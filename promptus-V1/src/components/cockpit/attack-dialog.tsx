@@ -1,0 +1,241 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { DAMAGE_TYPES } from "@/lib/engine/catalog";
+import type { ParticipantView } from "@/lib/stores/session-store";
+import type { ResolutionRecord, DamageType } from "@/lib/engine/types";
+
+interface Props {
+  sessionId: string;
+  participants: ParticipantView[];
+  trigger: React.ReactNode;
+}
+
+export function AttackDialog({ sessionId, participants, trigger }: Props) {
+  const [open, setOpen] = useState(false);
+  const [attackerId, setAttackerId] = useState<string>("");
+  const [targetIds, setTargetIds] = useState<Set<string>>(new Set());
+  const [attackBonus, setAttackBonus] = useState("3");
+  const [damageNotation, setDamageNotation] = useState("1d8+3");
+  const [damageType, setDamageType] = useState<DamageType>("slashing");
+  const [meleeWithin5ft, setMeleeWithin5ft] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [results, setResults] = useState<ResolutionRecord[] | null>(null);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!open) {
+      setResults(null);
+      setTargetIds(new Set());
+    }
+  }, [open]);
+
+  const aliveParticipants = participants.filter(
+    (p) => (p.state.currentState.hp ?? 1) > 0,
+  );
+
+  function toggleTarget(id: string) {
+    setTargetIds((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function attack() {
+    if (!attackerId) return toast.error("Pick an attacker");
+    if (targetIds.size === 0) return toast.error("Pick at least one target");
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/actions`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          kind: "attack",
+          attackerId,
+          targetIds: Array.from(targetIds),
+          attackBonus: Number(attackBonus),
+          damageNotation,
+          damageType,
+          meleeWithin5ft,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message ?? "Attack failed");
+      }
+      const { records } = (await res.json()) as { records: ResolutionRecord[] };
+      setResults(records);
+      queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
+      queryClient.invalidateQueries({ queryKey: ["timeline", sessionId] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Attack failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Make an attack</DialogTitle>
+        </DialogHeader>
+
+        {results ? (
+          <div className="space-y-2" data-testid="attack-results">
+            <h3 className="text-sm font-semibold">Resolution</h3>
+            <ScrollArea className="max-h-72 rounded border p-3">
+              <ul className="space-y-1 text-sm">
+                {results.map((r, i) => (
+                  <li key={i} className="border-l-2 pl-2 py-0.5">
+                    <Badge
+                      variant={
+                        r.outcome === "success"
+                          ? "default"
+                          : r.outcome === "fail"
+                          ? "destructive"
+                          : "outline"
+                      }
+                      className="mr-2 capitalize"
+                    >
+                      {r.outcome}
+                    </Badge>
+                    {r.description}
+                  </li>
+                ))}
+              </ul>
+            </ScrollArea>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setResults(null)}>
+                Another attack
+              </Button>
+              <Button onClick={() => setOpen(false)}>Close</Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-xs uppercase">Attacker</Label>
+              <Select value={attackerId} onValueChange={setAttackerId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pick an attacker…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {aliveParticipants.map((p) => (
+                    <SelectItem key={p.state.entityId} value={p.state.entityId}>
+                      {p.entity?.name ?? p.state.entityId}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-xs uppercase">Target(s)</Label>
+              <div className="rounded border p-2 max-h-40 overflow-auto space-y-1">
+                {aliveParticipants
+                  .filter((p) => p.state.entityId !== attackerId)
+                  .map((p) => (
+                    <label
+                      key={p.state.entityId}
+                      className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={targetIds.has(p.state.entityId)}
+                        onCheckedChange={() => toggleTarget(p.state.entityId)}
+                      />
+                      <span className="flex-1 text-sm">{p.entity?.name}</span>
+                      {p.state.currentState.ac !== undefined ? (
+                        <Badge variant="outline" className="text-xs">
+                          AC {p.state.currentState.ac}
+                        </Badge>
+                      ) : null}
+                      {p.state.currentState.conditions.length > 0 ? (
+                        <Badge variant="destructive" className="text-xs">
+                          {p.state.currentState.conditions[0].conditionId}
+                          {p.state.currentState.conditions.length > 1 ? "+" : ""}
+                        </Badge>
+                      ) : null}
+                    </label>
+                  ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3 grid-cols-2">
+              <div className="space-y-1">
+                <Label className="text-xs uppercase">Attack bonus</Label>
+                <Input
+                  type="number"
+                  value={attackBonus}
+                  onChange={(e) => setAttackBonus(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs uppercase">Damage type</Label>
+                <Select value={damageType} onValueChange={(v) => setDamageType(v as DamageType)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DAMAGE_TYPES.map((d) => (
+                      <SelectItem key={d} value={d}>
+                        {d}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label className="text-xs uppercase">Damage notation</Label>
+                <Input
+                  value={damageNotation}
+                  onChange={(e) => setDamageNotation(e.target.value)}
+                  placeholder="1d8+3"
+                />
+              </div>
+              <label className="flex items-center gap-2 col-span-2">
+                <Checkbox
+                  checked={meleeWithin5ft}
+                  onCheckedChange={(v) => setMeleeWithin5ft(!!v)}
+                />
+                <span className="text-sm">Melee within 5 ft (enables critical on paralyzed/unconscious)</span>
+              </label>
+            </div>
+
+            <DialogFooter>
+              <Button onClick={attack} disabled={busy} data-testid="attack-submit">
+                {busy ? "Resolving…" : "Resolve attack"}
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
