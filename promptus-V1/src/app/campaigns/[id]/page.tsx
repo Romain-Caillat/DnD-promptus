@@ -67,6 +67,16 @@ export default async function CampaignDashboardPage({ params }: Props) {
               </CardHeader>
             </Card>
           </Link>
+          <Link href={`/campaigns/${campaign.id}/media`}>
+            <Card className="hover:border-primary transition-colors h-full">
+              <CardHeader>
+                <CardTitle className="text-base">Médias</CardTitle>
+                <CardDescription>
+                  Images, vidéos d’intro et musiques YouTube, selon votre budget.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
           <Link href={`/campaigns/${campaign.id}/entities`}>
             <Card className="hover:border-primary transition-colors h-full">
               <CardHeader>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db/client";
+import { lockCampaign } from "@/lib/db/lock";
 import { campaigns, entities, sessions, sessionState, sessionTimeline } from "@/lib/db/schema";
 import { handleApiError, notFound } from "@/lib/api/errors";
 import { generateId } from "@/lib/api/ids";
@@ -27,11 +28,9 @@ export async function POST(
     const { action } = BodySchema.parse(await req.json());
     const [session] = await db.select().from(sessions).where(eq(sessions.id, id));
     if (!session) notFound("session", id);
-    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, session.campaignId));
-    const world = normalizeWorld(campaign?.worldState);
-
     if (action === "end") {
       await db.transaction(async (tx) => {
+        const world = normalizeWorld((await lockCampaign(tx, session.campaignId)).worldState);
         await tx
           .update(sessions)
           .set({ currentPhase: "exploration", combatRound: 0, activeTurnIndex: 0, initiativeOrder: [] })
@@ -43,6 +42,8 @@ export async function POST(
       return NextResponse.json({ ok: true });
     }
 
+    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, session.campaignId));
+    const world = normalizeWorld(campaign?.worldState);
     const story = campaign?.story ?? EMPTY_STORY;
     const ruleset = campaign?.ruleset ?? DND5E_RULESET;
     const map = story.maps.find((m) => m.id === defaultMapId(story, world));
@@ -72,6 +73,7 @@ export async function POST(
       .sort((a, b) => b.initiative - a.initiative);
 
     await db.transaction(async (tx) => {
+      const locked = normalizeWorld((await lockCampaign(tx, session.campaignId)).worldState);
       if (added.length) {
         await tx.insert(sessionState).values(
           added.map((e) => ({ id: generateId("st"), sessionId: id, entityId: e, currentState: deriveStateFromEntity(entById.get(e)!) })),
@@ -81,7 +83,7 @@ export async function POST(
         .update(sessions)
         .set({ currentPhase: "combat", combatRound: 1, activeTurnIndex: 0, initiativeOrder: order })
         .where(eq(sessions.id, id));
-      await tx.update(campaigns).set({ worldState: { ...world, turnMovement: undefined } }).where(eq(campaigns.id, session.campaignId));
+      await tx.update(campaigns).set({ worldState: { ...locked, turnMovement: undefined } }).where(eq(campaigns.id, session.campaignId));
       await tx.insert(sessionTimeline).values({ id: generateId("tl"), sessionId: id, round: 1, description: "⚔️ Le combat commence ! Initiative lancée." });
     });
     await notifySession(id, ["session", "story", "timeline"]);

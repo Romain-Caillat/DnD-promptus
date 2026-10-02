@@ -43,7 +43,7 @@ describe("projectPlayerView — confidentialité", () => {
     const v = projectPlayerView(input());
     const json = JSON.stringify(v);
     const scene = story.scenes.find((s) => s.id === "sc_crypte")!;
-    expect(v.scene).toEqual({ title: scene.title, readAloud: scene.readAloud, phase: "combat" });
+    expect(v.scene).toEqual({ title: scene.title, readAloud: scene.readAloud, phase: "combat", imageUrl: null, videoUrl: null });
     expect(json).not.toContain(scene.summary);
     for (const secret of story.bible.secrets) expect(json).not.toContain(secret);
     expect(json).not.toContain("cl_");

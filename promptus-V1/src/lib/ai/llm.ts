@@ -66,6 +66,15 @@ export function defaultModel(): string {
   return process.env.OPENROUTER_MODEL ?? "anthropic/claude-sonnet-4.5";
 }
 
+export function defaultImageModel(): string {
+  return process.env.OPENROUTER_IMAGE_MODEL ?? "google/gemini-2.5-flash-image";
+}
+
+/** Pas de modèle vidéo par défaut : le MJ le choisit selon l'offre du moment. */
+export function defaultVideoModel(): string | undefined {
+  return process.env.OPENROUTER_VIDEO_MODEL || undefined;
+}
+
 interface ChatCompletionResponse {
   model?: string;
   choices?: { message?: { content?: string | null }; finish_reason?: string }[];

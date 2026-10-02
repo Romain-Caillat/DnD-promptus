@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db/client";
+import { lockCampaign } from "@/lib/db/lock";
 import { sessions, sessionState } from "@/lib/db/schema";
 import { handleApiError, notFound } from "@/lib/api/errors";
 import { eq } from "drizzle-orm";
@@ -12,65 +13,55 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const [session] = await db.select().from(sessions).where(eq(sessions.id, id));
-    if (!session) notFound("session", id);
+    const [found] = await db.select({ campaignId: sessions.campaignId }).from(sessions).where(eq(sessions.id, id));
+    if (!found) notFound("session", id);
 
-    const order = session.initiativeOrder;
-    if (order.length === 0) {
-      return NextResponse.json({ session });
-    }
+    // Sous verrou : deux clics « Suivant » ne sautent pas un tour.
+    const updated = await db.transaction(async (tx) => {
+      await lockCampaign(tx, found.campaignId);
+      const [session] = await tx.select().from(sessions).where(eq(sessions.id, id));
+      const order = session.initiativeOrder;
+      if (order.length === 0) return session;
 
-    // Les adversaires à 0 PV ne jouent plus (les personnages, si : jets contre la mort).
-    const hpRows = await db.select().from(sessionState).where(eq(sessionState.sessionId, id));
-    const hpById = new Map(hpRows.map((s) => [s.entityId, (s.currentState as EntityState).hp]));
-    const out = (i: number) => !order[i].isPlayer && (hpById.get(order[i].entityId) ?? 1) <= 0;
-    let nextIndex = session.activeTurnIndex;
-    let wraps = false;
-    for (let step = 0; step < order.length; step++) {
-      nextIndex = (nextIndex + 1) % order.length;
-      if (nextIndex === 0) wraps = true;
-      if (!out(nextIndex)) break;
-    }
-    const nextRound = wraps ? session.combatRound + 1 : session.combatRound;
+      // Les adversaires à 0 PV ne jouent plus (les personnages, si : jets contre la mort).
+      const states = await tx.select().from(sessionState).where(eq(sessionState.sessionId, id));
+      const hpById = new Map(states.map((s) => [s.entityId, (s.currentState as EntityState).hp]));
+      const out = (i: number) => !order[i].isPlayer && (hpById.get(order[i].entityId) ?? 1) <= 0;
+      let nextIndex = session.activeTurnIndex;
+      let wraps = false;
+      for (let step = 0; step < order.length; step++) {
+        nextIndex = (nextIndex + 1) % order.length;
+        if (nextIndex === 0) wraps = true;
+        if (!out(nextIndex)) break;
+      }
+      const nextRound = wraps ? session.combatRound + 1 : session.combatRound;
 
-    const [updated] = await db
-      .update(sessions)
-      .set({
-        activeTurnIndex: nextIndex,
-        combatRound: nextRound,
-      })
-      .where(eq(sessions.id, id))
-      .returning();
+      const [row] = await tx
+        .update(sessions)
+        .set({ activeTurnIndex: nextIndex, combatRound: nextRound })
+        .where(eq(sessions.id, id))
+        .returning();
 
-    // Decrement condition durations on round wrap
-    if (wraps) {
-      const states = await db
-        .select()
-        .from(sessionState)
-        .where(eq(sessionState.sessionId, id));
-      for (const s of states) {
-        const cs = s.currentState as EntityState;
-        const conds = (cs.conditions ?? []).map((c) => ({
-          ...c,
-          remainingRounds:
-            typeof c.remainingRounds === "number"
-              ? Math.max(0, c.remainingRounds - 1)
-              : c.remainingRounds,
-        }));
-        const filtered = conds.filter(
-          (c) => c.remainingRounds === undefined || c.remainingRounds > 0,
-        );
-        if (filtered.length !== cs.conditions.length || filtered.some((f, i) => f !== cs.conditions[i])) {
-          await db
-            .update(sessionState)
-            .set({
-              currentState: { ...cs, conditions: filtered },
-              updatedAt: new Date(),
-            })
-            .where(eq(sessionState.id, s.id));
+      // Fin de round : les durées d'états diminuent.
+      if (wraps) {
+        for (const s of states) {
+          const cs = s.currentState as EntityState;
+          const conds = (cs.conditions ?? [])
+            .map((c) => ({
+              ...c,
+              remainingRounds: typeof c.remainingRounds === "number" ? Math.max(0, c.remainingRounds - 1) : c.remainingRounds,
+            }))
+            .filter((c) => c.remainingRounds === undefined || c.remainingRounds > 0);
+          if (JSON.stringify(conds) !== JSON.stringify(cs.conditions ?? [])) {
+            await tx
+              .update(sessionState)
+              .set({ currentState: { ...cs, conditions: conds }, updatedAt: new Date() })
+              .where(eq(sessionState.id, s.id));
+          }
         }
       }
-    }
+      return row;
+    });
 
     await notifySession(id, ["session"]);
     return NextResponse.json({ session: updated });

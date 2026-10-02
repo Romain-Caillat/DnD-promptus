@@ -250,7 +250,7 @@ export function EntityEditor({ campaignId, initial, mode }: Props) {
                 id="ent-img"
                 value={state.imageUrl}
                 onChange={(e) => update("imageUrl", e.target.value)}
-                placeholder="/generated-images/… ou https://…"
+                placeholder="/api/media/… ou https://…"
               />
               {state.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element

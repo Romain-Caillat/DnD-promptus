@@ -20,6 +20,7 @@ import { MapPanel } from "./map-panel";
 import { PlayersPanel } from "./players-panel";
 import { RequestsPanel } from "./requests-panel";
 import { CopilotPanel } from "./copilot-panel";
+import { MusicPanel } from "./music-panel";
 import { useRealtime } from "@/lib/realtime/use-realtime";
 import { PHASE_LABELS } from "@/lib/engine/catalog";
 
@@ -186,6 +187,7 @@ export function Cockpit({
         <PlayersPanel sessionId={session.id} realtime={realtime} />
         <RequestsPanel sessionId={session.id} />
         <InitiativeTracker session={session} participants={participants} />
+        <MusicPanel sessionId={session.id} />
         <AudioControls />
         <TimelineFeed sessionId={session.id} />
       </aside>

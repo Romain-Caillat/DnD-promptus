@@ -23,6 +23,7 @@ export async function GET(
     return NextResponse.json({
       story: campaign.story ?? EMPTY_STORY,
       world: normalizeWorld(campaign.worldState),
+      serverTime: Date.now(),
     });
   } catch (error) {
     return handleApiError(error);

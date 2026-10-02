@@ -7,6 +7,8 @@ import { handleApiError, notFound } from "@/lib/api/errors";
 
 const BodySchema = z.object({
   model: z.string().max(200).optional(),
+  imageModel: z.string().max(200).optional(),
+  videoModel: z.string().max(200).optional(),
   budgetUsd: z.number().nonnegative().max(10_000).optional(),
 });
 
@@ -19,6 +21,8 @@ export async function PUT(
     const input = BodySchema.parse(await req.json());
     const aiSettings = {
       ...(input.model?.trim() ? { model: input.model.trim() } : {}),
+      ...(input.imageModel?.trim() ? { imageModel: input.imageModel.trim() } : {}),
+      ...(input.videoModel?.trim() ? { videoModel: input.videoModel.trim() } : {}),
       ...(input.budgetUsd !== undefined ? { budgetUsd: input.budgetUsd } : {}),
     };
     const [row] = await db

@@ -46,3 +46,6 @@ next-env.d.ts
 .env.local
 .env.production
 src/lib/db/migrations/*.sql.bak
+
+# Médias générés (MEDIA_DIR)
+/data/

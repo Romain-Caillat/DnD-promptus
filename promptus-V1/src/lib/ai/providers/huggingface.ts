@@ -1,5 +1,4 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import { saveMedia } from "@/lib/media/storage";
 import {
   ImageGenerationError,
   type ImageGenerator,
@@ -9,7 +8,6 @@ import {
 
 const ENDPOINT =
   "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell";
-const PUBLIC_DIR = path.join(process.cwd(), "public", "generated-images");
 
 export class HuggingFaceFluxSchnell implements ImageGenerator {
   readonly name = "huggingface/flux-schnell";
@@ -53,7 +51,8 @@ export class HuggingFaceFluxSchnell implements ImageGenerator {
     }
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    const url = await saveToPublic(buffer, opts.entityId);
+    if (!opts.campaignId) throw new ImageGenerationError("Campagne manquante pour enregistrer l’image", 500);
+    const url = await saveMedia(opts.campaignId, buffer, "png");
     return {
       url,
       provider: this.name,
@@ -61,13 +60,4 @@ export class HuggingFaceFluxSchnell implements ImageGenerator {
       latencyMs: Math.round(performance.now() - start),
     };
   }
-}
-
-async function saveToPublic(buffer: Buffer, entityId?: string): Promise<string> {
-  await fs.mkdir(PUBLIC_DIR, { recursive: true });
-  const slug = entityId ? entityId.replace(/[^a-z0-9_-]/gi, "_") : "img";
-  const filename = `${slug}-${Date.now()}.png`;
-  const fullPath = path.join(PUBLIC_DIR, filename);
-  await fs.writeFile(fullPath, buffer);
-  return `/generated-images/${filename}`;
 }

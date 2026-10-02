@@ -30,13 +30,17 @@ services:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-anthropic/claude-sonnet-4.5}
       APP_URL: ${APP_URL:-}
-      IMAGE_PROVIDER: ${IMAGE_PROVIDER:-huggingface}
+      IMAGE_PROVIDER: ${IMAGE_PROVIDER:-}
+      OPENROUTER_IMAGE_MODEL: ${OPENROUTER_IMAGE_MODEL:-google/gemini-2.5-flash-image}
+      OPENROUTER_VIDEO_MODEL: ${OPENROUTER_VIDEO_MODEL:-}
+      MEDIA_DIR: /app/data/media
       # Adresse WebSocket vue par les navigateurs (servie par Caddy sur /realtime).
       REALTIME_PUBLIC_URL: ${REALTIME_PUBLIC_URL:-}
       NODE_ENV: production
     volumes:
       - ./public/audio:/app/public/audio
-      - ./public/generated-images:/app/public/generated-images
+      # Médias générés (images, vidéos), servis par /api/media.
+      - promptus_media:/app/data/media
     expose:
       - "3000"
 
@@ -72,5 +76,6 @@ services:
 
 volumes:
   promptus_pg_data:
+  promptus_media:
   caddy_data:
   caddy_config:

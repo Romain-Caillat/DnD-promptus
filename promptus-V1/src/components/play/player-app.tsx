@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { MapLegend, MapView, type TokenKind } from "@/components/maps/map-view";
+import { YouTubeMusic } from "@/components/media/youtube-music";
 import { PHASE_LABELS } from "@/lib/engine/catalog";
 import { cellKey, reachableCells, type Cell } from "@/lib/engine/grid";
 import type { PlayerView } from "@/lib/play/projection";
@@ -234,8 +235,22 @@ function PlayerScreen({ code, token }: { code: string; token: string }) {
           {view.scene ? (
             <Card>
               <CardContent className="pt-4 space-y-1">
+                {view.scene.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={view.scene.imageUrl} alt="" className="mb-2 w-full rounded object-cover max-h-64" data-testid="scene-image" />
+                ) : null}
                 <h2 className="font-semibold" data-testid="player-scene">{view.scene.title}</h2>
                 {view.scene.readAloud ? <p className="text-sm italic whitespace-pre-line">{view.scene.readAloud}</p> : null}
+                {view.scene.videoUrl ? (
+                  <video src={view.scene.videoUrl} controls playsInline className="mt-2 w-full rounded" data-testid="scene-video" />
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
+          {view.music ? (
+            <Card>
+              <CardContent className="pt-4">
+                <YouTubeMusic music={view.music} serverTime={view.serverTime} />
               </CardContent>
             </Card>
           ) : null}

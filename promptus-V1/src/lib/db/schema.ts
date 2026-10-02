@@ -30,6 +30,9 @@ import type {
 
 export interface AiSettings {
   model?: string;
+  /** Modèles OpenRouter pour les images et les vidéos. */
+  imageModel?: string;
+  videoModel?: string;
   budgetUsd?: number;
 }
 

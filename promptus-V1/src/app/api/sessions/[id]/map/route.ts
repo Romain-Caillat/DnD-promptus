@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db/client";
+import { lockCampaign } from "@/lib/db/lock";
 import { campaigns, entities, sessions, sessionTimeline } from "@/lib/db/schema";
 import { badRequest, handleApiError, notFound } from "@/lib/api/errors";
 import { generateId } from "@/lib/api/ids";
@@ -33,24 +34,22 @@ export async function POST(
     const op = MapOpSchema.parse(await req.json()) as MapOp;
     const [session] = await db.select().from(sessions).where(eq(sessions.id, id));
     if (!session) notFound("session", id);
-    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, session.campaignId));
-    if (!campaign) notFound("campaign", session.campaignId);
     const ents = await db
       .select({ id: entities.id, name: entities.name })
       .from(entities)
-      .where(eq(entities.campaignId, campaign.id));
-    const story = campaign.story ?? EMPTY_STORY;
+      .where(eq(entities.campaignId, session.campaignId));
 
-    let world;
-    try {
-      world = applyMapOp(normalizeWorld(campaign.worldState), story, op, new Set(ents.map((e) => e.id)));
-    } catch (e) {
-      if (e instanceof MapOpError) badRequest(e.message);
-      throw e;
-    }
-
-    await db.transaction(async (tx) => {
-      await tx.update(campaigns).set({ worldState: world, updatedAt: new Date() }).where(eq(campaigns.id, campaign.id));
+    const world = await db.transaction(async (tx) => {
+      const campaign = await lockCampaign(tx, session.campaignId);
+      const story = campaign.story ?? EMPTY_STORY;
+      let next;
+      try {
+        next = applyMapOp(normalizeWorld(campaign.worldState), story, op, new Set(ents.map((e) => e.id)));
+      } catch (e) {
+        if (e instanceof MapOpError) badRequest(e.message);
+        throw e;
+      }
+      await tx.update(campaigns).set({ worldState: next, updatedAt: new Date() }).where(eq(campaigns.id, campaign.id));
       if (op.op === "move_token") {
         const name = op.entityId === PARTY_TOKEN ? "Le groupe" : (ents.find((e) => e.id === op.entityId)?.name ?? op.entityId);
         const mapName = story.maps.find((m) => m.id === op.mapId)?.name ?? op.mapId;
@@ -61,9 +60,10 @@ export async function POST(
           round: session.combatRound,
           description: `📍 ${name} → (${op.x}, ${op.y}) sur « ${mapName} »`,
           // Un déplacement dans le brouillard reste secret.
-          isPublic: !!map && revealedCells(map, world).has(cellKey(op.x, op.y)),
+          isPublic: !!map && revealedCells(map, next).has(cellKey(op.x, op.y)),
         });
       }
+      return next;
     });
     await notifySession(id, ["story", "timeline"]);
     return NextResponse.json({ world });

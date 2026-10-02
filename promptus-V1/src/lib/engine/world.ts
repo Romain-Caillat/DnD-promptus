@@ -2,6 +2,7 @@
 // Le contenu écrit (scénario) est dans `CampaignStory` ; ici, seulement
 // l'état vivant, persisté d'une session à l'autre.
 
+import type { MusicState } from "@/lib/media/youtube";
 import type { CampaignStory, GameMap, MapToken, Scene, SceneStatus, SceneTrigger, WorldCondition } from "./story";
 
 export interface Relation {
@@ -34,6 +35,8 @@ export interface WorldState {
   spotlightEntityId?: string;
   /** Déplacement déjà utilisé pendant le tour en cours (clé « round:tour »). */
   turnMovement?: { turnKey: string; used: Record<string, number> };
+  /** Musique d'ambiance YouTube jouée chez tous les joueurs. */
+  music?: MusicState;
 }
 
 export interface MapRuntime {

@@ -92,6 +92,26 @@ pnpm tsx scripts/fake-openrouter.ts 4010 &
 OPENROUTER_API_KEY=fake OPENROUTER_BASE_URL=http://localhost:4010/api/v1 pnpm dev
 ```
 
+## Médias : images, vidéos, musique
+
+Page **Médias** d’une campagne : images des scènes, des fiches et fonds de
+cartes, vidéos d’intro des scènes, musique YouTube par scène.
+
+- Images et vidéos via OpenRouter (modèles choisis dans **Paramètres**). Sans
+  clé OpenRouter, les images passent par HuggingFace si `HUGGINGFACE_TOKEN`
+  est défini.
+- Le coût est estimé avant chaque lot (moyenne des derniers appels) et
+  comparé au budget IA de la campagne ; le lot est refusé s’il le dépasse.
+- Tout est généré à l’avance, rangé dans `MEDIA_DIR` (volume Docker) et servi
+  par `/api/media/…`. Les prompts sont modifiables.
+- **Musique** : le MJ associe un lien YouTube (vidéo ou playlist) à chaque
+  scène ; un lien de recherche est proposé à partir de l’ambiance suggérée par
+  le LLM. En partie, le panneau **Musique** la lance chez tous les joueurs,
+  calée au même instant (pause, reprise, arrêt). Le lecteur YouTube reste
+  visible (conditions de YouTube) et démarre en muet : chacun clique
+  « Activer le son ». Les publicités peuvent décaler un joueur ; la lecture
+  se recale toute seule.
+
 ## Co-MJ en direct
 
 Dans le cockpit, le panneau **Co-MJ** interroge le modèle avec le contexte de

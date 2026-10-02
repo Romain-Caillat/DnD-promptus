@@ -20,12 +20,18 @@ export function AiSettingsCard({
   campaignId,
   initial,
   defaultModel,
+  defaultImageModel,
+  defaultVideoModel,
 }: {
   campaignId: string;
   initial: AiSettings;
   defaultModel: string;
+  defaultImageModel: string;
+  defaultVideoModel?: string;
 }) {
   const [model, setModel] = useState(initial.model ?? "");
+  const [imageModel, setImageModel] = useState(initial.imageModel ?? "");
+  const [videoModel, setVideoModel] = useState(initial.videoModel ?? "");
   const [budget, setBudget] = useState(initial.budgetUsd !== undefined ? String(initial.budgetUsd) : "");
   const [busy, setBusy] = useState(false);
 
@@ -35,6 +41,16 @@ export function AiSettingsCard({
     staleTime: 3_600_000,
   });
   const selected = data?.models.find((m) => m.id === (model || defaultModel));
+  const media = useQuery({
+    queryKey: ["ai-models", "media"],
+    queryFn: async () => {
+      const [image, video] = await Promise.all(
+        ["image", "video"].map(async (m) => ((await (await fetch(`/api/ai/models?modality=${m}`)).json()) as { models: ModelOption[] }).models),
+      );
+      return { image, video };
+    },
+    staleTime: 3_600_000,
+  });
 
   async function save() {
     setBusy(true);
@@ -44,6 +60,8 @@ export function AiSettingsCard({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           model: model.trim() || undefined,
+          imageModel: imageModel.trim() || undefined,
+          videoModel: videoModel.trim() || undefined,
           budgetUsd: budget.trim() === "" ? undefined : Number(budget),
         }),
       });
@@ -86,6 +104,49 @@ export function AiSettingsCard({
               ? `${selected.name} : ${selected.promptPerM.toFixed(2)} $ / M jetons en entrée, ${selected.completionPerM.toFixed(2)} $ / M en sortie.`
               : data?.error ?? "Choisissez un identifiant de modèle OpenRouter (ex. fournisseur/modèle)."}
           </p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-1">
+            <Label htmlFor="ai-image-model" className="text-xs uppercase tracking-wide text-muted-foreground">
+              Modèle d’images
+            </Label>
+            <Input
+              id="ai-image-model"
+              list="ai-image-model-options"
+              value={imageModel}
+              onChange={(e) => setImageModel(e.target.value)}
+              placeholder={`Par défaut : ${defaultImageModel}`}
+            />
+            <datalist id="ai-image-model-options">
+              {(media.data?.image ?? []).map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </datalist>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="ai-video-model" className="text-xs uppercase tracking-wide text-muted-foreground">
+              Modèle vidéo
+            </Label>
+            <Input
+              id="ai-video-model"
+              list="ai-video-model-options"
+              value={videoModel}
+              onChange={(e) => setVideoModel(e.target.value)}
+              placeholder={defaultVideoModel ? `Par défaut : ${defaultVideoModel}` : "Aucun : choisissez un modèle vidéo"}
+            />
+            <datalist id="ai-video-model-options">
+              {(media.data?.video ?? []).map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </datalist>
+            <p className="text-xs text-muted-foreground">
+              {media.data && !media.data.video.length ? "OpenRouter ne liste aucun modèle vidéo pour l’instant." : null}
+            </p>
+          </div>
         </div>
         <div className="space-y-1">
           <Label htmlFor="ai-budget" className="text-xs uppercase tracking-wide text-muted-foreground">

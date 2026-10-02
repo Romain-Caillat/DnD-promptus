@@ -162,7 +162,7 @@ des écrans MJ et joueur.
 | E0 ✅ | Assainissement V1 | Tests (séparer l'intégration), lint, `.env.example`, suppression des mocks, passage en français |
 | E1 ✅ | Modèle de campagne + règles | Schéma : bible, fronts, nœuds, indices, cartes, état vivant, système de règles du MJ |
 | E2 ✅ | Génération de campagne | Pitch → structure par LLM → édition par le MJ |
-| E3 | Pipeline média | Jobs async image / vidéo (OpenRouter), musique YouTube, budget, cache |
+| E3 ✅ | Pipeline média | Jobs async image / vidéo (OpenRouter), musique YouTube, budget, cache |
 | E4 ✅ | Cartes à grille | 3 niveaux, données + fond, brouillard, navigation entre niveaux |
 | E5 ✅ | Session temps réel | Lobby, lien d'invitation, synchronisation |
 | E6 ✅ | Interface joueur | Fiche, carte, actions possibles, médias, journal |
@@ -175,4 +175,6 @@ de chaque niveau), jouée à distance de bout en bout avec un combat sur grille.
 
 ## Questions ouvertes
 
-- Les modèles OpenRouter à utiliser par défaut (LLM, image, vidéo).
+- Les modèles OpenRouter à utiliser par défaut (LLM, image, vidéo) : à
+  confirmer sur l’offre réelle (le format des réponses vidéo d’OpenRouter
+  n’a pas pu être vérifié, faute d’accès réseau pendant le développement).

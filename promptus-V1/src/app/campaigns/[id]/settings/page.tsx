@@ -1,5 +1,5 @@
 import { AiSettingsCard } from "@/components/campaigns/ai-settings-card";
-import { defaultModel } from "@/lib/ai/llm";
+import { defaultImageModel, defaultModel, defaultVideoModel } from "@/lib/ai/llm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db/client";
@@ -39,7 +39,13 @@ export default async function CampaignSettingsPage({ params }: Props) {
         }}
       />
       <div className="mt-6">
-        <AiSettingsCard campaignId={campaign.id} initial={campaign.aiSettings} defaultModel={defaultModel()} />
+        <AiSettingsCard
+          campaignId={campaign.id}
+          initial={campaign.aiSettings}
+          defaultModel={defaultModel()}
+          defaultImageModel={defaultImageModel()}
+          defaultVideoModel={defaultVideoModel()}
+        />
       </div>
     </main>
   );

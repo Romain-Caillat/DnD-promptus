@@ -7,6 +7,7 @@ import { attackGeometry, creatureAttacks } from "@/lib/engine/combat";
 import { cellKey, speedInCells, type DiagonalRule } from "@/lib/engine/grid";
 import { abilityModifier, damageTypeLabel, rulesetConditionLabel, skillLabel, type Ruleset } from "@/lib/engine/ruleset";
 import type { CampaignStory, GameMap, MapCell, MapToken } from "@/lib/engine/story";
+import type { MusicState } from "@/lib/media/youtube";
 import type { EntityState, EntityType, InitiativeEntry } from "@/lib/engine/types";
 import { defaultMapId, mapTokens, revealedCells, type WorldState } from "@/lib/engine/world";
 
@@ -42,6 +43,8 @@ export interface ProjectionInput {
   takenBy: Record<string, string>;
   timeline: { id: string; description: string; createdAt: string; kind?: "event" | "narration" | "npc" }[];
   requests: { id: string; label: string; status: string; result: string | null; createdAt: string }[];
+  /** Heure serveur (ms), pour synchroniser la musique. */
+  now?: number;
 }
 
 export interface PlayerMap {
@@ -75,7 +78,7 @@ export interface PlayerView {
   party: { id: string; name: string; hp: number | null; hpMax: number | null; player: string | null }[];
   initiative: { name: string; isPlayer: boolean; active: boolean; mine: boolean }[];
   isMyTurn: boolean;
-  scene: { title: string; readAloud: string; phase: PhaseId } | null;
+  scene: { title: string; readAloud: string; phase: PhaseId; imageUrl: string | null; videoUrl: string | null } | null;
   map: PlayerMap | null;
   movement: { budgetCells: number; usedCells: number; diagonal: DiagonalRule; allowed: boolean; reason: string | null } | null;
   actions: { id: string; label: string; kind: string; detail: string | null; description: string | null }[];
@@ -91,6 +94,9 @@ export interface PlayerView {
     byAttack: Record<string, { possible: boolean; longRange: boolean; reason: string | null }>;
   }[];
   spotlight: { name: string; description: string | null; imageUrl: string | null } | null;
+  /** Musique d'ambiance en cours (YouTube) et heure serveur pour la caler. */
+  music: MusicState | null;
+  serverTime: number;
   /** Dernière narration ou réplique envoyée par le MJ. */
   narration: { id: string; text: string } | null;
   timeline: ProjectionInput["timeline"];
@@ -187,7 +193,15 @@ export function projectPlayerView(input: ProjectionInput): PlayerView {
 
   // --- Scène ---------------------------------------------------------------
   const sceneRow = story.scenes.find((s) => s.id === world.currentSceneId);
-  const scene = sceneRow ? { title: sceneRow.title, readAloud: sceneRow.readAloud, phase: sceneRow.phase } : null;
+  const scene = sceneRow
+    ? {
+        title: sceneRow.title,
+        readAloud: sceneRow.readAloud,
+        phase: sceneRow.phase,
+        imageUrl: sceneRow.media?.imageUrl ?? null,
+        videoUrl: sceneRow.media?.videoUrl ?? null,
+      }
+    : null;
 
   // --- Carte (cases révélées uniquement) ----------------------------------
   const mapId = defaultMapId(story, world);
@@ -302,6 +316,8 @@ export function projectPlayerView(input: ProjectionInput): PlayerView {
     attacks,
     targets,
     spotlight: spot ? { name: spot.name, description: spot.description, imageUrl: spot.imageUrl } : null,
+    music: world.music ?? null,
+    serverTime: input.now ?? Date.now(),
     narration: (() => {
       const n = input.timeline.find((t) => t.kind === "narration" || t.kind === "npc");
       return n ? { id: n.id, text: mask(n.description) } : null;
