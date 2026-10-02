@@ -15,11 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  ENTITY_TYPE_LABELS,
-  STANDARD_CONDITIONS,
-  conditionLabel,
-} from "@/lib/engine/catalog";
+import { ENTITY_TYPE_LABELS } from "@/lib/engine/catalog";
+import { rulesetConditionLabel } from "@/lib/engine/ruleset";
+import { useRuleset } from "@/components/providers/ruleset-provider";
 import { cn } from "@/lib/utils";
 import type { ParticipantView } from "@/lib/stores/session-store";
 
@@ -34,6 +32,8 @@ export function ParticipantCard({ sessionId, participant }: Props) {
   const [condId, setCondId] = useState<string>("");
   const [condRounds, setCondRounds] = useState<string>("");
   const queryClient = useQueryClient();
+  const ruleset = useRuleset();
+  const conditionLabel = (id: string) => rulesetConditionLabel(ruleset, id);
 
   const ent = participant.entity;
   const cs = participant.state.currentState;
@@ -189,9 +189,9 @@ export function ParticipantCard({ sessionId, participant }: Props) {
               <SelectValue placeholder="Appliquer un état" />
             </SelectTrigger>
             <SelectContent>
-              {STANDARD_CONDITIONS.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {conditionLabel(c)}
+              {ruleset.conditions.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
                 </SelectItem>
               ))}
             </SelectContent>

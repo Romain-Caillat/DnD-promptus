@@ -24,9 +24,10 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { DAMAGE_TYPES, DAMAGE_TYPE_LABELS, OUTCOME_LABELS } from "@/lib/engine/catalog";
+import { OUTCOME_LABELS } from "@/lib/engine/catalog";
+import { useRuleset } from "@/components/providers/ruleset-provider";
 import type { ParticipantView } from "@/lib/stores/session-store";
-import type { ResolutionRecord, DamageType } from "@/lib/engine/types";
+import type { ResolutionRecord } from "@/lib/engine/types";
 
 interface Props {
   sessionId: string;
@@ -35,12 +36,15 @@ interface Props {
 }
 
 export function AttackDialog({ sessionId, participants, trigger }: Props) {
+  const ruleset = useRuleset();
   const [open, setOpen] = useState(false);
   const [attackerId, setAttackerId] = useState<string>("");
   const [targetIds, setTargetIds] = useState<Set<string>>(new Set());
   const [attackBonus, setAttackBonus] = useState("3");
   const [damageNotation, setDamageNotation] = useState("1d8+3");
-  const [damageType, setDamageType] = useState<DamageType>("slashing");
+  const [damageTypeChoice, setDamageType] = useState<string>("");
+  // Le type par défaut est le premier du ruleset (tranchant en 5e).
+  const damageType = damageTypeChoice || ruleset.damageTypes[0]?.id || "";
   const [meleeWithin5ft, setMeleeWithin5ft] = useState(true);
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<ResolutionRecord[] | null>(null);
@@ -199,14 +203,14 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs uppercase">Type de dégâts</Label>
-                <Select value={damageType} onValueChange={(v) => setDamageType(v as DamageType)}>
+                <Select value={damageType} onValueChange={setDamageType}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {DAMAGE_TYPES.map((d) => (
-                      <SelectItem key={d} value={d}>
-                        {DAMAGE_TYPE_LABELS[d]}
+                    {ruleset.damageTypes.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.label}
                       </SelectItem>
                     ))}
                   </SelectContent>

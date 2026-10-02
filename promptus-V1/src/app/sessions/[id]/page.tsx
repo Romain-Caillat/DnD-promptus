@@ -3,6 +3,7 @@ import { db } from "@/lib/db/client";
 import { sessions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { Cockpit } from "@/components/cockpit/cockpit";
+import { RulesetProvider } from "@/components/providers/ruleset-provider";
 
 export const dynamic = "force-dynamic";
 
@@ -15,5 +16,9 @@ export default async function SessionCockpitPage({ params }: Props) {
   const [session] = await db.select().from(sessions).where(eq(sessions.id, id));
   if (!session) notFound();
 
-  return <Cockpit sessionId={session.id} campaignId={session.campaignId} />;
+  return (
+    <RulesetProvider campaignId={session.campaignId}>
+      <Cockpit sessionId={session.id} campaignId={session.campaignId} />
+    </RulesetProvider>
+  );
 }

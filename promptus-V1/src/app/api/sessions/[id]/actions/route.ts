@@ -17,6 +17,7 @@ import {
   type EntityRef,
 } from "@/lib/engine/resolver";
 import type { Effect, EntityState, ResolutionRecord } from "@/lib/engine/types";
+import { getCampaignRuleset } from "@/lib/rules/server";
 
 export async function POST(
   req: NextRequest,
@@ -61,7 +62,9 @@ export async function POST(
         : undefined;
     const caster = casterId ? refs.find((r) => r.id === casterId) : undefined;
 
+    const ruleset = await getCampaignRuleset(session.campaignId);
     const ctx = newContext({
+      ruleset,
       caster,
       entities: refs,
       initiativeOrder: session.initiativeOrder,

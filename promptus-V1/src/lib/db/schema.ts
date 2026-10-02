@@ -17,6 +17,7 @@ import type {
   InitiativeEntry,
   MarkerCondition,
 } from "@/lib/engine/types";
+import type { Ruleset } from "@/lib/engine/ruleset";
 
 // ============================================================================
 // Enums
@@ -71,6 +72,8 @@ export const campaigns = pgTable("campaigns", {
   description: text("description"),
   styleGuide: jsonb("style_guide").$type<StyleGuide>().default({}).notNull(),
   systemTemplate: text("system_template").default("dnd5e").notNull(),
+  /** Système de règles défini par le MJ ; null = préréglage D&D 5e. */
+  ruleset: jsonb("ruleset").$type<Ruleset>(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });

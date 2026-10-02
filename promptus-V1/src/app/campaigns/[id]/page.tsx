@@ -57,6 +57,16 @@ export default async function CampaignDashboardPage({ params }: Props) {
               </CardHeader>
             </Card>
           </Link>
+          <Link href={`/campaigns/${campaign.id}/rules`}>
+            <Card className="hover:border-primary transition-colors h-full">
+              <CardHeader>
+                <CardTitle className="text-base">Règles</CardTitle>
+                <CardDescription>
+                  Système de jeu : jets, états, déplacement, actions des joueurs.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
           <Link href={`/campaigns/${campaign.id}/audio`}>
             <Card className="hover:border-primary transition-colors h-full">
               <CardHeader>

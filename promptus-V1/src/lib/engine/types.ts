@@ -9,7 +9,11 @@
 // Primitive vocabulary
 // ----------------------------------------------------------------------------
 
+/** Caractéristiques du préréglage D&D 5e. Les effets acceptent tout id du ruleset. */
 export type Stat = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
+
+/** Identifiant de caractéristique défini par le ruleset de la campagne. */
+export type AbilityId = string;
 
 export type DamageType =
   | "slashing"
@@ -78,7 +82,8 @@ export type ResourceKind =
 export interface DamageEffect {
   type: "damage";
   amount: string; // dice notation: "1d8+3", "8d6/2"
-  damageType: DamageType;
+  /** Id d'un type de dégâts du ruleset (préréglage : DamageType). */
+  damageType: string;
   target: TargetSpec;
 }
 
@@ -93,7 +98,7 @@ export interface ApplyConditionEffect {
   conditionId: string;
   duration?: { rounds?: number; minutes?: number };
   target: TargetSpec;
-  save?: { stat: Stat; dc: string | number };
+  save?: { stat: AbilityId; dc: string | number };
 }
 
 export interface RemoveConditionEffect {
@@ -112,7 +117,7 @@ export interface ModifyStatEffect {
 
 export interface RollCheckEffect {
   type: "roll_check";
-  stat: Stat;
+  stat: AbilityId;
   dc: string | number;
   target: TargetSpec;
   outcomeSuccess?: Effect[];
@@ -121,7 +126,7 @@ export interface RollCheckEffect {
 
 export interface ConsumeResourceEffect {
   type: "consume_resource";
-  resource: ResourceKind;
+  resource: string;
   amount: number;
   level?: number; // for spell slots
   target: TargetSpec;
@@ -129,7 +134,7 @@ export interface ConsumeResourceEffect {
 
 export interface RestoreResourceEffect {
   type: "restore_resource";
-  resource: ResourceKind;
+  resource: string;
   amount: number;
   level?: number;
   target: TargetSpec;
@@ -327,7 +332,7 @@ export interface ConditionModifier {
     | "outgoing_attack_within_5ft"
     | "incoming_attack_within_5ft"
     | "incapacitated";
-  saveStat?: Stat[];
+  saveStat?: AbilityId[];
   effect:
     | "advantage"
     | "disadvantage"

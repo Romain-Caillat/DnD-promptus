@@ -6,7 +6,6 @@ import type {
   ActiveCondition,
   ConditionDefinition,
   ConditionModifier,
-  Stat,
 } from "./types";
 
 export const CONDITIONS: Record<string, ConditionDefinition> = {
@@ -161,22 +160,25 @@ export interface ComputeFlagsOpts {
   actorConditions: ActiveCondition[];
   targetConditions?: ActiveCondition[];
   kind: RollKind;
-  saveStat?: Stat;
+  saveStat?: string;
   meleeWithin5ft?: boolean;
+  /** Définitions d’états du ruleset ; par défaut les 14 états 5e. */
+  conditions?: Record<string, ConditionDefinition>;
 }
 
 export function computeRollFlags(opts: ComputeFlagsOpts): RollFlags {
   const flags: RollFlags = { ...NEUTRAL_FLAGS };
+  const defs = opts.conditions ?? CONDITIONS;
 
   for (const c of opts.actorConditions) {
-    const def = CONDITIONS[c.conditionId];
+    const def = defs[c.conditionId];
     if (!def) continue;
     for (const mod of def.modifiers) {
       applyModifier(mod, "outgoing", opts, flags);
     }
   }
   for (const c of opts.targetConditions ?? []) {
-    const def = CONDITIONS[c.conditionId];
+    const def = defs[c.conditionId];
     if (!def) continue;
     for (const mod of def.modifiers) {
       applyModifier(mod, "incoming", opts, flags);
@@ -230,9 +232,12 @@ function applyModifier(
   }
 }
 
-export function isIncapacitated(conds: ActiveCondition[]): boolean {
+export function isIncapacitated(
+  conds: ActiveCondition[],
+  defs: Record<string, ConditionDefinition> = CONDITIONS,
+): boolean {
   for (const c of conds) {
-    const def = CONDITIONS[c.conditionId];
+    const def = defs[c.conditionId];
     if (!def) continue;
     if (def.modifiers.some((m) => m.trigger === "incapacitated" && m.effect === "true")) {
       return true;

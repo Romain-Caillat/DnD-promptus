@@ -16,20 +16,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
-  DAMAGE_TYPES,
-  DAMAGE_TYPE_LABELS,
   EFFECT_CATEGORY_LABELS,
   EFFECT_KINDS,
-  RESOURCE_KINDS,
-  RESOURCE_LABELS,
-  STANDARD_CONDITIONS,
-  STAT_LABELS,
-  STATS,
-  conditionLabel,
   type EffectKindId,
 } from "@/lib/engine/catalog";
 import type { Effect, TargetSpec } from "@/lib/engine/types";
 import { TargetField } from "./target-field";
+import { useRuleset } from "@/components/providers/ruleset-provider";
 
 interface Props {
   value: Effect[];
@@ -212,6 +205,7 @@ function EffectFields({
   onChange: (next: Effect) => void;
   idPrefix: string;
 }) {
+  const ruleset = useRuleset();
   switch (effect.type) {
     case "damage":
       return (
@@ -230,8 +224,8 @@ function EffectFields({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {DAMAGE_TYPES.map((d) => (
-                  <SelectItem key={d} value={d}>{DAMAGE_TYPE_LABELS[d]}</SelectItem>
+                {ruleset.damageTypes.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>{d.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -263,8 +257,8 @@ function EffectFields({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STANDARD_CONDITIONS.map((c) => (
-                  <SelectItem key={c} value={c}>{conditionLabel(c)}</SelectItem>
+                {ruleset.conditions.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -294,8 +288,8 @@ function EffectFields({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STANDARD_CONDITIONS.map((c) => (
-                  <SelectItem key={c} value={c}>{conditionLabel(c)}</SelectItem>
+                {ruleset.conditions.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -340,8 +334,8 @@ function EffectFields({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATS.map((s) => (
-                    <SelectItem key={s} value={s}>{STAT_LABELS[s]}</SelectItem>
+                  {ruleset.abilities.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -394,8 +388,8 @@ function EffectFields({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {RESOURCE_KINDS.map((r) => (
-                  <SelectItem key={r} value={r}>{RESOURCE_LABELS[r]}</SelectItem>
+                {ruleset.resources.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>{r.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

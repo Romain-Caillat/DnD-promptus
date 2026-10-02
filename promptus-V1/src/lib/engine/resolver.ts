@@ -3,11 +3,16 @@
 // The DB persistence is handled by the API route.
 
 import {
-  DAMAGE_TYPE_LABELS,
-  RESOURCE_LABELS,
-  STAT_LABELS,
-  conditionLabel,
-} from "./catalog";
+  DND5E_RULESET,
+  abilityLabel,
+  conditionsById,
+  damageTypeLabel,
+  defaultAbilityScore,
+  resourceLabel,
+  rollCheck,
+  rulesetConditionLabel,
+  type Ruleset,
+} from "./ruleset";
 
 import type {
   ActiveCondition,
@@ -31,14 +36,13 @@ import type {
   RollDetail,
   SetRelationEffect,
   SetStateEffect,
-  Stat,
   TargetSpec,
   TriggerEventEffect,
   AddToInventoryEffect,
   RemoveFromInventoryEffect,
 } from "./types";
 import { computeRollFlags } from "./conditions";
-import { rollD20, rollDice, type Rng, defaultRng } from "./dice";
+import { rollDice, type Rng, defaultRng } from "./dice";
 
 // ----------------------------------------------------------------------------
 // Resolution context
@@ -61,6 +65,8 @@ export interface ResolverContext {
   initiativeOrder: InitiativeEntry[];
   /** Optional explicit target list, used when caller already picked targets. */
   explicitTargets?: string[];
+  /** Règles de la campagne (défaut : D&D 5e). */
+  ruleset: Ruleset;
   rng: Rng;
 }
 
@@ -79,6 +85,7 @@ export function newContext(opts: {
   entities: EntityRef[];
   initiativeOrder: InitiativeEntry[];
   explicitTargets?: string[];
+  ruleset?: Ruleset;
   rng?: Rng;
 }): ResolverContext {
   const ents = new Map(opts.entities.map((e) => [e.id, e]));
@@ -89,6 +96,7 @@ export function newContext(opts: {
     states,
     initiativeOrder: opts.initiativeOrder,
     explicitTargets: opts.explicitTargets,
+    ruleset: opts.ruleset ?? DND5E_RULESET,
     rng: opts.rng ?? defaultRng,
   };
 }
@@ -188,10 +196,6 @@ function resolveTargets(target: TargetSpec, ctx: ResolverContext): string[] {
   }
 }
 
-function statLabel(stat: string): string {
-  return (STAT_LABELS as Record<string, string>)[stat] ?? stat;
-}
-
 function nameOf(ctx: ResolverContext, id: string): string {
   return ctx.entities.get(id)?.name ?? id;
 }
@@ -239,7 +243,7 @@ function resolveDamage(effect: DamageEffect, ctx: ResolverContext): ResolutionRe
 
   const totalDamage = rolls.reduce((sum, r) => sum + r.result, 0);
   const description = targets.length
-    ? `${ctx.caster?.name ?? "Source"} inflige ${totalDamage} dégâts de ${DAMAGE_TYPE_LABELS[effect.damageType] ?? effect.damageType} à ${targets.map((t) => nameOf(ctx, t)).join(", ")}`
+    ? `${ctx.caster?.name ?? "Source"} inflige ${totalDamage} dégâts de ${damageTypeLabel(ctx.ruleset, effect.damageType)} à ${targets.map((t) => nameOf(ctx, t)).join(", ")}`
     : `${ctx.caster?.name ?? "Source"} inflige des dégâts (aucune cible)`;
 
   return {
@@ -311,7 +315,7 @@ function resolveApplyCondition(
     rolls: [],
     outcome: "success",
     applied,
-    description: `${ctx.caster?.name ?? "Source"} applique « ${conditionLabel(effect.conditionId)} » à ${targets.map((t) => nameOf(ctx, t)).join(", ")}${effect.duration?.rounds ? ` pendant ${effect.duration.rounds} round(s)` : ""}`,
+    description: `${ctx.caster?.name ?? "Source"} applique « ${rulesetConditionLabel(ctx.ruleset, effect.conditionId)} » à ${targets.map((t) => nameOf(ctx, t)).join(", ")}${effect.duration?.rounds ? ` pendant ${effect.duration.rounds} round(s)` : ""}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -340,7 +344,7 @@ function resolveRemoveCondition(
     rolls: [],
     outcome: applied.length ? "success" : "none",
     applied,
-    description: `Retire « ${conditionLabel(effect.conditionId)} » de ${targets.map((t) => nameOf(ctx, t)).join(", ") || "(personne)"}`,
+    description: `Retire « ${rulesetConditionLabel(ctx.ruleset, effect.conditionId)} » de ${targets.map((t) => nameOf(ctx, t)).join(", ") || "(personne)"}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -362,7 +366,7 @@ function resolveModifyStat(effect: ModifyStatEffect, ctx: ResolverContext): Reso
     rolls: [],
     outcome: "success",
     applied,
-    description: `${ctx.caster?.name ?? "Source"} modifie ${statLabel(effect.stat)} de ${effect.modifier > 0 ? "+" : ""}${effect.modifier} sur ${targets.map((t) => nameOf(ctx, t)).join(", ")}`,
+    description: `${ctx.caster?.name ?? "Source"} modifie ${abilityLabel(ctx.ruleset, effect.stat)} de ${effect.modifier > 0 ? "+" : ""}${effect.modifier} sur ${targets.map((t) => nameOf(ctx, t)).join(", ")}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -381,7 +385,7 @@ async function resolveRollCheck(
         rolls: [],
         outcome: "none",
         applied: [],
-        description: `Jet de ${statLabel(effect.stat)} (aucune cible)`,
+        description: `Jet de ${abilityLabel(ctx.ruleset, effect.stat)} (aucune cible)`,
         timestamp: new Date().toISOString(),
       },
     ];
@@ -393,14 +397,14 @@ async function resolveRollCheck(
     const flags = computeRollFlags({
       actorConditions: state.conditions ?? [],
       kind: "save",
-      saveStat: effect.stat as Stat,
+      saveStat: effect.stat,
+      conditions: conditionsById(ctx.ruleset),
     });
     const dc = typeof effect.dc === "number" ? effect.dc : Number(effect.dc) || 10;
-    const abilityScore = (ent?.attributes as Record<string, unknown>)?.abilityScores as
-      | Record<Stat, number>
+    const abilityScores = (ent?.attributes as Record<string, unknown>)?.abilityScores as
+      | Record<string, number>
       | undefined;
-    const score = abilityScore?.[effect.stat as Stat] ?? 10;
-    const modifier = Math.floor((score - 10) / 2);
+    const score = abilityScores?.[effect.stat] ?? defaultAbilityScore(ctx.ruleset);
 
     let roll: RollDetail;
     let outcome: ResolutionRecord["outcome"];
@@ -411,15 +415,18 @@ async function resolveRollCheck(
       roll = { notation: "auto-success", result: dc + 1, rolls: [] };
       outcome = "success";
     } else {
-      roll = rollD20(modifier, {
+      const check = rollCheck(ctx.ruleset, {
+        score,
+        dc,
         advantage: flags.advantage,
         disadvantage: flags.disadvantage,
         rng: ctx.rng,
       });
-      outcome = roll.result >= dc ? "success" : "fail";
+      roll = check.roll;
+      outcome = check.success ? "success" : "fail";
     }
 
-    const description = `${nameOf(ctx, tid)} fait un jet de sauvegarde de ${statLabel(effect.stat)} DD ${dc} : ${roll.notation} = ${roll.result} → ${outcome === "success" ? "réussite" : "échec"}`;
+    const description = `${nameOf(ctx, tid)} fait un jet de sauvegarde de ${abilityLabel(ctx.ruleset, effect.stat)} DD ${dc} : ${roll.notation} = ${roll.result} → ${outcome === "success" ? "réussite" : "échec"}`;
     const subEffects = outcome === "success" ? effect.outcomeSuccess ?? [] : effect.outcomeFail ?? [];
     const sub = subEffects.length
       ? await resolveEffects(subEffects, {
@@ -466,7 +473,7 @@ function resolveConsumeResource(
     rolls: [],
     outcome: "success",
     applied,
-    description: `${ctx.caster?.name ?? "Source"} consomme ${effect.amount} × ${RESOURCE_LABELS[effect.resource] ?? effect.resource}${effect.level ? ` niv. ${effect.level}` : ""}`,
+    description: `${ctx.caster?.name ?? "Source"} consomme ${effect.amount} × ${resourceLabel(ctx.ruleset, effect.resource)}${effect.level ? ` niv. ${effect.level}` : ""}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -495,7 +502,7 @@ function resolveRestoreResource(
     rolls: [],
     outcome: "success",
     applied,
-    description: `${ctx.caster?.name ?? "Source"} récupère ${effect.amount} × ${RESOURCE_LABELS[effect.resource] ?? effect.resource}`,
+    description: `${ctx.caster?.name ?? "Source"} récupère ${effect.amount} × ${resourceLabel(ctx.ruleset, effect.resource)}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -673,18 +680,21 @@ export function resolveAttack(
       targetConditions: targetState.conditions,
       kind: "attack",
       meleeWithin5ft: input.meleeWithin5ft,
+      conditions: conditionsById(ctx.ruleset),
     });
 
-    const roll = rollD20(input.attackBonus, {
+    // Jet d'attaque = test du ruleset contre la CA ; le bonus d'attaque
+    // s'ajoute (roll_over) ou sert de valeur cible (roll_under).
+    const check = rollCheck(ctx.ruleset, {
+      bonus: input.attackBonus,
+      dc: ac,
       advantage: flags.advantage,
       disadvantage: flags.disadvantage,
       rng: ctx.rng,
     });
-    const rolledFaces = roll.rolls ?? [];
-    const isNat20 = rolledFaces[0] === 20 || (flags.advantage && rolledFaces.includes(20));
-    const isNat1 = rolledFaces[0] === 1 || (flags.disadvantage && rolledFaces.includes(1));
-    const isCritical = isNat20 || flags.autoCritical;
-    const hit = !isNat1 && (isCritical || roll.result >= ac);
+    const roll = check.roll;
+    const isCritical = check.critical || flags.autoCritical;
+    const hit = !check.fumble && (isCritical || check.success);
 
     records.push({
       effect: {
@@ -721,7 +731,7 @@ export function resolveAttack(
         rolls: [damage],
         outcome: "success",
         applied: [{ entityId: tid, field: "hp", before, after }],
-        description: `${attacker?.name ?? "Attaquant"} inflige ${damage.result} dégâts de ${DAMAGE_TYPE_LABELS[input.damageType] ?? input.damageType} à ${target?.name ?? tid} (PV ${before}→${after})`,
+        description: `${attacker?.name ?? "Attaquant"} inflige ${damage.result} dégâts de ${damageTypeLabel(ctx.ruleset, input.damageType)} à ${target?.name ?? tid} (PV ${before}→${after})`,
         timestamp: new Date().toISOString(),
       });
     }

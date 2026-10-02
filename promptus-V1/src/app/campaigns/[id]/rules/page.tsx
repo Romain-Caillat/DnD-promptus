@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { campaigns } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
-import { RulesetProvider } from "@/components/providers/ruleset-provider";
-import { EntityEditor } from "@/components/editor/entity-editor";
+import { RulesEditor } from "@/components/rules/rules-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +12,7 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
-export default async function NewEntityPage({ params }: Props) {
+export default async function CampaignRulesPage({ params }: Props) {
   const { id } = await params;
   const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id));
   if (!campaign) notFound();
@@ -21,16 +20,14 @@ export default async function NewEntityPage({ params }: Props) {
   return (
     <main className="flex-1 px-6 py-8 max-w-5xl mx-auto w-full">
       <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-        <Link href={`/campaigns/${id}/entities`}>← Fiches</Link>
+        <Link href={`/campaigns/${id}`}>← {campaign.name}</Link>
       </Button>
-      <h1 className="text-3xl font-bold mb-1">Créer une fiche</h1>
+      <h1 className="text-3xl font-bold mb-1">Règles</h1>
       <p className="text-muted-foreground mb-8">
-        Ajoutez un élément à votre monde : sort, PNJ, objet, lieu…
+        Le système de jeu de cette campagne : il pilote les jets, les états, le déplacement sur les
+        cartes et les actions proposées aux joueurs.
       </p>
-
-      <RulesetProvider campaignId={id}>
-        <EntityEditor campaignId={id} mode="create" />
-      </RulesetProvider>
+      <RulesEditor campaignId={id} />
     </main>
   );
 }

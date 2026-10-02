@@ -5,23 +5,10 @@ import type { Effect } from "@/lib/engine/types";
 // Primitives
 // ----------------------------------------------------------------------------
 
-export const StatSchema = z.enum(["STR", "DEX", "CON", "INT", "WIS", "CHA"]);
+// Ids définis par le ruleset de la campagne (validés contre lui à l’usage).
+export const StatSchema = z.string().min(1);
 
-export const DamageTypeSchema = z.enum([
-  "slashing",
-  "piercing",
-  "bludgeoning",
-  "fire",
-  "cold",
-  "lightning",
-  "thunder",
-  "acid",
-  "poison",
-  "psychic",
-  "necrotic",
-  "radiant",
-  "force",
-]);
+export const DamageTypeSchema = z.string().min(1);
 
 export const VisibilitySchema = z.enum([
   "public",
@@ -52,17 +39,7 @@ export const TargetSpecSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("all_enemies") }),
 ]);
 
-export const ResourceKindSchema = z.enum([
-  "spell_slot",
-  "ki",
-  "rage",
-  "sorcery_point",
-  "bardic_inspiration",
-  "channel_divinity",
-  "action_surge",
-  "second_wind",
-  "custom",
-]);
+export const ResourceKindSchema = z.string().min(1);
 
 // ----------------------------------------------------------------------------
 // Effects (recursive: roll_check has sub-effects)

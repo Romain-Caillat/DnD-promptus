@@ -4,6 +4,7 @@ import { db } from "@/lib/db/client";
 import { campaigns, entities } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
+import { RulesetProvider } from "@/components/providers/ruleset-provider";
 import { EntityEditor, type EntityFormState } from "@/components/editor/entity-editor";
 import { ENTITY_TYPE_LABELS } from "@/lib/engine/catalog";
 
@@ -46,7 +47,9 @@ export default async function EditEntityPage({ params }: Props) {
         {ENTITY_TYPE_LABELS[entity.type]} · version {entity.version}
       </p>
 
-      <EntityEditor campaignId={id} mode="edit" initial={initial} />
+      <RulesetProvider campaignId={id}>
+        <EntityEditor campaignId={id} mode="edit" initial={initial} />
+      </RulesetProvider>
     </main>
   );
 }
