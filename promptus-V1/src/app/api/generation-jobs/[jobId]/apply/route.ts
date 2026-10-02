@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleApiError } from "@/lib/api/errors";
-import { applyDraft } from "@/lib/generation/server";
+import { applyDraft, getJob } from "@/lib/generation/server";
+import { notifyCampaign } from "@/lib/realtime/notify";
 
 export async function POST(
   _req: NextRequest,
@@ -9,6 +10,8 @@ export async function POST(
   try {
     const { jobId } = await params;
     const { entities } = await applyDraft(jobId);
+    const job = await getJob(jobId);
+    await notifyCampaign(job.campaignId, ["story", "session"]);
     return NextResponse.json({ entities });
   } catch (error) {
     return handleApiError(error);

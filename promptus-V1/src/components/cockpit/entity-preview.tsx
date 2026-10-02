@@ -26,7 +26,7 @@ import { ENTITY_TYPE_LABELS } from "@/lib/engine/catalog";
 
 const PREVIEW_TYPES = ["npc", "monster", "location", "item"];
 
-export function EntityPreview({ campaignId }: { campaignId: string }) {
+export function EntityPreview({ campaignId, sessionId }: { campaignId: string; sessionId: string }) {
   const [revealedId, setRevealedId] = useState<string | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
 
@@ -141,6 +141,20 @@ export function EntityPreview({ campaignId }: { campaignId: string }) {
                     <Wind className="size-4" /> Ambiance
                   </Button>
                 ) : null}
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    const res = await fetch(`/api/sessions/${sessionId}/map`, {
+                      method: "POST",
+                      headers: { "content-type": "application/json" },
+                      body: JSON.stringify({ op: "spotlight", entityId: revealed.id }),
+                    });
+                    if (res.ok) toast.success(`${revealed.name} est montré aux joueurs`);
+                    else toast.error("Impossible de montrer aux joueurs");
+                  }}
+                >
+                  Montrer aux joueurs
+                </Button>
                 <Button size="sm" variant="outline" onClick={() => setFullscreen(true)}>
                   Plein écran
                 </Button>

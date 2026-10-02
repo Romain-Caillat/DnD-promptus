@@ -102,3 +102,35 @@ describe("RulesetSchema", () => {
     expect(RulesetSchema.safeParse(bad).success).toBe(false);
   });
 });
+
+import { resolveSkillCheck } from "@/lib/engine/skill-check";
+
+describe("resolveSkillCheck", () => {
+  it("ajoute la maîtrise et la caractéristique de la compétence", () => {
+    const r = resolveSkillCheck({
+      ruleset: DND5E_RULESET,
+      name: "Tom",
+      attributes: { abilityScores: { DEX: 17 }, proficientSkills: ["stealth"], proficiencyBonus: 2 },
+      conditions: [],
+      skill: "stealth",
+      dc: 15,
+      rng: seq(face(10)),
+    });
+    expect(r.roll.result).toBe(15); // 10 + 3 (DEX) + 2 (maîtrise)
+    expect(r.success).toBe(true);
+    expect(r.description).toContain("Discrétion (DEX) DD 15");
+  });
+  it("applique le désavantage d’un état (empoisonné)", () => {
+    const r = resolveSkillCheck({
+      ruleset: DND5E_RULESET,
+      name: "Tom",
+      attributes: {},
+      conditions: [{ conditionId: "poisoned" }],
+      skill: "perception",
+      dc: 10,
+      rng: seq(face(18), face(4)),
+    });
+    expect(r.natural).toBe(4);
+    expect(r.success).toBe(false);
+  });
+});

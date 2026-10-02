@@ -164,8 +164,8 @@ des écrans MJ et joueur.
 | E2 ✅ | Génération de campagne | Pitch → structure par LLM → édition par le MJ |
 | E3 | Pipeline média | Jobs async image / vidéo (OpenRouter), musique YouTube, budget, cache |
 | E4 ✅ | Cartes à grille | 3 niveaux, données + fond, brouillard, navigation entre niveaux |
-| E5 | Session temps réel | Lobby, lien d'invitation, synchronisation |
-| E6 | Interface joueur | Fiche, carte, actions possibles, médias, journal |
+| E5 ✅ | Session temps réel | Lobby, lien d'invitation, synchronisation |
+| E6 ✅ | Interface joueur | Fiche, carte, actions possibles, médias, journal |
 | E7 | Cockpit MJ + co-MJ | Nœud courant, propositions LLM, validation, révélations |
 | E8 | Combat sur grille | Déplacement, portées, initiative, réutilisation du résolveur |
 | E9 | Continuité | Journal, résumés de session, récap |

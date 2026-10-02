@@ -45,3 +45,31 @@ describe("defaultMapId", () => {
     expect(defaultMapId(story, { ...normalizeWorld(null), currentSceneId: "sc_village", activeMapId: "map_monde" })).toBe("map_monde");
   });
 });
+
+import { planPlayerMove } from "@/lib/engine/map-ops";
+
+describe("planPlayerMove", () => {
+  const world = {
+    ...normalizeWorld(null),
+    mapState: {
+      map_crypte: {
+        revealed: ["5,12", "5,11", "5,10", "5,9", "6,9", "4,5"],
+        tokens: [{ entityId: "ent:Bobby", x: 5, y: 12 }, { entityId: "ent:Squelette", x: 4, y: 5 }],
+      },
+    },
+  };
+  const base = { map: crypt, world, entityId: "ent:Bobby", budgetCells: 6, usedCells: 0, diagonal: "chebyshev" as const, inCombat: true, isMyTurn: true };
+
+  it("autorise un déplacement révélé dans la portée et en donne le coût", () => {
+    // 3 cases tout droit puis 1 : la diagonale raserait une case non révélée.
+    expect(planPlayerMove({ ...base, target: { x: 6, y: 9 } })).toBe(4);
+  });
+  it("refuse hors tour, case cachée, case occupée, portée épuisée, carte de voyage", () => {
+    expect(() => planPlayerMove({ ...base, isMyTurn: false, target: { x: 5, y: 11 } })).toThrow(/pas votre tour/);
+    expect(() => planPlayerMove({ ...base, target: { x: 5, y: 8 } })).toThrow(/pas révélée/);
+    expect(() => planPlayerMove({ ...base, target: { x: 4, y: 5 } })).toThrow(/occupée/);
+    expect(() => planPlayerMove({ ...base, usedCells: 5, target: { x: 6, y: 9 } })).toThrow(/reste 1 case/) // 4 > 1;
+    const vallee = story.maps.find((m) => m.id === "map_vallee")!;
+    expect(() => planPlayerMove({ ...base, map: vallee, target: { x: 1, y: 1 } })).toThrow(/MJ déplace le groupe/);
+  });
+});

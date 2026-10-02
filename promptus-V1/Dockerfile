@@ -6,7 +6,8 @@
 # Multi-stage build:
 #   1. deps:    install pnpm + production+dev deps for the build
 #   2. builder: build the Next.js app using "standalone" output
-#   3. runner:  small runtime image, runs `node server.js`
+#   3. realtime: WebSocket server (target `realtime`)
+#   4. runner:  small runtime image, runs `node server.js` (default target)
 # ----------------------------------------------------------------------------
 
 FROM node:22-alpine AS deps
@@ -23,6 +24,19 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 RUN pnpm build
+
+# Serveur temps réel (WebSocket) : script TypeScript autonome, exécuté par Node.
+FROM node:22-alpine AS realtime
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json ./
+COPY realtime ./realtime
+USER node
+EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost:3001/health >/dev/null || exit 1
+CMD ["node", "--experimental-strip-types", "--no-warnings", "realtime/server.mts"]
 
 FROM node:22-alpine AS runner
 WORKDIR /app

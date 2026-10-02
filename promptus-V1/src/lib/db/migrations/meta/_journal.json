@@ -36,6 +36,13 @@
       "when": 1790926726957,
       "tag": "0004_generation_jobs",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790933988879,
+      "tag": "0005_remote_play",
+      "breakpoints": true
     }
   ]
 }

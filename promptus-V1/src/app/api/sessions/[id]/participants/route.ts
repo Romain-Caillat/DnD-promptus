@@ -6,6 +6,7 @@ import { entities, sessions, sessionState } from "@/lib/db/schema";
 import { badRequest, handleApiError, notFound } from "@/lib/api/errors";
 import { generateId } from "@/lib/api/ids";
 import { deriveStateFromEntity } from "@/lib/session/derive-state";
+import { notifySession } from "@/lib/realtime/notify";
 
 const BodySchema = z.object({ entityIds: z.array(z.string()).min(1) });
 
@@ -46,6 +47,7 @@ export async function POST(
           .where(eq(sessions.id, id));
       });
     }
+    await notifySession(id, ["session"]);
     return NextResponse.json({ added: added.map((e) => e.id) });
   } catch (error) {
     return handleApiError(error);

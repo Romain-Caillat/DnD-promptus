@@ -5,6 +5,7 @@ import { campaigns } from "@/lib/db/schema";
 import { ApiError, handleApiError, notFound } from "@/lib/api/errors";
 import { StorySchema } from "@/lib/validation/story-schema";
 import { checkStory, getCampaignStory } from "@/lib/story/server";
+import { notifyCampaign } from "@/lib/realtime/notify";
 
 export async function GET(
   _req: NextRequest,
@@ -46,6 +47,7 @@ export async function PUT(
       .where(eq(campaigns.id, id))
       .returning({ id: campaigns.id });
     if (!row) notFound("campaign", id);
+    await notifyCampaign(id, ["story"]);
     return NextResponse.json({ story, issues });
   } catch (error) {
     return handleApiError(error);

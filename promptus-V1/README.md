@@ -48,6 +48,7 @@ pnpm seed:all                  # audio catalog + demo campaign
 pnpm test                      # unit tests (no DB)
 pnpm test:integration          # DB-backed tests (needs Postgres)
 pnpm dev                        # http://localhost:3000
+pnpm realtime                   # temps réel (WebSocket) sur :3001
 ```
 
 Open `/campaigns` to see "Le Donjon des gobelins (démo)" with 4 PCs, 15 spells,
@@ -91,6 +92,30 @@ pnpm tsx scripts/fake-openrouter.ts 4010 &
 OPENROUTER_API_KEY=fake OPENROUTER_BASE_URL=http://localhost:4010/api/v1 pnpm dev
 ```
 
+## Jouer à distance
+
+1. Le MJ lance une session depuis la campagne. Dans le cockpit, le panneau
+   **Joueurs** donne le lien d’invitation (`/play/<code>`).
+2. Chaque joueur ouvre le lien sur son téléphone ou son ordinateur, choisit un
+   pseudo et un personnage libre (ou spectateur). Pas de compte : un jeton
+   secret est gardé dans le navigateur.
+3. Écran joueur : scène en cours, carte (zone révélée seulement), fiche,
+   groupe et initiative, actions permises par les règles, journal public.
+   - **Déplacement** : le joueur touche une case en surbrillance. Le serveur
+     vérifie le tour, la vitesse, les murs, le brouillard et les cases occupées.
+   - **Actions** : le joueur envoie une demande, le MJ la valide, la refuse ou
+     lance le test (DD) ; le résultat revient chez le joueur.
+   - **Montrer aux joueurs** : le MJ affiche une fiche (PNJ, lieu…) chez tous.
+4. La synchronisation passe par le serveur temps réel (`pnpm realtime`) : il
+   relaie les notifications Postgres, sans transporter de données de jeu.
+
+Le joueur ne reçoit jamais les notes MJ, les cases cachées ni le nom des
+adversaires non révélés.
+
+> ⚠️ Les pages MJ n’ont pas d’authentification : en production, protégez-les
+> (par exemple `basic_auth` dans Caddy, en laissant `/play/*`, `/api/play/*` et
+> `/realtime` publics).
+
 ## Deploying to your home server
 
 Promptus ships a multi-stage Dockerfile and a production compose file with
@@ -101,7 +126,7 @@ ssh you@home-server
 git clone <your-fork>
 cd promptus
 cp .env.production.example .env.production
-$EDITOR .env.production            # set DB_PASSWORD; HUGGINGFACE_TOKEN if needed
+$EDITOR .env.production            # DB_PASSWORD, REALTIME_PUBLIC_URL, clés API
 $EDITOR Caddyfile                  # set your domain
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d
 ```

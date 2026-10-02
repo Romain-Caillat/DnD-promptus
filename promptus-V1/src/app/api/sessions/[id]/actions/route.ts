@@ -22,6 +22,25 @@ import { DND5E_RULESET } from "@/lib/engine/ruleset";
 import { EMPTY_STORY } from "@/lib/engine/story";
 import { normalizeWorld, triggerKey } from "@/lib/engine/world";
 import type { Effect, EntityState, ResolutionRecord } from "@/lib/engine/types";
+import { notifySession } from "@/lib/realtime/notify";
+
+/** Effets qui relèvent de la cuisine du MJ : invisibles dans le journal des joueurs. */
+const GM_ONLY_EFFECTS = new Set<Effect["type"]>([
+  "advance_front",
+  "set_flag",
+  "set_state",
+  "set_relation",
+  "set_scene_status",
+  "trigger_event",
+  "play_ambience",
+  "play_music",
+  "play_sound",
+  "display_image",
+]);
+
+function isPublicRecord(r: ResolutionRecord, isTriggerHeader: boolean): boolean {
+  return !isTriggerHeader && !GM_ONLY_EFFECTS.has(r.effect.type);
+}
 
 export async function POST(
   req: NextRequest,
@@ -160,12 +179,14 @@ export async function POST(
             round: session.combatRound,
             description: r.description,
             resolutionRecord: r,
+            isPublic: isPublicRecord(r, action.kind === "fire_trigger" && i === 0),
             createdAt: new Date(now + i),
           })),
         );
       }
     });
 
+    await notifySession(sessionId, ["session", "story", "timeline"]);
     return NextResponse.json({ records, world: ctx.world });
   } catch (error) {
     return handleApiError(error);

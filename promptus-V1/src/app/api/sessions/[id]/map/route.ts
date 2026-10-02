@@ -6,8 +6,10 @@ import { campaigns, entities, sessions, sessionTimeline } from "@/lib/db/schema"
 import { badRequest, handleApiError, notFound } from "@/lib/api/errors";
 import { generateId } from "@/lib/api/ids";
 import { EMPTY_STORY } from "@/lib/engine/story";
-import { PARTY_TOKEN, normalizeWorld } from "@/lib/engine/world";
+import { PARTY_TOKEN, normalizeWorld, revealedCells } from "@/lib/engine/world";
+import { cellKey } from "@/lib/engine/grid";
 import { MapOpError, applyMapOp, type MapOp } from "@/lib/engine/map-ops";
+import { notifySession } from "@/lib/realtime/notify";
 
 const Cells = z.array(z.tuple([z.number().int(), z.number().int()])).max(5000);
 const MapOpSchema = z.discriminatedUnion("op", [
@@ -18,6 +20,7 @@ const MapOpSchema = z.discriminatedUnion("op", [
   z.object({ op: z.literal("move_token"), mapId: z.string(), entityId: z.string(), x: z.number().int(), y: z.number().int() }),
   z.object({ op: z.literal("remove_token"), mapId: z.string(), entityId: z.string() }),
   z.object({ op: z.literal("set_active"), mapId: z.string().nullable() }),
+  z.object({ op: z.literal("spotlight"), entityId: z.string().nullable() }),
 ]);
 
 /** Opérations du MJ sur les cartes (brouillard, pions, carte affichée). */
@@ -51,14 +54,18 @@ export async function POST(
       if (op.op === "move_token") {
         const name = op.entityId === PARTY_TOKEN ? "Le groupe" : (ents.find((e) => e.id === op.entityId)?.name ?? op.entityId);
         const mapName = story.maps.find((m) => m.id === op.mapId)?.name ?? op.mapId;
+        const map = story.maps.find((m) => m.id === op.mapId);
         await tx.insert(sessionTimeline).values({
           id: generateId("tl"),
           sessionId: id,
           round: session.combatRound,
           description: `📍 ${name} → (${op.x}, ${op.y}) sur « ${mapName} »`,
+          // Un déplacement dans le brouillard reste secret.
+          isPublic: !!map && revealedCells(map, world).has(cellKey(op.x, op.y)),
         });
       }
     });
+    await notifySession(id, ["story", "timeline"]);
     return NextResponse.json({ world });
   } catch (error) {
     return handleApiError(error);

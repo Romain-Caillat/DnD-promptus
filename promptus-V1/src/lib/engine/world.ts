@@ -30,6 +30,10 @@ export interface WorldState {
   mapState: Record<string, MapRuntime>;
   /** Carte affichée aux joueurs. */
   activeMapId?: string;
+  /** Fiche montrée en grand aux joueurs (image + description). */
+  spotlightEntityId?: string;
+  /** Déplacement déjà utilisé pendant le tour en cours (clé « round:tour »). */
+  turnMovement?: { turnKey: string; used: Record<string, number> };
 }
 
 export interface MapRuntime {

@@ -16,7 +16,9 @@ services:
       retries: 10
 
   app:
-    build: .
+    build:
+      context: .
+      target: runner
     container_name: promptus-app
     restart: unless-stopped
     depends_on:
@@ -29,6 +31,8 @@ services:
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-anthropic/claude-sonnet-4.5}
       APP_URL: ${APP_URL:-}
       IMAGE_PROVIDER: ${IMAGE_PROVIDER:-huggingface}
+      # Adresse WebSocket vue par les navigateurs (servie par Caddy sur /realtime).
+      REALTIME_PUBLIC_URL: ${REALTIME_PUBLIC_URL:-}
       NODE_ENV: production
     volumes:
       - ./public/audio:/app/public/audio
@@ -36,12 +40,28 @@ services:
     expose:
       - "3000"
 
+  realtime:
+    build:
+      context: .
+      target: realtime
+    container_name: promptus-realtime
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://promptus:${DB_PASSWORD}@db:5432/promptus
+      REALTIME_PORT: "3001"
+    expose:
+      - "3001"
+
   caddy:
     image: caddy:2-alpine
     container_name: promptus-caddy
     restart: unless-stopped
     depends_on:
       - app
+      - realtime
     ports:
       - "80:80"
       - "443:443"

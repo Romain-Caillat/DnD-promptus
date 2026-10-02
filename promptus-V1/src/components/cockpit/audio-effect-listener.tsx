@@ -29,7 +29,7 @@ export function AudioEffectListener({ sessionId }: { sessionId: string }) {
       if (!res.ok) throw new Error("Impossible de charger le journal");
       return res.json() as Promise<{ timeline: SessionTimelineRow[] }>;
     },
-    refetchInterval: 3000,
+    refetchInterval: 60_000, // le temps réel invalide le journal à chaque action
   });
 
   const { data: audioData } = useQuery({

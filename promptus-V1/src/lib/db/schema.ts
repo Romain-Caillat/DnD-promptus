@@ -4,6 +4,7 @@ import {
   jsonb,
   timestamp,
   integer,
+  boolean,
   pgEnum,
   index,
   uniqueIndex,
@@ -136,6 +137,8 @@ export const sessions = pgTable("sessions", {
     .notNull(),
   combatRound: integer("combat_round").default(0).notNull(),
   activeTurnIndex: integer("active_turn_index").default(0).notNull(),
+  /** Code du lien d'invitation des joueurs (/play/<code>). */
+  inviteCode: text("invite_code").unique(),
   startedAt: timestamp("started_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -168,11 +171,55 @@ export const sessionTimeline = pgTable("session_timeline", {
   round: integer("round"),
   description: text("description").notNull(),
   resolutionRecord: jsonb("resolution_record").$type<ResolutionRecord>(),
+  /** Visible des joueurs (sinon réservé au MJ). */
+  isPublic: boolean("is_public").default(true).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
 });
 
+
+/** Joueurs ayant rejoint une session à distance. */
+export const sessionPlayers = pgTable(
+  "session_players",
+  {
+    id: text("id").primaryKey(),
+    sessionId: text("session_id")
+      .references(() => sessions.id, { onDelete: "cascade" })
+      .notNull(),
+    name: text("name").notNull(),
+    /** Personnage incarné ; null = spectateur. */
+    characterEntityId: text("character_entity_id").references(() => entities.id, { onDelete: "set null" }),
+    /** Empreinte SHA-256 du jeton secret remis au joueur. */
+    tokenHash: text("token_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("session_players_session_idx").on(t.sessionId), uniqueIndex("session_players_token_idx").on(t.tokenHash)],
+);
+
+/** Actions demandées par les joueurs, validées par le MJ. */
+export const playerRequests = pgTable(
+  "player_requests",
+  {
+    id: text("id").primaryKey(),
+    sessionId: text("session_id")
+      .references(() => sessions.id, { onDelete: "cascade" })
+      .notNull(),
+    playerId: text("player_id")
+      .references(() => sessionPlayers.id, { onDelete: "cascade" })
+      .notNull(),
+    actionId: text("action_id").notNull(),
+    label: text("label").notNull(),
+    targetIds: jsonb("target_ids").$type<string[]>().default([]).notNull(),
+    note: text("note"),
+    status: text("status").$type<"pending" | "resolved" | "rejected">().default("pending").notNull(),
+    result: text("result"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  },
+  (t) => [index("player_requests_session_idx").on(t.sessionId, t.status)],
+);
 
 export const generationJobs = pgTable(
   "generation_jobs",
@@ -219,3 +266,5 @@ export type SessionStateRow = typeof sessionState.$inferSelect;
 export type SessionTimelineRow = typeof sessionTimeline.$inferSelect;
 export type AudioAsset = typeof audioAssets.$inferSelect;
 export type GenerationJobRow = typeof generationJobs.$inferSelect;
+export type SessionPlayerRow = typeof sessionPlayers.$inferSelect;
+export type PlayerRequestRow = typeof playerRequests.$inferSelect;

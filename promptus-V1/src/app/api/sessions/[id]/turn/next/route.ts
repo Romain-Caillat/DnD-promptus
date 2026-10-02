@@ -4,6 +4,7 @@ import { sessions, sessionState } from "@/lib/db/schema";
 import { handleApiError, notFound } from "@/lib/api/errors";
 import { eq } from "drizzle-orm";
 import type { EntityState } from "@/lib/engine/types";
+import { notifySession } from "@/lib/realtime/notify";
 
 export async function POST(
   _req: NextRequest,
@@ -62,6 +63,7 @@ export async function POST(
       }
     }
 
+    await notifySession(id, ["session"]);
     return NextResponse.json({ session: updated });
   } catch (error) {
     return handleApiError(error);

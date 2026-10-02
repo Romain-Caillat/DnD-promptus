@@ -17,6 +17,9 @@ import { AudioControls } from "./audio-controls";
 import { AudioEffectListener } from "./audio-effect-listener";
 import { StoryPanel } from "./story-panel";
 import { MapPanel } from "./map-panel";
+import { PlayersPanel } from "./players-panel";
+import { RequestsPanel } from "./requests-panel";
+import { useRealtime } from "@/lib/realtime/use-realtime";
 import { PHASE_LABELS } from "@/lib/engine/catalog";
 
 export function Cockpit({
@@ -36,7 +39,23 @@ export function Cockpit({
         participants: ParticipantView[];
       }>;
     },
-    refetchInterval: 5000,
+    // Filet de sécurité : les mises à jour arrivent par le temps réel.
+    refetchInterval: 60_000,
+  });
+
+  const realtime = useRealtime({ type: "hello", role: "gm", sessionId }, (kind) => {
+    switch (kind) {
+      case "session":
+        return [["session", sessionId]];
+      case "story":
+        return [["session-story", sessionId]];
+      case "timeline":
+        return [["timeline", sessionId]];
+      case "requests":
+        return [["player-requests", sessionId]];
+      case "players":
+        return [["session-players", sessionId]];
+    }
   });
 
   const setStore = useSessionStore((s) => s.set);
@@ -114,7 +133,7 @@ export function Cockpit({
         />
 
         {/* Révélation d’images */}
-        <EntityPreview campaignId={campaignId} />
+        <EntityPreview campaignId={campaignId} sessionId={session.id} />
 
         {/* Participants */}
         <section className="space-y-3">
@@ -160,6 +179,8 @@ export function Cockpit({
 
       {/* Sidebar: initiative + audio + timeline */}
       <aside className="space-y-4">
+        <PlayersPanel sessionId={session.id} realtime={realtime} />
+        <RequestsPanel sessionId={session.id} />
         <InitiativeTracker session={session} participants={participants} />
         <AudioControls />
         <TimelineFeed sessionId={session.id} />

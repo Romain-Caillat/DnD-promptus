@@ -8,6 +8,7 @@ import {
 import { handleApiError, notFound, badRequest } from "@/lib/api/errors";
 import { and, eq } from "drizzle-orm";
 import type { EntityState } from "@/lib/engine/types";
+import { notifySession } from "@/lib/realtime/notify";
 
 interface PatchBody {
   hpDelta?: number;
@@ -73,6 +74,7 @@ export async function PATCH(
       .where(eq(sessionState.id, row.id))
       .returning();
 
+    await notifySession(sessionId, ["session"]);
     return NextResponse.json({ state: updated });
   } catch (error) {
     return handleApiError(error);
