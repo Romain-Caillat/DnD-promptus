@@ -17,6 +17,7 @@ import type {
 } from "@/lib/engine/types";
 import type { Ruleset } from "@/lib/engine/ruleset";
 import type { CampaignStory } from "@/lib/engine/story";
+import type { WorldState } from "@/lib/engine/world";
 
 // ============================================================================
 // Enums
@@ -70,6 +71,8 @@ export const campaigns = pgTable("campaigns", {
   ruleset: jsonb("ruleset").$type<Ruleset>(),
   /** Histoire structurée (bible, fronts, scènes, indices, cartes) ; null = vide. */
   story: jsonb("story").$type<CampaignStory>(),
+  /** État du monde (scène courante, indices, menaces…), partagé entre sessions. */
+  worldState: jsonb("world_state").$type<WorldState>(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });

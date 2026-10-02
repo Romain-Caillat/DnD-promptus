@@ -15,6 +15,7 @@ import { TimelineFeed } from "./timeline-feed";
 import { EntityPreview } from "./entity-preview";
 import { AudioControls } from "./audio-controls";
 import { AudioEffectListener } from "./audio-effect-listener";
+import { StoryPanel } from "./story-panel";
 import { PHASE_LABELS } from "@/lib/engine/catalog";
 
 export function Cockpit({
@@ -96,6 +97,9 @@ export function Cockpit({
             </div>
           </CardContent>
         </Card>
+
+        {/* Scénario : la narration d’abord */}
+        <StoryPanel sessionId={session.id} campaignId={campaignId} participants={participants} />
 
         {/* Hotbar */}
         <Hotbar

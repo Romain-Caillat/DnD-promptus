@@ -109,6 +109,16 @@ export function validateStory(story: CampaignStory, ctx: StoryValidationContext)
         case "remove_from_inventory":
           entity(e.itemId, `${at}.itemId`, "Objet");
           break;
+        case "advance_front":
+          if (!story.fronts.some((f) => f.id === e.frontId)) err(`${at}.frontId`, `Front inconnu : « ${e.frontId} »`);
+          break;
+        case "reveal_clue":
+          if (!clueIds.has(e.clueId)) err(`${at}.clueId`, `Indice inconnu : « ${e.clueId} »`);
+          break;
+        case "enter_scene":
+        case "set_scene_status":
+          if (!sceneIds.has(e.sceneId)) err(`${at}.sceneId`, `Scène inconnue : « ${e.sceneId} »`);
+          break;
         default:
           break;
       }

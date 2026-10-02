@@ -16,7 +16,12 @@ import {
 
 import type {
   ActiveCondition,
+  AdvanceFrontEffect,
   AppliedMutation,
+  EnterSceneEffect,
+  RevealClueEffect,
+  SetFlagEffect,
+  SetSceneStatusEffect,
   ApplyConditionEffect,
   ConsumeResourceEffect,
   DamageEffect,
@@ -42,6 +47,14 @@ import type {
   RemoveFromInventoryEffect,
 } from "./types";
 import { computeRollFlags } from "./conditions";
+import { EMPTY_STORY, type CampaignStory } from "./story";
+import {
+  EMPTY_WORLD,
+  frontStep,
+  isRevelationKnown,
+  relationKey,
+  type WorldState,
+} from "./world";
 import { rollDice, type Rng, defaultRng } from "./dice";
 
 // ----------------------------------------------------------------------------
@@ -67,7 +80,19 @@ export interface ResolverContext {
   explicitTargets?: string[];
   /** Règles de la campagne (défaut : D&D 5e). */
   ruleset: Ruleset;
+  /** Scénario (lecture seule) et état du monde (muté, persisté par l'API). */
+  story: CampaignStory;
+  world: WorldState;
+  /** Toutes les fiches de la campagne (noms, effets des événements). */
+  catalog: Map<string, CatalogEntry>;
+  /** Profondeur d'imbrication des événements déclenchés. */
+  depth?: number;
   rng: Rng;
+}
+
+export interface CatalogEntry {
+  name: string;
+  effects: Effect[];
 }
 
 // ----------------------------------------------------------------------------
@@ -86,6 +111,9 @@ export function newContext(opts: {
   initiativeOrder: InitiativeEntry[];
   explicitTargets?: string[];
   ruleset?: Ruleset;
+  story?: CampaignStory;
+  world?: WorldState;
+  catalog?: Map<string, CatalogEntry>;
   rng?: Rng;
 }): ResolverContext {
   const ents = new Map(opts.entities.map((e) => [e.id, e]));
@@ -97,6 +125,9 @@ export function newContext(opts: {
     initiativeOrder: opts.initiativeOrder,
     explicitTargets: opts.explicitTargets,
     ruleset: opts.ruleset ?? DND5E_RULESET,
+    story: opts.story ?? EMPTY_STORY,
+    world: structuredClone(opts.world ?? EMPTY_WORLD),
+    catalog: opts.catalog ?? new Map(),
     rng: opts.rng ?? defaultRng,
   };
 }
@@ -147,7 +178,7 @@ async function resolveEffect(
     case "set_relation":
       return [resolveSetRelation(effect, ctx)];
     case "trigger_event":
-      return [resolveTriggerEvent(effect, ctx)];
+      return await resolveTriggerEvent(effect, ctx);
     case "add_to_inventory":
       return [resolveAddToInventory(effect, ctx)];
     case "remove_from_inventory":
@@ -162,6 +193,16 @@ async function resolveEffect(
       return [resolveDisplayImage(effect)];
     case "display_text":
       return [resolveDisplayText(effect)];
+    case "set_flag":
+      return [resolveSetFlag(effect, ctx)];
+    case "advance_front":
+      return await resolveAdvanceFront(effect, ctx);
+    case "reveal_clue":
+      return [resolveRevealClue(effect, ctx)];
+    case "enter_scene":
+      return [resolveEnterScene(effect, ctx)];
+    case "set_scene_status":
+      return [resolveSetSceneStatus(effect, ctx)];
     default: {
       const _exhaustive: never = effect;
       void _exhaustive;
@@ -197,7 +238,7 @@ function resolveTargets(target: TargetSpec, ctx: ResolverContext): string[] {
 }
 
 function nameOf(ctx: ResolverContext, id: string): string {
-  return ctx.entities.get(id)?.name ?? id;
+  return ctx.entities.get(id)?.name ?? ctx.catalog.get(id)?.name ?? id;
 }
 
 function getState(ctx: ResolverContext, id: string): EntityState {
@@ -507,68 +548,150 @@ function resolveRestoreResource(
   };
 }
 
+function record(
+  effect: Effect,
+  description: string,
+  applied: AppliedMutation[] = [],
+  outcome: ResolutionRecord["outcome"] = "success",
+): ResolutionRecord {
+  return { effect, rolls: [], outcome, applied, description, timestamp: new Date().toISOString() };
+}
+
 function resolveSetState(effect: SetStateEffect, ctx: ResolverContext): ResolutionRecord {
-  // Generic free-form state mutation — only common attributes get persisted via
-  // session_state; arbitrary attributes are recorded in the timeline only.
-  const ent = ctx.entities.get(effect.entityId);
-  const before = ent?.attributes?.[effect.attribute] ?? null;
-  return {
+  // Persisté dans l'état du monde : l'attribut d'origine de la fiche ne change pas.
+  const attrs = (ctx.world.entityAttributes[effect.entityId] ??= {});
+  const before =
+    effect.attribute in attrs
+      ? attrs[effect.attribute]
+      : (ctx.entities.get(effect.entityId)?.attributes?.[effect.attribute] ?? null);
+  attrs[effect.attribute] = effect.value;
+  return record(
     effect,
-    rolls: [],
-    outcome: "success",
-    applied: [{ entityId: effect.entityId, field: `attr:${effect.attribute}`, before, after: effect.value }],
-    description: `${nameOf(ctx, effect.entityId)} ${effect.attribute} → ${String(effect.value)}`,
-    timestamp: new Date().toISOString(),
-  };
+    `${nameOf(ctx, effect.entityId)} : ${effect.attribute} → ${String(effect.value)}`,
+    [{ entityId: effect.entityId, field: `attr:${effect.attribute}`, before, after: effect.value }],
+  );
 }
 
 function resolveMoveEntity(effect: MoveEntityEffect, ctx: ResolverContext): ResolutionRecord {
   const state = getState(ctx, effect.entityId);
-  const before = state.position?.locationId ?? null;
+  const before = state.position?.locationId ?? ctx.world.entityLocations[effect.entityId] ?? null;
   state.position = { ...(state.position ?? {}), locationId: effect.toLocationId };
-  return {
+  ctx.world.entityLocations[effect.entityId] = effect.toLocationId;
+  return record(
     effect,
-    rolls: [],
-    outcome: "success",
-    applied: [{ entityId: effect.entityId, field: "position.locationId", before, after: effect.toLocationId }],
-    description: `${nameOf(ctx, effect.entityId)} se déplace vers ${nameOf(ctx, effect.toLocationId)}`,
-    timestamp: new Date().toISOString(),
-  };
+    `${nameOf(ctx, effect.entityId)} se déplace vers ${nameOf(ctx, effect.toLocationId)}`,
+    [{ entityId: effect.entityId, field: "position.locationId", before, after: effect.toLocationId }],
+  );
 }
 
 function resolveRevealEntity(effect: RevealEntityEffect, ctx: ResolverContext): ResolutionRecord {
   const state = getState(ctx, effect.entityId);
   state.visible = true;
-  return {
-    effect,
-    rolls: [],
-    outcome: "success",
-    applied: [{ entityId: effect.entityId, field: "visible", before: false, after: true }],
-    description: `Révèle ${nameOf(ctx, effect.entityId)}`,
-    timestamp: new Date().toISOString(),
-  };
+  if (!ctx.world.revealedEntityIds.includes(effect.entityId)) ctx.world.revealedEntityIds.push(effect.entityId);
+  return record(effect, `Révèle ${nameOf(ctx, effect.entityId)}`, [
+    { entityId: effect.entityId, field: "visible", before: false, after: true },
+  ]);
 }
 
 function resolveSetRelation(effect: SetRelationEffect, ctx: ResolverContext): ResolutionRecord {
-  return {
-    effect,
-    rolls: [],
-    outcome: "success",
-    applied: [],
-    description: `Relation ${nameOf(ctx, effect.fromId)} → ${nameOf(ctx, effect.toId)} : ${effect.delta > 0 ? "+" : ""}${effect.delta}${effect.disposition ? ` (${effect.disposition})` : ""}`,
-    timestamp: new Date().toISOString(),
+  const key = relationKey(effect.fromId, effect.toId);
+  const before = ctx.world.relations[key] ?? { value: 0 };
+  const after = {
+    value: before.value + effect.delta,
+    disposition: effect.disposition ?? before.disposition,
   };
+  ctx.world.relations[key] = after;
+  return record(
+    effect,
+    `Relation ${nameOf(ctx, effect.fromId)} → ${nameOf(ctx, effect.toId)} : ${effect.delta > 0 ? "+" : ""}${effect.delta} (${after.value})${after.disposition ? `, ${after.disposition}` : ""}`,
+    [{ entityId: effect.fromId, field: `relation:${effect.toId}`, before: before.value, after: after.value }],
+  );
 }
 
-function resolveTriggerEvent(effect: TriggerEventEffect, ctx: ResolverContext): ResolutionRecord {
-  return {
+const MAX_EVENT_DEPTH = 5;
+
+async function resolveTriggerEvent(effect: TriggerEventEffect, ctx: ResolverContext): Promise<ResolutionRecord[]> {
+  const event = ctx.catalog.get(effect.eventId);
+  const head = record(effect, `Déclenche l’événement ${nameOf(ctx, effect.eventId)}`);
+  if (!event) return [{ ...head, outcome: "none", description: `${head.description} (introuvable)` }];
+  if ((ctx.depth ?? 0) >= MAX_EVENT_DEPTH) {
+    return [{ ...head, outcome: "none", description: `${head.description} (chaîne d’événements trop longue, arrêtée)` }];
+  }
+  const sub = await resolveEffects(event.effects, { ...ctx, depth: (ctx.depth ?? 0) + 1 });
+  return [head, ...sub.records];
+}
+
+// --- Effets sur le scénario --------------------------------------------------
+
+function resolveSetFlag(effect: SetFlagEffect, ctx: ResolverContext): ResolutionRecord {
+  const before = ctx.world.flags[effect.flag] ?? null;
+  ctx.world.flags[effect.flag] = effect.value;
+  return record(effect, `Drapeau « ${effect.flag} » → ${JSON.stringify(effect.value)}`, [
+    { entityId: "world", field: `flag:${effect.flag}`, before, after: effect.value },
+  ]);
+}
+
+async function resolveAdvanceFront(effect: AdvanceFrontEffect, ctx: ResolverContext): Promise<ResolutionRecord[]> {
+  const front = ctx.story.fronts.find((f) => f.id === effect.frontId);
+  if (!front) return [record(effect, `Menace inconnue : ${effect.frontId}`, [], "none")];
+  const before = frontStep(ctx.world, front.id);
+  const after = Math.max(-1, Math.min(front.steps.length - 1, before + (effect.steps ?? 1)));
+  ctx.world.frontProgress[front.id] = after;
+  if (after === before) {
+    return [record(effect, `« ${front.name} » : horloge inchangée`, [], "none")];
+  }
+  const step = front.steps[after];
+  const last = after === front.steps.length - 1;
+  const head = record(
     effect,
-    rolls: [],
-    outcome: "success",
-    applied: [],
-    description: `Déclenche l’événement ${nameOf(ctx, effect.eventId)}`,
-    timestamp: new Date().toISOString(),
-  };
+    after < 0
+      ? `« ${front.name} » revient au départ`
+      : `${last ? "☠ " : "⏳ "}« ${front.name} » atteint « ${step.label} » (${after + 1}/${front.steps.length})`,
+    [{ entityId: "world", field: `front:${front.id}`, before, after }],
+  );
+  // Les effets d'étape ne s'appliquent qu'en avançant, une fois par étape franchie.
+  const records = [head];
+  for (let i = before + 1; i <= after; i++) {
+    const effects = front.steps[i]?.effects ?? [];
+    if (effects.length) records.push(...(await resolveEffects(effects, ctx)).records);
+  }
+  return records;
+}
+
+function resolveRevealClue(effect: RevealClueEffect, ctx: ResolverContext): ResolutionRecord {
+  const clue = ctx.story.clues.find((c) => c.id === effect.clueId);
+  if (!clue) return record(effect, `Indice inconnu : ${effect.clueId}`, [], "none");
+  if (ctx.world.foundClueIds.includes(clue.id)) return record(effect, `🔎 Indice déjà trouvé : ${clue.text}`, [], "none");
+  const wasKnown = isRevelationKnown(ctx.story, ctx.world, clue.revelationId);
+  ctx.world.foundClueIds.push(clue.id);
+  const revelation = ctx.story.revelations.find((r) => r.id === clue.revelationId);
+  const suffix = !wasKnown && revelation ? ` — révélation : « ${revelation.statement} »` : "";
+  return record(effect, `🔎 Indice trouvé : ${clue.text}${suffix}`, [
+    { entityId: "world", field: `clue:${clue.id}`, before: false, after: true },
+  ]);
+}
+
+function sceneTitle(ctx: ResolverContext, id: string): string {
+  return ctx.story.scenes.find((s) => s.id === id)?.title ?? id;
+}
+
+function resolveEnterScene(effect: EnterSceneEffect, ctx: ResolverContext): ResolutionRecord {
+  const before = ctx.world.currentSceneId ?? null;
+  ctx.world.currentSceneId = effect.sceneId;
+  if (ctx.world.sceneStatus[effect.sceneId] !== "resolved") ctx.world.sceneStatus[effect.sceneId] = "visited";
+  return record(effect, `🎬 Scène : ${sceneTitle(ctx, effect.sceneId)}`, [
+    { entityId: "world", field: "currentScene", before, after: effect.sceneId },
+  ]);
+}
+
+const SCENE_STATUS_LABELS = { available: "disponible", visited: "visitée", resolved: "résolue" } as const;
+
+function resolveSetSceneStatus(effect: SetSceneStatusEffect, ctx: ResolverContext): ResolutionRecord {
+  const before = ctx.world.sceneStatus[effect.sceneId] ?? null;
+  ctx.world.sceneStatus[effect.sceneId] = effect.status;
+  return record(effect, `Scène « ${sceneTitle(ctx, effect.sceneId)} » ${SCENE_STATUS_LABELS[effect.status]}`, [
+    { entityId: "world", field: `scene:${effect.sceneId}`, before, after: effect.status },
+  ]);
 }
 
 function resolveAddToInventory(effect: AddToInventoryEffect, ctx: ResolverContext): ResolutionRecord {

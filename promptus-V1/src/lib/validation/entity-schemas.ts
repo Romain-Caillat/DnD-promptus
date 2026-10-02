@@ -167,6 +167,29 @@ const baseEffectSchemas = [
     type: z.literal("display_text"),
     text: z.string(),
   }),
+  z.object({
+    type: z.literal("set_flag"),
+    flag: z.string().min(1),
+    value: z.unknown(),
+  }),
+  z.object({
+    type: z.literal("advance_front"),
+    frontId: z.string().min(1),
+    steps: z.number().int().optional(),
+  }),
+  z.object({
+    type: z.literal("reveal_clue"),
+    clueId: z.string().min(1),
+  }),
+  z.object({
+    type: z.literal("enter_scene"),
+    sceneId: z.string().min(1),
+  }),
+  z.object({
+    type: z.literal("set_scene_status"),
+    sceneId: z.string().min(1),
+    status: z.enum(["available", "visited", "resolved"]),
+  }),
 ];
 
 // Recursive effect schema using z.lazy for roll_check

@@ -89,7 +89,7 @@ export const STANDARD_CONDITIONS = [
 
 export type StandardConditionId = (typeof STANDARD_CONDITIONS)[number];
 
-// 20 primitive effect kinds + label + category
+// Primitive effect kinds + label + category
 export const EFFECT_KINDS = [
   // Combat
   { id: "damage", label: "Infliger des dégâts", category: "combat" },
@@ -108,6 +108,11 @@ export const EFFECT_KINDS = [
   { id: "trigger_event", label: "Déclencher un événement", category: "narration" },
   { id: "add_to_inventory", label: "Ajouter à l’inventaire", category: "narration" },
   { id: "remove_from_inventory", label: "Retirer de l’inventaire", category: "narration" },
+  { id: "set_flag", label: "Poser un drapeau", category: "narration" },
+  { id: "advance_front", label: "Faire avancer une menace", category: "narration" },
+  { id: "reveal_clue", label: "Révéler un indice", category: "narration" },
+  { id: "enter_scene", label: "Entrer dans une scène", category: "narration" },
+  { id: "set_scene_status", label: "Changer l’état d’une scène", category: "narration" },
   // Sensory
   { id: "play_ambience", label: "Jouer une ambiance", category: "sensory" },
   { id: "play_music", label: "Jouer une musique", category: "sensory" },

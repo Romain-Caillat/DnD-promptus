@@ -33,11 +33,19 @@ export const RawEffectsActionSchema = z.object({
   effects: z.array(EffectSchema),
 });
 
+/** Le MJ valide un déclencheur de scène : ses effets sont appliqués. */
+export const FireTriggerActionSchema = z.object({
+  kind: z.literal("fire_trigger"),
+  sceneId: z.string(),
+  triggerId: z.string(),
+});
+
 export const ActionSchema = z.discriminatedUnion("kind", [
   AttackActionSchema,
   CastSpellActionSchema,
   ApplyEntityEffectsActionSchema,
   RawEffectsActionSchema,
+  FireTriggerActionSchema,
 ]);
 
 export type ActionInput = z.infer<typeof ActionSchema>;

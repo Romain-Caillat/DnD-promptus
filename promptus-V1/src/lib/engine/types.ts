@@ -212,6 +212,37 @@ export interface DisplayTextEffect {
   text: string;
 }
 
+// --- Effets narratifs sur l'état du monde (scénario V2) ---------------------
+
+export interface SetFlagEffect {
+  type: "set_flag";
+  flag: string;
+  value: unknown;
+}
+
+export interface AdvanceFrontEffect {
+  type: "advance_front";
+  frontId: string;
+  /** Nombre d'étapes (défaut 1, négatif pour reculer). */
+  steps?: number;
+}
+
+export interface RevealClueEffect {
+  type: "reveal_clue";
+  clueId: string;
+}
+
+export interface EnterSceneEffect {
+  type: "enter_scene";
+  sceneId: string;
+}
+
+export interface SetSceneStatusEffect {
+  type: "set_scene_status";
+  sceneId: string;
+  status: "available" | "visited" | "resolved";
+}
+
 export type Effect =
   | DamageEffect
   | HealEffect
@@ -232,7 +263,12 @@ export type Effect =
   | PlayMusicEffect
   | PlaySoundEffect
   | DisplayImageEffect
-  | DisplayTextEffect;
+  | DisplayTextEffect
+  | SetFlagEffect
+  | AdvanceFrontEffect
+  | RevealClueEffect
+  | EnterSceneEffect
+  | SetSceneStatusEffect;
 
 export type EffectType = Effect["type"];
 
