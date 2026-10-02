@@ -5,6 +5,9 @@ import { db } from "../src/lib/db/client";
 import { campaigns, entities } from "../src/lib/db/schema";
 import { generateId } from "../src/lib/api/ids";
 import { SCHOOL_LABELS } from "../src/lib/engine/catalog";
+import { DND5E_RULESET } from "../src/lib/engine/ruleset";
+import { validateStory } from "../src/lib/engine/story-validator";
+import { buildDemoStory } from "./demo-story";
 import { eq, like } from "drizzle-orm";
 import type { Effect } from "../src/lib/engine/types";
 import type { NewEntityRow } from "../src/lib/db/schema";
@@ -556,6 +559,22 @@ async function main() {
     await db.insert(entities).values(e);
   }
   console.log(`[seed-demo] inserted ${ents.length} entities`);
+
+  // Histoire V2 : bible, fronts, scènes, indices, cartes.
+  const idByName = new Map(ents.map((e) => [e.name, e.id]));
+  const story = buildDemoStory((name) => {
+    const id = idByName.get(name);
+    if (!id) throw new Error(`[seed-demo] fiche introuvable : ${name}`);
+    return id;
+  });
+  const issues = validateStory(story, {
+    entityIds: new Set(ents.map((e) => e.id)),
+    ruleset: DND5E_RULESET,
+  });
+  for (const i of issues) console.log(`[seed-demo] ${i.severity} ${i.path} — ${i.message}`);
+  if (issues.some((i) => i.severity === "error")) throw new Error("[seed-demo] histoire invalide");
+  await db.update(campaigns).set({ story }).where(eq(campaigns.id, campaignId));
+  console.log(`[seed-demo] story: ${story.scenes.length} scènes, ${story.clues.length} indices, ${story.maps.length} cartes`);
 
   console.log(`\n[seed-demo] DONE`);
   console.log(`  campaignId: ${campaignId}`);

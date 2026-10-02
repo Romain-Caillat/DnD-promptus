@@ -404,25 +404,6 @@ export interface ResolutionRecord {
 }
 
 // ----------------------------------------------------------------------------
-// Scene markers (N2)
-// ----------------------------------------------------------------------------
-
-export type MarkerCondition =
-  | { all: MarkerCondition[] }
-  | { any: MarkerCondition[] }
-  | { not: MarkerCondition }
-  | {
-      entityAttributeEquals: {
-        entityId: string;
-        attribute: string;
-        value: unknown;
-      };
-    }
-  | { worldAttributeEquals: { attribute: string; value: unknown } }
-  | { entityHasCondition: { entityId: string; conditionId: string } }
-  | { questBranch: { questId: string; branch: string } };
-
-// ----------------------------------------------------------------------------
 // Style guide for image generation
 // ----------------------------------------------------------------------------
 

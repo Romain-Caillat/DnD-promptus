@@ -4,7 +4,6 @@ import {
   jsonb,
   timestamp,
   integer,
-  boolean,
   pgEnum,
   index,
   uniqueIndex,
@@ -15,9 +14,9 @@ import type {
   EntityState,
   ResolutionRecord,
   InitiativeEntry,
-  MarkerCondition,
 } from "@/lib/engine/types";
 import type { Ruleset } from "@/lib/engine/ruleset";
+import type { CampaignStory } from "@/lib/engine/story";
 
 // ============================================================================
 // Enums
@@ -56,11 +55,6 @@ export const audioTypeEnum = pgEnum("audio_type", [
   "sound",
 ]);
 
-export const markerStatusEnum = pgEnum("marker_status", [
-  "armed",
-  "triggered",
-  "disabled",
-]);
 
 // ============================================================================
 // Tables
@@ -74,6 +68,8 @@ export const campaigns = pgTable("campaigns", {
   systemTemplate: text("system_template").default("dnd5e").notNull(),
   /** Système de règles défini par le MJ ; null = préréglage D&D 5e. */
   ruleset: jsonb("ruleset").$type<Ruleset>(),
+  /** Histoire structurée (bible, fronts, scènes, indices, cartes) ; null = vide. */
+  story: jsonb("story").$type<CampaignStory>(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -160,22 +156,6 @@ export const sessionTimeline = pgTable("session_timeline", {
     .notNull(),
 });
 
-export const sceneMarkers = pgTable("scene_markers", {
-  id: text("id").primaryKey(),
-  campaignId: text("campaign_id")
-    .references(() => campaigns.id, { onDelete: "cascade" })
-    .notNull(),
-  name: text("name").notNull(),
-  description: text("description"),
-  conditions: jsonb("conditions").$type<MarkerCondition>().notNull(),
-  effects: jsonb("effects").$type<Effect[]>().notNull(),
-  status: markerStatusEnum("status").default("armed").notNull(),
-  oneShot: boolean("one_shot").default(true).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  triggeredAt: timestamp("triggered_at", { withTimezone: true }),
-});
 
 export const audioAssets = pgTable("audio_assets", {
   id: text("id").primaryKey(),
@@ -200,5 +180,4 @@ export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
 export type SessionStateRow = typeof sessionState.$inferSelect;
 export type SessionTimelineRow = typeof sessionTimeline.$inferSelect;
-export type SceneMarker = typeof sceneMarkers.$inferSelect;
 export type AudioAsset = typeof audioAssets.$inferSelect;

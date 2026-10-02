@@ -15,6 +15,13 @@
       "when": 1790924336400,
       "tag": "0001_campaign_ruleset",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790924763828,
+      "tag": "0002_campaign_story",
+      "breakpoints": true
     }
   ]
 }

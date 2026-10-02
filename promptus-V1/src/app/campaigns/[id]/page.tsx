@@ -47,6 +47,16 @@ export default async function CampaignDashboardPage({ params }: Props) {
       <section className="mt-8">
         <h2 className="text-xl font-semibold mb-4">Monde et ressources</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Link href={`/campaigns/${campaign.id}/story`}>
+            <Card className="hover:border-primary transition-colors h-full">
+              <CardHeader>
+                <CardTitle className="text-base">Scénario</CardTitle>
+                <CardDescription>
+                  Bible, menaces, scènes, révélations et cartes.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
           <Link href={`/campaigns/${campaign.id}/entities`}>
             <Card className="hover:border-primary transition-colors h-full">
               <CardHeader>

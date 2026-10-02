@@ -72,7 +72,12 @@ export function RulesEditor({ campaignId }: { campaignId: string }) {
       const json = await res.json();
       if (!res.ok) {
         const details = (json.error?.details ?? []) as ApiIssue[];
-        setIssues(details.map((d) => `${d.path.join(".") || "(racine)"} : ${d.message}`));
+        // Les erreurs de validation s'affichent sous l'éditeur, pas en toast
+        // (qui masquerait le bouton d'enregistrement).
+        if (details.length > 0) {
+          setIssues(details.map((d) => `${d.path.join(".") || "(racine)"} : ${d.message}`));
+          return;
+        }
         throw new Error(json.error?.message ?? "Échec de l’enregistrement");
       }
       queryClient.setQueryData(rulesetQueryKey(campaignId), json as RulesResponse);
