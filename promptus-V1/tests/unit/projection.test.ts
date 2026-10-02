@@ -111,3 +111,66 @@ describe("projectPlayerView — fiche, tour et actions", () => {
     expect(mine.movement?.allowed).toBe(true);
   });
 });
+
+describe("projectPlayerView — combat sur grille", () => {
+  const world = {
+    ...normalizeWorld(null),
+    currentSceneId: "sc_crypte",
+    revealedEntityIds: [],
+    mapState: {
+      map_crypte: {
+        revealed: ["4,5", "4,6", "4,8", "5,5", "6,5"],
+        tokens: [
+          { entityId: "e:Bobby", x: 4, y: 6 },
+          { entityId: "e:Squelette", x: 4, y: 5 },
+          { entityId: "e:Zombie", x: 6, y: 5 },
+          { entityId: "e:Revenant Mort-Roi", x: 9, y: 9 },
+        ],
+      },
+    },
+  };
+  const bobby = ent("Bobby", "character", "public", {
+    attacks: [
+      { name: "Épée longue", bonus: 5, damage: "1d8+3", damageType: "slashing" },
+      { name: "Arbalète", bonus: 3, damage: "1d8+1", damageType: "piercing", rangeMeters: 24 },
+    ],
+  });
+  const ents = [bobby, ...entities.filter((e) => e.name !== "Bobby")];
+
+  it("liste les attaques et les cibles visibles avec leur portée", () => {
+    const v = projectPlayerView(input({ world, entities: ents }));
+    expect(v.attacks.map((a) => a.name)).toEqual(["Épée longue", "Arbalète"]);
+    // Numérotés car plusieurs ; le revenant, dans le brouillard, n'apparaît pas.
+    expect(v.targets.map((t) => t.label)).toEqual(["Adversaire 1", "Adversaire 2"]);
+    const [squelette, zombie] = v.targets;
+    expect(squelette.byAttack.epee_longue.possible).toBe(true);
+    expect(zombie.byAttack.epee_longue.possible).toBe(false);
+    expect(zombie.byAttack.arbalete.possible).toBe(true);
+    expect(JSON.stringify(v)).not.toContain("Revenant");
+  });
+
+  it("masque les noms des adversaires cachés dans le journal et les résultats", () => {
+    const v = projectPlayerView(
+      input({
+        world,
+        entities: ents,
+        timeline: [{ id: "t", description: "Bobby attaque Squelette : touché", createdAt: "" }],
+        requests: [{ id: "r", label: "Attaquer", status: "resolved", result: "Bobby inflige 6 dégâts à Squelette (PV 13→7) · Léa (PV 7→5)", createdAt: "" }],
+      }),
+    );
+    expect(v.timeline[0].description).toBe("Bobby attaque Adversaire 1 : touché");
+    // PV de l'adversaire masqués, ceux d'un personnage visibles.
+    expect(v.requests[0].result).toBe("Bobby inflige 6 dégâts à Adversaire 1 · Léa (PV 7→5)");
+  });
+
+  it("marque les pions à terre", () => {
+    const v = projectPlayerView(
+      input({
+        world,
+        entities: ents,
+        states: [...input().states.filter((s) => s.entityId !== "e:Squelette"), { entityId: "e:Squelette", currentState: { hp: 0, conditions: [] } }],
+      }),
+    );
+    expect(v.map?.tokens.find((t) => t.entityId === "e:Squelette")?.down).toBe(true);
+  });
+});

@@ -22,7 +22,9 @@ export interface MapViewProps {
   selectedCell?: Cell | null;
   /** Case de la scène en cours. */
   currentCell?: Cell | null;
-  tokenInfo: (entityId: string) => { label: string; kind: TokenKind; title?: string };
+  tokenInfo: (entityId: string) => { label: string; kind: TokenKind; title?: string; down?: boolean };
+  /** Anneaux de couleur autour de certains pions (cibles possibles, cible choisie). */
+  ringTokens?: Map<string, string>;
   onCellClick?: (cell: Cell, mods: { shiftKey: boolean }) => void;
   onCellHover?: (cell: Cell | null) => void;
   /** Peinture au glisser (brouillard) : reçoit les cases traversées au relâchement. */
@@ -67,6 +69,7 @@ export function MapView({
   selectedCell,
   currentCell,
   tokenInfo,
+  ringTokens,
   onCellClick,
   onCellHover,
   onPaint,
@@ -194,13 +197,22 @@ export function MapView({
             const { cx, cy } = cellCenter(type, t.x, t.y, size);
             const info = tokenInfo(t.entityId);
             const selected = selectedToken === t.entityId;
+            const ring = ringTokens?.get(t.entityId);
             return (
-              <g key={t.entityId} pointerEvents="none" data-token={t.entityId}>
-                <title>{info.title ?? info.label}</title>
+              <g key={t.entityId} pointerEvents="none" data-token={t.entityId} data-down={info.down ? "" : undefined} opacity={info.down ? 0.45 : 1}>
+                <title>{(info.title ?? info.label) + (info.down ? " (hors de combat)" : "")}</title>
+                {ring ? <circle cx={cx} cy={cy} r={size * 0.52} fill="none" stroke={ring} strokeWidth={2.5} strokeDasharray="4 2" /> : null}
                 <circle cx={cx} cy={cy} r={size * 0.4} fill={TOKEN_COLORS[info.kind]} stroke={selected ? "#fff" : "#000"} strokeWidth={selected ? 3 : 1.5} />
                 <text x={cx} y={cy + 3.5} textAnchor="middle" fontSize={10} fontWeight={700} fill="#fff">
                   {info.label}
                 </text>
+                {info.down ? (
+                  <path
+                    d={`M${cx - size * 0.28},${cy - size * 0.28}L${cx + size * 0.28},${cy + size * 0.28}M${cx + size * 0.28},${cy - size * 0.28}L${cx - size * 0.28},${cy + size * 0.28}`}
+                    stroke="#fff"
+                    strokeWidth={2}
+                  />
+                ) : null}
               </g>
             );
           })}

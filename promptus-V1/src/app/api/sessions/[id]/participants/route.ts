@@ -8,7 +8,11 @@ import { generateId } from "@/lib/api/ids";
 import { deriveStateFromEntity } from "@/lib/session/derive-state";
 import { notifySession } from "@/lib/realtime/notify";
 
-const BodySchema = z.object({ entityIds: z.array(z.string()).min(1) });
+const BodySchema = z.union([
+  z.object({ entityIds: z.array(z.string()).min(1) }),
+  /** Nouvel exemplaire d'un monstre ou PNJ (« Gobelin 2 »), ajouté à la session. */
+  z.object({ copyOf: z.string() }),
+]);
 
 /** Ajoute des participants en cours de session (ceux déjà présents sont ignorés). */
 export async function POST(
@@ -17,9 +21,10 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { entityIds } = BodySchema.parse(await req.json());
+    const body = BodySchema.parse(await req.json());
     const [session] = await db.select().from(sessions).where(eq(sessions.id, id));
     if (!session) notFound("session", id);
+    const entityIds = "copyOf" in body ? [await createCopy(session.campaignId, body.copyOf)] : body.entityIds;
 
     const ents = await db
       .select()
@@ -52,4 +57,29 @@ export async function POST(
   } catch (error) {
     return handleApiError(error);
   }
+}
+
+/** Copie d'une fiche (mêmes caractéristiques), numérotée et marquée copyOf. */
+async function createCopy(campaignId: string, baseId: string): Promise<string> {
+  const [base] = await db.select().from(entities).where(and(eq(entities.id, baseId), eq(entities.campaignId, campaignId)));
+  if (!base) notFound("entity", baseId);
+  if (base.type === "character") badRequest("Un personnage joueur ne se duplique pas");
+  const rootId = typeof base.attributes.copyOf === "string" ? base.attributes.copyOf : base.id;
+  const [root] = rootId === base.id ? [base] : await db.select().from(entities).where(eq(entities.id, rootId));
+  const all = await db.select({ attributes: entities.attributes }).from(entities).where(eq(entities.campaignId, campaignId));
+  const n = all.filter((e) => e.attributes.copyOf === rootId).length + 2;
+  const copyId = generateId(`ent_${base.type}`);
+  await db.insert(entities).values({
+    id: copyId,
+    campaignId,
+    type: base.type,
+    name: `${(root ?? base).name} ${n}`,
+    description: base.description,
+    imageUrl: base.imageUrl,
+    tags: base.tags,
+    attributes: { ...base.attributes, copyOf: rootId },
+    effects: base.effects,
+    visibility: base.visibility,
+  });
+  return copyId;
 }

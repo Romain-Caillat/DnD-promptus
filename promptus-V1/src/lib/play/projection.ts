@@ -3,8 +3,9 @@
 // non révélées, pas de nom d'adversaire caché, pas de secrets.
 
 import type { PhaseId } from "@/lib/engine/catalog";
+import { attackGeometry, creatureAttacks } from "@/lib/engine/combat";
 import { cellKey, speedInCells, type DiagonalRule } from "@/lib/engine/grid";
-import { abilityModifier, rulesetConditionLabel, skillLabel, type Ruleset } from "@/lib/engine/ruleset";
+import { abilityModifier, damageTypeLabel, rulesetConditionLabel, skillLabel, type Ruleset } from "@/lib/engine/ruleset";
 import type { CampaignStory, GameMap, MapCell, MapToken } from "@/lib/engine/story";
 import type { EntityState, EntityType, InitiativeEntry } from "@/lib/engine/types";
 import { defaultMapId, mapTokens, revealedCells, type WorldState } from "@/lib/engine/world";
@@ -51,7 +52,7 @@ export interface PlayerMap {
   backgroundUrl?: string;
   /** Uniquement les cases révélées. */
   cells: MapCell[];
-  tokens: (MapToken & { label: string; kind: "pc" | "enemy" | "npc" | "party"; mine: boolean })[];
+  tokens: (MapToken & { label: string; kind: "pc" | "enemy" | "npc" | "party"; mine: boolean; down: boolean })[];
   revealed: string[];
 }
 
@@ -78,6 +79,17 @@ export interface PlayerView {
   map: PlayerMap | null;
   movement: { budgetCells: number; usedCells: number; diagonal: DiagonalRule; allowed: boolean; reason: string | null } | null;
   actions: { id: string; label: string; kind: string; detail: string | null; description: string | null }[];
+  /** Attaques du personnage (portées en mètres). */
+  attacks: { id: string; name: string; bonus: number; damage: string; damageType: string; rangeMeters: number; longRangeMeters: number | null }[];
+  /** Cibles visibles sur la carte, et pour chaque attaque si elle est possible. */
+  targets: {
+    entityId: string;
+    label: string;
+    kind: "pc" | "enemy" | "npc";
+    down: boolean;
+    distanceMeters: number;
+    byAttack: Record<string, { possible: boolean; longRange: boolean; reason: string | null }>;
+  }[];
   spotlight: { name: string; description: string | null; imageUrl: string | null } | null;
   timeline: { id: string; description: string; createdAt: string }[];
   requests: ProjectionInput["requests"];
@@ -99,6 +111,26 @@ export function projectPlayerView(input: ProjectionInput): PlayerView {
   const byId = new Map(input.entities.map((e) => [e.id, e]));
   const stateById = new Map(input.states.map((s) => [s.entityId, s.currentState]));
   const myId = player.characterEntityId;
+
+  // Adversaires et PNJ non révélés : nom générique, numéroté s'il y en a
+  // plusieurs (ordre stable : par identifiant).
+  const mapForNames = story.maps.find((m) => m.id === defaultMapId(story, world));
+  const revealedForNames = mapForNames ? revealedCells(mapForNames, world) : new Set<string>();
+  const seenIds = new Set([
+    ...session.initiativeOrder.map((e) => e.entityId),
+    ...(mapForNames ? mapTokens(mapForNames, world).filter((t) => revealedForNames.has(cellKey(t.x, t.y))).map((t) => t.entityId) : []),
+  ]);
+  const generic = new Map<string, string>();
+  for (const kind of ["Adversaire", "Inconnu"]) {
+    const ids = [...seenIds]
+      .filter((id) => {
+        const e = byId.get(id);
+        return e && visibleName(e, world) === kind;
+      })
+      .sort();
+    ids.forEach((id, i) => generic.set(id, ids.length > 1 ? `${kind} ${i + 1}` : kind));
+  }
+  const nameOf = (e: ProjectionEntity | undefined) => (e && generic.get(e.id)) ?? visibleName(e, world);
   const me = myId ? byId.get(myId) : undefined;
   const myState = myId ? stateById.get(myId) : undefined;
 
@@ -144,7 +176,7 @@ export function projectPlayerView(input: ProjectionInput): PlayerView {
     }));
   const initiative = inCombat
     ? session.initiativeOrder.map((entry, i) => ({
-        name: visibleName(byId.get(entry.entityId), world),
+        name: nameOf(byId.get(entry.entityId)),
         isPlayer: entry.isPlayer,
         active: i === session.activeTurnIndex,
         mine: entry.entityId === myId,
@@ -175,8 +207,9 @@ export function projectPlayerView(input: ProjectionInput): PlayerView {
         .map((t) => {
           const e = byId.get(t.entityId);
           const kind = t.entityId === "party" ? "party" : e?.type === "character" ? "pc" : e?.type === "npc" ? "npc" : "enemy";
-          const name = t.entityId === "party" ? "Le groupe" : visibleName(e, world);
-          return { ...t, label: name, kind, mine: t.entityId === myId };
+          const name = t.entityId === "party" ? "Le groupe" : nameOf(e);
+          const hp = stateById.get(t.entityId)?.hp;
+          return { ...t, label: name, kind, mine: t.entityId === myId, down: typeof hp === "number" && hp <= 0 };
         }),
       revealed: [...revealed],
     };
@@ -203,6 +236,54 @@ export function projectPlayerView(input: ProjectionInput): PlayerView {
       description: a.description ?? null,
     }));
 
+  // --- Attaques et cibles ------------------------------------------------
+  const attackList = me ? creatureAttacks(me.attributes, ruleset) : [];
+  const attacks = attackList.map((a) => ({
+    id: a.id,
+    name: a.name,
+    bonus: a.bonus,
+    damage: a.damage,
+    damageType: damageTypeLabel(ruleset, a.damageType),
+    rangeMeters: a.rangeMeters,
+    longRangeMeters: a.longRangeMeters ?? null,
+  }));
+  const myToken = map?.tokens.find((t) => t.mine);
+  const targets: PlayerView["targets"] =
+    map && mapRow && myToken && mapRow.level === "local"
+      ? map.tokens
+          .filter((t) => !t.mine && t.kind !== "party")
+          .map((t) => {
+            const byAttack: PlayerView["targets"][number]["byAttack"] = {};
+            let meters = 0;
+            for (const a of attackList) {
+              const g = attackGeometry({
+                map: mapRow,
+                from: myToken,
+                to: t,
+                attack: a,
+                cellMeters: ruleset.movement.local.cellMeters,
+                diagonal: ruleset.movement.local.diagonal,
+              });
+              meters = g.distanceMeters;
+              byAttack[a.id] = { possible: !g.reason, longRange: g.longRange, reason: g.reason };
+            }
+            return { entityId: t.entityId, label: t.label, kind: t.kind as "pc" | "enemy" | "npc", down: t.down, distanceMeters: meters, byAttack };
+          })
+      : [];
+
+  // Les noms des fiches cachées n'apparaissent pas dans les textes publics.
+  const hidden = input.entities
+    .filter((e) => visibleName(e, world) !== e.name && e.name.length > 2)
+    .sort((a, b) => b.name.length - a.name.length);
+  // Les PV des adversaires et PNJ restent secrets (« PV 10→4 »).
+  const escape = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const nonPc = [...new Set(input.entities.filter((e) => e.type !== "character").map((e) => nameOf(e)))];
+  const hpPattern = nonPc.length ? new RegExp(`(${nonPc.map(escape).join("|")}) \\(PV -?\\d+→-?\\d+\\)`, "g") : null;
+  const mask = (text: string) => {
+    const masked = hidden.reduce((t, e) => t.split(e.name).join(nameOf(e)), text);
+    return hpPattern ? masked.replace(hpPattern, "$1") : masked;
+  };
+
   const spot = world.spotlightEntityId ? byId.get(world.spotlightEntityId) : undefined;
 
   return {
@@ -216,8 +297,10 @@ export function projectPlayerView(input: ProjectionInput): PlayerView {
     map,
     movement,
     actions,
+    attacks,
+    targets,
     spotlight: spot ? { name: spot.name, description: spot.description, imageUrl: spot.imageUrl } : null,
-    timeline: input.timeline,
-    requests: input.requests,
+    timeline: input.timeline.map((t) => ({ ...t, description: mask(t.description) })),
+    requests: input.requests.map((r) => ({ ...r, result: r.result ? mask(r.result) : null })),
   };
 }

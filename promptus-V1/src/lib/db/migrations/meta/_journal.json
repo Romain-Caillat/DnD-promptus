@@ -43,6 +43,13 @@
       "when": 1790933988879,
       "tag": "0005_remote_play",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790940513332,
+      "tag": "0006_player_attack",
+      "breakpoints": true
     }
   ]
 }

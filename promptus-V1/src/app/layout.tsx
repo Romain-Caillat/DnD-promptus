@@ -42,7 +42,7 @@ export default function RootLayout({
           <QueryProvider>
             {children}
             <AudioPlayer />
-            <Toaster richColors position="bottom-right" />
+            <Toaster richColors position="top-center" />
           </QueryProvider>
         </ThemeProvider>
       </body>

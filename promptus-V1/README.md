@@ -109,8 +109,22 @@ OPENROUTER_API_KEY=fake OPENROUTER_BASE_URL=http://localhost:4010/api/v1 pnpm de
 4. La synchronisation passe par le serveur temps réel (`pnpm realtime`) : il
    relaie les notifications Postgres, sans transporter de données de jeu.
 
+### Combat sur grille
+
+- Le MJ pose les pions sur la carte de combat : participants, fiches de la
+  campagne (« + ») ou nouvel exemplaire d’un monstre (« ⧉ », ex. « Guerrier
+  gobelin 2 »). **Lancer le combat** fait entrer toutes les créatures de la
+  carte dans l’initiative.
+- Les fiches ont des **attaques** (bonus, dégâts, type, portée en mètres,
+  portée longue). La portée et la ligne de vue sont vérifiées sur la grille ;
+  la portée longue donne un désavantage. Le MJ peut forcer.
+- MJ : sélectionner un pion → **Attaquer** → cliquer la cible.
+- Joueur, à son tour : se déplacer, toucher un adversaire, choisir l’arme ;
+  le MJ résout l’attaque d’un clic.
+- Un adversaire à 0 PV est marqué à terre et ne joue plus.
+
 Le joueur ne reçoit jamais les notes MJ, les cases cachées ni le nom des
-adversaires non révélés.
+adversaires non révélés (ni leurs PV).
 
 > ⚠️ Les pages MJ n’ont pas d’authentification : en production, protégez-les
 > (par exemple `basic_auth` dans Caddy, en laissant `/play/*`, `/api/play/*` et

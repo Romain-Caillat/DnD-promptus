@@ -15,6 +15,8 @@ export async function GET(
       .select({
         id: playerRequests.id,
         actionId: playerRequests.actionId,
+        attackId: playerRequests.attackId,
+        targetIds: playerRequests.targetIds,
         label: playerRequests.label,
         note: playerRequests.note,
         status: playerRequests.status,

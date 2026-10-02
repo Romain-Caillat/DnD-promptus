@@ -172,6 +172,8 @@ function JoinScreen({ code }: { code: string }) {
 
 function PlayerScreen({ code, token }: { code: string; token: string }) {
   const queryClient = useQueryClient();
+  const [tab, setTab] = useState("actions");
+  const [targetId, setTargetId] = useState<string | null>(null);
   const key = ["play", code];
   const headers = { "content-type": "application/json", "x-player-token": token };
 
@@ -193,6 +195,12 @@ function PlayerScreen({ code, token }: { code: string; token: string }) {
   if (!view) return <p className="p-6 text-center text-muted-foreground">Chargement…</p>;
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: key });
+  const activeTab = view.character || !["actions", "sheet"].includes(tab) ? tab : "journal";
+  const target = view.targets.find((t) => t.entityId === targetId) ? targetId : null;
+  const pickTarget = (id: string) => {
+    setTargetId(id);
+    setTab("actions");
+  };
 
   return (
     <main className="mx-auto w-full max-w-6xl p-3 sm:p-4 space-y-3" data-testid="player-screen">
@@ -231,10 +239,10 @@ function PlayerScreen({ code, token }: { code: string; token: string }) {
               </CardContent>
             </Card>
           ) : null}
-          <PlayerMapCard code={code} headers={headers} view={view} onMoved={refresh} />
+          <PlayerMapCard code={code} headers={headers} view={view} onMoved={refresh} targetId={target} onTarget={pickTarget} />
         </div>
 
-        <Tabs defaultValue={view.character ? "actions" : "journal"} className="min-w-0">
+        <Tabs value={activeTab} onValueChange={setTab} className="min-w-0">
           <TabsList className="w-full">
             {view.character ? <TabsTrigger value="actions">Actions</TabsTrigger> : null}
             {view.character ? <TabsTrigger value="sheet">Fiche</TabsTrigger> : null}
@@ -243,7 +251,7 @@ function PlayerScreen({ code, token }: { code: string; token: string }) {
           </TabsList>
           {view.character ? (
             <TabsContent value="actions">
-              <ActionsPanel code={code} headers={headers} view={view} onSent={refresh} />
+              <ActionsPanel code={code} headers={headers} view={view} onSent={refresh} targetId={target} onTarget={setTargetId} />
             </TabsContent>
           ) : null}
           {view.character ? (
@@ -297,11 +305,15 @@ function PlayerMapCard({
   headers,
   view,
   onMoved,
+  targetId,
+  onTarget,
 }: {
   code: string;
   headers: Record<string, string>;
   view: PlayerView;
   onMoved: () => void;
+  targetId: string | null;
+  onTarget: (entityId: string) => void;
 }) {
   const move = useMutation({
     mutationFn: async (cell: Cell) => {
@@ -336,6 +348,12 @@ function PlayerMapCard({
     reachable.delete(cellKey(mine.x, mine.y));
   }
   const labels = new Map(map.tokens.map((t) => [t.entityId, t]));
+  // Cibles : rouge si une attaque est possible, ambre pour la cible choisie.
+  const rings = new Map<string, string>();
+  if (view.session.phase === "combat") {
+    for (const t of view.targets) if (!t.down && Object.values(t.byAttack).some((a) => a.possible)) rings.set(t.entityId, "#f87171");
+  }
+  if (targetId) rings.set(targetId, "#fbbf24");
 
   return (
     <Card>
@@ -359,9 +377,13 @@ function PlayerMapCard({
           tokenInfo={(id) => {
             const t = labels.get(id);
             const label = t?.label ?? "?";
-            return { label: label.slice(0, 2), kind: (t?.kind ?? "enemy") as TokenKind, title: label };
+            const num = label.match(/ (\d+)$/)?.[1] ?? "";
+            return { label: label.slice(0, num ? 1 : 2) + num, kind: (t?.kind ?? "enemy") as TokenKind, title: label, down: t?.down };
           }}
+          ringTokens={rings}
           onCellClick={(cell) => {
+            const other = view.targets.find((t) => t.entityId === map.tokens.find((k) => k.x === cell.x && k.y === cell.y)?.entityId);
+            if (other) return onTarget(other.entityId);
             if (!reachable?.has(cellKey(cell.x, cell.y)) || move.isPending) return;
             move.mutate(cell);
           }}
@@ -381,27 +403,47 @@ function ActionsPanel({
   headers,
   view,
   onSent,
+  targetId,
+  onTarget,
 }: {
   code: string;
   headers: Record<string, string>;
   view: PlayerView;
   onSent: () => void;
+  targetId: string | null;
+  onTarget: (entityId: string | null) => void;
 }) {
-  const [selected, setSelected] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [attackPick, setAttackPick] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  // Une cible touchée sur la carte en combat sélectionne l'action d'attaque.
+  const attackAction = view.actions.find((a) => a.kind === "attack");
+  const selected = picked ?? (targetId && attackAction ? attackAction.id : null);
+  const isAttack = view.actions.find((a) => a.id === selected)?.kind === "attack";
+  const target = view.targets.find((t) => t.entityId === targetId);
+  const attackId =
+    attackPick && view.attacks.some((a) => a.id === attackPick)
+      ? attackPick
+      : (view.attacks.find((a) => target?.byAttack[a.id]?.possible) ?? view.attacks[0])?.id ?? null;
+  const verdict = target && attackId ? target.byAttack[attackId] : undefined;
   const send = useMutation({
     mutationFn: async () => {
       const res = await fetch(`/api/play/${code}/requests`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ actionId: selected, note: note || undefined }),
+        body: JSON.stringify({
+          actionId: selected,
+          note: note || undefined,
+          ...(isAttack ? { attackId, targetId } : {}),
+        }),
       });
       if (!res.ok) throw new Error(await errorMessage(res, "Demande refusée"));
     },
     onSuccess: () => {
       toast.success("Demande envoyée au MJ");
-      setSelected(null);
+      setPicked(null);
       setNote("");
+      onTarget(null);
       onSent();
     },
     onError: (e) => toast.error(e.message),
@@ -418,7 +460,10 @@ function ActionsPanel({
           <button
             key={a.id}
             type="button"
-            onClick={() => setSelected(a.id === selected ? null : a.id)}
+            onClick={() => {
+              setPicked(a.id === selected ? null : a.id);
+              if (a.id === selected) onTarget(null);
+            }}
             aria-pressed={a.id === selected}
             className={cn(
               "rounded-lg border p-2 text-left text-sm",
@@ -433,6 +478,15 @@ function ActionsPanel({
       {action ? (
         <div className="space-y-2 rounded-lg border p-3">
           {action.description ? <p className="text-xs text-muted-foreground">{action.description}</p> : null}
+          {isAttack ? (
+            <AttackPicker
+              view={view}
+              attackId={attackId}
+              onAttack={setAttackPick}
+              targetId={targetId}
+              onTarget={onTarget}
+            />
+          ) : null}
           <Textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -440,8 +494,13 @@ function ActionsPanel({
             maxLength={500}
             rows={2}
           />
-          <Button className="w-full" onClick={() => send.mutate()} disabled={send.isPending}>
-            Demander : {action.label}
+          {isAttack && verdict && !verdict.possible ? <p className="text-xs text-destructive">{verdict.reason}</p> : null}
+          <Button
+            className="w-full"
+            onClick={() => send.mutate()}
+            disabled={send.isPending || (isAttack && (!target || !verdict?.possible))}
+          >
+            {isAttack && target ? `Attaquer ${target.label}` : `Demander : ${action.label}`}
           </Button>
         </div>
       ) : null}
@@ -463,6 +522,73 @@ function ActionsPanel({
           </ul>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function AttackPicker({
+  view,
+  attackId,
+  onAttack,
+  targetId,
+  onTarget,
+}: {
+  view: PlayerView;
+  attackId: string | null;
+  onAttack: (id: string) => void;
+  targetId: string | null;
+  onTarget: (id: string | null) => void;
+}) {
+  const fmt = (n: number) => (n >= 0 ? `+${n}` : String(n));
+  const range = (a: PlayerView["attacks"][number]) =>
+    a.longRangeMeters ? `${a.rangeMeters}/${a.longRangeMeters} m` : a.rangeMeters <= 1.5 ? "contact" : `${a.rangeMeters} m`;
+  return (
+    <div className="space-y-2" data-testid="attack-picker">
+      <div className="flex flex-wrap gap-1">
+        {view.attacks.map((a) => (
+          <button
+            key={a.id}
+            type="button"
+            onClick={() => onAttack(a.id)}
+            aria-pressed={a.id === attackId}
+            className={cn("rounded border px-2 py-1 text-xs text-left", a.id === attackId ? "border-primary bg-primary/10" : "hover:bg-muted/50")}
+          >
+            <span className="font-medium">{a.name}</span> {fmt(a.bonus)} · {a.damage} {a.damageType} · {range(a)}
+          </button>
+        ))}
+      </div>
+      {view.targets.length ? (
+        <ul className="space-y-1">
+          {view.targets.map((t) => {
+            const v = attackId ? t.byAttack[attackId] : undefined;
+            return (
+              <li key={t.entityId}>
+                <button
+                  type="button"
+                  onClick={() => onTarget(t.entityId === targetId ? null : t.entityId)}
+                  aria-pressed={t.entityId === targetId}
+                  className={cn(
+                    "w-full flex items-center justify-between rounded border px-2 py-1 text-sm",
+                    t.entityId === targetId ? "border-amber-500 bg-amber-500/10" : "hover:bg-muted/50",
+                    t.down && "opacity-50",
+                  )}
+                >
+                  <span>
+                    {t.label}
+                    {t.down ? " (à terre)" : ""}
+                  </span>
+                  <span className={cn("text-xs", v?.possible ? "text-emerald-500" : "text-muted-foreground")}>
+                    {t.distanceMeters.toLocaleString("fr-FR")} m · {v?.possible ? (v.longRange ? "portée longue (désavantage)" : "à portée") : "hors d’atteinte"}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="text-xs text-muted-foreground italic">Aucune cible visible sur la carte.</p>
+      )}
+      <p className="text-xs text-muted-foreground">Astuce : touchez un pion sur la carte pour le cibler.</p>
     </div>
   );
 }

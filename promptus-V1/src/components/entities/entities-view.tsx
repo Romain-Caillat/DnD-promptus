@@ -41,7 +41,8 @@ export function EntitiesView({ campaignId }: { campaignId: string }) {
     },
   });
 
-  const entities = data?.entities ?? [];
+  // Les exemplaires créés en combat (« Gobelin 2 ») restent hors du bestiaire.
+  const entities = (data?.entities ?? []).filter((e) => !e.attributes.copyOf);
 
   return (
     <div className="space-y-6">

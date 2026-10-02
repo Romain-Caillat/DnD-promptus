@@ -10,6 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { useRuleset } from "@/components/providers/ruleset-provider";
 import { SCHOOLS_OF_MAGIC, SCHOOL_LABELS } from "@/lib/engine/catalog";
 import type { EntityType } from "@/lib/engine/types";
 
@@ -55,6 +57,9 @@ export function TypeAttributes({ type, attributes, onChange }: Props) {
           <TextField label="Taille" name="size" attributes={attributes} set={set} placeholder="Moyenne" />
           <TextField label="Alignement" name="alignment" attributes={attributes} set={set} placeholder="Neutre mauvais" />
           <NumField label="Niveau" name="level" attributes={attributes} set={set} />
+          <div className="md:col-span-3">
+            <AttacksField attributes={attributes} set={set} />
+          </div>
         </div>
       );
 
@@ -95,6 +100,9 @@ export function TypeAttributes({ type, attributes, onChange }: Props) {
             />
           </div>
           <TextField label="Note d’interprétation (voix)" name="voiceActorRecommended" attributes={attributes} set={set} />
+          <div className="md:col-span-2">
+            <AttacksField attributes={attributes} set={set} />
+          </div>
         </div>
       );
 
@@ -259,6 +267,76 @@ function BoolField({
         className="size-4"
       />
       <Label className="text-sm">{label}</Label>
+    </div>
+  );
+}
+
+interface AttackRow {
+  name: string;
+  bonus?: number;
+  damage: string;
+  damageType?: string;
+  rangeMeters?: number;
+  longRangeMeters?: number;
+}
+
+/** Attaques de la créature : utilisées en combat sur la carte (bonus, dégâts, portée). */
+function AttacksField({ attributes, set }: { attributes: Record<string, unknown>; set: (k: string, v: unknown) => void }) {
+  const ruleset = useRuleset();
+  const rows = (Array.isArray(attributes.attacks) ? attributes.attacks : []) as AttackRow[];
+  const update = (i: number, patch: Partial<AttackRow>) =>
+    set("attacks", rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const numOrUndef = (v: string) => (v === "" ? undefined : Number(v));
+  return (
+    <div className="space-y-2" data-testid="attacks-field">
+      <Label className="text-xs uppercase tracking-wide text-muted-foreground">Attaques</Label>
+      {rows.map((r, i) => (
+        <div key={i} className="grid gap-2 grid-cols-2 md:grid-cols-[2fr_70px_1fr_1.3fr_80px_80px_auto] items-center">
+          <Input aria-label="Nom de l’attaque" placeholder="Épée longue" value={r.name ?? ""} onChange={(e) => update(i, { name: e.target.value })} />
+          <Input aria-label="Bonus" type="number" placeholder="+5" value={r.bonus ?? ""} onChange={(e) => update(i, { bonus: numOrUndef(e.target.value) })} />
+          <Input aria-label="Dégâts" placeholder="1d8+3" value={r.damage ?? ""} onChange={(e) => update(i, { damage: e.target.value })} />
+          <Select value={r.damageType ?? ""} onValueChange={(v) => update(i, { damageType: v })}>
+            <SelectTrigger aria-label="Type de dégâts">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              {ruleset.damageTypes.map((d) => (
+                <SelectItem key={d.id} value={d.id}>
+                  {d.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            aria-label="Portée (m)"
+            type="number"
+            step="1.5"
+            placeholder="1,5 m"
+            value={r.rangeMeters ?? ""}
+            onChange={(e) => update(i, { rangeMeters: numOrUndef(e.target.value) })}
+          />
+          <Input
+            aria-label="Portée longue (m)"
+            type="number"
+            step="1.5"
+            placeholder="longue"
+            value={r.longRangeMeters ?? ""}
+            onChange={(e) => update(i, { longRangeMeters: numOrUndef(e.target.value) })}
+          />
+          <Button type="button" size="sm" variant="ghost" onClick={() => set("attacks", rows.filter((_, j) => j !== i))}>
+            Retirer
+          </Button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={() => set("attacks", [...rows, { name: "", bonus: 0, damage: "1d6", damageType: ruleset.damageTypes[0]?.id, rangeMeters: 1.5 }])}
+      >
+        Ajouter une attaque
+      </Button>
+      <p className="text-xs text-muted-foreground">Portée en mètres : 1,5 m = au contact. Au-delà de la portée normale et jusqu’à la longue : désavantage.</p>
     </div>
   );
 }

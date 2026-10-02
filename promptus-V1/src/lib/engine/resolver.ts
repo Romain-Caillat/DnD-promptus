@@ -783,6 +783,11 @@ export interface AttackInput {
   damageNotation: string;
   damageType: DamageEffect["damageType"];
   meleeWithin5ft?: boolean;
+  /** Nom de l'arme ou de l'attaque, pour le journal. */
+  attackName?: string;
+  /** Avantage / désavantage imposés par la situation (portée longue…). */
+  advantage?: boolean;
+  disadvantage?: boolean;
 }
 
 export function resolveAttack(
@@ -811,8 +816,8 @@ export function resolveAttack(
     const check = rollCheck(ctx.ruleset, {
       bonus: input.attackBonus,
       dc: ac,
-      advantage: flags.advantage,
-      disadvantage: flags.disadvantage,
+      advantage: flags.advantage || !!input.advantage,
+      disadvantage: flags.disadvantage || !!input.disadvantage,
       rng: ctx.rng,
     });
     const roll = check.roll;
@@ -829,7 +834,7 @@ export function resolveAttack(
       rolls: [roll],
       outcome: hit ? "success" : "fail",
       applied: [],
-      description: `${attacker?.name ?? "Attaquant"} attaque ${target?.name ?? tid} : ${roll.notation} = ${roll.result} contre CA ${ac} → ${isCritical ? "CRITIQUE" : hit ? "touché" : "raté"}`,
+      description: `${attacker?.name ?? "Attaquant"} attaque ${target?.name ?? tid}${input.attackName ? ` (${input.attackName})` : ""} : ${roll.notation} = ${roll.result} contre CA ${ac} → ${isCritical ? "CRITIQUE" : hit ? "touché" : "raté"}`,
       timestamp: new Date().toISOString(),
     });
 

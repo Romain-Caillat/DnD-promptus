@@ -20,8 +20,17 @@ export async function POST(
       return NextResponse.json({ session });
     }
 
-    const nextIndex = (session.activeTurnIndex + 1) % order.length;
-    const wraps = nextIndex === 0;
+    // Les adversaires à 0 PV ne jouent plus (les personnages, si : jets contre la mort).
+    const hpRows = await db.select().from(sessionState).where(eq(sessionState.sessionId, id));
+    const hpById = new Map(hpRows.map((s) => [s.entityId, (s.currentState as EntityState).hp]));
+    const out = (i: number) => !order[i].isPlayer && (hpById.get(order[i].entityId) ?? 1) <= 0;
+    let nextIndex = session.activeTurnIndex;
+    let wraps = false;
+    for (let step = 0; step < order.length; step++) {
+      nextIndex = (nextIndex + 1) % order.length;
+      if (nextIndex === 0) wraps = true;
+      if (!out(nextIndex)) break;
+    }
     const nextRound = wraps ? session.combatRound + 1 : session.combatRound;
 
     const [updated] = await db

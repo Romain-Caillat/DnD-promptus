@@ -42,8 +42,8 @@ export function StartSessionDialog({ campaignId }: { campaignId: string }) {
     },
   });
 
-  const candidates = (data?.entities ?? []).filter((e) =>
-    PARTICIPANT_TYPES.includes(e.type as (typeof PARTICIPANT_TYPES)[number]),
+  const candidates = (data?.entities ?? []).filter(
+    (e) => !e.attributes.copyOf && PARTICIPANT_TYPES.includes(e.type as (typeof PARTICIPANT_TYPES)[number]),
   );
 
   function toggle(id: string) {

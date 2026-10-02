@@ -13,6 +13,8 @@ import { skillLabel } from "@/lib/engine/ruleset";
 interface RequestRow {
   id: string;
   actionId: string;
+  attackId: string | null;
+  targetIds: string[];
   label: string;
   note: string | null;
   status: "pending" | "resolved" | "rejected";
@@ -51,6 +53,7 @@ export function RequestsPanel({ sessionId }: { sessionId: string }) {
       if (json.result) toast.info(json.result);
       void queryClient.invalidateQueries({ queryKey: ["player-requests", sessionId] });
       void queryClient.invalidateQueries({ queryKey: ["timeline", sessionId] });
+      void queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Échec");
     } finally {
@@ -75,7 +78,22 @@ export function RequestsPanel({ sessionId }: { sessionId: string }) {
               </p>
               {r.note ? <p className="text-xs italic text-muted-foreground">« {r.note} »</p> : null}
               <div className="flex flex-wrap items-center gap-1">
-                {testable ? (
+                {r.attackId ? (
+                  <>
+                    <Button size="xs" disabled={busy === r.id} onClick={() => decide(r.id, { decision: "attack" })}>
+                      Résoudre l’attaque
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      title="Ignorer la portée et la ligne de vue"
+                      disabled={busy === r.id}
+                      onClick={() => decide(r.id, { decision: "attack", force: true })}
+                    >
+                      Forcer
+                    </Button>
+                  </>
+                ) : testable ? (
                   <>
                     <Input
                       className="h-7 w-16 text-xs"

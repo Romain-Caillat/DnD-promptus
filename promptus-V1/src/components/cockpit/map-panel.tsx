@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Eye, EyeOff, Map as MapIcon, Move, Paintbrush } from "lucide-react";
+import { Crosshair, Eye, EyeOff, Map as MapIcon, Move, Paintbrush } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,11 +11,14 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { MapLegend, MapView, type TokenKind } from "@/components/maps/map-view";
 import { useRuleset } from "@/components/providers/ruleset-provider";
+import { AttackDialog } from "./attack-dialog";
+import { attackGeometry, creatureAttacks, type CreatureAttack } from "@/lib/engine/combat";
 import { cellKey, distance, reachableCells, speedInCells, type Cell } from "@/lib/engine/grid";
 import { MAP_LEVEL_LABELS, type CampaignStory, type GameMap } from "@/lib/engine/story";
 import type { MapOp } from "@/lib/engine/map-ops";
@@ -51,6 +54,9 @@ export function MapPanel({
   const [hover, setHover] = useState<Cell | null>(null);
   const [playerView, setPlayerView] = useState(false);
   const [sceneSeen, setSceneSeen] = useState<string | undefined>(undefined);
+  /** Mode « choisir la cible » après « Attaquer » sur un pion sélectionné. */
+  const [targeting, setTargeting] = useState(false);
+  const [attackPreset, setAttackPreset] = useState<{ attackerId: string; targetIds: string[] } | null>(null);
 
   const storyKey = ["session-story", sessionId];
   const { data } = useQuery({
@@ -89,12 +95,15 @@ export function MapPanel({
     scene?.mapPlacement?.mapId === map.id ? { x: scene.mapPlacement.x, y: scene.mapPlacement.y } : null;
   const shownToPlayers = defaultMapId(story, world) === map.id;
 
-  function tokenInfo(entityId: string): { label: string; kind: TokenKind; title: string } {
-    if (entityId === PARTY_TOKEN) return { label: "G", kind: "party", title: "Le groupe" };
+  function tokenInfo(entityId: string): { label: string; kind: TokenKind; title: string; down: boolean } {
+    if (entityId === PARTY_TOKEN) return { label: "G", kind: "party", title: "Le groupe", down: false };
     const e = entities.get(entityId);
     const name = e?.name ?? entityId;
     const kind: TokenKind = e?.type === "character" ? "pc" : e?.type === "npc" ? "npc" : "enemy";
-    return { label: name.slice(0, 2).toUpperCase(), kind, title: name };
+    const hp = participants.find((p) => p.state.entityId === entityId)?.state.currentState.hp;
+    // Initiales + numéro d'exemplaire (« GG2 ») pour distinguer les copies.
+    const num = name.match(/ (\d+)$/)?.[1] ?? "";
+    return { label: name.slice(0, 2).toUpperCase() + num, kind, title: name, down: typeof hp === "number" && hp <= 0 };
   }
 
   // Portée de déplacement du pion sélectionné, selon les règles et le niveau de carte.
@@ -114,6 +123,26 @@ export function MapPanel({
       ? reachableCells(map, selected, moveBudget(selected.entityId), ruleset.movement.local.diagonal, occupied)
       : undefined;
 
+  function geometry(attackerId: string, targetId: string, attack: Pick<CreatureAttack, "rangeMeters" | "longRangeMeters">) {
+    if (map.level !== "local") return null;
+    const from = tokens.find((t) => t.entityId === attackerId);
+    const to = tokens.find((t) => t.entityId === targetId);
+    if (!from || !to) return null;
+    return attackGeometry({ map, from, to, attack, cellMeters: ruleset.movement.local.cellMeters, diagonal: ruleset.movement.local.diagonal });
+  }
+  const isParticipant = (id: string) => participants.some((p) => p.state.entityId === id);
+  // En mode cible : anneau rouge si la première attaque du pion l'atteint, gris sinon.
+  const rings = new Map<string, string>();
+  if (targeting && selected) {
+    const attrs = (entities.get(selected.entityId)?.attributes ?? {}) as Record<string, unknown>;
+    const first = creatureAttacks(attrs, ruleset)[0];
+    for (const t of tokens) {
+      if (t.entityId === selected.entityId || !isParticipant(t.entityId)) continue;
+      const g = first ? geometry(selected.entityId, t.entityId, first) : null;
+      rings.set(t.entityId, g && !g.reason ? "#f87171" : "#9ca3af");
+    }
+  }
+
   async function send(op: MapOp, ok?: string) {
     // Mise à jour immédiate de l'affichage pour le brouillard (peinture fluide).
     try {
@@ -132,15 +161,43 @@ export function MapPanel({
     }
   }
 
+  /** Pose un pion : participant, fiche ajoutée à la session, ou nouvel exemplaire. */
+  async function place(value: string, cell: Cell) {
+    const [mode, id] = value.split(":") as ["p" | "add" | "copy", string];
+    let entityId = id;
+    if (mode !== "p") {
+      const res = await fetch(`/api/sessions/${sessionId}/participants`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(mode === "copy" ? { copyOf: id } : { entityIds: [id] }),
+      });
+      const json = await res.json();
+      if (!res.ok) return toast.error(json.error?.message ?? "Ajout impossible");
+      if (mode === "copy") entityId = json.added[0];
+      void queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
+      void queryClient.invalidateQueries({ queryKey: ["entities", campaignId, "all"] });
+    }
+    await send({ op: "move_token", mapId: map.id, entityId, x: cell.x, y: cell.y });
+  }
+
   function onCellClick(cell: Cell, mods: { shiftKey: boolean }) {
     if (tool !== "tokens") return;
     const key = cellKey(cell.x, cell.y);
     if (placing) {
-      void send({ op: "move_token", mapId: map.id, entityId: placing, x: cell.x, y: cell.y });
+      void place(placing, cell);
       setPlacing("");
       return;
     }
     const onCell = tokens.find((t) => t.x === cell.x && t.y === cell.y);
+    if (targeting && selected) {
+      if (onCell && onCell.entityId !== selected.entityId && isParticipant(onCell.entityId)) {
+        setAttackPreset({ attackerId: selected.entityId, targetIds: [onCell.entityId] });
+      } else {
+        toast.info("Choisissez un pion participant comme cible");
+      }
+      setTargeting(false);
+      return;
+    }
     if (onCell) {
       setSelectedToken(onCell.entityId === selectedToken ? null : onCell.entityId);
       setSelectedCell(null);
@@ -163,12 +220,28 @@ export function MapPanel({
   const selectedInfo = cellInfo(selectedCell);
   const hoverInfo = cellInfo(hover);
   const childMap = selectedInfo?.childMapId ? story.maps.find((m) => m.id === selectedInfo.childMapId) : undefined;
+  const onMapIds = new Set(tokens.map((t) => t.entityId));
   const placeable = [
-    ...(map.level === "local" ? [] : [{ id: PARTY_TOKEN, name: "Le groupe" }]),
+    ...(map.level === "local" ? [] : [{ id: `p:${PARTY_TOKEN}`, name: "Le groupe" }]),
     ...participants
-      .filter((p) => p.entity)
-      .map((p) => ({ id: p.state.entityId, name: p.entity!.name })),
-  ].filter((p) => !tokens.some((t) => t.entityId === p.id));
+      .filter((p) => p.entity && !onMapIds.has(p.state.entityId))
+      .map((p) => ({ id: `p:${p.state.entityId}`, name: p.entity!.name })),
+  ];
+  // Fiches de la campagne hors session : elles la rejoignent en étant posées.
+  const addable =
+    map.level === "local"
+      ? (entData?.entities ?? [])
+          .filter((e) => ["monster", "npc", "character"].includes(e.type) && !e.attributes.copyOf && !isParticipant(e.id))
+          .map((e) => ({ id: `add:${e.id}`, name: e.name }))
+      : [];
+  // Nouvel exemplaire d'un monstre ou PNJ déjà en jeu.
+  const copyable =
+    map.level === "local"
+      ? participants
+          .filter((p) => p.entity && p.entity.type !== "character" && !p.entity.attributes.copyOf)
+          .map((p) => ({ id: `copy:${p.state.entityId}`, name: `${p.entity!.name} (nouvel exemplaire)` }))
+      : [];
+  const placeOptions = [...placeable, ...addable, ...copyable];
   const cellMeters =
     map.level === "campaign" ? ruleset.movement.campaign.cellKm * 1000 : map.level === "region" ? ruleset.movement.region.cellMeters : ruleset.movement.local.cellMeters;
   const fmtDist = (cells: number) => {
@@ -217,18 +290,42 @@ export function MapPanel({
             </Button>
           </div>
           {tool === "tokens" ? (
-            <Select value={placing} onValueChange={setPlacing} disabled={placeable.length === 0}>
-              <SelectTrigger className="h-7 w-48 text-xs" aria-label="Placer un pion">
-                <SelectValue placeholder={placeable.length ? "Placer un pion…" : "Tous les pions sont placés"} />
-              </SelectTrigger>
-              <SelectContent>
-                {placeable.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <>
+              <Select value={placing} onValueChange={setPlacing} disabled={placeOptions.length === 0}>
+                <SelectTrigger className="h-7 w-56 text-xs" aria-label="Placer un pion">
+                  <SelectValue placeholder={placeOptions.length ? "Placer un pion…" : "Tous les pions sont placés"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {placeable.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                  {addable.length ? <SelectSeparator /> : null}
+                  {addable.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      + {p.name}
+                    </SelectItem>
+                  ))}
+                  {copyable.length ? <SelectSeparator /> : null}
+                  {copyable.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      ⧉ {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selected && selected.entityId !== PARTY_TOKEN && isParticipant(selected.entityId) && map.level === "local" ? (
+                <Button
+                  size="xs"
+                  variant={targeting ? "default" : "outline"}
+                  onClick={() => setTargeting((t) => !t)}
+                  data-testid="map-attack"
+                >
+                  <Crosshair /> {targeting ? "Choisissez la cible…" : "Attaquer"}
+                </Button>
+              ) : null}
+            </>
           ) : (
             <>
               <Button size="xs" variant="outline" onClick={() => send({ op: "reveal_all", mapId: map.id })}>
@@ -248,7 +345,9 @@ export function MapPanel({
           {tool === "fog"
             ? "Cliquez ou glissez sur les cases pour les révéler (ou les cacher si la première case est déjà révélée)."
             : placing
-              ? `Cliquez sur une case pour placer ${placeable.find((p) => p.id === placing)?.name ?? "le pion"}.`
+              ? `Cliquez sur une case pour placer ${placeOptions.find((p) => p.id === placing)?.name ?? "le pion"}.`
+              : targeting && selected
+                ? `${tokenInfo(selected.entityId).title} attaque : cliquez sur la cible (anneau rouge = à portée de sa première attaque).`
               : selected
                 ? `${tokenInfo(selected.entityId).title} : portée ${moveBudget(selected.entityId)} case(s) (Maj+clic pour forcer)` +
                   (hover ? ` · case visée à ${distance(map.grid.type, selected, hover, ruleset.movement.local.diagonal)} case(s), ${fmtDist(distance(map.grid.type, selected, hover, ruleset.movement.local.diagonal))}` : "")
@@ -267,6 +366,7 @@ export function MapPanel({
           selectedCell={selectedCell}
           currentCell={currentCell}
           tokenInfo={tokenInfo}
+          ringTokens={rings}
           onCellClick={tool === "tokens" ? onCellClick : undefined}
           onCellHover={setHover}
           onPaint={
@@ -276,6 +376,18 @@ export function MapPanel({
               : undefined
           }
         />
+
+        {attackPreset ? (
+          <AttackDialog
+            key={`${attackPreset.attackerId}>${attackPreset.targetIds.join(",")}`}
+            sessionId={sessionId}
+            participants={participants}
+            open
+            onOpenChange={(o) => !o && setAttackPreset(null)}
+            preset={attackPreset}
+            geometry={geometry}
+          />
+        ) : null}
 
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <MapLegend />

@@ -69,8 +69,9 @@ Produis ce JSON :
 }
 Quantités : 2 menaces de 4 étapes ; PNJ ${n.npcs} ; lieux ${n.locations} ; monstres ${n.monsters} ; objets ${n.items}${input.pregens ? ` ; ${input.players} personnages prêts à jouer (type character)` : ""}.
 Attributs selon le type :
-- npc : { "hp", "hpMax", "ac", "faction", "status": "alive", "motivation", "secret", "voiceActorRecommended": "conseil d’interprétation" }
-- monster${input.pregens ? " / character" : ""} : { "hp", "hpMax", "ac", "speed", "challengeRating", "size", "abilityScores": { ${abilities} }, "initiativeBonus" }
+- npc : { "hp", "hpMax", "ac", "faction", "status": "alive", "motivation", "secret", "voiceActorRecommended": "conseil d’interprétation", "attacks": [ATTAQUE] }
+- monster${input.pregens ? " / character" : ""} : { "hp", "hpMax", "ac", "speed", "challengeRating", "size", "abilityScores": { ${abilities} }, "initiativeBonus", "attacks": [ATTAQUE, …] }
+- ATTAQUE = { "name": "Cimeterre", "bonus": 4, "damage": "1d6+2", "damageType": "id de type de dégâts", "rangeMeters": 1.5 (contact) ou portée en mètres, "longRangeMeters": portée longue facultative } ; chaque créature combattante a au moins une attaque
 - location : { "parentLocation": "ent_… éventuel" }
 - item : { "rarity": "common|uncommon|rare|very_rare|legendary", "value" }
 - faction : { "reputation": 0 }

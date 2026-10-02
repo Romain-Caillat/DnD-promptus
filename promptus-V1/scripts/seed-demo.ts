@@ -74,6 +74,10 @@ async function main() {
       classes: [{ name: "Guerrier", level: 1 }],
       abilityScores: { STR: 16, DEX: 13, CON: 14, INT: 10, WIS: 11, CHA: 8 },
       proficiencyBonus: 2,
+      attacks: [
+        { name: "Épée longue", bonus: 5, damage: "1d8+3", damageType: "slashing", rangeMeters: 1.5 },
+        { name: "Arbalète légère", bonus: 3, damage: "1d8+1", damageType: "piercing", rangeMeters: 24, longRangeMeters: 96 },
+      ],
       initiativeBonus: 1,
     },
     effects: [],
@@ -97,6 +101,10 @@ async function main() {
       classes: [{ name: "Magicien", level: 1 }],
       abilityScores: { STR: 8, DEX: 14, CON: 12, INT: 16, WIS: 13, CHA: 10 },
       proficiencyBonus: 2,
+      attacks: [
+        { name: "Bâton", bonus: 1, damage: "1d6-1", damageType: "bludgeoning", rangeMeters: 1.5 },
+        { name: "Trait de feu", bonus: 5, damage: "1d10", damageType: "fire", rangeMeters: 36 },
+      ],
       initiativeBonus: 2,
       spellSlots: { 1: { current: 2, max: 2 } },
     },
@@ -121,6 +129,10 @@ async function main() {
       classes: [{ name: "Roublard", level: 1 }],
       abilityScores: { STR: 9, DEX: 17, CON: 13, INT: 12, WIS: 11, CHA: 14 },
       proficiencyBonus: 2,
+      attacks: [
+        { name: "Rapière", bonus: 5, damage: "1d8+3", damageType: "piercing", rangeMeters: 1.5 },
+        { name: "Arc court", bonus: 5, damage: "1d6+3", damageType: "piercing", rangeMeters: 24, longRangeMeters: 96 },
+      ],
       initiativeBonus: 3,
     },
     effects: [],
@@ -144,6 +156,10 @@ async function main() {
       classes: [{ name: "Clerc", level: 1 }],
       abilityScores: { STR: 12, DEX: 10, CON: 14, INT: 11, WIS: 16, CHA: 13 },
       proficiencyBonus: 2,
+      attacks: [
+        { name: "Masse d’armes", bonus: 3, damage: "1d6+1", damageType: "bludgeoning", rangeMeters: 1.5 },
+        { name: "Flamme sacrée", bonus: 5, damage: "1d8", damageType: "radiant", rangeMeters: 18 },
+      ],
       initiativeBonus: 0,
       spellSlots: { 1: { current: 2, max: 2 } },
     },
@@ -403,6 +419,7 @@ async function main() {
     ac: number,
     abilities: Record<string, number>,
     extraTags: string[] = [],
+    attacks: Record<string, unknown>[] = [],
   ): NewEntityRow {
     return {
       id: generateId("ent_monster"),
@@ -420,6 +437,7 @@ async function main() {
         size: "Moyenne",
         abilityScores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10, ...abilities },
         initiativeBonus: Math.floor(((abilities.DEX ?? 10) - 10) / 2),
+        attacks,
       },
       effects: [],
       visibility: "mj_only",
@@ -428,16 +446,16 @@ async function main() {
   }
 
   ents.push(
-    monster("Éclaireur gobelin", "Petit humanoïde sournois tapi dans l’ombre.", 0.25, 7, 15, { DEX: 14 }, ["gobelin", "humanoïde"]),
-    monster("Guerrier gobelin", "Un gobelin plus costaud, armé d’un cimeterre ébréché.", 0.25, 10, 14, { STR: 12, DEX: 13 }, ["gobelin", "humanoïde"]),
-    monster("Chef gobelin", "Chef rusé de la bande ; ne se bat jamais à la loyale.", 1, 21, 17, { STR: 10, DEX: 14, CHA: 10 }, ["gobelin", "humanoïde", "chef"]),
-    monster("Rat géant", "Plus gros qu’un honnête rat n’a le droit de l’être.", 0.125, 7, 12, { DEX: 11 }, ["bête"]),
-    monster("Araignée géante", "Huit pattes, huit yeux, et bien trop de patience.", 1, 26, 14, { DEX: 16 }, ["bête", "araignée"]),
-    monster("Squelette", "Des os que seule la malveillance tient ensemble.", 0.25, 13, 13, { STR: 10, DEX: 14 }, ["mort-vivant"]),
-    monster("Zombie", "Lent, implacable, affamé.", 0.25, 22, 8, { CON: 16 }, ["mort-vivant"]),
-    monster("Bandit", "Un humain masqué en quête d’argent facile.", 0.125, 11, 12, { STR: 11, DEX: 12 }, ["humanoïde", "criminel"]),
-    monster("Loup", "Chasseur de meute à la morsure cruelle.", 0.25, 11, 13, { DEX: 15 }, ["bête"]),
-    monster("Revenant Mort-Roi", "La dépouille squelettique du roi oublié refuse le repos.", 5, 65, 17, { STR: 18, DEX: 14, CON: 16, WIS: 16 }, ["mort-vivant", "boss", "unique"]),
+    monster("Éclaireur gobelin", "Petit humanoïde sournois tapi dans l’ombre.", 0.25, 7, 15, { DEX: 14 }, ["gobelin", "humanoïde"], [{ name: "Cimeterre", bonus: 4, damage: "1d6+2", damageType: "slashing", rangeMeters: 1.5 }, { name: "Arc court", bonus: 4, damage: "1d6+2", damageType: "piercing", rangeMeters: 24, longRangeMeters: 96 }]),
+    monster("Guerrier gobelin", "Un gobelin plus costaud, armé d’un cimeterre ébréché.", 0.25, 10, 14, { STR: 12, DEX: 13 }, ["gobelin", "humanoïde"], [{ name: "Cimeterre", bonus: 4, damage: "1d6+2", damageType: "slashing", rangeMeters: 1.5 }, { name: "Javeline", bonus: 3, damage: "1d6+1", damageType: "piercing", rangeMeters: 9, longRangeMeters: 36 }]),
+    monster("Chef gobelin", "Chef rusé de la bande ; ne se bat jamais à la loyale.", 1, 21, 17, { STR: 10, DEX: 14, CHA: 10 }, ["gobelin", "humanoïde", "chef"], [{ name: "Cimeterre", bonus: 4, damage: "1d6+2", damageType: "slashing", rangeMeters: 1.5 }, { name: "Javeline", bonus: 2, damage: "1d6", damageType: "piercing", rangeMeters: 9, longRangeMeters: 36 }]),
+    monster("Rat géant", "Plus gros qu’un honnête rat n’a le droit de l’être.", 0.125, 7, 12, { DEX: 11 }, ["bête"], [{ name: "Morsure", bonus: 4, damage: "1d4+2", damageType: "piercing", rangeMeters: 1.5 }]),
+    monster("Araignée géante", "Huit pattes, huit yeux, et bien trop de patience.", 1, 26, 14, { DEX: 16 }, ["bête", "araignée"], [{ name: "Morsure", bonus: 5, damage: "1d8+3", damageType: "piercing", rangeMeters: 1.5 }]),
+    monster("Squelette", "Des os que seule la malveillance tient ensemble.", 0.25, 13, 13, { STR: 10, DEX: 14 }, ["mort-vivant"], [{ name: "Épée courte", bonus: 4, damage: "1d6+2", damageType: "piercing", rangeMeters: 1.5 }, { name: "Arc court", bonus: 4, damage: "1d6+2", damageType: "piercing", rangeMeters: 24, longRangeMeters: 96 }]),
+    monster("Zombie", "Lent, implacable, affamé.", 0.25, 22, 8, { CON: 16 }, ["mort-vivant"], [{ name: "Coup", bonus: 3, damage: "1d6+1", damageType: "bludgeoning", rangeMeters: 1.5 }]),
+    monster("Bandit", "Un humain masqué en quête d’argent facile.", 0.125, 11, 12, { STR: 11, DEX: 12 }, ["humanoïde", "criminel"], [{ name: "Cimeterre", bonus: 3, damage: "1d6+1", damageType: "slashing", rangeMeters: 1.5 }, { name: "Arbalète légère", bonus: 3, damage: "1d8+1", damageType: "piercing", rangeMeters: 24, longRangeMeters: 96 }]),
+    monster("Loup", "Chasseur de meute à la morsure cruelle.", 0.25, 11, 13, { DEX: 15 }, ["bête"], [{ name: "Morsure", bonus: 4, damage: "2d4+2", damageType: "piercing", rangeMeters: 1.5 }]),
+    monster("Revenant Mort-Roi", "La dépouille squelettique du roi oublié refuse le repos.", 5, 65, 17, { STR: 18, DEX: 14, CON: 16, WIS: 16 }, ["mort-vivant", "boss", "unique"], [{ name: "Épée longue maudite", bonus: 7, damage: "1d8+4", damageType: "slashing", rangeMeters: 1.5 }, { name: "Toucher glacial", bonus: 6, damage: "2d6", damageType: "necrotic", rangeMeters: 1.5 }]),
   );
 
   // -----------------------------------------------------------------------

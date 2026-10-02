@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Dice6, SkipForward, User, Skull } from "lucide-react";
+import { ArrowDown, ArrowUp, Dice6, Flag, SkipForward, Swords, User, Skull } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,25 @@ export function InitiativeTracker({ session, participants }: Props) {
       toast.success("Initiative lancée");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Échec du jet");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function combat(action: "start" | "end") {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/sessions/${session.id}/combat`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error?.message ?? "Action impossible");
+      queryClient.invalidateQueries({ queryKey: ["session", session.id] });
+      toast.success(action === "start" ? "Le combat commence" : "Fin du combat");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Action impossible");
     } finally {
       setBusy(false);
     }
@@ -99,6 +118,24 @@ export function InitiativeTracker({ session, participants }: Props) {
               <SkipForward className="size-4" /> Suivant
             </Button>
           </div>
+        </div>
+
+        <div className="flex gap-1">
+          {session.combatRound > 0 ? (
+            <Button size="sm" variant="outline" className="w-full" onClick={() => combat("end")} disabled={busy}>
+              <Flag className="size-4" /> Fin du combat
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              className="w-full"
+              onClick={() => combat("start")}
+              disabled={busy}
+              title="Les créatures posées sur la carte affichée entrent en combat ; chacun lance l’initiative."
+            >
+              <Swords className="size-4" /> Lancer le combat
+            </Button>
+          )}
         </div>
 
         {session.initiativeOrder.length === 0 ? (

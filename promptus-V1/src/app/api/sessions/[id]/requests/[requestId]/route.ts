@@ -9,9 +9,12 @@ import { DND5E_RULESET } from "@/lib/engine/ruleset";
 import { resolveSkillCheck } from "@/lib/engine/skill-check";
 import type { EntityState } from "@/lib/engine/types";
 import { notifySession } from "@/lib/realtime/notify";
+import { runAction } from "@/lib/session/run-action";
 
 const BodySchema = z.discriminatedUnion("decision", [
   z.object({ decision: z.literal("roll"), dc: z.number().int().min(-50).max(200) }),
+  /** Attaque demandée par le joueur : résolue par le moteur (portée, CA, dégâts). */
+  z.object({ decision: z.literal("attack"), force: z.boolean().optional() }),
   z.object({ decision: z.literal("accept"), result: z.string().trim().max(500).optional() }),
   z.object({ decision: z.literal("reject"), result: z.string().trim().max(500).optional() }),
 ]);
@@ -56,6 +59,16 @@ export async function POST(
         dc: body.dc,
       });
       result = check.description;
+    } else if (body.decision === "attack") {
+      if (!player?.characterEntityId || !request.attackId || !request.targetIds.length) badRequest("Ce n’est pas une demande d’attaque");
+      const { records } = await runAction(id, {
+        kind: "attack",
+        attackerId: player.characterEntityId,
+        targetIds: request.targetIds,
+        attackId: request.attackId,
+        force: body.force,
+      });
+      result = records.map((r) => r.description).join(" · ");
     } else if (body.decision === "accept") {
       result = body.result || "Validé par le MJ";
     } else {
@@ -65,12 +78,15 @@ export async function POST(
 
     await db.transaction(async (tx) => {
       await tx.update(playerRequests).set({ status, result, resolvedAt: new Date() }).where(eq(playerRequests.id, requestId));
-      await tx.insert(sessionTimeline).values({
-        id: generateId("tl"),
-        sessionId: id,
-        round: session.combatRound,
-        description: body.decision === "roll" ? result : `${player?.name ?? "Joueur"} — ${request.label} : ${result}`,
-      });
+      // Une attaque est déjà au journal (résolue par le moteur).
+      if (body.decision !== "attack") {
+        await tx.insert(sessionTimeline).values({
+          id: generateId("tl"),
+          sessionId: id,
+          round: session.combatRound,
+          description: body.decision === "roll" ? result : `${player?.name ?? "Joueur"} — ${request.label} : ${result}`,
+        });
+      }
     });
     await notifySession(id, ["requests", "timeline"]);
     return NextResponse.json({ status, result });

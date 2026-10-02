@@ -212,6 +212,8 @@ export const playerRequests = pgTable(
     actionId: text("action_id").notNull(),
     label: text("label").notNull(),
     targetIds: jsonb("target_ids").$type<string[]>().default([]).notNull(),
+    /** Attaque choisie (attributes.attacks du personnage) pour une action d'attaque. */
+    attackId: text("attack_id"),
     note: text("note"),
     status: text("status").$type<"pending" | "resolved" | "rejected">().default("pending").notNull(),
     result: text("result"),
