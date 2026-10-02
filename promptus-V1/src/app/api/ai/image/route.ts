@@ -36,7 +36,7 @@ function rateLimitOk(): boolean {
 export async function POST(req: NextRequest) {
   try {
     if (!rateLimitOk()) {
-      badRequest("Image generation rate limit reached (30/hour). Try again later.");
+      badRequest("Limite de génération d’images atteinte (30/heure). Réessayez plus tard.");
     }
 
     const body = await req.json();

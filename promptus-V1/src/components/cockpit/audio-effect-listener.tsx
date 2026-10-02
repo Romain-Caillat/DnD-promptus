@@ -26,7 +26,7 @@ export function AudioEffectListener({ sessionId }: { sessionId: string }) {
     queryKey: ["timeline", sessionId],
     queryFn: async () => {
       const res = await fetch(`/api/sessions/${sessionId}/timeline`);
-      if (!res.ok) throw new Error("Failed to load timeline");
+      if (!res.ok) throw new Error("Impossible de charger le journal");
       return res.json() as Promise<{ timeline: SessionTimelineRow[] }>;
     },
     refetchInterval: 3000,
@@ -36,7 +36,7 @@ export function AudioEffectListener({ sessionId }: { sessionId: string }) {
     queryKey: ["audio-assets"],
     queryFn: async () => {
       const res = await fetch("/api/audio/assets");
-      if (!res.ok) throw new Error("Failed to load audio assets");
+      if (!res.ok) throw new Error("Impossible de charger les pistes audio");
       return res.json() as Promise<{ assets: AudioAsset[] }>;
     },
   });

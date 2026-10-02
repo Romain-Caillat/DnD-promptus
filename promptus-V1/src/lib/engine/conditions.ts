@@ -12,8 +12,8 @@ import type {
 export const CONDITIONS: Record<string, ConditionDefinition> = {
   blinded: {
     id: "blinded",
-    name: "Blinded",
-    description: "Can't see; auto-fails sight checks; attacks have disadvantage; attacks against you have advantage.",
+    name: "Aveuglé",
+    description: "Ne voit pas ; rate automatiquement les tests liés à la vue ; désavantage à ses attaques ; avantage aux attaques contre lui.",
     modifiers: [
       { trigger: "outgoing_attack", effect: "disadvantage" },
       { trigger: "incoming_attack", effect: "advantage" },
@@ -21,20 +21,20 @@ export const CONDITIONS: Record<string, ConditionDefinition> = {
   },
   charmed: {
     id: "charmed",
-    name: "Charmed",
-    description: "Can't attack the charmer or target them with harmful abilities.",
+    name: "Charmé",
+    description: "Ne peut pas attaquer le charmeur ni le cibler avec des capacités nuisibles.",
     modifiers: [],
   },
   deafened: {
     id: "deafened",
-    name: "Deafened",
-    description: "Can't hear; auto-fails hearing checks.",
+    name: "Assourdi",
+    description: "N’entend pas ; rate automatiquement les tests liés à l’ouïe.",
     modifiers: [],
   },
   frightened: {
     id: "frightened",
-    name: "Frightened",
-    description: "Disadvantage on ability checks and attacks while source is in line of sight.",
+    name: "Effrayé",
+    description: "Désavantage aux tests et aux attaques tant que la source de la peur est en vue.",
     modifiers: [
       { trigger: "outgoing_attack", effect: "disadvantage" },
       { trigger: "outgoing_check", effect: "disadvantage" },
@@ -42,20 +42,20 @@ export const CONDITIONS: Record<string, ConditionDefinition> = {
   },
   grappled: {
     id: "grappled",
-    name: "Grappled",
-    description: "Speed becomes 0; can't benefit from speed bonuses.",
+    name: "Agrippé",
+    description: "Vitesse réduite à 0 ; aucun bonus de vitesse.",
     modifiers: [],
   },
   incapacitated: {
     id: "incapacitated",
-    name: "Incapacitated",
-    description: "Can't take actions or reactions.",
+    name: "Neutralisé",
+    description: "Ne peut effectuer ni action ni réaction.",
     modifiers: [{ trigger: "incapacitated", effect: "true" }],
   },
   invisible: {
     id: "invisible",
     name: "Invisible",
-    description: "Can't be seen; attacks have advantage; attacks against you have disadvantage.",
+    description: "Ne peut pas être vu ; avantage à ses attaques ; désavantage aux attaques contre lui.",
     modifiers: [
       { trigger: "outgoing_attack", effect: "advantage" },
       { trigger: "incoming_attack", effect: "disadvantage" },
@@ -63,8 +63,8 @@ export const CONDITIONS: Record<string, ConditionDefinition> = {
   },
   paralyzed: {
     id: "paralyzed",
-    name: "Paralyzed",
-    description: "Incapacitated; auto-fails STR & DEX saves; attacks against have advantage; melee hits within 5ft are critical.",
+    name: "Paralysé",
+    description: "Neutralisé ; rate automatiquement les sauvegardes de FOR et DEX ; avantage aux attaques contre lui ; toute attaque au contact à 1,5 m est un critique.",
     modifiers: [
       { trigger: "incapacitated", effect: "true" },
       { trigger: "outgoing_save", saveStat: ["STR", "DEX"], effect: "auto_fail" },
@@ -74,8 +74,8 @@ export const CONDITIONS: Record<string, ConditionDefinition> = {
   },
   petrified: {
     id: "petrified",
-    name: "Petrified",
-    description: "Transformed to stone; incapacitated; resists all damage; auto-fails STR/DEX saves; advantage to hit.",
+    name: "Pétrifié",
+    description: "Changé en pierre ; neutralisé ; résistance à tous les dégâts ; rate automatiquement les sauvegardes de FOR et DEX ; avantage pour le toucher.",
     modifiers: [
       { trigger: "incapacitated", effect: "true" },
       { trigger: "outgoing_save", saveStat: ["STR", "DEX"], effect: "auto_fail" },
@@ -84,8 +84,8 @@ export const CONDITIONS: Record<string, ConditionDefinition> = {
   },
   poisoned: {
     id: "poisoned",
-    name: "Poisoned",
-    description: "Disadvantage on attacks and ability checks.",
+    name: "Empoisonné",
+    description: "Désavantage aux attaques et aux tests de caractéristique.",
     modifiers: [
       { trigger: "outgoing_attack", effect: "disadvantage" },
       { trigger: "outgoing_check", effect: "disadvantage" },
@@ -93,8 +93,8 @@ export const CONDITIONS: Record<string, ConditionDefinition> = {
   },
   prone: {
     id: "prone",
-    name: "Prone",
-    description: "Disadvantage on attacks; melee against have advantage; ranged against have disadvantage.",
+    name: "À terre",
+    description: "Désavantage à ses attaques ; avantage aux attaques au contact contre lui ; désavantage aux attaques à distance contre lui.",
     modifiers: [
       { trigger: "outgoing_attack", effect: "disadvantage" },
       { trigger: "incoming_attack_within_5ft", effect: "advantage" },
@@ -104,8 +104,8 @@ export const CONDITIONS: Record<string, ConditionDefinition> = {
   },
   restrained: {
     id: "restrained",
-    name: "Restrained",
-    description: "Speed 0; disadvantage on attacks and DEX saves; attacks against have advantage.",
+    name: "Entravé",
+    description: "Vitesse 0 ; désavantage aux attaques et aux sauvegardes de DEX ; avantage aux attaques contre lui.",
     modifiers: [
       { trigger: "outgoing_attack", effect: "disadvantage" },
       { trigger: "outgoing_save", saveStat: ["DEX"], effect: "disadvantage" } as ConditionModifier,
@@ -114,8 +114,8 @@ export const CONDITIONS: Record<string, ConditionDefinition> = {
   },
   stunned: {
     id: "stunned",
-    name: "Stunned",
-    description: "Incapacitated; auto-fails STR & DEX saves; attacks against have advantage.",
+    name: "Étourdi",
+    description: "Neutralisé ; rate automatiquement les sauvegardes de FOR et DEX ; avantage aux attaques contre lui.",
     modifiers: [
       { trigger: "incapacitated", effect: "true" },
       { trigger: "outgoing_save", saveStat: ["STR", "DEX"], effect: "auto_fail" },
@@ -124,8 +124,8 @@ export const CONDITIONS: Record<string, ConditionDefinition> = {
   },
   unconscious: {
     id: "unconscious",
-    name: "Unconscious",
-    description: "Incapacitated; drops what's held; falls prone; auto-fails STR/DEX saves; advantage to hit; melee within 5ft is critical.",
+    name: "Inconscient",
+    description: "Neutralisé ; lâche ce qu’il tient ; tombe à terre ; rate automatiquement les sauvegardes de FOR et DEX ; avantage pour le toucher ; toute attaque au contact à 1,5 m est un critique.",
     modifiers: [
       { trigger: "incapacitated", effect: "true" },
       { trigger: "outgoing_save", saveStat: ["STR", "DEX"], effect: "auto_fail" },

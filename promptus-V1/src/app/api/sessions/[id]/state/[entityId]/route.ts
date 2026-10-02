@@ -58,7 +58,7 @@ export async function PATCH(
     }
 
     if (body.removeCondition) {
-      if (typeof body.removeCondition !== "string") badRequest("removeCondition must be a string id");
+      if (typeof body.removeCondition !== "string") badRequest("removeCondition doit être un identifiant (texte)");
       next = {
         ...next,
         conditions: (next.conditions ?? []).filter(

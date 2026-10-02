@@ -54,7 +54,7 @@ export async function POST(
     }
 
     if (rawList.length === 0) {
-      badRequest("No entities found in payload");
+      badRequest("Aucune fiche trouvée dans le contenu");
     }
 
     // Validate each entity individually with EntityInputSchema (without campaignId)
@@ -62,7 +62,7 @@ export async function POST(
     const validated = rawList.map((raw, idx) => {
       const r = inputSchema.safeParse(raw);
       if (!r.success) {
-        badRequest(`Entity #${idx + 1} invalid`, r.error.issues);
+        badRequest(`Fiche n°${idx + 1} invalide`, r.error.issues);
       }
       return r.data!;
     });

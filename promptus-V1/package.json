@@ -17,7 +17,6 @@
     "db:studio": "drizzle-kit studio",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "seed": "tsx scripts/seed.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "seed:audio": "tsx scripts/seed-audio.ts",
     "seed:all": "pnpm seed:audio && pnpm seed:demo"

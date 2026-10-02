@@ -15,7 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { STANDARD_CONDITIONS } from "@/lib/engine/catalog";
+import {
+  ENTITY_TYPE_LABELS,
+  STANDARD_CONDITIONS,
+  conditionLabel,
+} from "@/lib/engine/catalog";
 import { cn } from "@/lib/utils";
 import type { ParticipantView } from "@/lib/stores/session-store";
 
@@ -58,10 +62,10 @@ export function ParticipantCard({ sessionId, participant }: Props) {
           body: JSON.stringify(body),
         },
       );
-      if (!res.ok) throw new Error((await res.json()).error?.message ?? "Update failed");
+      if (!res.ok) throw new Error((await res.json()).error?.message ?? "Échec de la mise à jour");
       queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Update failed");
+      toast.error(e instanceof Error ? e.message : "Échec de la mise à jour");
     } finally {
       setBusy(false);
     }
@@ -98,7 +102,7 @@ export function ParticipantCard({ sessionId, participant }: Props) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold truncate">{ent?.name ?? participant.state.entityId}</h3>
-              <Badge variant="outline" className="capitalize text-xs">{ent?.type}</Badge>
+              <Badge variant="outline" className="text-xs">{ent ? ENTITY_TYPE_LABELS[ent.type] : null}</Badge>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
               <span className="inline-flex items-center gap-1">
@@ -130,7 +134,7 @@ export function ParticipantCard({ sessionId, participant }: Props) {
             variant="outline"
             onClick={() => patch({ hpDelta: -Number(hpInput || 1) })}
             disabled={busy}
-            aria-label="Damage"
+            aria-label="Dégâts"
           >
             <Minus className="size-4" />
           </Button>
@@ -146,11 +150,11 @@ export function ParticipantCard({ sessionId, participant }: Props) {
             variant="outline"
             onClick={() => patch({ hpDelta: Number(hpInput || 1) })}
             disabled={busy}
-            aria-label="Heal"
+            aria-label="Soins"
           >
             <Plus className="size-4" />
           </Button>
-          <span className="text-xs text-muted-foreground ml-1">HP</span>
+          <span className="text-xs text-muted-foreground ml-1">PV</span>
         </div>
 
         {/* Conditions */}
@@ -163,13 +167,13 @@ export function ParticipantCard({ sessionId, participant }: Props) {
                 className="text-xs gap-1"
                 data-testid={`condition-${c.conditionId}`}
               >
-                {c.conditionId}
-                {c.remainingRounds !== undefined ? ` (${c.remainingRounds}r)` : ""}
+                {conditionLabel(c.conditionId)}
+                {c.remainingRounds !== undefined ? ` (${c.remainingRounds} rd)` : ""}
                 <button
                   type="button"
                   onClick={() => patch({ removeCondition: c.conditionId })}
                   className="ml-1 hover:text-destructive-foreground/70"
-                  aria-label={`Remove ${c.conditionId}`}
+                  aria-label={`Retirer ${conditionLabel(c.conditionId)}`}
                 >
                   <X className="size-3" />
                 </button>
@@ -182,12 +186,12 @@ export function ParticipantCard({ sessionId, participant }: Props) {
         <div className="flex items-center gap-1 pt-1 border-t">
           <Select value={condId} onValueChange={setCondId}>
             <SelectTrigger className="h-8 flex-1 text-xs">
-              <SelectValue placeholder="Apply condition" />
+              <SelectValue placeholder="Appliquer un état" />
             </SelectTrigger>
             <SelectContent>
               {STANDARD_CONDITIONS.map((c) => (
                 <SelectItem key={c} value={c}>
-                  {c}
+                  {conditionLabel(c)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -196,7 +200,8 @@ export function ParticipantCard({ sessionId, participant }: Props) {
             type="number"
             value={condRounds}
             onChange={(e) => setCondRounds(e.target.value)}
-            placeholder="rds"
+            placeholder="rd"
+            aria-label="Durée en rounds"
             className="h-8 w-16"
           />
           <Button

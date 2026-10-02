@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ENTITY_TYPES, VISIBILITIES } from "@/lib/engine/catalog";
+import { ENTITY_TYPES, ENTITY_TYPE_LABELS, VISIBILITIES } from "@/lib/engine/catalog";
 import type { Effect, EntityType, Visibility } from "@/lib/engine/types";
 import { EffectBuilder } from "./effect-builder";
 import { TypeAttributes } from "./type-attributes";
@@ -82,7 +82,7 @@ export function EntityEditor({ campaignId, initial, mode }: Props) {
 
   async function save() {
     if (!state.name.trim()) {
-      toast.error("Name is required");
+      toast.error("Le nom est obligatoire");
       return;
     }
     setBusy(true);
@@ -104,25 +104,25 @@ export function EntityEditor({ campaignId, initial, mode }: Props) {
           headers: { "content-type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error((await res.json()).error?.message ?? "Save failed");
+        if (!res.ok) throw new Error((await res.json()).error?.message ?? "Échec de l’enregistrement");
         const data = await res.json();
-        toast.success(`Entity "${data.entity.name}" created`);
+        toast.success(`Fiche « ${data.entity.name} » créée`);
         router.push(`/campaigns/${campaignId}/entities`);
         router.refresh();
       } else {
-        if (!state.id) throw new Error("Missing entity id for edit");
+        if (!state.id) throw new Error("ID de fiche manquant");
         const res = await fetch(`/api/entities/${state.id}`, {
           method: "PATCH",
           headers: { "content-type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error((await res.json()).error?.message ?? "Save failed");
-        toast.success(`Entity "${state.name}" updated`);
+        if (!res.ok) throw new Error((await res.json()).error?.message ?? "Échec de l’enregistrement");
+        toast.success(`Fiche « ${state.name} » mise à jour`);
         router.push(`/campaigns/${campaignId}/entities`);
         router.refresh();
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Unknown error");
+      toast.error(e instanceof Error ? e.message : "Erreur inconnue");
     } finally {
       setBusy(false);
     }
@@ -133,12 +133,12 @@ export function EntityEditor({ campaignId, initial, mode }: Props) {
     setBusy(true);
     try {
       const res = await fetch(`/api/entities/${state.id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error((await res.json()).error?.message ?? "Delete failed");
-      toast.success(`Entity "${state.name}" deleted`);
+      if (!res.ok) throw new Error((await res.json()).error?.message ?? "Échec de la suppression");
+      toast.success(`Fiche « ${state.name} » supprimée`);
       router.push(`/campaigns/${campaignId}/entities`);
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Unknown error");
+      toast.error(e instanceof Error ? e.message : "Erreur inconnue");
     } finally {
       setBusy(false);
     }
@@ -149,7 +149,7 @@ export function EntityEditor({ campaignId, initial, mode }: Props) {
       {/* Base section */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Identity</CardTitle>
+          <CardTitle className="text-lg">Identité</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2">
@@ -176,7 +176,7 @@ export function EntityEditor({ campaignId, initial, mode }: Props) {
             </div>
             <div className="space-y-1">
               <Label htmlFor="ent-vis" className="text-xs uppercase tracking-wide text-muted-foreground">
-                Visibility
+                Visibilité
               </Label>
               <Select value={state.visibility} onValueChange={(v) => update("visibility", v as Visibility)}>
                 <SelectTrigger id="ent-vis">
@@ -193,13 +193,13 @@ export function EntityEditor({ campaignId, initial, mode }: Props) {
             </div>
             <div className="md:col-span-2 space-y-1">
               <Label htmlFor="ent-name" className="text-xs uppercase tracking-wide text-muted-foreground">
-                Name
+                Nom
               </Label>
               <Input
                 id="ent-name"
                 value={state.name}
                 onChange={(e) => update("name", e.target.value)}
-                placeholder="Fireball, Bortrand the Robust, The Forgotten Crypt…"
+                placeholder="Boule de feu, Bortrand le Robuste, La Crypte oubliée…"
                 autoFocus={mode === "create"}
                 required
               />
@@ -212,13 +212,13 @@ export function EntityEditor({ campaignId, initial, mode }: Props) {
                 id="ent-desc"
                 value={state.description}
                 onChange={(e) => update("description", e.target.value)}
-                placeholder="A short narrative description; players see this if visibility allows."
+                placeholder="Courte description narrative ; visible des joueurs si la visibilité le permet."
                 rows={3}
               />
             </div>
             <div className="md:col-span-2 space-y-1">
               <Label htmlFor="ent-tags" className="text-xs uppercase tracking-wide text-muted-foreground">
-                Tags (comma-separated)
+                Tags (séparés par des virgules)
               </Label>
               <Input
                 id="ent-tags"
@@ -232,13 +232,13 @@ export function EntityEditor({ campaignId, initial, mode }: Props) {
                       .filter(Boolean),
                   )
                 }
-                placeholder="evocation, fire, AoE, level 3"
+                placeholder="évocation, feu, zone, niveau 3"
               />
             </div>
             <div className="md:col-span-2 space-y-1">
               <div className="flex items-center justify-between">
                 <Label htmlFor="ent-img" className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Image URL (optional)
+                  URL de l’image (facultative)
                 </Label>
                 <GenerateImageButton
                   entityId={state.id ?? null}
@@ -250,7 +250,7 @@ export function EntityEditor({ campaignId, initial, mode }: Props) {
                 id="ent-img"
                 value={state.imageUrl}
                 onChange={(e) => update("imageUrl", e.target.value)}
-                placeholder="/generated-images/… or https://…"
+                placeholder="/generated-images/… ou https://…"
               />
               {state.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -268,7 +268,7 @@ export function EntityEditor({ campaignId, initial, mode }: Props) {
       {/* Type attributes */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg capitalize">{state.type} attributes</CardTitle>
+          <CardTitle className="text-lg">Attributs : {ENTITY_TYPE_LABELS[state.type]}</CardTitle>
         </CardHeader>
         <CardContent>
           <TypeAttributes
@@ -282,7 +282,7 @@ export function EntityEditor({ campaignId, initial, mode }: Props) {
       {/* Effects */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Effects</CardTitle>
+          <CardTitle className="text-lg">Effets</CardTitle>
         </CardHeader>
         <CardContent>
           <EffectBuilder value={state.effects} onChange={(next) => update("effects", next)} />
@@ -298,33 +298,33 @@ export function EntityEditor({ campaignId, initial, mode }: Props) {
           variant="outline"
           onClick={() => router.push(`/campaigns/${campaignId}/entities`)}
         >
-          Cancel
+          Annuler
         </Button>
         <div className="flex gap-2">
           {mode === "edit" && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button type="button" variant="destructive" disabled={busy}>
-                  Delete
+                  Supprimer
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Delete this entity?</AlertDialogTitle>
+                  <AlertDialogTitle>Supprimer cette fiche ?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. The entity “{state.name}” will be
-                    permanently removed from this campaign.
+                    Cette action est irréversible. La fiche « {state.name} » sera
+                    définitivement retirée de cette campagne.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={remove}>Delete</AlertDialogAction>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={remove}>Supprimer</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           )}
           <Button type="button" onClick={save} disabled={busy}>
-            {busy ? "Saving…" : mode === "create" ? "Create entity" : "Save changes"}
+            {busy ? "Enregistrement…" : mode === "create" ? "Créer la fiche" : "Enregistrer"}
           </Button>
         </div>
       </div>

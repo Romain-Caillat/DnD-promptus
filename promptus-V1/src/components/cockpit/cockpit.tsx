@@ -15,6 +15,7 @@ import { TimelineFeed } from "./timeline-feed";
 import { EntityPreview } from "./entity-preview";
 import { AudioControls } from "./audio-controls";
 import { AudioEffectListener } from "./audio-effect-listener";
+import { PHASE_LABELS } from "@/lib/engine/catalog";
 
 export function Cockpit({
   sessionId,
@@ -27,7 +28,7 @@ export function Cockpit({
     queryKey: ["session", sessionId],
     queryFn: async () => {
       const res = await fetch(`/api/sessions/${sessionId}`);
-      if (!res.ok) throw new Error("Failed to load session");
+      if (!res.ok) throw new Error("Impossible de charger la session");
       return res.json() as Promise<{
         session: SessionView;
         participants: ParticipantView[];
@@ -46,7 +47,7 @@ export function Cockpit({
       <div className="p-8 text-center">
         <p className="text-destructive">{(error as Error).message}</p>
         <Button asChild variant="outline" className="mt-4">
-          <Link href={`/campaigns/${campaignId}`}>Back to campaign</Link>
+          <Link href={`/campaigns/${campaignId}`}>Retour à la campagne</Link>
         </Button>
       </div>
     );
@@ -54,7 +55,7 @@ export function Cockpit({
 
   if (isLoading || !data) {
     return (
-      <div className="p-8 text-center text-muted-foreground">Loading session…</div>
+      <div className="p-8 text-center text-muted-foreground">Chargement de la session…</div>
     );
   }
 
@@ -74,17 +75,17 @@ export function Cockpit({
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
                 <Button asChild variant="ghost" size="sm" className="mb-1 -ml-2">
-                  <Link href={`/campaigns/${campaignId}`}>← Campaign</Link>
+                  <Link href={`/campaigns/${campaignId}`}>← Campagne</Link>
                 </Button>
                 <h1 className="text-2xl font-bold">{session.name}</h1>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                  <Badge variant="outline" className="capitalize" data-testid="phase-badge">
-                    {session.currentPhase}
+                  <Badge variant="outline" data-testid="phase-badge">
+                    {PHASE_LABELS[session.currentPhase]}
                   </Badge>
                   {session.combatRound > 0 ? (
                     <span>Round {session.combatRound}</span>
                   ) : (
-                    <span>Pre-combat</span>
+                    <span>Hors combat</span>
                   )}
                 </div>
               </div>
@@ -104,7 +105,7 @@ export function Cockpit({
           participants={participants}
         />
 
-        {/* Entity preview (reveal images on the table) */}
+        {/* Révélation d’images */}
         <EntityPreview campaignId={campaignId} />
 
         {/* Participants */}
@@ -112,7 +113,7 @@ export function Cockpit({
           {playerParticipants.length > 0 ? (
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                Player characters
+                Personnages joueurs
               </h2>
               <div className="grid gap-3 md:grid-cols-2">
                 {playerParticipants.map((p) => (
@@ -128,7 +129,7 @@ export function Cockpit({
           {adversaryParticipants.length > 0 ? (
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 mt-3">
-                Adversaries & NPCs
+                Adversaires et PNJ
               </h2>
               <div className="grid gap-3 md:grid-cols-2">
                 {adversaryParticipants.map((p) => (
@@ -143,7 +144,7 @@ export function Cockpit({
           ) : null}
           {participants.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">
-              No participants in this session.
+              Aucun participant dans cette session.
             </p>
           ) : null}
         </section>

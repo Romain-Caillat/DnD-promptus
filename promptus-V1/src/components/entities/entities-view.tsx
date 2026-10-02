@@ -8,20 +8,21 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { EntityType } from "@/lib/engine/types";
+import { ENTITY_TYPE_LABELS } from "@/lib/engine/catalog";
 import type { EntityRow } from "@/lib/db/schema";
 import { ImportYamlDialog } from "@/components/editor/import-yaml-dialog";
 import { ExportAllButton } from "@/components/editor/export-all-button";
 
 const TYPES: { id: "all" | EntityType; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "spell", label: "Spells" },
-  { id: "item", label: "Items" },
-  { id: "npc", label: "NPCs" },
-  { id: "monster", label: "Monsters" },
-  { id: "character", label: "Characters" },
-  { id: "location", label: "Locations" },
-  { id: "event", label: "Events" },
-  { id: "condition", label: "Conditions" },
+  { id: "all", label: "Toutes" },
+  { id: "spell", label: "Sorts" },
+  { id: "item", label: "Objets" },
+  { id: "npc", label: "PNJ" },
+  { id: "monster", label: "Monstres" },
+  { id: "character", label: "Personnages" },
+  { id: "location", label: "Lieux" },
+  { id: "event", label: "Événements" },
+  { id: "condition", label: "États" },
 ];
 
 export function EntitiesView({ campaignId }: { campaignId: string }) {
@@ -35,7 +36,7 @@ export function EntitiesView({ campaignId }: { campaignId: string }) {
           ? `/api/campaigns/${campaignId}/entities`
           : `/api/campaigns/${campaignId}/entities?type=${type}`;
       const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to load entities");
+      if (!res.ok) throw new Error("Impossible de charger les fiches");
       return res.json() as Promise<{ entities: EntityRow[] }>;
     },
   });
@@ -58,7 +59,7 @@ export function EntitiesView({ campaignId }: { campaignId: string }) {
           <ExportAllButton campaignId={campaignId} disabled={entities.length === 0} />
           <ImportYamlDialog campaignId={campaignId} />
           <Button asChild>
-            <Link href={`/campaigns/${campaignId}/entities/new`}>Create entity</Link>
+            <Link href={`/campaigns/${campaignId}/entities/new`}>Créer une fiche</Link>
           </Button>
         </div>
       </div>
@@ -72,13 +73,13 @@ export function EntitiesView({ campaignId }: { campaignId: string }) {
       ) : isLoading ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            Loading entities…
+            Chargement des fiches…
           </CardContent>
         </Card>
       ) : entities.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            No {type === "all" ? "entities" : `${type}s`} yet.
+            Aucune fiche{type === "all" ? "" : ` de type « ${ENTITY_TYPE_LABELS[type]} »`}.
           </CardContent>
         </Card>
       ) : (
@@ -93,8 +94,8 @@ export function EntitiesView({ campaignId }: { campaignId: string }) {
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-lg">{e.name}</CardTitle>
-                    <Badge variant="outline" className="capitalize">
-                      {e.type}
+                    <Badge variant="outline">
+                      {ENTITY_TYPE_LABELS[e.type]}
                     </Badge>
                   </div>
                   {e.description ? (

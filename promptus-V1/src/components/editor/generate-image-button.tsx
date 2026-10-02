@@ -30,8 +30,8 @@ export function GenerateImageButton({ entityId, defaultPrompt, onGenerated }: Pr
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   async function generate() {
-    if (!entityId) return toast.error("Save the entity first to generate an image");
-    if (!prompt.trim()) return toast.error("Prompt cannot be empty");
+    if (!entityId) return toast.error("Enregistrez d’abord la fiche pour générer une image");
+    if (!prompt.trim()) return toast.error("Le prompt ne peut pas être vide");
     setBusy(true);
     try {
       const res = await fetch(`/api/ai/image`, {
@@ -41,13 +41,13 @@ export function GenerateImageButton({ entityId, defaultPrompt, onGenerated }: Pr
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error?.message ?? "Generation failed");
+        throw new Error(data.error?.message ?? "Échec de la génération");
       }
       setPreviewUrl(data.result.url);
       onGenerated(data.result.url);
-      toast.success(`Image generated (${data.result.latencyMs}ms)`);
+      toast.success(`Image générée (${data.result.latencyMs} ms)`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Generation failed");
+      toast.error(e instanceof Error ? e.message : "Échec de la génération");
     } finally {
       setBusy(false);
     }
@@ -66,17 +66,17 @@ export function GenerateImageButton({ entityId, defaultPrompt, onGenerated }: Pr
           variant="outline"
           size="sm"
           disabled={!entityId}
-          title={!entityId ? "Save the entity first" : undefined}
+          title={!entityId ? "Enregistrez d’abord la fiche" : undefined}
         >
-          <Sparkles className="size-4" /> Generate
+          <Sparkles className="size-4" /> Générer
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Generate image</DialogTitle>
+          <DialogTitle>Générer une image</DialogTitle>
           <DialogDescription>
-            Edit the prompt if you want a more specific composition. The campaign
-            style guide is already factored into the default prompt.
+            Modifiez le prompt pour une composition plus précise. Le guide de style
+            de la campagne est déjà intégré au prompt par défaut.
           </DialogDescription>
         </DialogHeader>
 
@@ -94,11 +94,11 @@ export function GenerateImageButton({ entityId, defaultPrompt, onGenerated }: Pr
 
           {previewUrl ? (
             <div className="space-y-1">
-              <Label className="text-xs uppercase">Preview</Label>
+              <Label className="text-xs uppercase">Aperçu</Label>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={previewUrl}
-                alt="Generated"
+                alt="Image générée"
                 className="rounded border w-full max-h-96 object-contain bg-black/30"
               />
             </div>
@@ -109,13 +109,13 @@ export function GenerateImageButton({ entityId, defaultPrompt, onGenerated }: Pr
           {previewUrl ? (
             <>
               <Button variant="outline" onClick={generate} disabled={busy}>
-                Regenerate
+                Régénérer
               </Button>
-              <Button onClick={close}>Use this image</Button>
+              <Button onClick={close}>Utiliser cette image</Button>
             </>
           ) : (
             <Button onClick={generate} disabled={busy}>
-              {busy ? "Generating…" : "Generate"}
+              {busy ? "Génération…" : "Générer"}
             </Button>
           )}
         </DialogFooter>

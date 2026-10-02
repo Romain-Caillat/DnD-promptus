@@ -88,13 +88,13 @@ export async function POST(
     } else if (action.kind === "cast_spell") {
       const spell = ent_by_id.get(action.spellEntityId);
       if (!spell || spell.type !== "spell") {
-        badRequest(`Spell ${action.spellEntityId} not found`);
+        badRequest(`Sort ${action.spellEntityId} introuvable`);
       }
       const result = await resolveEffects(spell!.effects as Effect[], ctx);
       records = result.records;
     } else if (action.kind === "apply_entity_effects") {
       const ent = ent_by_id.get(action.entityId);
-      if (!ent) badRequest(`Entity ${action.entityId} not found`);
+      if (!ent) badRequest(`Fiche ${action.entityId} introuvable`);
       const result = await resolveEffects(ent!.effects as Effect[], ctx);
       records = result.records;
     } else if (action.kind === "raw_effects") {

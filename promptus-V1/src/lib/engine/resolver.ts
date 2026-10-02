@@ -2,6 +2,13 @@
 // The runner returns a list of ResolutionRecords plus the mutations to apply.
 // The DB persistence is handled by the API route.
 
+import {
+  DAMAGE_TYPE_LABELS,
+  RESOURCE_LABELS,
+  STAT_LABELS,
+  conditionLabel,
+} from "./catalog";
+
 import type {
   ActiveCondition,
   AppliedMutation,
@@ -138,11 +145,11 @@ async function resolveEffect(
     case "remove_from_inventory":
       return [resolveRemoveFromInventory(effect, ctx)];
     case "play_ambience":
-      return [annotation(effect, `🔊 Ambience: ${effect.ambienceId}`)];
+      return [annotation(effect, `🔊 Ambiance : ${effect.ambienceId}`)];
     case "play_music":
-      return [annotation(effect, `🎵 Music: ${effect.musicId}`)];
+      return [annotation(effect, `🎵 Musique : ${effect.musicId}`)];
     case "play_sound":
-      return [annotation(effect, `🔔 Sound: ${effect.soundId}`)];
+      return [annotation(effect, `🔔 Bruitage : ${effect.soundId}`)];
     case "display_image":
       return [resolveDisplayImage(effect)];
     case "display_text":
@@ -179,6 +186,10 @@ function resolveTargets(target: TargetSpec, ctx: ResolverContext): string[] {
     default:
       return [];
   }
+}
+
+function statLabel(stat: string): string {
+  return (STAT_LABELS as Record<string, string>)[stat] ?? stat;
 }
 
 function nameOf(ctx: ResolverContext, id: string): string {
@@ -228,8 +239,8 @@ function resolveDamage(effect: DamageEffect, ctx: ResolverContext): ResolutionRe
 
   const totalDamage = rolls.reduce((sum, r) => sum + r.result, 0);
   const description = targets.length
-    ? `${ctx.caster?.name ?? "Source"} deals ${totalDamage} ${effect.damageType} damage to ${targets.map((t) => nameOf(ctx, t)).join(", ")}`
-    : `${ctx.caster?.name ?? "Source"} deals damage (no targets)`;
+    ? `${ctx.caster?.name ?? "Source"} inflige ${totalDamage} dégâts de ${DAMAGE_TYPE_LABELS[effect.damageType] ?? effect.damageType} à ${targets.map((t) => nameOf(ctx, t)).join(", ")}`
+    : `${ctx.caster?.name ?? "Source"} inflige des dégâts (aucune cible)`;
 
   return {
     effect,
@@ -262,7 +273,7 @@ function resolveHeal(effect: HealEffect, ctx: ResolverContext): ResolutionRecord
     rolls,
     outcome: "success",
     applied,
-    description: `${ctx.caster?.name ?? "Source"} heals ${targets.map((t) => nameOf(ctx, t)).join(", ")} for ${rolls.reduce((s, r) => s + r.result, 0)}`,
+    description: `${ctx.caster?.name ?? "Source"} soigne ${targets.map((t) => nameOf(ctx, t)).join(", ")} de ${rolls.reduce((s, r) => s + r.result, 0)} PV`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -300,7 +311,7 @@ function resolveApplyCondition(
     rolls: [],
     outcome: "success",
     applied,
-    description: `${ctx.caster?.name ?? "Source"} applies ${effect.conditionId} to ${targets.map((t) => nameOf(ctx, t)).join(", ")}${effect.duration?.rounds ? ` for ${effect.duration.rounds}r` : ""}`,
+    description: `${ctx.caster?.name ?? "Source"} applique « ${conditionLabel(effect.conditionId)} » à ${targets.map((t) => nameOf(ctx, t)).join(", ")}${effect.duration?.rounds ? ` pendant ${effect.duration.rounds} round(s)` : ""}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -329,7 +340,7 @@ function resolveRemoveCondition(
     rolls: [],
     outcome: applied.length ? "success" : "none",
     applied,
-    description: `Remove ${effect.conditionId} from ${targets.map((t) => nameOf(ctx, t)).join(", ") || "(no one)"}`,
+    description: `Retire « ${conditionLabel(effect.conditionId)} » de ${targets.map((t) => nameOf(ctx, t)).join(", ") || "(personne)"}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -351,7 +362,7 @@ function resolveModifyStat(effect: ModifyStatEffect, ctx: ResolverContext): Reso
     rolls: [],
     outcome: "success",
     applied,
-    description: `${ctx.caster?.name ?? "Source"} modifies ${effect.stat} by ${effect.modifier} on ${targets.map((t) => nameOf(ctx, t)).join(", ")}`,
+    description: `${ctx.caster?.name ?? "Source"} modifie ${statLabel(effect.stat)} de ${effect.modifier > 0 ? "+" : ""}${effect.modifier} sur ${targets.map((t) => nameOf(ctx, t)).join(", ")}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -370,7 +381,7 @@ async function resolveRollCheck(
         rolls: [],
         outcome: "none",
         applied: [],
-        description: `Roll ${effect.stat} check (no targets)`,
+        description: `Jet de ${statLabel(effect.stat)} (aucune cible)`,
         timestamp: new Date().toISOString(),
       },
     ];
@@ -408,7 +419,7 @@ async function resolveRollCheck(
       outcome = roll.result >= dc ? "success" : "fail";
     }
 
-    const description = `${nameOf(ctx, tid)} rolls ${effect.stat} save vs DC ${dc}: ${roll.notation} = ${roll.result} → ${outcome}`;
+    const description = `${nameOf(ctx, tid)} fait un jet de sauvegarde de ${statLabel(effect.stat)} DD ${dc} : ${roll.notation} = ${roll.result} → ${outcome === "success" ? "réussite" : "échec"}`;
     const subEffects = outcome === "success" ? effect.outcomeSuccess ?? [] : effect.outcomeFail ?? [];
     const sub = subEffects.length
       ? await resolveEffects(subEffects, {
@@ -455,7 +466,7 @@ function resolveConsumeResource(
     rolls: [],
     outcome: "success",
     applied,
-    description: `${ctx.caster?.name ?? "Source"} consumes ${effect.amount} ${effect.resource}${effect.level ? ` lvl ${effect.level}` : ""}`,
+    description: `${ctx.caster?.name ?? "Source"} consomme ${effect.amount} × ${RESOURCE_LABELS[effect.resource] ?? effect.resource}${effect.level ? ` niv. ${effect.level}` : ""}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -484,7 +495,7 @@ function resolveRestoreResource(
     rolls: [],
     outcome: "success",
     applied,
-    description: `${ctx.caster?.name ?? "Source"} restores ${effect.amount} ${effect.resource}`,
+    description: `${ctx.caster?.name ?? "Source"} récupère ${effect.amount} × ${RESOURCE_LABELS[effect.resource] ?? effect.resource}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -513,7 +524,7 @@ function resolveMoveEntity(effect: MoveEntityEffect, ctx: ResolverContext): Reso
     rolls: [],
     outcome: "success",
     applied: [{ entityId: effect.entityId, field: "position.locationId", before, after: effect.toLocationId }],
-    description: `${nameOf(ctx, effect.entityId)} moved to ${nameOf(ctx, effect.toLocationId)}`,
+    description: `${nameOf(ctx, effect.entityId)} se déplace vers ${nameOf(ctx, effect.toLocationId)}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -526,29 +537,29 @@ function resolveRevealEntity(effect: RevealEntityEffect, ctx: ResolverContext): 
     rolls: [],
     outcome: "success",
     applied: [{ entityId: effect.entityId, field: "visible", before: false, after: true }],
-    description: `Reveal ${nameOf(ctx, effect.entityId)}`,
+    description: `Révèle ${nameOf(ctx, effect.entityId)}`,
     timestamp: new Date().toISOString(),
   };
 }
 
-function resolveSetRelation(effect: SetRelationEffect, _ctx: ResolverContext): ResolutionRecord {
+function resolveSetRelation(effect: SetRelationEffect, ctx: ResolverContext): ResolutionRecord {
   return {
     effect,
     rolls: [],
     outcome: "success",
     applied: [],
-    description: `Relation ${effect.fromId} → ${effect.toId}: ${effect.delta > 0 ? "+" : ""}${effect.delta}${effect.disposition ? ` (${effect.disposition})` : ""}`,
+    description: `Relation ${nameOf(ctx, effect.fromId)} → ${nameOf(ctx, effect.toId)} : ${effect.delta > 0 ? "+" : ""}${effect.delta}${effect.disposition ? ` (${effect.disposition})` : ""}`,
     timestamp: new Date().toISOString(),
   };
 }
 
-function resolveTriggerEvent(effect: TriggerEventEffect, _ctx: ResolverContext): ResolutionRecord {
+function resolveTriggerEvent(effect: TriggerEventEffect, ctx: ResolverContext): ResolutionRecord {
   return {
     effect,
     rolls: [],
     outcome: "success",
     applied: [],
-    description: `Trigger event ${effect.eventId}`,
+    description: `Déclenche l’événement ${nameOf(ctx, effect.eventId)}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -571,7 +582,7 @@ function resolveAddToInventory(effect: AddToInventoryEffect, ctx: ResolverContex
     rolls: [],
     outcome: "success",
     applied,
-    description: `${effect.itemId} → ${targets.map((t) => nameOf(ctx, t)).join(", ")}`,
+    description: `${nameOf(ctx, effect.itemId)} → ${targets.map((t) => nameOf(ctx, t)).join(", ")}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -603,7 +614,7 @@ function resolveRemoveFromInventory(
     rolls: [],
     outcome: "success",
     applied,
-    description: `Remove ${effect.itemId} from ${targets.map((t) => nameOf(ctx, t)).join(", ")}`,
+    description: `Retire ${nameOf(ctx, effect.itemId)} de ${targets.map((t) => nameOf(ctx, t)).join(", ")}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -614,7 +625,7 @@ function resolveDisplayImage(effect: DisplayImageEffect): ResolutionRecord {
     rolls: [],
     outcome: "none",
     applied: [],
-    description: `🖼 Display image${effect.prompt ? `: "${effect.prompt}"` : effect.imageId ? ` (${effect.imageId})` : ""}`,
+    description: `🖼 Affiche une image${effect.prompt ? ` : « ${effect.prompt} »` : effect.imageId ? ` (${effect.imageId})` : ""}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -685,7 +696,7 @@ export function resolveAttack(
       rolls: [roll],
       outcome: hit ? "success" : "fail",
       applied: [],
-      description: `${attacker?.name ?? "Attacker"} attacks ${target?.name ?? tid}: ${roll.notation} = ${roll.result} vs AC ${ac} → ${isCritical ? "CRITICAL" : hit ? "hit" : "miss"}`,
+      description: `${attacker?.name ?? "Attaquant"} attaque ${target?.name ?? tid} : ${roll.notation} = ${roll.result} contre CA ${ac} → ${isCritical ? "CRITIQUE" : hit ? "touché" : "raté"}`,
       timestamp: new Date().toISOString(),
     });
 
@@ -710,7 +721,7 @@ export function resolveAttack(
         rolls: [damage],
         outcome: "success",
         applied: [{ entityId: tid, field: "hp", before, after }],
-        description: `${attacker?.name ?? "Attacker"} deals ${damage.result} ${input.damageType} damage to ${target?.name ?? tid} (HP ${before}→${after})`,
+        description: `${attacker?.name ?? "Attaquant"} inflige ${damage.result} dégâts de ${DAMAGE_TYPE_LABELS[input.damageType] ?? input.damageType} à ${target?.name ?? tid} (PV ${before}→${after})`,
         timestamp: new Date().toISOString(),
       });
     }
@@ -725,7 +736,7 @@ function doubleDamage(notation: string, rng: Rng): RollDetail {
   const a = rollDice(notation, { rng });
   const b = rollDice(notation, { rng });
   return {
-    notation: `${notation} (crit)`,
+    notation: `${notation} (critique)`,
     result: a.result + (b.result - (a.modifier ?? 0)),
     rolls: [...(a.rolls ?? []), ...(b.rolls ?? [])],
     modifier: a.modifier,

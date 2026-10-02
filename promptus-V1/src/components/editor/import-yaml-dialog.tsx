@@ -20,16 +20,16 @@ import { Label } from "@/components/ui/label";
 const SAMPLE = `# Paste a single entity, multiple YAML docs separated by ---,
 # or { entities: [...] } in one doc.
 type: spell
-name: Magic Missile
-description: Three darts of force strike unerringly.
+name: Projectile magique
+description: Trois fléchettes de force frappent sans jamais manquer.
 tags: [evocation, force, level 1]
 attributes:
   level: 1
   school: evocation
   castingTime: 1 action
-  range: 120 ft
+  range: 36 m
   components: [V, S]
-  duration: instantaneous
+  duration: instantanée
 effects:
   - type: consume_resource
     resource: spell_slot
@@ -60,7 +60,7 @@ export function ImportYamlDialog({ campaignId }: { campaignId: string }) {
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
     if (!/\.(yaml|yml|txt)$/i.test(file.name)) {
-      toast.error("Drop a .yaml or .yml file");
+      toast.error("Déposez un fichier .yaml ou .yml");
       return;
     }
     const content = await file.text();
@@ -74,7 +74,7 @@ export function ImportYamlDialog({ campaignId }: { campaignId: string }) {
 
   async function submit() {
     if (!text.trim()) {
-      toast.error("Paste or drop YAML first");
+      toast.error("Collez ou déposez du YAML d’abord");
       return;
     }
     setBusy(true);
@@ -89,15 +89,15 @@ export function ImportYamlDialog({ campaignId }: { campaignId: string }) {
         const detail = data.error?.details
           ? JSON.stringify(data.error.details).slice(0, 200)
           : "";
-        throw new Error(`${data.error?.message ?? "Import failed"}${detail ? ` — ${detail}` : ""}`);
+        throw new Error(`${data.error?.message ?? "Échec de l’import"}${detail ? ` — ${detail}` : ""}`);
       }
-      toast.success(`Imported ${data.imported} entities`);
+      toast.success(`${data.imported} fiche(s) importée(s)`);
       setOpen(false);
       setText("");
       queryClient.invalidateQueries({ queryKey: ["entities", campaignId] });
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Unknown error");
+      toast.error(e instanceof Error ? e.message : "Erreur inconnue");
     } finally {
       setBusy(false);
     }
@@ -106,15 +106,15 @@ export function ImportYamlDialog({ campaignId }: { campaignId: string }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Import YAML</Button>
+        <Button variant="outline">Importer du YAML</Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Import entities from YAML</DialogTitle>
+          <DialogTitle>Importer des fiches en YAML</DialogTitle>
           <DialogDescription>
-            Paste YAML or drop a .yaml file. Multiple entities are supported with
-            <code className="mx-1 px-1 rounded bg-muted">---</code> separators or by
-            using a top-level <code className="mx-1 px-1 rounded bg-muted">entities:</code> array.
+            Collez du YAML ou déposez un fichier .yaml. Plusieurs fiches sont acceptées, séparées par
+            <code className="mx-1 px-1 rounded bg-muted">---</code> ou regroupées dans un tableau
+            <code className="mx-1 px-1 rounded bg-muted">entities:</code> à la racine.
           </DialogDescription>
         </DialogHeader>
 
@@ -126,7 +126,7 @@ export function ImportYamlDialog({ campaignId }: { campaignId: string }) {
             className="rounded border border-dashed p-2"
           >
             <Label htmlFor="yaml-input" className="text-xs uppercase tracking-wide text-muted-foreground">
-              YAML content (drop a file here or paste below)
+              Contenu YAML (déposez un fichier ici ou collez ci-dessous)
             </Label>
             <Textarea
               id="yaml-input"
@@ -141,10 +141,10 @@ export function ImportYamlDialog({ campaignId }: { campaignId: string }) {
 
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => setText(SAMPLE)}>
-            Insert sample
+            Insérer un exemple
           </Button>
           <Button type="button" onClick={submit} disabled={busy}>
-            {busy ? "Importing…" : "Import"}
+            {busy ? "Import…" : "Importer"}
           </Button>
         </DialogFooter>
       </DialogContent>

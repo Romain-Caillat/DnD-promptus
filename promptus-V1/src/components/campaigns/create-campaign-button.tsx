@@ -26,7 +26,7 @@ export function CreateCampaignButton() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      toast.error("Campaign name is required");
+      toast.error("Le nom de la campagne est obligatoire");
       return;
     }
     setBusy(true);
@@ -38,17 +38,17 @@ export function CreateCampaignButton() {
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error?.message ?? "Creation failed");
+        throw new Error(err.error?.message ?? "Échec de la création");
       }
       const data = await res.json();
-      toast.success(`Campaign "${data.campaign.name}" created`);
+      toast.success(`Campagne « ${data.campaign.name} » créée`);
       setOpen(false);
       setName("");
       setDescription("");
       router.refresh();
       router.push(`/campaigns/${data.campaign.id}/entities`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Unknown error");
+      toast.error(e instanceof Error ? e.message : "Erreur inconnue");
     } finally {
       setBusy(false);
     }
@@ -57,37 +57,37 @@ export function CreateCampaignButton() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>New campaign</Button>
+        <Button>Nouvelle campagne</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create a campaign</DialogTitle>
+          <DialogTitle>Créer une campagne</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="campaign-name">Name</Label>
+            <Label htmlFor="campaign-name">Nom</Label>
             <Input
               id="campaign-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. The Lost Crown"
+              placeholder="ex. La Couronne perdue"
               autoFocus
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="campaign-description">Description (optional)</Label>
+            <Label htmlFor="campaign-description">Description (facultative)</Label>
             <Textarea
               id="campaign-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="A short pitch for this saga..."
+              placeholder="Le pitch de cette saga…"
               rows={3}
             />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={busy}>
-              {busy ? "Creating..." : "Create"}
+              {busy ? "Création…" : "Créer"}
             </Button>
           </DialogFooter>
         </form>

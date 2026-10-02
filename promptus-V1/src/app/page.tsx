@@ -8,36 +8,36 @@ export default function HomePage() {
       <div className="max-w-3xl text-center space-y-6">
         <h1 className="text-5xl font-bold tracking-tight">Promptus</h1>
         <p className="text-xl text-muted-foreground italic">
-          The stage is set. Let the session begin.
+          La scène est prête. Que la partie commence.
         </p>
         <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-          A narrative game engine for tabletop RPGs — your stage director for
-          preparation, atmosphere, combat resolution and shared memory.
+          Un moteur de jeu narratif pour le jeu de rôle — votre régisseur pour la
+          préparation, l’ambiance, la résolution des combats et la mémoire de campagne.
         </p>
       </div>
 
       <div className="mt-12 grid gap-4 md:grid-cols-3 max-w-5xl w-full">
         <Card>
           <CardHeader>
-            <CardTitle>Preparation</CardTitle>
+            <CardTitle>Préparation</CardTitle>
             <CardDescription>
-              Declare entities, import YAML, generate visuals.
+              Créer les fiches, importer du YAML, générer les visuels.
             </CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Live session</CardTitle>
+            <CardTitle>Partie en direct</CardTitle>
             <CardDescription>
-              Cockpit by phase, automatic combat resolution, world state tracking.
+              Poste de pilotage du MJ, résolution automatique des combats, suivi de l’état du monde.
             </CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Atmosphere</CardTitle>
+            <CardTitle>Ambiance</CardTitle>
             <CardDescription>
-              Sound and image cues to amplify the narrative without stealing it.
+              Sons et images pour porter le récit sans le voler.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -45,7 +45,7 @@ export default function HomePage() {
 
       <div className="mt-12">
         <Button asChild size="lg">
-          <Link href="/campaigns">Enter the studio</Link>
+          <Link href="/campaigns">Entrer dans l’atelier</Link>
         </Button>
       </div>
     </main>

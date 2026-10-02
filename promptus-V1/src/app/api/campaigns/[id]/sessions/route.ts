@@ -58,7 +58,7 @@ export async function POST(
       .where(inArray(entities.id, input.participantEntityIds));
 
     if (participants.length !== input.participantEntityIds.length) {
-      badRequest("Some participant entities were not found");
+      badRequest("Certains participants sont introuvables");
     }
 
     const sessionId = generateId("ses");

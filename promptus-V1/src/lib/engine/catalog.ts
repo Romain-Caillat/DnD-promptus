@@ -11,22 +11,22 @@ import type {
 } from "./types";
 
 export const ENTITY_TYPES: { id: EntityType; label: string }[] = [
-  { id: "spell", label: "Spell" },
-  { id: "item", label: "Item" },
-  { id: "npc", label: "NPC" },
-  { id: "monster", label: "Monster" },
-  { id: "character", label: "Character" },
-  { id: "location", label: "Location" },
-  { id: "event", label: "Event" },
-  { id: "condition", label: "Condition" },
+  { id: "spell", label: "Sort" },
+  { id: "item", label: "Objet" },
+  { id: "npc", label: "PNJ" },
+  { id: "monster", label: "Monstre" },
+  { id: "character", label: "Personnage" },
+  { id: "location", label: "Lieu" },
+  { id: "event", label: "Événement" },
+  { id: "condition", label: "État" },
   { id: "faction", label: "Faction" },
 ];
 
 export const VISIBILITIES: { id: Visibility; label: string }[] = [
-  { id: "public", label: "Public (everyone)" },
-  { id: "mj_only", label: "GM only" },
-  { id: "players_in_session", label: "Players in session" },
-  { id: "specific_users", label: "Specific users" },
+  { id: "public", label: "Public (tout le monde)" },
+  { id: "mj_only", label: "MJ uniquement" },
+  { id: "players_in_session", label: "Joueurs de la session" },
+  { id: "specific_users", label: "Utilisateurs choisis" },
 ];
 
 export const STATS: Stat[] = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
@@ -92,38 +92,145 @@ export type StandardConditionId = (typeof STANDARD_CONDITIONS)[number];
 // 20 primitive effect kinds + label + category
 export const EFFECT_KINDS = [
   // Combat
-  { id: "damage", label: "Inflict damage", category: "combat" },
-  { id: "heal", label: "Heal", category: "combat" },
-  { id: "apply_condition", label: "Apply condition", category: "combat" },
-  { id: "remove_condition", label: "Remove condition", category: "combat" },
-  { id: "modify_stat", label: "Modify stat", category: "combat" },
-  { id: "roll_check", label: "Roll check / saving throw", category: "combat" },
-  { id: "consume_resource", label: "Consume resource", category: "combat" },
-  { id: "restore_resource", label: "Restore resource", category: "combat" },
+  { id: "damage", label: "Infliger des dégâts", category: "combat" },
+  { id: "heal", label: "Soigner", category: "combat" },
+  { id: "apply_condition", label: "Appliquer un état", category: "combat" },
+  { id: "remove_condition", label: "Retirer un état", category: "combat" },
+  { id: "modify_stat", label: "Modifier une statistique", category: "combat" },
+  { id: "roll_check", label: "Jet de caractéristique / sauvegarde", category: "combat" },
+  { id: "consume_resource", label: "Consommer une ressource", category: "combat" },
+  { id: "restore_resource", label: "Restaurer une ressource", category: "combat" },
   // Narration
-  { id: "set_state", label: "Set entity state", category: "narration" },
-  { id: "move_entity", label: "Move entity to location", category: "narration" },
-  { id: "reveal_entity", label: "Reveal entity", category: "narration" },
-  { id: "set_relation", label: "Adjust relation", category: "narration" },
-  { id: "trigger_event", label: "Trigger event", category: "narration" },
-  { id: "add_to_inventory", label: "Add to inventory", category: "narration" },
-  { id: "remove_from_inventory", label: "Remove from inventory", category: "narration" },
+  { id: "set_state", label: "Modifier l’état d’une fiche", category: "narration" },
+  { id: "move_entity", label: "Déplacer vers un lieu", category: "narration" },
+  { id: "reveal_entity", label: "Révéler une fiche", category: "narration" },
+  { id: "set_relation", label: "Ajuster une relation", category: "narration" },
+  { id: "trigger_event", label: "Déclencher un événement", category: "narration" },
+  { id: "add_to_inventory", label: "Ajouter à l’inventaire", category: "narration" },
+  { id: "remove_from_inventory", label: "Retirer de l’inventaire", category: "narration" },
   // Sensory
-  { id: "play_ambience", label: "Play ambience", category: "sensory" },
-  { id: "play_music", label: "Play music", category: "sensory" },
-  { id: "play_sound", label: "Play sound effect", category: "sensory" },
-  { id: "display_image", label: "Display image", category: "sensory" },
-  { id: "display_text", label: "Display text", category: "sensory" },
+  { id: "play_ambience", label: "Jouer une ambiance", category: "sensory" },
+  { id: "play_music", label: "Jouer une musique", category: "sensory" },
+  { id: "play_sound", label: "Jouer un bruitage", category: "sensory" },
+  { id: "display_image", label: "Afficher une image", category: "sensory" },
+  { id: "display_text", label: "Afficher un texte", category: "sensory" },
 ] as const;
 
 export type EffectKindId = (typeof EFFECT_KINDS)[number]["id"];
 
 export const TARGET_KINDS = [
-  { id: "self", label: "Self (the activator)" },
-  { id: "caster", label: "Caster" },
-  { id: "single", label: "A single target" },
-  { id: "multiple", label: "Several targets" },
-  { id: "all_in_area", label: "All in area" },
-  { id: "all_players", label: "All players" },
-  { id: "all_enemies", label: "All enemies" },
+  { id: "self", label: "Soi-même (l’activateur)" },
+  { id: "caster", label: "Lanceur" },
+  { id: "single", label: "Une cible" },
+  { id: "multiple", label: "Plusieurs cibles" },
+  { id: "all_in_area", label: "Tous dans la zone" },
+  { id: "all_players", label: "Tous les joueurs" },
+  { id: "all_enemies", label: "Tous les ennemis" },
 ] as const;
+
+// ----------------------------------------------------------------------------
+// Libellés français des identifiants internes (les IDs restent en anglais).
+// ----------------------------------------------------------------------------
+
+export const ENTITY_TYPE_LABELS: Record<EntityType, string> = Object.fromEntries(
+  ENTITY_TYPES.map((t) => [t.id, t.label]),
+) as Record<EntityType, string>;
+
+export const STAT_LABELS: Record<Stat, string> = {
+  STR: "FOR",
+  DEX: "DEX",
+  CON: "CON",
+  INT: "INT",
+  WIS: "SAG",
+  CHA: "CHA",
+};
+
+export const DAMAGE_TYPE_LABELS: Record<DamageType, string> = {
+  slashing: "tranchant",
+  piercing: "perforant",
+  bludgeoning: "contondant",
+  fire: "feu",
+  cold: "froid",
+  lightning: "foudre",
+  thunder: "tonnerre",
+  acid: "acide",
+  poison: "poison",
+  psychic: "psychique",
+  necrotic: "nécrotique",
+  radiant: "radiant",
+  force: "force",
+};
+
+export const RESOURCE_LABELS: Record<ResourceKind, string> = {
+  spell_slot: "emplacement de sort",
+  ki: "ki",
+  rage: "rage",
+  sorcery_point: "point de sorcellerie",
+  bardic_inspiration: "inspiration bardique",
+  channel_divinity: "conduit divin",
+  action_surge: "fougue",
+  second_wind: "second souffle",
+  custom: "personnalisée",
+};
+
+export const SCHOOL_LABELS: Record<string, string> = {
+  abjuration: "abjuration",
+  conjuration: "invocation",
+  divination: "divination",
+  enchantment: "enchantement",
+  evocation: "évocation",
+  illusion: "illusion",
+  necromancy: "nécromancie",
+  transmutation: "transmutation",
+};
+
+export const CONDITION_LABELS: Record<StandardConditionId, string> = {
+  blinded: "aveuglé",
+  charmed: "charmé",
+  deafened: "assourdi",
+  frightened: "effrayé",
+  grappled: "agrippé",
+  incapacitated: "neutralisé",
+  invisible: "invisible",
+  paralyzed: "paralysé",
+  petrified: "pétrifié",
+  poisoned: "empoisonné",
+  prone: "à terre",
+  restrained: "entravé",
+  stunned: "étourdi",
+  unconscious: "inconscient",
+};
+
+export type PhaseId = "exploration" | "combat" | "dialogue" | "travel" | "rest";
+
+export const PHASE_LABELS: Record<PhaseId, string> = {
+  exploration: "Exploration",
+  combat: "Combat",
+  dialogue: "Dialogue",
+  travel: "Voyage",
+  rest: "Repos",
+};
+
+export const AUDIO_TYPE_LABELS: Record<"ambience" | "music" | "sound", string> = {
+  ambience: "Ambiance",
+  music: "Musique",
+  sound: "Bruitage",
+};
+
+export const EFFECT_CATEGORY_LABELS: Record<"combat" | "narration" | "sensory", string> = {
+  combat: "Combat",
+  narration: "Narration",
+  sensory: "Sensoriel",
+};
+
+/** Libellé d'un état : catalogue standard, sinon l'ID brut. */
+export function conditionLabel(id: string): string {
+  return (CONDITION_LABELS as Record<string, string>)[id] ?? id;
+}
+
+export const OUTCOME_LABELS: Record<"success" | "fail" | "partial" | "none", string> = {
+  success: "réussite",
+  fail: "échec",
+  partial: "partiel",
+  none: "info",
+};

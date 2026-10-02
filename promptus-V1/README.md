@@ -45,10 +45,12 @@ docker compose up -d           # Postgres on :5433
 cp .env.example .env.local
 pnpm db:migrate                # apply schema
 pnpm seed:all                  # audio catalog + demo campaign
+pnpm test                      # unit tests (no DB)
+pnpm test:integration          # DB-backed tests (needs Postgres)
 pnpm dev                        # http://localhost:3000
 ```
 
-Open `/campaigns` to see "The Goblin Dungeon — Demo" with 4 PCs, 15 spells,
+Open `/campaigns` to see "Le Donjon des gobelins (démo)" with 4 PCs, 15 spells,
 10 monsters, 10 items, 5 locations, 4 NPCs.
 
 ### Optional: AI image generation

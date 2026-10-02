@@ -12,8 +12,8 @@ const PHASES: { id: Phase; label: string; icon: typeof Swords; accent: string }[
   { id: "exploration", label: "Exploration", icon: Map, accent: "from-emerald-500/30 to-emerald-700/30 border-emerald-600" },
   { id: "combat", label: "Combat", icon: Swords, accent: "from-red-500/30 to-red-700/30 border-red-600" },
   { id: "dialogue", label: "Dialogue", icon: MessageCircle, accent: "from-amber-500/30 to-amber-700/30 border-amber-600" },
-  { id: "travel", label: "Travel", icon: Wind, accent: "from-sky-500/30 to-sky-700/30 border-sky-600" },
-  { id: "rest", label: "Rest", icon: Bed, accent: "from-violet-500/30 to-violet-700/30 border-violet-600" },
+  { id: "travel", label: "Voyage", icon: Wind, accent: "from-sky-500/30 to-sky-700/30 border-sky-600" },
+  { id: "rest", label: "Repos", icon: Bed, accent: "from-violet-500/30 to-violet-700/30 border-violet-600" },
 ];
 
 export function PhaseSwitcher({
@@ -37,10 +37,10 @@ export function PhaseSwitcher({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ phase }),
       });
-      if (!res.ok) throw new Error("Phase update failed");
+      if (!res.ok) throw new Error("Échec du changement de phase");
       queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Phase update failed");
+      toast.error(e instanceof Error ? e.message : "Échec du changement de phase");
       setOptimistic(currentPhase);
     } finally {
       setBusy(false);

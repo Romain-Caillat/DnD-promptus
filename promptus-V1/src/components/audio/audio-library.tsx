@@ -9,9 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import type { AudioAsset } from "@/lib/db/schema";
 
 const TYPE_LABELS: Record<AudioAsset["type"], string> = {
-  ambience: "Ambiences",
-  music: "Music",
-  sound: "Sound effects",
+  ambience: "Ambiances",
+  music: "Musiques",
+  sound: "Bruitages",
 };
 
 export function AudioLibrary() {
@@ -19,7 +19,7 @@ export function AudioLibrary() {
     queryKey: ["audio-assets-all"],
     queryFn: async () => {
       const res = await fetch("/api/audio/assets");
-      if (!res.ok) throw new Error("Failed to load");
+      if (!res.ok) throw new Error("Impossible de charger la bibliothèque");
       return res.json() as Promise<{ assets: AudioAsset[] }>;
     },
   });
@@ -42,7 +42,7 @@ export function AudioLibrary() {
     setPlayingId(asset.id);
   }
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading library…</p>;
+  if (isLoading) return <p className="text-sm text-muted-foreground">Chargement de la bibliothèque…</p>;
 
   const grouped: Record<AudioAsset["type"], AudioAsset[]> = {
     ambience: [],
@@ -58,7 +58,7 @@ export function AudioLibrary() {
           <h2 className="text-lg font-semibold mb-2">{TYPE_LABELS[type]}</h2>
           <div className="grid gap-3 md:grid-cols-2">
             {grouped[type].length === 0 ? (
-              <p className="text-sm text-muted-foreground">None.</p>
+              <p className="text-sm text-muted-foreground">Aucun.</p>
             ) : (
               grouped[type].map((a) => (
                 <Card key={a.id}>
@@ -69,7 +69,7 @@ export function AudioLibrary() {
                         size="icon"
                         variant="outline"
                         onClick={() => toggle(a)}
-                        aria-label={playingId === a.id ? "Pause" : "Play"}
+                        aria-label={playingId === a.id ? "Pause" : "Lecture"}
                       >
                         {playingId === a.id ? <Pause className="size-4" /> : <Play className="size-4" />}
                       </Button>

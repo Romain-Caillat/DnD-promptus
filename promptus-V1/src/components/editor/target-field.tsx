@@ -32,7 +32,7 @@ export function TargetField({ value, onChange, idPrefix = "tgt" }: Props) {
   return (
     <div className="space-y-2">
       <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-        Target
+        Cible
       </Label>
       <Select value={target.type} onValueChange={(v) => setKind(v as TargetSpec["type"])}>
         <SelectTrigger>
@@ -49,7 +49,7 @@ export function TargetField({ value, onChange, idPrefix = "tgt" }: Props) {
       {target.type === "single" && (
         <div>
           <Label htmlFor={`${idPrefix}-entity-id`} className="text-xs">
-            Entity ID
+            ID de la fiche
           </Label>
           <Input
             id={`${idPrefix}-entity-id`}
@@ -64,7 +64,7 @@ export function TargetField({ value, onChange, idPrefix = "tgt" }: Props) {
       {target.type === "multiple" && (
         <div>
           <Label htmlFor={`${idPrefix}-entity-ids`} className="text-xs">
-            Entity IDs (comma-separated)
+            ID des fiches (séparés par des virgules)
           </Label>
           <Input
             id={`${idPrefix}-entity-ids`}

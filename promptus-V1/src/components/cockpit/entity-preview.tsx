@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import type { AudioAsset, EntityRow } from "@/lib/db/schema";
 import { useAudioStore } from "@/lib/stores/audio-store";
+import { ENTITY_TYPE_LABELS } from "@/lib/engine/catalog";
 
 const PREVIEW_TYPES = ["npc", "monster", "location", "item"];
 
@@ -33,7 +34,7 @@ export function EntityPreview({ campaignId }: { campaignId: string }) {
     queryKey: ["entities-with-images", campaignId],
     queryFn: async () => {
       const res = await fetch(`/api/campaigns/${campaignId}/entities`);
-      if (!res.ok) throw new Error("Failed to load entities");
+      if (!res.ok) throw new Error("Impossible de charger les fiches");
       return res.json() as Promise<{ entities: EntityRow[] }>;
     },
     refetchInterval: 30_000,
@@ -50,7 +51,7 @@ export function EntityPreview({ campaignId }: { campaignId: string }) {
     queryKey: ["audio-assets"],
     queryFn: async () => {
       const res = await fetch("/api/audio/assets");
-      if (!res.ok) throw new Error("Failed to load audio");
+      if (!res.ok) throw new Error("Impossible de charger l’audio");
       return res.json() as Promise<{ assets: AudioAsset[] }>;
     },
   });
@@ -60,10 +61,15 @@ export function EntityPreview({ campaignId }: { campaignId: string }) {
     const ambiences = all.filter((a) => a.type === "ambience");
     if (entity.type !== "location") return null;
     const attrs = (entity.attributes ?? {}) as Record<string, unknown>;
-    const explicit = typeof attrs.defaultAmbienceId === "string" ? attrs.defaultAmbienceId : null;
-    if (explicit) {
-      const byId = ambiences.find((a) => a.id === explicit);
+    const explicitId = typeof attrs.defaultAmbienceId === "string" ? attrs.defaultAmbienceId : null;
+    if (explicitId) {
+      const byId = ambiences.find((a) => a.id === explicitId || a.name === explicitId);
       if (byId) return byId;
+    }
+    const explicitName = typeof attrs.defaultAmbienceName === "string" ? attrs.defaultAmbienceName : null;
+    if (explicitName) {
+      const byName = ambiences.find((a) => a.name.toLowerCase() === explicitName.toLowerCase());
+      if (byName) return byName;
     }
     // Fallback: match by tag overlap
     const entityTags = new Set([...(entity.tags ?? []), entity.name.toLowerCase()]);
@@ -83,7 +89,7 @@ export function EntityPreview({ campaignId }: { campaignId: string }) {
           <div className="flex items-center gap-2">
             <ImageIcon className="size-4 text-muted-foreground" />
             <h3 className="text-sm font-semibold uppercase tracking-wide">
-              Reveal
+              Révéler
             </h3>
           </div>
           {candidates.length > 0 ? (
@@ -92,12 +98,12 @@ export function EntityPreview({ campaignId }: { campaignId: string }) {
               onValueChange={(v) => setRevealedId(v || null)}
             >
               <SelectTrigger className="w-56">
-                <SelectValue placeholder="Choose entity to show…" />
+                <SelectValue placeholder="Choisir une fiche à montrer…" />
               </SelectTrigger>
               <SelectContent>
                 {candidates.map((e) => (
                   <SelectItem key={e.id} value={e.id}>
-                    {e.name} <span className="text-muted-foreground ml-1">({e.type})</span>
+                    {e.name} <span className="text-muted-foreground ml-1">({ENTITY_TYPE_LABELS[e.type]})</span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -107,19 +113,19 @@ export function EntityPreview({ campaignId }: { campaignId: string }) {
 
         {candidates.length === 0 ? (
           <p className="text-xs text-muted-foreground italic">
-            No entity has an image yet. Generate one from the entity editor.
+            Aucune fiche n’a encore d’image. Générez-en une depuis l’éditeur de fiche.
           </p>
         ) : !revealed ? (
           <p className="text-xs text-muted-foreground italic">
-            Pick an NPC, monster, location or item to display its image.
+            Choisissez un PNJ, un monstre, un lieu ou un objet pour afficher son image.
           </p>
         ) : (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-semibold">{revealed.name}</h4>
-                <Badge variant="outline" className="capitalize text-xs mt-1">
-                  {revealed.type}
+                <Badge variant="outline" className="text-xs mt-1">
+                  {ENTITY_TYPE_LABELS[revealed.type]}
                 </Badge>
               </div>
               <div className="flex gap-1">
@@ -129,16 +135,16 @@ export function EntityPreview({ campaignId }: { campaignId: string }) {
                     variant="outline"
                     onClick={() => {
                       playAmbience(revealedAmbience);
-                      toast.success(`Ambience: ${revealedAmbience.name}`);
+                      toast.success(`Ambiance : ${revealedAmbience.name}`);
                     }}
                   >
-                    <Wind className="size-4" /> Ambience
+                    <Wind className="size-4" /> Ambiance
                   </Button>
                 ) : null}
                 <Button size="sm" variant="outline" onClick={() => setFullscreen(true)}>
-                  Fullscreen
+                  Plein écran
                 </Button>
-                <Button size="icon" variant="ghost" onClick={() => setRevealedId(null)} aria-label="Close">
+                <Button size="icon" variant="ghost" onClick={() => setRevealedId(null)} aria-label="Fermer">
                   <X className="size-4" />
                 </Button>
               </div>

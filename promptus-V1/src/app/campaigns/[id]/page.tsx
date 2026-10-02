@@ -22,7 +22,7 @@ export default async function CampaignDashboardPage({ params }: Props) {
   return (
     <main className="flex-1 px-6 py-8 max-w-6xl mx-auto w-full">
       <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-        <Link href="/campaigns">← Campaigns</Link>
+        <Link href="/campaigns">← Campagnes</Link>
       </Button>
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
@@ -32,7 +32,7 @@ export default async function CampaignDashboardPage({ params }: Props) {
           ) : null}
         </div>
         <Button asChild variant="outline" size="sm">
-          <Link href={`/campaigns/${campaign.id}/settings`}>Settings</Link>
+          <Link href={`/campaigns/${campaign.id}/settings`}>Paramètres</Link>
         </Button>
       </div>
 
@@ -45,14 +45,14 @@ export default async function CampaignDashboardPage({ params }: Props) {
       </section>
 
       <section className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">World & assets</h2>
+        <h2 className="text-xl font-semibold mb-4">Monde et ressources</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Link href={`/campaigns/${campaign.id}/entities`}>
             <Card className="hover:border-primary transition-colors h-full">
               <CardHeader>
-                <CardTitle className="text-base">Entities</CardTitle>
+                <CardTitle className="text-base">Fiches</CardTitle>
                 <CardDescription>
-                  Spells, items, NPCs, monsters, locations and events.
+                  Sorts, objets, PNJ, monstres, lieux et événements.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -60,19 +60,13 @@ export default async function CampaignDashboardPage({ params }: Props) {
           <Link href={`/campaigns/${campaign.id}/audio`}>
             <Card className="hover:border-primary transition-colors h-full">
               <CardHeader>
-                <CardTitle className="text-base">Audio library</CardTitle>
+                <CardTitle className="text-base">Bibliothèque audio</CardTitle>
                 <CardDescription>
-                  Ambiences, music and sound effects available in cockpit.
+                  Ambiances, musiques et bruitages disponibles en partie.
                 </CardDescription>
               </CardHeader>
             </Card>
           </Link>
-          <Card className="opacity-50 cursor-not-allowed">
-            <CardHeader>
-              <CardTitle className="text-base">Replay archive</CardTitle>
-              <CardDescription>Available in V1.</CardDescription>
-            </CardHeader>
-          </Card>
         </div>
       </section>
     </main>

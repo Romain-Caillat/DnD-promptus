@@ -24,7 +24,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { DAMAGE_TYPES } from "@/lib/engine/catalog";
+import { DAMAGE_TYPES, DAMAGE_TYPE_LABELS, OUTCOME_LABELS } from "@/lib/engine/catalog";
 import type { ParticipantView } from "@/lib/stores/session-store";
 import type { ResolutionRecord, DamageType } from "@/lib/engine/types";
 
@@ -68,8 +68,8 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
   }
 
   async function attack() {
-    if (!attackerId) return toast.error("Pick an attacker");
-    if (targetIds.size === 0) return toast.error("Pick at least one target");
+    if (!attackerId) return toast.error("Choisissez un attaquant");
+    if (targetIds.size === 0) return toast.error("Choisissez au moins une cible");
     setBusy(true);
     try {
       const res = await fetch(`/api/sessions/${sessionId}/actions`, {
@@ -87,14 +87,14 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error?.message ?? "Attack failed");
+        throw new Error(err.error?.message ?? "Échec de l’attaque");
       }
       const { records } = (await res.json()) as { records: ResolutionRecord[] };
       setResults(records);
       queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
       queryClient.invalidateQueries({ queryKey: ["timeline", sessionId] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Attack failed");
+      toast.error(e instanceof Error ? e.message : "Échec de l’attaque");
     } finally {
       setBusy(false);
     }
@@ -105,12 +105,12 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Make an attack</DialogTitle>
+          <DialogTitle>Attaquer</DialogTitle>
         </DialogHeader>
 
         {results ? (
           <div className="space-y-2" data-testid="attack-results">
-            <h3 className="text-sm font-semibold">Resolution</h3>
+            <h3 className="text-sm font-semibold">Résolution</h3>
             <ScrollArea className="max-h-72 rounded border p-3">
               <ul className="space-y-1 text-sm">
                 {results.map((r, i) => (
@@ -125,7 +125,7 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
                       }
                       className="mr-2 capitalize"
                     >
-                      {r.outcome}
+                      {OUTCOME_LABELS[r.outcome]}
                     </Badge>
                     {r.description}
                   </li>
@@ -134,18 +134,18 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
             </ScrollArea>
             <DialogFooter>
               <Button variant="outline" onClick={() => setResults(null)}>
-                Another attack
+                Nouvelle attaque
               </Button>
-              <Button onClick={() => handleOpenChange(false)}>Close</Button>
+              <Button onClick={() => handleOpenChange(false)}>Fermer</Button>
             </DialogFooter>
           </div>
         ) : (
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-xs uppercase">Attacker</Label>
+              <Label className="text-xs uppercase">Attaquant</Label>
               <Select value={attackerId} onValueChange={setAttackerId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Pick an attacker…" />
+                  <SelectValue placeholder="Choisir un attaquant…" />
                 </SelectTrigger>
                 <SelectContent>
                   {aliveParticipants.map((p) => (
@@ -158,7 +158,7 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
             </div>
 
             <div>
-              <Label className="text-xs uppercase">Target(s)</Label>
+              <Label className="text-xs uppercase">Cible(s)</Label>
               <div className="rounded border p-2 max-h-40 overflow-auto space-y-1">
                 {aliveParticipants
                   .filter((p) => p.state.entityId !== attackerId)
@@ -190,7 +190,7 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
 
             <div className="grid gap-3 grid-cols-2">
               <div className="space-y-1">
-                <Label className="text-xs uppercase">Attack bonus</Label>
+                <Label className="text-xs uppercase">Bonus d’attaque</Label>
                 <Input
                   type="number"
                   value={attackBonus}
@@ -198,7 +198,7 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs uppercase">Damage type</Label>
+                <Label className="text-xs uppercase">Type de dégâts</Label>
                 <Select value={damageType} onValueChange={(v) => setDamageType(v as DamageType)}>
                   <SelectTrigger>
                     <SelectValue />
@@ -206,14 +206,14 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
                   <SelectContent>
                     {DAMAGE_TYPES.map((d) => (
                       <SelectItem key={d} value={d}>
-                        {d}
+                        {DAMAGE_TYPE_LABELS[d]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1 col-span-2">
-                <Label className="text-xs uppercase">Damage notation</Label>
+                <Label className="text-xs uppercase">Dés de dégâts</Label>
                 <Input
                   value={damageNotation}
                   onChange={(e) => setDamageNotation(e.target.value)}
@@ -225,13 +225,13 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
                   checked={meleeWithin5ft}
                   onCheckedChange={(v) => setMeleeWithin5ft(!!v)}
                 />
-                <span className="text-sm">Melee within 5 ft (enables critical on paralyzed/unconscious)</span>
+                <span className="text-sm">Au contact à 1,5 m (critique automatique sur une cible paralysée/inconsciente)</span>
               </label>
             </div>
 
             <DialogFooter>
               <Button onClick={attack} disabled={busy} data-testid="attack-submit">
-                {busy ? "Resolving…" : "Resolve attack"}
+                {busy ? "Résolution…" : "Résoudre l’attaque"}
               </Button>
             </DialogFooter>
           </div>

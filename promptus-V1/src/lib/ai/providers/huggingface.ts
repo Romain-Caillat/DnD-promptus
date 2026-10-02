@@ -19,7 +19,7 @@ export class HuggingFaceFluxSchnell implements ImageGenerator {
     const token = process.env.HUGGINGFACE_TOKEN;
     if (!token) {
       throw new ImageGenerationError(
-        "HUGGINGFACE_TOKEN is not set; cannot reach the inference API",
+        "HUGGINGFACE_TOKEN n’est pas défini : impossible de joindre l’API de génération",
         500,
       );
     }
@@ -46,7 +46,7 @@ export class HuggingFaceFluxSchnell implements ImageGenerator {
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       throw new ImageGenerationError(
-        `HuggingFace inference failed (${res.status})`,
+        `Échec de la génération HuggingFace (${res.status})`,
         res.status,
         text.slice(0, 500),
       );

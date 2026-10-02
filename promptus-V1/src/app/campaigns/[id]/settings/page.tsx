@@ -23,9 +23,9 @@ export default async function CampaignSettingsPage({ params }: Props) {
       <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
         <Link href={`/campaigns/${id}`}>← {campaign.name}</Link>
       </Button>
-      <h1 className="text-3xl font-bold mb-1">Settings — {campaign.name}</h1>
+      <h1 className="text-3xl font-bold mb-1">Paramètres : {campaign.name}</h1>
       <p className="text-muted-foreground mb-8">
-        Visual style applied when generating images for entities of this campaign.
+        Style visuel appliqué à la génération des images de cette campagne.
       </p>
 
       <CampaignSettingsForm

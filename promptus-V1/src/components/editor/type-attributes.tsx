@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SCHOOLS_OF_MAGIC } from "@/lib/engine/catalog";
+import { SCHOOLS_OF_MAGIC, SCHOOL_LABELS } from "@/lib/engine/catalog";
 import type { EntityType } from "@/lib/engine/types";
 
 interface Props {
@@ -33,12 +33,12 @@ export function TypeAttributes({ type, attributes, onChange }: Props) {
     case "spell":
       return (
         <div className="grid gap-3 md:grid-cols-2">
-          <NumField label="Spell level" name="level" attributes={attributes} set={set} placeholder="3" />
-          <SelectField label="School" name="school" options={SCHOOLS_OF_MAGIC} attributes={attributes} set={set} />
-          <TextField label="Casting time" name="castingTime" attributes={attributes} set={set} placeholder="1 action" />
-          <TextField label="Range" name="range" attributes={attributes} set={set} placeholder="150 ft" />
-          <TextField label="Duration" name="duration" attributes={attributes} set={set} placeholder="instantaneous" />
-          <TextField label="Components (V/S/M)" name="components" attributes={attributes} set={set} placeholder="V, S, M" parseList />
+          <NumField label="Niveau du sort" name="level" attributes={attributes} set={set} placeholder="3" />
+          <SelectField label="École" name="school" options={SCHOOLS_OF_MAGIC} labels={SCHOOL_LABELS} attributes={attributes} set={set} />
+          <TextField label="Temps d’incantation" name="castingTime" attributes={attributes} set={set} placeholder="1 action" />
+          <TextField label="Portée" name="range" attributes={attributes} set={set} placeholder="45 m" />
+          <TextField label="Durée" name="duration" attributes={attributes} set={set} placeholder="instantanée" />
+          <TextField label="Composantes (V/S/M)" name="components" attributes={attributes} set={set} placeholder="V, S, M" parseList />
         </div>
       );
 
@@ -46,30 +46,31 @@ export function TypeAttributes({ type, attributes, onChange }: Props) {
     case "character":
       return (
         <div className="grid gap-3 md:grid-cols-3">
-          <NumField label="HP" name="hp" attributes={attributes} set={set} />
-          <NumField label="HP max" name="hpMax" attributes={attributes} set={set} />
-          <NumField label="Armor Class" name="ac" attributes={attributes} set={set} />
-          <NumField label="Speed (ft)" name="speed" attributes={attributes} set={set} />
-          <NumField label="Initiative bonus" name="initiativeBonus" attributes={attributes} set={set} />
-          <NumField label="Challenge rating" name="challengeRating" attributes={attributes} set={set} step="0.25" />
-          <TextField label="Size" name="size" attributes={attributes} set={set} placeholder="Medium" />
-          <TextField label="Alignment" name="alignment" attributes={attributes} set={set} placeholder="Neutral Evil" />
-          <NumField label="Level" name="level" attributes={attributes} set={set} />
+          <NumField label="PV" name="hp" attributes={attributes} set={set} />
+          <NumField label="PV max" name="hpMax" attributes={attributes} set={set} />
+          <NumField label="Classe d’armure" name="ac" attributes={attributes} set={set} />
+          <NumField label="Vitesse (pieds)" name="speed" attributes={attributes} set={set} />
+          <NumField label="Bonus d’initiative" name="initiativeBonus" attributes={attributes} set={set} />
+          <NumField label="Facteur de puissance" name="challengeRating" attributes={attributes} set={set} step="0.25" />
+          <TextField label="Taille" name="size" attributes={attributes} set={set} placeholder="Moyenne" />
+          <TextField label="Alignement" name="alignment" attributes={attributes} set={set} placeholder="Neutre mauvais" />
+          <NumField label="Niveau" name="level" attributes={attributes} set={set} />
         </div>
       );
 
     case "npc":
       return (
         <div className="grid gap-3 md:grid-cols-2">
-          <NumField label="HP" name="hp" attributes={attributes} set={set} />
-          <NumField label="HP max" name="hpMax" attributes={attributes} set={set} />
-          <NumField label="Armor Class" name="ac" attributes={attributes} set={set} />
+          <NumField label="PV" name="hp" attributes={attributes} set={set} />
+          <NumField label="PV max" name="hpMax" attributes={attributes} set={set} />
+          <NumField label="Classe d’armure" name="ac" attributes={attributes} set={set} />
           <TextField label="Faction" name="faction" attributes={attributes} set={set} />
-          <TextField label="Current location" name="currentLocation" attributes={attributes} set={set} />
+          <TextField label="Lieu actuel" name="currentLocation" attributes={attributes} set={set} />
           <SelectField
-            label="Status"
+            label="Statut"
             name="status"
             options={["alive", "wounded", "dead", "missing"]}
+            labels={{ alive: "vivant", wounded: "blessé", dead: "mort", missing: "disparu" }}
             attributes={attributes}
             set={set}
           />
@@ -85,7 +86,7 @@ export function TypeAttributes({ type, attributes, onChange }: Props) {
           </div>
           <div className="md:col-span-2 space-y-1">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-              Secret (GM only)
+              Secret (MJ uniquement)
             </Label>
             <Textarea
               value={(attributes.secret as string) ?? ""}
@@ -93,7 +94,7 @@ export function TypeAttributes({ type, attributes, onChange }: Props) {
               rows={2}
             />
           </div>
-          <TextField label="Voice acting note" name="voiceActorRecommended" attributes={attributes} set={set} />
+          <TextField label="Note d’interprétation (voix)" name="voiceActorRecommended" attributes={attributes} set={set} />
         </div>
       );
 
@@ -101,30 +102,31 @@ export function TypeAttributes({ type, attributes, onChange }: Props) {
       return (
         <div className="grid gap-3 md:grid-cols-3">
           <SelectField
-            label="Rarity"
+            label="Rareté"
             name="rarity"
             options={["common", "uncommon", "rare", "very_rare", "legendary"]}
+            labels={{ common: "commun", uncommon: "peu commun", rare: "rare", very_rare: "très rare", legendary: "légendaire" }}
             attributes={attributes}
             set={set}
           />
-          <NumField label="Weight (lb)" name="weight" attributes={attributes} set={set} step="0.1" />
-          <NumField label="Value (gp)" name="value" attributes={attributes} set={set} />
-          <BoolField label="Requires attunement" name="attunement" attributes={attributes} set={set} />
+          <NumField label="Poids (lb)" name="weight" attributes={attributes} set={set} step="0.1" />
+          <NumField label="Valeur (po)" name="value" attributes={attributes} set={set} />
+          <BoolField label="Harmonisation requise" name="attunement" attributes={attributes} set={set} />
         </div>
       );
 
     case "location":
       return (
         <div className="grid gap-3">
-          <TextField label="Parent location" name="parentLocation" attributes={attributes} set={set} placeholder="ent_location_…" />
-          <TextField label="Default ambience ID" name="defaultAmbienceId" attributes={attributes} set={set} placeholder="ambience_crypt" />
+          <TextField label="Lieu parent" name="parentLocation" attributes={attributes} set={set} placeholder="ent_location_…" />
+          <TextField label="ID de l’ambiance par défaut" name="defaultAmbienceId" attributes={attributes} set={set} placeholder="ambience_crypt" />
         </div>
       );
 
     case "faction":
       return (
         <div className="grid gap-3">
-          <NumField label="Reputation" name="reputation" attributes={attributes} set={set} />
+          <NumField label="Réputation" name="reputation" attributes={attributes} set={set} />
         </div>
       );
 
@@ -133,7 +135,7 @@ export function TypeAttributes({ type, attributes, onChange }: Props) {
     default:
       return (
         <p className="text-sm text-muted-foreground italic">
-          No type-specific attributes for {type}. Use the description and effects below.
+          Pas d’attributs spécifiques pour ce type. Utilisez la description et les effets ci-dessous.
         </p>
       );
   }
@@ -207,12 +209,14 @@ function SelectField({
   label,
   name,
   options,
+  labels,
   attributes,
   set,
 }: {
   label: string;
   name: string;
   options: readonly string[];
+  labels?: Record<string, string>;
   attributes: Record<string, unknown>;
   set: (k: string, v: unknown) => void;
 }) {
@@ -221,12 +225,12 @@ function SelectField({
       <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
       <Select value={(attributes[name] as string) ?? ""} onValueChange={(v) => set(name, v)}>
         <SelectTrigger>
-          <SelectValue placeholder="Choose…" />
+          <SelectValue placeholder="Choisir…" />
         </SelectTrigger>
         <SelectContent>
           {options.map((o) => (
             <SelectItem key={o} value={o}>
-              {o}
+              {labels?.[o] ?? o}
             </SelectItem>
           ))}
         </SelectContent>
