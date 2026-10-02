@@ -10,7 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SCHOOLS_OF_MAGIC } from "@/lib/engine/catalog";
+import { Button } from "@/components/ui/button";
+import { useRuleset } from "@/components/providers/ruleset-provider";
+import { SCHOOLS_OF_MAGIC, SCHOOL_LABELS } from "@/lib/engine/catalog";
 import type { EntityType } from "@/lib/engine/types";
 
 interface Props {
@@ -33,12 +35,12 @@ export function TypeAttributes({ type, attributes, onChange }: Props) {
     case "spell":
       return (
         <div className="grid gap-3 md:grid-cols-2">
-          <NumField label="Spell level" name="level" attributes={attributes} set={set} placeholder="3" />
-          <SelectField label="School" name="school" options={SCHOOLS_OF_MAGIC} attributes={attributes} set={set} />
-          <TextField label="Casting time" name="castingTime" attributes={attributes} set={set} placeholder="1 action" />
-          <TextField label="Range" name="range" attributes={attributes} set={set} placeholder="150 ft" />
-          <TextField label="Duration" name="duration" attributes={attributes} set={set} placeholder="instantaneous" />
-          <TextField label="Components (V/S/M)" name="components" attributes={attributes} set={set} placeholder="V, S, M" parseList />
+          <NumField label="Niveau du sort" name="level" attributes={attributes} set={set} placeholder="3" />
+          <SelectField label="École" name="school" options={SCHOOLS_OF_MAGIC} labels={SCHOOL_LABELS} attributes={attributes} set={set} />
+          <TextField label="Temps d’incantation" name="castingTime" attributes={attributes} set={set} placeholder="1 action" />
+          <TextField label="Portée" name="range" attributes={attributes} set={set} placeholder="45 m" />
+          <TextField label="Durée" name="duration" attributes={attributes} set={set} placeholder="instantanée" />
+          <TextField label="Composantes (V/S/M)" name="components" attributes={attributes} set={set} placeholder="V, S, M" parseList />
         </div>
       );
 
@@ -46,30 +48,34 @@ export function TypeAttributes({ type, attributes, onChange }: Props) {
     case "character":
       return (
         <div className="grid gap-3 md:grid-cols-3">
-          <NumField label="HP" name="hp" attributes={attributes} set={set} />
-          <NumField label="HP max" name="hpMax" attributes={attributes} set={set} />
-          <NumField label="Armor Class" name="ac" attributes={attributes} set={set} />
-          <NumField label="Speed (ft)" name="speed" attributes={attributes} set={set} />
-          <NumField label="Initiative bonus" name="initiativeBonus" attributes={attributes} set={set} />
-          <NumField label="Challenge rating" name="challengeRating" attributes={attributes} set={set} step="0.25" />
-          <TextField label="Size" name="size" attributes={attributes} set={set} placeholder="Medium" />
-          <TextField label="Alignment" name="alignment" attributes={attributes} set={set} placeholder="Neutral Evil" />
-          <NumField label="Level" name="level" attributes={attributes} set={set} />
+          <NumField label="PV" name="hp" attributes={attributes} set={set} />
+          <NumField label="PV max" name="hpMax" attributes={attributes} set={set} />
+          <NumField label="Classe d’armure" name="ac" attributes={attributes} set={set} />
+          <NumField label="Vitesse (pieds)" name="speed" attributes={attributes} set={set} />
+          <NumField label="Bonus d’initiative" name="initiativeBonus" attributes={attributes} set={set} />
+          <NumField label="Facteur de puissance" name="challengeRating" attributes={attributes} set={set} step="0.25" />
+          <TextField label="Taille" name="size" attributes={attributes} set={set} placeholder="Moyenne" />
+          <TextField label="Alignement" name="alignment" attributes={attributes} set={set} placeholder="Neutre mauvais" />
+          <NumField label="Niveau" name="level" attributes={attributes} set={set} />
+          <div className="md:col-span-3">
+            <AttacksField attributes={attributes} set={set} />
+          </div>
         </div>
       );
 
     case "npc":
       return (
         <div className="grid gap-3 md:grid-cols-2">
-          <NumField label="HP" name="hp" attributes={attributes} set={set} />
-          <NumField label="HP max" name="hpMax" attributes={attributes} set={set} />
-          <NumField label="Armor Class" name="ac" attributes={attributes} set={set} />
+          <NumField label="PV" name="hp" attributes={attributes} set={set} />
+          <NumField label="PV max" name="hpMax" attributes={attributes} set={set} />
+          <NumField label="Classe d’armure" name="ac" attributes={attributes} set={set} />
           <TextField label="Faction" name="faction" attributes={attributes} set={set} />
-          <TextField label="Current location" name="currentLocation" attributes={attributes} set={set} />
+          <TextField label="Lieu actuel" name="currentLocation" attributes={attributes} set={set} />
           <SelectField
-            label="Status"
+            label="Statut"
             name="status"
             options={["alive", "wounded", "dead", "missing"]}
+            labels={{ alive: "vivant", wounded: "blessé", dead: "mort", missing: "disparu" }}
             attributes={attributes}
             set={set}
           />
@@ -85,7 +91,7 @@ export function TypeAttributes({ type, attributes, onChange }: Props) {
           </div>
           <div className="md:col-span-2 space-y-1">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-              Secret (GM only)
+              Secret (MJ uniquement)
             </Label>
             <Textarea
               value={(attributes.secret as string) ?? ""}
@@ -93,7 +99,10 @@ export function TypeAttributes({ type, attributes, onChange }: Props) {
               rows={2}
             />
           </div>
-          <TextField label="Voice acting note" name="voiceActorRecommended" attributes={attributes} set={set} />
+          <TextField label="Note d’interprétation (voix)" name="voiceActorRecommended" attributes={attributes} set={set} />
+          <div className="md:col-span-2">
+            <AttacksField attributes={attributes} set={set} />
+          </div>
         </div>
       );
 
@@ -101,30 +110,31 @@ export function TypeAttributes({ type, attributes, onChange }: Props) {
       return (
         <div className="grid gap-3 md:grid-cols-3">
           <SelectField
-            label="Rarity"
+            label="Rareté"
             name="rarity"
             options={["common", "uncommon", "rare", "very_rare", "legendary"]}
+            labels={{ common: "commun", uncommon: "peu commun", rare: "rare", very_rare: "très rare", legendary: "légendaire" }}
             attributes={attributes}
             set={set}
           />
-          <NumField label="Weight (lb)" name="weight" attributes={attributes} set={set} step="0.1" />
-          <NumField label="Value (gp)" name="value" attributes={attributes} set={set} />
-          <BoolField label="Requires attunement" name="attunement" attributes={attributes} set={set} />
+          <NumField label="Poids (lb)" name="weight" attributes={attributes} set={set} step="0.1" />
+          <NumField label="Valeur (po)" name="value" attributes={attributes} set={set} />
+          <BoolField label="Harmonisation requise" name="attunement" attributes={attributes} set={set} />
         </div>
       );
 
     case "location":
       return (
         <div className="grid gap-3">
-          <TextField label="Parent location" name="parentLocation" attributes={attributes} set={set} placeholder="ent_location_…" />
-          <TextField label="Default ambience ID" name="defaultAmbienceId" attributes={attributes} set={set} placeholder="ambience_crypt" />
+          <TextField label="Lieu parent" name="parentLocation" attributes={attributes} set={set} placeholder="ent_location_…" />
+          <TextField label="ID de l’ambiance par défaut" name="defaultAmbienceId" attributes={attributes} set={set} placeholder="ambience_crypt" />
         </div>
       );
 
     case "faction":
       return (
         <div className="grid gap-3">
-          <NumField label="Reputation" name="reputation" attributes={attributes} set={set} />
+          <NumField label="Réputation" name="reputation" attributes={attributes} set={set} />
         </div>
       );
 
@@ -133,7 +143,7 @@ export function TypeAttributes({ type, attributes, onChange }: Props) {
     default:
       return (
         <p className="text-sm text-muted-foreground italic">
-          No type-specific attributes for {type}. Use the description and effects below.
+          Pas d’attributs spécifiques pour ce type. Utilisez la description et les effets ci-dessous.
         </p>
       );
   }
@@ -207,12 +217,14 @@ function SelectField({
   label,
   name,
   options,
+  labels,
   attributes,
   set,
 }: {
   label: string;
   name: string;
   options: readonly string[];
+  labels?: Record<string, string>;
   attributes: Record<string, unknown>;
   set: (k: string, v: unknown) => void;
 }) {
@@ -221,12 +233,12 @@ function SelectField({
       <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
       <Select value={(attributes[name] as string) ?? ""} onValueChange={(v) => set(name, v)}>
         <SelectTrigger>
-          <SelectValue placeholder="Choose…" />
+          <SelectValue placeholder="Choisir…" />
         </SelectTrigger>
         <SelectContent>
           {options.map((o) => (
             <SelectItem key={o} value={o}>
-              {o}
+              {labels?.[o] ?? o}
             </SelectItem>
           ))}
         </SelectContent>
@@ -255,6 +267,76 @@ function BoolField({
         className="size-4"
       />
       <Label className="text-sm">{label}</Label>
+    </div>
+  );
+}
+
+interface AttackRow {
+  name: string;
+  bonus?: number;
+  damage: string;
+  damageType?: string;
+  rangeMeters?: number;
+  longRangeMeters?: number;
+}
+
+/** Attaques de la créature : utilisées en combat sur la carte (bonus, dégâts, portée). */
+function AttacksField({ attributes, set }: { attributes: Record<string, unknown>; set: (k: string, v: unknown) => void }) {
+  const ruleset = useRuleset();
+  const rows = (Array.isArray(attributes.attacks) ? attributes.attacks : []) as AttackRow[];
+  const update = (i: number, patch: Partial<AttackRow>) =>
+    set("attacks", rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const numOrUndef = (v: string) => (v === "" ? undefined : Number(v));
+  return (
+    <div className="space-y-2" data-testid="attacks-field">
+      <Label className="text-xs uppercase tracking-wide text-muted-foreground">Attaques</Label>
+      {rows.map((r, i) => (
+        <div key={i} className="grid gap-2 grid-cols-2 md:grid-cols-[2fr_70px_1fr_1.3fr_80px_80px_auto] items-center">
+          <Input aria-label="Nom de l’attaque" placeholder="Épée longue" value={r.name ?? ""} onChange={(e) => update(i, { name: e.target.value })} />
+          <Input aria-label="Bonus" type="number" placeholder="+5" value={r.bonus ?? ""} onChange={(e) => update(i, { bonus: numOrUndef(e.target.value) })} />
+          <Input aria-label="Dégâts" placeholder="1d8+3" value={r.damage ?? ""} onChange={(e) => update(i, { damage: e.target.value })} />
+          <Select value={r.damageType ?? ""} onValueChange={(v) => update(i, { damageType: v })}>
+            <SelectTrigger aria-label="Type de dégâts">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              {ruleset.damageTypes.map((d) => (
+                <SelectItem key={d.id} value={d.id}>
+                  {d.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            aria-label="Portée (m)"
+            type="number"
+            step="1.5"
+            placeholder="1,5 m"
+            value={r.rangeMeters ?? ""}
+            onChange={(e) => update(i, { rangeMeters: numOrUndef(e.target.value) })}
+          />
+          <Input
+            aria-label="Portée longue (m)"
+            type="number"
+            step="1.5"
+            placeholder="longue"
+            value={r.longRangeMeters ?? ""}
+            onChange={(e) => update(i, { longRangeMeters: numOrUndef(e.target.value) })}
+          />
+          <Button type="button" size="sm" variant="ghost" onClick={() => set("attacks", rows.filter((_, j) => j !== i))}>
+            Retirer
+          </Button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={() => set("attacks", [...rows, { name: "", bonus: 0, damage: "1d6", damageType: ruleset.damageTypes[0]?.id, rangeMeters: 1.5 }])}
+      >
+        Ajouter une attaque
+      </Button>
+      <p className="text-xs text-muted-foreground">Portée en mètres : 1,5 m = au contact. Au-delà de la portée normale et jusqu’à la longue : désavantage.</p>
     </div>
   );
 }

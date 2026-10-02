@@ -12,8 +12,8 @@ const PHASES: { id: Phase; label: string; icon: typeof Swords; accent: string }[
   { id: "exploration", label: "Exploration", icon: Map, accent: "from-emerald-500/30 to-emerald-700/30 border-emerald-600" },
   { id: "combat", label: "Combat", icon: Swords, accent: "from-red-500/30 to-red-700/30 border-red-600" },
   { id: "dialogue", label: "Dialogue", icon: MessageCircle, accent: "from-amber-500/30 to-amber-700/30 border-amber-600" },
-  { id: "travel", label: "Travel", icon: Wind, accent: "from-sky-500/30 to-sky-700/30 border-sky-600" },
-  { id: "rest", label: "Rest", icon: Bed, accent: "from-violet-500/30 to-violet-700/30 border-violet-600" },
+  { id: "travel", label: "Voyage", icon: Wind, accent: "from-sky-500/30 to-sky-700/30 border-sky-600" },
+  { id: "rest", label: "Repos", icon: Bed, accent: "from-violet-500/30 to-violet-700/30 border-violet-600" },
 ];
 
 export function PhaseSwitcher({
@@ -24,26 +24,30 @@ export function PhaseSwitcher({
   currentPhase: Phase;
 }) {
   const [busy, setBusy] = useState(false);
-  const [optimistic, setOptimistic] = useState(currentPhase);
+  // Phase demandée en attente de confirmation ; sinon on suit le serveur
+  // (la phase change aussi quand le MJ entre dans une scène).
+  const [pending, setPending] = useState<Phase | null>(null);
+  const optimistic = pending ?? currentPhase;
   const queryClient = useQueryClient();
 
   async function setPhase(phase: Phase) {
     if (phase === optimistic || busy) return;
     setBusy(true);
-    setOptimistic(phase);
+    setPending(phase);
     try {
       const res = await fetch(`/api/sessions/${sessionId}/phase`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ phase }),
       });
-      if (!res.ok) throw new Error("Phase update failed");
-      queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
+      if (!res.ok) throw new Error("Échec du changement de phase");
+      // Attendre la nouvelle phase avant de lâcher l'affichage optimiste.
+      await queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Phase update failed");
-      setOptimistic(currentPhase);
+      toast.error(e instanceof Error ? e.message : "Échec du changement de phase");
     } finally {
       setBusy(false);
+      setPending(null);
     }
   }
 

@@ -16,15 +16,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
-  DAMAGE_TYPES,
+  EFFECT_CATEGORY_LABELS,
   EFFECT_KINDS,
-  RESOURCE_KINDS,
-  STANDARD_CONDITIONS,
-  STATS,
   type EffectKindId,
 } from "@/lib/engine/catalog";
 import type { Effect, TargetSpec } from "@/lib/engine/types";
 import { TargetField } from "./target-field";
+import { useRuleset } from "@/components/providers/ruleset-provider";
 
 interface Props {
   value: Effect[];
@@ -124,16 +122,16 @@ export function EffectBuilder({ value, onChange, idPrefix = "fx" }: Props) {
       <div className="flex items-end gap-2">
         <div className="flex-1">
           <Label htmlFor={`${idPrefix}-add`} className="text-xs uppercase tracking-wide text-muted-foreground">
-            Add an effect
+            Ajouter un effet
           </Label>
           <Select value={pendingKind} onValueChange={(v) => setPendingKind(v as EffectKindId)}>
             <SelectTrigger id={`${idPrefix}-add`}>
-              <SelectValue placeholder="Pick an effect kind…" />
+              <SelectValue placeholder="Choisir un type d’effet…" />
             </SelectTrigger>
             <SelectContent>
               {(["combat", "narration", "sensory"] as const).map((cat) => (
                 <div key={cat}>
-                  <div className="px-2 py-1 text-xs uppercase text-muted-foreground capitalize">{cat}</div>
+                  <div className="px-2 py-1 text-xs uppercase text-muted-foreground">{EFFECT_CATEGORY_LABELS[cat]}</div>
                   {EFFECT_KINDS.filter((k) => k.category === cat).map((k) => (
                     <SelectItem key={k.id} value={k.id}>
                       {k.label}
@@ -145,13 +143,13 @@ export function EffectBuilder({ value, onChange, idPrefix = "fx" }: Props) {
           </Select>
         </div>
         <Button type="button" onClick={addEffect} disabled={!pendingKind}>
-          <Plus className="size-4" /> Add
+          <Plus className="size-4" /> Ajouter
         </Button>
       </div>
 
       {value.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">
-          No effects yet. Add one above to make this entity do something.
+          Aucun effet. Ajoutez-en un pour que cette fiche agisse.
         </p>
       ) : (
         <div className="space-y-3">
@@ -163,18 +161,18 @@ export function EffectBuilder({ value, onChange, idPrefix = "fx" }: Props) {
                     <Badge variant="secondary" className="text-xs">
                       #{index + 1}
                     </Badge>
-                    <span className="text-sm font-medium capitalize">
-                      {effect.type.replace(/_/g, " ")}
+                    <span className="text-sm font-medium">
+                      {EFFECT_KINDS.find((k) => k.id === effect.type)?.label ?? effect.type}
                     </span>
                   </div>
                   <div className="flex gap-1">
-                    <Button type="button" variant="ghost" size="icon" onClick={() => moveUp(index)} disabled={index === 0} aria-label="Move up">
+                    <Button type="button" variant="ghost" size="icon" onClick={() => moveUp(index)} disabled={index === 0} aria-label="Monter">
                       <ArrowUp className="size-4" />
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => moveDown(index)} disabled={index === value.length - 1} aria-label="Move down">
+                    <Button type="button" variant="ghost" size="icon" onClick={() => moveDown(index)} disabled={index === value.length - 1} aria-label="Descendre">
                       <ArrowDown className="size-4" />
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeAt(index)} aria-label="Delete effect">
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeAt(index)} aria-label="Supprimer l’effet">
                       <Trash2 className="size-4 text-destructive" />
                     </Button>
                   </div>
@@ -207,11 +205,12 @@ function EffectFields({
   onChange: (next: Effect) => void;
   idPrefix: string;
 }) {
+  const ruleset = useRuleset();
   switch (effect.type) {
     case "damage":
       return (
         <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Amount (dice notation)" id={`${idPrefix}-amount`}>
+          <Field label="Quantité (notation de dés)" id={`${idPrefix}-amount`}>
             <Input
               id={`${idPrefix}-amount`}
               value={effect.amount}
@@ -219,14 +218,14 @@ function EffectFields({
               placeholder="1d8+3"
             />
           </Field>
-          <Field label="Damage type" id={`${idPrefix}-dtype`}>
+          <Field label="Type de dégâts" id={`${idPrefix}-dtype`}>
             <Select value={effect.damageType} onValueChange={(v) => onChange({ ...effect, damageType: v as Effect["type"] extends "damage" ? typeof effect.damageType : never })}>
               <SelectTrigger id={`${idPrefix}-dtype`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {DAMAGE_TYPES.map((d) => (
-                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                {ruleset.damageTypes.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>{d.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -240,7 +239,7 @@ function EffectFields({
     case "heal":
       return (
         <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Amount" id={`${idPrefix}-amount`}>
+          <Field label="Quantité" id={`${idPrefix}-amount`}>
             <Input id={`${idPrefix}-amount`} value={effect.amount} onChange={(e) => onChange({ ...effect, amount: e.target.value })} placeholder="2d4+2" />
           </Field>
           <div className="md:col-span-2">
@@ -252,19 +251,19 @@ function EffectFields({
     case "apply_condition":
       return (
         <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Condition" id={`${idPrefix}-cond`}>
+          <Field label="État" id={`${idPrefix}-cond`}>
             <Select value={effect.conditionId} onValueChange={(v) => onChange({ ...effect, conditionId: v })}>
               <SelectTrigger id={`${idPrefix}-cond`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STANDARD_CONDITIONS.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                {ruleset.conditions.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Duration (rounds)" id={`${idPrefix}-dur`}>
+          <Field label="Durée (rounds)" id={`${idPrefix}-dur`}>
             <Input
               id={`${idPrefix}-dur`}
               type="number"
@@ -283,14 +282,14 @@ function EffectFields({
     case "remove_condition":
       return (
         <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Condition" id={`${idPrefix}-cond`}>
+          <Field label="État" id={`${idPrefix}-cond`}>
             <Select value={effect.conditionId} onValueChange={(v) => onChange({ ...effect, conditionId: v })}>
               <SelectTrigger id={`${idPrefix}-cond`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STANDARD_CONDITIONS.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                {ruleset.conditions.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -304,13 +303,13 @@ function EffectFields({
     case "modify_stat":
       return (
         <div className="grid gap-3 md:grid-cols-3">
-          <Field label="Stat" id={`${idPrefix}-stat`}>
+          <Field label="Statistique" id={`${idPrefix}-stat`}>
             <Input id={`${idPrefix}-stat`} value={effect.stat} onChange={(e) => onChange({ ...effect, stat: e.target.value })} placeholder="STR | AC | speed" />
           </Field>
-          <Field label="Modifier" id={`${idPrefix}-mod`}>
+          <Field label="Modificateur" id={`${idPrefix}-mod`}>
             <Input id={`${idPrefix}-mod`} type="number" value={effect.modifier} onChange={(e) => onChange({ ...effect, modifier: Number(e.target.value) })} />
           </Field>
-          <Field label="Duration (rounds)" id={`${idPrefix}-dur`}>
+          <Field label="Durée (rounds)" id={`${idPrefix}-dur`}>
             <Input
               id={`${idPrefix}-dur`}
               type="number"
@@ -329,19 +328,19 @@ function EffectFields({
       return (
         <div className="space-y-3">
           <div className="grid gap-3 md:grid-cols-2">
-            <Field label="Saving throw / check" id={`${idPrefix}-stat`}>
+            <Field label="Sauvegarde / test" id={`${idPrefix}-stat`}>
               <Select value={effect.stat} onValueChange={(v) => onChange({ ...effect, stat: v as typeof effect.stat })}>
                 <SelectTrigger id={`${idPrefix}-stat`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATS.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  {ruleset.abilities.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="DC (number or expression)" id={`${idPrefix}-dc`}>
+            <Field label="DD (nombre ou expression)" id={`${idPrefix}-dc`}>
               <Input
                 id={`${idPrefix}-dc`}
                 value={String(effect.dc)}
@@ -354,12 +353,27 @@ function EffectFields({
             </Field>
           </div>
           <TargetField value={effect.target} onChange={(t) => onChange({ ...effect, target: t })} idPrefix={idPrefix} />
-          <div className="rounded border bg-muted/30 p-3 space-y-2">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              On success / on failure: nested effects are configured separately
-              (V1 enrichment). For MVP, leave them empty and resolve outcomes manually,
-              or use damage with “/2” notation.
-            </p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded border bg-muted/30 p-3 space-y-2">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                En cas de réussite
+              </p>
+              <EffectBuilder
+                value={effect.outcomeSuccess ?? []}
+                onChange={(next) => onChange({ ...effect, outcomeSuccess: next })}
+                idPrefix={`${idPrefix}-ok`}
+              />
+            </div>
+            <div className="rounded border bg-muted/30 p-3 space-y-2">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                En cas d’échec
+              </p>
+              <EffectBuilder
+                value={effect.outcomeFail ?? []}
+                onChange={(next) => onChange({ ...effect, outcomeFail: next })}
+                idPrefix={`${idPrefix}-ko`}
+              />
+            </div>
           </div>
         </div>
       );
@@ -368,22 +382,22 @@ function EffectFields({
     case "restore_resource":
       return (
         <div className="grid gap-3 md:grid-cols-3">
-          <Field label="Resource" id={`${idPrefix}-res`}>
+          <Field label="Ressource" id={`${idPrefix}-res`}>
             <Select value={effect.resource} onValueChange={(v) => onChange({ ...effect, resource: v as typeof effect.resource })}>
               <SelectTrigger id={`${idPrefix}-res`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {RESOURCE_KINDS.map((r) => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                {ruleset.resources.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>{r.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Amount" id={`${idPrefix}-amt`}>
+          <Field label="Quantité" id={`${idPrefix}-amt`}>
             <Input id={`${idPrefix}-amt`} type="number" min={0} value={effect.amount} onChange={(e) => onChange({ ...effect, amount: Number(e.target.value) })} />
           </Field>
-          <Field label="Level (for spell slots)" id={`${idPrefix}-lvl`}>
+          <Field label="Niveau (emplacements de sort)" id={`${idPrefix}-lvl`}>
             <Input id={`${idPrefix}-lvl`} type="number" min={0} value={effect.level ?? ""} onChange={(e) => onChange({ ...effect, level: e.target.value ? Number(e.target.value) : undefined })} />
           </Field>
           <div className="md:col-span-3">
@@ -395,13 +409,13 @@ function EffectFields({
     case "set_state":
       return (
         <div className="grid gap-3 md:grid-cols-3">
-          <Field label="Entity ID" id={`${idPrefix}-ent`}>
+          <Field label="ID de la fiche" id={`${idPrefix}-ent`}>
             <Input id={`${idPrefix}-ent`} value={effect.entityId} onChange={(e) => onChange({ ...effect, entityId: e.target.value })} placeholder="ent_npc_…" />
           </Field>
-          <Field label="Attribute" id={`${idPrefix}-attr`}>
+          <Field label="Attribut" id={`${idPrefix}-attr`}>
             <Input id={`${idPrefix}-attr`} value={effect.attribute} onChange={(e) => onChange({ ...effect, attribute: e.target.value })} placeholder="status" />
           </Field>
-          <Field label="Value (string)" id={`${idPrefix}-val`}>
+          <Field label="Valeur (texte)" id={`${idPrefix}-val`}>
             <Input
               id={`${idPrefix}-val`}
               value={String(effect.value ?? "")}
@@ -415,10 +429,10 @@ function EffectFields({
     case "move_entity":
       return (
         <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Entity ID" id={`${idPrefix}-ent`}>
+          <Field label="ID de la fiche" id={`${idPrefix}-ent`}>
             <Input id={`${idPrefix}-ent`} value={effect.entityId} onChange={(e) => onChange({ ...effect, entityId: e.target.value })} placeholder="ent_npc_…" />
           </Field>
-          <Field label="To location ID" id={`${idPrefix}-loc`}>
+          <Field label="ID du lieu de destination" id={`${idPrefix}-loc`}>
             <Input id={`${idPrefix}-loc`} value={effect.toLocationId} onChange={(e) => onChange({ ...effect, toLocationId: e.target.value })} placeholder="ent_location_…" />
           </Field>
         </div>
@@ -427,17 +441,17 @@ function EffectFields({
     case "reveal_entity":
       return (
         <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Entity ID" id={`${idPrefix}-ent`}>
+          <Field label="ID de la fiche" id={`${idPrefix}-ent`}>
             <Input id={`${idPrefix}-ent`} value={effect.entityId} onChange={(e) => onChange({ ...effect, entityId: e.target.value })} />
           </Field>
-          <Field label="To users" id={`${idPrefix}-users`}>
+          <Field label="Visible par" id={`${idPrefix}-users`}>
             <Select value={typeof effect.toUsers === "string" ? effect.toUsers : "all_players"} onValueChange={(v) => onChange({ ...effect, toUsers: v as "all_players" | "mj_only" })}>
               <SelectTrigger id={`${idPrefix}-users`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all_players">All players</SelectItem>
-                <SelectItem value="mj_only">GM only</SelectItem>
+                <SelectItem value="all_players">Tous les joueurs</SelectItem>
+                <SelectItem value="mj_only">MJ uniquement</SelectItem>
               </SelectContent>
             </Select>
           </Field>
@@ -447,18 +461,18 @@ function EffectFields({
     case "set_relation":
       return (
         <div className="grid gap-3 md:grid-cols-3">
-          <Field label="From entity" id={`${idPrefix}-from`}>
+          <Field label="Fiche source" id={`${idPrefix}-from`}>
             <Input id={`${idPrefix}-from`} value={effect.fromId} onChange={(e) => onChange({ ...effect, fromId: e.target.value })} placeholder="ent_…" />
           </Field>
-          <Field label="To entity" id={`${idPrefix}-to`}>
+          <Field label="Fiche cible" id={`${idPrefix}-to`}>
             <Input id={`${idPrefix}-to`} value={effect.toId} onChange={(e) => onChange({ ...effect, toId: e.target.value })} />
           </Field>
           <Field label="Delta" id={`${idPrefix}-delta`}>
             <Input id={`${idPrefix}-delta`} type="number" value={effect.delta} onChange={(e) => onChange({ ...effect, delta: Number(e.target.value) })} placeholder="-20" />
           </Field>
           <div className="md:col-span-3">
-            <Field label="Disposition (optional)" id={`${idPrefix}-disp`}>
-              <Input id={`${idPrefix}-disp`} value={effect.disposition ?? ""} onChange={(e) => onChange({ ...effect, disposition: e.target.value || undefined })} placeholder="ally / enemy / rival" />
+            <Field label="Disposition (facultative)" id={`${idPrefix}-disp`}>
+              <Input id={`${idPrefix}-disp`} value={effect.disposition ?? ""} onChange={(e) => onChange({ ...effect, disposition: e.target.value || undefined })} placeholder="allié / ennemi / rival" />
             </Field>
           </div>
         </div>
@@ -466,7 +480,7 @@ function EffectFields({
 
     case "trigger_event":
       return (
-        <Field label="Event ID" id={`${idPrefix}-event`}>
+        <Field label="ID de l’événement" id={`${idPrefix}-event`}>
           <Input id={`${idPrefix}-event`} value={effect.eventId} onChange={(e) => onChange({ ...effect, eventId: e.target.value })} />
         </Field>
       );
@@ -475,10 +489,10 @@ function EffectFields({
     case "remove_from_inventory":
       return (
         <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Item ID" id={`${idPrefix}-item`}>
+          <Field label="ID de l’objet" id={`${idPrefix}-item`}>
             <Input id={`${idPrefix}-item`} value={effect.itemId} onChange={(e) => onChange({ ...effect, itemId: e.target.value })} />
           </Field>
-          <Field label="Quantity" id={`${idPrefix}-qty`}>
+          <Field label="Quantité" id={`${idPrefix}-qty`}>
             <Input id={`${idPrefix}-qty`} type="number" min={1} value={effect.quantity ?? 1} onChange={(e) => onChange({ ...effect, quantity: Number(e.target.value) })} />
           </Field>
           <div className="md:col-span-2">
@@ -489,21 +503,21 @@ function EffectFields({
 
     case "play_ambience":
       return (
-        <Field label="Ambience ID" id={`${idPrefix}-amb`}>
+        <Field label="ID de l’ambiance" id={`${idPrefix}-amb`}>
           <Input id={`${idPrefix}-amb`} value={effect.ambienceId} onChange={(e) => onChange({ ...effect, ambienceId: e.target.value })} placeholder="ambience_crypt" />
         </Field>
       );
 
     case "play_music":
       return (
-        <Field label="Music ID" id={`${idPrefix}-mus`}>
+        <Field label="ID de la musique" id={`${idPrefix}-mus`}>
           <Input id={`${idPrefix}-mus`} value={effect.musicId} onChange={(e) => onChange({ ...effect, musicId: e.target.value })} placeholder="music_combat_tense" />
         </Field>
       );
 
     case "play_sound":
       return (
-        <Field label="Sound ID" id={`${idPrefix}-snd`}>
+        <Field label="ID du bruitage" id={`${idPrefix}-snd`}>
           <Input id={`${idPrefix}-snd`} value={effect.soundId} onChange={(e) => onChange({ ...effect, soundId: e.target.value })} placeholder="sound_chest_open" />
         </Field>
       );
@@ -511,19 +525,19 @@ function EffectFields({
     case "display_image":
       return (
         <div className="grid gap-3">
-          <Field label="Image ID (optional)" id={`${idPrefix}-img`}>
+          <Field label="ID de l’image (facultatif)" id={`${idPrefix}-img`}>
             <Input id={`${idPrefix}-img`} value={effect.imageId ?? ""} onChange={(e) => onChange({ ...effect, imageId: e.target.value || undefined })} />
           </Field>
-          <Field label="Or live prompt" id={`${idPrefix}-prompt`}>
-            <Input id={`${idPrefix}-prompt`} value={effect.prompt ?? ""} onChange={(e) => onChange({ ...effect, prompt: e.target.value || undefined })} placeholder="Bobby vs the dragon in the cave" />
+          <Field label="Ou prompt de génération" id={`${idPrefix}-prompt`}>
+            <Input id={`${idPrefix}-prompt`} value={effect.prompt ?? ""} onChange={(e) => onChange({ ...effect, prompt: e.target.value || undefined })} placeholder="Bobby affronte le dragon dans la grotte" />
           </Field>
         </div>
       );
 
     case "display_text":
       return (
-        <Field label="Text" id={`${idPrefix}-text`}>
-          <Input id={`${idPrefix}-text`} value={effect.text} onChange={(e) => onChange({ ...effect, text: e.target.value })} placeholder="A cold wind sweeps through the room…" />
+        <Field label="Texte" id={`${idPrefix}-text`}>
+          <Input id={`${idPrefix}-text`} value={effect.text} onChange={(e) => onChange({ ...effect, text: e.target.value })} placeholder="Un vent glacial balaie la salle…" />
         </Field>
       );
 

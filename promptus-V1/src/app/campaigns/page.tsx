@@ -15,9 +15,9 @@ export default async function CampaignsPage() {
     <main className="flex-1 px-6 py-12 max-w-6xl mx-auto w-full">
       <header className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Campaigns</h1>
+          <h1 className="text-3xl font-bold">Campagnes</h1>
           <p className="text-muted-foreground mt-1">
-            The directories of your worlds — pick one to enter, or start a new saga.
+            Vos mondes : ouvrez-en un, ou lancez une nouvelle saga.
           </p>
         </div>
         <CreateCampaignButton />
@@ -26,8 +26,8 @@ export default async function CampaignsPage() {
       {rows.length === 0 ? (
         <Card className="text-center py-16">
           <CardHeader>
-            <CardTitle>No campaign yet</CardTitle>
-            <CardDescription>Create your first campaign to begin.</CardDescription>
+            <CardTitle>Aucune campagne</CardTitle>
+            <CardDescription>Créez votre première campagne pour commencer.</CardDescription>
           </CardHeader>
           <CardContent>
             <CreateCampaignButton />
@@ -45,10 +45,10 @@ export default async function CampaignsPage() {
               </CardHeader>
               <CardContent className="flex gap-2">
                 <Button asChild size="sm" variant="default">
-                  <Link href={`/campaigns/${c.id}/entities`}>Entities</Link>
+                  <Link href={`/campaigns/${c.id}/entities`}>Fiches</Link>
                 </Button>
                 <Button asChild size="sm" variant="outline">
-                  <Link href={`/campaigns/${c.id}`}>Open</Link>
+                  <Link href={`/campaigns/${c.id}`}>Ouvrir</Link>
                 </Button>
               </CardContent>
             </Card>

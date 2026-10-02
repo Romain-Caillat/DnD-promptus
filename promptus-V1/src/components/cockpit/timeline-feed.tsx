@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ResolutionRecord } from "@/lib/engine/types";
+import { OUTCOME_LABELS } from "@/lib/engine/catalog";
 import type { SessionTimelineRow } from "@/lib/db/schema";
 
 export function TimelineFeed({ sessionId }: { sessionId: string }) {
@@ -12,21 +13,21 @@ export function TimelineFeed({ sessionId }: { sessionId: string }) {
     queryKey: ["timeline", sessionId],
     queryFn: async () => {
       const res = await fetch(`/api/sessions/${sessionId}/timeline`);
-      if (!res.ok) throw new Error("Failed to load timeline");
+      if (!res.ok) throw new Error("Impossible de charger le journal");
       return res.json() as Promise<{ timeline: SessionTimelineRow[] }>;
     },
-    refetchInterval: 3000,
+    refetchInterval: 60_000, // le temps réel invalide le journal à chaque action
   });
 
   return (
     <Card className="h-full">
       <CardContent className="pt-4 space-y-2">
-        <h3 className="text-sm font-semibold uppercase tracking-wide">Timeline</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wide">Journal</h3>
         {isLoading ? (
-          <p className="text-xs text-muted-foreground">Loading…</p>
+          <p className="text-xs text-muted-foreground">Chargement…</p>
         ) : (data?.timeline ?? []).length === 0 ? (
           <p className="text-xs text-muted-foreground italic">
-            No actions resolved yet. Use the Hotbar to attack or cast a spell.
+            Aucune action résolue pour l’instant.
           </p>
         ) : (
           <ScrollArea className="h-72">
@@ -49,9 +50,9 @@ export function TimelineFeed({ sessionId }: { sessionId: string }) {
                             ? "destructive"
                             : "outline"
                         }
-                        className="capitalize text-[10px] py-0"
+                        className="text-[10px] py-0"
                       >
-                        {outcome}
+                        {OUTCOME_LABELS[outcome]}
                       </Badge>
                       {row.round !== null ? (
                         <span className="text-[10px] text-muted-foreground">

@@ -45,10 +45,13 @@ docker compose up -d           # Postgres on :5433
 cp .env.example .env.local
 pnpm db:migrate                # apply schema
 pnpm seed:all                  # audio catalog + demo campaign
+pnpm test                      # unit tests (no DB)
+pnpm test:integration          # DB-backed tests (needs Postgres)
 pnpm dev                        # http://localhost:3000
+pnpm realtime                   # temps réel (WebSocket) sur :3001
 ```
 
-Open `/campaigns` to see "The Goblin Dungeon — Demo" with 4 PCs, 15 spells,
+Open `/campaigns` to see "Le Donjon des gobelins (démo)" with 4 PCs, 15 spells,
 10 monsters, 10 items, 5 locations, 4 NPCs.
 
 ### Optional: AI image generation
@@ -67,6 +70,117 @@ entity editor is unavailable.
    ```
 5. Restart the dev server.
 
+## Génération de campagne par IA (OpenRouter)
+
+La page **« Générer avec l’IA »** d’une campagne transforme une idée en
+campagne complète (bible, menaces, fiches, scènes, indices, cartes à grille).
+Le résultat est un brouillon : le MJ le relit, le corrige (YAML) puis
+l’applique.
+
+1. Créez une clé sur <https://openrouter.ai> et ajoutez-la à `.env.local` :
+   ```
+   OPENROUTER_API_KEY=sk-or-...
+   OPENROUTER_MODEL=anthropic/claude-sonnet-4.5   # modèle par défaut
+   ```
+2. Par campagne, **Paramètres → Intelligence artificielle** : choix du modèle
+   (liste OpenRouter) et budget total en dollars.
+
+Sans réseau ni clé, un faux serveur OpenRouter rejoue la campagne de démo :
+
+```bash
+pnpm tsx scripts/fake-openrouter.ts 4010 &
+OPENROUTER_API_KEY=fake OPENROUTER_BASE_URL=http://localhost:4010/api/v1 pnpm dev
+```
+
+## Continuité : fin de session et chronique
+
+- **Terminer la session** (cockpit) : le combat et la musique s’arrêtent, les
+  joueurs ne peuvent plus agir. L’app mesure ce que la session a changé
+  depuis son lancement (scènes, indices, révélations, menaces, combats,
+  adversaires vaincus, état du groupe).
+- Deux récapitulatifs en brouillon : notes MJ (fils ouverts, pistes) et
+  « Précédemment… » pour les joueurs, sans secret. Factuels d’abord, puis
+  réécrits par l’IA si elle est configurée. Le MJ les corrige et **publie**
+  le second : les joueurs le lisent à la fin de la session et au début de la
+  suivante.
+- Le co-MJ connaît les résumés des sessions précédentes.
+- **Chronique** de la campagne : sessions, récapitulatifs, journaux complets,
+  ce que savent les joueurs, avancée des menaces.
+
+## Médias : images, vidéos, musique
+
+Page **Médias** d’une campagne : images des scènes, des fiches et fonds de
+cartes, vidéos d’intro des scènes, musique YouTube par scène.
+
+- Images et vidéos via OpenRouter (modèles choisis dans **Paramètres**). Sans
+  clé OpenRouter, les images passent par HuggingFace si `HUGGINGFACE_TOKEN`
+  est défini.
+- Le coût est estimé avant chaque lot (moyenne des derniers appels) et
+  comparé au budget IA de la campagne ; le lot est refusé s’il le dépasse.
+- Tout est généré à l’avance, rangé dans `MEDIA_DIR` (volume Docker) et servi
+  par `/api/media/…`. Les prompts sont modifiables.
+- **Musique** : le MJ associe un lien YouTube (vidéo ou playlist) à chaque
+  scène ; un lien de recherche est proposé à partir de l’ambiance suggérée par
+  le LLM. En partie, le panneau **Musique** la lance chez tous les joueurs,
+  calée au même instant (pause, reprise, arrêt). Le lecteur YouTube reste
+  visible (conditions de YouTube) et démarre en muet : chacun clique
+  « Activer le son ». Les publicités peuvent décaler un joueur ; la lecture
+  se recale toute seule.
+
+## Co-MJ en direct
+
+Dans le cockpit, le panneau **Co-MJ** interroge le modèle avec le contexte de
+la partie : bible, scène en cours (PNJ présents, indices, déclencheurs,
+sorties), menaces, révélations, état des combattants, journal récent et
+demandes des joueurs.
+
+- **Décrire la situation**, **Conséquences**, **Et ensuite ?**, **Faire
+  parler** un PNJ, ou une question libre (champ « Précision »).
+- Réponse : une narration et des répliques **modifiables**, puis envoyées aux
+  joueurs d’un clic ; des suggestions applicables (révéler un indice, faire
+  avancer une menace, déclencher un événement, changer de scène).
+  Les identifiants inventés par le modèle sont écartés.
+- Rien n’atteint les joueurs sans validation. Chaque appel est compté dans le
+  budget IA de la campagne.
+
+## Jouer à distance
+
+1. Le MJ lance une session depuis la campagne. Dans le cockpit, le panneau
+   **Joueurs** donne le lien d’invitation (`/play/<code>`).
+2. Chaque joueur ouvre le lien sur son téléphone ou son ordinateur, choisit un
+   pseudo et un personnage libre (ou spectateur). Pas de compte : un jeton
+   secret est gardé dans le navigateur.
+3. Écran joueur : scène en cours, carte (zone révélée seulement), fiche,
+   groupe et initiative, actions permises par les règles, journal public.
+   - **Déplacement** : le joueur touche une case en surbrillance. Le serveur
+     vérifie le tour, la vitesse, les murs, le brouillard et les cases occupées.
+   - **Actions** : le joueur envoie une demande, le MJ la valide, la refuse ou
+     lance le test (DD) ; le résultat revient chez le joueur.
+   - **Montrer aux joueurs** : le MJ affiche une fiche (PNJ, lieu…) chez tous.
+4. La synchronisation passe par le serveur temps réel (`pnpm realtime`) : il
+   relaie les notifications Postgres, sans transporter de données de jeu.
+
+### Combat sur grille
+
+- Le MJ pose les pions sur la carte de combat : participants, fiches de la
+  campagne (« + ») ou nouvel exemplaire d’un monstre (« ⧉ », ex. « Guerrier
+  gobelin 2 »). **Lancer le combat** fait entrer toutes les créatures de la
+  carte dans l’initiative.
+- Les fiches ont des **attaques** (bonus, dégâts, type, portée en mètres,
+  portée longue). La portée et la ligne de vue sont vérifiées sur la grille ;
+  la portée longue donne un désavantage. Le MJ peut forcer.
+- MJ : sélectionner un pion → **Attaquer** → cliquer la cible.
+- Joueur, à son tour : se déplacer, toucher un adversaire, choisir l’arme ;
+  le MJ résout l’attaque d’un clic.
+- Un adversaire à 0 PV est marqué à terre et ne joue plus.
+
+Le joueur ne reçoit jamais les notes MJ, les cases cachées ni le nom des
+adversaires non révélés (ni leurs PV).
+
+> ⚠️ Les pages MJ n’ont pas d’authentification : en production, protégez-les
+> (par exemple `basic_auth` dans Caddy, en laissant `/play/*`, `/api/play/*` et
+> `/realtime` publics).
+
 ## Deploying to your home server
 
 Promptus ships a multi-stage Dockerfile and a production compose file with
@@ -77,7 +191,7 @@ ssh you@home-server
 git clone <your-fork>
 cd promptus
 cp .env.production.example .env.production
-$EDITOR .env.production            # set DB_PASSWORD; HUGGINGFACE_TOKEN if needed
+$EDITOR .env.production            # DB_PASSWORD, REALTIME_PUBLIC_URL, clés API
 $EDITOR Caddyfile                  # set your domain
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d
 ```

@@ -3,6 +3,12 @@
 # For local-only or LAN deployment, replace the domain with `:80`.
 
 promptus.example.com {
-  reverse_proxy app:3000
-  encode gzip
+  # Temps réel (WebSocket) : REALTIME_PUBLIC_URL=wss://promptus.example.com/realtime
+  handle /realtime* {
+    reverse_proxy realtime:3001
+  }
+  handle {
+    reverse_proxy app:3000
+    encode gzip
+  }
 }

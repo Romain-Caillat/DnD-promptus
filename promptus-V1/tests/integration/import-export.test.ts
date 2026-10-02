@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import yaml from "js-yaml";
+import * as yaml from "js-yaml";
 import { db } from "@/lib/db/client";
 import { campaigns, entities } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";

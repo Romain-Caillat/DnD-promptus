@@ -4,7 +4,7 @@ import { db } from "@/lib/db/client";
 import { campaigns } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StartSessionDialog } from "@/components/sessions/start-session-dialog";
 import { SessionsList } from "@/components/sessions/sessions-list";
 
@@ -22,7 +22,7 @@ export default async function CampaignDashboardPage({ params }: Props) {
   return (
     <main className="flex-1 px-6 py-8 max-w-6xl mx-auto w-full">
       <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-        <Link href="/campaigns">← Campaigns</Link>
+        <Link href="/campaigns">← Campagnes</Link>
       </Button>
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
@@ -32,7 +32,7 @@ export default async function CampaignDashboardPage({ params }: Props) {
           ) : null}
         </div>
         <Button asChild variant="outline" size="sm">
-          <Link href={`/campaigns/${campaign.id}/settings`}>Settings</Link>
+          <Link href={`/campaigns/${campaign.id}/settings`}>Paramètres</Link>
         </Button>
       </div>
 
@@ -42,17 +42,60 @@ export default async function CampaignDashboardPage({ params }: Props) {
           <StartSessionDialog campaignId={campaign.id} />
         </div>
         <SessionsList campaignId={campaign.id} />
+        <Button asChild variant="link" className="px-0 mt-2">
+          <Link href={`/campaigns/${campaign.id}/chronicle`}>Chronique de la campagne →</Link>
+        </Button>
       </section>
 
       <section className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">World & assets</h2>
+        <h2 className="text-xl font-semibold mb-4">Monde et ressources</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Link href={`/campaigns/${campaign.id}/generate`}>
+            <Card className="hover:border-primary transition-colors h-full border-primary/50">
+              <CardHeader>
+                <CardTitle className="text-base">Générer avec l’IA</CardTitle>
+                <CardDescription>
+                  Une idée suffit : bible, personnages, scènes, indices et cartes.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+          <Link href={`/campaigns/${campaign.id}/story`}>
+            <Card className="hover:border-primary transition-colors h-full">
+              <CardHeader>
+                <CardTitle className="text-base">Scénario</CardTitle>
+                <CardDescription>
+                  Bible, menaces, scènes, révélations et cartes.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+          <Link href={`/campaigns/${campaign.id}/media`}>
+            <Card className="hover:border-primary transition-colors h-full">
+              <CardHeader>
+                <CardTitle className="text-base">Médias</CardTitle>
+                <CardDescription>
+                  Images, vidéos d’intro et musiques YouTube, selon votre budget.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
           <Link href={`/campaigns/${campaign.id}/entities`}>
             <Card className="hover:border-primary transition-colors h-full">
               <CardHeader>
-                <CardTitle className="text-base">Entities</CardTitle>
+                <CardTitle className="text-base">Fiches</CardTitle>
                 <CardDescription>
-                  Spells, items, NPCs, monsters, locations and events.
+                  Sorts, objets, PNJ, monstres, lieux et événements.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+          <Link href={`/campaigns/${campaign.id}/rules`}>
+            <Card className="hover:border-primary transition-colors h-full">
+              <CardHeader>
+                <CardTitle className="text-base">Règles</CardTitle>
+                <CardDescription>
+                  Système de jeu : jets, états, déplacement, actions des joueurs.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -60,19 +103,13 @@ export default async function CampaignDashboardPage({ params }: Props) {
           <Link href={`/campaigns/${campaign.id}/audio`}>
             <Card className="hover:border-primary transition-colors h-full">
               <CardHeader>
-                <CardTitle className="text-base">Audio library</CardTitle>
+                <CardTitle className="text-base">Bibliothèque audio</CardTitle>
                 <CardDescription>
-                  Ambiences, music and sound effects available in cockpit.
+                  Ambiances, musiques et bruitages disponibles en partie.
                 </CardDescription>
               </CardHeader>
             </Card>
           </Link>
-          <Card className="opacity-50 cursor-not-allowed">
-            <CardHeader>
-              <CardTitle className="text-base">Replay archive</CardTitle>
-              <CardDescription>Available in V1.</CardDescription>
-            </CardHeader>
-          </Card>
         </div>
       </section>
     </main>

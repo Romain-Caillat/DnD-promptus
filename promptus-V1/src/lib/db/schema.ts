@@ -5,6 +5,7 @@ import {
   timestamp,
   integer,
   boolean,
+  doublePrecision,
   pgEnum,
   index,
   uniqueIndex,
@@ -15,8 +16,26 @@ import type {
   EntityState,
   ResolutionRecord,
   InitiativeEntry,
-  MarkerCondition,
 } from "@/lib/engine/types";
+import type { Ruleset } from "@/lib/engine/ruleset";
+import type { CampaignStory } from "@/lib/engine/story";
+import type { WorldState } from "@/lib/engine/world";
+import type { LlmUsage } from "@/lib/ai/llm";
+import type { SessionRecap } from "@/lib/continuity/recap";
+import type {
+  GenerationInput,
+  GenerationResult,
+  GenerationStep,
+  JobStatus,
+} from "@/lib/generation/types";
+
+export interface AiSettings {
+  model?: string;
+  /** Modèles OpenRouter pour les images et les vidéos. */
+  imageModel?: string;
+  videoModel?: string;
+  budgetUsd?: number;
+}
 
 // ============================================================================
 // Enums
@@ -55,11 +74,6 @@ export const audioTypeEnum = pgEnum("audio_type", [
   "sound",
 ]);
 
-export const markerStatusEnum = pgEnum("marker_status", [
-  "armed",
-  "triggered",
-  "disabled",
-]);
 
 // ============================================================================
 // Tables
@@ -71,6 +85,14 @@ export const campaigns = pgTable("campaigns", {
   description: text("description"),
   styleGuide: jsonb("style_guide").$type<StyleGuide>().default({}).notNull(),
   systemTemplate: text("system_template").default("dnd5e").notNull(),
+  /** Système de règles défini par le MJ ; null = préréglage D&D 5e. */
+  ruleset: jsonb("ruleset").$type<Ruleset>(),
+  /** Histoire structurée (bible, fronts, scènes, indices, cartes) ; null = vide. */
+  story: jsonb("story").$type<CampaignStory>(),
+  /** État du monde (scène courante, indices, menaces…), partagé entre sessions. */
+  worldState: jsonb("world_state").$type<WorldState>(),
+  /** Réglages IA : modèle OpenRouter et budget total de génération (dollars). */
+  aiSettings: jsonb("ai_settings").$type<AiSettings>().default({}).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -120,10 +142,16 @@ export const sessions = pgTable("sessions", {
     .notNull(),
   combatRound: integer("combat_round").default(0).notNull(),
   activeTurnIndex: integer("active_turn_index").default(0).notNull(),
+  /** Code du lien d'invitation des joueurs (/play/<code>). */
+  inviteCode: text("invite_code").unique(),
   startedAt: timestamp("started_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
   endedAt: timestamp("ended_at", { withTimezone: true }),
+  /** État du monde au lancement : sert à mesurer ce que la session a changé. */
+  worldAtStart: jsonb("world_at_start").$type<WorldState>(),
+  /** Récapitulatifs de fin de session (MJ, joueurs). */
+  recap: jsonb("recap").$type<SessionRecap>(),
 });
 
 export const sessionState = pgTable(
@@ -152,27 +180,107 @@ export const sessionTimeline = pgTable("session_timeline", {
   round: integer("round"),
   description: text("description").notNull(),
   resolutionRecord: jsonb("resolution_record").$type<ResolutionRecord>(),
+  /** Visible des joueurs (sinon réservé au MJ). */
+  isPublic: boolean("is_public").default(true).notNull(),
+  /** event : résolution, déplacement… ; narration / npc : texte validé par le MJ. */
+  kind: text("kind").$type<"event" | "narration" | "npc">().default("event").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
 });
 
-export const sceneMarkers = pgTable("scene_markers", {
-  id: text("id").primaryKey(),
-  campaignId: text("campaign_id")
-    .references(() => campaigns.id, { onDelete: "cascade" })
-    .notNull(),
-  name: text("name").notNull(),
-  description: text("description"),
-  conditions: jsonb("conditions").$type<MarkerCondition>().notNull(),
-  effects: jsonb("effects").$type<Effect[]>().notNull(),
-  status: markerStatusEnum("status").default("armed").notNull(),
-  oneShot: boolean("one_shot").default(true).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  triggeredAt: timestamp("triggered_at", { withTimezone: true }),
-});
+
+/** Joueurs ayant rejoint une session à distance. */
+export const sessionPlayers = pgTable(
+  "session_players",
+  {
+    id: text("id").primaryKey(),
+    sessionId: text("session_id")
+      .references(() => sessions.id, { onDelete: "cascade" })
+      .notNull(),
+    name: text("name").notNull(),
+    /** Personnage incarné ; null = spectateur. */
+    characterEntityId: text("character_entity_id").references(() => entities.id, { onDelete: "set null" }),
+    /** Empreinte SHA-256 du jeton secret remis au joueur. */
+    tokenHash: text("token_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("session_players_session_idx").on(t.sessionId), uniqueIndex("session_players_token_idx").on(t.tokenHash)],
+);
+
+/** Actions demandées par les joueurs, validées par le MJ. */
+export const playerRequests = pgTable(
+  "player_requests",
+  {
+    id: text("id").primaryKey(),
+    sessionId: text("session_id")
+      .references(() => sessions.id, { onDelete: "cascade" })
+      .notNull(),
+    playerId: text("player_id")
+      .references(() => sessionPlayers.id, { onDelete: "cascade" })
+      .notNull(),
+    actionId: text("action_id").notNull(),
+    label: text("label").notNull(),
+    targetIds: jsonb("target_ids").$type<string[]>().default([]).notNull(),
+    /** Attaque choisie (attributes.attacks du personnage) pour une action d'attaque. */
+    attackId: text("attack_id"),
+    note: text("note"),
+    status: text("status").$type<"pending" | "resolved" | "rejected">().default("pending").notNull(),
+    result: text("result"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  },
+  (t) => [index("player_requests_session_idx").on(t.sessionId, t.status)],
+);
+
+export const generationJobs = pgTable(
+  "generation_jobs",
+  {
+    id: text("id").primaryKey(),
+    campaignId: text("campaign_id")
+      .references(() => campaigns.id, { onDelete: "cascade" })
+      .notNull(),
+    status: text("status").$type<JobStatus>().notNull(),
+    input: jsonb("input").$type<GenerationInput>().notNull(),
+    steps: jsonb("steps").$type<GenerationStep[]>().notNull(),
+    result: jsonb("result").$type<GenerationResult>(),
+    error: text("error"),
+    usage: jsonb("usage").$type<LlmUsage>().notNull(),
+    model: text("model").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("generation_jobs_campaign_idx").on(t.campaignId, t.createdAt)],
+);
+
+/**
+ * Appels IA hors génération de campagne : co-MJ en direct, images, vidéos.
+ * Sert d'historique et de compteur de dépenses (budget de la campagne).
+ */
+export const aiCalls = pgTable(
+  "ai_calls",
+  {
+    id: text("id").primaryKey(),
+    campaignId: text("campaign_id")
+      .references(() => campaigns.id, { onDelete: "cascade" })
+      .notNull(),
+    sessionId: text("session_id").references(() => sessions.id, { onDelete: "cascade" }),
+    kind: text("kind").$type<"copilot" | "image" | "video" | "recap">().notNull(),
+    status: text("status").$type<"running" | "succeeded" | "failed">().notNull(),
+    model: text("model").notNull(),
+    input: jsonb("input").$type<Record<string, unknown>>().default({}).notNull(),
+    output: jsonb("output").$type<Record<string, unknown>>(),
+    error: text("error"),
+    costUsd: doublePrecision("cost_usd").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("ai_calls_campaign_idx").on(t.campaignId, t.createdAt),
+    index("ai_calls_session_idx").on(t.sessionId, t.createdAt),
+  ],
+);
 
 export const audioAssets = pgTable("audio_assets", {
   id: text("id").primaryKey(),
@@ -197,5 +305,8 @@ export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
 export type SessionStateRow = typeof sessionState.$inferSelect;
 export type SessionTimelineRow = typeof sessionTimeline.$inferSelect;
-export type SceneMarker = typeof sceneMarkers.$inferSelect;
 export type AudioAsset = typeof audioAssets.$inferSelect;
+export type GenerationJobRow = typeof generationJobs.$inferSelect;
+export type SessionPlayerRow = typeof sessionPlayers.$inferSelect;
+export type PlayerRequestRow = typeof playerRequests.$inferSelect;
+export type AiCallRow = typeof aiCalls.$inferSelect;

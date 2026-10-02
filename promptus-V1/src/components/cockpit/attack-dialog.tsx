@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -24,38 +24,61 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { DAMAGE_TYPES } from "@/lib/engine/catalog";
+import { OUTCOME_LABELS } from "@/lib/engine/catalog";
+import { creatureAttacks, type AttackGeometry, type CreatureAttack } from "@/lib/engine/combat";
+import { damageTypeLabel } from "@/lib/engine/ruleset";
+import { useRuleset } from "@/components/providers/ruleset-provider";
 import type { ParticipantView } from "@/lib/stores/session-store";
-import type { ResolutionRecord, DamageType } from "@/lib/engine/types";
+import type { ResolutionRecord } from "@/lib/engine/types";
+
+const MANUAL = "__manual";
 
 interface Props {
   sessionId: string;
   participants: ParticipantView[];
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
+  /** Ouverture pilotée (depuis la carte). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  preset?: { attackerId: string; targetIds: string[] };
+  /** Portée et ligne de vue sur la carte affichée, si les deux pions y sont. */
+  geometry?: (attackerId: string, targetId: string, attack: Pick<CreatureAttack, "rangeMeters" | "longRangeMeters">) => AttackGeometry | null;
 }
 
-export function AttackDialog({ sessionId, participants, trigger }: Props) {
-  const [open, setOpen] = useState(false);
-  const [attackerId, setAttackerId] = useState<string>("");
-  const [targetIds, setTargetIds] = useState<Set<string>>(new Set());
+export function AttackDialog({ sessionId, participants, trigger, open: openProp, onOpenChange, preset, geometry }: Props) {
+  const ruleset = useRuleset();
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const [attackerId, setAttackerId] = useState<string>(preset?.attackerId ?? "");
+  const [targetIds, setTargetIds] = useState<Set<string>>(new Set(preset?.targetIds ?? []));
+  const [attackChoice, setAttackChoice] = useState<string>("");
   const [attackBonus, setAttackBonus] = useState("3");
   const [damageNotation, setDamageNotation] = useState("1d8+3");
-  const [damageType, setDamageType] = useState<DamageType>("slashing");
+  const [damageTypeChoice, setDamageType] = useState<string>("");
+  // Le type par défaut est le premier du ruleset (tranchant en 5e).
+  const damageType = damageTypeChoice || ruleset.damageTypes[0]?.id || "";
   const [meleeWithin5ft, setMeleeWithin5ft] = useState(true);
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<ResolutionRecord[] | null>(null);
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!open) {
+  function handleOpenChange(next: boolean) {
+    setOpenState(next);
+    onOpenChange?.(next);
+    if (!next) {
       setResults(null);
-      setTargetIds(new Set());
+      if (!preset) setTargetIds(new Set());
     }
-  }, [open]);
+  }
 
-  const aliveParticipants = participants.filter(
-    (p) => (p.state.currentState.hp ?? 1) > 0,
-  );
+  const aliveParticipants = participants.filter((p) => (p.state.currentState.hp ?? 1) > 0);
+  const attacker = participants.find((p) => p.state.entityId === attackerId);
+  const attacks = attacker?.entity ? creatureAttacks(attacker.entity.attributes, ruleset) : [];
+  // Par défaut : la première attaque de la fiche ; « saisie libre » sinon.
+  const attackId = attackChoice || attacks[0]?.id || MANUAL;
+  const weapon = attacks.find((a) => a.id === attackId);
+  const geoFor = (targetId: string) =>
+    geometry && attackerId ? geometry(attackerId, targetId, weapon ?? { rangeMeters: Infinity }) : null;
 
   function toggleTarget(id: string) {
     setTargetIds((s) => {
@@ -66,9 +89,9 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
     });
   }
 
-  async function attack() {
-    if (!attackerId) return toast.error("Pick an attacker");
-    if (targetIds.size === 0) return toast.error("Pick at least one target");
+  async function attack(force = false) {
+    if (!attackerId) return toast.error("Choisissez un attaquant");
+    if (targetIds.size === 0) return toast.error("Choisissez au moins une cible");
     setBusy(true);
     try {
       const res = await fetch(`/api/sessions/${sessionId}/actions`, {
@@ -78,53 +101,49 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
           kind: "attack",
           attackerId,
           targetIds: Array.from(targetIds),
-          attackBonus: Number(attackBonus),
-          damageNotation,
-          damageType,
-          meleeWithin5ft,
+          ...(weapon
+            ? { attackId: weapon.id }
+            : { attackBonus: Number(attackBonus), damageNotation, damageType, meleeWithin5ft }),
+          force,
         }),
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error?.message ?? "Attack failed");
+        throw new Error(err.error?.message ?? "Échec de l’attaque");
       }
       const { records } = (await res.json()) as { records: ResolutionRecord[] };
       setResults(records);
       queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
       queryClient.invalidateQueries({ queryKey: ["timeline", sessionId] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Attack failed");
+      toast.error(e instanceof Error ? e.message : "Échec de l’attaque");
     } finally {
       setBusy(false);
     }
   }
 
+  const blocked = weapon ? [...targetIds].some((t) => geoFor(t)?.reason) : false;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Make an attack</DialogTitle>
+          <DialogTitle>Attaquer</DialogTitle>
         </DialogHeader>
 
         {results ? (
           <div className="space-y-2" data-testid="attack-results">
-            <h3 className="text-sm font-semibold">Resolution</h3>
+            <h3 className="text-sm font-semibold">Résolution</h3>
             <ScrollArea className="max-h-72 rounded border p-3">
               <ul className="space-y-1 text-sm">
                 {results.map((r, i) => (
                   <li key={i} className="border-l-2 pl-2 py-0.5">
                     <Badge
-                      variant={
-                        r.outcome === "success"
-                          ? "default"
-                          : r.outcome === "fail"
-                          ? "destructive"
-                          : "outline"
-                      }
+                      variant={r.outcome === "success" ? "default" : r.outcome === "fail" ? "destructive" : "outline"}
                       className="mr-2 capitalize"
                     >
-                      {r.outcome}
+                      {OUTCOME_LABELS[r.outcome]}
                     </Badge>
                     {r.description}
                   </li>
@@ -133,18 +152,24 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
             </ScrollArea>
             <DialogFooter>
               <Button variant="outline" onClick={() => setResults(null)}>
-                Another attack
+                Nouvelle attaque
               </Button>
-              <Button onClick={() => setOpen(false)}>Close</Button>
+              <Button onClick={() => handleOpenChange(false)}>Fermer</Button>
             </DialogFooter>
           </div>
         ) : (
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-xs uppercase">Attacker</Label>
-              <Select value={attackerId} onValueChange={setAttackerId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pick an attacker…" />
+              <Label className="text-xs uppercase">Attaquant</Label>
+              <Select
+                value={attackerId}
+                onValueChange={(v) => {
+                  setAttackerId(v);
+                  setAttackChoice("");
+                }}
+              >
+                <SelectTrigger aria-label="Attaquant">
+                  <SelectValue placeholder="Choisir un attaquant…" />
                 </SelectTrigger>
                 <SelectContent>
                   {aliveParticipants.map((p) => (
@@ -156,81 +181,107 @@ export function AttackDialog({ sessionId, participants, trigger }: Props) {
               </Select>
             </div>
 
-            <div>
-              <Label className="text-xs uppercase">Target(s)</Label>
-              <div className="rounded border p-2 max-h-40 overflow-auto space-y-1">
-                {aliveParticipants
-                  .filter((p) => p.state.entityId !== attackerId)
-                  .map((p) => (
-                    <label
-                      key={p.state.entityId}
-                      className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted cursor-pointer"
-                    >
-                      <Checkbox
-                        checked={targetIds.has(p.state.entityId)}
-                        onCheckedChange={() => toggleTarget(p.state.entityId)}
-                      />
-                      <span className="flex-1 text-sm">{p.entity?.name}</span>
-                      {p.state.currentState.ac !== undefined ? (
-                        <Badge variant="outline" className="text-xs">
-                          AC {p.state.currentState.ac}
-                        </Badge>
-                      ) : null}
-                      {p.state.currentState.conditions.length > 0 ? (
-                        <Badge variant="destructive" className="text-xs">
-                          {p.state.currentState.conditions[0].conditionId}
-                          {p.state.currentState.conditions.length > 1 ? "+" : ""}
-                        </Badge>
-                      ) : null}
-                    </label>
-                  ))}
-              </div>
-            </div>
-
-            <div className="grid gap-3 grid-cols-2">
+            {attacker ? (
               <div className="space-y-1">
-                <Label className="text-xs uppercase">Attack bonus</Label>
-                <Input
-                  type="number"
-                  value={attackBonus}
-                  onChange={(e) => setAttackBonus(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs uppercase">Damage type</Label>
-                <Select value={damageType} onValueChange={(v) => setDamageType(v as DamageType)}>
-                  <SelectTrigger>
+                <Label className="text-xs uppercase">Attaque</Label>
+                <Select value={attackId} onValueChange={setAttackChoice}>
+                  <SelectTrigger aria-label="Attaque">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {DAMAGE_TYPES.map((d) => (
-                      <SelectItem key={d} value={d}>
-                        {d}
+                    {attacks.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.name} ({a.bonus >= 0 ? "+" : ""}
+                        {a.bonus}, {a.damage} {damageTypeLabel(ruleset, a.damageType)},{" "}
+                        {a.longRangeMeters ? `${a.rangeMeters}/${a.longRangeMeters} m` : `${a.rangeMeters} m`})
                       </SelectItem>
                     ))}
+                    <SelectItem value={MANUAL}>Saisie libre…</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1 col-span-2">
-                <Label className="text-xs uppercase">Damage notation</Label>
-                <Input
-                  value={damageNotation}
-                  onChange={(e) => setDamageNotation(e.target.value)}
-                  placeholder="1d8+3"
-                />
+            ) : null}
+
+            <div>
+              <Label className="text-xs uppercase">Cible(s)</Label>
+              <div className="rounded border p-2 max-h-40 overflow-auto space-y-1">
+                {aliveParticipants
+                  .filter((p) => p.state.entityId !== attackerId)
+                  .map((p) => {
+                    const geo = geoFor(p.state.entityId);
+                    return (
+                      <label
+                        key={p.state.entityId}
+                        className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={targetIds.has(p.state.entityId)}
+                          onCheckedChange={() => toggleTarget(p.state.entityId)}
+                        />
+                        <span className="flex-1 text-sm">{p.entity?.name}</span>
+                        {geo ? (
+                          <Badge
+                            variant={geo.reason ? "destructive" : geo.longRange ? "secondary" : "outline"}
+                            className="text-xs"
+                            title={geo.reason ?? undefined}
+                          >
+                            {geo.distanceMeters.toLocaleString("fr-FR")} m
+                            {geo.reason ? (geo.inRange ? " · pas de vue" : " · hors portée") : geo.longRange ? " · désavantage" : ""}
+                          </Badge>
+                        ) : null}
+                        {p.state.currentState.ac !== undefined ? (
+                          <Badge variant="outline" className="text-xs">
+                            CA {p.state.currentState.ac}
+                          </Badge>
+                        ) : null}
+                      </label>
+                    );
+                  })}
               </div>
-              <label className="flex items-center gap-2 col-span-2">
-                <Checkbox
-                  checked={meleeWithin5ft}
-                  onCheckedChange={(v) => setMeleeWithin5ft(!!v)}
-                />
-                <span className="text-sm">Melee within 5 ft (enables critical on paralyzed/unconscious)</span>
-              </label>
             </div>
 
+            {!weapon ? (
+              <div className="grid gap-3 grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs uppercase">Bonus d’attaque</Label>
+                  <Input type="number" value={attackBonus} onChange={(e) => setAttackBonus(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs uppercase">Type de dégâts</Label>
+                  <Select value={damageType} onValueChange={setDamageType}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ruleset.damageTypes.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 col-span-2">
+                  <Label className="text-xs uppercase">Dés de dégâts</Label>
+                  <Input value={damageNotation} onChange={(e) => setDamageNotation(e.target.value)} placeholder="1d8+3" />
+                </div>
+                <label className="flex items-center gap-2 col-span-2">
+                  <Checkbox checked={meleeWithin5ft} onCheckedChange={(v) => setMeleeWithin5ft(!!v)} />
+                  <span className="text-sm">
+                    Au contact à 1,5 m (critique automatique sur une cible paralysée/inconsciente)
+                  </span>
+                </label>
+              </div>
+            ) : null}
+
             <DialogFooter>
-              <Button onClick={attack} disabled={busy} data-testid="attack-submit">
-                {busy ? "Resolving…" : "Resolve attack"}
+              {blocked ? (
+                <Button variant="outline" onClick={() => attack(true)} disabled={busy} title="Ignorer la portée et la ligne de vue">
+                  Forcer
+                </Button>
+              ) : null}
+              <Button onClick={() => attack(false)} disabled={busy || blocked} data-testid="attack-submit">
+                {busy ? "Résolution…" : "Résoudre l’attaque"}
               </Button>
             </DialogFooter>
           </div>

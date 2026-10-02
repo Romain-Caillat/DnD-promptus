@@ -12,7 +12,7 @@ export function ExportAllButton({
   return (
     <Button asChild variant="outline" disabled={disabled}>
       <a href={`/api/campaigns/${campaignId}/entities/export`} download>
-        Export all
+        Tout exporter
       </a>
     </Button>
   );

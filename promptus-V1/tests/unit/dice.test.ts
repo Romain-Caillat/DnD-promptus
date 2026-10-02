@@ -82,7 +82,7 @@ describe("rollD20", () => {
   it("rolls a single d20 normally", () => {
     const r = rollD20(5, { rng: () => 0.95 }); // ~face 20
     expect(r.rolls).toHaveLength(1);
-    expect(r.result).toBe(r.rolls[0] + 5);
+    expect(r.result).toBe(r.rolls![0] + 5);
   });
 
   it("with advantage rolls 2 and keeps highest", () => {

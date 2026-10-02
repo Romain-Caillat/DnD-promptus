@@ -29,7 +29,7 @@ export interface ParsedDice {
 
 export function parseDiceNotation(input: string): ParsedDice {
   const cleaned = input.replace(/\s+/g, "").toLowerCase();
-  if (!cleaned) throw new Error("Empty dice notation");
+  if (!cleaned) throw new Error("Notation de dés vide");
 
   // Detect /2 (and other halve forms) suffix
   let half = false;
@@ -37,7 +37,7 @@ export function parseDiceNotation(input: string): ParsedDice {
   const halfMatch = body.match(/\/(\d+)$/);
   if (halfMatch) {
     if (halfMatch[1] !== "2") {
-      throw new Error(`Only /2 suffix is supported, got /${halfMatch[1]}`);
+      throw new Error(`Seul le suffixe /2 est accepté (reçu /${halfMatch[1]})`);
     }
     half = true;
     body = body.slice(0, -halfMatch[0].length);
@@ -57,7 +57,7 @@ export function parseDiceNotation(input: string): ParsedDice {
   // NdM(+|-K)?
   const re = /^(\d+)d(\d+)(?:([+\-])(\d+))?$/;
   const m = body.match(re);
-  if (!m) throw new Error(`Invalid dice notation: "${input}"`);
+  if (!m) throw new Error(`Notation de dés invalide : « ${input} »`);
 
   const count = parseInt(m[1], 10);
   const faces = parseInt(m[2], 10);
@@ -65,8 +65,8 @@ export function parseDiceNotation(input: string): ParsedDice {
   const num = m[4] ? parseInt(m[4], 10) : 0;
   const modifier = sign === "-" ? -num : num;
 
-  if (count <= 0 || count > 100) throw new Error(`Dice count out of range: ${count}`);
-  if (faces <= 0 || faces > 1000) throw new Error(`Dice faces out of range: ${faces}`);
+  if (count <= 0 || count > 100) throw new Error(`Nombre de dés hors limites : ${count}`);
+  if (faces <= 0 || faces > 1000) throw new Error(`Nombre de faces hors limites : ${faces}`);
 
   return { count, faces, modifier, half, flat: false };
 }

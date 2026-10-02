@@ -31,7 +31,7 @@ export function CampaignSettingsForm({ campaignId, initial }: Props) {
   }
 
   async function save() {
-    if (!name.trim()) return toast.error("Campaign name is required");
+    if (!name.trim()) return toast.error("Le nom de la campagne est obligatoire");
     setBusy(true);
     try {
       const res = await fetch(`/api/campaigns/${campaignId}`, {
@@ -43,11 +43,11 @@ export function CampaignSettingsForm({ campaignId, initial }: Props) {
           styleGuide: style,
         }),
       });
-      if (!res.ok) throw new Error((await res.json()).error?.message ?? "Save failed");
-      toast.success("Campaign settings saved");
+      if (!res.ok) throw new Error((await res.json()).error?.message ?? "Échec de l’enregistrement");
+      toast.success("Paramètres de la campagne enregistrés");
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Save failed");
+      toast.error(e instanceof Error ? e.message : "Échec de l’enregistrement");
     } finally {
       setBusy(false);
     }
@@ -57,12 +57,12 @@ export function CampaignSettingsForm({ campaignId, initial }: Props) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Identity</CardTitle>
+          <CardTitle className="text-lg">Identité</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1">
             <Label htmlFor="cname" className="text-xs uppercase tracking-wide text-muted-foreground">
-              Name
+              Nom
             </Label>
             <Input id="cname" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
@@ -82,44 +82,44 @@ export function CampaignSettingsForm({ campaignId, initial }: Props) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Visual style guide</CardTitle>
+          <CardTitle className="text-lg">Guide de style visuel</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <Field
-            label="Art style"
-            help="e.g. dark fantasy oil painting, ink wash, low-poly 3D"
+            label="Style artistique"
+            help="ex. peinture à l’huile dark fantasy, lavis d’encre, 3D low-poly"
             value={style.artStyle ?? ""}
             onChange={(v) => set("artStyle", v)}
           />
           <Field
-            label="Mood"
-            help="e.g. ominous, candle-lit, epic, somber"
+            label="Ambiance"
+            help="ex. inquiétante, à la chandelle, épique, sombre"
             value={style.mood ?? ""}
             onChange={(v) => set("mood", v)}
           />
           <Field
             label="Palette"
-            help="e.g. muted earth tones, neon cyberpunk, monochrome"
+            help="ex. tons terreux sourds, néons cyberpunk, monochrome"
             value={style.palette ?? ""}
             onChange={(v) => set("palette", v)}
           />
           <Field
-            label="Prompt prefix"
-            help="Prepended to every entity prompt — locks in the global aesthetic."
+            label="Préfixe du prompt"
+            help="Ajouté au début de chaque prompt : fixe l’esthétique globale."
             value={style.promptPrefix ?? ""}
             onChange={(v) => set("promptPrefix", v)}
             multiline
           />
           <Field
-            label="Prompt suffix"
-            help="Appended last — useful for technical hints (lighting, framing)."
+            label="Suffixe du prompt"
+            help="Ajouté à la fin : utile pour les indications techniques (lumière, cadrage)."
             value={style.promptSuffix ?? ""}
             onChange={(v) => set("promptSuffix", v)}
             multiline
           />
           <Field
-            label="Negative prompt"
-            help="Comma-separated tokens you NEVER want in the image."
+            label="Prompt négatif"
+            help="Éléments à ne JAMAIS voir dans l’image, séparés par des virgules."
             value={style.negativePrompt ?? ""}
             onChange={(v) => set("negativePrompt", v)}
             multiline
@@ -128,7 +128,7 @@ export function CampaignSettingsForm({ campaignId, initial }: Props) {
       </Card>
 
       <Button onClick={save} disabled={busy} size="lg">
-        {busy ? "Saving…" : "Save settings"}
+        {busy ? "Enregistrement…" : "Enregistrer"}
       </Button>
     </div>
   );

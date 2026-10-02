@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ParticipantView } from "@/lib/stores/session-store";
 import type { ResolutionRecord } from "@/lib/engine/types";
+import { OUTCOME_LABELS } from "@/lib/engine/catalog";
 import type { EntityRow } from "@/lib/db/schema";
 
 interface Props {
@@ -48,18 +49,19 @@ export function CastSpellDialog({ sessionId, campaignId, participants, trigger }
     enabled: open,
     queryFn: async () => {
       const res = await fetch(`/api/campaigns/${campaignId}/entities?type=spell`);
-      if (!res.ok) throw new Error("Failed to load spells");
+      if (!res.ok) throw new Error("Impossible de charger les sorts");
       return res.json() as Promise<{ entities: EntityRow[] }>;
     },
   });
 
-  useEffect(() => {
-    if (!open) {
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (!next) {
       setResults(null);
       setTargetIds(new Set());
       setSpellId("");
     }
-  }, [open]);
+  }
 
   const aliveParticipants = participants.filter(
     (p) => (p.state.currentState.hp ?? 1) > 0,
@@ -77,8 +79,8 @@ export function CastSpellDialog({ sessionId, campaignId, participants, trigger }
   }
 
   async function cast() {
-    if (!casterId) return toast.error("Pick a caster");
-    if (!spellId) return toast.error("Pick a spell");
+    if (!casterId) return toast.error("Choisissez un lanceur");
+    if (!spellId) return toast.error("Choisissez un sort");
     setBusy(true);
     try {
       const res = await fetch(`/api/sessions/${sessionId}/actions`, {
@@ -93,30 +95,30 @@ export function CastSpellDialog({ sessionId, campaignId, participants, trigger }
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error?.message ?? "Spell cast failed");
+        throw new Error(err.error?.message ?? "Échec du sort");
       }
       const { records } = (await res.json()) as { records: ResolutionRecord[] };
       setResults(records);
       queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
       queryClient.invalidateQueries({ queryKey: ["timeline", sessionId] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Spell cast failed");
+      toast.error(e instanceof Error ? e.message : "Échec du sort");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Cast a spell</DialogTitle>
+          <DialogTitle>Lancer un sort</DialogTitle>
         </DialogHeader>
 
         {results ? (
           <div className="space-y-2" data-testid="cast-results">
-            <h3 className="text-sm font-semibold">Resolution</h3>
+            <h3 className="text-sm font-semibold">Résolution</h3>
             <ScrollArea className="max-h-80 rounded border p-3">
               <ul className="space-y-1 text-sm">
                 {results.map((r, i) => (
@@ -131,7 +133,7 @@ export function CastSpellDialog({ sessionId, campaignId, participants, trigger }
                       }
                       className="mr-2 capitalize"
                     >
-                      {r.outcome}
+                      {OUTCOME_LABELS[r.outcome]}
                     </Badge>
                     {r.description}
                   </li>
@@ -140,18 +142,18 @@ export function CastSpellDialog({ sessionId, campaignId, participants, trigger }
             </ScrollArea>
             <DialogFooter>
               <Button variant="outline" onClick={() => setResults(null)}>
-                Cast another
+                Autre sort
               </Button>
-              <Button onClick={() => setOpen(false)}>Close</Button>
+              <Button onClick={() => handleOpenChange(false)}>Fermer</Button>
             </DialogFooter>
           </div>
         ) : (
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-xs uppercase">Caster</Label>
+              <Label className="text-xs uppercase">Lanceur</Label>
               <Select value={casterId} onValueChange={setCasterId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Pick a caster…" />
+                  <SelectValue placeholder="Choisir un lanceur…" />
                 </SelectTrigger>
                 <SelectContent>
                   {aliveParticipants.map((p) => (
@@ -164,10 +166,10 @@ export function CastSpellDialog({ sessionId, campaignId, participants, trigger }
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs uppercase">Spell</Label>
+              <Label className="text-xs uppercase">Sort</Label>
               <Select value={spellId} onValueChange={setSpellId}>
                 <SelectTrigger>
-                  <SelectValue placeholder={spells.length === 0 ? "No spells in this campaign" : "Pick a spell…"} />
+                  <SelectValue placeholder={spells.length === 0 ? "Aucun sort dans cette campagne" : "Choisir un sort…"} />
                 </SelectTrigger>
                 <SelectContent>
                   {spells.map((s) => (
@@ -185,7 +187,7 @@ export function CastSpellDialog({ sessionId, campaignId, participants, trigger }
             </div>
 
             <div>
-              <Label className="text-xs uppercase">Target(s)</Label>
+              <Label className="text-xs uppercase">Cible(s)</Label>
               <div className="rounded border p-2 max-h-40 overflow-auto space-y-1">
                 {aliveParticipants
                   .filter((p) => p.state.entityId !== casterId)
@@ -206,7 +208,7 @@ export function CastSpellDialog({ sessionId, campaignId, participants, trigger }
 
             <DialogFooter>
               <Button onClick={cast} disabled={busy} data-testid="cast-submit">
-                {busy ? "Casting…" : "Resolve spell"}
+                {busy ? "Incantation…" : "Résoudre le sort"}
               </Button>
             </DialogFooter>
           </div>

@@ -20,7 +20,7 @@ export function AudioControls() {
     queryKey: ["audio-assets"],
     queryFn: async () => {
       const res = await fetch("/api/audio/assets");
-      if (!res.ok) throw new Error("Failed to load audio assets");
+      if (!res.ok) throw new Error("Impossible de charger les pistes audio");
       return res.json() as Promise<{ assets: AudioAsset[] }>;
     },
   });
@@ -46,11 +46,11 @@ export function AudioControls() {
             <Volume2 className="size-4" /> Audio
           </h3>
           <Button size="sm" variant="ghost" onClick={stopAll} disabled={!currentAmbience && !currentMusic}>
-            <VolumeX className="size-4" /> Stop all
+            <VolumeX className="size-4" /> Tout couper
           </Button>
         </div>
 
-        <Row icon={<Wind className="size-4 text-muted-foreground" />} label="Ambience">
+        <Row icon={<Wind className="size-4 text-muted-foreground" />} label="Ambiance">
           <Select
             value={currentAmbience?.id ?? ""}
             onValueChange={(v) => {
@@ -59,7 +59,7 @@ export function AudioControls() {
             }}
           >
             <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="None" />
+              <SelectValue placeholder="Aucune" />
             </SelectTrigger>
             <SelectContent>
               {ambiences.map((a) => (
@@ -72,7 +72,7 @@ export function AudioControls() {
           <SliderRow value={ambienceVolume} onChange={(v) => setVolumes({ ambienceVolume: v })} />
         </Row>
 
-        <Row icon={<Music className="size-4 text-muted-foreground" />} label="Music">
+        <Row icon={<Music className="size-4 text-muted-foreground" />} label="Musique">
           <Select
             value={currentMusic?.id ?? ""}
             onValueChange={(v) => {
@@ -81,7 +81,7 @@ export function AudioControls() {
             }}
           >
             <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="None" />
+              <SelectValue placeholder="Aucune" />
             </SelectTrigger>
             <SelectContent>
               {musics.map((a) => (
@@ -94,7 +94,7 @@ export function AudioControls() {
           <SliderRow value={musicVolume} onChange={(v) => setVolumes({ musicVolume: v })} />
         </Row>
 
-        <Row icon={<Square className="size-4 text-muted-foreground" />} label="Effects">
+        <Row icon={<Square className="size-4 text-muted-foreground" />} label="Bruitages">
           <SliderRow value={effectsVolume} onChange={(v) => setVolumes({ effectsVolume: v })} />
         </Row>
       </CardContent>

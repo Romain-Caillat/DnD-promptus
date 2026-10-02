@@ -13,11 +13,21 @@ export class ApiError extends Error {
   }
 }
 
+const RESOURCE_LABELS: Record<string, string> = {
+  campaign: "Campagne",
+  entity: "Fiche",
+  session: "Session",
+  session_state: "État de session",
+  generation_job: "Génération",
+  player_request: "Demande",
+};
+
 export function notFound(resource: string, id?: string): never {
+  const label = RESOURCE_LABELS[resource] ?? resource;
   throw new ApiError(
     404,
     "not_found",
-    id ? `${resource} ${id} not found` : `${resource} not found`,
+    id ? `${label} ${id} introuvable` : `${label} introuvable`,
   );
 }
 
@@ -39,7 +49,7 @@ export function handleApiError(error: unknown): NextResponse {
       {
         error: {
           code: "validation_error",
-          message: "Invalid input",
+          message: "Données invalides",
           details: error.issues,
         },
       },
@@ -49,7 +59,7 @@ export function handleApiError(error: unknown): NextResponse {
   console.error("[api] unhandled error", error);
   return NextResponse.json(
     {
-      error: { code: "internal_error", message: "Internal server error" },
+      error: { code: "internal_error", message: "Erreur interne du serveur" },
     },
     { status: 500 },
   );

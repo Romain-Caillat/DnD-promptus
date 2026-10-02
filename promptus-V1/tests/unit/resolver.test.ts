@@ -269,6 +269,6 @@ describe("resolveAttack", () => {
     );
     // auto_critical → hit even though roll < AC
     expect(records[0].outcome).toBe("success");
-    expect(records[0].description).toContain("CRITICAL");
+    expect(records[0].description).toContain("CRITIQUE");
   });
 });

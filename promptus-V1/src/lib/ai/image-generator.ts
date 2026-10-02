@@ -2,7 +2,7 @@
 // Implementations live in ./providers/. Selection via IMAGE_PROVIDER env.
 // All providers must accept a prompt + options and return an ImageResult that
 // already contains the locally stored URL (the provider is responsible for
-// downloading the bytes to /public/generated-images and returning the path).
+// saving the bytes with lib/media/storage and returning the /api/media URL).
 
 export interface ImageOptions {
   width?: number;
@@ -12,6 +12,8 @@ export interface ImageOptions {
   seed?: number;
   /** Used to namespace the saved file. */
   entityId?: string;
+  /** Campagne : les médias sont rangés par campagne. */
+  campaignId?: string;
 }
 
 export interface ImageResult {

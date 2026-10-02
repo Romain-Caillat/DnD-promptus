@@ -2,9 +2,26 @@
 // The runner returns a list of ResolutionRecords plus the mutations to apply.
 // The DB persistence is handled by the API route.
 
+import {
+  DND5E_RULESET,
+  abilityLabel,
+  conditionsById,
+  damageTypeLabel,
+  defaultAbilityScore,
+  resourceLabel,
+  rollCheck,
+  rulesetConditionLabel,
+  type Ruleset,
+} from "./ruleset";
+
 import type {
   ActiveCondition,
+  AdvanceFrontEffect,
   AppliedMutation,
+  EnterSceneEffect,
+  RevealClueEffect,
+  SetFlagEffect,
+  SetSceneStatusEffect,
   ApplyConditionEffect,
   ConsumeResourceEffect,
   DamageEffect,
@@ -16,9 +33,6 @@ import type {
   InitiativeEntry,
   ModifyStatEffect,
   MoveEntityEffect,
-  PlayAmbienceEffect,
-  PlayMusicEffect,
-  PlaySoundEffect,
   RemoveConditionEffect,
   ResolutionRecord,
   RestoreResourceEffect,
@@ -27,14 +41,21 @@ import type {
   RollDetail,
   SetRelationEffect,
   SetStateEffect,
-  Stat,
   TargetSpec,
   TriggerEventEffect,
   AddToInventoryEffect,
   RemoveFromInventoryEffect,
 } from "./types";
 import { computeRollFlags } from "./conditions";
-import { rollD20, rollDice, type Rng, defaultRng } from "./dice";
+import { EMPTY_STORY, type CampaignStory } from "./story";
+import {
+  EMPTY_WORLD,
+  frontStep,
+  isRevelationKnown,
+  relationKey,
+  type WorldState,
+} from "./world";
+import { rollDice, type Rng, defaultRng } from "./dice";
 
 // ----------------------------------------------------------------------------
 // Resolution context
@@ -57,7 +78,21 @@ export interface ResolverContext {
   initiativeOrder: InitiativeEntry[];
   /** Optional explicit target list, used when caller already picked targets. */
   explicitTargets?: string[];
+  /** Règles de la campagne (défaut : D&D 5e). */
+  ruleset: Ruleset;
+  /** Scénario (lecture seule) et état du monde (muté, persisté par l'API). */
+  story: CampaignStory;
+  world: WorldState;
+  /** Toutes les fiches de la campagne (noms, effets des événements). */
+  catalog: Map<string, CatalogEntry>;
+  /** Profondeur d'imbrication des événements déclenchés. */
+  depth?: number;
   rng: Rng;
+}
+
+export interface CatalogEntry {
+  name: string;
+  effects: Effect[];
 }
 
 // ----------------------------------------------------------------------------
@@ -75,6 +110,10 @@ export function newContext(opts: {
   entities: EntityRef[];
   initiativeOrder: InitiativeEntry[];
   explicitTargets?: string[];
+  ruleset?: Ruleset;
+  story?: CampaignStory;
+  world?: WorldState;
+  catalog?: Map<string, CatalogEntry>;
   rng?: Rng;
 }): ResolverContext {
   const ents = new Map(opts.entities.map((e) => [e.id, e]));
@@ -85,6 +124,10 @@ export function newContext(opts: {
     states,
     initiativeOrder: opts.initiativeOrder,
     explicitTargets: opts.explicitTargets,
+    ruleset: opts.ruleset ?? DND5E_RULESET,
+    story: opts.story ?? EMPTY_STORY,
+    world: structuredClone(opts.world ?? EMPTY_WORLD),
+    catalog: opts.catalog ?? new Map(),
     rng: opts.rng ?? defaultRng,
   };
 }
@@ -135,21 +178,31 @@ async function resolveEffect(
     case "set_relation":
       return [resolveSetRelation(effect, ctx)];
     case "trigger_event":
-      return [resolveTriggerEvent(effect, ctx)];
+      return await resolveTriggerEvent(effect, ctx);
     case "add_to_inventory":
       return [resolveAddToInventory(effect, ctx)];
     case "remove_from_inventory":
       return [resolveRemoveFromInventory(effect, ctx)];
     case "play_ambience":
-      return [annotation(effect, `🔊 Ambience: ${effect.ambienceId}`)];
+      return [annotation(effect, `🔊 Ambiance : ${effect.ambienceId}`)];
     case "play_music":
-      return [annotation(effect, `🎵 Music: ${effect.musicId}`)];
+      return [annotation(effect, `🎵 Musique : ${effect.musicId}`)];
     case "play_sound":
-      return [annotation(effect, `🔔 Sound: ${effect.soundId}`)];
+      return [annotation(effect, `🔔 Bruitage : ${effect.soundId}`)];
     case "display_image":
       return [resolveDisplayImage(effect)];
     case "display_text":
       return [resolveDisplayText(effect)];
+    case "set_flag":
+      return [resolveSetFlag(effect, ctx)];
+    case "advance_front":
+      return await resolveAdvanceFront(effect, ctx);
+    case "reveal_clue":
+      return [resolveRevealClue(effect, ctx)];
+    case "enter_scene":
+      return [resolveEnterScene(effect, ctx)];
+    case "set_scene_status":
+      return [resolveSetSceneStatus(effect, ctx)];
     default: {
       const _exhaustive: never = effect;
       void _exhaustive;
@@ -185,7 +238,7 @@ function resolveTargets(target: TargetSpec, ctx: ResolverContext): string[] {
 }
 
 function nameOf(ctx: ResolverContext, id: string): string {
-  return ctx.entities.get(id)?.name ?? id;
+  return ctx.entities.get(id)?.name ?? ctx.catalog.get(id)?.name ?? id;
 }
 
 function getState(ctx: ResolverContext, id: string): EntityState {
@@ -231,8 +284,8 @@ function resolveDamage(effect: DamageEffect, ctx: ResolverContext): ResolutionRe
 
   const totalDamage = rolls.reduce((sum, r) => sum + r.result, 0);
   const description = targets.length
-    ? `${ctx.caster?.name ?? "Source"} deals ${totalDamage} ${effect.damageType} damage to ${targets.map((t) => nameOf(ctx, t)).join(", ")}`
-    : `${ctx.caster?.name ?? "Source"} deals damage (no targets)`;
+    ? `${ctx.caster?.name ?? "Source"} inflige ${totalDamage} dégâts de ${damageTypeLabel(ctx.ruleset, effect.damageType)} à ${targets.map((t) => nameOf(ctx, t)).join(", ")}`
+    : `${ctx.caster?.name ?? "Source"} inflige des dégâts (aucune cible)`;
 
   return {
     effect,
@@ -265,7 +318,7 @@ function resolveHeal(effect: HealEffect, ctx: ResolverContext): ResolutionRecord
     rolls,
     outcome: "success",
     applied,
-    description: `${ctx.caster?.name ?? "Source"} heals ${targets.map((t) => nameOf(ctx, t)).join(", ")} for ${rolls.reduce((s, r) => s + r.result, 0)}`,
+    description: `${ctx.caster?.name ?? "Source"} soigne ${targets.map((t) => nameOf(ctx, t)).join(", ")} de ${rolls.reduce((s, r) => s + r.result, 0)} PV`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -303,7 +356,7 @@ function resolveApplyCondition(
     rolls: [],
     outcome: "success",
     applied,
-    description: `${ctx.caster?.name ?? "Source"} applies ${effect.conditionId} to ${targets.map((t) => nameOf(ctx, t)).join(", ")}${effect.duration?.rounds ? ` for ${effect.duration.rounds}r` : ""}`,
+    description: `${ctx.caster?.name ?? "Source"} applique « ${rulesetConditionLabel(ctx.ruleset, effect.conditionId)} » à ${targets.map((t) => nameOf(ctx, t)).join(", ")}${effect.duration?.rounds ? ` pendant ${effect.duration.rounds} round(s)` : ""}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -332,7 +385,7 @@ function resolveRemoveCondition(
     rolls: [],
     outcome: applied.length ? "success" : "none",
     applied,
-    description: `Remove ${effect.conditionId} from ${targets.map((t) => nameOf(ctx, t)).join(", ") || "(no one)"}`,
+    description: `Retire « ${rulesetConditionLabel(ctx.ruleset, effect.conditionId)} » de ${targets.map((t) => nameOf(ctx, t)).join(", ") || "(personne)"}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -354,7 +407,7 @@ function resolveModifyStat(effect: ModifyStatEffect, ctx: ResolverContext): Reso
     rolls: [],
     outcome: "success",
     applied,
-    description: `${ctx.caster?.name ?? "Source"} modifies ${effect.stat} by ${effect.modifier} on ${targets.map((t) => nameOf(ctx, t)).join(", ")}`,
+    description: `${ctx.caster?.name ?? "Source"} modifie ${abilityLabel(ctx.ruleset, effect.stat)} de ${effect.modifier > 0 ? "+" : ""}${effect.modifier} sur ${targets.map((t) => nameOf(ctx, t)).join(", ")}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -373,7 +426,7 @@ async function resolveRollCheck(
         rolls: [],
         outcome: "none",
         applied: [],
-        description: `Roll ${effect.stat} check (no targets)`,
+        description: `Jet de ${abilityLabel(ctx.ruleset, effect.stat)} (aucune cible)`,
         timestamp: new Date().toISOString(),
       },
     ];
@@ -385,14 +438,14 @@ async function resolveRollCheck(
     const flags = computeRollFlags({
       actorConditions: state.conditions ?? [],
       kind: "save",
-      saveStat: effect.stat as Stat,
+      saveStat: effect.stat,
+      conditions: conditionsById(ctx.ruleset),
     });
     const dc = typeof effect.dc === "number" ? effect.dc : Number(effect.dc) || 10;
-    const abilityScore = (ent?.attributes as Record<string, unknown>)?.abilityScores as
-      | Record<Stat, number>
+    const abilityScores = (ent?.attributes as Record<string, unknown>)?.abilityScores as
+      | Record<string, number>
       | undefined;
-    const score = abilityScore?.[effect.stat as Stat] ?? 10;
-    const modifier = Math.floor((score - 10) / 2);
+    const score = abilityScores?.[effect.stat] ?? defaultAbilityScore(ctx.ruleset);
 
     let roll: RollDetail;
     let outcome: ResolutionRecord["outcome"];
@@ -403,15 +456,18 @@ async function resolveRollCheck(
       roll = { notation: "auto-success", result: dc + 1, rolls: [] };
       outcome = "success";
     } else {
-      roll = rollD20(modifier, {
+      const check = rollCheck(ctx.ruleset, {
+        score,
+        dc,
         advantage: flags.advantage,
         disadvantage: flags.disadvantage,
         rng: ctx.rng,
       });
-      outcome = roll.result >= dc ? "success" : "fail";
+      roll = check.roll;
+      outcome = check.success ? "success" : "fail";
     }
 
-    const description = `${nameOf(ctx, tid)} rolls ${effect.stat} save vs DC ${dc}: ${roll.notation} = ${roll.result} → ${outcome}`;
+    const description = `${nameOf(ctx, tid)} fait un jet de sauvegarde de ${abilityLabel(ctx.ruleset, effect.stat)} DD ${dc} : ${roll.notation} = ${roll.result} → ${outcome === "success" ? "réussite" : "échec"}`;
     const subEffects = outcome === "success" ? effect.outcomeSuccess ?? [] : effect.outcomeFail ?? [];
     const sub = subEffects.length
       ? await resolveEffects(subEffects, {
@@ -458,7 +514,7 @@ function resolveConsumeResource(
     rolls: [],
     outcome: "success",
     applied,
-    description: `${ctx.caster?.name ?? "Source"} consumes ${effect.amount} ${effect.resource}${effect.level ? ` lvl ${effect.level}` : ""}`,
+    description: `${ctx.caster?.name ?? "Source"} consomme ${effect.amount} × ${resourceLabel(ctx.ruleset, effect.resource)}${effect.level ? ` niv. ${effect.level}` : ""}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -487,73 +543,155 @@ function resolveRestoreResource(
     rolls: [],
     outcome: "success",
     applied,
-    description: `${ctx.caster?.name ?? "Source"} restores ${effect.amount} ${effect.resource}`,
+    description: `${ctx.caster?.name ?? "Source"} récupère ${effect.amount} × ${resourceLabel(ctx.ruleset, effect.resource)}`,
     timestamp: new Date().toISOString(),
   };
 }
 
+function record(
+  effect: Effect,
+  description: string,
+  applied: AppliedMutation[] = [],
+  outcome: ResolutionRecord["outcome"] = "success",
+): ResolutionRecord {
+  return { effect, rolls: [], outcome, applied, description, timestamp: new Date().toISOString() };
+}
+
 function resolveSetState(effect: SetStateEffect, ctx: ResolverContext): ResolutionRecord {
-  // Generic free-form state mutation — only common attributes get persisted via
-  // session_state; arbitrary attributes are recorded in the timeline only.
-  const ent = ctx.entities.get(effect.entityId);
-  const before = ent?.attributes?.[effect.attribute] ?? null;
-  return {
+  // Persisté dans l'état du monde : l'attribut d'origine de la fiche ne change pas.
+  const attrs = (ctx.world.entityAttributes[effect.entityId] ??= {});
+  const before =
+    effect.attribute in attrs
+      ? attrs[effect.attribute]
+      : (ctx.entities.get(effect.entityId)?.attributes?.[effect.attribute] ?? null);
+  attrs[effect.attribute] = effect.value;
+  return record(
     effect,
-    rolls: [],
-    outcome: "success",
-    applied: [{ entityId: effect.entityId, field: `attr:${effect.attribute}`, before, after: effect.value }],
-    description: `${nameOf(ctx, effect.entityId)} ${effect.attribute} → ${String(effect.value)}`,
-    timestamp: new Date().toISOString(),
-  };
+    `${nameOf(ctx, effect.entityId)} : ${effect.attribute} → ${String(effect.value)}`,
+    [{ entityId: effect.entityId, field: `attr:${effect.attribute}`, before, after: effect.value }],
+  );
 }
 
 function resolveMoveEntity(effect: MoveEntityEffect, ctx: ResolverContext): ResolutionRecord {
   const state = getState(ctx, effect.entityId);
-  const before = state.position?.locationId ?? null;
+  const before = state.position?.locationId ?? ctx.world.entityLocations[effect.entityId] ?? null;
   state.position = { ...(state.position ?? {}), locationId: effect.toLocationId };
-  return {
+  ctx.world.entityLocations[effect.entityId] = effect.toLocationId;
+  return record(
     effect,
-    rolls: [],
-    outcome: "success",
-    applied: [{ entityId: effect.entityId, field: "position.locationId", before, after: effect.toLocationId }],
-    description: `${nameOf(ctx, effect.entityId)} moved to ${nameOf(ctx, effect.toLocationId)}`,
-    timestamp: new Date().toISOString(),
-  };
+    `${nameOf(ctx, effect.entityId)} se déplace vers ${nameOf(ctx, effect.toLocationId)}`,
+    [{ entityId: effect.entityId, field: "position.locationId", before, after: effect.toLocationId }],
+  );
 }
 
 function resolveRevealEntity(effect: RevealEntityEffect, ctx: ResolverContext): ResolutionRecord {
   const state = getState(ctx, effect.entityId);
   state.visible = true;
-  return {
-    effect,
-    rolls: [],
-    outcome: "success",
-    applied: [{ entityId: effect.entityId, field: "visible", before: false, after: true }],
-    description: `Reveal ${nameOf(ctx, effect.entityId)}`,
-    timestamp: new Date().toISOString(),
-  };
+  if (!ctx.world.revealedEntityIds.includes(effect.entityId)) ctx.world.revealedEntityIds.push(effect.entityId);
+  return record(effect, `Révèle ${nameOf(ctx, effect.entityId)}`, [
+    { entityId: effect.entityId, field: "visible", before: false, after: true },
+  ]);
 }
 
-function resolveSetRelation(effect: SetRelationEffect, _ctx: ResolverContext): ResolutionRecord {
-  return {
-    effect,
-    rolls: [],
-    outcome: "success",
-    applied: [],
-    description: `Relation ${effect.fromId} → ${effect.toId}: ${effect.delta > 0 ? "+" : ""}${effect.delta}${effect.disposition ? ` (${effect.disposition})` : ""}`,
-    timestamp: new Date().toISOString(),
+function resolveSetRelation(effect: SetRelationEffect, ctx: ResolverContext): ResolutionRecord {
+  const key = relationKey(effect.fromId, effect.toId);
+  const before = ctx.world.relations[key] ?? { value: 0 };
+  const after = {
+    value: before.value + effect.delta,
+    disposition: effect.disposition ?? before.disposition,
   };
+  ctx.world.relations[key] = after;
+  return record(
+    effect,
+    `Relation ${nameOf(ctx, effect.fromId)} → ${nameOf(ctx, effect.toId)} : ${effect.delta > 0 ? "+" : ""}${effect.delta} (${after.value})${after.disposition ? `, ${after.disposition}` : ""}`,
+    [{ entityId: effect.fromId, field: `relation:${effect.toId}`, before: before.value, after: after.value }],
+  );
 }
 
-function resolveTriggerEvent(effect: TriggerEventEffect, _ctx: ResolverContext): ResolutionRecord {
-  return {
+const MAX_EVENT_DEPTH = 5;
+
+async function resolveTriggerEvent(effect: TriggerEventEffect, ctx: ResolverContext): Promise<ResolutionRecord[]> {
+  const event = ctx.catalog.get(effect.eventId);
+  const head = record(effect, `Déclenche l’événement ${nameOf(ctx, effect.eventId)}`);
+  if (!event) return [{ ...head, outcome: "none", description: `${head.description} (introuvable)` }];
+  if ((ctx.depth ?? 0) >= MAX_EVENT_DEPTH) {
+    return [{ ...head, outcome: "none", description: `${head.description} (chaîne d’événements trop longue, arrêtée)` }];
+  }
+  const sub = await resolveEffects(event.effects, { ...ctx, depth: (ctx.depth ?? 0) + 1 });
+  return [head, ...sub.records];
+}
+
+// --- Effets sur le scénario --------------------------------------------------
+
+function resolveSetFlag(effect: SetFlagEffect, ctx: ResolverContext): ResolutionRecord {
+  const before = ctx.world.flags[effect.flag] ?? null;
+  ctx.world.flags[effect.flag] = effect.value;
+  return record(effect, `Drapeau « ${effect.flag} » → ${JSON.stringify(effect.value)}`, [
+    { entityId: "world", field: `flag:${effect.flag}`, before, after: effect.value },
+  ]);
+}
+
+async function resolveAdvanceFront(effect: AdvanceFrontEffect, ctx: ResolverContext): Promise<ResolutionRecord[]> {
+  const front = ctx.story.fronts.find((f) => f.id === effect.frontId);
+  if (!front) return [record(effect, `Menace inconnue : ${effect.frontId}`, [], "none")];
+  const before = frontStep(ctx.world, front.id);
+  const after = Math.max(-1, Math.min(front.steps.length - 1, before + (effect.steps ?? 1)));
+  ctx.world.frontProgress[front.id] = after;
+  if (after === before) {
+    return [record(effect, `« ${front.name} » : horloge inchangée`, [], "none")];
+  }
+  const step = front.steps[after];
+  const last = after === front.steps.length - 1;
+  const head = record(
     effect,
-    rolls: [],
-    outcome: "success",
-    applied: [],
-    description: `Trigger event ${effect.eventId}`,
-    timestamp: new Date().toISOString(),
-  };
+    after < 0
+      ? `« ${front.name} » revient au départ`
+      : `${last ? "☠ " : "⏳ "}« ${front.name} » atteint « ${step.label} » (${after + 1}/${front.steps.length})`,
+    [{ entityId: "world", field: `front:${front.id}`, before, after }],
+  );
+  // Les effets d'étape ne s'appliquent qu'en avançant, une fois par étape franchie.
+  const records = [head];
+  for (let i = before + 1; i <= after; i++) {
+    const effects = front.steps[i]?.effects ?? [];
+    if (effects.length) records.push(...(await resolveEffects(effects, ctx)).records);
+  }
+  return records;
+}
+
+function resolveRevealClue(effect: RevealClueEffect, ctx: ResolverContext): ResolutionRecord {
+  const clue = ctx.story.clues.find((c) => c.id === effect.clueId);
+  if (!clue) return record(effect, `Indice inconnu : ${effect.clueId}`, [], "none");
+  if (ctx.world.foundClueIds.includes(clue.id)) return record(effect, `🔎 Indice déjà trouvé : ${clue.text}`, [], "none");
+  const wasKnown = isRevelationKnown(ctx.story, ctx.world, clue.revelationId);
+  ctx.world.foundClueIds.push(clue.id);
+  const revelation = ctx.story.revelations.find((r) => r.id === clue.revelationId);
+  const suffix = !wasKnown && revelation ? ` — révélation : « ${revelation.statement} »` : "";
+  return record(effect, `🔎 Indice trouvé : ${clue.text}${suffix}`, [
+    { entityId: "world", field: `clue:${clue.id}`, before: false, after: true },
+  ]);
+}
+
+function sceneTitle(ctx: ResolverContext, id: string): string {
+  return ctx.story.scenes.find((s) => s.id === id)?.title ?? id;
+}
+
+function resolveEnterScene(effect: EnterSceneEffect, ctx: ResolverContext): ResolutionRecord {
+  const before = ctx.world.currentSceneId ?? null;
+  ctx.world.currentSceneId = effect.sceneId;
+  if (ctx.world.sceneStatus[effect.sceneId] !== "resolved") ctx.world.sceneStatus[effect.sceneId] = "visited";
+  return record(effect, `🎬 Scène : ${sceneTitle(ctx, effect.sceneId)}`, [
+    { entityId: "world", field: "currentScene", before, after: effect.sceneId },
+  ]);
+}
+
+const SCENE_STATUS_LABELS = { available: "disponible", visited: "visitée", resolved: "résolue" } as const;
+
+function resolveSetSceneStatus(effect: SetSceneStatusEffect, ctx: ResolverContext): ResolutionRecord {
+  const before = ctx.world.sceneStatus[effect.sceneId] ?? null;
+  ctx.world.sceneStatus[effect.sceneId] = effect.status;
+  return record(effect, `Scène « ${sceneTitle(ctx, effect.sceneId)} » ${SCENE_STATUS_LABELS[effect.status]}`, [
+    { entityId: "world", field: `scene:${effect.sceneId}`, before, after: effect.status },
+  ]);
 }
 
 function resolveAddToInventory(effect: AddToInventoryEffect, ctx: ResolverContext): ResolutionRecord {
@@ -574,7 +712,7 @@ function resolveAddToInventory(effect: AddToInventoryEffect, ctx: ResolverContex
     rolls: [],
     outcome: "success",
     applied,
-    description: `${effect.itemId} → ${targets.map((t) => nameOf(ctx, t)).join(", ")}`,
+    description: `${nameOf(ctx, effect.itemId)} → ${targets.map((t) => nameOf(ctx, t)).join(", ")}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -606,7 +744,7 @@ function resolveRemoveFromInventory(
     rolls: [],
     outcome: "success",
     applied,
-    description: `Remove ${effect.itemId} from ${targets.map((t) => nameOf(ctx, t)).join(", ")}`,
+    description: `Retire ${nameOf(ctx, effect.itemId)} de ${targets.map((t) => nameOf(ctx, t)).join(", ")}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -617,7 +755,7 @@ function resolveDisplayImage(effect: DisplayImageEffect): ResolutionRecord {
     rolls: [],
     outcome: "none",
     applied: [],
-    description: `🖼 Display image${effect.prompt ? `: "${effect.prompt}"` : effect.imageId ? ` (${effect.imageId})` : ""}`,
+    description: `🖼 Affiche une image${effect.prompt ? ` : « ${effect.prompt} »` : effect.imageId ? ` (${effect.imageId})` : ""}`,
     timestamp: new Date().toISOString(),
   };
 }
@@ -645,6 +783,11 @@ export interface AttackInput {
   damageNotation: string;
   damageType: DamageEffect["damageType"];
   meleeWithin5ft?: boolean;
+  /** Nom de l'arme ou de l'attaque, pour le journal. */
+  attackName?: string;
+  /** Avantage / désavantage imposés par la situation (portée longue…). */
+  advantage?: boolean;
+  disadvantage?: boolean;
 }
 
 export function resolveAttack(
@@ -665,18 +808,21 @@ export function resolveAttack(
       targetConditions: targetState.conditions,
       kind: "attack",
       meleeWithin5ft: input.meleeWithin5ft,
+      conditions: conditionsById(ctx.ruleset),
     });
 
-    const roll = rollD20(input.attackBonus, {
-      advantage: flags.advantage,
-      disadvantage: flags.disadvantage,
+    // Jet d'attaque = test du ruleset contre la CA ; le bonus d'attaque
+    // s'ajoute (roll_over) ou sert de valeur cible (roll_under).
+    const check = rollCheck(ctx.ruleset, {
+      bonus: input.attackBonus,
+      dc: ac,
+      advantage: flags.advantage || !!input.advantage,
+      disadvantage: flags.disadvantage || !!input.disadvantage,
       rng: ctx.rng,
     });
-    const rolledFaces = roll.rolls ?? [];
-    const isNat20 = rolledFaces[0] === 20 || (flags.advantage && rolledFaces.includes(20));
-    const isNat1 = rolledFaces[0] === 1 || (flags.disadvantage && rolledFaces.includes(1));
-    const isCritical = isNat20 || flags.autoCritical;
-    const hit = !isNat1 && (isCritical || roll.result >= ac);
+    const roll = check.roll;
+    const isCritical = check.critical || flags.autoCritical;
+    const hit = !check.fumble && (isCritical || check.success);
 
     records.push({
       effect: {
@@ -688,7 +834,7 @@ export function resolveAttack(
       rolls: [roll],
       outcome: hit ? "success" : "fail",
       applied: [],
-      description: `${attacker?.name ?? "Attacker"} attacks ${target?.name ?? tid}: ${roll.notation} = ${roll.result} vs AC ${ac} → ${isCritical ? "CRITICAL" : hit ? "hit" : "miss"}`,
+      description: `${attacker?.name ?? "Attaquant"} attaque ${target?.name ?? tid}${input.attackName ? ` (${input.attackName})` : ""} : ${roll.notation} = ${roll.result} contre CA ${ac} → ${isCritical ? "CRITIQUE" : hit ? "touché" : "raté"}`,
       timestamp: new Date().toISOString(),
     });
 
@@ -713,7 +859,7 @@ export function resolveAttack(
         rolls: [damage],
         outcome: "success",
         applied: [{ entityId: tid, field: "hp", before, after }],
-        description: `${attacker?.name ?? "Attacker"} deals ${damage.result} ${input.damageType} damage to ${target?.name ?? tid} (HP ${before}→${after})`,
+        description: `${attacker?.name ?? "Attaquant"} inflige ${damage.result} dégâts de ${damageTypeLabel(ctx.ruleset, input.damageType)} à ${target?.name ?? tid} (PV ${before}→${after})`,
         timestamp: new Date().toISOString(),
       });
     }
@@ -728,7 +874,7 @@ function doubleDamage(notation: string, rng: Rng): RollDetail {
   const a = rollDice(notation, { rng });
   const b = rollDice(notation, { rng });
   return {
-    notation: `${notation} (crit)`,
+    notation: `${notation} (critique)`,
     result: a.result + (b.result - (a.modifier ?? 0)),
     rolls: [...(a.rolls ?? []), ...(b.rolls ?? [])],
     modifier: a.modifier,

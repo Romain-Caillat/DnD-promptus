@@ -5,20 +5,9 @@ import { StartSessionSchema } from "@/lib/validation/session-schemas";
 import { handleApiError, badRequest, notFound } from "@/lib/api/errors";
 import { generateId } from "@/lib/api/ids";
 import { eq, inArray, desc } from "drizzle-orm";
-import type { EntityState, InitiativeEntry } from "@/lib/engine/types";
-
-function deriveStateFromEntity(row: typeof entities.$inferSelect): EntityState {
-  const a = row.attributes as Record<string, unknown>;
-  return {
-    hp: typeof a.hp === "number" ? a.hp : undefined,
-    hpMax: typeof a.hpMax === "number" ? a.hpMax : (typeof a.hp === "number" ? a.hp : undefined),
-    ac: typeof a.ac === "number" ? a.ac : undefined,
-    conditions: [],
-    resources: a.spellSlots as EntityState["resources"],
-    inventory: Array.isArray(a.inventory) ? (a.inventory as string[]) : [],
-    visible: row.visibility !== "mj_only",
-  };
-}
+import type { InitiativeEntry } from "@/lib/engine/types";
+import { deriveStateFromEntity } from "@/lib/session/derive-state";
+import { normalizeWorld } from "@/lib/engine/world";
 
 export async function GET(
   _req: NextRequest,
@@ -58,7 +47,7 @@ export async function POST(
       .where(inArray(entities.id, input.participantEntityIds));
 
     if (participants.length !== input.participantEntityIds.length) {
-      badRequest("Some participant entities were not found");
+      badRequest("Certains participants sont introuvables");
     }
 
     const sessionId = generateId("ses");
@@ -78,6 +67,7 @@ export async function POST(
         initiativeOrder,
         combatRound: 0,
         activeTurnIndex: 0,
+        worldAtStart: normalizeWorld(campaign.worldState),
       })
       .returning();
 

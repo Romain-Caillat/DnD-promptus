@@ -22,10 +22,10 @@ export default async function AudioLibraryPage({ params }: Props) {
       <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
         <Link href={`/campaigns/${campaign.id}`}>← {campaign.name}</Link>
       </Button>
-      <h1 className="text-3xl font-bold mb-1">Audio library</h1>
+      <h1 className="text-3xl font-bold mb-1">Bibliothèque audio</h1>
       <p className="text-muted-foreground mb-8">
-        Royalty-free ambiences, music and sound effects available across your
-        campaigns. Preview by clicking play.
+        Ambiances, musiques et bruitages libres de droits, disponibles dans toutes
+        vos campagnes. Cliquez sur lecture pour écouter.
       </p>
       <AudioLibrary />
     </main>

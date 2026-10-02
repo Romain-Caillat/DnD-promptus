@@ -4,12 +4,16 @@ config({ path: ".env.local" });
 import { db } from "../src/lib/db/client";
 import { campaigns, entities } from "../src/lib/db/schema";
 import { generateId } from "../src/lib/api/ids";
+import { SCHOOL_LABELS } from "../src/lib/engine/catalog";
+import { DND5E_RULESET } from "../src/lib/engine/ruleset";
+import { validateStory } from "../src/lib/engine/story-validator";
+import { buildDemoStory } from "./demo-story";
 import { eq, like } from "drizzle-orm";
 import type { Effect } from "../src/lib/engine/types";
 import type { NewEntityRow } from "../src/lib/db/schema";
 
 /**
- * Builds the demo campaign "The Goblin Dungeon" with enough content to play
+ * Builds the demo campaign "Le Donjon des gobelins" with enough content to play
  * a one-shot session of ~3 hours at level 1.
  *
  * Idempotent: removes any prior campaign whose name starts with "The Goblin
@@ -25,7 +29,7 @@ async function main() {
   const prev = await db
     .select()
     .from(campaigns)
-    .where(like(campaigns.name, "The Goblin Dungeon — Demo%"));
+    .where(like(campaigns.name, "%(démo)%"));
   for (const c of prev) {
     await db.delete(campaigns).where(eq(campaigns.id, c.id));
     console.log(`[seed-demo] removed previous campaign ${c.id}`);
@@ -34,9 +38,9 @@ async function main() {
   const campaignId = generateId("camp");
   await db.insert(campaigns).values({
     id: campaignId,
-    name: "The Goblin Dungeon — Demo",
+    name: "Le Donjon des gobelins (démo)",
     description:
-      "A 3-hour one-shot at level 1 — gateway scenario for first-time GMs. Four heroes, a haunted crypt, a goblin warband, and a forgotten king who refuses to die.",
+      "Un one-shot de 3 heures au niveau 1, idéal pour un premier MJ. Quatre héros, une crypte hantée, une bande de gobelins et un roi oublié qui refuse de mourir.",
     styleGuide: {
       artStyle: "dark fantasy oil painting, painterly",
       mood: "ominous, candle-lit, dramatic",
@@ -58,18 +62,22 @@ async function main() {
     id: generateId("ent_character"),
     campaignId,
     type: "character",
-    name: "Bobby the Brave",
-    description: "A young human fighter from a frontier village; fierce, protective, prone to overconfidence.",
-    tags: ["fighter", "human", "lvl 1", "PC"],
+    name: "Bobby le Brave",
+    description: "Jeune guerrier humain d’un village frontalier ; farouche, protecteur, trop sûr de lui.",
+    tags: ["guerrier", "humain", "niv. 1", "PJ"],
     attributes: {
       hp: 12,
       hpMax: 12,
       ac: 16,
       speed: 30,
       level: 1,
-      classes: [{ name: "Fighter", level: 1 }],
+      classes: [{ name: "Guerrier", level: 1 }],
       abilityScores: { STR: 16, DEX: 13, CON: 14, INT: 10, WIS: 11, CHA: 8 },
       proficiencyBonus: 2,
+      attacks: [
+        { name: "Épée longue", bonus: 5, damage: "1d8+3", damageType: "slashing", rangeMeters: 1.5 },
+        { name: "Arbalète légère", bonus: 3, damage: "1d8+1", damageType: "piercing", rangeMeters: 24, longRangeMeters: 96 },
+      ],
       initiativeBonus: 1,
     },
     effects: [],
@@ -81,18 +89,22 @@ async function main() {
     id: generateId("ent_character"),
     campaignId,
     type: "character",
-    name: "Léa Stormcaller",
-    description: "An elven wizard with a staff carved from ancient yew; curious, patient, hides a ruthless streak.",
-    tags: ["wizard", "elf", "lvl 1", "PC"],
+    name: "Léa Mandetempête",
+    description: "Magicienne elfe au bâton taillé dans un if ancien ; curieuse, patiente, cache un côté impitoyable.",
+    tags: ["magicien", "elfe", "niv. 1", "PJ"],
     attributes: {
       hp: 7,
       hpMax: 7,
       ac: 12,
       speed: 30,
       level: 1,
-      classes: [{ name: "Wizard", level: 1 }],
+      classes: [{ name: "Magicien", level: 1 }],
       abilityScores: { STR: 8, DEX: 14, CON: 12, INT: 16, WIS: 13, CHA: 10 },
       proficiencyBonus: 2,
+      attacks: [
+        { name: "Bâton", bonus: 1, damage: "1d6-1", damageType: "bludgeoning", rangeMeters: 1.5 },
+        { name: "Trait de feu", bonus: 5, damage: "1d10", damageType: "fire", rangeMeters: 36 },
+      ],
       initiativeBonus: 2,
       spellSlots: { 1: { current: 2, max: 2 } },
     },
@@ -105,18 +117,22 @@ async function main() {
     id: generateId("ent_character"),
     campaignId,
     type: "character",
-    name: "Tom Quickfingers",
-    description: "A halfling rogue with too many daggers and not enough morals; sneaky, strategic, secretly loyal.",
-    tags: ["rogue", "halfling", "lvl 1", "PC"],
+    name: "Tom Doigts-Agiles",
+    description: "Roublard halfelin, trop de dagues et pas assez de morale ; furtif, stratège, loyal en secret.",
+    tags: ["roublard", "halfelin", "niv. 1", "PJ"],
     attributes: {
       hp: 9,
       hpMax: 9,
       ac: 14,
       speed: 25,
       level: 1,
-      classes: [{ name: "Rogue", level: 1 }],
+      classes: [{ name: "Roublard", level: 1 }],
       abilityScores: { STR: 9, DEX: 17, CON: 13, INT: 12, WIS: 11, CHA: 14 },
       proficiencyBonus: 2,
+      attacks: [
+        { name: "Rapière", bonus: 5, damage: "1d8+3", damageType: "piercing", rangeMeters: 1.5 },
+        { name: "Arc court", bonus: 5, damage: "1d6+3", damageType: "piercing", rangeMeters: 24, longRangeMeters: 96 },
+      ],
       initiativeBonus: 3,
     },
     effects: [],
@@ -128,18 +144,22 @@ async function main() {
     id: generateId("ent_character"),
     campaignId,
     type: "character",
-    name: "Anaïs Lightbringer",
-    description: "A human cleric of a forgotten dawn god; gentle in counsel, fierce in battle, rarely lets the party rest enough.",
-    tags: ["cleric", "human", "lvl 1", "PC"],
+    name: "Anaïs Porte-Lumière",
+    description: "Clerc humaine d’un dieu de l’aube oublié ; douce en conseil, farouche au combat, laisse rarement le groupe se reposer.",
+    tags: ["clerc", "humain", "niv. 1", "PJ"],
     attributes: {
       hp: 10,
       hpMax: 10,
       ac: 18,
       speed: 25,
       level: 1,
-      classes: [{ name: "Cleric", level: 1 }],
+      classes: [{ name: "Clerc", level: 1 }],
       abilityScores: { STR: 12, DEX: 10, CON: 14, INT: 11, WIS: 16, CHA: 13 },
       proficiencyBonus: 2,
+      attacks: [
+        { name: "Masse d’armes", bonus: 3, damage: "1d6+1", damageType: "bludgeoning", rangeMeters: 1.5 },
+        { name: "Flamme sacrée", bonus: 5, damage: "1d8", damageType: "radiant", rangeMeters: 18 },
+      ],
       initiativeBonus: 0,
       spellSlots: { 1: { current: 2, max: 2 } },
     },
@@ -165,7 +185,7 @@ async function main() {
       type: "spell",
       name,
       description,
-      tags: [school, `level ${level}`],
+      tags: [SCHOOL_LABELS[school] ?? school, `niveau ${level}`],
       attributes: {
         level,
         school,
@@ -183,8 +203,8 @@ async function main() {
 
   ents.push(
     spell(
-      "Magic Missile",
-      "Three darts of force unerringly strike chosen targets.",
+      "Projectile magique",
+      "Trois fléchettes de force frappent les cibles choisies sans jamais manquer.",
       1,
       "evocation",
       [
@@ -194,8 +214,8 @@ async function main() {
       { range: "120 ft" },
     ),
     spell(
-      "Fireball",
-      "An explosion of flame detonates at a chosen point.",
+      "Boule de feu",
+      "Une explosion de flammes détone au point choisi.",
       3,
       "evocation",
       [
@@ -212,13 +232,13 @@ async function main() {
             { type: "damage", amount: "8d6/2", damageType: "fire", target: { type: "all_in_area" } },
           ],
         },
-        { type: "play_sound", soundId: "Spell sparkle" },
+        { type: "play_sound", soundId: "Scintillement magique" },
       ],
-      { range: "150 ft", components: ["V", "S", "M"] },
+      { range: "45 m", components: ["V", "S", "M"] },
     ),
     spell(
-      "Cure Wounds",
-      "A creature you touch regains hit points.",
+      "Soins",
+      "La créature touchée récupère des points de vie.",
       1,
       "evocation",
       [
@@ -228,8 +248,8 @@ async function main() {
       { range: "touch" },
     ),
     spell(
-      "Sleep",
-      "A magical slumber takes the weakest creatures in an area.",
+      "Sommeil",
+      "Un sommeil magique emporte les créatures les plus faibles de la zone.",
       1,
       "enchantment",
       [
@@ -244,8 +264,8 @@ async function main() {
       { range: "90 ft" },
     ),
     spell(
-      "Shield",
-      "An invisible barrier of force protects you.",
+      "Bouclier",
+      "Une barrière de force invisible vous protège.",
       1,
       "abjuration",
       [
@@ -255,8 +275,8 @@ async function main() {
       { castingTime: "1 reaction" },
     ),
     spell(
-      "Bless",
-      "Allies gain a bonus to attacks and saves.",
+      "Bénédiction",
+      "Les alliés gagnent un bonus aux attaques et aux sauvegardes.",
       1,
       "enchantment",
       [
@@ -266,8 +286,8 @@ async function main() {
       { range: "30 ft" },
     ),
     spell(
-      "Sacred Flame",
-      "Radiant fire descends on a target.",
+      "Flamme sacrée",
+      "Un feu radieux s’abat sur une cible.",
       0,
       "evocation",
       [
@@ -281,11 +301,11 @@ async function main() {
           ],
         },
       ],
-      { range: "60 ft" },
+      { range: "18 m" },
     ),
     spell(
-      "Fire Bolt",
-      "A mote of fire streaks toward a target.",
+      "Trait de feu",
+      "Une étincelle de feu file vers une cible.",
       0,
       "evocation",
       [
@@ -294,8 +314,8 @@ async function main() {
       { range: "120 ft" },
     ),
     spell(
-      "Eldritch Blast",
-      "A beam of crackling energy.",
+      "Décharge occulte",
+      "Un rayon d’énergie crépitante.",
       0,
       "evocation",
       [
@@ -304,8 +324,8 @@ async function main() {
       { range: "120 ft" },
     ),
     spell(
-      "Shocking Grasp",
-      "Lightning springs from your hand to deliver a shock.",
+      "Poigne électrique",
+      "Un éclair jaillit de votre main et électrise la cible.",
       0,
       "evocation",
       [
@@ -314,8 +334,8 @@ async function main() {
       { range: "touch" },
     ),
     spell(
-      "Hold Person",
-      "Choose a humanoid you can see; it must succeed on a Wisdom save or be paralyzed.",
+      "Immobilisation de personne",
+      "Un humanoïde que vous voyez doit réussir une sauvegarde de Sagesse ou être paralysé.",
       2,
       "enchantment",
       [
@@ -335,21 +355,21 @@ async function main() {
           ],
         },
       ],
-      { range: "60 ft" },
+      { range: "18 m" },
     ),
     spell(
-      "Misty Step",
-      "Briefly surrounded by silvery mist, you teleport up to 30 feet.",
+      "Foulée brumeuse",
+      "Entouré un instant d’une brume argentée, vous vous téléportez jusqu’à 9 m.",
       2,
       "conjuration",
       [
         { type: "consume_resource", resource: "spell_slot", amount: 1, level: 2, target: { type: "caster" } },
-        { type: "display_text", text: "A wisp of silver mist marks your departure." },
+        { type: "display_text", text: "Un filet de brume argentée marque votre départ." },
       ],
     ),
     spell(
-      "Mage Armor",
-      "A protective magical force surrounds the target.",
+      "Armure de mage",
+      "Une force magique protectrice entoure la cible.",
       1,
       "abjuration",
       [
@@ -358,15 +378,15 @@ async function main() {
       ],
     ),
     spell(
-      "Light",
-      "An object you touch sheds bright light.",
+      "Lumière",
+      "L’objet touché émet une vive lumière.",
       0,
       "evocation",
-      [{ type: "display_text", text: "The object shines brightly." }],
+      [{ type: "display_text", text: "L’objet brille intensément." }],
     ),
     spell(
-      "Burning Hands",
-      "A thin sheet of flames shoots from your fingertips.",
+      "Mains brûlantes",
+      "Une fine nappe de flammes jaillit du bout de vos doigts.",
       1,
       "evocation",
       [
@@ -399,6 +419,7 @@ async function main() {
     ac: number,
     abilities: Record<string, number>,
     extraTags: string[] = [],
+    attacks: Record<string, unknown>[] = [],
   ): NewEntityRow {
     return {
       id: generateId("ent_monster"),
@@ -413,9 +434,10 @@ async function main() {
         ac,
         speed: 30,
         challengeRating: cr,
-        size: "Medium",
+        size: "Moyenne",
         abilityScores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10, ...abilities },
         initiativeBonus: Math.floor(((abilities.DEX ?? 10) - 10) / 2),
+        attacks,
       },
       effects: [],
       visibility: "mj_only",
@@ -424,16 +446,16 @@ async function main() {
   }
 
   ents.push(
-    monster("Goblin Scout", "A small, sneaky humanoid lurking in shadows.", 0.25, 7, 15, { DEX: 14 }, ["goblin", "humanoid"]),
-    monster("Goblin Warrior", "A bigger goblin armed with a notched scimitar.", 0.25, 10, 14, { STR: 12, DEX: 13 }, ["goblin", "humanoid"]),
-    monster("Goblin Boss", "Cunning leader of the goblin band; never fights fair.", 1, 21, 17, { STR: 10, DEX: 14, CHA: 10 }, ["goblin", "humanoid", "leader"]),
-    monster("Giant Rat", "Bigger than any honest rat has a right to be.", 0.125, 7, 12, { DEX: 11 }, ["beast"]),
-    monster("Giant Spider", "Eight legs, eight eyes, far too much patience.", 1, 26, 14, { DEX: 16 }, ["beast", "spider"]),
-    monster("Skeleton", "Bones held together by malice.", 0.25, 13, 13, { STR: 10, DEX: 14 }, ["undead"]),
-    monster("Zombie", "Slow, relentless, hungry.", 0.25, 22, 8, { CON: 16 }, ["undead"]),
-    monster("Bandit", "A masked human looking for easy coin.", 0.125, 11, 12, { STR: 11, DEX: 12 }, ["humanoid", "criminal"]),
-    monster("Wolf", "A pack hunter with a mean bite.", 0.25, 11, 13, { DEX: 15 }, ["beast"]),
-    monster("Revenant Mort-Roi", "The skeletal remains of the forgotten king refuse to rest.", 5, 65, 17, { STR: 18, DEX: 14, CON: 16, WIS: 16 }, ["undead", "boss", "named"]),
+    monster("Éclaireur gobelin", "Petit humanoïde sournois tapi dans l’ombre.", 0.25, 7, 15, { DEX: 14 }, ["gobelin", "humanoïde"], [{ name: "Cimeterre", bonus: 4, damage: "1d6+2", damageType: "slashing", rangeMeters: 1.5 }, { name: "Arc court", bonus: 4, damage: "1d6+2", damageType: "piercing", rangeMeters: 24, longRangeMeters: 96 }]),
+    monster("Guerrier gobelin", "Un gobelin plus costaud, armé d’un cimeterre ébréché.", 0.25, 10, 14, { STR: 12, DEX: 13 }, ["gobelin", "humanoïde"], [{ name: "Cimeterre", bonus: 4, damage: "1d6+2", damageType: "slashing", rangeMeters: 1.5 }, { name: "Javeline", bonus: 3, damage: "1d6+1", damageType: "piercing", rangeMeters: 9, longRangeMeters: 36 }]),
+    monster("Chef gobelin", "Chef rusé de la bande ; ne se bat jamais à la loyale.", 1, 21, 17, { STR: 10, DEX: 14, CHA: 10 }, ["gobelin", "humanoïde", "chef"], [{ name: "Cimeterre", bonus: 4, damage: "1d6+2", damageType: "slashing", rangeMeters: 1.5 }, { name: "Javeline", bonus: 2, damage: "1d6", damageType: "piercing", rangeMeters: 9, longRangeMeters: 36 }]),
+    monster("Rat géant", "Plus gros qu’un honnête rat n’a le droit de l’être.", 0.125, 7, 12, { DEX: 11 }, ["bête"], [{ name: "Morsure", bonus: 4, damage: "1d4+2", damageType: "piercing", rangeMeters: 1.5 }]),
+    monster("Araignée géante", "Huit pattes, huit yeux, et bien trop de patience.", 1, 26, 14, { DEX: 16 }, ["bête", "araignée"], [{ name: "Morsure", bonus: 5, damage: "1d8+3", damageType: "piercing", rangeMeters: 1.5 }]),
+    monster("Squelette", "Des os que seule la malveillance tient ensemble.", 0.25, 13, 13, { STR: 10, DEX: 14 }, ["mort-vivant"], [{ name: "Épée courte", bonus: 4, damage: "1d6+2", damageType: "piercing", rangeMeters: 1.5 }, { name: "Arc court", bonus: 4, damage: "1d6+2", damageType: "piercing", rangeMeters: 24, longRangeMeters: 96 }]),
+    monster("Zombie", "Lent, implacable, affamé.", 0.25, 22, 8, { CON: 16 }, ["mort-vivant"], [{ name: "Coup", bonus: 3, damage: "1d6+1", damageType: "bludgeoning", rangeMeters: 1.5 }]),
+    monster("Bandit", "Un humain masqué en quête d’argent facile.", 0.125, 11, 12, { STR: 11, DEX: 12 }, ["humanoïde", "criminel"], [{ name: "Cimeterre", bonus: 3, damage: "1d6+1", damageType: "slashing", rangeMeters: 1.5 }, { name: "Arbalète légère", bonus: 3, damage: "1d8+1", damageType: "piercing", rangeMeters: 24, longRangeMeters: 96 }]),
+    monster("Loup", "Chasseur de meute à la morsure cruelle.", 0.25, 11, 13, { DEX: 15 }, ["bête"], [{ name: "Morsure", bonus: 4, damage: "2d4+2", damageType: "piercing", rangeMeters: 1.5 }]),
+    monster("Revenant Mort-Roi", "La dépouille squelettique du roi oublié refuse le repos.", 5, 65, 17, { STR: 18, DEX: 14, CON: 16, WIS: 16 }, ["mort-vivant", "boss", "unique"], [{ name: "Épée longue maudite", bonus: 7, damage: "1d8+4", damageType: "slashing", rangeMeters: 1.5 }, { name: "Toucher glacial", bonus: 6, damage: "2d6", damageType: "necrotic", rangeMeters: 1.5 }]),
   );
 
   // -----------------------------------------------------------------------
@@ -455,16 +477,16 @@ async function main() {
   }
 
   ents.push(
-    item("Longsword", "A versatile straight-bladed sword.", "common", ["weapon", "martial", "melee"]),
-    item("Shortbow", "Quick and light.", "common", ["weapon", "ranged"]),
-    item("Dagger", "Small, fast, easily concealed.", "common", ["weapon", "finesse"]),
-    item("Healing Potion", "A small vial of crimson liquid.", "uncommon", ["potion", "healing", "consumable"]),
-    item("Chain Shirt", "Light metal links over a leather backing.", "common", ["armor", "medium"]),
-    item("Torch", "Burns for an hour, casts dim light.", "common", ["light", "consumable"]),
-    item("Rope (50 ft)", "Hempen, sturdy.", "common", ["utility"]),
-    item("Spellbook", "Contains the spells of an apprentice mage.", "common", ["book", "magic", "wizard"]),
-    item("Holy Symbol", "Etched in silver, a sun with rays.", "common", ["focus", "cleric"]),
-    item("Goblin Banner", "A faded, ragged banner showing a snarling goblin.", "uncommon", ["loot", "trophy", "named"]),
+    item("Épée longue", "Une épée droite et polyvalente.", "common", ["arme", "de guerre", "corps à corps"]),
+    item("Arc court", "Rapide et léger.", "common", ["arme", "distance"]),
+    item("Dague", "Petite, rapide, facile à dissimuler.", "common", ["arme", "finesse"]),
+    item("Potion de soins", "Une petite fiole de liquide écarlate.", "uncommon", ["potion", "soin", "consommable"]),
+    item("Chemise de mailles", "De fins anneaux de métal sur un dos de cuir.", "common", ["armure", "intermédiaire"]),
+    item("Torche", "Brûle une heure et diffuse une faible lumière.", "common", ["lumière", "consommable"]),
+    item("Corde (15 m)", "En chanvre, solide.", "common", ["utilitaire"]),
+    item("Grimoire", "Contient les sorts d’un apprenti mage.", "common", ["livre", "magie", "magicien"]),
+    item("Symbole sacré", "Un soleil rayonnant gravé dans l’argent.", "common", ["focaliseur", "clerc"]),
+    item("Bannière gobeline", "Une bannière délavée et déchirée montrant un gobelin grimaçant.", "uncommon", ["butin", "trophée", "unique"]),
   );
 
   // -----------------------------------------------------------------------
@@ -479,7 +501,7 @@ async function main() {
       description,
       tags,
       attributes: {
-        defaultAmbienceName: ambienceName, // resolved by tag-matching in EntityPreview
+        defaultAmbienceName: ambienceName, // résolu par nom dans EntityPreview
       },
       effects: [],
       visibility: "public",
@@ -488,11 +510,11 @@ async function main() {
   }
 
   ents.push(
-    location("Tin Hollow village", "A damp mining village; cobbled streets, tin smoke in the air.", "Tavern bustle", ["tavern", "village", "town"]),
-    location("The Yew Inn", "Wooden tables, a fire that never quite warms, suspicious patrons.", "Tavern bustle", ["tavern", "indoor"]),
-    location("The Forgotten Crypt", "A damp stone sanctuary buried beneath an old chapel.", "Crypt drips", ["crypt", "dungeon", "underground"]),
-    location("The Whispering Woods", "Old oaks and a stillness that prickles the neck.", "Forest at night", ["forest", "outdoor", "night"]),
-    location("Castle Aldric", "Crumbling battlements, banners of a dead house.", "Castle hall", ["castle", "indoor", "noble"]),
+    location("Village de Creux-d’Étain", "Village minier humide ; rues pavées, fumée d’étain dans l’air.", "Brouhaha de taverne", ["taverne", "village", "ville"]),
+    location("L’Auberge de l’If", "Tables de bois, un feu qui ne réchauffe jamais vraiment, clients louches.", "Brouhaha de taverne", ["taverne", "intérieur"]),
+    location("La Crypte oubliée", "Un sanctuaire de pierre humide enfoui sous une vieille chapelle.", "Gouttes dans la crypte", ["crypte", "donjon", "souterrain"]),
+    location("Le Bois des Murmures", "De vieux chênes et un silence qui hérisse la nuque.", "Forêt de nuit", ["forêt", "extérieur", "nuit"]),
+    location("Château d’Aldric", "Remparts en ruine, bannières d’une maison éteinte.", "Grand hall de château", ["château", "intérieur", "noble"]),
   );
 
   // -----------------------------------------------------------------------
@@ -523,30 +545,30 @@ async function main() {
 
   ents.push(
     npc(
-      "Bortrand the Robust",
-      "Mayor of Tin Hollow; weary but determined.",
-      "Tin Hollow Council",
-      "Protect his village from goblin raids.",
-      "His son was taken by goblins three weeks ago.",
+      "Bortrand le Robuste",
+      "Bourgmestre de Creux-d’Étain ; épuisé mais déterminé.",
+      "Conseil de Creux-d’Étain",
+      "Protéger son village des raids gobelins.",
+      "Son fils a été enlevé par les gobelins il y a trois semaines.",
     ),
     npc(
-      "Sister Mira",
-      "Cleric of the dawn at the village chapel.",
-      "Order of the Dawning Sun",
-      "Find what desecrates the crypts beneath her chapel.",
-      "Suspects the mayor's son became a revenant.",
+      "Sœur Mira",
+      "Prêtresse de l’aube à la chapelle du village.",
+      "Ordre du Soleil levant",
+      "Découvrir ce qui profane les cryptes sous sa chapelle.",
+      "Soupçonne le fils du bourgmestre d’être devenu un revenant.",
     ),
     npc(
-      "Old Tomas",
-      "The blacksmith. Knows everyone, owes a few favors, won't say which.",
-      "Tin Hollow Council",
-      "Keep the village's secrets.",
+      "Le vieux Tomas",
+      "Le forgeron. Connaît tout le monde, doit quelques faveurs, refuse de dire lesquelles.",
+      "Conseil de Creux-d’Étain",
+      "Garder les secrets du village.",
     ),
     npc(
-      "Greta the Brewer",
-      "Owner of the Yew Inn. Loud, hospitable, tracks gossip like prey.",
-      "Yew Inn",
-      "Keep her customers happy and her information flowing.",
+      "Greta la Brasseuse",
+      "Tenancière de l’Auberge de l’If. Bruyante, accueillante, traque les ragots comme du gibier.",
+      "Auberge de l’If",
+      "Garder ses clients contents et les informations qui circulent.",
     ),
   );
 
@@ -555,6 +577,22 @@ async function main() {
     await db.insert(entities).values(e);
   }
   console.log(`[seed-demo] inserted ${ents.length} entities`);
+
+  // Histoire V2 : bible, fronts, scènes, indices, cartes.
+  const idByName = new Map(ents.map((e) => [e.name, e.id]));
+  const story = buildDemoStory((name) => {
+    const id = idByName.get(name);
+    if (!id) throw new Error(`[seed-demo] fiche introuvable : ${name}`);
+    return id;
+  });
+  const issues = validateStory(story, {
+    entityIds: new Set(ents.map((e) => e.id)),
+    ruleset: DND5E_RULESET,
+  });
+  for (const i of issues) console.log(`[seed-demo] ${i.severity} ${i.path} — ${i.message}`);
+  if (issues.some((i) => i.severity === "error")) throw new Error("[seed-demo] histoire invalide");
+  await db.update(campaigns).set({ story }).where(eq(campaigns.id, campaignId));
+  console.log(`[seed-demo] story: ${story.scenes.length} scènes, ${story.clues.length} indices, ${story.maps.length} cartes`);
 
   console.log(`\n[seed-demo] DONE`);
   console.log(`  campaignId: ${campaignId}`);

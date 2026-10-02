@@ -4,6 +4,7 @@ import { sessions } from "@/lib/db/schema";
 import { PhaseUpdateSchema } from "@/lib/validation/session-schemas";
 import { handleApiError, notFound } from "@/lib/api/errors";
 import { eq } from "drizzle-orm";
+import { notifySession } from "@/lib/realtime/notify";
 
 export async function PATCH(
   req: NextRequest,
@@ -19,6 +20,7 @@ export async function PATCH(
       .where(eq(sessions.id, id))
       .returning();
     if (!row) notFound("session", id);
+    await notifySession(id, ["session"]);
     return NextResponse.json({ session: row });
   } catch (error) {
     return handleApiError(error);

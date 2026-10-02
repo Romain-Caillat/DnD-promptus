@@ -1,3 +1,4 @@
+import type { SessionRecap } from "@/lib/continuity/recap";
 import { create } from "zustand";
 import type { EntityState, EntityType, InitiativeEntry } from "@/lib/engine/types";
 
@@ -28,6 +29,7 @@ export interface SessionView {
   activeTurnIndex: number;
   startedAt: string | Date;
   endedAt: string | Date | null;
+  recap?: SessionRecap | null;
 }
 
 interface State {

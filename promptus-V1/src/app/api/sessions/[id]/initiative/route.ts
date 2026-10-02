@@ -5,6 +5,9 @@ import { InitiativeUpdateSchema } from "@/lib/validation/session-schemas";
 import { handleApiError, notFound } from "@/lib/api/errors";
 import { eq } from "drizzle-orm";
 import type { InitiativeEntry } from "@/lib/engine/types";
+import { rollInitiative } from "@/lib/engine/ruleset";
+import { getCampaignRuleset } from "@/lib/rules/server";
+import { notifySession } from "@/lib/realtime/notify";
 
 export async function PATCH(
   req: NextRequest,
@@ -24,6 +27,7 @@ export async function PATCH(
       .where(eq(sessions.id, id))
       .returning();
     if (!row) notFound("session", id);
+    await notifySession(id, ["session"]);
     return NextResponse.json({ session: row });
   } catch (error) {
     return handleApiError(error);
@@ -40,7 +44,6 @@ export async function POST(
     const [session] = await db.select().from(sessions).where(eq(sessions.id, id));
     if (!session) notFound("session", id);
 
-    // Look up each participant's DEX modifier (initiativeBonus or default 0)
     const states = await db
       .select()
       .from(sessionState)
@@ -52,14 +55,16 @@ export async function POST(
       .where(eq(entities.campaignId, session.campaignId));
     const ent_by_id = new Map(ents.map((e) => [e.id, e]));
 
+    const ruleset = await getCampaignRuleset(session.campaignId);
     const newOrder: InitiativeEntry[] = states.map((s) => {
       const ent = ent_by_id.get(s.entityId);
       const a = (ent?.attributes ?? {}) as Record<string, unknown>;
-      const initBonus = typeof a.initiativeBonus === "number" ? a.initiativeBonus : 0;
-      const roll = 1 + Math.floor(Math.random() * 20);
       return {
         entityId: s.entityId,
-        initiative: roll + initBonus,
+        initiative: rollInitiative(ruleset, {
+          abilityScores: a.abilityScores as Record<string, number> | undefined,
+          bonus: typeof a.initiativeBonus === "number" ? a.initiativeBonus : undefined,
+        }),
         isPlayer: ent?.type === "character",
       };
     });
@@ -75,6 +80,7 @@ export async function POST(
       })
       .where(eq(sessions.id, id))
       .returning();
+    await notifySession(id, ["session"]);
     return NextResponse.json({ session: row });
   } catch (error) {
     return handleApiError(error);

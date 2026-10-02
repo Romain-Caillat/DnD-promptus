@@ -15,6 +15,16 @@ import { TimelineFeed } from "./timeline-feed";
 import { EntityPreview } from "./entity-preview";
 import { AudioControls } from "./audio-controls";
 import { AudioEffectListener } from "./audio-effect-listener";
+import { StoryPanel } from "./story-panel";
+import { MapPanel } from "./map-panel";
+import { PlayersPanel } from "./players-panel";
+import { RequestsPanel } from "./requests-panel";
+import { CopilotPanel } from "./copilot-panel";
+import { MusicPanel } from "./music-panel";
+import { EndSessionButton } from "@/components/continuity/end-session-button";
+import { RecapEditor } from "@/components/continuity/recap-editor";
+import { useRealtime } from "@/lib/realtime/use-realtime";
+import { PHASE_LABELS } from "@/lib/engine/catalog";
 
 export function Cockpit({
   sessionId,
@@ -27,13 +37,29 @@ export function Cockpit({
     queryKey: ["session", sessionId],
     queryFn: async () => {
       const res = await fetch(`/api/sessions/${sessionId}`);
-      if (!res.ok) throw new Error("Failed to load session");
+      if (!res.ok) throw new Error("Impossible de charger la session");
       return res.json() as Promise<{
         session: SessionView;
         participants: ParticipantView[];
       }>;
     },
-    refetchInterval: 5000,
+    // Filet de sécurité : les mises à jour arrivent par le temps réel.
+    refetchInterval: 60_000,
+  });
+
+  const realtime = useRealtime({ type: "hello", role: "gm", sessionId }, (kind) => {
+    switch (kind) {
+      case "session":
+        return [["session", sessionId]];
+      case "story":
+        return [["session-story", sessionId]];
+      case "timeline":
+        return [["timeline", sessionId]];
+      case "requests":
+        return [["player-requests", sessionId]];
+      case "players":
+        return [["session-players", sessionId]];
+    }
   });
 
   const setStore = useSessionStore((s) => s.set);
@@ -46,7 +72,7 @@ export function Cockpit({
       <div className="p-8 text-center">
         <p className="text-destructive">{(error as Error).message}</p>
         <Button asChild variant="outline" className="mt-4">
-          <Link href={`/campaigns/${campaignId}`}>Back to campaign</Link>
+          <Link href={`/campaigns/${campaignId}`}>Retour à la campagne</Link>
         </Button>
       </div>
     );
@@ -54,7 +80,7 @@ export function Cockpit({
 
   if (isLoading || !data) {
     return (
-      <div className="p-8 text-center text-muted-foreground">Loading session…</div>
+      <div className="p-8 text-center text-muted-foreground">Chargement de la session…</div>
     );
   }
 
@@ -74,27 +100,45 @@ export function Cockpit({
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
                 <Button asChild variant="ghost" size="sm" className="mb-1 -ml-2">
-                  <Link href={`/campaigns/${campaignId}`}>← Campaign</Link>
+                  <Link href={`/campaigns/${campaignId}`}>← Campagne</Link>
                 </Button>
                 <h1 className="text-2xl font-bold">{session.name}</h1>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                  <Badge variant="outline" className="capitalize" data-testid="phase-badge">
-                    {session.currentPhase}
+                  <Badge variant="outline" data-testid="phase-badge">
+                    {PHASE_LABELS[session.currentPhase]}
                   </Badge>
                   {session.combatRound > 0 ? (
                     <span>Round {session.combatRound}</span>
                   ) : (
-                    <span>Pre-combat</span>
+                    <span>Hors combat</span>
                   )}
                 </div>
               </div>
-              <PhaseSwitcher
-                sessionId={session.id}
-                currentPhase={session.currentPhase}
-              />
+              <div className="flex items-center gap-2 flex-wrap">
+                {!session.endedAt ? (
+                  <PhaseSwitcher sessionId={session.id} currentPhase={session.currentPhase} />
+                ) : null}
+                <EndSessionButton sessionId={session.id} ended={!!session.endedAt} />
+              </div>
             </div>
+            {session.endedAt ? (
+              <p className="text-xs text-muted-foreground" data-testid="session-ended">
+                Session terminée le {new Date(session.endedAt).toLocaleString("fr-FR")} : les joueurs ne peuvent plus agir.
+              </p>
+            ) : null}
           </CardContent>
         </Card>
+
+        {session.recap ? <RecapEditor sessionId={session.id} recap={session.recap} /> : null}
+
+        {/* Scénario : la narration d’abord */}
+        <StoryPanel sessionId={session.id} campaignId={campaignId} participants={participants} />
+
+        {/* Co-MJ : propositions à valider */}
+        <CopilotPanel sessionId={session.id} campaignId={campaignId} participants={participants} />
+
+        {/* Carte de la scène */}
+        <MapPanel sessionId={session.id} campaignId={campaignId} participants={participants} />
 
         {/* Hotbar */}
         <Hotbar
@@ -104,15 +148,15 @@ export function Cockpit({
           participants={participants}
         />
 
-        {/* Entity preview (reveal images on the table) */}
-        <EntityPreview campaignId={campaignId} />
+        {/* Révélation d’images */}
+        <EntityPreview campaignId={campaignId} sessionId={session.id} />
 
         {/* Participants */}
         <section className="space-y-3">
           {playerParticipants.length > 0 ? (
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                Player characters
+                Personnages joueurs
               </h2>
               <div className="grid gap-3 md:grid-cols-2">
                 {playerParticipants.map((p) => (
@@ -128,7 +172,7 @@ export function Cockpit({
           {adversaryParticipants.length > 0 ? (
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 mt-3">
-                Adversaries & NPCs
+                Adversaires et PNJ
               </h2>
               <div className="grid gap-3 md:grid-cols-2">
                 {adversaryParticipants.map((p) => (
@@ -143,7 +187,7 @@ export function Cockpit({
           ) : null}
           {participants.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">
-              No participants in this session.
+              Aucun participant dans cette session.
             </p>
           ) : null}
         </section>
@@ -151,7 +195,10 @@ export function Cockpit({
 
       {/* Sidebar: initiative + audio + timeline */}
       <aside className="space-y-4">
+        <PlayersPanel sessionId={session.id} realtime={realtime} />
+        <RequestsPanel sessionId={session.id} />
         <InitiativeTracker session={session} participants={participants} />
+        <MusicPanel sessionId={session.id} />
         <AudioControls />
         <TimelineFeed sessionId={session.id} />
       </aside>

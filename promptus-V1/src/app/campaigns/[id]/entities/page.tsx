@@ -22,10 +22,10 @@ export default async function CampaignEntitiesPage({ params }: Props) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-            <Link href="/campaigns">← Campaigns</Link>
+            <Link href={`/campaigns/${campaign.id}`}>← Campagne</Link>
           </Button>
           <h1 className="text-3xl font-bold">{campaign.name}</h1>
-          <p className="text-muted-foreground mt-1">Entities — the inhabitants and props of your world</p>
+          <p className="text-muted-foreground mt-1">Fiches : les habitants et accessoires de votre monde</p>
         </div>
       </div>
 

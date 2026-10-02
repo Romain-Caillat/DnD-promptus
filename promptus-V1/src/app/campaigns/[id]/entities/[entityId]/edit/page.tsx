@@ -4,7 +4,9 @@ import { db } from "@/lib/db/client";
 import { campaigns, entities } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
+import { RulesetProvider } from "@/components/providers/ruleset-provider";
 import { EntityEditor, type EntityFormState } from "@/components/editor/entity-editor";
+import { ENTITY_TYPE_LABELS } from "@/lib/engine/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -38,14 +40,16 @@ export default async function EditEntityPage({ params }: Props) {
   return (
     <main className="flex-1 px-6 py-8 max-w-5xl mx-auto w-full">
       <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-        <Link href={`/campaigns/${id}/entities`}>← Entities</Link>
+        <Link href={`/campaigns/${id}/entities`}>← Fiches</Link>
       </Button>
-      <h1 className="text-3xl font-bold mb-1">Edit {entity.name}</h1>
-      <p className="text-muted-foreground mb-8 capitalize">
-        {entity.type} · version {entity.version}
+      <h1 className="text-3xl font-bold mb-1">Modifier {entity.name}</h1>
+      <p className="text-muted-foreground mb-8">
+        {ENTITY_TYPE_LABELS[entity.type]} · version {entity.version}
       </p>
 
-      <EntityEditor campaignId={id} mode="edit" initial={initial} />
+      <RulesetProvider campaignId={id}>
+        <EntityEditor campaignId={id} mode="edit" initial={initial} />
+      </RulesetProvider>
     </main>
   );
 }

@@ -4,6 +4,7 @@ import { db } from "@/lib/db/client";
 import { campaigns } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
+import { RulesetProvider } from "@/components/providers/ruleset-provider";
 import { EntityEditor } from "@/components/editor/entity-editor";
 
 export const dynamic = "force-dynamic";
@@ -20,14 +21,16 @@ export default async function NewEntityPage({ params }: Props) {
   return (
     <main className="flex-1 px-6 py-8 max-w-5xl mx-auto w-full">
       <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-        <Link href={`/campaigns/${id}/entities`}>← Entities</Link>
+        <Link href={`/campaigns/${id}/entities`}>← Fiches</Link>
       </Button>
-      <h1 className="text-3xl font-bold mb-1">Create entity</h1>
+      <h1 className="text-3xl font-bold mb-1">Créer une fiche</h1>
       <p className="text-muted-foreground mb-8">
-        Declare a new piece of your world — spell, NPC, item, location…
+        Ajoutez un élément à votre monde : sort, PNJ, objet, lieu…
       </p>
 
-      <EntityEditor campaignId={id} mode="create" />
+      <RulesetProvider campaignId={id}>
+        <EntityEditor campaignId={id} mode="create" />
+      </RulesetProvider>
     </main>
   );
 }
