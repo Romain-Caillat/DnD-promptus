@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import yaml from "js-yaml";
+import * as yaml from "js-yaml";
 import { z } from "zod";
 import { db } from "@/lib/db/client";
 import { campaigns, entities } from "@/lib/db/schema";

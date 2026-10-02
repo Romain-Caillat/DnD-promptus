@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -53,13 +53,14 @@ export function CastSpellDialog({ sessionId, campaignId, participants, trigger }
     },
   });
 
-  useEffect(() => {
-    if (!open) {
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (!next) {
       setResults(null);
       setTargetIds(new Set());
       setSpellId("");
     }
-  }, [open]);
+  }
 
   const aliveParticipants = participants.filter(
     (p) => (p.state.currentState.hp ?? 1) > 0,
@@ -107,7 +108,7 @@ export function CastSpellDialog({ sessionId, campaignId, participants, trigger }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-xl">
         <DialogHeader>
@@ -142,7 +143,7 @@ export function CastSpellDialog({ sessionId, campaignId, participants, trigger }
               <Button variant="outline" onClick={() => setResults(null)}>
                 Cast another
               </Button>
-              <Button onClick={() => setOpen(false)}>Close</Button>
+              <Button onClick={() => handleOpenChange(false)}>Close</Button>
             </DialogFooter>
           </div>
         ) : (

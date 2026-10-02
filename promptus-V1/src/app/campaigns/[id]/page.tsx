@@ -4,7 +4,7 @@ import { db } from "@/lib/db/client";
 import { campaigns } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StartSessionDialog } from "@/components/sessions/start-session-dialog";
 import { SessionsList } from "@/components/sessions/sessions-list";
 
