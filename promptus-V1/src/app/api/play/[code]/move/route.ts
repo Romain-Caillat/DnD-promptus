@@ -26,6 +26,7 @@ export async function POST(
     const { code } = await params;
     const session = await sessionByInvite(code);
     const player = await requirePlayer(req, session);
+    if (session.endedAt) badRequest("La session est terminée");
     if (!player.characterEntityId) badRequest("Un spectateur ne peut pas se déplacer");
     const target = BodySchema.parse(await req.json());
 

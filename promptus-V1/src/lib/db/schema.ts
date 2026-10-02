@@ -21,6 +21,7 @@ import type { Ruleset } from "@/lib/engine/ruleset";
 import type { CampaignStory } from "@/lib/engine/story";
 import type { WorldState } from "@/lib/engine/world";
 import type { LlmUsage } from "@/lib/ai/llm";
+import type { SessionRecap } from "@/lib/continuity/recap";
 import type {
   GenerationInput,
   GenerationResult,
@@ -147,6 +148,10 @@ export const sessions = pgTable("sessions", {
     .defaultNow()
     .notNull(),
   endedAt: timestamp("ended_at", { withTimezone: true }),
+  /** État du monde au lancement : sert à mesurer ce que la session a changé. */
+  worldAtStart: jsonb("world_at_start").$type<WorldState>(),
+  /** Récapitulatifs de fin de session (MJ, joueurs). */
+  recap: jsonb("recap").$type<SessionRecap>(),
 });
 
 export const sessionState = pgTable(
@@ -261,7 +266,7 @@ export const aiCalls = pgTable(
       .references(() => campaigns.id, { onDelete: "cascade" })
       .notNull(),
     sessionId: text("session_id").references(() => sessions.id, { onDelete: "cascade" }),
-    kind: text("kind").$type<"copilot" | "image" | "video">().notNull(),
+    kind: text("kind").$type<"copilot" | "image" | "video" | "recap">().notNull(),
     status: text("status").$type<"running" | "succeeded" | "failed">().notNull(),
     model: text("model").notNull(),
     input: jsonb("input").$type<Record<string, unknown>>().default({}).notNull(),

@@ -92,6 +92,21 @@ pnpm tsx scripts/fake-openrouter.ts 4010 &
 OPENROUTER_API_KEY=fake OPENROUTER_BASE_URL=http://localhost:4010/api/v1 pnpm dev
 ```
 
+## Continuité : fin de session et chronique
+
+- **Terminer la session** (cockpit) : le combat et la musique s’arrêtent, les
+  joueurs ne peuvent plus agir. L’app mesure ce que la session a changé
+  depuis son lancement (scènes, indices, révélations, menaces, combats,
+  adversaires vaincus, état du groupe).
+- Deux récapitulatifs en brouillon : notes MJ (fils ouverts, pistes) et
+  « Précédemment… » pour les joueurs, sans secret. Factuels d’abord, puis
+  réécrits par l’IA si elle est configurée. Le MJ les corrige et **publie**
+  le second : les joueurs le lisent à la fin de la session et au début de la
+  suivante.
+- Le co-MJ connaît les résumés des sessions précédentes.
+- **Chronique** de la campagne : sessions, récapitulatifs, journaux complets,
+  ce que savent les joueurs, avancée des menaces.
+
 ## Médias : images, vidéos, musique
 
 Page **Médias** d’une campagne : images des scènes, des fiches et fonds de

@@ -23,6 +23,8 @@ interface Member {
 
 const rooms = new Map<string, Set<Member>>();
 const pool = new pg.Pool({ connectionString: DATABASE_URL, max: 4 });
+// Une connexion inactive coupée (redémarrage de Postgres) ne doit pas tuer le serveur.
+pool.on("error", (e) => console.error("[realtime] pg pool error", e.message));
 
 function send(ws: WebSocket, msg: unknown) {
   if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
@@ -65,8 +67,14 @@ async function authenticate(hello: Record<string, unknown>): Promise<{ sessionId
 }
 
 const http = createServer((req, res) => {
-  res.writeHead(req.url === "/health" ? 200 : 404, { "content-type": "text/plain" });
-  res.end(req.url === "/health" ? "ok" : "not found");
+  // Santé : prêt seulement si l'écoute de Postgres est active.
+  if (req.url === "/health") {
+    res.writeHead(listening ? 200 : 503, { "content-type": "text/plain" });
+    res.end(listening ? "ok" : "postgres indisponible");
+    return;
+  }
+  res.writeHead(404, { "content-type": "text/plain" });
+  res.end("not found");
 });
 const wss = new WebSocketServer({ server: http });
 
@@ -124,7 +132,11 @@ setInterval(() => {
   }
 }, 30_000);
 
-async function listen() {
+let listening = false;
+let everConnected = false;
+
+/** LISTEN sur Postgres, reconnecté tant qu'il le faut (Postgres redémarré…). */
+async function listen(): Promise<void> {
   const client = new pg.Client({ connectionString: DATABASE_URL });
   client.on("notification", (n) => {
     try {
@@ -134,17 +146,32 @@ async function listen() {
       console.error("[realtime] bad notification", e);
     }
   });
-  client.on("error", (e) => {
-    console.error("[realtime] pg error, reconnecting", e.message);
-    setTimeout(listen, 2000);
-  });
-  await client.connect();
-  await client.query(`LISTEN ${CHANNEL}`);
+  let retried = false;
+  const retry = (why: string) => {
+    if (retried) return;
+    retried = true;
+    listening = false;
+    console.error(`[realtime] Postgres indisponible (${why}), nouvel essai dans 2 s`);
+    client.end().catch(() => {});
+    setTimeout(() => void listen(), 2000);
+  };
+  client.on("error", (e) => retry(e.message));
+  client.on("end", () => retry("connexion fermée"));
+  try {
+    await client.connect();
+    await client.query(`LISTEN ${CHANNEL}`);
+  } catch (e) {
+    retry(e instanceof Error ? e.message : String(e));
+    return;
+  }
+  listening = true;
   console.log(`[realtime] listening on Postgres channel ${CHANNEL}`);
+  // Après une coupure, les clients relisent tout : des notifications ont pu se perdre.
+  if (everConnected) {
+    for (const id of rooms.keys()) broadcast(id, { type: "invalidate", kinds: ["session", "story", "timeline", "requests", "players"] });
+  }
+  everConnected = true;
 }
 
-listen().catch((e) => {
-  console.error("[realtime] cannot connect to Postgres", e);
-  process.exit(1);
-});
+void listen();
 http.listen(PORT, () => console.log(`[realtime] ws://0.0.0.0:${PORT}`));

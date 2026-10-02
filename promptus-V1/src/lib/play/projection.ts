@@ -29,8 +29,13 @@ export interface ProjectionInput {
     combatRound: number;
     activeTurnIndex: number;
     initiativeOrder: InitiativeEntry[];
+    endedAt?: Date | string | null;
   };
   campaignName: string;
+  /** « Précédemment… » publié de la session précédente. */
+  previously?: { sessionName: string; text: string } | null;
+  /** Récapitulatif publié de cette session (une fois terminée). */
+  recap?: string | null;
   story: CampaignStory;
   world: WorldState;
   ruleset: Ruleset;
@@ -60,7 +65,9 @@ export interface PlayerMap {
 }
 
 export interface PlayerView {
-  session: { id: string; name: string; phase: PhaseId; combatRound: number; campaignName: string };
+  session: { id: string; name: string; phase: PhaseId; combatRound: number; campaignName: string; ended: boolean };
+  previously: { sessionName: string; text: string } | null;
+  recap: string | null;
   me: { playerId: string; name: string; characterId: string | null };
   character: {
     id: string;
@@ -303,7 +310,16 @@ export function projectPlayerView(input: ProjectionInput): PlayerView {
   const spot = world.spotlightEntityId ? byId.get(world.spotlightEntityId) : undefined;
 
   return {
-    session: { id: session.id, name: session.name, phase: session.currentPhase, combatRound: session.combatRound, campaignName: input.campaignName },
+    session: {
+      id: session.id,
+      name: session.name,
+      phase: session.currentPhase,
+      combatRound: session.combatRound,
+      campaignName: input.campaignName,
+      ended: !!session.endedAt,
+    },
+    previously: input.previously ? { sessionName: input.previously.sessionName, text: mask(input.previously.text) } : null,
+    recap: input.recap ? mask(input.recap) : null,
     me: { playerId: player.id, name: player.name, characterId: myId },
     character,
     party,

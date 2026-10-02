@@ -21,6 +21,8 @@ import { PlayersPanel } from "./players-panel";
 import { RequestsPanel } from "./requests-panel";
 import { CopilotPanel } from "./copilot-panel";
 import { MusicPanel } from "./music-panel";
+import { EndSessionButton } from "@/components/continuity/end-session-button";
+import { RecapEditor } from "@/components/continuity/recap-editor";
 import { useRealtime } from "@/lib/realtime/use-realtime";
 import { PHASE_LABELS } from "@/lib/engine/catalog";
 
@@ -112,13 +114,22 @@ export function Cockpit({
                   )}
                 </div>
               </div>
-              <PhaseSwitcher
-                sessionId={session.id}
-                currentPhase={session.currentPhase}
-              />
+              <div className="flex items-center gap-2 flex-wrap">
+                {!session.endedAt ? (
+                  <PhaseSwitcher sessionId={session.id} currentPhase={session.currentPhase} />
+                ) : null}
+                <EndSessionButton sessionId={session.id} ended={!!session.endedAt} />
+              </div>
             </div>
+            {session.endedAt ? (
+              <p className="text-xs text-muted-foreground" data-testid="session-ended">
+                Session terminée le {new Date(session.endedAt).toLocaleString("fr-FR")} : les joueurs ne peuvent plus agir.
+              </p>
+            ) : null}
           </CardContent>
         </Card>
+
+        {session.recap ? <RecapEditor sessionId={session.id} recap={session.recap} /> : null}
 
         {/* Scénario : la narration d’abord */}
         <StoryPanel sessionId={session.id} campaignId={campaignId} participants={participants} />

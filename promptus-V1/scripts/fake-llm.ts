@@ -64,6 +64,19 @@ export class FakeLlm implements LlmClient {
     const { story, entities } = demoDraft();
     let body: unknown;
     let kind: string;
+    if (req.messages[0]?.content.includes("Tu rédiges les récapitulatifs")) {
+      this.calls.push("recap");
+      const ctx = req.messages[1]?.content ?? "";
+      const scenes = ctx.match(/^Scènes jouées : (.+)$/m)?.[1] ?? "aucune";
+      const clues = ctx.match(/^Indices trouvés : (.+)$/m)?.[1] ?? "aucun";
+      return this.reply(
+        JSON.stringify({
+          players: `Précédemment… Vous avez traversé ${scenes}. Vous avez appris : ${clues}.`,
+          gm: `- Scènes : ${scenes}\n- Indices : ${clues}\n- Piste : relancer la menace principale.`,
+        }),
+        req,
+      );
+    }
     if (req.messages[0]?.content.includes("Tu aides le MJ humain en direct")) {
       this.calls.push("copilot");
       return this.reply(JSON.stringify(copilotBody(req.messages[1]?.content ?? "")), req);

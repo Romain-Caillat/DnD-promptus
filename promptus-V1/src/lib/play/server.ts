@@ -19,6 +19,7 @@ import { DND5E_RULESET } from "@/lib/engine/ruleset";
 import { EMPTY_STORY } from "@/lib/engine/story";
 import { normalizeWorld } from "@/lib/engine/world";
 import type { EntityState } from "@/lib/engine/types";
+import { previousRecaps } from "@/lib/continuity/server";
 import { projectPlayerView, type PlayerView } from "./projection";
 
 export const PLAYER_TOKEN_HEADER = "x-player-token";
@@ -87,8 +88,14 @@ export async function loadPlayerView(session: Session, player: SessionPlayerRow)
     .orderBy(desc(playerRequests.createdAt))
     .limit(10);
 
+  const [previous] = await previousRecaps(session.campaignId, session.startedAt, 5).then((rows) =>
+    rows.filter((r) => r.recap?.status === "published"),
+  );
+
   return projectPlayerView({
     session,
+    previously: previous?.recap ? { sessionName: previous.name, text: previous.recap.players } : null,
+    recap: session.recap?.status === "published" ? session.recap.players : null,
     campaignName: campaign?.name ?? "",
     story: campaign?.story ?? EMPTY_STORY,
     world: normalizeWorld(campaign?.worldState),

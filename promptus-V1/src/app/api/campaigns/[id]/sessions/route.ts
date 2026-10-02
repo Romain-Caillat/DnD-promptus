@@ -7,6 +7,7 @@ import { generateId } from "@/lib/api/ids";
 import { eq, inArray, desc } from "drizzle-orm";
 import type { InitiativeEntry } from "@/lib/engine/types";
 import { deriveStateFromEntity } from "@/lib/session/derive-state";
+import { normalizeWorld } from "@/lib/engine/world";
 
 export async function GET(
   _req: NextRequest,
@@ -66,6 +67,7 @@ export async function POST(
         initiativeOrder,
         combatRound: 0,
         activeTurnIndex: 0,
+        worldAtStart: normalizeWorld(campaign.worldState),
       })
       .returning();
 

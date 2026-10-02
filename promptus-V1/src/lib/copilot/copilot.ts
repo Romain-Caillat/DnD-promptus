@@ -49,6 +49,8 @@ export interface CopilotContextInput {
   /** Journal récent, du plus ancien au plus récent. */
   timeline: string[];
   pendingRequests: string[];
+  /** Résumés MJ des sessions précédentes, de la plus ancienne à la plus récente. */
+  previousRecaps?: string[];
 }
 
 // ----------------------------------------------------------------------------
@@ -142,6 +144,11 @@ export function buildCopilotContext(input: CopilotContextInput): string {
   lines.push(`Ton : ${story.bible.tone}`);
   if (story.bible.truths.length) lines.push(`Vérités du monde : ${story.bible.truths.map((t) => cut(t, 200)).join(" | ")}`);
   if (story.bible.secrets.length) lines.push(`Secrets (MJ) : ${story.bible.secrets.map((t) => cut(t, 200)).join(" | ")}`);
+
+  if (input.previousRecaps?.length) {
+    lines.push("", "# Sessions précédentes (résumés MJ)");
+    for (const r of input.previousRecaps) lines.push(cut(r, 1500));
+  }
 
   lines.push("", "# Scène en cours");
   if (scene) {

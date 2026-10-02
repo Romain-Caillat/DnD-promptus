@@ -168,7 +168,7 @@ des écrans MJ et joueur.
 | E6 ✅ | Interface joueur | Fiche, carte, actions possibles, médias, journal |
 | E7 ✅ | Cockpit MJ + co-MJ | Nœud courant, propositions LLM, validation, révélations |
 | E8 ✅ | Combat sur grille | Déplacement, portées, initiative, réutilisation du résolveur |
-| E9 | Continuité | Journal, résumés de session, récap |
+| E9 ✅ | Continuité | Journal, résumés de session, récap |
 
 **Tranche jouable visée :** une mini-campagne générée (3-5 nœuds, 1 carte
 de chaque niveau), jouée à distance de bout en bout avec un combat sur grille.

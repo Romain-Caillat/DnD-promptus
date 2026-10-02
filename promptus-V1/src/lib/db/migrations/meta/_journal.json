@@ -57,6 +57,13 @@
       "when": 1790941274838,
       "tag": "0007_copilot",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790946357260,
+      "tag": "0008_continuity",
+      "breakpoints": true
     }
   ]
 }

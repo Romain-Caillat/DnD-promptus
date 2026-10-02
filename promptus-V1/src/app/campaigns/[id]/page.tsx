@@ -42,6 +42,9 @@ export default async function CampaignDashboardPage({ params }: Props) {
           <StartSessionDialog campaignId={campaign.id} />
         </div>
         <SessionsList campaignId={campaign.id} />
+        <Button asChild variant="link" className="px-0 mt-2">
+          <Link href={`/campaigns/${campaign.id}/chronicle`}>Chronique de la campagne →</Link>
+        </Button>
       </section>
 
       <section className="mt-8">

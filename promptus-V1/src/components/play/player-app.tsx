@@ -228,6 +228,21 @@ function PlayerScreen({ code, token }: { code: string; token: string }) {
         </div>
       ) : null}
 
+      {view.session.ended ? (
+        <Card className="border-primary" data-testid="session-over">
+          <CardContent className="pt-4 space-y-2">
+            <h2 className="font-semibold">La session est terminée</h2>
+            {view.recap ? (
+              <p className="text-sm whitespace-pre-line" data-testid="session-recap">{view.recap}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">Merci d’avoir joué ! Le MJ prépare le récapitulatif.</p>
+            )}
+          </CardContent>
+        </Card>
+      ) : view.previously ? (
+        <Previously previously={view.previously} />
+      ) : null}
+
       <Spotlight spotlight={view.spotlight} />
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -288,6 +303,24 @@ function PlayerScreen({ code, token }: { code: string; token: string }) {
         </Tabs>
       </div>
     </main>
+  );
+}
+
+function Previously({ previously }: { previously: NonNullable<PlayerView["previously"]> }) {
+  const [hidden, setHidden] = useState(false);
+  if (hidden) return null;
+  return (
+    <Card className="border-amber-700/60" data-testid="previously">
+      <CardContent className="pt-4 space-y-1">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Précédemment ({previously.sessionName})</p>
+          <Button size="icon-sm" variant="ghost" aria-label="Fermer le récapitulatif" onClick={() => setHidden(true)}>
+            <X />
+          </Button>
+        </div>
+        <p className="text-sm whitespace-pre-line">{previously.text}</p>
+      </CardContent>
+    </Card>
   );
 }
 

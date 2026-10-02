@@ -20,6 +20,7 @@ import { EMPTY_STORY } from "@/lib/engine/story";
 import type { EntityState } from "@/lib/engine/types";
 import { normalizeWorld } from "@/lib/engine/world";
 import { spentUsd } from "@/lib/generation/server";
+import { previousRecaps } from "@/lib/continuity/server";
 import { copilotMessages, sanitizeAnswer, type CopilotAnswer, type CopilotRequest } from "./copilot";
 
 export interface CopilotCallView {
@@ -98,6 +99,9 @@ export async function askCopilot(sessionId: string, req: CopilotRequest, llm: Ll
     participants: states.map((s) => ({ entityId: s.entityId, state: s.currentState as EntityState })),
     timeline: timeline.map((t) => t.description).reverse(),
     pendingRequests: pending.map((p) => `${p.player} : ${p.label}${p.note ? ` (« ${p.note} »)` : ""}`),
+    previousRecaps: (await previousRecaps(campaign.id, session.startedAt, 2))
+      .reverse()
+      .map((s) => `${s.name} : ${s.recap?.gm ?? ""}`),
   });
 
   const model = campaign.aiSettings.model || defaultModel();

@@ -43,6 +43,7 @@ export function SessionsList({ campaignId }: { campaignId: string }) {
               <CardDescription>
                 {new Date(s.startedAt).toLocaleString("fr-FR")}
                 {s.combatRound > 0 ? ` · round ${s.combatRound}` : ""}
+                {s.recap ? (s.recap.status === "published" ? " · récap publié" : " · récap à relire") : ""}
               </CardDescription>
             </CardHeader>
           </Card>

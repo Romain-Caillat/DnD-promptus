@@ -17,6 +17,12 @@ const pool =
     max: 10,
   });
 
+if (!globalForDb.pool) {
+  // Connexion inactive coupée (Postgres redémarré) : la requête suivante en
+  // ouvre une autre ; sans écouteur, l'erreur arrêterait le serveur.
+  pool.on("error", (e) => console.error("[db] connexion perdue", e.message));
+}
+
 if (process.env.NODE_ENV !== "production") {
   globalForDb.pool = pool;
 }
