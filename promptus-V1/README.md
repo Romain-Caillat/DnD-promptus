@@ -92,6 +92,22 @@ pnpm tsx scripts/fake-openrouter.ts 4010 &
 OPENROUTER_API_KEY=fake OPENROUTER_BASE_URL=http://localhost:4010/api/v1 pnpm dev
 ```
 
+## Co-MJ en direct
+
+Dans le cockpit, le panneau **Co-MJ** interroge le modèle avec le contexte de
+la partie : bible, scène en cours (PNJ présents, indices, déclencheurs,
+sorties), menaces, révélations, état des combattants, journal récent et
+demandes des joueurs.
+
+- **Décrire la situation**, **Conséquences**, **Et ensuite ?**, **Faire
+  parler** un PNJ, ou une question libre (champ « Précision »).
+- Réponse : une narration et des répliques **modifiables**, puis envoyées aux
+  joueurs d’un clic ; des suggestions applicables (révéler un indice, faire
+  avancer une menace, déclencher un événement, changer de scène).
+  Les identifiants inventés par le modèle sont écartés.
+- Rien n’atteint les joueurs sans validation. Chaque appel est compté dans le
+  budget IA de la campagne.
+
 ## Jouer à distance
 
 1. Le MJ lance une session depuis la campagne. Dans le cockpit, le panneau

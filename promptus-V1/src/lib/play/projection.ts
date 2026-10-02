@@ -40,7 +40,7 @@ export interface ProjectionInput {
   player: { id: string; name: string; characterEntityId: string | null };
   /** Personnages déjà pris par d'autres joueurs, et par qui. */
   takenBy: Record<string, string>;
-  timeline: { id: string; description: string; createdAt: string }[];
+  timeline: { id: string; description: string; createdAt: string; kind?: "event" | "narration" | "npc" }[];
   requests: { id: string; label: string; status: string; result: string | null; createdAt: string }[];
 }
 
@@ -91,7 +91,9 @@ export interface PlayerView {
     byAttack: Record<string, { possible: boolean; longRange: boolean; reason: string | null }>;
   }[];
   spotlight: { name: string; description: string | null; imageUrl: string | null } | null;
-  timeline: { id: string; description: string; createdAt: string }[];
+  /** Dernière narration ou réplique envoyée par le MJ. */
+  narration: { id: string; text: string } | null;
+  timeline: ProjectionInput["timeline"];
   requests: ProjectionInput["requests"];
 }
 
@@ -300,6 +302,10 @@ export function projectPlayerView(input: ProjectionInput): PlayerView {
     attacks,
     targets,
     spotlight: spot ? { name: spot.name, description: spot.description, imageUrl: spot.imageUrl } : null,
+    narration: (() => {
+      const n = input.timeline.find((t) => t.kind === "narration" || t.kind === "npc");
+      return n ? { id: n.id, text: mask(n.description) } : null;
+    })(),
     timeline: input.timeline.map((t) => ({ ...t, description: mask(t.description) })),
     requests: input.requests.map((r) => ({ ...r, result: r.result ? mask(r.result) : null })),
   };

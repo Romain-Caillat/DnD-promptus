@@ -105,7 +105,7 @@ export async function loadPlayerView(session: Session, player: SessionPlayerRow)
     states: states.map((s) => ({ entityId: s.entityId, currentState: s.currentState as EntityState })),
     player: { id: player.id, name: player.name, characterEntityId: player.characterEntityId },
     takenBy: Object.fromEntries(players.filter((p) => p.characterEntityId).map((p) => [p.characterEntityId!, p.name])),
-    timeline: timeline.map((t) => ({ id: t.id, description: t.description, createdAt: t.createdAt.toISOString() })),
+    timeline: timeline.map((t) => ({ id: t.id, description: t.description, createdAt: t.createdAt.toISOString(), kind: t.kind })),
     requests: requests.map((r) => ({
       id: r.id,
       label: r.label,

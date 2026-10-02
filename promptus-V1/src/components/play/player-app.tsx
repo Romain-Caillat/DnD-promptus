@@ -239,6 +239,11 @@ function PlayerScreen({ code, token }: { code: string; token: string }) {
               </CardContent>
             </Card>
           ) : null}
+          {view.narration ? (
+            <Card className="border-amber-700/60 bg-amber-950/20" data-testid="player-narration">
+              <CardContent className="pt-4 text-sm whitespace-pre-line">{view.narration.text}</CardContent>
+            </Card>
+          ) : null}
           <PlayerMapCard code={code} headers={headers} view={view} onMoved={refresh} targetId={target} onTarget={pickTarget} />
         </div>
 

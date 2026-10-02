@@ -19,6 +19,7 @@ import { StoryPanel } from "./story-panel";
 import { MapPanel } from "./map-panel";
 import { PlayersPanel } from "./players-panel";
 import { RequestsPanel } from "./requests-panel";
+import { CopilotPanel } from "./copilot-panel";
 import { useRealtime } from "@/lib/realtime/use-realtime";
 import { PHASE_LABELS } from "@/lib/engine/catalog";
 
@@ -120,6 +121,9 @@ export function Cockpit({
 
         {/* Scénario : la narration d’abord */}
         <StoryPanel sessionId={session.id} campaignId={campaignId} participants={participants} />
+
+        {/* Co-MJ : propositions à valider */}
+        <CopilotPanel sessionId={session.id} campaignId={campaignId} participants={participants} />
 
         {/* Carte de la scène */}
         <MapPanel sessionId={session.id} campaignId={campaignId} participants={participants} />

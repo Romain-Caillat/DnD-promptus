@@ -64,6 +64,10 @@ export class FakeLlm implements LlmClient {
     const { story, entities } = demoDraft();
     let body: unknown;
     let kind: string;
+    if (req.messages[0]?.content.includes("Tu aides le MJ humain en direct")) {
+      this.calls.push("copilot");
+      return this.reply(JSON.stringify(copilotBody(req.messages[1]?.content ?? "")), req);
+    }
     if (prompt.includes("ne respecte pas le format")) {
       kind = "retry";
       body = this.castBody(story, entities);
@@ -121,4 +125,28 @@ export class FakeLlm implements LlmClient {
       usage: { promptTokens: 1000, completionTokens: 2000, costUsd: this.opts.costPerCall ?? 0.01 },
     };
   }
+}
+
+/** Réponse de co-MJ plausible, construite à partir des identifiants du contexte. */
+function copilotBody(context: string) {
+  const first = (re: RegExp) => context.match(re)?.[1];
+  const npc = first(/^- (ent_\w+) [^\n]*\((?:npc|monster)\)/m);
+  const clue = first(/^- (cl_\w+) \(à trouver\)/m);
+  const trigger = context.match(/^- (sc_\w+)\/(\w+) « [^»]+ » \(prêt\)/m);
+  const exit = first(/^Sorties :\n- (sc_\w+)/m);
+  const front = first(/^- (fr_\w+) /m);
+  const ask = first(/Précision du MJ : (.+)$/m) ?? first(/Question du MJ : (.+)$/m);
+  const suggestions = [
+    clue && { label: "Laisser trouver un indice", why: "Les joueurs piétinent", action: { type: "reveal_clue", clueId: clue } },
+    trigger && { label: "Déclencher l’événement prêt", action: { type: "fire_trigger", sceneId: trigger[1], triggerId: trigger[2] } },
+    front && { label: "La menace progresse", action: { type: "advance_front", frontId: front } },
+    exit && { label: "Proposer la scène suivante", action: { type: "enter_scene", sceneId: exit } },
+    { label: "Action fantaisiste", action: { type: "reveal_clue", clueId: "cl_inexistant" } },
+  ].filter(Boolean);
+  return {
+    narration: `Une odeur de pierre humide vous saisit. ${ask ? `(${ask}) ` : ""}Au loin, quelque chose racle le sol.`,
+    npcLines: npc ? [{ npcId: npc, text: "Vous n’auriez pas dû venir ici." }] : [],
+    suggestions,
+    gmNote: "Faux co-MJ : réponse de démonstration.",
+  };
 }

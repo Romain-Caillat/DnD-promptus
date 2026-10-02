@@ -5,6 +5,7 @@ import {
   timestamp,
   integer,
   boolean,
+  doublePrecision,
   pgEnum,
   index,
   uniqueIndex,
@@ -173,6 +174,8 @@ export const sessionTimeline = pgTable("session_timeline", {
   resolutionRecord: jsonb("resolution_record").$type<ResolutionRecord>(),
   /** Visible des joueurs (sinon réservé au MJ). */
   isPublic: boolean("is_public").default(true).notNull(),
+  /** event : résolution, déplacement… ; narration / npc : texte validé par le MJ. */
+  kind: text("kind").$type<"event" | "narration" | "npc">().default("event").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -243,6 +246,34 @@ export const generationJobs = pgTable(
   (t) => [index("generation_jobs_campaign_idx").on(t.campaignId, t.createdAt)],
 );
 
+/**
+ * Appels IA hors génération de campagne : co-MJ en direct, images, vidéos.
+ * Sert d'historique et de compteur de dépenses (budget de la campagne).
+ */
+export const aiCalls = pgTable(
+  "ai_calls",
+  {
+    id: text("id").primaryKey(),
+    campaignId: text("campaign_id")
+      .references(() => campaigns.id, { onDelete: "cascade" })
+      .notNull(),
+    sessionId: text("session_id").references(() => sessions.id, { onDelete: "cascade" }),
+    kind: text("kind").$type<"copilot" | "image" | "video">().notNull(),
+    status: text("status").$type<"running" | "succeeded" | "failed">().notNull(),
+    model: text("model").notNull(),
+    input: jsonb("input").$type<Record<string, unknown>>().default({}).notNull(),
+    output: jsonb("output").$type<Record<string, unknown>>(),
+    error: text("error"),
+    costUsd: doublePrecision("cost_usd").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("ai_calls_campaign_idx").on(t.campaignId, t.createdAt),
+    index("ai_calls_session_idx").on(t.sessionId, t.createdAt),
+  ],
+);
+
 export const audioAssets = pgTable("audio_assets", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -270,3 +301,4 @@ export type AudioAsset = typeof audioAssets.$inferSelect;
 export type GenerationJobRow = typeof generationJobs.$inferSelect;
 export type SessionPlayerRow = typeof sessionPlayers.$inferSelect;
 export type PlayerRequestRow = typeof playerRequests.$inferSelect;
+export type AiCallRow = typeof aiCalls.$inferSelect;

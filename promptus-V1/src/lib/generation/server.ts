@@ -1,7 +1,7 @@
 import "server-only";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { campaigns, entities, generationJobs, type GenerationJobRow, type NewEntityRow } from "@/lib/db/schema";
+import { aiCalls, campaigns, entities, generationJobs, type GenerationJobRow, type NewEntityRow } from "@/lib/db/schema";
 import { ApiError, badRequest, notFound } from "@/lib/api/errors";
 import { generateId } from "@/lib/api/ids";
 import { EMPTY_USAGE, LlmError, defaultModel, type LlmClient } from "@/lib/ai/llm";
@@ -47,13 +47,17 @@ export async function listJobs(campaignId: string): Promise<GenerationJobView[]>
   return rows.map(toJobView);
 }
 
-/** Dépense totale de génération de la campagne (dollars). */
+/** Dépense IA totale de la campagne (dollars) : génération, co-MJ, médias. */
 export async function spentUsd(campaignId: string): Promise<number> {
   const [row] = await db
     .select({ total: sql<number>`coalesce(sum((${generationJobs.usage}->>'costUsd')::float), 0)` })
     .from(generationJobs)
     .where(eq(generationJobs.campaignId, campaignId));
-  return Number(row?.total ?? 0);
+  const [calls] = await db
+    .select({ total: sql<number>`coalesce(sum(${aiCalls.costUsd}), 0)` })
+    .from(aiCalls)
+    .where(eq(aiCalls.campaignId, campaignId));
+  return Number(row?.total ?? 0) + Number(calls?.total ?? 0);
 }
 
 export async function startGenerationJob(campaignId: string, input: GenerationInput): Promise<GenerationJobRow> {
