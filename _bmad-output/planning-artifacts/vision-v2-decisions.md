@@ -159,9 +159,9 @@ des écrans MJ et joueur.
 
 | # | Epic | Contenu |
 |---|---|---|
-| E0 | Assainissement V1 | Tests (séparer l'intégration), lint, `.env.example`, suppression des mocks, passage en français |
-| E1 | Modèle de campagne + règles | Schéma : bible, fronts, nœuds, indices, cartes, état vivant, système de règles du MJ |
-| E2 | Génération de campagne | Pitch → structure par LLM → édition par le MJ |
+| E0 ✅ | Assainissement V1 | Tests (séparer l'intégration), lint, `.env.example`, suppression des mocks, passage en français |
+| E1 ✅ | Modèle de campagne + règles | Schéma : bible, fronts, nœuds, indices, cartes, état vivant, système de règles du MJ |
+| E2 ✅ | Génération de campagne | Pitch → structure par LLM → édition par le MJ |
 | E3 | Pipeline média | Jobs async image / vidéo (OpenRouter), musique YouTube, budget, cache |
 | E4 | Cartes à grille | 3 niveaux, données + fond, brouillard, navigation entre niveaux |
 | E5 | Session temps réel | Lobby, lien d'invitation, synchronisation |

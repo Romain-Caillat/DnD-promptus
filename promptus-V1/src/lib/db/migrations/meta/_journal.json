@@ -29,6 +29,13 @@
       "when": 1790925489672,
       "tag": "0003_campaign_world_state",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790926726957,
+      "tag": "0004_generation_jobs",
+      "breakpoints": true
     }
   ]
 }

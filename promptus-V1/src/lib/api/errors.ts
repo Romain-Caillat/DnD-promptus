@@ -18,6 +18,7 @@ const RESOURCE_LABELS: Record<string, string> = {
   entity: "Fiche",
   session: "Session",
   session_state: "État de session",
+  generation_job: "Génération",
 };
 
 export function notFound(resource: string, id?: string): never {

@@ -46,7 +46,7 @@ export function CreateCampaignButton() {
       setName("");
       setDescription("");
       router.refresh();
-      router.push(`/campaigns/${data.campaign.id}/entities`);
+      router.push(`/campaigns/${data.campaign.id}/generate`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur inconnue");
     } finally {

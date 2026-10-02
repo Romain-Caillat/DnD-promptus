@@ -1,3 +1,5 @@
+import { AiSettingsCard } from "@/components/campaigns/ai-settings-card";
+import { defaultModel } from "@/lib/ai/llm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db/client";
@@ -25,7 +27,7 @@ export default async function CampaignSettingsPage({ params }: Props) {
       </Button>
       <h1 className="text-3xl font-bold mb-1">Paramètres : {campaign.name}</h1>
       <p className="text-muted-foreground mb-8">
-        Style visuel appliqué à la génération des images de cette campagne.
+        Identité, style visuel des images et réglages de l’IA.
       </p>
 
       <CampaignSettingsForm
@@ -36,6 +38,9 @@ export default async function CampaignSettingsPage({ params }: Props) {
           styleGuide: (campaign.styleGuide ?? {}) as StyleGuide,
         }}
       />
+      <div className="mt-6">
+        <AiSettingsCard campaignId={campaign.id} initial={campaign.aiSettings} defaultModel={defaultModel()} />
+      </div>
     </main>
   );
 }

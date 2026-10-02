@@ -69,6 +69,28 @@ entity editor is unavailable.
    ```
 5. Restart the dev server.
 
+## Génération de campagne par IA (OpenRouter)
+
+La page **« Générer avec l’IA »** d’une campagne transforme une idée en
+campagne complète (bible, menaces, fiches, scènes, indices, cartes à grille).
+Le résultat est un brouillon : le MJ le relit, le corrige (YAML) puis
+l’applique.
+
+1. Créez une clé sur <https://openrouter.ai> et ajoutez-la à `.env.local` :
+   ```
+   OPENROUTER_API_KEY=sk-or-...
+   OPENROUTER_MODEL=anthropic/claude-sonnet-4.5   # modèle par défaut
+   ```
+2. Par campagne, **Paramètres → Intelligence artificielle** : choix du modèle
+   (liste OpenRouter) et budget total en dollars.
+
+Sans réseau ni clé, un faux serveur OpenRouter rejoue la campagne de démo :
+
+```bash
+pnpm tsx scripts/fake-openrouter.ts 4010 &
+OPENROUTER_API_KEY=fake OPENROUTER_BASE_URL=http://localhost:4010/api/v1 pnpm dev
+```
+
 ## Deploying to your home server
 
 Promptus ships a multi-stage Dockerfile and a production compose file with

@@ -18,6 +18,18 @@ import type {
 import type { Ruleset } from "@/lib/engine/ruleset";
 import type { CampaignStory } from "@/lib/engine/story";
 import type { WorldState } from "@/lib/engine/world";
+import type { LlmUsage } from "@/lib/ai/llm";
+import type {
+  GenerationInput,
+  GenerationResult,
+  GenerationStep,
+  JobStatus,
+} from "@/lib/generation/types";
+
+export interface AiSettings {
+  model?: string;
+  budgetUsd?: number;
+}
 
 // ============================================================================
 // Enums
@@ -73,6 +85,8 @@ export const campaigns = pgTable("campaigns", {
   story: jsonb("story").$type<CampaignStory>(),
   /** État du monde (scène courante, indices, menaces…), partagé entre sessions. */
   worldState: jsonb("world_state").$type<WorldState>(),
+  /** Réglages IA : modèle OpenRouter et budget total de génération (dollars). */
+  aiSettings: jsonb("ai_settings").$type<AiSettings>().default({}).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -160,6 +174,26 @@ export const sessionTimeline = pgTable("session_timeline", {
 });
 
 
+export const generationJobs = pgTable(
+  "generation_jobs",
+  {
+    id: text("id").primaryKey(),
+    campaignId: text("campaign_id")
+      .references(() => campaigns.id, { onDelete: "cascade" })
+      .notNull(),
+    status: text("status").$type<JobStatus>().notNull(),
+    input: jsonb("input").$type<GenerationInput>().notNull(),
+    steps: jsonb("steps").$type<GenerationStep[]>().notNull(),
+    result: jsonb("result").$type<GenerationResult>(),
+    error: text("error"),
+    usage: jsonb("usage").$type<LlmUsage>().notNull(),
+    model: text("model").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("generation_jobs_campaign_idx").on(t.campaignId, t.createdAt)],
+);
+
 export const audioAssets = pgTable("audio_assets", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -184,3 +218,4 @@ export type NewSession = typeof sessions.$inferInsert;
 export type SessionStateRow = typeof sessionState.$inferSelect;
 export type SessionTimelineRow = typeof sessionTimeline.$inferSelect;
 export type AudioAsset = typeof audioAssets.$inferSelect;
+export type GenerationJobRow = typeof generationJobs.$inferSelect;

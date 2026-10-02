@@ -47,6 +47,16 @@ export default async function CampaignDashboardPage({ params }: Props) {
       <section className="mt-8">
         <h2 className="text-xl font-semibold mb-4">Monde et ressources</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Link href={`/campaigns/${campaign.id}/generate`}>
+            <Card className="hover:border-primary transition-colors h-full border-primary/50">
+              <CardHeader>
+                <CardTitle className="text-base">Générer avec l’IA</CardTitle>
+                <CardDescription>
+                  Une idée suffit : bible, personnages, scènes, indices et cartes.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
           <Link href={`/campaigns/${campaign.id}/story`}>
             <Card className="hover:border-primary transition-colors h-full">
               <CardHeader>

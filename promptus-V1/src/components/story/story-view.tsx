@@ -29,7 +29,7 @@ export function storyQueryKey(campaignId: string) {
 }
 
 export function StoryView({ campaignId }: { campaignId: string }) {
-  const ruleset = useRuleset();
+  const queryClient = useQueryClient();
   const { data, isLoading, error } = useQuery({
     queryKey: storyQueryKey(campaignId),
     queryFn: async () => {
@@ -50,9 +50,36 @@ export function StoryView({ campaignId }: { campaignId: string }) {
   if (error) return <p className="text-destructive">{(error as Error).message}</p>;
   if (isLoading || !data) return <p className="text-muted-foreground">Chargement du scénario…</p>;
 
-  const { story, issues } = data;
   const names = new Map((entData?.entities ?? []).map((e) => [e.id, e.name]));
-  const entityName = (id: string) => names.get(id) ?? id;
+  return (
+    <StoryDisplay
+      story={data.story}
+      issues={data.issues}
+      entityName={(id) => names.get(id) ?? id}
+      yamlEditor={
+        <StoryYamlEditor
+          story={data.story}
+          saveUrl={`/api/campaigns/${campaignId}/story`}
+          onSaved={(json) => queryClient.setQueryData(storyQueryKey(campaignId), json as StoryResponse)}
+        />
+      }
+    />
+  );
+}
+
+/** Affichage d'un scénario (campagne ou brouillon généré). */
+export function StoryDisplay({
+  story,
+  issues,
+  entityName,
+  yamlEditor,
+}: {
+  story: CampaignStory;
+  issues: StoryIssue[];
+  entityName: (id: string) => string;
+  yamlEditor: React.ReactNode;
+}) {
+  const ruleset = useRuleset();
   const sceneTitle = (id: string) => story.scenes.find((s) => s.id === id)?.title ?? id;
   const mapName = (id: string) => story.maps.find((m) => m.id === id)?.name ?? id;
   const errors = issues.filter((i) => i.severity === "error");
@@ -298,9 +325,7 @@ export function StoryView({ campaignId }: { campaignId: string }) {
         })}
       </TabsContent>
 
-      <TabsContent value="yaml">
-        <StoryYamlEditor campaignId={campaignId} story={story} />
-      </TabsContent>
+      <TabsContent value="yaml">{yamlEditor}</TabsContent>
     </Tabs>
   );
 }
@@ -341,8 +366,16 @@ function IssuesPanel({ issues }: { issues: StoryIssue[] }) {
   );
 }
 
-function StoryYamlEditor({ campaignId, story }: { campaignId: string; story: CampaignStory }) {
-  const queryClient = useQueryClient();
+export function StoryYamlEditor({
+  story,
+  saveUrl,
+  onSaved,
+}: {
+  story: CampaignStory;
+  /** PUT { story } ; la réponse doit contenir `issues` ou `job.result.issues`. */
+  saveUrl: string;
+  onSaved: (json: unknown) => void;
+}) {
   const [draft, setDraft] = useState<string | null>(null);
   const [problems, setProblems] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -359,7 +392,7 @@ function StoryYamlEditor({ campaignId, story }: { campaignId: string; story: Cam
     setBusy(true);
     setProblems([]);
     try {
-      const res = await fetch(`/api/campaigns/${campaignId}/story`, {
+      const res = await fetch(saveUrl, {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ story: parsed }),
@@ -375,9 +408,9 @@ function StoryYamlEditor({ campaignId, story }: { campaignId: string; story: Cam
         }
         throw new Error(json.error?.message ?? "Échec de l’enregistrement");
       }
-      queryClient.setQueryData(storyQueryKey(campaignId), json as StoryResponse);
+      onSaved(json);
       setDraft(null);
-      const warnings = (json as StoryResponse).issues.length;
+      const warnings = (json.issues ?? json.job?.result?.issues ?? []).length;
       toast.success(warnings ? `Scénario enregistré (${warnings} avertissement(s))` : "Scénario enregistré");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur inconnue");
