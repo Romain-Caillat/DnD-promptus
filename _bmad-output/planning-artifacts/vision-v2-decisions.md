@@ -27,7 +27,10 @@ fin de session). Le V1 est un simulateur de combat, pas un jeu.
 | MJ | Hybride : MJ humain + co-MJ LLM. Le LLM propose, l'humain valide |
 | Mode de jeu prioritaire | **Tout le monde à distance** (le mode table + TV viendra ensuite) |
 | Cartes | Toutes avec grille, 3 niveaux : campagne → région → combat/lieu |
-| Règles | Claires et visibles pour les joueurs, une règle de déplacement par échelle |
+| Règles | Définies par le MJ via le moteur de règles déclaratif, toujours visibles pour les joueurs |
+| Temps réel | WebSocket |
+| LLM, image, vidéo | OpenRouter |
+| Musique | YouTube (choisie, pas générée) |
 | Budget génération | Réglable par le MJ |
 | Langue | Application et contenus en français |
 
@@ -82,6 +85,20 @@ Principes :
   par-dessus.
 - L'interface joueur surligne les cases atteignables et les portées.
 
+## Règles définies par le MJ
+
+C'est la raison d'être du moteur déclaratif (`lib/engine`) : les règles sont
+des données, pas du code.
+
+- Le MJ définit un **système de règles** par campagne : caractéristiques,
+  formule de jet (ex. `1d20 + mod` contre une difficulté), actions
+  disponibles, conditions, ressources, déplacement par niveau de carte.
+- Un préréglage « D&D 5e (SRD) » sert de point de départ modifiable.
+- Le LLM reçoit le système de règles dans son contexte et doit générer du
+  contenu conforme, validé par schéma.
+- L'interface joueur est dérivée des règles : les actions affichées sont
+  celles que le système autorise.
+
 ## Pipeline de génération (préparation)
 
 1. Le MJ saisit un pitch : ton, durée, niveau, nombre de joueurs, style.
@@ -94,15 +111,23 @@ Principes :
    par défaut.
 5. Le MJ fixe le budget. L'app estime le coût avant chaque lot de génération.
 
-Les fournisseurs (LLM, image, vidéo, musique) restent derrière des
-interfaces interchangeables, comme le fait déjà `lib/ai/image-generator.ts`.
+Les fournisseurs restent derrière des interfaces interchangeables, comme le
+fait déjà `lib/ai/image-generator.ts` :
+- **OpenRouter** pour le LLM, l'image et la vidéo. La disponibilité de la
+  vidéo et les modèles exacts sont à vérifier au branchement.
+- **YouTube** pour la musique et les ambiances. Le MJ (aidé du LLM pour les
+  suggestions de recherche) associe des vidéos ou playlists aux nœuds et
+  lieux. Lecture synchronisée chez chaque joueur via le lecteur YouTube
+  intégré, piloté par WebSocket. Contraintes : les conditions de YouTube
+  imposent un lecteur visible, et les publicités peuvent désynchroniser les
+  joueurs.
 
 ## Jeu en direct à distance
 
 - Le MJ crée une session et partage un lien d'invitation. Les joueurs
   rejoignent sans compte : un pseudo plus le choix de leur personnage.
-- La synchronisation est en temps réel (fini le rafraîchissement toutes les
-  5 s).
+- La synchronisation passe par WebSocket (fini le rafraîchissement toutes
+  les 5 s), avec un serveur Node à côté de Next.js.
 - Écran MJ : nœud courant, propositions du co-MJ, carte complète, PNJ, état.
 - Écran joueur : carte (zone révélée), fiche, actions possibles, médias
   révélés, journal.
@@ -135,9 +160,9 @@ des écrans MJ et joueur.
 | # | Epic | Contenu |
 |---|---|---|
 | E0 | Assainissement V1 | Tests (séparer l'intégration), lint, `.env.example`, suppression des mocks, passage en français |
-| E1 | Modèle de campagne | Schéma : bible, fronts, nœuds, indices, cartes, état vivant |
+| E1 | Modèle de campagne + règles | Schéma : bible, fronts, nœuds, indices, cartes, état vivant, système de règles du MJ |
 | E2 | Génération de campagne | Pitch → structure par LLM → édition par le MJ |
-| E3 | Pipeline média | Jobs async image / musique / vidéo, budget, cache |
+| E3 | Pipeline média | Jobs async image / vidéo (OpenRouter), musique YouTube, budget, cache |
 | E4 | Cartes à grille | 3 niveaux, données + fond, brouillard, navigation entre niveaux |
 | E5 | Session temps réel | Lobby, lien d'invitation, synchronisation |
 | E6 | Interface joueur | Fiche, carte, actions possibles, médias, journal |
@@ -150,6 +175,4 @@ de chaque niveau), jouée à distance de bout en bout avec un combat sur grille.
 
 ## Questions ouvertes
 
-- Le temps réel : WebSocket (serveur dédié) ou SSE + POST dans Next.js ?
-- Les fournisseurs image, vidéo et musique à brancher en premier.
-- Le système de règles : on garde la 5e (SRD), ou on la simplifie ?
+- Les modèles OpenRouter à utiliser par défaut (LLM, image, vidéo).
