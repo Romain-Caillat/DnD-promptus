@@ -2,7 +2,7 @@
 // Le contenu écrit (scénario) est dans `CampaignStory` ; ici, seulement
 // l'état vivant, persisté d'une session à l'autre.
 
-import type { CampaignStory, Scene, SceneStatus, SceneTrigger, WorldCondition } from "./story";
+import type { CampaignStory, GameMap, MapToken, Scene, SceneStatus, SceneTrigger, WorldCondition } from "./story";
 
 export interface Relation {
   value: number;
@@ -26,6 +26,17 @@ export interface WorldState {
   frontProgress: Record<string, number>;
   /** Déclencheurs déjà tirés, clé `sceneId/triggerId`. */
   firedTriggerIds: string[];
+  /** État des cartes : cases révélées aux joueurs, pions déplacés. */
+  mapState: Record<string, MapRuntime>;
+  /** Carte affichée aux joueurs. */
+  activeMapId?: string;
+}
+
+export interface MapRuntime {
+  /** Cases visibles des joueurs, clés « x,y ». */
+  revealed: string[];
+  /** Positions courantes ; absent = positions de départ de la carte. */
+  tokens?: MapToken[];
 }
 
 export const EMPTY_WORLD: WorldState = {
@@ -38,6 +49,7 @@ export const EMPTY_WORLD: WorldState = {
   foundClueIds: [],
   frontProgress: {},
   firedTriggerIds: [],
+  mapState: {},
 };
 
 /** Complète un état partiel (anciennes versions, JSON incomplet). */
@@ -106,4 +118,23 @@ export function sceneTriggers(story: CampaignStory, world: WorldState): TriggerS
       ready: (!fired || !oneShot) && evaluateCondition(trigger.when, world, story),
     };
   });
+}
+
+/** Id réservé au pion du groupe sur les cartes de campagne et de région. */
+export const PARTY_TOKEN = "party";
+
+export function mapTokens(map: GameMap, world: WorldState): MapToken[] {
+  return world.mapState[map.id]?.tokens ?? map.tokens ?? [];
+}
+
+export function revealedCells(map: GameMap, world: WorldState): Set<string> {
+  return new Set(world.mapState[map.id]?.revealed ?? []);
+}
+
+/** Carte à afficher par défaut : celle choisie, sinon celle de la scène en cours. */
+export function defaultMapId(story: CampaignStory, world: WorldState): string | undefined {
+  if (world.activeMapId && story.maps.some((m) => m.id === world.activeMapId)) return world.activeMapId;
+  const scene = story.scenes.find((s) => s.id === world.currentSceneId);
+  if (scene?.phase === "combat" && scene.battleMapId) return scene.battleMapId;
+  return scene?.mapPlacement?.mapId ?? scene?.battleMapId ?? story.maps[0]?.id;
 }

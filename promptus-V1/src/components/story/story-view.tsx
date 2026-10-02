@@ -15,6 +15,7 @@ import { MAP_LEVEL_LABELS, type CampaignStory } from "@/lib/engine/story";
 import type { StoryIssue } from "@/lib/engine/story-validator";
 import { skillLabel, abilityLabel } from "@/lib/engine/ruleset";
 import { describeCondition } from "@/lib/story/describe";
+import { MapLegend, MapView } from "@/components/maps/map-view";
 import { useRuleset } from "@/components/providers/ruleset-provider";
 import type { EntityRow } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
@@ -289,13 +290,15 @@ export function StoryDisplay({
         })}
       </TabsContent>
 
-      <TabsContent value="maps" className="grid gap-4 md:grid-cols-2">
+      <TabsContent value="maps" className="space-y-4">
         {story.maps.length === 0 ? <Empty text="Aucune carte." /> : null}
+        {story.maps.length ? <MapLegend /> : null}
         {story.maps.map((m) => {
-          const notable = m.cells.filter((c) => c.label || c.sceneId || c.childMapId);
           const blocked = m.cells.filter((c) => c.blocked).length;
+          const children = m.cells.filter((c) => c.childMapId);
+          const scenesHere = story.scenes.filter((s) => s.mapPlacement?.mapId === m.id || s.battleMapId === m.id);
           return (
-            <Card key={m.id}>
+            <Card key={m.id} data-testid={`story-map-${m.id}`}>
               <CardHeader>
                 <div className="flex items-center gap-2 flex-wrap">
                   <CardTitle className="text-base">{m.name}</CardTitle>
@@ -305,20 +308,19 @@ export function StoryDisplay({
                   Grille {m.grid.type === "hex" ? "hexagonale" : "carrée"} {m.grid.cols} × {m.grid.rows}
                   {blocked ? ` · ${blocked} case(s) infranchissable(s)` : ""}
                   {m.tokens?.length ? ` · ${m.tokens.length} pion(s)` : ""}
+                  {scenesHere.length ? ` · scènes : ${scenesHere.map((s) => s.title).join(", ")}` : ""}
+                  {children.length ? ` · ouvre : ${children.map((c) => mapName(c.childMapId!)).join(", ")}` : ""}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="text-sm">
-                <ul className="space-y-0.5">
-                  {notable.map((c) => (
-                    <li key={`${c.x},${c.y}`}>
-                      <span className="text-muted-foreground tabular-nums">
-                        ({c.x}, {c.y})
-                      </span>{" "}
-                      {c.label ?? c.terrain}
-                      {c.childMapId ? <span className="text-muted-foreground"> → {mapName(c.childMapId)}</span> : null}
-                    </li>
-                  ))}
-                </ul>
+              <CardContent>
+                <MapView
+                  map={m}
+                  tokens={m.tokens ?? []}
+                  tokenInfo={(id) => {
+                    const name = entityName(id);
+                    return { label: name.slice(0, 2).toUpperCase(), kind: "enemy", title: name };
+                  }}
+                />
               </CardContent>
             </Card>
           );

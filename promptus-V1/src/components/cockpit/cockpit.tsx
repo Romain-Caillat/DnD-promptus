@@ -16,6 +16,7 @@ import { EntityPreview } from "./entity-preview";
 import { AudioControls } from "./audio-controls";
 import { AudioEffectListener } from "./audio-effect-listener";
 import { StoryPanel } from "./story-panel";
+import { MapPanel } from "./map-panel";
 import { PHASE_LABELS } from "@/lib/engine/catalog";
 
 export function Cockpit({
@@ -100,6 +101,9 @@ export function Cockpit({
 
         {/* Scénario : la narration d’abord */}
         <StoryPanel sessionId={session.id} campaignId={campaignId} participants={participants} />
+
+        {/* Carte de la scène */}
+        <MapPanel sessionId={session.id} campaignId={campaignId} participants={participants} />
 
         {/* Hotbar */}
         <Hotbar
