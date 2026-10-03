@@ -59,8 +59,22 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   Terraria / Starbound style: side view, dark outline, top-light and
   back-shadow shading, heroes face right and enemies face left.
 - **Game materials:** ivory playing cards on a black table (actions,
-  clues, scenes), chunky 3D buttons that press down, segmented HP bars,
-  threat clocks as pie segments, a turn track with portraits.
+  clues, scenes) and a turn track with portraits.
+- **Stat gems are small pixel grids** (7, 9 or 11 cells wide by size),
+  one shape per stat, with a wave of light whose direction belongs to
+  the stat: HP from the centre out at heartbeat pace, MOVE left to
+  right, ATK diagonal, AC from the edges in, MAG spiral, INIT clockwise.
+- **Gauges:** HP as pixel hearts (Terraria: 2 HP per heart, at most ten
+  hearts, beyond that each heart holds max/10); hearts burst into pixels
+  on a hit. Countable resources (spell slots, movement, ammo) as bars of
+  square cells, one cell per point; spent cells whiten and fall. Threat
+  clocks are rings of square cells, the next part blinking. Rounded
+  progress bars and pie clocks were tried and rejected as "app-like".
+- **Buttons are cards:** inner frame, Cinzel label, the stat gem when
+  the action depends on one; ivory for the main action, black for the
+  rest; pressing tips the card forward. On the phone in combat only, an
+  arcade cluster: one big round button under the thumb for the selected
+  card, item and end-turn as small round buttons around it.
 - **Skill rarity has six tiers** — common, uncommon, rare, epic,
   legendary, divine — read from the card's material and from 1 to 6
   diamonds, never from a hue (hues belong to stats): ivory, double
