@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Parcours utilisateurs</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A}
+.pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 60% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.ttl{font-family:'Cinzel',Georgia,serif;font-weight:800;letter-spacing:.03em}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.board{display:grid;grid-template-columns:120px repeat(6,minmax(0,1fr));gap:12px}
+.ph{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:#EDEDED;color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A,0 6px 0 #5A5A5A;position:relative}
+.ph b{font-family:'Cinzel',serif;font-size:18px}
+.ph span{font-size:11px;font-weight:600;color:#5A5A5A}
+.ph::after{content:'›';position:absolute;right:-12px;top:50%;transform:translateY(-55%);font-family:'Cinzel',serif;font-weight:800;font-size:26px;color:#5E5E5E}
+.ph.last::after{content:none}
+.lane{display:flex;flex-direction:column;justify-content:center;gap:6px;padding:12px;border-radius:12px;background:#141414;border:1px solid #2C2C2C}
+.lane b{font-family:'Cinzel',serif;font-size:16px}
+.lane span{font-size:11px;color:#8C8C8C;line-height:1.4}
+.cell{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid #1F1F1F;min-height:60px}
+.st{display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:9px;font-size:12px;line-height:1.35}
+.st .t{font-weight:700;font-size:13px}
+.st .s{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.st.ok{background:#EDEDED;color:#0A0A0A;box-shadow:0 2px 0 #8A8A8A;outline:1.5px solid #0A0A0A;outline-offset:-4px}
+.st.ok .s{color:#5A5A5A}
+.st.todo{background:#0A0A0A;color:#D4D4D4;border:1.5px dashed #6E6E6E}
+.st.todo .s{color:#F2F2F2}
+.st.todo .t{color:#F2F2F2}
+.code{font-family:'Cinzel',serif;font-weight:800;font-size:11px;opacity:.6;margin-right:4px}
+.leg{display:flex;align-items:center;gap:8px;font-size:12px;color:#A3A3A3}
+.sw{width:26px;height:16px;border-radius:4px}
+.q{display:flex;gap:10px;font-size:13px;color:#D4D4D4;line-height:1.45}
+.q b{flex:none;width:24px;height:24px;border-radius:6px;background:#EDEDED;color:#0A0A0A;display:grid;place-items:center;font-family:'Cinzel',serif;box-shadow:0 2px 0 #6E6E6E}
+.slab{background:linear-gradient(180deg,#181818,#111);border:1px solid #2C2C2C;border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 30px rgba(0,0,0,.45)}
+</style>
+</helmet>
+<div class="pm" style="width: 1920px; height: 1480px; position: relative; overflow: hidden">
+
+<div style="padding: 48px 64px 24px; display: flex; justify-content: space-between; align-items: flex-end; gap: 40px">
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 1000px">
+<div class="lbl">Design · parcours utilisateurs</div>
+<h1 class="ttl" style="margin: 0; font-size: 46px">Qui fait quoi, dans quel ordre</h1>
+<p style="margin: 0; font-size: 15px; color: #A3A3A3; line-height: 1.5">Le MJ prépare puis mène ; le joueur rejoint, crée son personnage et joue depuis son téléphone ; l’écran partagé montre ce que tout le monde peut voir. Chaque étape dit si son écran est déjà dessiné. Détail : <span style="color: #F2F2F2">docs/user-journeys.md</span>.</p>
+</div>
+<div style="display: flex; gap: 22px; align-items: center">
+<div style="display: flex; flex-direction: column; align-items: center"><span class="ttl" style="font-size: 44px">{{nOk}}</span><span class="lbl">dessinés</span></div>
+<div style="display: flex; flex-direction: column; align-items: center"><span class="ttl" style="font-size: 44px; color: #8C8C8C">{{nTodo}}</span><span class="lbl">à dessiner</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span class="leg"><span class="sw" style="background: #EDEDED"></span>écran dessiné</span>
+<span class="leg"><span class="sw" style="border: 1.5px dashed #6E6E6E"></span>écran à dessiner</span>
+</div>
+</div>
+</div>
+
+<div style="padding: 0 64px; display: flex; flex-direction: column; gap: 24px">
+<div class="board">
+<div></div>
+<sc-for list="{{phases}}" as="p" hint-placeholder-count="6"><div class="ph {{p.cls}}"><b>{{p.name}}</b><span>{{p.sub}}</span></div></sc-for>
+<sc-for list="{{lanes}}" as="l" hint-placeholder-count="3">
+<div class="lane"><b>{{l.name}}</b><span>{{l.dev}}</span></div>
+<sc-for list="{{l.cells}}" as="c" hint-placeholder-count="6">
+<div class="cell"><sc-for list="{{c}}" as="s" hint-placeholder-count="3"><div class="st {{s.cls}}"><span class="t"><span class="code">{{s.code}}</span>{{s.t}}</span><span>{{s.d}}</span><span class="s">{{s.state}}</span></div></sc-for></div>
+</sc-for>
+</sc-for>
+</div>
+
+<section class="slab" style="padding: 22px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 22px">
+<sc-for list="{{questions}}" as="q" hint-placeholder-count="5"><div class="q"><b>{{q.n}}</b><span><strong style="color: #F2F2F2">{{q.t}}</strong><br>{{q.d}}</span></div></sc-for>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1480}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const S = (code, t, d, ok) => ({ code, t, d, cls: ok ? 'ok' : 'todo', state: ok ? 'dessiné' : 'à dessiner' });
+    const mj = [
+      [S('M1', 'Liste des campagnes', 'connexion passkey, campagnes en cours', 0), S('M1', 'Nouvelle campagne', 'univers, système de règles, pitch, budget', 0), S('M2', 'Suivi de génération', 'étapes, coût engagé, budget restant', 0), S('M2', 'Relire l’histoire avec le LLM', 'bible, fronts, graphe, indices, diffs', 1), S('M2', 'Fiches PNJ, monstres, objets', 'raretés, butin, créateur de PNJ', 0), S('M3', 'Cartes : proposer, éditer, importer', 'monde, lieu, rencontre ; objets cachés', 0), S('M4', 'Médias et budget', 'images, vidéos, musique, coût avant lot', 0)],
+      [S('M5', 'Inviter et valider', 'lien, joueurs arrivés, personnages à valider', 0)],
+      [S('M6', 'Salon', 'présence, test du son', 0), S('M6', 'Ouvrir l’écran partagé', 'code ou partage de fenêtre', 0), S('M6', 'Diffuser « Précédemment… »', 'relu avant envoi', 0)],
+      [S('M7', 'Écran MJ en direct', 'scène, carte, co-MJ, demandes, révéler', 1), S('M7', 'Voyage sur le monde', 'hexagones, portions de journée', 0)],
+      [S('M8', 'Combat', 'initiative, tours vérifiés, états', 1), S('M8', 'Butin et niveau', 'le MJ valide, la TV joue le moment', 1)],
+      [S('M9', 'Fin de session', 'état enregistré, récap MJ et joueurs, chronique', 0)]
+    ];
+    const pj = [
+      [],
+      [S('J1', 'Rejoindre par le lien', 'sans compte, créer, reprendre ou regarder', 0), S('J2', 'Créateur de personnage', 'couches, couleurs, règles guidées, < 2 min', 0)],
+      [S('J3', 'Précédemment, fiche, sac', 'lire, équiper un objet', 0), S('J3', 'Sac', 'cases, raretés, quantités', 1)],
+      [S('J4', 'Scène sur le téléphone', 'texte, image, musique, indices, que fais-tu ?', 1), S('J4', 'Journal du groupe', 'ce que tous savent', 0), S('J5', 'Plateau', 'pion au doigt, brouillard, cases atteignables', 1)],
+      [S('J6', 'Combat à son tour', 'cartes, dé coloré, arcade, cœurs, états', 1), S('J7', 'Recevoir', 'butin, niveau, compétence', 1)],
+      [S('J8', 'Après la session', 'récapitulatif, chronique', 0)]
+    ];
+    const tv = [
+      [], [],
+      [S('T1', 'Jumelage', 'la TV affiche un code', 0)],
+      [S('T2', 'Carte, scène, groupe, menaces', 'seulement ce que tous peuvent voir', 1)],
+      [S('T2', 'Grands moments', 'dés, coups, butin, niveaux, révélations', 1)],
+      [S('T3', 'Récap en fin de soirée', 'ce qui s’est passé, la suite', 0)]
+    ];
+    const all = [...mj, ...pj, ...tv].flat();
+    return {
+      nOk: all.filter((s) => s.cls === 'ok').length,
+      nTodo: all.filter((s) => s.cls === 'todo').length,
+      phases: [
+        ['Préparer', 'M1 → M4'], ['Inviter', 'M5 · J1 · J2'], ['Avant', 'M6 · J3 · T1'], ['Jouer', 'M7 · J4 · J5'], ['Combattre', 'M8 · J6 · J7'], ['Clore', 'M9 · J8']
+      ].map(([name, sub], i) => ({ name, sub, cls: i === 5 ? 'last' : '' })),
+      lanes: [
+        { name: 'MJ', dev: 'ordinateur pour préparer, ordinateur ou tablette en direct', cells: mj },
+        { name: 'Joueur', dev: 'téléphone, ordinateur possible, sans compte', cells: pj },
+        { name: 'Écran partagé', dev: 'TV ou partage d’écran, aucune interaction', cells: tv }
+      ],
+      questions: [
+        { n: '1', t: 'L’écran partagé', d: 'Une vraie TV, une fenêtre partagée sur Discord, ou les deux ?' },
+        { n: '2', t: 'Créer les personnages', d: 'Avant la première session, ou en session zéro tous ensemble ?' },
+        { n: '3', t: 'Entre deux sessions', d: 'Le joueur peut-il équiper, gérer son sac, écrire au MJ, ou seulement lire ?' },
+        { n: '4', t: 'Mort d’un personnage', d: 'Spectateur, nouveau personnage dans la session, ou attente ?' },
+        { n: '5', t: 'Spectateurs', d: 'Utiles (un ami, un joueur absent qui suit) ou à retirer ?' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

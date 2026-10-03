@@ -1,1 +1,0 @@
-ALTER TABLE "player_requests" ADD COLUMN "attack_id" text;

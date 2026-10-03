@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>La soirée côté TV</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A}
+.stv-pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 40% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.stv-ttl{font-family:'Cinzel',Georgia,serif;font-weight:800}
+.stv-lbl{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.stv-grid{display:grid;grid-template-columns:repeat(3,768px);gap:56px 48px}
+.stv-mo{display:flex;flex-direction:column;gap:14px}
+.stv-mh{display:flex;align-items:baseline;gap:10px}
+.stv-mh b{font-family:'Cinzel',serif;font-size:13px;width:28px;height:28px;border-radius:7px;display:inline-grid;place-items:center;background:#EDEDED;color:#0A0A0A;box-shadow:0 2px 0 #6E6E6E;flex:none}
+.stv-mh span{font-family:'Cinzel',serif;font-weight:800;font-size:20px}
+.stv-fr{width:768px;height:432px;overflow:hidden;border-radius:12px;border:1px solid #2C2C2C;box-shadow:0 20px 40px rgba(0,0,0,.6)}
+.stv-cap{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;font-size:13px;line-height:1.45;color:#D4D4D4;margin:0}
+.stv-cap dt{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8C8C8C;padding-top:3px}
+.stv-cap dd{margin:0}
+.stv-rule{display:flex;gap:12px;align-items:flex-start;font-size:13px;color:#D4D4D4;line-height:1.45}
+.stv-rule b{flex:none;width:24px;height:24px;border-radius:6px;background:#EDEDED;color:#0A0A0A;display:grid;place-items:center;font-family:'Cinzel',serif;box-shadow:0 2px 0 #6E6E6E}
+</style>
+</helmet>
+<div class="stv-pm" style="width: 2528px; height: 2780px; position: relative; overflow: hidden">
+<div style="padding: 48px 64px 32px; display: flex; gap: 80px; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 1000px">
+<div class="stv-lbl">TV · écran partagé</div>
+<h1 class="stv-ttl" style="margin: 0; font-size: 50px">La soirée côté TV</h1>
+<p style="margin: 0; font-size: 16px; color: #A3A3A3; line-height: 1.5">La même soirée, vue depuis le canapé ou dans le partage d’écran Discord. La TV ne demande rien à personne : elle montre ce que tout le monde a le droit de voir, et joue les grands moments. Elle suit le téléphone de Marc en direct dans la version jouable.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 900px">
+<div class="stv-rule"><b>1</b><span><strong style="color: #F2F2F2">Un seul centre d’attention à la fois.</strong> Le récit, le dé, la carte ou le butin, jamais tout en même temps.</span></div>
+<div class="stv-rule"><b>2</b><span><strong style="color: #F2F2F2">Lisible depuis le canapé.</strong> Gros titres, gros chiffres, une phrase en bas pour dire ce qui vient de se passer.</span></div>
+<div class="stv-rule"><b>3</b><span><strong style="color: #F2F2F2">Rien de secret.</strong> Pas de notes du MJ, pas de PV des ennemis, pas de cases non découvertes.</span></div>
+</div>
+</div>
+<div class="stv-grid" style="padding: 0 64px"><div class="stv-mo"><div class="stv-mh"><b>1</b><span>Le salon</span></div><div class="stv-fr"><div style="width: 1920px; height: 1080px; transform: scale(.4); transform-origin: 0 0"><dc-import name="Ecran-TV" moment="1" dice="idle" atk="idle" sent="false" feed="0" hint-size="1920px,1080px"></dc-import></div></div><dl class="stv-cap"><dt>La table voit</dt><dd>Le nom de la partie en grand, les trois personnages qui arrivent, « En attente du MJ ».</dd><dt>Pourquoi</dt><dd>Tout le monde sait qu’on va commencer et qui joue qui.</dd></dl></div><div class="stv-mo"><div class="stv-mh"><b>2</b><span>Précédemment…</span></div><div class="stv-fr"><div style="width: 1920px; height: 1080px; transform: scale(.4); transform-origin: 0 0"><dc-import name="Ecran-TV" moment="2" dice="idle" atk="idle" sent="false" feed="0" hint-size="1920px,1080px"></dc-import></div></div><dl class="stv-cap"><dt>La table voit</dt><dd>Trois phrases qui apparaissent une à une, puis les deux indices déjà trouvés.</dd><dt>Pourquoi</dt><dd>On se remet dans l’histoire ensemble, sans lire son téléphone.</dd></dl></div><div class="stv-mo"><div class="stv-mh"><b>3</b><span>Le MJ raconte</span></div><div class="stv-fr"><div style="width: 1920px; height: 1080px; transform: scale(.4); transform-origin: 0 0"><dc-import name="Ecran-TV" moment="3" dice="idle" atk="idle" sent="false" feed="0" hint-size="1920px,1080px"></dc-import></div></div><dl class="stv-cap"><dt>La table voit</dt><dd>L’illustration du lieu en plein écran, le titre et le texte en bas, comme un film.</dd><dt>Pourquoi</dt><dd>Le récit du MJ a une image. Les téléphones restent dans les poches.</dd></dl></div><div class="stv-mo"><div class="stv-mh"><b>4</b><span>Que faites-vous ?</span></div><div class="stv-fr"><div style="width: 1920px; height: 1080px; transform: scale(.4); transform-origin: 0 0"><dc-import name="Ecran-TV" moment="4" dice="idle" atk="idle" sent="true" feed="0" hint-size="1920px,1080px"></dc-import></div></div><dl class="stv-cap"><dt>La table voit</dt><dd>La question du MJ, et chaque joueur avec son état : « réfléchit… » ou ce qu’il propose.</dd><dt>Pourquoi</dt><dd>On voit qui a déjà proposé. Personne n’est oublié.</dd></dl></div><div class="stv-mo"><div class="stv-mh"><b>5</b><span>Le jet de dé</span></div><div class="stv-fr"><div style="width: 1920px; height: 1080px; transform: scale(.4); transform-origin: 0 0"><dc-import name="Ecran-TV" moment="5" dice="done" atk="idle" sent="false" feed="0" hint-size="1920px,1080px"></dc-import></div></div><dl class="stv-cap"><dt>La table voit</dt><dd>Le dé géant de Borin qui roule en même temps que sur le téléphone de Marc, puis « RÉUSSI ».</dd><dt>Pourquoi</dt><dd>Le suspense est partagé : tout le monde regarde le même dé.</dd></dl></div><div class="stv-mo"><div class="stv-mh"><b>6</b><span>L’indice</span></div><div class="stv-fr"><div style="width: 1920px; height: 1080px; transform: scale(.4); transform-origin: 0 0"><dc-import name="Ecran-TV" moment="6" dice="idle" atk="idle" sent="false" feed="0" hint-size="1920px,1080px"></dc-import></div></div><dl class="stv-cap"><dt>La table voit</dt><dd>La carte qui se retourne au centre, avec des rayons.</dd><dt>Pourquoi</dt><dd>Une découverte est un moment, pas une ligne dans un journal.</dd></dl></div><div class="stv-mo"><div class="stv-mh"><b>7</b><span>L’exploration</span></div><div class="stv-fr"><div style="width: 1920px; height: 1080px; transform: scale(.4); transform-origin: 0 0"><dc-import name="Ecran-TV" moment="7" dice="idle" atk="idle" sent="false" feed="0" hint-size="1920px,1080px"></dc-import></div></div><dl class="stv-cap"><dt>La table voit</dt><dd>La carte en grand avec les personnages, le groupe et ses PV à droite.</dd><dt>Pourquoi</dt><dd>Tout le monde voit où on est et où va Borin.</dd></dl></div><div class="stv-mo"><div class="stv-mh"><b>8</b><span>Le combat commence</span></div><div class="stv-fr"><div style="width: 1920px; height: 1080px; transform: scale(.4); transform-origin: 0 0"><dc-import name="Ecran-TV" moment="8" dice="idle" atk="idle" sent="false" feed="1" hint-size="1920px,1080px"></dc-import></div></div><dl class="stv-cap"><dt>La table voit</dt><dd>« COMBAT ! » en tampon, l’ordre du tour en haut, ce qui vient de se passer en bas.</dd><dt>Pourquoi</dt><dd>On sait qui joue et ce qui s’est passé, sans lire de règles.</dd></dl></div><div class="stv-mo"><div class="stv-mh"><b>9</b><span>Le tour de Borin</span></div><div class="stv-fr"><div style="width: 1920px; height: 1080px; transform: scale(.4); transform-origin: 0 0"><dc-import name="Ecran-TV" moment="9" dice="idle" atk="done" sent="false" feed="0" hint-size="1920px,1080px"></dc-import></div></div><dl class="stv-cap"><dt>La table voit</dt><dd>La cible entourée, le dé orange de l’attaque, puis « −9 » sur le gobelin.</dd><dt>Pourquoi</dt><dd>Le tour de Marc devient le spectacle de toute la table.</dd></dl></div><div class="stv-mo"><div class="stv-mh"><b>10</b><span>Borin est touché</span></div><div class="stv-fr"><div style="width: 1920px; height: 1080px; transform: scale(.4); transform-origin: 0 0"><dc-import name="Ecran-TV" moment="10" dice="idle" atk="idle" sent="false" feed="0" hint-size="1920px,1080px"></dc-import></div></div><dl class="stv-cap"><dt>La table voit</dt><dd>L’écran tremble, un éclair rouge, « −6 » au-dessus de Borin, ses cœurs qui éclatent.</dd><dt>Pourquoi</dt><dd>Tout le monde sent le coup, et voit que Borin est en danger.</dd></dl></div><div class="stv-mo"><div class="stv-mh"><b>11</b><span>Le butin</span></div><div class="stv-fr"><div style="width: 1920px; height: 1080px; transform: scale(.4); transform-origin: 0 0"><dc-import name="Ecran-TV" moment="11" dice="idle" atk="idle" sent="false" feed="0" hint-size="1920px,1080px"></dc-import></div></div><dl class="stv-cap"><dt>La table voit</dt><dd>Le coffre tremble, un rayon d’or, la hache monte. Son nom et sa rareté.</dd><dt>Pourquoi</dt><dd>La récompense se fête ensemble.</dd></dl></div><div class="stv-mo"><div class="stv-mh"><b>12</b><span>Fin de soirée</span></div><div class="stv-fr"><div style="width: 1920px; height: 1080px; transform: scale(.4); transform-origin: 0 0"><dc-import name="Ecran-TV" moment="12" dice="idle" atk="idle" sent="false" feed="0" hint-size="1920px,1080px"></dc-import></div></div><dl class="stv-cap"><dt>La table voit</dt><dd>Ce qui s’est passé ce soir, et la date de la prochaine session.</dd><dt>Pourquoi</dt><dd>On se quitte sur un résumé et un rendez-vous.</dd></dl></div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2528,"height":2780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Écran MJ en direct</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
+<style>
+.gemw{display:inline-grid;flex:none;filter:drop-shadow(0 3px 0 rgba(0,0,0,.55))}
+.pf{display:inline-grid;place-items:end center;border-radius:8px;background:linear-gradient(180deg,#262626,#121212);border:2px solid #3A3A3A;box-shadow:0 4px 0 #000;padding:2px 3px 0;flex:none;position:relative}
+.pf.foe{border-color:#F2F2F2;background:#0A0A0A}
+.pf.now{border-color:#FFD60A;box-shadow:0 4px 0 #000,0 0 22px rgba(255,214,10,.45)}
+body{margin:0;background:#0A0A0A}
+.pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(90% 70% at 50% 0%,#1A1A1A 0,#0C0C0C 60%,#050505 100%);-webkit-font-smoothing:antialiased}
+.mono{font-family:'Chakra Petch',system-ui,sans-serif;font-weight:600}
+.serif{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500}
+.ttl{font-family:'Cinzel',Georgia,serif;font-weight:800}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.panel{background:linear-gradient(180deg,#181818,#111);border:1px solid #2C2C2C;border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 30px rgba(0,0,0,.45)}
+.btn{font:inherit;font-family:'Cinzel',Georgia,serif;font-size:14px;font-weight:800;letter-spacing:.02em;color:#F2F2F2;background:#141414;border:0;border-radius:10px;min-height:44px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;outline:1.5px solid #5A5A5A;outline-offset:-5px;box-shadow:0 0 0 1.5px #3A3A3A,0 4px 0 #000,0 10px 18px rgba(0,0,0,.4);transform-origin:50% 100%;transition:transform .1s,box-shadow .1s}
+.btn:active{transform:perspective(400px) rotateX(14deg) translateY(3px);box-shadow:0 0 0 1.5px #3A3A3A,0 1px 0 #000}
+.btn:focus-visible{box-shadow:0 0 0 3px #F2F2F2,0 4px 0 #000}
+.btn.pri{color:#0A0A0A;background:#EDEDED;outline-color:#0A0A0A;box-shadow:0 4px 0 #8A8A8A,0 7px 0 #5A5A5A,0 10px 18px rgba(0,0,0,.4)}
+.btn.pri:active{box-shadow:0 1px 0 #8A8A8A,0 2px 0 #5A5A5A}
+.btn.sm{min-height:34px;font-size:12px;padding:0 12px;border-radius:8px;outline-offset:-4px}
+.btn.sm.pri{box-shadow:0 3px 0 #8A8A8A,0 5px 0 #5A5A5A}
+.seg{display:flex;background:#050505;border:1px solid #2C2C2C;border-radius:12px;padding:4px;gap:4px}
+.seg button{flex:1;font:inherit;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#A3A3A3;background:transparent;border:0;border-radius:8px;min-height:38px;cursor:pointer;transition:background .25s,color .25s,transform .2s}
+.seg button.on{background:linear-gradient(180deg,#FFFFFF,#D4D4D4);color:#0A0A0A;box-shadow:0 3px 0 #6E6E6E;transform:translateY(-1px)}
+.chip{font:inherit;font-size:12px;font-weight:600;color:#D4D4D4;background:#141414;border:1px solid #333;border-radius:999px;min-height:34px;padding:0 12px;cursor:pointer;transition:border-color .2s,color .2s,background .2s}
+.chip:hover{border-color:#8C8C8C;color:#FFFFFF}
+.chip.on{background:#F2F2F2;color:#0A0A0A;border-color:#F2F2F2}
+.tool{width:44px;height:44px;display:grid;place-items:center;border-radius:10px;background:linear-gradient(180deg,#262626,#161616);border:0;color:#D4D4D4;cursor:pointer;box-shadow:0 3px 0 #000}
+.tool.on{background:linear-gradient(180deg,#FFFFFF,#D4D4D4);color:#0A0A0A;box-shadow:0 3px 0 #6E6E6E}
+.ini{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;border:1px solid transparent;transition:background .3s}
+.ini.now{background:#1E1E1E;border-color:#FFD60A;box-shadow:0 0 18px rgba(255,214,10,.15)}
+.tp{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-family:'Cinzel',serif;font-weight:800;font-size:12px;box-sizing:border-box;flex:none}
+.tp.pc{background:radial-gradient(circle at 35% 30%,#FFF,#D0D0D0 70%);color:#0A0A0A;box-shadow:0 3px 0 #6E6E6E}
+.tp.foe{background:#0A0A0A;color:#F2F2F2;border:2px solid #F2F2F2;box-shadow:0 3px 0 #2A2A2A}
+.tp.hid{background:transparent;color:#A3A3A3;border:2px dashed #8C8C8C}
+@keyframes caret{50%{opacity:0}}
+@keyframes reqIn{0%{opacity:0;transform:translateX(30px) rotate(4deg)}100%{opacity:1;transform:none}}
+.req{animation:reqIn .6s cubic-bezier(.2,1.2,.3,1) both;background:#EDEDED;color:#0A0A0A;border-radius:12px;box-shadow:0 3px 0 #8A8A8A,0 10px 20px rgba(0,0,0,.4)}
+.req .btn{color:#F2F2F2}
+.req .btn.pri{color:#F2F2F2;background:linear-gradient(180deg,#2C2C2C,#0A0A0A);box-shadow:0 3px 0 #000}
+@keyframes eq{0%,100%{height:20%}50%{height:100%}}
+.eq span{width:3px;background:#F2F2F2;border-radius:1px;animation:eq 1s ease-in-out infinite}
+.pres{width:8px;height:8px;border-radius:50%;background:#F2F2F2;animation:pres 2s ease-out infinite}
+@keyframes pres{0%{box-shadow:0 0 0 0 rgba(242,242,242,.5)}100%{box-shadow:0 0 0 8px rgba(242,242,242,0)}}
+.dieb{width:44px;height:48px;display:grid;place-items:center;background:none;border:0;padding:0;cursor:pointer;transition:transform .2s}
+.dieb:hover{transform:rotate(-12deg) scale(1.08)}
+.die{width:48px;height:48px;display:grid;place-items:center;font:inherit;font-weight:700;font-size:13px;color:#0A0A0A;background:linear-gradient(160deg,#FFFFFF,#BDBDBD);border:0;cursor:pointer;filter:drop-shadow(0 3px 0 #555);transition:transform .2s}
+.die:hover{transform:rotate(-12deg) scale(1.08)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div class="pm" style="min-height: 960px; display: flex; flex-direction: column">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 12px 20px; border-bottom: 1px solid #1F1F1F">
+<div style="display: flex; align-items: center; gap: 14px">
+<span class="ttl" style="font-size: 14px; letter-spacing: .3em">PROMPTUS</span>
+<span style="width: 1px; height: 20px; background: #2A2A2A"></span>
+<span class="ttl" style="font-size: 16px">Session 2 · La crypte des Valombre</span>
+<span class="mono" style="font-size: 12px; color: #A3A3A3">01:42:18</span>
+</div>
+<div style="display: flex; align-items: center; gap: 16px; flex: 1 1 360px; justify-content: center">
+<span style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #D4D4D4"><span class="pres"></span>3 joueurs connectés</span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #D4D4D4"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20h8"></path></svg>Écran TV relié</span>
+<span class="mono" style="font-size: 12px; color: #A3A3A3">IA 2,61 / 10 $</span>
+</div>
+<div style="display: flex; gap: 8px">
+<button type="button" class="btn">Lien d’invitation</button>
+<button type="button" class="btn">Terminer la session</button>
+</div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 14px; padding: 14px; flex: 1; align-items: stretch">
+
+<aside aria-label="Commandes" style="flex: 1 1 260px; max-width: 300px; display: flex; flex-direction: column; gap: 14px">
+<div class="panel" style="padding: 14px; display: flex; flex-direction: column; gap: 12px">
+<span class="lbl">Phase</span>
+<div class="seg" role="group" aria-label="Phase de jeu">
+<sc-for list="{{phases}}" as="p" hint-placeholder-count="4"><button type="button" class="{{p.cls}}" onClick="{{p.pick}}">{{p.name}}</button></sc-for>
+</div>
+</div>
+<div class="panel" style="padding: 14px; display: flex; flex-direction: column; gap: 6px; flex: 1">
+<div style="display: flex; justify-content: space-between; align-items: center"><span class="lbl">Initiative · round 3</span><button type="button" class="btn sm">Tour suivant</button></div>
+<sc-for list="{{inits}}" as="c" hint-placeholder-count="6">
+<div class="{{c.cls}}">
+<span class="mono" style="font-size: 13px; color: #FFD60A; width: 20px">{{c.ini}}</span>
+<span class="pf {{c.kind}}"><dc-import name="Sprite" perso="{{c.perso}}" px="1" anim="repos" cache="{{c.cache}}" hint-size="20px,26px"></dc-import></span>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 5px; min-width: 0">
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.name}}</span><span class="mono" style="font-size: 12px; color: #FF4D5E">{{c.hp}}</span></div>
+<dc-import name="Coeurs" pv="{{c.pv}}" max="{{c.max}}" coeurs="8" px="2" hint-size="151px,16px"></dc-import>
+</div>
+<span class="mono" style="font-size: 12px; color: #3D9BFF; width: 22px; text-align: right">{{c.ca}}</span>
+</div>
+</sc-for>
+</div>
+<div class="panel" style="padding: 14px; display: flex; flex-direction: column; gap: 10px">
+<span class="lbl">Musique · scène</span>
+<div style="display: flex; align-items: center; gap: 12px">
+<div class="eq" aria-hidden="true" style="display: flex; align-items: flex-end; gap: 3px; height: 22px; width: 24px"><span style="animation-delay: -.2s"></span><span style="animation-delay: -.5s"></span><span style="animation-delay: -.8s"></span><span style="animation-delay: -.35s"></span></div>
+<div style="flex: 1; min-width: 0"><div style="font-size: 13px; font-weight: 500">Crypte — chœurs graves</div><div class="mono" style="font-size: 11px; color: #8A8A8A">YouTube · synchronisée · 3/3</div></div>
+<button type="button" class="tool" aria-label="Pause"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 5v14"></path><path d="M15 5v14"></path></svg></button>
+</div>
+</div>
+<div class="panel" style="padding: 14px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between"><span class="lbl">Dés</span><span class="lbl">touche pour lancer</span></div>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); justify-items: center">
+<button type="button" class="dieb" aria-label="Lancer un d20"><dc-import name="De" de="d20" valeur="20" taille="40" anim="survol" hint-size="40px,40px"></dc-import></button>
+<button type="button" class="dieb" aria-label="Lancer un d12"><dc-import name="De" de="d12" valeur="12" taille="40" anim="survol" hint-size="40px,40px"></dc-import></button>
+<button type="button" class="dieb" aria-label="Lancer un d10"><dc-import name="De" de="d10" valeur="10" taille="40" anim="survol" hint-size="40px,40px"></dc-import></button>
+<button type="button" class="dieb" aria-label="Lancer un d8"><dc-import name="De" de="d8" valeur="8" taille="40" anim="survol" hint-size="40px,40px"></dc-import></button>
+<button type="button" class="dieb" aria-label="Lancer un d6"><dc-import name="De" de="d6" valeur="6" taille="40" anim="survol" hint-size="40px,40px"></dc-import></button>
+<button type="button" class="dieb" aria-label="Lancer un d4"><dc-import name="De" de="d4" valeur="4" taille="40" anim="survol" hint-size="40px,40px"></dc-import></button>
+<button type="button" class="die" aria-label="Lancer un d4" style="clip-path: polygon(50% 4%, 100% 96%, 0 96%)">d4</button>
+</div>
+</div>
+</aside>
+
+<main aria-label="Carte et scène" style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+<div class="panel" style="padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center">
+<div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 4px">
+<span class="lbl">Nœud en cours</span>
+<span class="ttl" style="font-size: 20px">La crypte des Valombre · salle des ossuaires</span>
+<span style="font-size: 12px; color: #A3A3A3">Sorties : porte nord (verrouillée) · escalier · passage est (caché)</span>
+</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<button type="button" class="btn">Montrer aux joueurs</button>
+<button type="button" class="btn">Révéler un indice</button>
+</div>
+</div>
+<div class="panel" style="flex: 1; display: flex; overflow: hidden">
+<div role="toolbar" aria-label="Outils de carte" style="display: flex; flex-direction: column; gap: 8px; padding: 10px; border-right: 1px solid #1F1F1F">
+<button type="button" class="tool on" aria-label="Sélection"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3l14 8-6 2-2 6z"></path></svg></button>
+<button type="button" class="tool" aria-label="Pinceau de brouillard"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="4" height="4"></rect><rect x="10" y="4" width="4" height="4"></rect><rect x="16" y="4" width="4" height="4"></rect><rect x="4" y="10" width="4" height="4"></rect><rect x="10" y="10" width="4" height="4"></rect><rect x="4" y="16" width="4" height="4"></rect></svg></button>
+<button type="button" class="tool" aria-label="Attaquer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6L9 21l-6-6z"></path><path d="M5 13l6 6"></path></svg></button>
+<button type="button" class="tool" aria-label="Ajouter un pion"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v8"></path><path d="M8 12h8"></path></svg></button>
+<button type="button" class="tool" aria-label="Lancer les dés"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l9 5v10l-9 5-9-5V7z"></path><path d="M12 2v20"></path><path d="M3 7l18 10"></path><path d="M21 7L3 17"></path></svg></button>
+</div>
+<div style="flex: 1; overflow: auto; display: grid; place-items: center; padding: 12px; min-width: 0">
+<dc-import name="Carte" pitch="30" vue="mj" moment="tour" reach="true" hint-size="720px,420px"></dc-import>
+</div>
+</div>
+<div class="panel" style="padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center">
+<span class="lbl">Borin · à son tour</span>
+<span class="mono" style="font-size: 13px"><span style="color: #2EE6A6">MVT 6 cases</span> · <span style="color: #FF9F1C">ATQ +5 · 1d12+3</span> · <span style="color: #FF4D5E">PV 9/31</span></span>
+<span style="font-size: 12px; color: #A3A3A3; flex: 1 1 200px">Le chef gobelin (caché) l’attend derrière la porte est.</span>
+</div>
+</main>
+
+<aside aria-label="Chat et co-MJ" style="flex: 1 1 330px; max-width: 380px; display: flex; flex-direction: column; gap: 14px">
+<section class="panel" aria-label="Table" style="display: flex; flex-direction: column; flex: 1 1 300px; min-height: 0">
+<div style="padding: 14px 14px 8px; display: flex; justify-content: space-between"><span class="lbl">Table</span><span class="mono" style="font-size: 11px; color: #8A8A8A">2 demandes</span></div>
+<div style="flex: 1; overflow: auto; padding: 0 14px 10px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 13px; line-height: 1.45"><span style="font-weight: 600">Lyra</span> <span style="color: #A3A3A3">je surveille l’escalier, j’ai un mauvais pressentiment</span></div>
+<div class="req" style="padding: 10px 12px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 13px"><span class="ttl">Sef</span> demande : « Je crochète la porte nord. »</div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap"><button type="button" class="btn sm pri">Test DD 15</button><button type="button" class="btn sm">Accepter</button><button type="button" class="btn sm">Refuser</button></div>
+</div>
+<div class="req" style="padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; animation-delay: .25s">
+<div style="font-size: 13px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap"><span class="ttl">Borin</span> attaque <span class="ttl">G1</span> <dc-import name="Gemme" stat="atq" valeur="+5" taille="30" hint-size="30px,30px"></dc-import> contre <dc-import name="Gemme" stat="ca" valeur="13" taille="30" hint-size="30px,30px"></dc-import></div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap"><button type="button" class="btn sm pri">Résoudre</button><button type="button" class="btn sm">Avantage</button><button type="button" class="btn sm">Refuser</button></div>
+</div>
+</div>
+<div style="padding: 10px 14px 14px; display: flex; gap: 8px; border-top: 1px solid #1F1F1F">
+<label for="say" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Message à la table</label>
+<input id="say" type="text" placeholder="Écrire à la table…" style="flex: 1; min-width: 0; font: inherit; font-size: 13px; color: #F5F5F5; background: #0A0A0A; border: 1px solid #333; border-radius: 10px; padding: 0 12px; min-height: 44px">
+<button type="button" class="btn" aria-label="Envoyer" style="width: 44px; padding: 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg></button>
+</div>
+</section>
+
+<section class="panel" aria-label="Co-MJ" style="display: flex; flex-direction: column; overflow: hidden; flex: 1 1 360px">
+<div style="position: relative; height: 40px; overflow: hidden; border-bottom: 1px solid #1F1F1F">
+<div style="position: absolute; inset: 0; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: transparent">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>
+<span class="lbl" style="color: #F2F2F2">Co-MJ</span>
+<span style="margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 11px; color: #A3A3A3">écrit…<span style="width: 48px; height: 16px; overflow: hidden; border-radius: 3px"><dc-import name="RadialGrid" cols="6" rows="2" pitch="8" pattern="vague" ox="0" hint-size="48px,16px"></dc-import></span></span>
+</div>
+</div>
+<div style="padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{asks}}" as="a" hint-placeholder-count="4"><button type="button" class="{{a.cls}}" onClick="{{a.pick}}">{{a.name}}</button></sc-for>
+</div>
+<div style="padding: 0 14px 12px; display: flex; flex-direction: column; gap: 10px; flex: 1">
+<div style="border: 1px solid #333; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #0D0D0D">
+<span class="lbl">Brouillon · modifiable</span>
+<p class="serif" style="margin: 0; font-size: 20px; font-style: italic; line-height: 1.4; color: #EDEDED">{{draft}}<span style="display: inline-block; width: 2px; height: 16px; background: #F5F5F5; margin-left: 2px; vertical-align: -2px; animation: caret .8s steps(1) infinite"></span></p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span class="lbl">Suggestions</span>
+<sc-for list="{{sugg}}" as="s" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 10px; font-size: 12px; padding: 8px 10px; background: #161616; border-radius: 8px"><span class="mono" style="color: #8A8A8A">{{s.code}}</span><span style="flex: 1">{{s.text}}</span><button type="button" class="btn sm">Appliquer</button></div>
+</sc-for>
+</div>
+<div style="display: flex; gap: 8px; margin-top: auto"><button type="button" class="btn pri" style="flex: 1">Envoyer aux joueurs</button><button type="button" class="btn">Relancer</button></div>
+</div>
+</section>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { phase: 'Combat', ask: 'Conséquences' };
+  }
+  renderVals() {
+    const drafts = {
+      'Décrire': 'Les ossuaires s’élèvent jusqu’à la voûte. Des crânes, rangés par familles, regardent tous vers la porte nord.',
+      'Conséquences': 'Le gobelin encaisse, recule d’un pas et siffle entre ses dents. Derrière la porte est, quelque chose répond.',
+      'Et ensuite ?': 'Si le groupe force la porte nord, le chef gobelin attaque par l’est au round suivant. Le front « culte » avance d’un cran.',
+      'Faire parler': '« Vous n’auriez pas dû descendre. Le maire paie pour que personne ne descende. »'
+    };
+    const ask = this.state.ask;
+    return {
+      phases: ['Exploration', 'Dialogue', 'Combat', 'Repos'].map((n) => ({
+        name: n, cls: n === this.state.phase ? 'on' : '', pick: () => this.setState({ phase: n })
+      })),
+      asks: Object.keys(drafts).map((n) => ({
+        name: n, cls: n === ask ? 'chip on' : 'chip', pick: () => this.setState({ ask: n })
+      })),
+      draft: drafts[ask],
+      sugg: [
+        { code: 'advance_front', text: 'Culte des cendres : 3 → 4' },
+        { code: 'reveal_entity', text: 'Révéler « Chef gobelin »' }
+      ],
+      inits: [
+        { ini: 19, tag: 'L', perso: 'lyra', cache: 'false', kind: 'pc', name: 'Lyra', hp: '18/22', pv: 18, max: 22, ca: 15, cls: 'ini', low: '' },
+        { ini: 17, tag: 'B', perso: 'borin', cache: 'false', kind: 'pc', name: 'Borin', hp: '9/31', pv: 9, max: 31, ca: 18, cls: 'ini now', low: 'low' },
+        { ini: 14, tag: 'G1', perso: 'gobelin', cache: 'false', kind: 'foe', name: 'Gobelin G1', hp: '7/7', pv: 7, max: 7, ca: 13, cls: 'ini', low: '' },
+        { ini: 12, tag: 'S', perso: 'sef', cache: 'false', kind: 'pc', name: 'Sef', hp: '14/16', pv: 14, max: 16, ca: 14, cls: 'ini', low: '' },
+        { ini: 9, tag: 'G2', perso: 'gobelin', cache: 'false', kind: 'foe', name: 'Gobelin G2', hp: '7/7', pv: 7, max: 7, ca: 13, cls: 'ini', low: '' },
+        { ini: 6, tag: 'C', perso: 'chef', cache: 'true', kind: 'hid', name: 'Chef gobelin · caché', hp: '21/21', pv: 21, max: 21, ca: 16, cls: 'ini', low: '' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

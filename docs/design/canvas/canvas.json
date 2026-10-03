@@ -1,0 +1,343 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Bouton.dc.html": {
+      "h": 64,
+      "title": "Composant — bouton-carte",
+      "w": 280,
+      "x": 2460,
+      "y": 640
+    },
+    "Carte.dc.html": {
+      "h": 420,
+      "title": "Composant — carte à grille",
+      "w": 720,
+      "x": 1520,
+      "y": 480
+    },
+    "Cartes.dc.html": {
+      "h": 2460,
+      "title": "Cartes · trois échelles",
+      "w": 1440,
+      "x": 7360,
+      "y": 0
+    },
+    "Cases.dc.html": {
+      "h": 40,
+      "title": "Composant — barre en cases",
+      "w": 160,
+      "x": 2320,
+      "y": 560
+    },
+    "Coeurs.dc.html": {
+      "h": 40,
+      "title": "Composant — cœurs de vie",
+      "w": 300,
+      "x": 2320,
+      "y": 480
+    },
+    "De.dc.html": {
+      "h": 120,
+      "title": "Composant — dé",
+      "w": 120,
+      "x": 2336,
+      "y": 300
+    },
+    "Ecran-TV.dc.html": {
+      "h": 1080,
+      "title": "Composant — écran TV (soirée)",
+      "w": 1920,
+      "x": 6200,
+      "y": 4720
+    },
+    "Etat.dc.html": {
+      "h": 40,
+      "title": "Composant — badge d’état",
+      "w": 40,
+      "x": 2460,
+      "y": 780
+    },
+    "Etats.dc.html": {
+      "h": 1100,
+      "title": "États des personnages",
+      "w": 1440,
+      "x": 4320,
+      "y": 1300
+    },
+    "Exterieurs.dc.html": {
+      "h": 3380,
+      "title": "Cartes · extérieurs",
+      "w": 1440,
+      "x": 8880,
+      "y": 0
+    },
+    "GameCard.dc.html": {
+      "h": 210,
+      "title": "Composant — carte à jouer",
+      "w": 150,
+      "x": 2176,
+      "y": 0
+    },
+    "Gemme.dc.html": {
+      "h": 64,
+      "title": "Composant — gemme",
+      "w": 64,
+      "x": 2496,
+      "y": 300
+    },
+    "Histoire.dc.html": {
+      "expand": "fill",
+      "h": 960,
+      "is_interactive": true,
+      "title": "Construction d'histoire (LLM)",
+      "w": 1440,
+      "x": 0,
+      "y": 1880
+    },
+    "Horloge.dc.html": {
+      "h": 112,
+      "title": "Composant — horloge de menace",
+      "w": 112,
+      "x": 2320,
+      "y": 640
+    },
+    "Jouer-Marc.dc.html": {
+      "x": 4080,
+      "y": 4720,
+      "w": 1440,
+      "h": 1000,
+      "title": "Jouer · la soirée de Marc",
+      "is_interactive": true
+    },
+    "Joueur-Carte.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Joueur — carte (téléphone)",
+      "w": 390,
+      "x": 2940,
+      "y": 3240
+    },
+    "Joueur-Combat.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Joueur — combat (téléphone)",
+      "w": 390,
+      "x": 2470,
+      "y": 3240
+    },
+    "Joueur-Journal.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Joueur — journal (téléphone)",
+      "w": 390,
+      "x": 3880,
+      "y": 3240
+    },
+    "Joueur-Personnage.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Joueur — personnage (téléphone)",
+      "w": 390,
+      "x": 3410,
+      "y": 3240
+    },
+    "Joueur-Scene.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Joueur — scène (téléphone)",
+      "w": 390,
+      "x": 2000,
+      "y": 3240
+    },
+    "MJ.dc.html": {
+      "expand": "fill",
+      "h": 960,
+      "is_interactive": true,
+      "title": "Écran MJ — en direct",
+      "w": 1440,
+      "x": 1520,
+      "y": 1880
+    },
+    "Main.dc.html": {
+      "h": 1480,
+      "title": "Fondations",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "Notifs.dc.html": {
+      "h": 1120,
+      "title": "Notifications",
+      "w": 1440,
+      "x": 5840,
+      "y": 0
+    },
+    "Objet.dc.html": {
+      "h": 72,
+      "title": "Composant — objet en case",
+      "w": 72,
+      "x": 2320,
+      "y": 780
+    },
+    "Objets.dc.html": {
+      "h": 1220,
+      "title": "Objets et butin",
+      "w": 1440,
+      "x": 4320,
+      "y": 0
+    },
+    "Parcours.dc.html": {
+      "h": 1480,
+      "title": "Parcours utilisateurs",
+      "w": 1920,
+      "x": 0,
+      "y": 4720
+    },
+    "Perso.dc.html": {
+      "h": 104,
+      "title": "Composant — personnage et état",
+      "w": 80,
+      "x": 2560,
+      "y": 780
+    },
+    "Pistes-UI.dc.html": {
+      "h": 1160,
+      "title": "Jauges et boutons — pistes",
+      "w": 1440,
+      "x": 2800,
+      "y": 0
+    },
+    "Plan.dc.html": {
+      "h": 400,
+      "title": "Composant — plan en vue 3/4",
+      "w": 560,
+      "x": 5840,
+      "y": 1200
+    },
+    "RadialGrid.dc.html": {
+      "h": 360,
+      "title": "Composant — grille radiale",
+      "w": 576,
+      "x": 1520,
+      "y": 0
+    },
+    "Raretes.dc.html": {
+      "h": 560,
+      "title": "Rareté des compétences",
+      "w": 1200,
+      "x": 1520,
+      "y": 980
+    },
+    "Soiree-Marc.dc.html": {
+      "h": 3640,
+      "is_interactive": true,
+      "title": "Joueur · la soirée de Marc",
+      "w": 1920,
+      "x": 2040,
+      "y": 4720
+    },
+    "Soiree-TV.dc.html": {
+      "h": 2780,
+      "title": "TV · la soirée côté TV",
+      "w": 2528,
+      "x": 0,
+      "y": 8480
+    },
+    "Sprite.dc.html": {
+      "h": 104,
+      "title": "Composant — personnage pixel",
+      "w": 80,
+      "x": 2176,
+      "y": 300
+    },
+    "TV.dc.html": {
+      "h": 1080,
+      "title": "Écran TV",
+      "w": 1920,
+      "x": 0,
+      "y": 3240
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-03T11:30:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "row0": {
+      "kind": "title1",
+      "maxW": 2720,
+      "text": "Fondations",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "row1": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "Le MJ : préparer, puis mener",
+      "w": 240,
+      "x": 0,
+      "y": 1600
+    },
+    "row2": {
+      "kind": "title1",
+      "maxW": 4300,
+      "text": "La table : TV et joueurs",
+      "w": 240,
+      "x": 0,
+      "y": 2960
+    },
+    "row3": {
+      "kind": "title1",
+      "maxW": 1920,
+      "text": "Parcours",
+      "w": 240,
+      "x": 0,
+      "y": 4440
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "GameCard.dc.html",
+    "RadialGrid.dc.html",
+    "Carte.dc.html",
+    "Histoire.dc.html",
+    "MJ.dc.html",
+    "TV.dc.html",
+    "Joueur-Scene.dc.html",
+    "Joueur-Combat.dc.html",
+    "Sprite.dc.html",
+    "De.dc.html",
+    "Raretes.dc.html",
+    "Gemme.dc.html",
+    "Pistes-UI.dc.html",
+    "Coeurs.dc.html",
+    "Cases.dc.html",
+    "Horloge.dc.html",
+    "Bouton.dc.html",
+    "Objets.dc.html",
+    "Objet.dc.html",
+    "Etats.dc.html",
+    "Notifs.dc.html",
+    "Etat.dc.html",
+    "Perso.dc.html",
+    "Cartes.dc.html",
+    "Plan.dc.html",
+    "Exterieurs.dc.html",
+    "Parcours.dc.html",
+    "Soiree-Marc.dc.html",
+    "Jouer-Marc.dc.html",
+    "Joueur-Carte.dc.html",
+    "Joueur-Personnage.dc.html",
+    "Joueur-Journal.dc.html",
+    "Ecran-TV.dc.html",
+    "Soiree-TV.dc.html"
+  ],
+  "pages": [],
+  "title": "Promptus — écrans"
+}

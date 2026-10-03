@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Plan en vue 3/4</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0A0A0A}
+.pl{position:relative;background:#050505;overflow:hidden;font-family:'Chakra Petch',system-ui,sans-serif}
+.pl .c{position:absolute}
+.pl .sh{background:linear-gradient(180deg,rgba(0,0,0,.6),rgba(0,0,0,0))}
+.pl .shw{background:linear-gradient(90deg,rgba(0,0,0,.45),rgba(0,0,0,0))}
+.pl .face::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(0,0,0,.45))}
+.pl .grid{position:absolute;pointer-events:none;opacity:.5}
+/* crypte */
+.th-crypte .fl{background:#1D1D1D;box-shadow:inset 1px 1px 0 rgba(255,255,255,.07),inset -1px -1px 0 rgba(0,0,0,.7)}
+.th-crypte .fl.v1{background:#212121}.th-crypte .fl.v2{background:#191919}
+.th-crypte .wa{background:repeating-linear-gradient(160deg,#151a1d 0 5px,#1c2226 5px 9px)}
+.th-crypte .cap{background:linear-gradient(180deg,#D2D2D2,#B4B4B4)}
+.th-crypte .face{background:repeating-linear-gradient(180deg,#4E4E4E 0 22%,#2A2A2A 22% 25%),#4E4E4E}
+.th-crypte .face::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 46%,#2A2A2A 46% 50%);-webkit-mask-image:repeating-linear-gradient(180deg,#000 0 50%,transparent 50% 100%);mask-image:repeating-linear-gradient(180deg,#000 0 50%,transparent 50% 100%)}
+.th-crypte .door{background:repeating-linear-gradient(90deg,#6A4A2A 0 30%,#4A321A 30% 34%);box-shadow:inset 0 0 0 2px #2A1A0A}
+/* hôpital (zombies) */
+.th-hopital .fl{background:#26292A;box-shadow:inset 1px 1px 0 rgba(255,255,255,.06),inset -1px -1px 0 rgba(0,0,0,.6)}
+.th-hopital .fl.odd{background:#1E2122}
+.th-hopital .wa{background:radial-gradient(60% 50% at 50% 50%,#3A0F14,#1E2122 80%)}
+.th-hopital .cap{background:linear-gradient(180deg,#ECEEEE,#CDD2D2)}
+.th-hopital .face{background:linear-gradient(180deg,#7E8787 0 36%,#4E5656 36% 40%,transparent 40%),repeating-linear-gradient(90deg,#AEB6B6 0 1px,transparent 1px 25%),repeating-linear-gradient(180deg,#AEB6B6 0 1px,transparent 1px 15%),#D5DADA}
+.th-hopital .door{background:linear-gradient(90deg,#9AA3A3 0 48%,#5E6666 48% 52%,#9AA3A3 52%);box-shadow:inset 0 0 0 2px #3A4040}
+/* vaisseau (spatial) */
+.th-vaisseau .fl{background:radial-gradient(circle at 14% 14%,#4A535E 0 1.5px,transparent 2px),radial-gradient(circle at 86% 14%,#4A535E 0 1.5px,transparent 2px),radial-gradient(circle at 14% 86%,#4A535E 0 1.5px,transparent 2px),radial-gradient(circle at 86% 86%,#4A535E 0 1.5px,transparent 2px),linear-gradient(135deg,#252A32,#1A1E24);box-shadow:inset 0 0 0 1px #11141A}
+.th-vaisseau .wa{background:repeating-linear-gradient(90deg,#2C333C 0 2px,#14181D 2px 5px)}
+.th-vaisseau .cap{background:linear-gradient(180deg,#4A525C,#323840)}
+.th-vaisseau .face{background:linear-gradient(180deg,transparent 0 28%,rgba(225,245,255,.95) 28% 33%,transparent 33%),repeating-linear-gradient(90deg,#4C545E 0 47%,#262C34 47% 50%),#4C545E}
+.th-vaisseau .door{background:repeating-linear-gradient(45deg,#EDEDED 0 4px,#0A0A0A 4px 8px);box-shadow:inset 0 0 0 2px #0A0A0A}
+/* village (lieu) */
+.th-village .fl{background:#1C1C1C;box-shadow:inset 1px 1px 0 rgba(255,255,255,.05),inset -1px -1px 0 rgba(0,0,0,.5)}
+.th-village .fl.v1{background:#202020}
+.th-village .wa{background:repeating-linear-gradient(160deg,#151a1d 0 4px,#1c2226 4px 7px)}
+.th-village .cap{background:repeating-linear-gradient(180deg,#9E9E9E 0 3px,#7A7A7A 3px 6px)}
+.th-village .face{background:linear-gradient(90deg,#3A3226 0 8%,transparent 8% 92%,#3A3226 92%),linear-gradient(180deg,#3A3226 0 10%,transparent 10%),#CFC8BA}
+.th-village .door{background:#5A3E22;box-shadow:inset 0 0 0 2px #2A1A0A}
+/* tokens, labels, fog, hidden objects */
+.pl .tk{position:absolute;display:grid;place-items:end center}
+.pl .tk.act::before{content:'';position:absolute;left:8%;right:8%;bottom:4%;height:26%;border-radius:50%;border:2px solid #FFD60A;box-shadow:0 0 10px rgba(255,214,10,.6)}
+.pl .fog{background:#070707;z-index:900;display:grid;place-items:center}
+.pl .fog i{display:block;width:24%;height:24%;background:#F2F2F2;animation:plFog 2.6s ease-in-out infinite}
+@keyframes plFog{0%,100%{opacity:.05;transform:scale(.6)}50%{opacity:.4;transform:scale(1)}}
+.pl .hid{z-index:880;display:grid;place-items:center;outline:2px dashed #F2F2F2;outline-offset:-3px;border-radius:6px;opacity:.85}
+.pl .hid span{position:absolute;top:-1.6em;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:#F2F2F2;color:#0A0A0A;padding:1px 5px;border-radius:3px;white-space:nowrap}
+.pl .zl{position:absolute;z-index:950;transform:translate(-50%,-50%);font-family:'Cinzel',Georgia,serif;font-weight:800;font-size:11px;background:#EDEDED;color:#0A0A0A;padding:2px 7px;border-radius:5px;box-shadow:0 2px 0 #6E6E6E;white-space:nowrap}
+@media (prefers-reduced-motion: reduce){.pl *{animation:none!important}}
+</style>
+</helmet>
+<div class="pl th-{{theme}}" role="img" aria-label="{{label}}" style="width: {{W}}px; height: {{H}}px">
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="40"><div class="c {{c.cls}}" style="left: {{c.x}}px; top: {{c.y}}px; width: {{c.w}}px; height: {{c.h}}px; z-index: {{c.z}}; box-shadow: {{c.bs}}"><sc-if value="{{c.dot}}" hint-placeholder-val="{{ false }}"><i style="animation-delay: {{c.d}}s"></i></sc-if></div></sc-for>
+<sc-for list="{{tokens}}" as="t" hint-placeholder-count="3"><div class="tk {{t.cls}}" style="left: {{t.x}}px; top: {{t.y}}px; width: {{P}}px; height: {{t.h}}px; z-index: {{t.z}}"><dc-import name="Perso" perso="{{t.perso}}" px="{{spx}}" anim="{{t.anim}}" etat="{{t.etat}}" hint-size="{{sw}}px,{{sh}}px"></dc-import></div></sc-for>
+<sc-for list="{{hidden}}" as="o" hint-placeholder-count="1"><div class="c hid" style="left: {{o.x}}px; top: {{o.y}}px; width: {{P}}px; height: {{P}}px"><dc-import name="Objet" objet="{{o.objet}}" cadre="false" taille="{{P}}" hint-size="{{P}}px,{{P}}px"></dc-import><span>{{o.tag}}</span></div></sc-for>
+<sc-for list="{{zones}}" as="z" hint-placeholder-count="3"><span class="zl" style="left: {{z.x}}px; top: {{z.y}}px">{{z.name}}</span></sc-for>
+<sc-if value="{{showGrid}}" hint-placeholder-val="{{ true }}"><div class="grid" style="left: 0; top: {{P}}px; width: {{W}}px; height: {{GH}}px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px {{P}}px), repeating-linear-gradient(180deg, rgba(255,255,255,.08) 0 1px, transparent 1px {{P}}px); z-index: 860"></div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["crypte","hopital","vaisseau","village"],"default":"crypte"},"carte":{"editor":"enum","options":["salle","village"],"default":"salle"},"pitch":{"editor":"int","default":40,"min":12,"max":96},"vue":{"editor":"enum","options":["mj","joueur"],"default":"mj"},"grille":{"editor":"boolean","default":true},"combat":{"editor":"boolean","default":false},"bx":{"editor":"int","default":4},"by":{"editor":"int","default":6},"$preview":{"width":560,"height":400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const theme = this.props.theme ?? 'crypte';
+    const carte = this.props.carte ?? 'salle';
+    const P = Number(this.props.pitch ?? 40);
+    const vue = this.props.vue ?? 'mj';
+    const maps = {
+      salle: [
+        '##############',
+        '#......#.....#',
+        '#......#.....#',
+        '#......d.....#',
+        '#......#.....#',
+        '###d####..~..#',
+        '#............#',
+        '#............#',
+        '##############'
+      ],
+      village: [
+        '................',
+        '.####....#####..',
+        '.####....#####..',
+        '.##d#....##d##..',
+        '................',
+        '.......~~.......',
+        '..#####.~~..###.',
+        '..#####..~..###.',
+        '..##d##.....#d#.',
+        '................'
+      ]
+    };
+    const M = maps[carte] || maps.salle;
+    const R = M.length, C = M[0].length;
+    const wall = (x, y) => y >= 0 && y < R && x >= 0 && x < C && M[y][x] === '#';
+    const hiddenZone = carte === 'salle' ? (x, y) => x >= 8 && y <= 4 : () => false;
+    const cells = [];
+    const top = (y) => (y + 1) * P;
+    const cell = (cls, x, y, w, h, z, bs) => cells.push({ cls, x, y, w, h, z, bs: bs || 'none', dot: false, d: 0 });
+    for (let y = 0; y < R; y++) {
+      for (let x = 0; x < C; x++) {
+        const ch = M[y][x];
+        if (ch === '#') continue;
+        const hh = Math.sin(x * 7.13 + y * 3.71) * 1000;
+        const fr = hh - Math.floor(hh);
+        let cls = ch === '~' ? 'wa' : 'fl' + (fr < 0.3 ? ' v1' : fr > 0.72 ? ' v2' : '') + ((x + y) % 2 ? ' odd' : '');
+        cell(cls, x * P, top(y), P, P, 1);
+        if (ch === 'd') cell('door', x * P + P * 0.12, top(y) + P * 0.12, P * 0.76, P * 0.76, 2);
+        if (wall(x, y - 1)) cell('sh', x * P, top(y), P, Math.round(P * 0.35), 3);
+        if (wall(x - 1, y)) cell('shw', x * P, top(y), Math.round(P * 0.2), P, 3);
+      }
+    }
+    // Three-quarter walls: the cap is drawn one tile up, the brick face fills the wall's own cell
+    // when the cell below is open. Later rows paint over earlier ones, so a token standing just
+    // north of a wall goes behind its cap.
+    const rim = Math.max(2, Math.round(P * 0.08));
+    for (let y = 0; y < R; y++) {
+      for (let x = 0; x < C; x++) {
+        if (!wall(x, y)) continue;
+        const z = 10 + y * 10;
+        const bs = [
+          !wall(x, y - 1) ? 'inset 0 ' + rim + 'px 0 rgba(255,255,255,.55)' : '',
+          !wall(x - 1, y) ? 'inset ' + rim + 'px 0 0 rgba(255,255,255,.35)' : '',
+          !wall(x + 1, y) ? 'inset -' + rim + 'px 0 0 rgba(0,0,0,.35)' : '',
+          !wall(x, y + 1) ? 'inset 0 -' + rim + 'px 0 rgba(0,0,0,.4)' : ''
+        ].filter(Boolean).join(', ');
+        cell('cap', x * P, top(y) - P, P, P, z, bs);
+        if (!wall(x, y + 1)) cell('face', x * P, top(y), P, P, z);
+      }
+    }
+    if (vue === 'joueur') {
+      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+        if (!hiddenZone(x, y)) continue;
+        const r = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+        cells.push({ cls: 'fog', x: x * P, y: top(y) - (y === 0 ? P : 0), w: P, h: P + (y === 0 ? P : 0), z: 900, bs: 'none', dot: true, d: (-(r - Math.floor(r)) * 2.6).toFixed(2) });
+      }
+    }
+    const spx = Math.max(1, Math.round(P / 22));
+    const sw = 20 * spx, sh = 26 * spx;
+    const combat = String(this.props.combat ?? false) === 'true';
+    const toks = carte === 'salle' && combat
+      ? [{ perso: 'borin', x: 4, y: 6, act: true, etat: 'aucun', anim: 'repos' }, { perso: 'gobelin', x: 5, y: 6, etat: 'aucun', anim: 'repos', foe: true }, { perso: 'lyra', x: 2, y: 7, etat: 'aucun', anim: 'repos' }, { perso: 'gobelin', x: 7, y: 7, etat: 'aucun', anim: 'repos', foe: true }, { perso: 'sef', x: 3, y: 4, etat: 'aucun', anim: 'repos' }]
+      : carte === 'salle'
+      ? [{ perso: 'borin', x: Number(this.props.bx ?? 4), y: Number(this.props.by ?? 6), act: true, etat: 'aucun', anim: 'repos' }, { perso: 'lyra', x: 5, y: 4, etat: 'aucun', anim: 'repos' }, { perso: 'gobelin', x: 11, y: 2, etat: 'aucun', anim: 'repos', foe: true }, { perso: 'sef', x: 9, y: 7, etat: 'beni', anim: 'repos' }]
+      : [{ perso: 'borin', x: 7, y: 4, act: true, etat: 'aucun', anim: 'marche' }, { perso: 'lyra', x: 8, y: 4, etat: 'aucun', anim: 'marche' }];
+    const tokens = toks
+      .filter((t) => !(vue === 'joueur' && hiddenZone(t.x, t.y)))
+      .map((t) => ({ ...t, cls: t.act ? 'act' : '', x: t.x * P, y: top(t.y) + P - sh - Math.round(P * 0.08), h: sh + Math.round(P * 0.08), z: 15 + t.y * 10 }));
+    const hidden = carte === 'salle' && vue === 'mj' ? [{ objet: 'coffre', x: 12 * P, y: top(1), tag: 'caché' }] : [];
+    const zones = carte === 'village'
+      ? [{ name: 'Taverne', x: 3 * P, y: top(1) - P * 0.4 }, { name: 'Temple', x: 11.5 * P, y: top(1) - P * 0.4 }, { name: 'Forge', x: 4.5 * P, y: top(6) - P * 0.4 }, { name: 'Crypte', x: 13.5 * P, y: top(6) - P * 0.4 }]
+      : [];
+    const names = { crypte: 'crypte', hopital: 'hôpital abandonné', vaisseau: 'coursive de vaisseau', village: 'village' };
+    return {
+      theme, P, W: C * P, H: (R + 1) * P, GH: R * P, cells, tokens, hidden, zones, spx, sw, sh,
+      showGrid: String(this.props.grille ?? true) === 'true',
+      label: 'Plan en vue 3/4 : ' + (names[theme] || theme)
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Badge d’état</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0A0A0A}
+.et{position:relative;display:inline-block;vertical-align:middle;flex:none;font-family:'Chakra Petch',system-ui,sans-serif;border-radius:6px;box-sizing:border-box}
+.et.mal{background:#0A0A0A;box-shadow:0 0 0 1.5px #8C8C8C,0 3px 0 #000}
+.et.bon{background:#EDEDED;box-shadow:0 0 0 1.5px #0A0A0A,0 3px 0 #6E6E6E}
+.et .ic{position:absolute}
+.et .ic i{position:absolute;display:block}
+.et .n{position:absolute;right:-4px;bottom:-5px;font-weight:700;line-height:1;color:#F2F2F2;-webkit-text-stroke:2px #000;paint-order:stroke}
+.et.neuf{animation:etIn .5s cubic-bezier(.2,1.5,.3,1) both}
+@keyframes etIn{0%{transform:scale(2.2);opacity:0}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){.et{animation:none!important}}
+</style>
+</helmet>
+<div class="et {{cls}}" role="img" aria-label="{{label}}" style="width: {{S}}px; height: {{S}}px">
+<div class="ic" style="left: {{o}}px; top: {{o}}px; width: {{iw}}px; height: {{iw}}px"><i style="left: -{{p}}px; top: -{{p}}px; width: {{p}}px; height: {{p}}px; box-shadow: {{sh}}"></i></div>
+<sc-if value="{{hasN}}" hint-placeholder-val="{{ true }}"><span class="n" style="font-size: {{nfs}}px">{{tours}}</span></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"etat":{"editor":"enum","options":["poison","etourdi","endormi","invisible","feu","entrave","effraye","beni"],"default":"poison"},"tours":{"editor":"text","default":"3"},"taille":{"editor":"int","default":28,"min":14,"max":120},"neuf":{"editor":"boolean","default":false},"$preview":{"width":28,"height":28}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ICONS = {"poison":[".XXXXXXX.","XXXXXXXXX","XX..X..XX","XX..X..XX","XXXXXXXXX",".XXX.XXX.","..XXXXX..","..X.X.X..","........."],"etourdi":["....X....","...XXX...","XXXXXXXXX",".XXXXXXX.","..XXXXX..","..XX.XX..",".XX...XX.",".X.....X.","........."],"endormi":["XXXXX....","...X.....","..X......",".X.......","XXXXX....",".....XXX.","......X..",".....XXX.","........."],"invisible":["..XXXXX..",".X.....X.","X..X.X..X","X.......X","X.......X","X.......X","X.X.X.X.X",".X.X.X.X.","........."],"feu":["....X....","...XX....","...XXX...","..XXXX.X.",".XXX.XXX.",".XX...XX.",".XX...XX.","..XX.XX..","...XXX..."],"entrave":["..XXXXX..",".XX...XX.",".X.....X.",".X.....X.","XXXXXXXXX","XXXX.XXXX","XXXX.XXXX","XXXXXXXXX","XXXXXXXXX"],"effraye":["...XXX...","...XXX...","...XXX...","...XXX...","....X....",".........","...XXX...","...XXX...","........."],"beni":["....X....","....X....","..X.X.X..","...XXX...","XXXXXXXXX","...XXX...","..X.X.X..","....X....","....X...."]};
+    const etat = this.props.etat ?? 'poison';
+    const S = Number(this.props.taille ?? 28);
+    const tours = String(this.props.tours ?? '');
+    const names = { poison: 'Empoisonné', etourdi: 'Étourdi', endormi: 'Endormi', invisible: 'Invisible', feu: 'En feu', entrave: 'Entravé', effraye: 'Effrayé', beni: 'Béni' };
+    // Boons are ivory chips, banes black ones: the same light/dark split as buttons.
+    const bon = etat === 'beni' || etat === 'invisible';
+    const p = Math.max(1, Math.floor((S * 0.72) / 9));
+    const g = ICONS[etat] || ICONS.poison;
+    const col = bon ? '#0A0A0A' : '#F2F2F2';
+    const sh = [];
+    g.forEach((r, y) => [...r].forEach((c, x) => { if (c === 'X') sh.push(((x + 1) * p) + 'px ' + ((y + 1) * p) + 'px 0 0 ' + col); }));
+    return {
+      S, p, iw: 9 * p, o: Math.round((S - 9 * p) / 2), sh: sh.join(', '),
+      cls: (bon ? 'bon' : 'mal') + (String(this.props.neuf ?? false) === 'true' ? ' neuf' : ''),
+      tours, hasN: tours !== '' && S >= 20, nfs: Math.max(9, Math.round(S * 0.4)),
+      label: (names[etat] || etat) + (tours ? ', ' + tours + ' tours' : '')
+    };
+  }
+}
+</script>
+</body>
+</html>

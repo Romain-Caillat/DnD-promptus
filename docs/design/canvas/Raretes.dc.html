@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Rareté des compétences</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A}
+.pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(90% 80% at 50% 40%,#1C1C1C 0,#0C0C0C 60%,#050505 100%);-webkit-font-smoothing:antialiased}
+.ttl{font-family:'Cinzel',Georgia,serif;font-weight:800}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.pips{display:flex;gap:5px;justify-content:center}
+.pips i{width:8px;height:8px;transform:rotate(45deg);background:#F2F2F2}
+</style>
+</helmet>
+<div class="pm" style="width: 1200px; height: 560px; box-sizing: border-box; padding: 40px 50px; display: flex; flex-direction: column; gap: 34px">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span class="lbl">Rareté des compétences</span>
+<span class="ttl" style="font-size: 34px">Six niveaux, une seule règle</span>
+</div>
+<p style="margin: 0; max-width: 470px; font-size: 13px; line-height: 1.55; color: #A3A3A3">La rareté se lit à la matière de la carte et au nombre de losanges, jamais à une couleur : les couleurs restent aux statistiques. Seule la carte divine a droit à l’arc-en-ciel.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 30px; align-items: end">
+<sc-for list="{{tiers}}" as="t" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 16px">
+<dc-import name="GameCard" titre="{{t.titre}}" type="{{t.type}}" texte="{{t.texte}}" valeur="{{t.val}}" stat="atq" icon="{{t.icon}}" rarete="{{t.id}}" w="150" delay="{{t.delay}}" hint-size="150px,210px"></dc-import>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center">
+<div class="pips" aria-hidden="true"><sc-for list="{{t.pips}}" as="p" hint-placeholder-count="3"><i></i></sc-for></div>
+<span class="ttl" style="font-size: 16px">{{t.name}}</span>
+<span style="font-size: 11px; color: #8C8C8C; line-height: 1.4">{{t.how}}</span>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1200,"height":560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const T = [
+      ['commune', 'Commune', 'Frappe', 'Hache d’armes, 1d12+3.', '+5', 'epee', 'Ivoire, filet simple'],
+      ['peu-commune', 'Peu commune', 'Coup puissant', 'La cible recule d’une case.', '+5', 'epee', 'Double filet, coins marqués'],
+      ['rare', 'Rare', 'Fendoir', 'Touche deux ennemis voisins.', '+6', 'epee', 'Cadre argent brossé'],
+      ['epique', 'Épique', 'Tourbillon', 'Frappe toutes les cases autour.', '+7', 'epee', 'Carte noire, reflet qui passe'],
+      ['legendaire', 'Légendaire', 'Colère des monts', 'Dégâts doublés, cible renversée.', '+8', 'crane', 'Feuille d’or, étincelles, halo'],
+      ['divine', 'Divine', 'Le Dernier Mot', 'Une fois par campagne : la cible tombe.', '+10', 'sort', 'Holographique, flotte, rayons']
+    ];
+    return {
+      tiers: T.map((t, i) => ({
+        id: t[0], name: t[1], titre: t[2], texte: t[3], val: t[4], icon: t[5], how: t[6],
+        type: 'Compétence', delay: (i * 0.12).toFixed(2),
+        pips: Array.from({ length: i + 1 }, (_, n) => n)
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

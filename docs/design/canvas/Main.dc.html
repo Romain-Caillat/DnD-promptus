@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Promptus — fondations</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
+<style>
+.gemw{display:inline-grid;flex:none;filter:drop-shadow(0 3px 0 rgba(0,0,0,.55))}
+body{margin:0;background:#0A0A0A}
+.pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 80% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.ttl{font-family:'Cinzel',Georgia,serif;font-weight:800;letter-spacing:.04em}
+.nar{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-weight:500}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.slab{background:linear-gradient(180deg,#181818,#111);border:1px solid #2C2C2C;border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 30px rgba(0,0,0,.45)}
+.gem{display:inline-grid;place-items:center;width:46px;height:46px;font-weight:700;font-size:16px;color:#0A0A0A;filter:drop-shadow(0 3px 0 rgba(0,0,0,.6))}
+.fan{position:relative;height:250px}
+.fan > div{position:absolute;bottom:0;transform-origin:50% 120%}
+.pw{position:relative;width:64px;height:64px;display:grid;place-items:center}
+.pw .sh{position:absolute;left:14%;right:14%;bottom:4%;height:22%;border-radius:50%;background:rgba(0,0,0,.7);filter:blur(2px)}
+.pw .disc{position:relative;width:74%;height:74%;border-radius:50%;display:grid;place-items:center;font-family:'Cinzel',serif;font-weight:800;font-size:20px;margin-top:-10%;box-sizing:border-box}
+.pw.pc .disc{background:radial-gradient(circle at 35% 30%,#FFF,#D6D6D6 70%);color:#0A0A0A;box-shadow:0 4px 0 #8A8A8A,0 7px 0 #5A5A5A}
+.pw.foe .disc{background:radial-gradient(circle at 35% 30%,#2E2E2E,#0A0A0A 70%);color:#F2F2F2;border:2px solid #F2F2F2;box-shadow:0 4px 0 #3A3A3A,0 7px 0 #1A1A1A}
+.pw.hid .disc{background:rgba(255,255,255,.04);color:#A3A3A3;border:2px dashed #8A8A8A}
+.pw.act .disc{animation:bob 1.6s ease-in-out infinite}
+.pw.act .sh{animation:shad 1.6s ease-in-out infinite}
+.pw.act::before{content:'';position:absolute;left:6%;right:6%;bottom:0;height:34%;border-radius:50%;border:2px solid #FFD60A;box-shadow:0 0 14px rgba(255,214,10,.6)}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-16%)}}
+@keyframes shad{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(.72);opacity:.4}}
+.d20{position:relative;width:84px;height:92px;display:grid;place-items:center;animation:tumble 3.2s cubic-bezier(.2,.7,.2,1) infinite}
+.d20::before{content:'';position:absolute;inset:0;background:linear-gradient(160deg,#FFFFFF,#BDBDBD);clip-path:polygon(50% 0,94% 25%,94% 75%,50% 100%,6% 75%,6% 25%)}
+.d20::after{content:'';position:absolute;inset:22% 18% 26%;background:#E6E6E6;clip-path:polygon(50% 0,100% 100%,0 100%);box-shadow:inset 0 0 0 1px #999}
+.d20 span{position:relative;z-index:1;font-weight:700;font-size:26px;color:#0A0A0A;margin-top:12px}
+@keyframes tumble{0%{transform:rotate(0) scale(.7)}45%{transform:rotate(1080deg) scale(1.08)}52%,100%{transform:rotate(1080deg) scale(1)}}
+.d6{width:58px;height:58px;border-radius:12px;background:linear-gradient(160deg,#1F1F1F,#0A0A0A);border:2px solid #F2F2F2;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:9px;box-sizing:border-box;gap:2px;box-shadow:0 5px 0 #000;animation:tumble6 3.2s .4s cubic-bezier(.2,.7,.2,1) infinite}
+.d6 i{width:9px;height:9px;border-radius:50%;background:#F2F2F2;place-self:center}
+.d6 i.o{background:transparent}
+@keyframes tumble6{0%{transform:rotate(0) translateX(-30px)}45%{transform:rotate(-540deg) translateX(0)}52%,100%{transform:rotate(-540deg)}}
+.dchip{font-weight:700;font-size:22px;color:#FF4D5E;-webkit-text-stroke:2px #000;paint-order:stroke;text-shadow:0 3px 0 #000;animation:pop 3.2s ease-out infinite}
+@keyframes pop{0%,38%{transform:translateY(10px) scale(.3);opacity:0}44%{transform:scale(1.4);opacity:1}52%{transform:scale(1)}80%{opacity:1}100%{transform:translateY(-24px);opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div class="pm" style="width: 1440px; height: 1480px; position: relative; overflow: hidden">
+
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 56px 64px 24px">
+<div style="display: flex; flex-direction: column; gap: 16px; max-width: 700px">
+<div class="lbl">Système visuel · v2</div>
+<h1 class="ttl" style="margin: 0; font-size: 84px; line-height: .95">Promptus</h1>
+<p class="nar" style="margin: 0; font-size: 30px; color: #CFCFCF; line-height: 1.2">Un plateau, des cartes, des personnages en pixel, des dés. Le décor reste noir et blanc ; les chiffres prennent la couleur.</p>
+</div>
+<div class="fan" style="width: 520px">
+<div style="left: 40px; transform: rotate(-16deg)"><dc-import name="GameCard" titre="Frappe" type="Action" texte="Hache d’armes, 1d12+3." valeur="+5" stat="atq" icon="epee" w="130" delay="0" hint-size="130px,182px"></dc-import></div>
+<div style="left: 130px; transform: rotate(-6deg) translateY(-14px)"><dc-import name="GameCard" titre="Parade" type="Réaction" texte="+2 CA jusqu’à ton tour." valeur="18" stat="ca" icon="bouclier" w="130" delay="0.12" hint-size="130px,182px"></dc-import></div>
+<div style="left: 220px; transform: rotate(5deg) translateY(-14px)"><dc-import name="GameCard" titre="Trait de feu" type="Sort" texte="1d10 feu, portée 36 m." valeur="2" stat="mag" icon="sort" w="130" delay="0.24" hint-size="130px,182px"></dc-import></div>
+<div style="left: 310px; transform: rotate(15deg)"><dc-import name="GameCard" titre="Promptus" etat="dos" w="130" delay="0.36" hint-size="130px,182px"></dc-import></div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; padding: 16px 64px">
+
+<section class="slab" style="padding: 22px; display: flex; flex-direction: column; gap: 18px; grid-column: span 2">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><div class="lbl">Personnages · pixel art façon Terraria</div><span style="font-size: 12px; color: #8C8C8C">20 × 26 pixels · contour sombre, ombres, 2 images par animation</span></div>
+<div style="display: flex; justify-content: space-around; align-items: flex-end; height: 130px">
+<sc-for list="{{heroes}}" as="h" hint-placeholder-count="5">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 12px">
+<dc-import name="Sprite" perso="{{h.id}}" px="4" anim="{{h.anim}}" cache="{{h.cache}}" hint-size="80px,104px"></dc-import>
+<span style="font-size: 12px; color: #A3A3A3; text-align: center">{{h.name}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; justify-content: space-around; align-items: flex-end; padding-top: 14px; border-top: 1px solid #262626">
+<sc-for list="{{states}}" as="h" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px">
+<dc-import name="Sprite" perso="borin" px="3" anim="{{h.anim}}" hint-size="60px,78px"></dc-import>
+<span class="lbl">{{h.name}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section class="slab" style="padding: 22px; display: flex; flex-direction: column; gap: 14px; grid-column: span 2">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><div class="lbl">Dés · à facettes, couleur de la stat</div><span style="font-size: 12px; color: #8C8C8C">la couleur dit ce que le dé lance · blanc pour une compétence</span></div>
+<div style="display: flex; align-items: center; gap: 28px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; flex: none">
+<dc-import name="De" de="d20" valeur="17" taille="150" couleur="atq" hint-size="150px,150px"></dc-import>
+<span class="lbl" style="color: #FF9F1C">d20 · attaque</span>
+</div>
+<div style="flex: 1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; align-items: end">
+<sc-for list="{{dice}}" as="d" hint-placeholder-count="5">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<dc-import name="De" de="{{d.de}}" valeur="{{d.v}}" taille="78" couleur="{{d.c}}" hint-size="78px,78px"></dc-import>
+<span class="lbl" style="color: {{d.hex}}">{{d.de}} · {{d.use}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section class="slab" style="padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<div class="lbl">Jauges</div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; color: #8C8C8C">PV en cœurs · le battement court de gauche à droite</span><dc-import name="Coeurs" pv="18" max="22" coeurs="8" px="3" hint-size="230px,24px"></dc-import></div>
+<div style="display: flex; flex-direction: column; gap: 6px; position: relative"><span style="font-size: 11px; color: #8C8C8C">Coup reçu · les cœurs éclatent</span><dc-import name="Coeurs" pv="12" max="22" degats="6" coeurs="8" px="3" hint-size="230px,24px"></dc-import><span class="dchip" style="position: absolute; right: 0; top: -8px">−6</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; color: #FF4D5E; font-weight: 700">En danger</span><dc-import name="Coeurs" pv="4" max="22" coeurs="8" px="3" hint-size="230px,24px"></dc-import></div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid #262626">
+<span style="font-size: 11px; color: #8C8C8C">Ressources en cases · une case = un point</span>
+<div style="display: flex; align-items: center; gap: 10px"><span class="gemw"><dc-import name="Gemme" stat="mag" valeur="3" taille="28" hint-size="28px,28px"></dc-import></span><dc-import name="Cases" stat="mag" valeur="3" max="4" h="14" largeur="120" hint-size="120px,20px"></dc-import><span style="font-size: 11px; color: #A3A3A3">sorts</span></div>
+<div style="display: flex; align-items: center; gap: 10px"><span class="gemw"><dc-import name="Gemme" stat="mvt" valeur="4" taille="28" hint-size="28px,28px"></dc-import></span><dc-import name="Cases" stat="mvt" valeur="4" max="6" perdus="2" h="14" largeur="170" hint-size="170px,20px"></dc-import><span style="font-size: 11px; color: #A3A3A3">cases</span></div>
+</div>
+<div style="display: flex; align-items: center; gap: 14px; padding-top: 12px; border-top: 1px solid #262626">
+<dc-import name="Horloge" parts="6" rempli="3" taille="84" hint-size="84px,84px"></dc-import>
+<span style="font-size: 12px; color: #A3A3A3; line-height: 1.5">Horloge de menace : un anneau de cases, la prochaine part clignote.</span>
+</div>
+</section>
+
+<section class="slab" style="padding: 22px; display: flex; flex-direction: column; gap: 16px">
+<div class="lbl">Boutons · des cartes</div>
+<dc-import name="Bouton" titre="Attaquer" sous="Hache d’armes · 1d12+3" stat="atq" valeur="+5" variante="clair" etat="demo" largeur="268" hint-size="268px,56px"></dc-import>
+<dc-import name="Bouton" titre="Fin du tour" sous="Il te reste 2 cases" stat="none" icon="sablier" variante="sombre" largeur="268" hint-size="268px,56px"></dc-import>
+<div style="display: flex; gap: 10px">
+<dc-import name="Bouton" titre="Accepter" stat="none" icon="plus" variante="clair" taille="petit" largeur="129" hint-size="129px,36px"></dc-import>
+<dc-import name="Bouton" titre="Refuser" stat="none" icon="stop" variante="sombre" taille="petit" largeur="129" hint-size="129px,36px"></dc-import>
+</div>
+<p style="margin: 0; font-size: 12px; color: #A3A3A3; line-height: 1.5">Cadre de carte, titre en Cinzel, la stat en gemme quand l’action en dépend. Ivoire pour l’action principale, noir pour le reste. Enfoncé, le bouton bascule vers l’avant. Au téléphone en combat : la grappe arcade.</p>
+</section>
+<section class="slab" style="padding: 22px; display: flex; flex-direction: column; gap: 16px; grid-column: span 2">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><div class="lbl">Gemmes · en petite grille</div><span style="font-size: 12px; color: #8C8C8C">une forme par statistique, facettée par la lumière, un reflet passe case par case</span></div>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; justify-items: center">
+<sc-for list="{{gems}}" as="g" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px">
+<span class="gemw"><dc-import name="Gemme" stat="{{g.stat}}" valeur="{{g.v}}" taille="72" hint-size="72px,72px"></dc-import></span>
+<span class="lbl" style="color: {{g.hex}}">{{g.code}}</span>
+<span style="font-size: 11px; color: #8C8C8C">{{g.shape}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; align-items: flex-end; gap: 22px; padding-top: 14px; border-top: 1px solid #262626">
+<span class="lbl" style="align-self: center">Tailles</span>
+<span class="gemw"><dc-import name="Gemme" stat="atq" valeur="+5" taille="24" hint-size="24px,24px"></dc-import></span>
+<span class="gemw"><dc-import name="Gemme" stat="atq" valeur="+5" taille="40" hint-size="40px,40px"></dc-import></span>
+<span class="gemw"><dc-import name="Gemme" stat="atq" valeur="+5" taille="64" hint-size="64px,64px"></dc-import></span>
+<span class="gemw"><dc-import name="Gemme" stat="atq" valeur="+5" taille="96" hint-size="96px,96px"></dc-import></span>
+<span style="font-size: 12px; color: #8C8C8C; line-height: 1.5; flex: 1">7 × 7 cases sous 30 px, 9 × 9 jusqu’à 56 px, 11 × 11 au-delà : la gemme reste lisible du coin de carte à la TV.</span>
+</div>
+</section>
+
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; padding: 20px 64px">
+
+<section class="slab" style="padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<div class="lbl">Typographie</div>
+<div class="ttl" style="font-size: 34px">La crypte des Valombre</div>
+<div class="nar" style="font-size: 24px; color: #D4D4D4">« La porte cède. Derrière, l’odeur du fer et de la cire froide. »</div>
+<div style="font-size: 18px; font-weight: 600"><span style="color: #FF4D5E">PV 18/22</span> · <span style="color: #3D9BFF">CA 16</span> · <span style="color: #FF9F1C">ATQ +5</span></div>
+<p style="margin: 0; font-size: 12px; color: #8C8C8C">Cinzel pour les titres et les cartes · Cormorant pour ce qui se lit à voix haute · Chakra Petch pour l’interface et les chiffres.</p>
+</section>
+
+<section class="slab" style="padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<div class="lbl">Couleurs</div>
+<div style="display: flex; gap: 6px">
+<span style="flex: 1; height: 48px; border-radius: 8px; background: #050505; border: 1px solid #2C2C2C"></span>
+<span style="flex: 1; height: 48px; border-radius: 8px; background: #181818; border: 1px solid #2C2C2C"></span>
+<span style="flex: 1; height: 48px; border-radius: 8px; background: #8C8C8C"></span>
+<span style="flex: 1; height: 48px; border-radius: 8px; background: #EDEDED"></span>
+</div>
+<div style="display: flex; gap: 6px">
+<span style="flex: 1; height: 30px; border-radius: 6px; background: #FF4D5E"></span>
+<span style="flex: 1; height: 30px; border-radius: 6px; background: #FF9F1C"></span>
+<span style="flex: 1; height: 30px; border-radius: 6px; background: #3D9BFF"></span>
+<span style="flex: 1; height: 30px; border-radius: 6px; background: #B28CFF"></span>
+<span style="flex: 1; height: 30px; border-radius: 6px; background: #2EE6A6"></span>
+<span style="flex: 1; height: 30px; border-radius: 6px; background: #FFD60A"></span>
+</div>
+<p style="margin: 0; font-size: 12px; color: #8C8C8C; line-height: 1.5">Table noire, cartes ivoire. Six couleurs, réservées aux statistiques : PV, ATQ, CA, MAG, MVT, INIT. Rien d’autre n’est en couleur.</p>
+</section>
+
+<section class="slab" style="padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<div class="lbl">La grille de carrés : deux usages, pas plus</div>
+<div style="display: flex; gap: 12px">
+<div style="flex: 1; display: flex; flex-direction: column; gap: 8px">
+<div style="height: 96px; border-radius: 10px; overflow: hidden; border: 1px solid #2C2C2C"><dc-import name="RadialGrid" cols="14" rows="7" pitch="14" pattern="scintillement" hint-size="196px,98px"></dc-import></div>
+<span style="font-size: 12px; color: #A3A3A3">L’inconnu : le brouillard de la carte</span>
+</div>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 8px">
+<div style="height: 96px; border-radius: 10px; overflow: hidden; border: 1px solid #2C2C2C"><dc-import name="RadialGrid" cols="14" rows="7" pitch="14" pattern="vague" ox="0" hint-size="196px,98px"></dc-import></div>
+<span style="font-size: 12px; color: #A3A3A3">L’IA réfléchit : un petit témoin</span>
+</div>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1480}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      heroes: [
+        { id: 'borin', name: 'Borin · marche', anim: 'marche', cache: 'false' },
+        { id: 'lyra', name: 'Lyra · repos', anim: 'repos', cache: 'false' },
+        { id: 'sef', name: 'Sef · repos', anim: 'repos', cache: 'false' },
+        { id: 'gobelin', name: 'Gobelin · adversaire', anim: 'repos', cache: 'false' },
+        { id: 'chef', name: 'Caché (MJ seul)', anim: 'repos', cache: 'true' }
+      ],
+      gems: [
+        { stat: 'pv', v: '18', code: 'PV', shape: 'cœur', hex: '#FF4D5E' },
+        { stat: 'atq', v: '+5', code: 'ATQ', shape: 'losange', hex: '#FF9F1C' },
+        { stat: 'ca', v: '16', code: 'CA', shape: 'écu', hex: '#3D9BFF' },
+        { stat: 'mag', v: '3', code: 'MAG', shape: 'hexagone', hex: '#B28CFF' },
+        { stat: 'mvt', v: '9', code: 'MVT', shape: 'flèche', hex: '#2EE6A6' },
+        { stat: 'ini', v: '17', code: 'INIT', shape: 'rond', hex: '#FFD60A' }
+      ],
+      dice: [
+        { de: 'd4', v: 3, c: 'mag', hex: '#B28CFF', use: 'sort' }, { de: 'd6', v: 5, c: 'pv', hex: '#FF4D5E', use: 'dégâts' },
+        { de: 'd8', v: 7, c: 'ca', hex: '#3D9BFF', use: 'parade' }, { de: 'd10', v: 9, c: 'blanc', hex: '#8C8C8C', use: 'compétence' },
+        { de: 'd12', v: 11, c: 'pv', hex: '#FF4D5E', use: 'hache' }
+      ],
+      states: [
+        { name: 'Repos', anim: 'repos' }, { name: 'Marche', anim: 'marche' },
+        { name: 'Attaque', anim: 'attaque' }, { name: 'Touché', anim: 'touche' }, { name: 'En danger', anim: 'danger' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

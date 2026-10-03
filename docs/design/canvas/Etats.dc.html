@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>États des personnages</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A}
+.pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 80% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.ttl{font-family:'Cinzel',Georgia,serif;font-weight:800;letter-spacing:.03em}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.slab{background:linear-gradient(180deg,#181818,#111);border:1px solid #2C2C2C;border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 30px rgba(0,0,0,.45)}
+.desc{margin:0;font-size:12px;color:#A3A3A3;line-height:1.5}
+.stage{height:132px;display:flex;align-items:flex-end;justify-content:center;border-radius:12px;background:radial-gradient(60% 30% at 50% 92%,rgba(255,255,255,.08),transparent),linear-gradient(180deg,#121212,#1A1A1A);padding-bottom:10px;box-sizing:border-box}
+.pf{display:inline-grid;place-items:end center;border-radius:8px;background:linear-gradient(180deg,#262626,#121212);border:2px solid #3A3A3A;box-shadow:0 3px 0 #000;padding:2px 3px 0;flex:none}
+</style>
+</helmet>
+<div class="pm" style="width: 1440px; height: 1100px; position: relative; overflow: hidden">
+
+<div style="padding: 48px 64px 20px; display: flex; flex-direction: column; gap: 10px; max-width: 1000px">
+<div class="lbl">Fondations · états</div>
+<h1 class="ttl" style="margin: 0; font-size: 46px">États des personnages</h1>
+<p style="margin: 0; font-size: 15px; color: #A3A3A3; line-height: 1.5">Un état se voit deux fois : sur le personnage, par un effet en pixel (bulles, étoiles, flammes, chaînes), et dans l’interface, par un badge carré avec les tours restants. Badge noir pour ce qui gêne, ivoire pour ce qui aide.</p>
+</div>
+
+<div style="padding: 0 64px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px">
+<sc-for list="{{etats}}" as="e" hint-placeholder-count="8">
+<section class="slab" style="padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div class="stage"><dc-import name="Perso" perso="{{e.perso}}" px="4" etat="{{e.id}}" hint-size="80px,104px"></dc-import></div>
+<div style="display: flex; align-items: center; gap: 10px">
+<dc-import name="Etat" etat="{{e.id}}" tours="{{e.t}}" taille="30" hint-size="30px,30px"></dc-import>
+<span class="ttl" style="font-size: 17px">{{e.name}}</span>
+</div>
+<p class="desc">{{e.rule}}</p>
+<p class="desc" style="color: #6E6E6E">{{e.fx}}</p>
+</section>
+</sc-for>
+</div>
+
+<section class="slab" style="padding: 20px 22px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span class="lbl">Initiative du MJ</span>
+<div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: #141414; border: 1px solid #2C2C2C">
+<span class="pf"><dc-import name="Sprite" perso="borin" px="1" anim="repos" hint-size="20px,26px"></dc-import></span>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 5px"><span style="font-size: 13px">Borin</span><dc-import name="Coeurs" pv="9" max="31" coeurs="8" px="2" hint-size="151px,16px"></dc-import></div>
+<dc-import name="Etat" etat="poison" tours="3" taille="24" hint-size="24px,24px"></dc-import>
+<dc-import name="Etat" etat="beni" tours="1" taille="24" hint-size="24px,24px"></dc-import>
+</div>
+<p class="desc">Les badges suivent le nom, le MJ les retire d’un geste.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span class="lbl">Sur le plateau</span>
+<div style="display: flex; align-items: flex-end; gap: 22px; height: 80px; padding: 0 10px; border-radius: 12px; background: #1D1D1D">
+<div style="position: relative"><dc-import name="Perso" perso="borin" px="2" etat="poison" hint-size="40px,52px"></dc-import><span style="position: absolute; right: -14px; top: -10px"><dc-import name="Etat" etat="poison" tours="" taille="18" hint-size="18px,18px"></dc-import></span></div>
+<div style="position: relative"><dc-import name="Perso" perso="gobelin" px="2" etat="etourdi" hint-size="40px,52px"></dc-import><span style="position: absolute; right: -14px; top: -10px"><dc-import name="Etat" etat="etourdi" tours="" taille="18" hint-size="18px,18px"></dc-import></span></div>
+<div style="position: relative"><dc-import name="Perso" perso="lyra" px="2" etat="invisible" hint-size="40px,52px"></dc-import></div>
+</div>
+<p class="desc">L’effet suffit sur la TV ; un petit badge sans chiffre sur le pion. Un joueur invisible n’apparaît pas sur la TV, il se voit en fantôme sur son téléphone.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span class="lbl">Téléphone du joueur</span>
+<div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #141414; border: 1px solid #2C2C2C">
+<dc-import name="Gemme" stat="pv" valeur="9" taille="34" hint-size="34px,34px"></dc-import>
+<dc-import name="Gemme" stat="ca" valeur="18" taille="30" hint-size="30px,30px"></dc-import>
+<span style="flex: 1"></span>
+<dc-import name="Etat" etat="poison" tours="3" taille="30" neuf="true" hint-size="30px,30px"></dc-import>
+<dc-import name="Etat" etat="beni" tours="1" taille="30" hint-size="30px,30px"></dc-import>
+</div>
+<p class="desc">Un nouvel état tombe en tampon. Toucher le badge ouvre la règle complète.</p>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      etats: [
+        { id: 'poison', perso: 'borin', t: '3', name: 'Empoisonné', rule: 'Désavantage aux attaques et aux tests.', fx: 'Teinte malade qui pulse, bulles qui montent.' },
+        { id: 'etourdi', perso: 'gobelin', t: '1', name: 'Étourdi', rule: 'Ne peut ni agir ni bouger. Les attaques contre lui ont l’avantage.', fx: 'Étoiles qui tournent, le corps tangue.' },
+        { id: 'endormi', perso: 'sef', t: '', name: 'Endormi', rule: 'Inconscient jusqu’à un coup ou une secousse.', fx: 'Respiration lente, des « z » qui s’envolent.' },
+        { id: 'invisible', perso: 'lyra', t: '2', name: 'Invisible', rule: 'Les attaques contre lui ont le désavantage.', fx: 'Fantôme qui clignote, contour en pointillés.' },
+        { id: 'feu', perso: 'gobelin', t: '2', name: 'En feu', rule: '1d6 dégâts de feu au début du tour. Une action pour s’éteindre.', fx: 'Flammes qui lèchent, le corps vacille.' },
+        { id: 'entrave', perso: 'borin', t: '', name: 'Entravé', rule: 'Vitesse 0, désavantage aux attaques.', fx: 'Chaînes en travers, il se débat.' },
+        { id: 'effraye', perso: 'sef', t: '1', name: 'Effrayé', rule: 'Ne peut pas s’approcher de ce qui l’effraie.', fx: 'Tremblement rapide, goutte de sueur.' },
+        { id: 'beni', perso: 'lyra', t: '10', name: 'Béni', rule: '+1d4 aux attaques et aux sauvegardes.', fx: 'Auréole, lueur blanche, étincelles.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

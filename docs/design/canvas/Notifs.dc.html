@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Notifications</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A}
+.pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 80% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.ttl{font-family:'Cinzel',Georgia,serif;font-weight:800;letter-spacing:.03em}
+.nar{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-weight:500}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.slab{background:linear-gradient(180deg,#181818,#111);border:1px solid #2C2C2C;border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 30px rgba(0,0,0,.45)}
+.desc{margin:0;font-size:12px;color:#A3A3A3;line-height:1.5}
+
+/* phone with stacking toasts */
+.phone{position:relative;width:390px;height:780px;border-radius:44px;overflow:hidden;border:10px solid #050505;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7);background:radial-gradient(130% 70% at 50% 0%,#1C1C1C 0,#0C0C0C 60%,#050505 100%);box-sizing:border-box;flex:none}
+.phone .dim{position:absolute;inset:0;padding:70px 20px;display:flex;flex-direction:column;gap:14px;opacity:.35}
+.toast{position:absolute;left:12px;right:12px;display:flex;align-items:center;gap:12px;padding:8px 12px 8px 8px;border-radius:12px;opacity:0;animation:toast 12s cubic-bezier(.2,1.2,.3,1) infinite}
+@keyframes toast{0%{opacity:0;transform:translateY(-40px) scale(.9)}3%{opacity:1;transform:none}82%{opacity:1;transform:none}88%,100%{opacity:0;transform:translateX(110%)}}
+.toast .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.toast .k{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.toast .m{font-size:13px;line-height:1.3}
+.t-ivoire{background:#EDEDED;color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A,0 6px 0 #5A5A5A,0 14px 24px rgba(0,0,0,.6);outline:1.5px solid #0A0A0A;outline-offset:-5px}
+.t-ivoire .k{color:#5A5A5A}
+.t-noir{background:#0A0A0A;color:#F2F2F2;box-shadow:0 0 0 1.5px #8C8C8C,0 4px 0 #000,0 14px 24px rgba(0,0,0,.6)}
+.t-noir .k{color:#8C8C8C}
+.t-trait{background:rgba(10,10,10,.92);color:#F2F2F2;box-shadow:0 0 0 1px #3A3A3A,0 14px 24px rgba(0,0,0,.6)}
+.t-trait .k{color:#8C8C8C}
+.quill{width:40px;height:40px;border-radius:8px;display:grid;place-items:center;background:#1A1A1A;border:1px solid #3A3A3A;flex:none}
+
+/* TV level up */
+.lvl{position:relative;height:440px;border-radius:14px;overflow:hidden;background:radial-gradient(60% 70% at 50% 55%,#262626,#0A0A0A 75%)}
+.lvl .rays{position:absolute;left:50%;top:55%;width:900px;height:900px;margin:-450px 0 0 -450px;border-radius:50%;background:repeating-conic-gradient(rgba(255,255,255,.09) 0 7deg,transparent 7deg 20deg);-webkit-mask-image:radial-gradient(circle,#000 15%,transparent 60%);mask-image:radial-gradient(circle,#000 15%,transparent 60%);animation:spin 20s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lvl .hero{position:absolute;left:50%;bottom:150px;margin-left:-60px;animation:jump 7s cubic-bezier(.3,1.4,.5,1) infinite}
+@keyframes jump{0%,8%{transform:translateY(0)}14%{transform:translateY(-60px)}20%{transform:translateY(0) scale(1.08,.92)}24%,100%{transform:none}}
+.lvl .burst{position:absolute;left:50%;bottom:150px;width:260px;height:260px;margin:0 0 -60px -130px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.85),transparent 60%);opacity:0;animation:burst 7s ease-out infinite}
+@keyframes burst{0%,13%{opacity:0;transform:scale(.2)}16%{opacity:1;transform:scale(1)}30%,100%{opacity:0;transform:scale(1.6)}}
+.lvl .big{position:absolute;left:0;right:0;top:36px;text-align:center;animation:slam 7s cubic-bezier(.2,1.4,.3,1) infinite}
+.lvl .big span{display:inline-block;font-family:'Cinzel',serif;font-weight:800;font-size:72px;line-height:1;color:#0A0A0A;background:#F2F2F2;padding:8px 28px;transform:rotate(-3deg);box-shadow:0 6px 0 #6E6E6E,0 20px 40px rgba(0,0,0,.6)}
+@keyframes slam{0%,15%{opacity:0;transform:scale(3)}21%{opacity:1;transform:scale(.94)}25%{transform:scale(1.03)}28%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+.lvl .gains{position:absolute;left:0;right:0;bottom:36px;display:flex;justify-content:center;gap:34px}
+.gain{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0;animation:gain 7s cubic-bezier(.2,1.4,.3,1) infinite}
+@keyframes gain{0%,30%{opacity:0;transform:translateY(30px) scale(.4)}36%{opacity:1;transform:scale(1.15)}40%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+.gain b{position:absolute;right:-22px;top:-12px;font-size:22px;font-weight:700;-webkit-text-stroke:2px #000;paint-order:stroke;text-shadow:0 3px 0 #000}
+
+/* skill unlock flip */
+.flip{position:relative;width:180px;height:252px;perspective:1000px;flex:none}
+.flip .card{position:absolute;inset:0;transform-style:preserve-3d;animation:flip 6s cubic-bezier(.3,1.3,.4,1) infinite}
+@keyframes flip{0%,30%{transform:rotateY(0) translateY(0)}36%{transform:rotateY(90deg) translateY(-30px) scale(1.1)}46%,92%{transform:rotateY(180deg)}100%{transform:rotateY(180deg)}}
+.flip .side{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.flip .front{transform:rotateY(180deg)}
+.flip .rays{position:absolute;inset:-60px;border-radius:50%;background:repeating-conic-gradient(rgba(255,255,255,.12) 0 6deg,transparent 6deg 20deg);-webkit-mask-image:radial-gradient(circle,#000 25%,transparent 65%);mask-image:radial-gradient(circle,#000 25%,transparent 65%);opacity:0;animation:frays 6s ease-out infinite}
+@keyframes frays{0%,38%{opacity:0;transform:rotate(0)}48%,88%{opacity:1}100%{opacity:0;transform:rotate(60deg)}}
+.unl{opacity:0;animation:unl 6s ease-out infinite}
+@keyframes unl{0%,44%{opacity:0;transform:translateY(10px)}52%,92%{opacity:1;transform:none}100%{opacity:0}}
+
+.log{display:flex;align-items:center;gap:10px;font-size:12px;padding:6px 8px;border-radius:8px;background:#141414}
+.log time{font-weight:600;color:#6E6E6E;width:38px;flex:none}
+@media (prefers-reduced-motion: reduce){.pm *{animation:none!important}.toast,.gain,.unl,.lvl .big{opacity:1}.flip .card{transform:rotateY(180deg)}}
+</style>
+</helmet>
+<div class="pm" style="width: 1440px; height: 1120px; position: relative; overflow: hidden">
+
+<div style="padding: 48px 64px 20px; display: flex; flex-direction: column; gap: 10px; max-width: 1040px">
+<div class="lbl">Fondations · notifications</div>
+<h1 class="ttl" style="margin: 0; font-size: 46px">Notifications</h1>
+<p style="margin: 0; font-size: 15px; color: #A3A3A3; line-height: 1.5">Trois tailles. Le téléphone reçoit des cartes qui tombent du haut et s’empilent. La TV joue les grands moments en plein écran. Le journal du MJ garde tout, une ligne par événement.</p>
+</div>
+
+<div style="padding: 0 64px; display: flex; gap: 24px">
+
+<div style="display: flex; flex-direction: column; gap: 10px; flex: none">
+<span class="lbl">Téléphone · cartes empilées</span>
+<div class="phone">
+<div class="dim"><div style="height: 120px; border-radius: 14px; background: #EDEDED"></div><div class="nar" style="font-size: 19px">L’escalier descend plus loin que la colline…</div><div style="height: 150px; border-radius: 12px; background: #1A1A1A"></div></div>
+
+<div class="toast t-ivoire" style="top: 56px; animation-delay: 0s">
+<dc-import name="Objet" objet="bouclier" rarete="rare" taille="48" pips="false" hint-size="48px,48px"></dc-import>
+<div class="tx"><span class="k">Butin · rare</span><span class="m"><b class="ttl">Écu de la garde</b> rejoint ton sac.</span></div>
+</div>
+
+<div class="toast t-noir" style="top: 136px; animation-delay: 1.4s">
+<span style="padding: 0 9px"><dc-import name="Etat" etat="poison" tours="3" taille="30" neuf="true" hint-size="30px,30px"></dc-import></span>
+<div class="tx"><span class="k">État · 3 tours</span><span class="m">Tu es <b>empoisonné</b> : désavantage aux attaques.</span></div>
+</div>
+
+<div class="toast t-trait" style="top: 216px; animation-delay: 2.8s">
+<dc-import name="Objet" objet="parchemin" rarete="commune" taille="48" pips="false" hint-size="48px,48px"></dc-import>
+<div class="tx"><span class="k">Indice</span><span class="m">Le MJ vous montre <b>Registre des sépultures</b>.</span></div>
+</div>
+
+<div class="toast t-trait" style="top: 296px; animation-delay: 4.2s">
+<span class="quill"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2F2F2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l6-6M20 4c-6 0-11 5-11 11l2 2c6 0 11-5 11-11z"></path></svg></span>
+<div class="tx"><span class="k">Mot du MJ · à toi seul</span><span class="m nar" style="font-size: 16px">« Tu reconnais l’écriture de ton père. »</span></div>
+</div>
+
+<div class="toast t-ivoire" style="top: 376px; animation-delay: 5.6s">
+<dc-import name="Gemme" stat="pv" valeur="38" taille="44" hint-size="44px,44px"></dc-import>
+<div class="tx"><span class="k">Niveau 4</span><span class="m"><b>+7 PV</b>, +1 attaque, une nouvelle compétence.</span></div>
+</div>
+</div>
+<p class="desc" style="max-width: 390px">Ivoire : une bonne nouvelle. Noir : ce qui te gêne. Filet : une information. Un glissement à droite pour ranger, tout reste dans le journal.</p>
+</div>
+
+<div style="flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0">
+
+<section class="slab" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="lbl">TV · niveau supérieur</span><span style="font-size: 12px; color: #8C8C8C">le héros saute, éclair blanc, le niveau tombe, les gains surgissent un par un</span></div>
+<div class="lvl">
+<div class="rays"></div>
+<div class="burst"></div>
+<div class="hero"><dc-import name="Perso" perso="borin" px="6" etat="beni" hint-size="120px,156px"></dc-import></div>
+<div class="big"><span>Niveau 4</span></div>
+<div class="gains">
+<div class="gain" style="animation-delay: 0s"><dc-import name="Gemme" stat="pv" valeur="38" taille="64" hint-size="64px,64px"></dc-import><b style="color: #FF4D5E">+7</b><span class="lbl" style="color: #FF4D5E">PV</span></div>
+<div class="gain" style="animation-delay: .35s"><dc-import name="Gemme" stat="atq" valeur="+6" taille="64" hint-size="64px,64px"></dc-import><b style="color: #FF9F1C">+1</b><span class="lbl" style="color: #FF9F1C">ATQ</span></div>
+<div class="gain" style="animation-delay: .7s"><div style="width: 64px; display: grid; place-items: center"><dc-import name="GameCard" titre="Rage" etat="dos" w="60" hint-size="60px,84px"></dc-import></div><b style="color: #F2F2F2">+1</b><span class="lbl">Compétence</span></div>
+</div>
+</div>
+</section>
+
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px">
+
+<section class="slab" style="padding: 18px; display: flex; gap: 18px; align-items: center">
+<div class="flip">
+<div class="rays"></div>
+<div class="card">
+<div class="side"><dc-import name="GameCard" titre="Promptus" etat="dos" w="180" hint-size="180px,252px"></dc-import></div>
+<div class="side front"><dc-import name="GameCard" titre="Rage du nain" type="Bonus · épique" texte="+2 dégâts et résistance aux coups jusqu’à la fin du combat." valeur="+2" stat="atq" icon="epee" rarete="epique" w="180" hint-size="180px,252px"></dc-import></div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span class="lbl">Compétence débloquée</span>
+<span class="ttl unl" style="font-size: 22px">Rage du nain</span>
+<p class="desc">La carte arrive de dos, se retourne en sautant, sa matière dit sa rareté. Même geste sur le téléphone et sur la TV.</p>
+</div>
+</section>
+
+<section class="slab" style="padding: 18px; display: flex; flex-direction: column; gap: 8px">
+<span class="lbl">Journal du MJ</span>
+<div class="log"><time>21:14</time><dc-import name="Objet" objet="bouclier" rarete="rare" taille="24" pips="false" hint-size="24px,24px"></dc-import><span>Lyra reçoit <b>Écu de la garde</b></span></div>
+<div class="log"><time>21:16</time><dc-import name="Etat" etat="poison" tours="" taille="24" hint-size="24px,24px"></dc-import><span>Borin est <b>empoisonné</b>, 3 tours</span></div>
+<div class="log"><time>21:18</time><dc-import name="Etat" etat="beni" tours="" taille="24" hint-size="24px,24px"></dc-import><span>Sef bénit Borin</span></div>
+<div class="log"><time>21:22</time><dc-import name="Gemme" stat="pv" valeur="38" taille="24" anim="false" hint-size="24px,24px"></dc-import><span>Borin passe <b>niveau 4</b></span></div>
+<div class="log"><time>21:23</time><dc-import name="Objet" objet="parchemin" rarete="commune" taille="24" pips="false" hint-size="24px,24px"></dc-import><span>Indice montré : <b>Registre</b></span></div>
+</section>
+
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
