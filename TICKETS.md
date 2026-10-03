@@ -123,7 +123,7 @@ partagé, voyage, fin de session, version tablette.
 
 **Origine** — `docs/design-brief.md`
 
-### `design/verify-canvas-rendering` · todo
+### `design/verify-canvas-rendering` · doing
 
 **Pourquoi** — Les planches ont été écrites sans pouvoir les voir : le
 rendu n'a été contrôlé que par des scripts (classes définies, logique
@@ -138,6 +138,15 @@ autres.
 
 **Fini quand** — Chaque planche a été vue rendue, et Romain valide les
 trois planches de la soirée.
+
+**État** — Les trois planches de la soirée ont été vues rendues dans
+Chrome le 3 octobre 2026 (les 12 moments de « Jouer » cliqués) et
+corrigées : personnages cachés sous les hauts de mur (rayons X), brouillard
+en carrés blancs quand les animations sont réduites, bannière « À toi,
+Borin ! » sous la carte, titre de carte d'indice décentré, main de cartes
+hors de l'écran, libellé « Frappe » illisible, sélecteur de moments qui
+sautait, dégâts TV au-dessus du mauvais personnage. Reste : validation des
+trois planches par Romain, puis toutes les autres planches.
 
 **Origine** — Romain, 3 octobre 2026 : « TV · la soirée côté TV est
 cassé », « c'est pas aligné ».

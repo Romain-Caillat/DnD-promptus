@@ -16,6 +16,7 @@ body{margin:0;background:#0A0A0A}
 .pl .shw{background:linear-gradient(90deg,rgba(0,0,0,.45),rgba(0,0,0,0))}
 .pl .face::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(0,0,0,.45))}
 .pl .grid{position:absolute;pointer-events:none;opacity:.5}
+.pl .cap.xr{opacity:.32}
 /* crypte */
 .th-crypte .fl{background:#1D1D1D;box-shadow:inset 1px 1px 0 rgba(255,255,255,.07),inset -1px -1px 0 rgba(0,0,0,.7)}
 .th-crypte .fl.v1{background:#212121}.th-crypte .fl.v2{background:#191919}
@@ -48,7 +49,7 @@ body{margin:0;background:#0A0A0A}
 .pl .tk{position:absolute;display:grid;place-items:end center}
 .pl .tk.act::before{content:'';position:absolute;left:8%;right:8%;bottom:4%;height:26%;border-radius:50%;border:2px solid #FFD60A;box-shadow:0 0 10px rgba(255,214,10,.6)}
 .pl .fog{background:#070707;z-index:900;display:grid;place-items:center}
-.pl .fog i{display:block;width:24%;height:24%;background:#F2F2F2;animation:plFog 2.6s ease-in-out infinite}
+.pl .fog i{display:block;width:24%;height:24%;background:#F2F2F2;opacity:.12;transform:scale(.7);animation:plFog 2.6s ease-in-out infinite}
 @keyframes plFog{0%,100%{opacity:.05;transform:scale(.6)}50%{opacity:.4;transform:scale(1)}}
 .pl .hid{z-index:880;display:grid;place-items:center;outline:2px dashed #F2F2F2;outline-offset:-3px;border-radius:6px;opacity:.85}
 .pl .hid span{position:absolute;top:-1.6em;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:#F2F2F2;color:#0A0A0A;padding:1px 5px;border-radius:3px;white-space:nowrap}
@@ -116,9 +117,21 @@ class Component extends DCLogic {
         if (wall(x - 1, y)) cell('shw', x * P, top(y), Math.round(P * 0.2), P, 3);
       }
     }
+    const spx = Math.max(1, Math.round(P / 22));
+    const sw = 20 * spx, sh = 26 * spx;
+    const combat = String(this.props.combat ?? false) === 'true';
+    const toks = carte === 'salle' && combat
+      ? [{ perso: 'borin', x: 4, y: 6, act: true, etat: 'aucun', anim: 'repos' }, { perso: 'gobelin', x: 5, y: 6, etat: 'aucun', anim: 'repos', foe: true }, { perso: 'lyra', x: 2, y: 7, etat: 'aucun', anim: 'repos' }, { perso: 'gobelin', x: 7, y: 7, etat: 'aucun', anim: 'repos', foe: true }, { perso: 'sef', x: 3, y: 4, etat: 'aucun', anim: 'repos' }]
+      : carte === 'salle'
+      ? [{ perso: 'borin', x: Number(this.props.bx ?? 4), y: Number(this.props.by ?? 6), act: true, etat: 'aucun', anim: 'repos' }, { perso: 'lyra', x: 5, y: 4, etat: 'aucun', anim: 'repos' }, { perso: 'gobelin', x: 11, y: 2, etat: 'aucun', anim: 'repos', foe: true }, { perso: 'sef', x: 9, y: 7, etat: 'beni', anim: 'repos' }]
+      : [{ perso: 'borin', x: 7, y: 4, act: true, etat: 'aucun', anim: 'marche' }, { perso: 'lyra', x: 8, y: 4, etat: 'aucun', anim: 'marche' }];
+    const tokens = toks
+      .filter((t) => !(vue === 'joueur' && hiddenZone(t.x, t.y)))
+      .map((t) => ({ ...t, cx: t.x, cy: t.y, cls: t.act ? 'act' : '', x: t.x * P, y: top(t.y) + P - sh - Math.round(P * 0.08), h: sh + Math.round(P * 0.08), z: 15 + t.y * 10 }));
     // Three-quarter walls: the cap is drawn one tile up, the brick face fills the wall's own cell
     // when the cell below is open. Later rows paint over earlier ones, so a token standing just
-    // north of a wall goes behind its cap.
+    // north of a wall goes behind its cap: that cap turns see-through (x-ray) so the token stays visible.
+    const occupied = new Set(tokens.map((t) => t.cx + ',' + t.cy));
     const rim = Math.max(2, Math.round(P * 0.08));
     for (let y = 0; y < R; y++) {
       for (let x = 0; x < C; x++) {
@@ -130,7 +143,7 @@ class Component extends DCLogic {
           !wall(x + 1, y) ? 'inset -' + rim + 'px 0 0 rgba(0,0,0,.35)' : '',
           !wall(x, y + 1) ? 'inset 0 -' + rim + 'px 0 rgba(0,0,0,.4)' : ''
         ].filter(Boolean).join(', ');
-        cell('cap', x * P, top(y) - P, P, P, z, bs);
+        cell(occupied.has(x + ',' + (y - 1)) ? 'cap xr' : 'cap', x * P, top(y) - P, P, P, z, bs);
         if (!wall(x, y + 1)) cell('face', x * P, top(y), P, P, z);
       }
     }
@@ -141,17 +154,6 @@ class Component extends DCLogic {
         cells.push({ cls: 'fog', x: x * P, y: top(y) - (y === 0 ? P : 0), w: P, h: P + (y === 0 ? P : 0), z: 900, bs: 'none', dot: true, d: (-(r - Math.floor(r)) * 2.6).toFixed(2) });
       }
     }
-    const spx = Math.max(1, Math.round(P / 22));
-    const sw = 20 * spx, sh = 26 * spx;
-    const combat = String(this.props.combat ?? false) === 'true';
-    const toks = carte === 'salle' && combat
-      ? [{ perso: 'borin', x: 4, y: 6, act: true, etat: 'aucun', anim: 'repos' }, { perso: 'gobelin', x: 5, y: 6, etat: 'aucun', anim: 'repos', foe: true }, { perso: 'lyra', x: 2, y: 7, etat: 'aucun', anim: 'repos' }, { perso: 'gobelin', x: 7, y: 7, etat: 'aucun', anim: 'repos', foe: true }, { perso: 'sef', x: 3, y: 4, etat: 'aucun', anim: 'repos' }]
-      : carte === 'salle'
-      ? [{ perso: 'borin', x: Number(this.props.bx ?? 4), y: Number(this.props.by ?? 6), act: true, etat: 'aucun', anim: 'repos' }, { perso: 'lyra', x: 5, y: 4, etat: 'aucun', anim: 'repos' }, { perso: 'gobelin', x: 11, y: 2, etat: 'aucun', anim: 'repos', foe: true }, { perso: 'sef', x: 9, y: 7, etat: 'beni', anim: 'repos' }]
-      : [{ perso: 'borin', x: 7, y: 4, act: true, etat: 'aucun', anim: 'marche' }, { perso: 'lyra', x: 8, y: 4, etat: 'aucun', anim: 'marche' }];
-    const tokens = toks
-      .filter((t) => !(vue === 'joueur' && hiddenZone(t.x, t.y)))
-      .map((t) => ({ ...t, cls: t.act ? 'act' : '', x: t.x * P, y: top(t.y) + P - sh - Math.round(P * 0.08), h: sh + Math.round(P * 0.08), z: 15 + t.y * 10 }));
     const hidden = carte === 'salle' && vue === 'mj' ? [{ objet: 'coffre', x: 12 * P, y: top(1), tag: 'caché' }] : [];
     const zones = carte === 'village'
       ? [{ name: 'Taverne', x: 3 * P, y: top(1) - P * 0.4 }, { name: 'Temple', x: 11.5 * P, y: top(1) - P * 0.4 }, { name: 'Forge', x: 4.5 * P, y: top(6) - P * 0.4 }, { name: 'Crypte', x: 13.5 * P, y: top(6) - P * 0.4 }]

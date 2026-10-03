@@ -2,20 +2,20 @@
 
 The design lives in a private Claude design canvas:
 https://claude.ai/artifact/AP3z1S5hbhqEiPzi5agTdy (owner: Romain).
-`canvas/` is a snapshot of its sources (version 33, 3 October 2026).
+`canvas/` is a snapshot of its sources (version 36, 3 October 2026).
 The published canvas is the reference: if they differ, read the canvas
 back before editing, Romain moves and resizes boards there.
 
 Decisions are in `MEMORY.md` §2, remaining work in `TICKETS.md`
 (epic `design`), journeys in `docs/user-journeys.md`.
 
-## Rendering was never checked visually
+## Rendering check
 
-Every board was written without seeing it rendered: checks were scripts
-only (all used classes defined, holes balanced, the playable's 12
-moments driven in Node with a stubbed `DCLogic`). Romain already found
-misaligned frames (fixed by scoping, see below). First job of a session
-that can render: `design/verify-canvas-rendering`.
+The three evening boards (`Jouer-Marc`, `Soiree-Marc`, `Soiree-TV`)
+were checked rendered in Chrome on 3 October 2026 and fixed. Every
+other board was still written without being seen rendered: see
+`design/verify-canvas-rendering`. Chrome must stay in the foreground
+while checking, and has reduced motion on (`MEMORY.md` §4).
 
 ## Board format
 

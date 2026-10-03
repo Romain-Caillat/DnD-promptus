@@ -120,7 +120,8 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   Maker): the GM or the LLM only places wall cells; autotiling draws the
   wall top one tile up and the front face when the cell below is open.
   Later rows paint over earlier ones, so a token north of a wall goes
-  behind it; rules stay on the logical grid. One tileset per decor
+  behind it, and that wall top turns see-through (x-ray) so the token
+  stays visible; rules stay on the logical grid. One tileset per decor
   (16 tiles per material, dual-grid), hand-drawn or AI-generated once.
   Top-down and isometric were considered and set aside.
 - **Outdoor maps use the same engine:** terrains blended with noise
@@ -205,6 +206,20 @@ against the campaign budget; a batch that would exceed it is refused.
   (`docs/design/scope.py`); keep generic names only for runtime state
   modifiers, always combined with a prefixed class. Template holes are
   `{{name}}`: inside a Python f-string they must be written `{{{{name}}}}`.
+- **Design canvas: the same leak hits a board's own modifiers.** The
+  combat button carried `big`, which is also the damage-number class
+  (thick black stroke): its label became unreadable. A modifier name
+  must not already be a style of the same board.
+- **Design canvas: boards must survive reduced motion.** Romain's
+  Windows asks for reduced motion, and `@media (prefers-reduced-motion)`
+  turns animations off: an element whose resting style is the animation's
+  loud frame then shows that frame forever (fog dots became white
+  squares). Give every animated element a calm resting style.
+- **Design canvas: a map inside a phone needs `isolation: isolate`.**
+  The `Plan` cells use z-indexes up to 900; without a stacking context
+  on the wrapper they paint over the board's own overlays (banners).
+- **Checking the canvas in Chrome:** the window must stay in the
+  foreground, or the page is reported hidden and never renders.
 
 - **YouTube player must stay visible** (YouTube terms) and starts muted:
   each player taps "activate sound". Ads can desync a player; playback
