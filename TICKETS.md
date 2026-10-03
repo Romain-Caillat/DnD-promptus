@@ -112,10 +112,15 @@ co-MJ, demandes des joueurs, combat, musique, fin de session).
 
 **Fini quand** — Maquettes ordinateur et tablette validées.
 
-**État** — Dessinés : construction d'histoire avec le LLM, écran MJ en
-direct (une version, avant la soirée de Marc), cartes (vue MJ, import
-d'image). Reste : la soirée de Marc côté MJ (prochaine étape : la même
-soirée, moment par moment, comme le téléphone et la TV), liste et
+**État** — Dessinés : construction d'histoire avec le LLM, cartes (vue
+MJ, import d'image), et la soirée de Marc côté MJ (planche jouable
+« Mener · la soirée de Marc côté MJ », 3 octobre 2026) : les 12 moments
+sur l'ordinateur du MJ, une action principale par moment, demandes des
+joueurs en cartes, co-MJ en brouillon, journal qui montre aussi le
+caché, TV synchronisée à côté. Elle remplace la première version de
+l'écran MJ (planche « Écran MJ — en direct »), à retirer une fois
+validée. Reste : validation de la soirée côté MJ par Romain, son
+storyboard (12 écrans figés, comme côté TV), liste et
 création de campagne, éditeur du système de règles, suivi de génération
 et coût, fiche PNJ/monstre, éditeur de carte, médias et budget,
 invitation et validation des personnages, salon, jumelage de l'écran
@@ -151,9 +156,9 @@ en colonne, gemme de carte sur le titre, cadres trop courts (Fondations,
 Jauges, Objets), butin sur son nom, dé TV sur les PV du groupe, « Tu es
 ici » sur Lyra, calibrage sur « passage secret », brouillard des
 extérieurs, barres de défilement des téléphones. Reste : validation des
-trois planches de la soirée par Romain. Vus, non corrigés : l'écran MJ
-déborde même à 1440 px (phases, demandes, carte, dés — à reprendre avec
-la soirée côté MJ) ; Histoire laisse un grand vide sous 1440 px ; petits
+trois planches de la soirée par Romain. Vus, non corrigés : l'ancien écran MJ
+déborde même à 1440 px (remplacé par la soirée côté MJ, qui tient dans
+1440 × 900) ; Histoire laisse un grand vide sous 1440 px ; petits
 défauts de Notifications ; barres de défilement des planches Sprite et
 Carte à jouer vues seules (cause hors du code des planches).
 

@@ -257,6 +257,14 @@
       "w": 1920,
       "x": 0,
       "y": 3240
+    },
+    "Mener-MJ.dc.html": {
+      "h": 1020,
+      "is_interactive": true,
+      "title": "Mener · la soirée de Marc côté MJ",
+      "w": 2240,
+      "x": 4080,
+      "y": 6060
     }
   },
   "createdOnFiles": {
@@ -336,7 +344,8 @@
     "Joueur-Personnage.dc.html",
     "Joueur-Journal.dc.html",
     "Ecran-TV.dc.html",
-    "Soiree-TV.dc.html"
+    "Soiree-TV.dc.html",
+    "Mener-MJ.dc.html"
   ],
   "pages": [],
   "title": "Promptus — écrans"

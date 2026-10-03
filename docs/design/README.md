@@ -2,7 +2,7 @@
 
 The design lives in a private Claude design canvas:
 https://claude.ai/artifact/AP3z1S5hbhqEiPzi5agTdy (owner: Romain).
-`canvas/` is a snapshot of its sources (version 63, 3 October 2026).
+`canvas/` is a snapshot of its sources (version 66, 3 October 2026).
 The published canvas is the reference: if they differ, read the canvas
 back before editing, Romain moves and resizes boards there.
 
@@ -46,7 +46,7 @@ put `{"view":"canvas"}` back when done.
 | --- | --- | --- |
 | Main | Fondations | colours, type, materials |
 | Histoire | Construction d'histoire (LLM) | GM prep, interactive |
-| MJ | Écran MJ — en direct | GM live, drawn before the evening work |
+| MJ | Écran MJ — en direct | GM live, first draft, superseded by `Mener-MJ` |
 | TV | Écran TV | wrapper on `Ecran-TV`, combat moment |
 | Joueur-Scene / -Combat / -Carte / -Personnage / -Journal | player phone screens | wrappers on `Jouer-Marc` frozen on a moment and tab |
 | Pistes-UI, Raretes, Objets, Etats, Notifs | design system boards | |
@@ -56,6 +56,7 @@ put `{"view":"canvas"}` back when done.
 | Soiree-Marc | Joueur · la soirée de Marc | storyboard, 12 `Jouer-Marc` instances (`seul=true`) |
 | Ecran-TV | Composant — écran TV (soirée) | TV driven by moment and player actions |
 | Soiree-TV | TV · la soirée côté TV | storyboard, 12 `Ecran-TV` frames |
+| Mener-MJ | **Mener · la soirée de Marc côté MJ** | the playable evening on the GM laptop (1440 × 900), TV beside it; `seul=true` shows the laptop alone, frozen on `moment` |
 
 Components: GameCard, RadialGrid, Carte, Sprite, De, Gemme, Coeurs,
 Cases, Horloge, Bouton, Objet, Etat, Perso, Plan.
@@ -67,12 +68,13 @@ any board layout already set in `canvas.json`.
 
 - `player-evening-play.py` → `Jouer-Marc` (uses `player-evening.css`).
 - `tv-evening.py` → `Ecran-TV`.
+- `gm-evening-play.py` → `Mener-MJ`.
 - `outdoor/*.py` → outdoor map PNGs; `items-prototype.py`,
   `walls-prototype.py`, `sprite-prototype.py` (+ `sprites.json`) →
   pixel-art previews.
 
-Other boards were edited by hand. Regenerating `Jouer-Marc` and
-`Ecran-TV` from these scripts reproduces the snapshot byte for byte.
+Other boards were edited by hand. Regenerating `Jouer-Marc`,
+`Ecran-TV` and `Mener-MJ` from these scripts reproduces the snapshot byte for byte.
 
 ## Publishing
 

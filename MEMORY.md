@@ -218,6 +218,10 @@ against the campaign budget; a batch that would exceed it is refused.
 - **Design canvas: a map inside a phone needs `isolation: isolate`.**
   The `Plan` cells use z-indexes up to 900; without a stacking context
   on the wrapper they paint over the board's own overlays (banners).
+- **Design canvas: element selectors leak into imported components too.**
+  `.req .hd div{display:flex}` reached the divs inside an imported
+  `Sprite` and pushed the pixel character over the buttons. Scoping only
+  renames classes: write element selectors as children (`.req .hd > div`).
 - **Checking the canvas in Chrome:** the window must stay in the
   foreground, or the page is reported hidden and never renders. Zoom
   and shortcuts do not reach the canvas through the extension: open a
