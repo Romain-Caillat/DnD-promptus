@@ -2,7 +2,7 @@
 
 The design lives in a private Claude design canvas:
 https://claude.ai/artifact/AP3z1S5hbhqEiPzi5agTdy (owner: Romain).
-`canvas/` is a snapshot of its sources (version 74, 3 October 2026).
+`canvas/` is a snapshot of its sources (version 78, 3 October 2026).
 The published canvas is the reference: if they differ, read the canvas
 back before editing, Romain moves and resizes boards there.
 
@@ -47,6 +47,8 @@ put `{"view":"canvas"}` back when done.
 | Main | Fondations | colours, type, materials |
 | Preparer-MJ | **Préparer · la campagne de Romain** | the playable GM prep journey (1440 × 900), ten moments from the campaign list to a playable campaign; the story workshop is moment 6 |
 | Preparation-MJ | MJ · préparer une campagne | storyboard, 10 `Preparer-MJ` frames (`seul=true`) |
+| Inviter-MJ | **Inviter · la table de Romain** | GM laptop and Marc's phone side by side, seven moments from the invite link to the first session date; `seul=true` is 1880 × 900 |
+| Invitation-MJ | MJ · inviter la table | storyboard, 7 `Inviter-MJ` frames |
 | TV | Écran TV | wrapper on `Ecran-TV`, combat moment |
 | Joueur-Scene / -Combat / -Carte / -Personnage / -Journal | player phone screens | wrappers on `Jouer-Marc` frozen on a moment and tab |
 | Pistes-UI, Raretes, Objets, Etats, Notifs | design system boards | |
@@ -71,12 +73,13 @@ any board layout already set in `canvas.json`.
 - `tv-evening.py` → `Ecran-TV`.
 - `gm-evening-play.py` → `Mener-MJ`; `gm-evening-storyboard.py` → `Soiree-MJ`.
 - `gm-prep-play.py` → `Preparer-MJ`; `gm-prep-storyboard.py` → `Preparation-MJ`.
+- `gm-invite-play.py` → `Inviter-MJ`; `gm-invite-storyboard.py` → `Invitation-MJ`.
 - `outdoor/*.py` → outdoor map PNGs; `items-prototype.py`,
   `walls-prototype.py`, `sprite-prototype.py` (+ `sprites.json`) →
   pixel-art previews.
 
 Other boards were edited by hand. Regenerating `Jouer-Marc`,
-`Ecran-TV`, `Mener-MJ`, `Preparer-MJ` and the two GM storyboards from these scripts reproduces the snapshot byte for byte.
+`Ecran-TV`, `Mener-MJ`, `Preparer-MJ`, `Inviter-MJ` and the GM storyboards from these scripts reproduces the snapshot byte for byte.
 
 ## Publishing
 

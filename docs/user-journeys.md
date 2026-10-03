@@ -78,11 +78,11 @@ Rappels qui valent pour tous les parcours :
 
 ### M5 · Inviter les joueurs
 
-1. Le MJ copie **le lien d'invitation** de la campagne. · *à dessiner*
+1. Le MJ copie **le lien d'invitation** de la campagne. · *dessiné* (Inviter)
 2. Il voit qui a rejoint, et **valide les personnages** créés par les
    joueurs (un personnage hors règles est renvoyé avec un mot).
-   · *à dessiner*
-3. Il fixe la date de la prochaine session.
+   · *dessiné* (Inviter)
+3. Il fixe la date de la prochaine session. · *dessiné* (Inviter)
 
 ### M6 · Lancer la session
 
@@ -136,9 +136,10 @@ La boucle principale, sur **l'écran MJ en direct**. · *dessiné*
 ### J1 · Rejoindre
 
 1. Il ouvre **le lien** reçu (sans compte, un jeton reste sur son
-   téléphone). · *à dessiner*
+   téléphone). · *dessiné* (Inviter)
 2. Il choisit : **créer son personnage**, **reprendre** le sien, ou
-   **regarder** en spectateur. · *à dessiner*
+   **regarder** en spectateur. · *dessiné* (Inviter ; « reprendre » vu
+   côté MJ seulement)
 
 ### J2 · Créer son personnage
 
@@ -146,8 +147,9 @@ La boucle principale, sur **l'écran MJ en direct**. · *dessiné*
    accessoire, couleurs, bouton « au hasard ». Les pièces viennent du
    pack de l'univers. · *à dessiner*
 2. Il remplit ce que les règles demandent (classe, caractéristiques),
-   guidé pas à pas. · *à dessiner*
-3. Il l'envoie au MJ et attend la validation.
+   guidé pas à pas. · *dessiné en partie* (Inviter : le choix de la
+   classe, le renvoi avec le mot du MJ)
+3. Il l'envoie au MJ et attend la validation. · *dessiné* (Inviter)
 
 Objectif : moins de deux minutes, sur un téléphone.
 

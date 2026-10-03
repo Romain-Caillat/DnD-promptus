@@ -269,6 +269,21 @@
       "w": 2384,
       "h": 2760,
       "title": "MJ · préparer une campagne"
+    },
+    "Inviter-MJ.dc.html": {
+      "x": 0,
+      "y": 11400,
+      "w": 2450,
+      "h": 1020,
+      "title": "Inviter · la table de Romain",
+      "is_interactive": true
+    },
+    "Invitation-MJ.dc.html": {
+      "x": 2560,
+      "y": 11400,
+      "w": 2384,
+      "h": 1780,
+      "title": "MJ · inviter la table"
     }
   },
   "createdOnFiles": {
@@ -350,7 +365,9 @@
     "Mener-MJ.dc.html",
     "Soiree-MJ.dc.html",
     "Preparer-MJ.dc.html",
-    "Preparation-MJ.dc.html"
+    "Preparation-MJ.dc.html",
+    "Inviter-MJ.dc.html",
+    "Invitation-MJ.dc.html"
   ],
   "pages": [],
   "title": "Promptus — écrans"

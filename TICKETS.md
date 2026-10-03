@@ -93,8 +93,10 @@ ne demande de viser ni de zoomer.
 sur la planche « Jouer · la soirée de Marc » : scène, indices, dé,
 exploration, combat (main de cartes, « Autre… », arcade), butin, onglets
 Jeu, Carte, Personnage, Journal. Les planches Joueur et le storyboard
-sont ce même téléphone figé sur un moment. Reste à dessiner : rejoindre
-(lien, choix), créateur de personnage, « Précédemment… » hors session,
+sont ce même téléphone figé sur un moment. Rejoindre (lien, pseudo,
+choix) et l'envoi du personnage au MJ sont dessinés sur la planche
+« Inviter ». Reste à dessiner : le créateur de personnage en couches
+(corps, tenue, couleurs, au hasard) et ses étapes de règles, « Précédemment… » hors session,
 voyage sur la carte du monde, fin de session et récapitulatif, joueur
 sur ordinateur, mort du personnage, mini-lecteur YouTube visible
 (`MEMORY.md` §4).
@@ -124,12 +126,17 @@ l'ordinateur du MJ avec son storyboard :
   12 moments) : une action principale par moment, demandes des joueurs
   en cartes, co-MJ en brouillon, journal qui montre aussi le caché, TV
   synchronisée. Elle remplace la première version de l'écran MJ ;
+- l'invitation et la validation des personnages (« Inviter · la table
+  de Romain », 7 moments, ordinateur du MJ et téléphone de Marc côte à
+  côte) : lien et message à coller sur Discord, arrivée sans compte,
+  relecture d'une fiche vérifiée par le co-MJ, renvoi avec un mot quand
+  une règle n'est pas respectée, accroches secrètes tirées des histoires
+  des joueurs, date de la première session ;
 - les cartes (vue MJ, import d'image).
 
-Reste : validation des deux parcours par Romain ; éditeur du système de
-règles (au-delà du choix du préréglage) ; éditeur de carte ; invitation
-et validation des personnages ; salon ; jumelage de l'écran partagé ;
-voyage ; version tablette.
+Reste : validation des trois parcours par Romain ; éditeur du système de
+règles (au-delà du choix du préréglage) ; éditeur de carte ; salon ;
+jumelage de l'écran partagé ; voyage ; version tablette.
 
 **Origine** — `docs/design-brief.md`
 
