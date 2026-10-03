@@ -108,6 +108,14 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   behind it; rules stay on the logical grid. One tileset per decor
   (16 tiles per material, dual-grid), hand-drawn or AI-generated once.
   Top-down and isometric were considered and set aside.
+- **Outdoor maps use the same engine:** terrains blended with noise
+  (asphalt, grass, sand, rock…), relief drawn like walls (cliff top one
+  tile up, strata face; a unit up there is drawn higher and the rules
+  know its height), props as pixel decor on the grid that also give
+  cover, and an ambience setting (time of day, weather, light sources).
+  Maps are in **muted colour**, the one place colour goes beyond stats,
+  characters, items and dice; the UI on top stays black and white.
+  Prototype renderer: `docs/design/outdoor/`.
 - **An imported image is decor only.** Doors, chests, traps, secret
   passages and lights are objects on the grid, on layers the GM
   reveals; walls are traced on top (or proposed by the AI, then

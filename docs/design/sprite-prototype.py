@@ -1,16 +1,14 @@
-# Prototype from the design pass: builds 20x26 side-view sprites from
-# primitives (rects, ellipses, lines), then adds the outline and the
-# top-light / back-shadow shading automatically. Writes sprites.json.
-# Reference for characters/build-character-creator, not production code.
 import json, colorsys
 W, H = 20, 26
 BASE = {
  'skin':'#F0C09A','dwarfskin':'#E8A982','hair_or':'#D9762B','hair_br':'#7A4A2A','metal':'#C9CFD9','horn':'#EDE3C8',
  'armor':'#4F6D9A','leather':'#7A5233','gold':'#F2C14E','pants':'#5A4636','boot':'#3B2A20','wood':'#8A5A33',
  'eyew':'#FFFFFF','eye':'#1B1426','green':'#3F7D4E','green_dk':'#2C5A3A','tunic':'#6E8F3A','purple':'#4B3A6B','purple_dk':'#33284A',
- 'grey':'#8A8F99','gob':'#7DB04C','gob_eye':'#F2D33A','red':'#B8352B','bone':'#EDE3C8','string':'#E6E0D0'
+ 'grey':'#8A8F99','gob':'#7DB04C','gob_eye':'#F2D33A','red':'#B8352B','bone':'#EDE3C8','string':'#E6E0D0',
+ 'jacket':'#6B6A3A','jeans':'#3E5470','pack':'#7A5233','cap':'#A3362E','zskin':'#8FA37A','zshirt':'#6B6F78','zpants':'#4A4A55','zeye':'#F2EBA0',
+ 'plate':'#C9CFD9','visor':'#6FD3FF','gun':'#3A3F48','chitin':'#3E7F7A','chitin_dk':'#2A5552','acid':'#C8FF4A'
 }
-NOSHADE={'eyew','eye','gob_eye','string','gold'}
+NOSHADE={'eyew','eye','gob_eye','string','gold','zeye','visor','acid'}
 OUT='#1B1426'
 def adj(hexc, f):
     r,g,b=[int(hexc[i:i+2],16)/255 for i in (1,3,5)]
@@ -162,7 +160,56 @@ def chef(pose=0, dy=0):
     c.line(15,8+dy,15,16+dy,'wood'); c.rect(16,6+dy,19,10+dy,'metal')
     return c
 
-SPRITES={'borin':(borin,False),'lyra':(lyra,False),'sef':(sef,False),'gobelin':(gobelin,True),'chef':(chef,True)}
+
+def mara(pose=0, dy=0):
+    c=C()
+    c.rect(3,12+dy,5,18,'pack')
+    legs(c,pose,7,10,19,col='jeans',w=2)
+    c.rect(6,12+dy,12,19,'jacket'); c.rect(6,18,12,18,'leather')
+    c.ell(9.5,8.5+dy,4,4.2,'skin')
+    for y in range(6,12): c.px(5,y+dy,'hair_br')
+    c.px(6,6+dy,'hair_br'); c.px(6,10+dy,'hair_br')
+    c.ell(9.5,6+dy,4.4,2.4,'cap',ymax=6+dy); c.rect(12,6+dy,15,6+dy,'cap')
+    c.px(12,8+dy,'eye'); c.px(14,9+dy,'skin')
+    c.line(14,18+dy,18,6+dy,'wood'); c.rect(17,4+dy,18,8+dy,'wood'); c.px(19,5+dy,'metal'); c.px(16,6+dy,'metal')
+    c.rect(11,13+dy,12,16+dy,'jacket'); c.rect(13,16+dy,14,17+dy,'skin')
+    return c
+
+def zombie(pose=0, dy=0):
+    c=C()
+    legs(c,pose,7,10,19,col='zpants',w=2)
+    c.rect(6,12+dy,11,19,'zshirt'); c.px(8,14+dy,'red'); c.px(9,15+dy,'red'); c.px(7,17,'red')
+    c.ell(9.5,9+dy,4,4.2,'zskin')
+    c.px(7,5+dy,'zpants'); c.px(9,5+dy,'zpants'); c.px(6,7+dy,'zpants')
+    c.px(11,8+dy,'zeye'); c.px(12,8+dy,'zeye')
+    c.rect(11,11+dy,12,11+dy,'red')
+    c.rect(10,13+dy,18,14+dy,'zskin'); c.rect(10,13+dy,12,14+dy,'zshirt')
+    c.rect(10,16+dy,16,16+dy,'zskin')
+    return c
+
+def soldat(pose=0, dy=0):
+    c=C()
+    c.rect(3,11+dy,5,18,'gun')
+    legs(c,pose,7,10,19,col='plate',boot='gun',w=2)
+    c.rect(5,12+dy,12,19,'plate'); c.rect(5,15+dy,12,15+dy,'armor')
+    c.ell(9.5,7.5+dy,4.6,4.6,'plate'); c.rect(10,6+dy,14,9+dy,'visor')
+    c.rect(10,13+dy,12,17+dy,'plate')
+    c.rect(9,16+dy,19,17+dy,'gun'); c.rect(15,15+dy,16,15+dy,'gun'); c.px(19,15+dy,'visor')
+    return c
+
+def alien(pose=0, dy=0):
+    c=C()
+    c.line(1,21,6,17,'chitin'); c.px(0,22,'chitin_dk')
+    legs(c,pose,7,10,19,col='chitin',boot='chitin_dk',w=2)
+    c.ell(9,15+dy,3.6,4.6,'chitin')
+    c.ell(10.5,8+dy,5,3,'chitin'); c.ell(6,5.5+dy,3.2,2.2,'chitin'); c.px(3,4+dy,'chitin_dk')
+    c.px(13,7+dy,'acid'); c.px(14,7+dy,'acid')
+    c.px(14,10+dy,'bone'); c.px(15,10+dy,'bone')
+    c.line(11,13+dy,16,11+dy,'chitin'); c.px(17,10+dy,'bone'); c.px(17,12+dy,'bone')
+    c.line(10,16+dy,15,15+dy,'chitin_dk'); c.px(16,14+dy,'bone')
+    return c
+
+SPRITES={'borin':(borin,False),'lyra':(lyra,False),'sef':(sef,False),'gobelin':(gobelin,True),'chef':(chef,True),'mara':(mara,False),'zombie':(zombie,True),'soldat':(soldat,False),'alien':(alien,True)}
 out={}
 for k,(fn,mir) in SPRITES.items():
     frames=[fn(0,0).render(mir), fn(0,1).render(mir), fn(1,0).render(mir), fn(0,1).render(mir)]
@@ -170,6 +217,3 @@ for k,(fn,mir) in SPRITES.items():
     out[k]={'pal':pal,'repos':[enc[0],enc[1]],'marche':[enc[2],enc[3]]}
 json.dump(out,open('sprites.json','w'))
 # preview
-for k in out:
-    print(k)
-    for r in out[k]['repos'][0]: print(r)
