@@ -76,8 +76,9 @@ None of these code folders exist yet; they are created by
 - `MEMORY.md` — durable decisions, invariants, traps. **Read it first.**
   Its V1 invariants must survive the rewrite.
 - `archive/tickets/<epic>.md` — what shipped, one line per ticket.
-- `archive/bmad/` — the BMad planning artifacts (brief, architecture,
-  retrospective, V2 vision). Historical reference.
+- `archive/bmad/` — the retired BMad export (brief, architecture,
+  retrospective, V2 vision). Historical reference only; BMad is no
+  longer used — work is tracked in `TICKETS.md` and `MEMORY.md`.
 
 ## Communication
 
