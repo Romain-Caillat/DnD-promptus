@@ -145,8 +145,17 @@ corrigées : personnages cachés sous les hauts de mur (rayons X), brouillard
 en carrés blancs quand les animations sont réduites, bannière « À toi,
 Borin ! » sous la carte, titre de carte d'indice décentré, main de cartes
 hors de l'écran, libellé « Frappe » illisible, sélecteur de moments qui
-sautait, dégâts TV au-dessus du mauvais personnage. Reste : validation des
-trois planches par Romain, puis toutes les autres planches.
+sautait, dégâts TV au-dessus du mauvais personnage. Toutes les autres
+planches ont ensuite été vues rendues et corrigées : horloge « 3/6 » empilée
+en colonne, gemme de carte sur le titre, cadres trop courts (Fondations,
+Jauges, Objets), butin sur son nom, dé TV sur les PV du groupe, « Tu es
+ici » sur Lyra, calibrage sur « passage secret », brouillard des
+extérieurs, barres de défilement des téléphones. Reste : validation des
+trois planches de la soirée par Romain. Vus, non corrigés : l'écran MJ
+déborde même à 1440 px (phases, demandes, carte, dés — à reprendre avec
+la soirée côté MJ) ; Histoire laisse un grand vide sous 1440 px ; petits
+défauts de Notifications ; barres de défilement des planches Sprite et
+Carte à jouer vues seules (cause hors du code des planches).
 
 **Origine** — Romain, 3 octobre 2026 : « TV · la soirée côté TV est
 cassé », « c'est pas aligné ».

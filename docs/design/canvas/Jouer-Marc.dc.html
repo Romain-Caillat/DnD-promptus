@@ -489,7 +489,7 @@ class Component extends DCLogic {
       bigAct: () => { if (this.state.atk === 'done') { this.sfx('click'); this.go(10); } else v.attack(); },
       openBag: () => { this.setState({ tab: 'perso' }); this.sfx('click'); },
       freeOpen: s.choice === 3 && !s.sent, diceTitle: s.choice === 3 ? 'Ton idée' : optsData[s.choice][0],
-      showMap: s.tab === 'carte' && !s.ended, hereX: (dest && s.moved ? dest[0] : 4) * 30 - 26 + 15, hereY: ((dest && s.moved ? dest[1] : 6) + 1) * 30 + 40 - 40,
+      showMap: s.tab === 'carte' && !s.ended, hereX: (dest && s.moved ? dest[0] : 4) * 30 - 26 + 15, hereY: ((dest && s.moved ? dest[1] : 6) + 1) * 30 + 40 - 2,
       tabs: [['jeu', 'Jeu'], ['carte', 'Carte'], ['perso', 'Personnage'], ['journal', 'Journal']].map(([id, n]) => ({ n, cls: (s.tab || 'jeu') === id ? 'on' : '', pick: () => { this.setState({ tab: id }); this.sfx('click'); } })),
       showPerso: s.tab === 'perso' && !s.ended, showJournal: s.tab === 'journal' && !s.ended,
       xp: m >= 12 ? 8 : m >= 10 ? 7 : 6, xpTxt: (m >= 12 ? 8 : m >= 10 ? 7 : 6) + ' / 10 · bientôt niveau 4',

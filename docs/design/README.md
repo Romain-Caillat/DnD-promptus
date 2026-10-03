@@ -2,7 +2,7 @@
 
 The design lives in a private Claude design canvas:
 https://claude.ai/artifact/AP3z1S5hbhqEiPzi5agTdy (owner: Romain).
-`canvas/` is a snapshot of its sources (version 36, 3 October 2026).
+`canvas/` is a snapshot of its sources (version 63, 3 October 2026).
 The published canvas is the reference: if they differ, read the canvas
 back before editing, Romain moves and resizes boards there.
 
@@ -11,11 +11,12 @@ Decisions are in `MEMORY.md` §2, remaining work in `TICKETS.md`
 
 ## Rendering check
 
-The three evening boards (`Jouer-Marc`, `Soiree-Marc`, `Soiree-TV`)
-were checked rendered in Chrome on 3 October 2026 and fixed. Every
-other board was still written without being seen rendered: see
-`design/verify-canvas-rendering`. Chrome must stay in the foreground
-while checking, and has reduced motion on (`MEMORY.md` §4).
+Every board was checked rendered in Chrome on 3 October 2026 and
+fixed; what remains is listed in `design/verify-canvas-rendering`.
+Chrome must stay in the foreground while checking, and has reduced
+motion on (`MEMORY.md` §4). To see one board large, set the index's
+`launch` to `{"view":"focused","file":"<board>"}`, publish, reload;
+put `{"view":"canvas"}` back when done.
 
 ## Board format
 

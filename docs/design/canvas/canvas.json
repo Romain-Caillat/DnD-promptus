@@ -63,7 +63,7 @@
       "title": "États des personnages",
       "w": 1440,
       "x": 4320,
-      "y": 1300
+      "y": 1380
     },
     "Exterieurs.dc.html": {
       "h": 3380,
@@ -103,12 +103,12 @@
       "y": 640
     },
     "Jouer-Marc.dc.html": {
-      "x": 4080,
-      "y": 4720,
-      "w": 1440,
-      "h": 1000,
+      "h": 1206,
+      "is_interactive": true,
       "title": "Jouer · la soirée de Marc",
-      "is_interactive": true
+      "w": 1961,
+      "x": 4080,
+      "y": 4720
     },
     "Joueur-Carte.dc.html": {
       "h": 844,
@@ -160,7 +160,7 @@
       "y": 1880
     },
     "Main.dc.html": {
-      "h": 1480,
+      "h": 1600,
       "title": "Fondations",
       "w": 1440,
       "x": 0,
@@ -181,7 +181,7 @@
       "y": 780
     },
     "Objets.dc.html": {
-      "h": 1220,
+      "h": 1300,
       "title": "Objets et butin",
       "w": 1440,
       "x": 4320,
@@ -202,7 +202,7 @@
       "y": 780
     },
     "Pistes-UI.dc.html": {
-      "h": 1160,
+      "h": 1280,
       "title": "Jauges et boutons — pistes",
       "w": 1440,
       "x": 2800,

@@ -59,7 +59,7 @@ body{margin:0;background:#050505}
 @keyframes dmg{0%{transform:translateY(40px) scale(.3);opacity:0}30%{transform:translateY(-20px) scale(1.4);opacity:1}45%{transform:scale(1)}100%{transform:translateY(-40px);opacity:1}}
 .flash{position:absolute;inset:0;z-index:970;pointer-events:none;animation:fl 1s ease-out both}
 @keyframes fl{0%{background:rgba(255,77,94,.45)}100%{background:rgba(255,77,94,0)}}
-.bigdie{position:absolute;right:220px;top:330px;z-index:990;display:flex;flex-direction:column;align-items:center;gap:16px}
+.bigdie{position:absolute;right:240px;top:600px;z-index:990;display:flex;flex-direction:column;align-items:center;gap:16px}
 .res{display:flex;gap:16px;align-items:baseline;font-weight:700;font-size:64px}
 .res .op{font-size:40px;color:#8C8C8C}
 .loot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:600px;height:700px}

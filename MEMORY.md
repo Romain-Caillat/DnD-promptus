@@ -219,7 +219,12 @@ against the campaign budget; a batch that would exceed it is refused.
   The `Plan` cells use z-indexes up to 900; without a stacking context
   on the wrapper they paint over the board's own overlays (banners).
 - **Checking the canvas in Chrome:** the window must stay in the
-  foreground, or the page is reported hidden and never renders.
+  foreground, or the page is reported hidden and never renders. Zoom
+  and shortcuts do not reach the canvas through the extension: open a
+  board large by setting `launch` to focused (`docs/design/README.md`).
+- **Design canvas: a grid or flex box splits mixed text into items.**
+  `<b>{{a}}/{{b}}</b>` with `display:grid` puts each text node on its own
+  row (the clock showed 3 / 6 stacked). Wrap mixed text in one `<span>`.
 
 - **YouTube player must stay visible** (YouTube terms) and starts muted:
   each player taps "activate sound". Ads can desync a player; playback
