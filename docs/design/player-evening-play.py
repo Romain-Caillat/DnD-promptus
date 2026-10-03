@@ -1,0 +1,335 @@
+import json
+css = open('docs/design/player-evening.css').read()
+css += r'''
+.ph{flex:none}
+.cb{font:inherit;display:block;width:100%;box-sizing:border-box;border:0;padding:6px;border-radius:12px;background:#EDEDED;color:#0A0A0A;text-align:left;cursor:pointer;box-shadow:0 4px 0 #8A8A8A,0 7px 0 #5A5A5A,0 14px 24px rgba(0,0,0,.5);transform-origin:50% 100%;transition:transform .1s,box-shadow .1s}
+.cb .in{display:flex;align-items:center;gap:12px;border:1.5px solid #0A0A0A;border-radius:8px;padding:8px 12px;min-height:40px}
+.cb .t{display:block;font-family:'Cinzel',Georgia,serif;font-weight:800;font-size:18px;line-height:1.05}
+.cb .s{display:block;font-size:11px;font-weight:600;color:#5A5A5A;margin-top:3px}
+.cb .chev{margin-left:auto;font-family:'Cinzel',serif;font-weight:800;font-size:22px}
+.cb:active{transform:perspective(500px) rotateX(14deg) translateY(4px);box-shadow:0 1px 0 #8A8A8A,0 2px 0 #5A5A5A}
+.cb.dk{background:#141414;color:#F2F2F2;box-shadow:0 0 0 1.5px #3A3A3A,0 4px 0 #000}
+.cb.dk .in{border-color:#5A5A5A}.cb.dk .s{color:#8C8C8C}
+.cb.off{opacity:.45;pointer-events:none}
+.lnk{font:inherit;background:none;border:0;color:#A3A3A3;text-decoration:underline;text-underline-offset:3px;font-size:12px;cursor:pointer;padding:6px}
+.opt{font:inherit;text-align:left;cursor:pointer;color:#F2F2F2}
+.idle{position:relative;overflow:hidden}
+.idle .bar{position:absolute;left:0;bottom:0;height:3px;background:#F2F2F2;animation:bar linear forwards}
+@keyframes bar{from{width:0}to{width:100%}}
+.dz{cursor:pointer;background:none;border:0;padding:0}
+.reach{border:0;padding:0;cursor:pointer}
+.reach.on{background:rgba(46,230,166,.65);box-shadow:inset 0 0 0 2px #F2F2F2}
+.act{font:inherit;text-align:left;cursor:pointer}
+.sent{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:#141414;border:1.5px dashed #5E5E5E;font-size:13px;color:#D4D4D4}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid #5E5E5E;border-top-color:#F2F2F2;animation:spin .8s linear infinite}
+.zoom{position:absolute;inset:0;z-index:50;background:rgba(5,5,5,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;cursor:pointer}
+.ok{display:inline-block;font-family:'Cinzel',serif;font-weight:800;font-size:22px;color:#0A0A0A;background:#F2F2F2;padding:4px 16px;border-radius:8px;box-shadow:0 4px 0 #6E6E6E}
+.slam{position:absolute;left:0;right:0;top:300px;z-index:60;display:grid;place-items:center;pointer-events:none;animation:slamOut 2.2s ease-in forwards}
+.slam span{font-family:'Cinzel',serif;font-weight:800;font-size:40px;color:#0A0A0A;background:#FFD60A;padding:6px 22px;transform:rotate(-4deg);box-shadow:0 6px 0 #8A6F00,0 20px 40px rgba(0,0,0,.6);animation:slamIn 2.2s cubic-bezier(.2,1.4,.3,1) forwards}
+@keyframes slamIn{0%{transform:rotate(-4deg) scale(3);opacity:0}15%{transform:rotate(-4deg) scale(.92);opacity:1}22%,100%{transform:rotate(-4deg) scale(1)}}
+@keyframes slamOut{0%,70%{opacity:1}100%{opacity:0}}
+.endc{position:absolute;inset:0;z-index:70;background:rgba(5,5,5,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:30px}
+.side{display:flex;flex-direction:column;gap:14px;width:440px;flex:none}
+.disc{display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:16px;background:#111214;border:1px solid #2A2C30}
+.disc .hdr{display:flex;align-items:center;gap:8px;font-size:12px;color:#9AA0AA;font-weight:600}
+.disc .live{width:8px;height:8px;border-radius:50%;background:#2EE6A6;box-shadow:0 0 8px #2EE6A6}
+.line{display:flex;gap:12px;align-items:flex-start;animation:lineIn .5s ease-out both}
+@keyframes lineIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;flex:none;background:#2A2C30}
+.av.mj{background:#EDEDED;color:#0A0A0A;box-shadow:0 0 0 3px #2EE6A6}
+.line b{display:block;font-size:13px;margin-bottom:2px}
+.line p{margin:0;font-size:15px;line-height:1.45;color:#E5E5E5}
+.line.mjl p{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:19px;line-height:1.3}
+.think{position:relative;padding:16px 18px;border-radius:18px;background:#EDEDED;color:#0A0A0A;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:21px;line-height:1.3;box-shadow:0 4px 0 #8A8A8A}
+.think::after{content:'';position:absolute;left:-14px;top:24px;width:18px;height:18px;border-radius:50%;background:#EDEDED}
+.think::before{content:'';position:absolute;left:-26px;top:40px;width:9px;height:9px;border-radius:50%;background:#EDEDED}
+.prog{display:flex;flex-wrap:wrap;gap:6px}
+.prog button{font:inherit;font-size:12px;font-weight:700;width:34px;height:34px;border-radius:8px;border:1px solid #2C2C2C;background:#141414;color:#8C8C8C;cursor:pointer}
+.prog button.done{color:#F2F2F2}
+.prog button.cur{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A;box-shadow:0 2px 0 #8A8A8A}
+.ctl{display:flex;gap:8px}
+.ctl button{font:inherit;flex:1;min-height:42px;border-radius:10px;border:1px solid #3A3A3A;background:#141414;color:#F2F2F2;font-weight:700;font-size:13px;cursor:pointer}
+'''
+def cb(label, sub='', on='', dark=False, extra=''):
+    s = f'<span class="s">{sub}</span>' if sub else ''
+    return f'<button type="button" class="cb {"dk" if dark else ""} {extra}" onClick="{{{{{on}}}}}"><span class="in"><span style="flex: 1"><span class="t">{label}</span>{s}</span><span class="chev">›</span></span></button>'
+def idle(text, ms):
+    return f'<div class="idle">{text}<span class="bar" style="animation-duration: {ms}ms"></span></div>'
+HEAD = '''<div class="hd"><span class="pf"><dc-import name="Sprite" perso="borin" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><div style="display: flex; flex-direction: column; gap: 3px; flex: 1"><span class="ttl" style="font-size: 14px">Borin</span><dc-import name="Coeurs" pv="{{hp}}" max="31" coeurs="8" px="2" degats="{{deg}}" hint-size="151px,16px"></dc-import></div><span class="pv">{{hp}}<small> / 31 PV</small></span></div>'''
+NAV = '<nav class="nav"><button type="button" class="on">Jeu</button><button type="button">Personnage</button><button type="button">Journal</button></nav>'
+def bn(kind, text): return f'<div class="bn {kind}"><span>{text}</span></div>'
+def block(n, banner, body, foot):
+    return f'<sc-if value="{{{{is{n}}}}}" hint-placeholder-val="{{{{ {"true" if n==1 else "false"} }}}}">{banner}<div class="body">{body}</div><div class="ft">{foot}</div></sc-if>'
+B = []
+B.append(block(1, bn('wait', '⏳ On attend le MJ'), '''<div style="display: flex; flex-direction: column; gap: 4px"><span class="lbl">Ce soir · 20 h 30</span><span class="ttl" style="font-size: 26px; line-height: 1.1">La crypte des Valombre</span><span style="font-size: 13px; color: #A3A3A3">Session 3</span></div>
+<div class="stage" style="margin-top: 16px"><dc-import name="Perso" perso="borin" px="5" etat="aucun" hint-size="100px,130px"></dc-import><div style="display: flex; flex-direction: column; gap: 4px"><span class="lbl">Tu joues</span><span class="ttl" style="font-size: 22px">Borin</span><span style="font-size: 12px; color: #A3A3A3">nain guerrier · niveau 3</span></div></div>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px"><span class="lbl">Autour de la table</span><div class="who"><span class="dot on"></span><b>Romain</b><span>le MJ</span></div><div class="who"><span class="dot on"></span><b>Camille</b><span>joue Lyra</span></div><div class="who"><span class="dot on"></span><b>Hugo</b><span>joue Sef</span></div></div>''',
+  '<sc-if value="{{noSound}}" hint-placeholder-val="{{ true }}">' + cb('Activer le son', 'La musique de la partie passera ici', 'sound') + '<button type="button" class="lnk" onClick="{{mute}}">Continuer sans le son</button></sc-if><sc-if value="{{soundOn}}" hint-placeholder-val="{{ false }}"><div class="sent"><span class="spin"></span>C’est parti. Le MJ lance la partie…</div></sc-if>'))
+B.append(block(2, bn('listen', '👂 Le MJ commence'), '''<span class="ttl" style="font-size: 26px">Précédemment…</span>
+<p class="nar" style="font-size: 20px; margin-top: 12px">Vous êtes descendus dans la crypte des Valombre. Les crânes regardent tous la porte nord. Borin a pris un mauvais coup.</p>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px"><span class="lbl">Ce que vous savez</span><div class="clue"><dc-import name="Objet" objet="parchemin" rarete="commune" taille="40" pips="false" hint-size="40px,40px"></dc-import><span><b>Le registre</b> : une page a été arrachée.</span></div><div class="clue"><dc-import name="Objet" objet="anneau" rarete="peu" taille="40" pips="false" hint-size="40px,40px"></dc-import><span><b>La bague du gardien</b> : gravée d’un corbeau.</span></div></div>''', idle('Rien à faire : écoute le MJ', 7000)))
+B.append(block(3, bn('listen', '👂 Le MJ raconte · écoute'), '''<div class="art"><span class="ttl" style="font-size: 22px; color: #F2F2F2">La salle de l’autel</span><span class="tag">[ILLUSTRATION]</span></div>
+<p class="nar typed" style="font-size: 20px; margin-top: 14px">L’escalier s’arrête devant un autel de pierre noire. Des cendres encore tièdes. Quelqu’un est passé ici il y a moins d’une heure.</p>
+<div class="mini" style="margin-top: 14px"><span class="eq"><i></i><i></i><i></i></span><span style="flex: 1">Ombres de la crypte</span><span style="color: #8C8C8C">{{soundTxt}}</span></div>''', idle('Rien à faire pour l’instant', 8000)))
+B.append(block(4, bn('you', '✋ À vous : que faites-vous ?'), '''<p class="nar" style="font-size: 19px">« Devant l’autel, que faites-vous ? »</p>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px"><sc-for list="{{opts}}" as="o" hint-placeholder-count="4"><button type="button" class="opt {{o.cls}}" onClick="{{o.pick}}"><b>{{o.t}}</b><span>{{o.d}}</span></button></sc-for></div>
+<div class="others" style="margin-top: 10px"><span class="lbl">Les autres</span><span>Lyra surveille l’escalier.</span></div>''',
+  '<sc-if value="{{notSent}}" hint-placeholder-val="{{ true }}">' + cb('Proposer au MJ', '{{choiceName}}', 'propose') + '</sc-if><sc-if value="{{sent}}" hint-placeholder-val="{{ false }}"><div class="sent"><span class="spin"></span>Envoyé. Le MJ lit ta proposition…</div></sc-if>'))
+B.append(block(5, bn('you', '🎲 À toi : lance le dé'), '''<div style="display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center">
+<span class="ttl" style="font-size: 22px">Fouiller l’autel</span>
+<span style="font-size: 15px; color: #D4D4D4">Il te faut <b style="font-size: 20px; color: #F2F2F2">13 ou plus</b></span>
+<sc-if value="{{diceIdle}}" hint-placeholder-val="{{ true }}"><button type="button" class="dz" onClick="{{roll}}" aria-label="Lancer le dé"><dc-import name="De" de="d20" valeur="20" taille="150" anim="survol" hint-size="150px,150px"></dc-import></button><span style="font-size: 13px; color: #A3A3A3">Touche le dé</span></sc-if>
+<sc-if value="{{diceRolling}}" hint-placeholder-val="{{ false }}"><dc-import name="De" de="d20" valeur="16" taille="150" anim="roule" hint-size="150px,150px"></dc-import></sc-if>
+<sc-if value="{{diceDone}}" hint-placeholder-val="{{ false }}"><dc-import name="De" de="d20" valeur="16" taille="150" anim="fixe" hint-size="150px,150px"></dc-import><div class="res" style="animation: none"><span>16</span><span class="op">+ 4</span><span class="op">=</span><span>20</span></div><span class="win" style="animation: none">Réussi !</span><span style="font-size: 12px; color: #8C8C8C">+4, c’est ton bonus de Sagesse.</span></sc-if>
+</div>''', '<sc-if value="{{diceIdle}}" hint-placeholder-val="{{ true }}">' + cb('Lancer le dé', 'Il te faut 13 ou plus', 'roll') + '</sc-if><sc-if value="{{diceNotIdle}}" hint-placeholder-val="{{ false }}"><div class="sent"><span class="spin"></span>Le MJ découvre ton résultat…</div></sc-if>'))
+B.append(block(6, bn('star', '★ Tu as trouvé quelque chose'), '''<div style="display: flex; flex-direction: column; gap: 14px; align-items: center">
+<button type="button" class="dz flip" onClick="{{zoom}}"><dc-import name="GameCard" titre="La page arrachée" type="Indice" texte="Coincée sous l’autel : la page qui manquait au registre." valeur="" stat="none" icon="parchemin" w="220" hint-size="220px,308px"></dc-import></button>
+<span style="font-size: 13px; color: #A3A3A3; text-align: center">Rangée dans le journal. Tout le groupe la voit.</span></div>
+<sc-if value="{{zoomed}}" hint-placeholder-val="{{ false }}"><div class="zoom" onClick="{{zoom}}"><span class="lbl">La page arrachée</span><p class="nar" style="font-size: 22px; text-align: center">« Ici reposent les Valombre, gardiens de la porte nord. Que nul ne chante leur nom après le couvre-feu. »</p><span style="font-size: 12px; color: #8C8C8C">Touche pour fermer</span></div></sc-if>''',
+  cb('Lire en grand', '', 'zoom', dark=True) + idle('Le MJ continue dans un instant', 6500)))
+B.append(block(7, bn('you', '✋ Exploration · déplace-toi'), '''<div class="mapw" style="margin: 0 -16px"><div style="position: absolute; left: -12px; top: -8px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="28" vue="joueur" bx="{{bx}}" by="{{by}}" hint-size="392px,280px"></dc-import></div>
+<sc-if value="{{notMoved}}" hint-placeholder-val="{{ true }}"><sc-for list="{{reach}}" as="r" hint-placeholder-count="10"><button type="button" class="reach {{r.cls}}" aria-label="Aller ici" style="left: {{r.l}}px; top: {{r.t}}px" onClick="{{r.pick}}"></button></sc-for></sc-if></div>
+<div class="legend" style="margin-top: 10px; padding: 0"><span><i class="g"></i>tu peux y aller</span><span><i class="f"></i>pas encore vu</span></div>
+<div style="font-size: 13px; color: #D4D4D4; margin-top: 8px">{{moveTxt}}</div>''',
+  '<sc-if value="{{notMoved}}" hint-placeholder-val="{{ true }}">' + cb('Y aller', '{{moveSub}}', 'move', extra='{{moveCls}}') + '</sc-if><sc-if value="{{moved}}" hint-placeholder-val="{{ false }}"><div class="sent"><span class="spin"></span>Tu avances… quelque chose bouge dans l’ombre.</div></sc-if>'))
+B.append(block(8, bn('wait', '⏳ Combat · {{who}} joue'), '''<div class="order">
+<sc-for list="{{order}}" as="o" hint-placeholder-count="4"><div class="o {{o.cls}}"><span class="pf {{o.pf}}"><dc-import name="Sprite" perso="{{o.p}}" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><span>{{o.n}}</span></div></sc-for>
+</div>
+<div class="feed" style="margin-top: 14px"><span class="lbl">À l’instant</span><p>{{feedTxt}}</p></div>
+<div class="feed" style="margin-top: 10px"><span class="lbl">Ton tour arrive</span><p>{{feedNext}}</p></div>''', idle('Rien à faire : regarde, ton tour arrive', 6500)))
+B.append(block(9, bn('turn', '⚔ À toi, Borin !'), '''<div class="steps"><span class="done">1 · Bouger ✓</span><span class="{{s2}}">2 · Agir</span><span class="{{s3}}">3 · Finir</span></div>
+<div class="mapw small" style="margin-top: 10px"><div style="position: absolute; left: -116px; top: -78px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="34" vue="joueur" grille="false" combat="true" hint-size="476px,340px"></dc-import></div><span class="tgt" style="left: 51px; top: 157px"></span></div>
+<sc-if value="{{atkIdle}}" hint-placeholder-val="{{ true }}"><span class="lbl" style="display: block; margin: 10px 0 8px">Cible : le gobelin, juste à côté</span><div class="acts"><sc-for list="{{acts}}" as="a" hint-placeholder-count="3"><button type="button" class="act {{a.cls}}" onClick="{{a.pick}}"><b>{{a.t}}</b><span>{{a.l1}}</span><span>{{a.l2}}</span></button></sc-for></div></sc-if>
+<sc-if value="{{atkRolling}}" hint-placeholder-val="{{ false }}"><div style="display: flex; align-items: center; gap: 14px; margin-top: 12px"><dc-import name="De" de="d20" valeur="17" taille="80" anim="roule" couleur="atq" hint-size="80px,80px"></dc-import><span style="font-size: 15px">Tu frappes… il te faut <b>13</b>.</span></div></sc-if>
+<sc-if value="{{atkDone}}" hint-placeholder-val="{{ false }}"><div style="display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 12px; text-align: center"><div class="res" style="animation: none; font-size: 28px"><span>17</span><span class="op">+ 5</span><span class="op">=</span><span>22</span></div><span class="ok">Touché !</span><span style="font-size: 14px">La hache fait <b style="color: #FF4D5E">9 dégâts</b>. Le gobelin chancelle.</span></div></sc-if>''',
+  '<sc-if value="{{atkIdle}}" hint-placeholder-val="{{ true }}">' + cb('{{atkLabel}}', '{{atkSub}}', 'attack') + '</sc-if><sc-if value="{{atkRolling}}" hint-placeholder-val="{{ false }}"><div class="sent"><span class="spin"></span>Le dé roule…</div></sc-if><sc-if value="{{atkDone}}" hint-placeholder-val="{{ false }}">' + cb('Finir mon tour', 'Plus rien à faire ce tour-ci', 'finish', dark=True) + '</sc-if>'))
+B.append(block(10, bn('hurt', '♥ Le gobelin te touche : −6 PV'), '''<div style="display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center">
+<div class="shake"><dc-import name="Perso" perso="borin" px="5" anim="touche" etat="aucun" hint-size="100px,130px"></dc-import></div>
+<span class="big">−6</span><span style="font-size: 16px">Il te reste <b>{{hp}} PV sur 31</b></span>
+<sc-if value="{{danger}}" hint-placeholder-val="{{ true }}"><div class="tip"><b>Tu es en danger.</b> À ton tour, ta carte <b>Second souffle</b> te rend 1d10 + 3 PV.</div></sc-if><sc-if value="{{safe}}" hint-placeholder-val="{{ false }}"><div class="tip"><b>Tu tiens le coup</b> grâce à ton second souffle.</div></sc-if></div>''', idle('Rien à faire : c’est au tour de Lyra', 5000)))
+B.append(block(11, bn('star', '★ Butin !'), '''<div style="display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center">
+<div class="beam"><dc-import name="Objet" objet="hache" rarete="leg" taille="140" hint-size="140px,140px"></dc-import></div>
+<span class="ttl" style="font-size: 24px; color: #F3CC63">Hache des Valombre</span><span class="lbl" style="color: #F3CC63">Légendaire</span>
+<span style="font-size: 15px">Mieux que ta hache : <b>+2 pour toucher</b>.</span>
+<sc-if value="{{equipped}}" hint-placeholder-val="{{ false }}"><span class="ok">{{lootTxt}}</span></sc-if></div>''',
+  '<sc-if value="{{notEquipped}}" hint-placeholder-val="{{ true }}">' + cb('L’équiper', 'Remplace ta hache', 'equip') + cb('La garder dans le sac', '', 'keep', dark=True) + '</sc-if>'))
+B.append(block(12, bn('listen', '★ Fin de la session'), '''<span class="ttl" style="font-size: 26px">Ce soir</span>
+<ul class="rec" style="margin-top: 10px"><li>Vous avez trouvé la page arrachée du registre.</li><li>Vous avez vaincu les gobelins de la crypte.</li><li>La porte nord est ouverte. Quelque chose chante derrière.</li></ul>
+<div class="gain" style="margin-top: 14px"><dc-import name="Objet" objet="hache" rarete="leg" taille="48" pips="false" hint-size="48px,48px"></dc-import><div style="display: flex; flex-direction: column; gap: 6px; flex: 1"><span style="font-size: 13px">Borin · bientôt niveau 4</span><dc-import name="Cases" stat="ini" valeur="8" max="10" h="10" largeur="200" hint-size="200px,16px"></dc-import></div></div>
+<div class="next" style="margin-top: 14px"><span class="lbl">Prochaine session</span><span class="ttl" style="font-size: 20px">Jeudi 10 octobre · 20 h 30</span></div>''', cb('À jeudi !', 'Ajouter à mon agenda', 'end')))
+phone = '<div class="ph">' + HEAD + ''.join(B) + NAV + '''<sc-if value="{{slam}}" hint-placeholder-val="{{ false }}"><div class="slam"><span>À toi, Borin !</span></div></sc-if>
+<sc-if value="{{ended}}" hint-placeholder-val="{{ false }}"><div class="endc"><span class="ttl" style="font-size: 30px">Bonne nuit, Marc.</span><p class="nar" style="font-size: 20px">La porte nord vous attend jeudi.</p><button type="button" class="cb" style="width: 240px" onClick="{{restart}}"><span class="in"><span style="flex: 1"><span class="t">Rejouer la soirée</span></span><span class="chev">›</span></span></button></div></sc-if></div>'''
+side_l = '''<div class="side"><div class="disc"><div class="hdr"><span class="live"></span>Discord · salon vocal « Crypte »</div>
+<sc-for list="{{lines}}" as="l" hint-placeholder-count="2"><div class="line {{l.cls}}"><span class="av {{l.av}}">{{l.ini}}</span><div><b>{{l.who}}</b><p>{{l.txt}}</p></div></div></sc-for></div>
+<p style="margin: 0; font-size: 12px; color: #6E6E6E; line-height: 1.5">À gauche, ce que Marc entend dans son casque. Au centre, son téléphone : touche les boutons comme lui. Quand il n’a rien à faire, le MJ continue tout seul.</p></div>'''
+side_r = '''<div class="side" style="width: 380px"><span class="lbl">Dans la tête de Marc</span><div class="think">{{thought}}</div>
+<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px"><span class="lbl">La soirée · moment {{m}} sur 12</span><div class="prog"><sc-for list="{{dots}}" as="d" hint-placeholder-count="12"><button type="button" class="{{d.cls}}" onClick="{{d.pick}}">{{d.n}}</button></sc-for></div>
+<div class="ctl"><button type="button" onClick="{{next}}">Le MJ continue ▶</button><button type="button" onClick="{{restart}}">Recommencer</button></div></div></div>'''
+JS = r'''
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = this.fresh();
+    this.timers = [];
+    this.ac = null;
+  }
+  fresh() {
+    return { m: 1, sound: false, soundAsked: false, choice: 0, sent: false, dice: 'idle', zoomed: false, dest: -1, moved: false, feed: 0, card: 0, atk: 'idle', equipped: '', ended: false, hp: 15, deg: 0, slam: false };
+  }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+  clear() { this.timers.forEach((t) => clearTimeout(t)); this.timers = []; }
+  go(m) {
+    if (m > 12) return;
+    this.clear();
+    const patch = { m, deg: 0, zoomed: false, slam: false };
+    if (m < 10) patch.hp = 15;
+    if (m === 10) { patch.hp = Math.max(1, (this.state.hp || 15) - 6); patch.deg = 6; }
+    if (m <= 4) { patch.sent = false; }
+    if (m <= 5) patch.dice = 'idle';
+    if (m <= 7) { patch.moved = false; patch.dest = -1; }
+    if (m <= 8) patch.feed = 0;
+    if (m <= 9) patch.atk = 'idle';
+    if (m <= 11) patch.equipped = '';
+    if (m === 1) { patch.soundAsked = false; }
+    this.setState(patch);
+    const auto = { 2: 7000, 3: 8000, 6: 6500, 10: 5000 };
+    if (auto[m]) this.later(() => this.go(m + 1), auto[m]);
+    if (m === 8) {
+      this.sfx('drum');
+      this.later(() => { this.setState({ feed: 1 }); this.sfx('miss'); }, 2200);
+      this.later(() => { this.setState({ feed: 2 }); this.sfx('hit'); }, 4400);
+      this.later(() => this.go(9), 6500);
+    }
+    if (m === 9) { this.setState({ slam: true }); this.sfx('turn'); this.later(() => this.setState({ slam: false }), 2300); }
+    if (m === 10) this.sfx('hurt');
+    if (m === 11) this.sfx('loot');
+    if (m === 6) this.sfx('clue');
+    if (m === 12) this.sfx('win');
+  }
+  audio() {
+    if (this.ac) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      this.ac = new AC();
+      const g = this.ac.createGain(); g.gain.value = 0.05; g.connect(this.ac.destination);
+      [55, 82.41, 110, 164.8].forEach((f, i) => {
+        const o = this.ac.createOscillator(); o.type = i > 1 ? 'triangle' : 'sine'; o.frequency.value = f;
+        const og = this.ac.createGain(); og.gain.value = i > 1 ? 0.12 : 0.5;
+        const lfo = this.ac.createOscillator(); lfo.frequency.value = 0.08 + i * 0.05;
+        const lg = this.ac.createGain(); lg.gain.value = i > 1 ? 0.12 : 0.3;
+        lfo.connect(lg); lg.connect(og.gain); o.connect(og); og.connect(g); o.start(); lfo.start();
+      });
+    } catch (e) { this.ac = null; }
+  }
+  tone(f, t0, dur, type, vol) {
+    const ac = this.ac; const o = ac.createOscillator(); o.type = type; o.frequency.value = f;
+    const g = ac.createGain(); const t = ac.currentTime + t0;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + 0.05);
+  }
+  noise(t0, dur, vol, freq) {
+    const ac = this.ac; const n = Math.floor(ac.sampleRate * dur);
+    const buf = ac.createBuffer(1, n, ac.sampleRate); const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const s = ac.createBufferSource(); s.buffer = buf;
+    const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq || 1800;
+    const g = ac.createGain(); g.gain.value = vol;
+    s.connect(f); f.connect(g); g.connect(ac.destination); s.start(ac.currentTime + t0);
+  }
+  sfx(k) {
+    if (!this.ac) return;
+    try {
+      if (k === 'click') this.tone(660, 0, 0.08, 'square', 0.04);
+      if (k === 'dice') for (let i = 0; i < 10; i++) this.noise(i * 0.1 + Math.random() * 0.03, 0.05, 0.5, 2400);
+      if (k === 'win') [523, 659, 784, 1047].forEach((f, i) => this.tone(f, i * 0.09, 0.4, 'triangle', 0.12));
+      if (k === 'hit') { this.tone(110, 0, 0.3, 'sine', 0.5); this.noise(0, 0.12, 0.6, 900); }
+      if (k === 'hurt') { this.tone(80, 0, 0.5, 'sine', 0.7); this.noise(0, 0.2, 0.7, 600); this.tone(220, 0.05, 0.25, 'sawtooth', 0.05); }
+      if (k === 'miss') this.noise(0, 0.25, 0.3, 3500);
+      if (k === 'turn') { this.tone(392, 0, 0.15, 'square', 0.07); this.tone(587, 0.15, 0.35, 'square', 0.07); }
+      if (k === 'drum') for (let i = 0; i < 4; i++) this.tone(70, i * 0.35, 0.25, 'sine', 0.6);
+      if (k === 'loot') [784, 988, 1175, 1568].forEach((f, i) => this.tone(f, i * 0.07, 0.6, 'sine', 0.1));
+      if (k === 'clue') [440, 554, 659].forEach((f, i) => this.tone(f, i * 0.12, 0.6, 'sine', 0.08));
+    } catch (e) {}
+  }
+  stopAudio() { try { if (this.ac) this.ac.close(); } catch (e) {} this.ac = null; }
+  renderVals() {
+    const s = this.state;
+    const m = s.m;
+    const optsData = [
+      ['Fouiller l’autel', 'Chercher ce qui est caché. Tu es bon pour ça.'],
+      ['Lire les inscriptions', 'Comprendre ce qui est écrit.'],
+      ['Parler aux autres', 'Proposer un plan au groupe.'],
+      ['Autre chose…', 'Dis-le au MJ sur Discord.']
+    ];
+    const reachCells = [[3, 6], [5, 6], [6, 6], [7, 6], [8, 6], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7], [3, 5]];
+    const actsData = [['Hache', 'Touche sur 13+ (+5)', '1d12 + 3 dégâts', 'Attaquer le gobelin', 'Hache · 1d12 + 3'], ['Second souffle', 'Soigne 1d10 + 3', '1 fois par combat', 'Reprendre mon souffle', 'Soigne 1d10 + 3 PV'], ['Parade', '+2 en défense', 'jusqu’à ton tour', 'Me mettre en garde', '+2 en défense']];
+    const dest = s.dest >= 0 ? reachCells[s.dest] : null;
+    const L = (who, txt, mj) => ({ who, txt, ini: who[0], cls: mj ? 'mjl' : '', av: mj ? 'mj' : '' });
+    const lines = {
+      1: [L('Romain · MJ', 'Salut tout le monde ! Je lance dans une minute. Activez le son sur vos téléphones.', 1), L('Camille', 'Lyra est prête !')],
+      2: [L('Romain · MJ', 'Précédemment… vous êtes descendus dans la crypte des Valombre. Borin, tu as pris un mauvais coup la dernière fois.', 1)],
+      3: [L('Romain · MJ', 'L’escalier s’arrête devant un autel de pierre noire. Les cendres sont encore tièdes…', 1), L('Hugo', 'Ça sent le piège, ça.')],
+      4: [L('Romain · MJ', 'Devant l’autel… que faites-vous ?', 1), L('Camille', 'Lyra surveille l’escalier, arc en main.')],
+      5: [L('Romain · MJ', 'Borin fouille ? Fais-moi un jet. Il te faut 13.', 1)],
+      6: [L('Romain · MJ', 'Sous l’autel, coincée dans une fente… une page de parchemin. La page arrachée du registre !', 1), L('Hugo', 'Je le savais !')],
+      7: [L('Romain · MJ', 'La porte de droite est entrouverte. Borin, tu passes devant ?', 1)],
+      8: [L('Romain · MJ', 'Des gobelins surgissent ! Le premier tire sur Lyra…', 1), L('Camille', 'Noooon !')],
+      9: [L('Romain · MJ', 'Borin, c’est à toi. Le gobelin est juste devant toi.', 1)],
+      10: [L('Romain · MJ', 'Le gobelin riposte… sa lame passe sous ton bouclier. Six dégâts.', 1), L('Hugo', 'Tiens bon, Borin !')],
+      11: [L('Romain · MJ', 'Le dernier gobelin s’effondre. Dans son sac… une hache magnifique.', 1)],
+      12: [L('Romain · MJ', 'On s’arrête là pour ce soir. Bravo tout le monde, à jeudi !', 1), L('Camille', 'Trop bien, à jeudi !')]
+    }[m];
+    const thoughts = {
+      1: 'Je suis au bon endroit, je joue Borin. On attend le MJ. Ah, il faut que j’active le son.',
+      2: 'Ah oui, la porte nord et le registre. Et Borin est blessé.',
+      3: 'J’écoute. Ce n’est pas encore à moi.',
+      4: 'Je peux fouiller, lire, parler… ou dire autre chose. Je fouille !',
+      5: s.dice === 'done' ? '20 ! C’est réussi, je l’ai vu tout de suite.' : 'Il me faut 13. Allez…',
+      6: 'C’est important, c’est gardé. Je peux le relire quand je veux.',
+      7: s.dest >= 0 ? 'Je vais là. Le gris, on ne l’a pas encore vu.' : 'Je peux aller jusqu’aux cases vertes.',
+      8: 'Le gobelin attaque Lyra. Moi, c’est après Sef. Je me prépare.',
+      9: s.atk === 'done' ? 'Touché ! Plus rien à faire, je finis mon tour.' : 'Je suis à côté du gobelin. Ma hache, et j’attaque.',
+      10: s.hp <= 10 ? 'Aïe. Il me reste ' + s.hp + ' PV. Au prochain tour, je me soigne.' : 'Aïe. Heureusement que j’ai repris mon souffle.',
+      11: 'Une hache légendaire ! Je la prends tout de suite.',
+      12: 'C’était bien. Vivement jeudi.'
+    }[m];
+    const feedTxt = ['Le gobelin tire sur Lyra…', 'Le gobelin tire sur Lyra… raté !', 'Sef lance une dague : touché, 4 dégâts.'][s.feed];
+    const order = [
+      { p: 'gobelin', n: s.feed < 2 ? 'maintenant' : 'a joué', pf: 'foe', cls: s.feed < 2 ? 'now' : '' },
+      { p: 'sef', n: s.feed === 2 ? 'maintenant' : 'Sef', pf: '', cls: s.feed === 2 ? 'now' : '' },
+      { p: 'borin', n: 'toi', pf: '', cls: 'me' },
+      { p: 'lyra', n: 'Lyra', pf: '', cls: '' }
+    ];
+    const v = {
+      m, hp: s.hp, deg: s.deg, soundOn: s.soundAsked, noSound: !s.soundAsked, soundTxt: s.sound ? 'son activé' : 'son coupé',
+      lines, thought: thoughts,
+      opts: optsData.map(([t, d], i) => ({ t, d, cls: (i === s.choice ? 'sel' : '') + (i === 3 ? ' free' : ''), pick: () => { if (!s.sent) { this.setState({ choice: i }); this.sfx('click'); } } })),
+      choiceName: optsData[s.choice][0], sent: s.sent, notSent: !s.sent,
+      diceIdle: s.dice === 'idle', diceRolling: s.dice === 'rolling', diceDone: s.dice === 'done', diceNotIdle: s.dice !== 'idle',
+      zoomed: s.zoomed,
+      bx: dest && s.moved ? dest[0] : 4, by: dest && s.moved ? dest[1] : 6,
+      reach: reachCells.map(([x, y], i) => ({ l: x * 28 - 12, t: (y + 1) * 28 - 8, cls: i === s.dest ? 'on' : '', pick: () => { this.setState({ dest: i }); this.sfx('click'); } })),
+      notMoved: !s.moved, moved: s.moved,
+      moveTxt: dest ? 'Tu vas sur la case choisie.' : 'Touche une case verte.',
+      moveSub: dest ? 'Case choisie' : 'Choisis d’abord une case', moveCls: dest ? '' : 'off',
+      who: s.feed < 2 ? 'le gobelin' : 'Sef', feedTxt, feedNext: s.feed < 2 ? 'Après Sef. Tu pourras bouger de 6 cases puis attaquer.' : 'C’est bientôt à toi !', order,
+      s2: s.atk === 'done' ? 'done' : 'cur', s3: s.atk === 'done' ? 'cur' : '',
+      atkIdle: s.atk === 'idle', atkRolling: s.atk === 'rolling', atkDone: s.atk === 'done',
+      acts: actsData.map((a, i) => ({ t: a[0], l1: a[1], l2: a[2], cls: i === s.card ? 'sel' : '', pick: () => { this.setState({ card: i }); this.sfx('click'); } })),
+      atkLabel: actsData[s.card][3], atkSub: actsData[s.card][4],
+      equipped: !!s.equipped, notEquipped: !s.equipped, lootTxt: s.equipped === 'equip' ? 'Équipée !' : 'Dans ton sac',
+      slam: s.slam, ended: s.ended, danger: s.hp <= 10, safe: s.hp > 10,
+      dots: Array.from({ length: 12 }, (_, i) => ({ n: i + 1, cls: i + 1 === m ? 'cur' : i + 1 < m ? 'done' : '', pick: () => this.go(i + 1) })),
+      sound: () => { this.audio(); this.setState({ sound: true, soundAsked: true }); this.sfx('click'); this.later(() => this.go(2), 1800); },
+      mute: () => { this.setState({ soundAsked: true }); this.later(() => this.go(2), 1200); },
+      propose: () => { if (s.sent) return; this.setState({ sent: true }); this.sfx('click'); this.later(() => this.go(5), 2200); },
+      roll: () => { if (this.state.dice !== 'idle') return; this.setState({ dice: 'rolling' }); this.sfx('dice'); this.later(() => { this.setState({ dice: 'done' }); this.sfx('win'); }, 1600); this.later(() => this.go(6), 4800); },
+      zoom: () => { this.setState({ zoomed: !this.state.zoomed }); this.sfx('click'); },
+      move: () => { if (this.state.dest < 0) return; this.setState({ moved: true }); this.sfx('click'); this.later(() => this.go(8), 2600); },
+      attack: () => {
+        if (this.state.atk !== 'idle') return;
+        if (this.state.card === 1) { this.setState({ hp: 22, deg: 0, atk: 'done' }); this.sfx('win'); return; }
+        this.setState({ atk: 'rolling' }); this.sfx('dice');
+        this.later(() => { this.setState({ atk: 'done' }); this.sfx('hit'); }, 1500);
+      },
+      finish: () => { this.sfx('click'); this.go(10); },
+      equip: () => { this.setState({ equipped: 'equip' }); this.sfx('loot'); this.later(() => this.go(12), 1800); },
+      keep: () => { this.setState({ equipped: 'keep' }); this.sfx('click'); this.later(() => this.go(12), 1800); },
+      end: () => { this.clear(); this.setState({ ended: true }); this.sfx('win'); this.later(() => this.stopAudio(), 1500); },
+      restart: () => { this.clear(); this.stopAudio(); this.setState(this.fresh()); },
+      next: () => { if (this.state.m < 12) this.go(this.state.m + 1); }
+    };
+    for (let i = 1; i <= 12; i++) v['is' + i] = m === i && !s.ended;
+    return v;
+  }
+}
+'''
+html = f'''<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Jouer la soirée de Marc</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
+<style>{css}</style>
+</helmet>
+<div class="pm" style="width: 1440px; height: 1000px; position: relative; overflow: hidden; display: flex; gap: 48px; padding: 56px 64px; box-sizing: border-box; align-items: flex-start">
+{side_l}
+{phone}
+{side_r}
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{{"$preview":{{"width":1440,"height":1000}}}}'>{JS}</script>
+</body>
+</html>
+'''
+open('design/project/Jouer-Marc.dc.html', 'w').write(html)
+d = json.load(open('design/project/canvas.json'))
+d['boards']['Jouer-Marc.dc.html'] = {"x": 4080, "y": 4720, "w": 1440, "h": 1000, "title": "Jouer · la soirée de Marc", "is_interactive": True}
+if 'Jouer-Marc.dc.html' not in d['order']: d['order'].append('Jouer-Marc.dc.html')
+json.dump(d, open('design/project/canvas.json', 'w'), ensure_ascii=False, indent=2)
+print(len(html))
