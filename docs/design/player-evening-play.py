@@ -59,6 +59,21 @@ css += r'''
 .mapov .mw{position:relative;height:420px;overflow:hidden;border-top:1px solid #2C2C2C;border-bottom:1px solid #2C2C2C}
 .here{position:absolute;z-index:970;transform:translate(-50%,-100%);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:#FFD60A;color:#0A0A0A;padding:2px 6px;border-radius:4px;white-space:nowrap}
 .nav button{cursor:pointer}
+.ov{position:absolute;left:0;right:0;top:96px;bottom:64px;z-index:40;background:#080808;overflow-y:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:16px;animation:lineIn .25s ease-out both;box-sizing:border-box}
+.sec{display:flex;flex-direction:column;gap:8px}
+.trait{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:#141414;border:1px solid #2C2C2C;font-size:13px}
+.trait span:last-child{margin-left:auto;font-size:12px;color:#8C8C8C}
+.mini-hand{display:flex;gap:6px}
+.slots{display:grid;grid-template-columns:repeat(5,56px);gap:8px}
+.wear{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:10px;background:#141414;border:1px solid #2C2C2C;font-size:13px}
+.wear small{display:block;font-size:11px;color:#8C8C8C}
+.tl{display:flex;flex-direction:column;gap:0;border-left:2px solid #2C2C2C;margin-left:6px}
+.ev{position:relative;padding:0 0 14px 18px;font-size:13px;line-height:1.45;color:#D4D4D4;animation:lineIn .4s ease-out both}
+.ev::before{content:'';position:absolute;left:-7px;top:4px;width:12px;height:12px;border-radius:3px;background:#3A3A3A;box-shadow:0 0 0 3px #080808}
+.ev.key::before{background:#F2F2F2}
+.ev time{display:block;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6E6E6E}
+.clue2{font:inherit;color:#F2F2F2;text-align:left;cursor:pointer;display:flex;align-items:center;gap:12px;font-size:13px;padding:8px;border-radius:10px;background:#141414;border:1px solid #2C2C2C}
+.clue2 .new{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.12em;background:#F2F2F2;color:#0A0A0A;padding:2px 5px;border-radius:3px}
 .prog button{font:inherit;font-size:12px;font-weight:700;width:34px;height:34px;border-radius:8px;border:1px solid #2C2C2C;background:#141414;color:#8C8C8C;cursor:pointer}
 .prog button.done{color:#F2F2F2}
 .prog button.cur{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A;box-shadow:0 2px 0 #8A8A8A}
@@ -139,7 +154,30 @@ MAPOV = '''<sc-if value="{{showMap}}" hint-placeholder-val="{{ false }}"><div cl
 <div class="mw"><div style="position: absolute; left: -26px; top: 40px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="30" vue="joueur" bx="{{bx}}" by="{{by}}" hint-size="420px,300px"></dc-import></div><span class="here" style="left: {{hereX}}px; top: {{hereY}}px">Tu es ici</span></div>
 <div class="legend" style="padding: 0 16px"><span><i class="f"></i>pas encore vu</span><span>Glisse pour te déplacer sur la carte</span></div>
 <div style="padding: 0 14px">''' + cb('Retour au jeu', '', 'backToGame', dark=True) + '''</div></div></sc-if>'''
-phone = '<div class="ph">' + HEAD + ''.join(B) + MAPOV + NAV + '''<sc-if value="{{slam}}" hint-placeholder-val="{{ false }}"><div class="slam"><span>À toi, Borin !</span></div></sc-if>
+PERSO = '''<sc-if value="{{showPerso}}" hint-placeholder-val="{{ false }}"><div class="ov">
+<div class="stage"><dc-import name="Perso" perso="borin" px="4" etat="aucun" hint-size="80px,104px"></dc-import><div style="display: flex; flex-direction: column; gap: 4px; flex: 1"><span class="ttl" style="font-size: 22px">Borin</span><span style="font-size: 12px; color: #A3A3A3">Nain guerrier · niveau 3</span><dc-import name="Cases" stat="ini" valeur="{{xp}}" max="10" h="8" largeur="170" hint-size="170px,14px"></dc-import><span style="font-size: 11px; color: #8C8C8C">{{xpTxt}}</span></div></div>
+<div class="sec"><span class="lbl">Ta vie</span><div class="trait"><dc-import name="Coeurs" pv="{{hp}}" max="31" coeurs="8" px="2" anim="false" hint-size="151px,16px"></dc-import><span>{{hp}} / 31 PV</span></div></div>
+<div class="sec"><span class="lbl">Ce que tu es</span>
+<div class="trait"><dc-import name="Gemme" stat="atq" valeur="+5" taille="30" anim="false" hint-size="30px,30px"></dc-import><b>Fort</b><span>tu touches souvent</span></div>
+<div class="trait"><dc-import name="Gemme" stat="ca" valeur="18" taille="30" anim="false" hint-size="30px,30px"></dc-import><b>Solide</b><span>on te touche sur 18 ou plus</span></div>
+<div class="trait"><dc-import name="Gemme" stat="mvt" valeur="6" taille="30" anim="false" hint-size="30px,30px"></dc-import><b>Lent</b><span>6 cases par tour</span></div>
+<div class="trait"><dc-import name="Gemme" stat="ini" valeur="+1" taille="30" anim="false" hint-size="30px,30px"></dc-import><b>Attentif</b><span>bon pour fouiller (+4)</span></div></div>
+<div class="sec"><span class="lbl">Ce que tu sais faire</span><div class="mini-hand">
+<dc-import name="GameCard" titre="Hache d’armes" type="Arme" texte="1d12 + 3 dégâts." valeur="+5" stat="atq" icon="epee" rarete="commune" w="80" hint-size="80px,112px"></dc-import>
+<dc-import name="GameCard" titre="Second souffle" type="Compétence" texte="Soigne 1d10 + 3." valeur="d10" stat="pv" icon="sort" rarete="peu-commune" w="80" hint-size="80px,112px"></dc-import>
+<dc-import name="GameCard" titre="Rage du nain" type="Compétence" texte="+2 dégâts." valeur="+2" stat="atq" icon="epee" rarete="rare" w="80" hint-size="80px,112px"></dc-import>
+<dc-import name="GameCard" titre="Fouiller" type="Sagesse" texte="Chercher, observer." valeur="+4" stat="none" icon="oeil" rarete="commune" w="80" hint-size="80px,112px"></dc-import></div></div>
+<div class="sec"><span class="lbl">Sur toi</span>
+<div class="wear"><dc-import name="Objet" objet="hache" rarete="{{weaponRar}}" taille="44" pips="false" hint-size="44px,44px"></dc-import><div><b>{{weaponName}}</b><small>arme en main</small></div></div>
+<div class="wear"><dc-import name="Objet" objet="bouclier" rarete="rare" taille="44" pips="false" hint-size="44px,44px"></dc-import><div><b>Écu de fer</b><small>au bras · compte dans « Solide »</small></div></div></div>
+<div class="sec"><span class="lbl">Ton sac</span><div class="slots"><sc-for list="{{bag}}" as="b" hint-placeholder-count="10"><dc-import name="Objet" objet="{{b.o}}" rarete="{{b.r}}" taille="56" qte="{{b.q}}" pips="false" hint-size="56px,56px"></dc-import></sc-for></div></div>
+</div></sc-if>'''
+JOURNAL = '''<sc-if value="{{showJournal}}" hint-placeholder-val="{{ false }}"><div class="ov">
+<div class="sec"><span class="lbl">Les indices du groupe</span><sc-for list="{{clues}}" as="c" hint-placeholder-count="3"><button type="button" class="clue2" onClick="{{c.pick}}"><dc-import name="Objet" objet="{{c.o}}" rarete="{{c.r}}" taille="40" pips="false" hint-size="40px,40px"></dc-import><span><b>{{c.t}}</b> : {{c.d}}</span><sc-if value="{{c.isNew}}" hint-placeholder-val="{{ false }}"><span class="new">NOUVEAU</span></sc-if></button></sc-for></div>
+<div class="sec"><span class="lbl">Ce soir</span><div class="tl"><sc-for list="{{events}}" as="e" hint-placeholder-count="4"><div class="ev {{e.cls}}"><time>{{e.h}}</time>{{e.t}}</div></sc-for></div></div>
+<sc-if value="{{clueOpen}}" hint-placeholder-val="{{ false }}"><div class="zoom" onClick="{{closeClue}}"><span class="lbl">{{clueTitle}}</span><p class="nar" style="font-size: 22px; text-align: center">{{clueText}}</p><span style="font-size: 12px; color: #8C8C8C">Touche pour fermer</span></div></sc-if>
+</div></sc-if>'''
+phone = '<div class="ph">' + HEAD + ''.join(B) + MAPOV + PERSO + JOURNAL + NAV + '''<sc-if value="{{slam}}" hint-placeholder-val="{{ false }}"><div class="slam"><span>À toi, Borin !</span></div></sc-if>
 <sc-if value="{{ended}}" hint-placeholder-val="{{ false }}"><div class="endc"><span class="ttl" style="font-size: 30px">Bonne nuit, Marc.</span><p class="nar" style="font-size: 20px">La porte nord vous attend jeudi.</p><button type="button" class="cb" style="width: 240px" onClick="{{restart}}"><span class="in"><span style="flex: 1"><span class="t">Rejouer la soirée</span></span><span class="chev">›</span></span></button></div></sc-if></div>'''
 side_l = '''<div class="side"><div class="disc"><div class="hdr"><span class="live"></span>Discord · salon vocal « Crypte »</div>
 <sc-for list="{{lines}}" as="l" hint-placeholder-count="2"><div class="line {{l.cls}}"><span class="av {{l.av}}">{{l.ini}}</span><div><b>{{l.who}}</b><p>{{l.txt}}</p></div></div></sc-for></div>
@@ -156,7 +194,7 @@ class Component extends DCLogic {
     this.ac = null;
   }
   fresh() {
-    return { m: 1, tab: 'jeu', sound: false, soundAsked: false, choice: 0, sent: false, dice: 'idle', zoomed: false, dest: -1, moved: false, feed: 0, card: 0, atk: 'idle', equipped: '', ended: false, hp: 15, deg: 0, slam: false };
+    return { m: 1, tab: 'jeu', clueOpen: '', clueFull: '', sound: false, soundAsked: false, choice: 0, sent: false, dice: 'idle', zoomed: false, dest: -1, moved: false, feed: 0, card: 0, atk: 'idle', equipped: '', ended: false, hp: 15, deg: 0, slam: false };
   }
   later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
   clear() { this.timers.forEach((t) => clearTimeout(t)); this.timers = []; }
@@ -312,6 +350,29 @@ class Component extends DCLogic {
       freeOpen: s.choice === 3 && !s.sent, diceTitle: s.choice === 3 ? 'Ton idée' : optsData[s.choice][0],
       showMap: s.tab === 'carte' && !s.ended, hereX: (dest && s.moved ? dest[0] : 4) * 30 - 26 + 15, hereY: ((dest && s.moved ? dest[1] : 6) + 1) * 30 + 40 - 40,
       tabs: [['jeu', 'Jeu'], ['carte', 'Carte'], ['perso', 'Personnage'], ['journal', 'Journal']].map(([id, n]) => ({ n, cls: (s.tab || 'jeu') === id ? 'on' : '', pick: () => { this.setState({ tab: id }); this.sfx('click'); } })),
+      showPerso: s.tab === 'perso' && !s.ended, showJournal: s.tab === 'journal' && !s.ended,
+      xp: m >= 12 ? 8 : m >= 10 ? 7 : 6, xpTxt: (m >= 12 ? 8 : m >= 10 ? 7 : 6) + ' / 10 · bientôt niveau 4',
+      weaponRar: s.equipped === 'equip' ? 'leg' : 'commune', weaponName: s.equipped === 'equip' ? 'Hache des Valombre' : 'Hache d’armes',
+      bag: [{ o: 'potion', r: 'commune', q: '2' }, { o: 'bourse', r: 'commune', q: '48' }, s.equipped === 'keep' ? { o: 'hache', r: 'leg', q: '' } : s.equipped === 'equip' ? { o: 'hache', r: 'commune', q: '' } : { o: 'aucun', r: 'commune', q: '' }, { o: 'aucun', r: 'commune', q: '' }, { o: 'aucun', r: 'commune', q: '' }, { o: 'aucun', r: 'commune', q: '' }, { o: 'aucun', r: 'commune', q: '' }, { o: 'aucun', r: 'commune', q: '' }, { o: 'aucun', r: 'commune', q: '' }, { o: 'aucun', r: 'commune', q: '' }],
+      clues: [
+        { o: 'parchemin', r: 'commune', t: 'Le registre', d: 'une page a été arrachée.', full: '« Registre des sépultures des Valombre. » Une page manque, arrachée net.', show: true, isNew: false },
+        { o: 'anneau', r: 'peu', t: 'La bague du gardien', d: 'gravée d’un corbeau.', full: 'Un anneau de fer noirci, gravé d’un corbeau aux ailes ouvertes.', show: true, isNew: false },
+        { o: 'parchemin', r: 'rare', t: 'La page arrachée', d: 'trouvée sous l’autel.', full: '« Ici reposent les Valombre, gardiens de la porte nord. Que nul ne chante leur nom après le couvre-feu. »', show: m >= 6, isNew: m >= 6 && m <= 8 }
+      ].filter((c) => c.show).map((c) => ({ ...c, pick: () => { this.setState({ clueOpen: c.t, clueFull: c.full }); this.sfx('click'); } })),
+      clueOpen: !!s.clueOpen, clueTitle: s.clueOpen || '', clueText: s.clueFull || '',
+      closeClue: () => this.setState({ clueOpen: '' }),
+      events: [
+        [2, '20:31', 'Précédemment : la crypte, la porte nord, Borin blessé.', ''],
+        [3, '20:34', 'Le groupe arrive dans la salle de l’autel.', ''],
+        [5, '20:38', s.choice === 3 ? 'Borin tente son idée : réussi (20).' : 'Borin fouille l’autel : réussi (20).', ''],
+        [6, '20:39', 'Indice trouvé : la page arrachée.', 'key'],
+        [7, '20:42', 'Le groupe avance vers la porte de droite.', ''],
+        [8, '20:43', 'Combat ! Des gobelins surgissent.', 'key'],
+        [9, '20:44', s.card === 3 ? 'Borin renverse la table : le gobelin tombe.' : s.card === 1 ? 'Borin reprend son souffle.' : s.card === 2 ? 'Borin entre en rage.' : 'Borin touche le gobelin : 9 dégâts.', ''],
+        [10, '20:45', 'Le gobelin blesse Borin : −6 PV.', ''],
+        [11, '20:52', 'Butin : Hache des Valombre (légendaire).', 'key'],
+        [12, '21:40', 'Fin de la session. Prochaine : jeudi 20 h 30.', 'key']
+      ].filter((e) => e[0] <= m && !(e[0] === 9 && m === 9 && s.atk !== 'done')).reverse().map(([, h, t, cls]) => ({ h, t, cls })),
       backToGame: () => { this.setState({ tab: 'jeu' }); this.sfx('click'); },
       equipped: !!s.equipped, notEquipped: !s.equipped, lootTxt: s.equipped === 'equip' ? 'Équipée !' : 'Dans ton sac',
       slam: s.slam, ended: s.ended, danger: s.hp <= 10, safe: s.hp > 10,
