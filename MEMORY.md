@@ -88,6 +88,16 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   diamonds, never from a hue (hues belong to stats): ivory, double
   rule, brushed silver, black card, gold foil, holographic. The divine
   card is the only rainbow in the app.
+- **States show twice:** a pixel effect on the character (poison
+  bubbles and tint, stun stars, sleep Z, invisible ghost, flames,
+  chains, sweat drop, halo) and a square badge in the UI with turns
+  left — black for banes, ivory for boons. An invisible player is not
+  drawn on the TV; their own phone shows them as a ghost.
+- **Notifications come in three sizes:** phone toasts that drop and
+  stack (ivory good news, black bad news, outlined information), full
+  TV moments for big events (level up, loot, skill unlocked, the card
+  flips and its material shows its rarity), and one line per event in
+  the GM journal.
 - **Dice are all faceted** (d4 to d20, shaded faces, numbers that roll
   then settle with a flash in the die's colour). Cartoon and pixel dice were tried and
   rejected.
