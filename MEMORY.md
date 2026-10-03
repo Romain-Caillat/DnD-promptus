@@ -98,6 +98,23 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   TV moments for big events (level up, loot, skill unlocked, the card
   flips and its material shows its rarity), and one line per event in
   the GM journal.
+- **Maps have three scales, all gridded:** world in hexes (~10 km),
+  place in squares (~5 m), encounter in squares (1.5 m). The grid
+  carries the rules everywhere.
+- **Maps are drawn in three-quarter view** (Zelda / Stardew / RPG
+  Maker): the GM or the LLM only places wall cells; autotiling draws the
+  wall top one tile up and the front face when the cell below is open.
+  Later rows paint over earlier ones, so a token north of a wall goes
+  behind it; rules stay on the logical grid. One tileset per decor
+  (16 tiles per material, dual-grid), hand-drawn or AI-generated once.
+  Top-down and isometric were considered and set aside.
+- **An imported image is decor only.** Doors, chests, traps, secret
+  passages and lights are objects on the grid, on layers the GM
+  reveals; walls are traced on top (or proposed by the AI, then
+  validated by the GM).
+- **Themes are packs.** A theme (fantasy, zombies, space…) swaps
+  tilesets, sprite parts, item art and the names of the six stats; the
+  UI system, the grid and the rules engine stay the same.
 - **Dice are all faceted** (d4 to d20, shaded faces, numbers that roll
   then settle with a flash in the die's colour). Cartoon and pixel dice were tried and
   rejected.
