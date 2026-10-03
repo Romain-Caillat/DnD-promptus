@@ -61,6 +61,11 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
 - **Game materials:** ivory playing cards on a black table (actions,
   clues, scenes), chunky 3D buttons that press down, segmented HP bars,
   threat clocks as pie segments, a turn track with portraits.
+- **Skill rarity has six tiers** — common, uncommon, rare, epic,
+  legendary, divine — read from the card's material and from 1 to 6
+  diamonds, never from a hue (hues belong to stats): ivory, double
+  rule, brushed silver, black card, gold foil, holographic. The divine
+  card is the only rainbow in the app.
 - **Dice are all faceted** (d4 to d20, shaded faces, numbers that roll
   then settle with a gold flash). Cartoon and pixel dice were tried and
   rejected.
