@@ -24,7 +24,8 @@ le récit de ce qui a été livré (→ `archive/tickets/`).
 | `design` | Les écrans MJ et joueur dessinés avant d'écrire du code |
 | `platform` | Le squelette (Rust/React/Tauri), la CI, le déploiement, le compte MJ |
 | `characters` | Chaque joueur crée son personnage pixel et le voit marcher dans les 4 directions |
-| Épics de portage | À découper une fois le design validé (moteur, campagne, génération, médias, cartes, session, joueur, co-MJ, combat, continuité) |
+| `maps` | Des cartes à trois échelles, dessinées automatiquement en vue 3/4, dans tous les univers |
+| Épics de portage | À découper une fois le design validé (moteur, campagne, génération, médias, session, joueur, co-MJ, combat, continuité) |
 
 ---
 
@@ -173,3 +174,193 @@ direction ; le pion se tourne vers sa case d'arrivée ou sa cible.
 marcher dans la bonne direction, chez tous les joueurs et sur la TV.
 
 **Origine** — Romain, session de design du 3 octobre 2026
+
+---
+
+## Épic `maps`
+
+Décisions : `MEMORY.md` §2 (trois échelles, vue 3/4, image = décor,
+extérieurs, thèmes en packs). Planches « Cartes · trois échelles » et
+« Cartes · extérieurs » du canevas. Prototypes de rendu :
+`docs/design/walls-prototype.py`, `docs/design/outdoor/`.
+
+Règle commune à tous les tickets : **la grille porte les règles**, le
+dessin n'est qu'une projection. Le serveur reste seul juge du
+déplacement, de la portée et de la ligne de vue ; un joueur ne reçoit
+jamais ce qu'il n'a pas le droit de voir (projection joueur, `MEMORY.md` §3).
+
+### `maps/model-grid-maps` · todo · à spécifier
+
+**Pourquoi** — Tout le reste (rendu, règles, brouillard, génération)
+lit la même description de carte.
+
+**Périmètre** — Modèle dans `shared/` : une carte a une échelle
+(monde en hexagones, lieu en carrés de 5 m, rencontre en carrés de
+1,5 m), une grille de cases (terrain, mur, hauteur, porte, eau…), des
+décors posés (avec couvert et terrain difficile), des objets cachés,
+des lumières, une ambiance, et des calques avec leur visibilité
+(tous, MJ, joueurs). Format versionné, stocké en base, porté depuis les
+cartes YAML du V1.
+
+**Fini quand** — Les cartes de la campagne de démo V1 se chargent dans
+le nouveau modèle et le moteur de règles calcule déplacement et ligne
+de vue dessus.
+
+**Origine** — Session de design du 3 octobre 2026 · V1 (format YAML des cartes)
+
+### `maps/render-three-quarter-tiles` · todo · à spécifier
+
+**Pourquoi** — Le MJ ou le LLM ne pose que des cases ; la carte doit
+se dessiner seule, belle, dans le style des personnages.
+
+**Périmètre** — Rendu en vue 3/4 par autotiling (double grille,
+16 tuiles par matière) : dessus des murs décalé d'une case, face quand
+la case du dessous est ouverte, ombres portées ; reliefs comme des murs
+qu'on gravit (falaise en strates, unité en hauteur dessinée plus haut) ;
+ordre de dessin par rangée pour passer derrière un mur ; calque de
+cimes au-dessus des pions, éclairci côté MJ quand un pion est dessous.
+Même rendu sur la TV, le téléphone et l'écran MJ.
+
+**Fini quand** — La crypte, la rue zombie, le désert et la forêt des
+planches sont rendus par l'app à partir de leur grille, sans image
+préparée, à 60 images/s sur un téléphone milieu de gamme.
+
+**Origine** — Planches « Cartes » du canevas · `docs/design/walls-prototype.py`
+
+### `maps/blend-outdoor-terrain` · todo · à spécifier
+
+**Pourquoi** — Sans extérieurs crédibles, on ne joue ni une rue
+post-apo ni une bataille sur une planète.
+
+**Périmètre** — Terrains fondus par bruit (bitume, dalles, herbe,
+terre, sable, roche, eau…) ; décors en pixel posés sur la grille
+(voitures, barricades, arbres, rochers, caisses) qui portent leurs
+règles (couvert ½ ou ¾, terrain difficile, passage obligé) ; ambiance
+réglable : heure, météo (pluie, sable, brume), sources de lumière
+(feu, cristaux) qui éclairent et vacillent.
+
+**Fini quand** — Le MJ change l'heure ou la météo d'une carte en
+direct et les joueurs le voient ; un décor de couvert modifie bien le
+jet d'attaque calculé par le serveur.
+
+**Origine** — Planche « Cartes · extérieurs » · `docs/design/outdoor/`
+
+### `maps/build-tileset-packs` · todo · à spécifier
+
+**Pourquoi** — Chaque décor (crypte, forêt, rue, désert, coursive…)
+a besoin de son jeu de tuiles et de ses décors, sans dessiner à la main
+à chaque campagne.
+
+**Périmètre** — Format d'un jeu de tuiles (16 tuiles par matière,
+faces de mur, décors avec leur emprise et leurs règles) ; génération
+par IA une fois par décor (type PixelLab), relue et validée par le MJ,
+puis réutilisée ; premiers packs : crypte et forêt (fantasy), rue
+(zombies), désert et coursive (spatial).
+
+**Fini quand** — Le MJ génère un nouveau décor, le valide, et
+l'utilise sur une carte sans retouche manuelle.
+
+**Origine** — Session de design du 3 octobre 2026
+
+### `maps/package-theme-packs` · todo · à spécifier
+
+**Pourquoi** — On jouera aussi en zombies et en spatial, pas seulement
+en fantasy.
+
+**Périmètre** — Un thème regroupe ses jeux de tuiles, ses pièces de
+personnage, ses objets, les noms de ses six statistiques (MAG peut
+devenir TECH ou PSY), ses ressources propres (munitions, oxygène,
+bruit…) et éventuellement sa police de titres. L'interface, la grille
+et le moteur de règles ne changent pas. Le système de règles est une
+donnée de la campagne, pas du code.
+
+**Fini quand** — Une campagne zombie et une campagne spatiale se
+jouent de bout en bout avec leurs ressources affichées dans les
+composants existants (cases, horloges, badges).
+
+**Origine** — Romain, session de design du 3 octobre 2026
+
+### `maps/edit-map-gm` · todo · à spécifier
+
+**Pourquoi** — Le MJ garde le dernier mot sur chaque carte.
+
+**Périmètre** — Éditeur dans l'écran MJ : peindre terrains et murs,
+poser décors, portes, objets cachés et lumières, régler l'ambiance,
+pinceau de brouillard, révéler un calque ou un objet en direct.
+
+**Fini quand** — Le MJ crée une carte de rencontre complète en moins
+de dix minutes et révèle un passage secret pendant la session.
+
+**Origine** — Planche « Cartes · trois échelles »
+
+### `maps/generate-map-llm` · todo · à spécifier
+
+**Pourquoi** — Préparer une carte doit être aussi rapide que décrire
+la scène.
+
+**Périmètre** — À partir d'une scène du graphe d'histoire, le LLM
+propose une grille (murs, portes, terrains, décors, objets cachés)
+dans le jeu de tuiles du décor ; le MJ la relit dans l'éditeur et la
+valide. Rien n'arrive aux joueurs sans validation ; chaque appel est
+compté.
+
+**Fini quand** — Une scène de la démo produit une carte jouable,
+validée par le MJ, en une génération et quelques retouches.
+
+**Origine** — Règles de design 1 et 2 (`CLAUDE.md`)
+
+### `maps/import-image-map` · todo · à spécifier
+
+**Pourquoi** — Beaucoup de MJ ont déjà des cartes (achetées, faites
+dans Dungeondraft ou Dungeon Alchemist, générées).
+
+**Périmètre** — Importer ou générer une image ; aligner la grille
+(taille de case, décalage, case témoin) ; tracer les murs, ou laisser
+l'IA les proposer puis les valider ; importer le format Universal VTT
+(`.dd2vtt`) avec ses murs et lumières ; l'image n'est qu'un décor,
+tout ce qui est caché ou change d'état est un objet posé par-dessus.
+
+**Fini quand** — Une carte `.dd2vtt` et une image brute deviennent
+jouables, avec ligne de vue correcte, en moins de cinq minutes.
+
+**Origine** — Recherche sur Foundry VTT et Owlbear Rodeo, session du 3 octobre 2026
+
+### `maps/reveal-fog-and-hidden` · todo · à spécifier
+
+**Pourquoi** — Explorer, c'est découvrir : ce qui n'est pas vu ne doit
+pas fuiter.
+
+**Périmètre** — Brouillard (motif de petits carrés) révélé par la
+ligne de vue ou par le MJ ; objets cachés visibles du seul MJ ; un
+joueur invisible absent de la TV mais visible en fantôme sur son
+téléphone. Tout est filtré côté serveur avant l'envoi.
+
+**Fini quand** — Un test prouve qu'aucune donnée d'une case non
+révélée ou d'un objet caché n'atteint un client joueur.
+
+**Origine** — `MEMORY.md` §3 (projection joueur)
+
+### `maps/travel-hex-world` · todo · à spécifier
+
+**Pourquoi** — Le voyage entre les lieux est une partie du jeu, pas un
+écran de chargement.
+
+**Périmètre** — Carte du monde en hexagones (≈ 10 km) : le groupe est
+un seul pion, avance par portions de journée, révèle les hexagones
+traversés et découvre les lieux ; un lieu ouvre sa carte (lieu ou
+rencontre). En spatial, la même mécanique sert la carte du système.
+
+**Fini quand** — Le groupe voyage de Valombre à la crypte sur la carte
+du monde puis entre dans la crypte sans quitter l'écran de jeu.
+
+**Origine** — Planche « Cartes · trois échelles »
+
+### `maps/support-hex-combat` · todo · à spécifier
+
+**Pourquoi** — Certains MJ préfèrent les hexagones aussi en combat.
+
+**Périmètre** — Seconde géométrie pour le moteur de règles
+(déplacement, portée, ligne de vue) et le rendu ; à décider après les
+premières sessions réelles.
+
+**Origine** — Session de design du 3 octobre 2026 (reporté volontairement)
