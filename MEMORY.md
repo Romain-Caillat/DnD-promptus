@@ -58,6 +58,14 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
 - **Exception: characters are in colour.** Pixel-art sprites in the
   Terraria / Starbound style: side view, dark outline, top-light and
   back-shadow shading, heroes face right and enemies face left.
+- **Items are pixel art in colour too** (12 × 12 cells plus outline),
+  shown in square inventory slots like Terraria. An item's rarity is
+  the slot frame's material, the same six as skill cards, plus 1 to 6
+  diamonds. Loot on the TV: the chest shakes, a beam in the rarity's
+  material rises, the item floats up.
+- **Dice take the colour of the stat they roll** (attack orange,
+  damage red, spell violet…); white is a plain skill roll. The faces
+  keep their shading, re-tinted in that colour.
 - **Game materials:** ivory playing cards on a black table (actions,
   clues, scenes) and a turn track with portraits.
 - **Stat gems are small pixel grids** (7, 9 or 11 cells wide by size),
@@ -81,7 +89,7 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   rule, brushed silver, black card, gold foil, holographic. The divine
   card is the only rainbow in the app.
 - **Dice are all faceted** (d4 to d20, shaded faces, numbers that roll
-  then settle with a gold flash). Cartoon and pixel dice were tried and
+  then settle with a flash in the die's colour). Cartoon and pixel dice were tried and
   rejected.
 - **The radial square grid has two uses only:** fog of war (unknown
   cells) and the small "AI is writing" indicator. Elsewhere it was too
