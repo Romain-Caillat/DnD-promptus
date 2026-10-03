@@ -23,11 +23,16 @@ le récit de ce qui a été livré (→ `archive/tickets/`).
 | --- | --- |
 | `design` | Les écrans MJ et joueur dessinés avant d'écrire du code |
 | `platform` | Le squelette (Rust/React/Tauri), la CI, le déploiement, le compte MJ |
+| `characters` | Chaque joueur crée son personnage pixel et le voit marcher dans les 4 directions |
 | Épics de portage | À découper une fois le design validé (moteur, campagne, génération, médias, cartes, session, joueur, co-MJ, combat, continuité) |
 
 ---
 
 ## Épic `design`
+
+Canevas de travail (privé) : https://claude.ai/artifact/AP3z1S5hbhqEiPzi5agTdy —
+fondations, construction d'histoire, écran MJ, TV, téléphone joueur.
+Décisions retenues : `MEMORY.md` §2.
 
 On repart d'une feuille blanche côté interface. Le V1 a montré que des
 écrans empilés au fil des épics ne font pas un jeu : on dessine d'abord
@@ -47,7 +52,7 @@ une action, lire le récapitulatif).
 
 **Origine** — `docs/design-brief.md`
 
-### `design/build-design-system` · todo
+### `design/build-design-system` · doing
 
 **Pourquoi** — Une identité visuelle propre au jeu (ambiance, typo,
 couleurs, iconographie), cohérente entre téléphone et ordinateur.
@@ -59,7 +64,7 @@ composants de base adaptés de shadcn, ton des textes.
 
 **Origine** — `docs/design-brief.md`
 
-### `design/draw-player-screens` · todo
+### `design/draw-player-screens` · doing
 
 **Pourquoi** — Le joueur joue sur téléphone : c'est l'écran qui décide
 si la partie est agréable.
@@ -72,7 +77,7 @@ ne demande de viser ni de zoomer.
 
 **Origine** — `docs/design-brief.md`
 
-### `design/draw-gm-screens` · todo
+### `design/draw-gm-screens` · doing
 
 **Pourquoi** — Le MJ mène toute la partie depuis un seul écran sans se
 perdre.
@@ -119,7 +124,7 @@ Rust contre Postgres, lint + typecheck + tests front, gitleaks.
 **Périmètre** — Compte MJ avec passkey (comme Devotion) ; les joueurs
 restent sans compte (jeton haché).
 
-**Origine** — `MEMORY.md` §3
+**Origine** — `MEMORY.md` §4
 
 ### `platform/deploy-self-hosted` · todo · à spécifier
 
@@ -128,3 +133,43 @@ sauvegarde avant chaque déploiement, déploiement continu (modèle
 `deploy/` de Devotion), `docs/install.md` et `docs/backup.md`.
 
 **Origine** — Alignement sur Devotion
+
+---
+
+## Épic `characters`
+
+Les personnages sont des sprites pixel art en couleur, façon Terraria /
+Starbound (voir `MEMORY.md` §2). Dans le design actuel, ils sont fixes
+et vus de profil ; dans l'app, chaque joueur fabrique le sien.
+
+### `characters/build-character-creator` · todo · à spécifier
+
+**Pourquoi** — Le personnage est la pièce du joueur sur le plateau :
+le créer soi-même, c'est s'y attacher dès la première session.
+
+**Périmètre** — Un configurateur en couches (corps, peau, cheveux,
+barbe, tenue, armure, arme, accessoire), chaque couche avec sa palette
+de couleurs ; aperçu animé en direct ; un bouton « au hasard ». Le
+personnage est stocké comme une description (couches + couleurs), pas
+comme une image : l'app le dessine, le contour et les ombres sont
+calculés. Le MJ fait de même pour les PNJ et les monstres.
+
+**Fini quand** — Un joueur crée son personnage depuis son téléphone en
+moins de deux minutes et le retrouve sur la carte, la TV et sa fiche.
+
+**Origine** — Romain, session de design du 3 octobre 2026 ·
+prototype : `docs/design/sprite-prototype.py`
+
+### `characters/walk-in-four-directions` · todo · à spécifier
+
+**Pourquoi** — Sur la carte, un personnage qui se tourne vers là où il
+va rend le déplacement lisible et vivant.
+
+**Périmètre** — Chaque couche existe en 4 directions (face, dos,
+gauche, droite) ; animations repos, marche, attaque, touché par
+direction ; le pion se tourne vers sa case d'arrivée ou sa cible.
+
+**Fini quand** — Un déplacement sur la grille montre le personnage
+marcher dans la bonne direction, chez tous les joueurs et sur la TV.
+
+**Origine** — Romain, session de design du 3 octobre 2026

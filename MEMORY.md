@@ -44,7 +44,36 @@ memory. If someone would re-litigate it in six months, it is.
   by default. Cost is estimated before each batch and checked against
   the campaign's AI budget.
 
-## 2. Load-bearing invariants (proven in V1, keep them)
+
+## 2. Visual direction (design pass, October 2026)
+
+Settled with Romain on the design canvas (link in `TICKETS.md`, epic
+`design`). The feel is a board game / video game, not a dashboard.
+
+- **Black and white UI; colour only for numbers.** HP red `#FF4D5E`,
+  ATK orange `#FF9F1C`, AC blue `#3D9BFF`, MAG violet `#B28CFF`,
+  MOVE mint `#2EE6A6`, INIT yellow `#FFD60A`. Each stat also has a
+  shape (diamond ATK, shield AC, hexagon MAG, arrow MOVE, round INIT),
+  so colour is never the only cue.
+- **Exception: characters are in colour.** Pixel-art sprites in the
+  Terraria / Starbound style: side view, dark outline, top-light and
+  back-shadow shading, heroes face right and enemies face left.
+- **Game materials:** ivory playing cards on a black table (actions,
+  clues, scenes), chunky 3D buttons that press down, segmented HP bars,
+  threat clocks as pie segments, a turn track with portraits.
+- **Dice are all faceted** (d4 to d20, shaded faces, numbers that roll
+  then settle with a gold flash). Cartoon and pixel dice were tried and
+  rejected.
+- **The radial square grid has two uses only:** fog of war (unknown
+  cells) and the small "AI is writing" indicator. Elsewhere it was too
+  much.
+- **Type:** Cinzel (titles, cards), Cormorant Garamond italic (text read
+  aloud), Chakra Petch (UI and numbers).
+- **Motion is part of the product:** dice rolls, damage numbers, card
+  deals and flips, hit shake, "your turn" slam. Every animation has a
+  meaning and respects `prefers-reduced-motion`.
+
+## 3. Load-bearing invariants (proven in V1, keep them)
 
 Break one of these and the failure is silent, not loud.
 
@@ -91,7 +120,7 @@ only its hash.
 Each LLM, image or video call is recorded with its cost and counted
 against the campaign budget; a batch that would exceed it is refused.
 
-## 3. Traps
+## 4. Traps
 
 - **YouTube player must stay visible** (YouTube terms) and starts muted:
   each player taps "activate sound". Ads can desync a player; playback
@@ -100,8 +129,11 @@ against the campaign budget; a batch that would exceed it is refused.
   during V1 development). Check it before designing around it.
 - **V1 GM pages had no authentication.** The rewrite needs a GM account
   from day one (passkeys, as in Devotion); `/play/*` stays tokenless.
+- **YouTube player must stay visible** also applies to the phone design:
+  the scene screen currently hides music behind a button — needs a
+  visible mini-player before it ships.
 
-## 4. Conventions
+## 5. Conventions
 
 - **Language:** conversation and tickets in **French**. Code,
   comments, commit messages, and technical docs in **English**.
