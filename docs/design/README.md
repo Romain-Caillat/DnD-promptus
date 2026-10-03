@@ -2,7 +2,7 @@
 
 The design lives in a private Claude design canvas:
 https://claude.ai/artifact/AP3z1S5hbhqEiPzi5agTdy (owner: Romain).
-`canvas/` is a snapshot of its sources (version 72, 3 October 2026).
+`canvas/` is a snapshot of its sources (version 74, 3 October 2026).
 The published canvas is the reference: if they differ, read the canvas
 back before editing, Romain moves and resizes boards there.
 

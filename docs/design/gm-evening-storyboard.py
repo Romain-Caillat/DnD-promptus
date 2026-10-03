@@ -21,7 +21,7 @@ FRAMES = [
 ]
 
 css = r'''
-body{margin:0;background:#0A0A0A}
+body{margin:0;background:#0A0A0A;overflow:hidden}
 .pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 40% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
 .ttl{font-family:'Cinzel',Georgia,serif;font-weight:800}
 .lbl{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
@@ -38,7 +38,7 @@ body{margin:0;background:#0A0A0A}
 .rule > b{flex:none;width:24px;height:24px;border-radius:6px;background:#EDEDED;color:#0A0A0A;display:grid;place-items:center;font-family:'Cinzel',serif;box-shadow:0 2px 0 #6E6E6E}
 '''
 
-W, H = 2384, 2680
+W, H = 2384, 2760
 frames = ''.join(
     f'<div class="mo"><div class="mh"><b>{i}</b><span>{t}</span></div>'
     f'<div class="fr"><div style="width: 1440px; height: 900px; transform: scale(.5); transform-origin: 0 0"><dc-import name="Mener-MJ" moment="{i}" seul="true" hint-size="1440px,900px"></dc-import></div></div>'
