@@ -44,6 +44,21 @@ css += r'''
 .think::after{content:'';position:absolute;left:-14px;top:24px;width:18px;height:18px;border-radius:50%;background:#EDEDED}
 .think::before{content:'';position:absolute;left:-26px;top:40px;width:9px;height:9px;border-radius:50%;background:#EDEDED}
 .prog{display:flex;flex-wrap:wrap;gap:6px}
+.hand{position:relative;height:150px;margin-top:6px}
+.hand .cw{position:absolute;bottom:0;background:none;border:0;padding:0;cursor:pointer;transform-origin:50% 140%;transition:transform .25s cubic-bezier(.2,1.3,.3,1),filter .25s}
+.hand .cw.sel{filter:drop-shadow(0 0 14px rgba(255,255,255,.35));z-index:5}
+.other{width:80px;height:112px;border-radius:9px;border:2px dashed #8C8C8C;background:#0E0E0E;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#F2F2F2;box-sizing:border-box;box-shadow:0 4px 0 #000}
+.other b{font-family:'Cinzel',serif;font-size:30px;line-height:1}
+.other span{font-family:'Cinzel',serif;font-size:12px;font-weight:800}
+.cw.sel .other{border-color:#F2F2F2;background:#1A1A1A}
+.txt{font:inherit;font-size:14px;width:100%;box-sizing:border-box;min-height:64px;resize:none;padding:10px 12px;border-radius:10px;background:#0A0A0A;color:#F2F2F2;border:1.5px solid #F2F2F2;outline:none}
+.txt::placeholder{color:#6E6E6E}
+.cardinfo{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px;color:#A3A3A3;margin-top:8px}
+.cardinfo b{font-family:'Cinzel',serif;font-size:15px;color:#F2F2F2}
+.mapov{position:absolute;left:0;right:0;top:96px;bottom:64px;z-index:40;background:#080808;display:flex;flex-direction:column;gap:10px;padding:12px 0 0;animation:lineIn .25s ease-out both}
+.mapov .mw{position:relative;height:420px;overflow:hidden;border-top:1px solid #2C2C2C;border-bottom:1px solid #2C2C2C}
+.here{position:absolute;z-index:970;transform:translate(-50%,-100%);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:#FFD60A;color:#0A0A0A;padding:2px 6px;border-radius:4px;white-space:nowrap}
+.nav button{cursor:pointer}
 .prog button{font:inherit;font-size:12px;font-weight:700;width:34px;height:34px;border-radius:8px;border:1px solid #2C2C2C;background:#141414;color:#8C8C8C;cursor:pointer}
 .prog button.done{color:#F2F2F2}
 .prog button.cur{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A;box-shadow:0 2px 0 #8A8A8A}
@@ -56,7 +71,7 @@ def cb(label, sub='', on='', dark=False, extra=''):
 def idle(text, ms):
     return f'<div class="idle">{text}<span class="bar" style="animation-duration: {ms}ms"></span></div>'
 HEAD = '''<div class="hd"><span class="pf"><dc-import name="Sprite" perso="borin" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><div style="display: flex; flex-direction: column; gap: 3px; flex: 1"><span class="ttl" style="font-size: 14px">Borin</span><dc-import name="Coeurs" pv="{{hp}}" max="31" coeurs="8" px="2" degats="{{deg}}" hint-size="151px,16px"></dc-import></div><span class="pv">{{hp}}<small> / 31 PV</small></span></div>'''
-NAV = '<nav class="nav"><button type="button" class="on">Jeu</button><button type="button">Personnage</button><button type="button">Journal</button></nav>'
+NAV = '<nav class="nav"><sc-for list="{{tabs}}" as="t" hint-placeholder-count="4"><button type="button" class="{{t.cls}}" onClick="{{t.pick}}">{{t.n}}</button></sc-for></nav>'
 def bn(kind, text): return f'<div class="bn {kind}"><span>{text}</span></div>'
 def block(n, banner, body, foot):
     return f'<sc-if value="{{{{is{n}}}}}" hint-placeholder-val="{{{{ {"true" if n==1 else "false"} }}}}">{banner}<div class="body">{body}</div><div class="ft">{foot}</div></sc-if>'
@@ -73,10 +88,11 @@ B.append(block(3, bn('listen', '👂 Le MJ raconte · écoute'), '''<div class="
 <div class="mini" style="margin-top: 14px"><span class="eq"><i></i><i></i><i></i></span><span style="flex: 1">Ombres de la crypte</span><span style="color: #8C8C8C">{{soundTxt}}</span></div>''', idle('Rien à faire pour l’instant', 8000)))
 B.append(block(4, bn('you', '✋ À vous : que faites-vous ?'), '''<p class="nar" style="font-size: 19px">« Devant l’autel, que faites-vous ? »</p>
 <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px"><sc-for list="{{opts}}" as="o" hint-placeholder-count="4"><button type="button" class="opt {{o.cls}}" onClick="{{o.pick}}"><b>{{o.t}}</b><span>{{o.d}}</span></button></sc-for></div>
+<sc-if value="{{freeOpen}}" hint-placeholder-val="{{ false }}"><textarea class="txt" style="margin-top: 8px" placeholder="Ex. : je verse de l’eau sur les cendres pour voir ce qu’elles cachent"></textarea></sc-if>
 <div class="others" style="margin-top: 10px"><span class="lbl">Les autres</span><span>Lyra surveille l’escalier.</span></div>''',
   '<sc-if value="{{notSent}}" hint-placeholder-val="{{ true }}">' + cb('Proposer au MJ', '{{choiceName}}', 'propose') + '</sc-if><sc-if value="{{sent}}" hint-placeholder-val="{{ false }}"><div class="sent"><span class="spin"></span>Envoyé. Le MJ lit ta proposition…</div></sc-if>'))
 B.append(block(5, bn('you', '🎲 À toi : lance le dé'), '''<div style="display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center">
-<span class="ttl" style="font-size: 22px">Fouiller l’autel</span>
+<span class="ttl" style="font-size: 22px">{{diceTitle}}</span>
 <span style="font-size: 15px; color: #D4D4D4">Il te faut <b style="font-size: 20px; color: #F2F2F2">13 ou plus</b></span>
 <sc-if value="{{diceIdle}}" hint-placeholder-val="{{ true }}"><button type="button" class="dz" onClick="{{roll}}" aria-label="Lancer le dé"><dc-import name="De" de="d20" valeur="20" taille="150" anim="survol" hint-size="150px,150px"></dc-import></button><span style="font-size: 13px; color: #A3A3A3">Touche le dé</span></sc-if>
 <sc-if value="{{diceRolling}}" hint-placeholder-val="{{ false }}"><dc-import name="De" de="d20" valeur="16" taille="150" anim="roule" hint-size="150px,150px"></dc-import></sc-if>
@@ -98,11 +114,13 @@ B.append(block(8, bn('wait', '⏳ Combat · {{who}} joue'), '''<div class="order
 <div class="feed" style="margin-top: 14px"><span class="lbl">À l’instant</span><p>{{feedTxt}}</p></div>
 <div class="feed" style="margin-top: 10px"><span class="lbl">Ton tour arrive</span><p>{{feedNext}}</p></div>''', idle('Rien à faire : regarde, ton tour arrive', 6500)))
 B.append(block(9, bn('turn', '⚔ À toi, Borin !'), '''<div class="steps"><span class="done">1 · Bouger ✓</span><span class="{{s2}}">2 · Agir</span><span class="{{s3}}">3 · Finir</span></div>
-<div class="mapw small" style="margin-top: 10px"><div style="position: absolute; left: -116px; top: -78px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="34" vue="joueur" grille="false" combat="true" hint-size="476px,340px"></dc-import></div><span class="tgt" style="left: 51px; top: 157px"></span></div>
-<sc-if value="{{atkIdle}}" hint-placeholder-val="{{ true }}"><span class="lbl" style="display: block; margin: 10px 0 8px">Cible : le gobelin, juste à côté</span><div class="acts"><sc-for list="{{acts}}" as="a" hint-placeholder-count="3"><button type="button" class="act {{a.cls}}" onClick="{{a.pick}}"><b>{{a.t}}</b><span>{{a.l1}}</span><span>{{a.l2}}</span></button></sc-for></div></sc-if>
+<div class="mapw small" style="margin-top: 10px; height: 170px"><div style="position: absolute; left: 18px; top: -120px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="34" vue="joueur" grille="false" combat="true" hint-size="476px,340px"></dc-import></div><span class="tgt" style="left: 185px; top: 115px"></span></div>
+<sc-if value="{{atkIdle}}" hint-placeholder-val="{{ true }}"><div class="cardinfo"><span>Ta main · cible : <b>le gobelin</b></span><span>{{cardHint}}</span></div>
+<div class="hand"><sc-for list="{{acts}}" as="a" hint-placeholder-count="4"><button type="button" class="cw {{a.cls}}" style="left: {{a.x}}px; transform: rotate({{a.r}}deg) translateY({{a.y}}px)" onClick="{{a.pick}}" aria-label="{{a.t}}"><sc-if value="{{a.isCard}}" hint-placeholder-val="{{ true }}"><dc-import name="GameCard" titre="{{a.t}}" type="{{a.ty}}" texte="{{a.tx}}" valeur="{{a.v}}" stat="{{a.st}}" icon="{{a.ic}}" rarete="{{a.ra}}" etat="{{a.et}}" w="80" hint-size="80px,112px"></dc-import></sc-if><sc-if value="{{a.isOther}}" hint-placeholder-val="{{ false }}"><span class="other"><b>?</b><span>Autre…</span></span></sc-if></button></sc-for></div>
+<sc-if value="{{otherSel}}" hint-placeholder-val="{{ false }}"><textarea class="txt" placeholder="Décris ton idée : je renverse la table sur le gobelin…"></textarea></sc-if></sc-if>
 <sc-if value="{{atkRolling}}" hint-placeholder-val="{{ false }}"><div style="display: flex; align-items: center; gap: 14px; margin-top: 12px"><dc-import name="De" de="d20" valeur="17" taille="80" anim="roule" couleur="atq" hint-size="80px,80px"></dc-import><span style="font-size: 15px">Tu frappes… il te faut <b>13</b>.</span></div></sc-if>
-<sc-if value="{{atkDone}}" hint-placeholder-val="{{ false }}"><div style="display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 12px; text-align: center"><div class="res" style="animation: none; font-size: 28px"><span>17</span><span class="op">+ 5</span><span class="op">=</span><span>22</span></div><span class="ok">Touché !</span><span style="font-size: 14px">La hache fait <b style="color: #FF4D5E">9 dégâts</b>. Le gobelin chancelle.</span></div></sc-if>''',
-  '<sc-if value="{{atkIdle}}" hint-placeholder-val="{{ true }}">' + cb('{{atkLabel}}', '{{atkSub}}', 'attack') + '</sc-if><sc-if value="{{atkRolling}}" hint-placeholder-val="{{ false }}"><div class="sent"><span class="spin"></span>Le dé roule…</div></sc-if><sc-if value="{{atkDone}}" hint-placeholder-val="{{ false }}">' + cb('Finir mon tour', 'Plus rien à faire ce tour-ci', 'finish', dark=True) + '</sc-if>'))
+<sc-if value="{{atkAsking}}" hint-placeholder-val="{{ false }}"><div class="sent" style="margin-top: 12px"><span class="spin"></span>Le MJ lit ton idée…</div></sc-if><sc-if value="{{atkCustom}}" hint-placeholder-val="{{ false }}"><div style="display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 12px; text-align: center"><span class="ok">Le MJ accepte !</span><span style="font-size: 14px">Tu renverses la table : <b>le gobelin tombe à terre</b>. Les autres auront l’avantage contre lui.</span></div></sc-if><sc-if value="{{atkHit}}" hint-placeholder-val="{{ false }}"><div style="display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 12px; text-align: center"><div class="res" style="animation: none; font-size: 28px"><span>17</span><span class="op">+ 5</span><span class="op">=</span><span>22</span></div><span class="ok">Touché !</span><span style="font-size: 14px">La hache fait <b style="color: #FF4D5E">9 dégâts</b>. Le gobelin chancelle.</span></div></sc-if>''',
+  '<sc-if value="{{atkIdle}}" hint-placeholder-val="{{ true }}">' + cb('{{atkLabel}}', '{{atkSub}}', 'attack') + '</sc-if><sc-if value="{{atkBusy}}" hint-placeholder-val="{{ false }}"><div class="sent"><span class="spin"></span>{{busyTxt}}</div></sc-if><sc-if value="{{atkDone}}" hint-placeholder-val="{{ false }}">' + cb('Finir mon tour', 'Plus rien à faire ce tour-ci', 'finish', dark=True) + '</sc-if>'))
 B.append(block(10, bn('hurt', '♥ Le gobelin te touche : −6 PV'), '''<div style="display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center">
 <div class="shake"><dc-import name="Perso" perso="borin" px="5" anim="touche" etat="aucun" hint-size="100px,130px"></dc-import></div>
 <span class="big">−6</span><span style="font-size: 16px">Il te reste <b>{{hp}} PV sur 31</b></span>
@@ -117,7 +135,11 @@ B.append(block(12, bn('listen', '★ Fin de la session'), '''<span class="ttl" s
 <ul class="rec" style="margin-top: 10px"><li>Vous avez trouvé la page arrachée du registre.</li><li>Vous avez vaincu les gobelins de la crypte.</li><li>La porte nord est ouverte. Quelque chose chante derrière.</li></ul>
 <div class="gain" style="margin-top: 14px"><dc-import name="Objet" objet="hache" rarete="leg" taille="48" pips="false" hint-size="48px,48px"></dc-import><div style="display: flex; flex-direction: column; gap: 6px; flex: 1"><span style="font-size: 13px">Borin · bientôt niveau 4</span><dc-import name="Cases" stat="ini" valeur="8" max="10" h="10" largeur="200" hint-size="200px,16px"></dc-import></div></div>
 <div class="next" style="margin-top: 14px"><span class="lbl">Prochaine session</span><span class="ttl" style="font-size: 20px">Jeudi 10 octobre · 20 h 30</span></div>''', cb('À jeudi !', 'Ajouter à mon agenda', 'end')))
-phone = '<div class="ph">' + HEAD + ''.join(B) + NAV + '''<sc-if value="{{slam}}" hint-placeholder-val="{{ false }}"><div class="slam"><span>À toi, Borin !</span></div></sc-if>
+MAPOV = '''<sc-if value="{{showMap}}" hint-placeholder-val="{{ false }}"><div class="mapov"><div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 16px"><span class="ttl" style="font-size: 18px">La crypte</span><span class="lbl">ce que le groupe a vu</span></div>
+<div class="mw"><div style="position: absolute; left: -26px; top: 40px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="30" vue="joueur" bx="{{bx}}" by="{{by}}" hint-size="420px,300px"></dc-import></div><span class="here" style="left: {{hereX}}px; top: {{hereY}}px">Tu es ici</span></div>
+<div class="legend" style="padding: 0 16px"><span><i class="f"></i>pas encore vu</span><span>Glisse pour te déplacer sur la carte</span></div>
+<div style="padding: 0 14px">''' + cb('Retour au jeu', '', 'backToGame', dark=True) + '''</div></div></sc-if>'''
+phone = '<div class="ph">' + HEAD + ''.join(B) + MAPOV + NAV + '''<sc-if value="{{slam}}" hint-placeholder-val="{{ false }}"><div class="slam"><span>À toi, Borin !</span></div></sc-if>
 <sc-if value="{{ended}}" hint-placeholder-val="{{ false }}"><div class="endc"><span class="ttl" style="font-size: 30px">Bonne nuit, Marc.</span><p class="nar" style="font-size: 20px">La porte nord vous attend jeudi.</p><button type="button" class="cb" style="width: 240px" onClick="{{restart}}"><span class="in"><span style="flex: 1"><span class="t">Rejouer la soirée</span></span><span class="chev">›</span></span></button></div></sc-if></div>'''
 side_l = '''<div class="side"><div class="disc"><div class="hdr"><span class="live"></span>Discord · salon vocal « Crypte »</div>
 <sc-for list="{{lines}}" as="l" hint-placeholder-count="2"><div class="line {{l.cls}}"><span class="av {{l.av}}">{{l.ini}}</span><div><b>{{l.who}}</b><p>{{l.txt}}</p></div></div></sc-for></div>
@@ -134,14 +156,14 @@ class Component extends DCLogic {
     this.ac = null;
   }
   fresh() {
-    return { m: 1, sound: false, soundAsked: false, choice: 0, sent: false, dice: 'idle', zoomed: false, dest: -1, moved: false, feed: 0, card: 0, atk: 'idle', equipped: '', ended: false, hp: 15, deg: 0, slam: false };
+    return { m: 1, tab: 'jeu', sound: false, soundAsked: false, choice: 0, sent: false, dice: 'idle', zoomed: false, dest: -1, moved: false, feed: 0, card: 0, atk: 'idle', equipped: '', ended: false, hp: 15, deg: 0, slam: false };
   }
   later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
   clear() { this.timers.forEach((t) => clearTimeout(t)); this.timers = []; }
   go(m) {
     if (m > 12) return;
     this.clear();
-    const patch = { m, deg: 0, zoomed: false, slam: false };
+    const patch = { m, deg: 0, zoomed: false, slam: false, tab: 'jeu' };
     if (m < 10) patch.hp = 15;
     if (m === 10) { patch.hp = Math.max(1, (this.state.hp || 15) - 6); patch.deg = 6; }
     if (m <= 4) { patch.sent = false; }
@@ -219,10 +241,15 @@ class Component extends DCLogic {
       ['Fouiller l’autel', 'Chercher ce qui est caché. Tu es bon pour ça.'],
       ['Lire les inscriptions', 'Comprendre ce qui est écrit.'],
       ['Parler aux autres', 'Proposer un plan au groupe.'],
-      ['Autre chose…', 'Dis-le au MJ sur Discord.']
+      ['Autre chose…', 'Écris ton idée, le MJ décide.']
     ];
     const reachCells = [[3, 6], [5, 6], [6, 6], [7, 6], [8, 6], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7], [3, 5]];
-    const actsData = [['Hache', 'Touche sur 13+ (+5)', '1d12 + 3 dégâts', 'Attaquer le gobelin', 'Hache · 1d12 + 3'], ['Second souffle', 'Soigne 1d10 + 3', '1 fois par combat', 'Reprendre mon souffle', 'Soigne 1d10 + 3 PV'], ['Parade', '+2 en défense', 'jusqu’à ton tour', 'Me mettre en garde', '+2 en défense']];
+    const actsData = [
+      { t: 'Hache d’armes', ty: 'Arme', tx: '1d12 + 3 dégâts.', v: '+5', st: 'atq', ic: 'epee', ra: 'commune', btn: 'Attaquer le gobelin', sub: 'Touche sur 13 ou plus · 1d12 + 3', hint: 'touche sur 13+' },
+      { t: 'Second souffle', ty: 'Compétence', tx: 'Soigne 1d10 + 3. Une fois.', v: 'd10', st: 'pv', ic: 'sort', ra: 'peu-commune', btn: 'Reprendre mon souffle', sub: 'Soigne 1d10 + 3 PV', hint: 'une fois par combat' },
+      { t: 'Rage du nain', ty: 'Compétence', tx: '+2 dégâts ce combat.', v: '+2', st: 'atq', ic: 'epee', ra: 'rare', btn: 'Entrer en rage', sub: '+2 dégâts jusqu’à la fin du combat', hint: 'rare · une fois par jour' },
+      { t: 'Autre…', other: true, btn: 'Proposer au MJ', sub: 'Ton idée, le MJ décide', hint: 'le MJ décide' }
+    ];
     const dest = s.dest >= 0 ? reachCells[s.dest] : null;
     const L = (who, txt, mj) => ({ who, txt, ini: who[0], cls: mj ? 'mjl' : '', av: mj ? 'mj' : '' });
     const lines = {
@@ -230,11 +257,11 @@ class Component extends DCLogic {
       2: [L('Romain · MJ', 'Précédemment… vous êtes descendus dans la crypte des Valombre. Borin, tu as pris un mauvais coup la dernière fois.', 1)],
       3: [L('Romain · MJ', 'L’escalier s’arrête devant un autel de pierre noire. Les cendres sont encore tièdes…', 1), L('Hugo', 'Ça sent le piège, ça.')],
       4: [L('Romain · MJ', 'Devant l’autel… que faites-vous ?', 1), L('Camille', 'Lyra surveille l’escalier, arc en main.')],
-      5: [L('Romain · MJ', 'Borin fouille ? Fais-moi un jet. Il te faut 13.', 1)],
+      5: [L('Romain · MJ', s.choice === 3 ? 'Ah, bonne idée ! Fais-moi un jet, il te faut 13.' : 'Borin fouille ? Fais-moi un jet. Il te faut 13.', 1)],
       6: [L('Romain · MJ', 'Sous l’autel, coincée dans une fente… une page de parchemin. La page arrachée du registre !', 1), L('Hugo', 'Je le savais !')],
       7: [L('Romain · MJ', 'La porte de droite est entrouverte. Borin, tu passes devant ?', 1)],
       8: [L('Romain · MJ', 'Des gobelins surgissent ! Le premier tire sur Lyra…', 1), L('Camille', 'Noooon !')],
-      9: [L('Romain · MJ', 'Borin, c’est à toi. Le gobelin est juste devant toi.', 1)],
+      9: s.atk === 'done' && s.card === 3 ? [L('Romain · MJ', 'Hmm… j’adore. La table bascule, le gobelin s’étale par terre !', 1), L('Hugo', 'Ahah, magnifique.')] : [L('Romain · MJ', 'Borin, c’est à toi. Le gobelin est juste devant toi.', 1)],
       10: [L('Romain · MJ', 'Le gobelin riposte… sa lame passe sous ton bouclier. Six dégâts.', 1), L('Hugo', 'Tiens bon, Borin !')],
       11: [L('Romain · MJ', 'Le dernier gobelin s’effondre. Dans son sac… une hache magnifique.', 1)],
       12: [L('Romain · MJ', 'On s’arrête là pour ce soir. Bravo tout le monde, à jeudi !', 1), L('Camille', 'Trop bien, à jeudi !')]
@@ -243,12 +270,12 @@ class Component extends DCLogic {
       1: 'Je suis au bon endroit, je joue Borin. On attend le MJ. Ah, il faut que j’active le son.',
       2: 'Ah oui, la porte nord et le registre. Et Borin est blessé.',
       3: 'J’écoute. Ce n’est pas encore à moi.',
-      4: 'Je peux fouiller, lire, parler… ou dire autre chose. Je fouille !',
+      4: s.choice === 3 ? 'J’ai mon idée à moi : je l’écris, le MJ décidera.' : 'Je peux fouiller, lire, parler… ou proposer autre chose.',
       5: s.dice === 'done' ? '20 ! C’est réussi, je l’ai vu tout de suite.' : 'Il me faut 13. Allez…',
       6: 'C’est important, c’est gardé. Je peux le relire quand je veux.',
       7: s.dest >= 0 ? 'Je vais là. Le gris, on ne l’a pas encore vu.' : 'Je peux aller jusqu’aux cases vertes.',
       8: 'Le gobelin attaque Lyra. Moi, c’est après Sef. Je me prépare.',
-      9: s.atk === 'done' ? 'Touché ! Plus rien à faire, je finis mon tour.' : 'Je suis à côté du gobelin. Ma hache, et j’attaque.',
+      9: s.atk === 'done' ? 'C’est fait. Plus rien à faire, je finis mon tour.' : s.card === 3 ? 'Et si je renversais la table sur lui ? Je propose au MJ.' : 'Je suis à côté du gobelin. Je choisis une carte, et j’y vais.',
       10: s.hp <= 10 ? 'Aïe. Il me reste ' + s.hp + ' PV. Au prochain tour, je me soigne.' : 'Aïe. Heureusement que j’ai repris mon souffle.',
       11: 'Une hache légendaire ! Je la prends tout de suite.',
       12: 'C’était bien. Vivement jeudi.'
@@ -275,8 +302,17 @@ class Component extends DCLogic {
       who: s.feed < 2 ? 'le gobelin' : 'Sef', feedTxt, feedNext: s.feed < 2 ? 'Après Sef. Tu pourras bouger de 6 cases puis attaquer.' : 'C’est bientôt à toi !', order,
       s2: s.atk === 'done' ? 'done' : 'cur', s3: s.atk === 'done' ? 'cur' : '',
       atkIdle: s.atk === 'idle', atkRolling: s.atk === 'rolling', atkDone: s.atk === 'done',
-      acts: actsData.map((a, i) => ({ t: a[0], l1: a[1], l2: a[2], cls: i === s.card ? 'sel' : '', pick: () => { this.setState({ card: i }); this.sfx('click'); } })),
-      atkLabel: actsData[s.card][3], atkSub: actsData[s.card][4],
+      acts: actsData.map((a, i) => ({ ...a, tx: a.tx || '', ty: a.ty || '', v: a.v || '', st: a.st || 'none', ic: a.ic || 'epee', ra: a.ra || 'aucune',
+        isCard: !a.other, isOther: !!a.other, et: i === s.card ? 'actif' : 'normal', cls: i === s.card ? 'sel' : '',
+        x: 6 + i * 84, r: [-9, -3, 3, 9][i], y: (i === 0 || i === 3 ? 10 : 0) - (i === s.card ? 22 : 0),
+        pick: () => { this.setState({ card: i }); this.sfx('click'); } })),
+      atkLabel: actsData[s.card].btn, atkSub: actsData[s.card].sub, cardHint: actsData[s.card].hint, otherSel: s.card === 3,
+      atkBusy: s.atk === 'rolling' || s.atk === 'asking', busyTxt: s.atk === 'asking' ? 'Le MJ lit ton idée…' : 'Le dé roule…',
+      atkAsking: s.atk === 'asking', atkHit: s.atk === 'done' && s.card !== 3, atkCustom: s.atk === 'done' && s.card === 3,
+      freeOpen: s.choice === 3 && !s.sent, diceTitle: s.choice === 3 ? 'Ton idée' : optsData[s.choice][0],
+      showMap: s.tab === 'carte' && !s.ended, hereX: (dest && s.moved ? dest[0] : 4) * 30 - 26 + 15, hereY: ((dest && s.moved ? dest[1] : 6) + 1) * 30 + 40 - 40,
+      tabs: [['jeu', 'Jeu'], ['carte', 'Carte'], ['perso', 'Personnage'], ['journal', 'Journal']].map(([id, n]) => ({ n, cls: (s.tab || 'jeu') === id ? 'on' : '', pick: () => { this.setState({ tab: id }); this.sfx('click'); } })),
+      backToGame: () => { this.setState({ tab: 'jeu' }); this.sfx('click'); },
       equipped: !!s.equipped, notEquipped: !s.equipped, lootTxt: s.equipped === 'equip' ? 'Équipée !' : 'Dans ton sac',
       slam: s.slam, ended: s.ended, danger: s.hp <= 10, safe: s.hp > 10,
       dots: Array.from({ length: 12 }, (_, i) => ({ n: i + 1, cls: i + 1 === m ? 'cur' : i + 1 < m ? 'done' : '', pick: () => this.go(i + 1) })),
@@ -289,6 +325,8 @@ class Component extends DCLogic {
       attack: () => {
         if (this.state.atk !== 'idle') return;
         if (this.state.card === 1) { this.setState({ hp: 22, deg: 0, atk: 'done' }); this.sfx('win'); return; }
+        if (this.state.card === 2) { this.setState({ atk: 'done' }); this.sfx('turn'); return; }
+        if (this.state.card === 3) { this.setState({ atk: 'asking' }); this.sfx('click'); this.later(() => { this.setState({ atk: 'done' }); this.sfx('win'); }, 2600); return; }
         this.setState({ atk: 'rolling' }); this.sfx('dice');
         this.later(() => { this.setState({ atk: 'done' }); this.sfx('hit'); }, 1500);
       },
