@@ -98,6 +98,11 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   propose any idea to the GM, in a scene or in combat. The combat turn
   keeps the original layout: turn order, map centred on the target,
   hearts and gems, a fanned hand of skill cards, the arcade cluster.
+- **The shared screen (TV) follows the same evening** from one
+  component (canvas "Composant — écran TV"), driven by the moment and
+  the player's actions; the playable board shows it next to the phone.
+  One focal point at a time (story, die, map or loot), readable from a
+  couch, a one-line feed at the bottom, nothing secret.
 - **States show twice:** a pixel effect on the character (poison
   bubbles and tint, stun stars, sleep Z, invisible ghost, flames,
   chains, sweat drop, halo) and a square badge in the UI with turns

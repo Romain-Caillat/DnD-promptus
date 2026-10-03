@@ -216,12 +216,17 @@ JOURNAL = '''<sc-if value="{{showJournal}}" hint-placeholder-val="{{ false }}"><
 </div></sc-if>'''
 phone = '<div class="ph">' + HEAD + ''.join(B) + MAPOV + PERSO + JOURNAL + NAV + '''<sc-if value="{{slam}}" hint-placeholder-val="{{ false }}"><div class="slam"><span>À toi, Borin !</span></div></sc-if>
 <sc-if value="{{ended}}" hint-placeholder-val="{{ false }}"><div class="endc"><span class="ttl" style="font-size: 30px">Bonne nuit, Marc.</span><p class="nar" style="font-size: 20px">La porte nord vous attend jeudi.</p><button type="button" class="cb" style="width: 240px" onClick="{{restart}}"><span class="in"><span style="flex: 1"><span class="t">Rejouer la soirée</span></span><span class="chev">›</span></span></button></div></sc-if></div>'''
-side_l = '''<div class="side"><div class="disc"><div class="hdr"><span class="live"></span>Discord · salon vocal « Crypte »</div>
+side_l = '''<div style="display: flex; flex-direction: column; gap: 20px; flex: 1; min-width: 0">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="lbl">La TV du salon (ou l’écran partagé sur Discord)</span><span class="lbl">synchronisée avec le téléphone</span></div>
+<div style="width: 1267px; height: 713px; border-radius: 14px; overflow: hidden; border: 1px solid #2C2C2C; box-shadow: 0 30px 60px rgba(0,0,0,.6)"><div style="width: 1920px; height: 1080px; transform: scale(.66); transform-origin: 0 0"><dc-import name="Ecran-TV" moment="{{m}}" hp="{{hp}}" deg="{{deg}}" dice="{{tvDice}}" atk="{{tvAtk}}" card="{{tvCard}}" feed="{{tvFeed}}" choice="{{tvChoice}}" sent="{{tvSent}}" moved="{{tvMoved}}" bx="{{bx}}" by="{{by}}" equipped="{{tvEquipped}}" hint-size="1920px,1080px"></dc-import></div></div>
+<div style="display: flex; gap: 24px; align-items: flex-start">
+<div class="disc" style="flex: 1"><div class="hdr"><span class="live"></span>Discord · salon vocal « Crypte »</div>
 <sc-for list="{{lines}}" as="l" hint-placeholder-count="2"><div class="line {{l.cls}}"><span class="av {{l.av}}">{{l.ini}}</span><div><b>{{l.who}}</b><p>{{l.txt}}</p></div></div></sc-for></div>
-<p style="margin: 0; font-size: 12px; color: #6E6E6E; line-height: 1.5">À gauche, ce que Marc entend dans son casque. Au centre, son téléphone : touche les boutons comme lui. Quand il n’a rien à faire, le MJ continue tout seul.</p></div>'''
-side_r = '''<div class="side" style="width: 380px"><span class="lbl">Dans la tête de Marc</span><div class="think">{{thought}}</div>
-<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px"><span class="lbl">La soirée · moment {{m}} sur 12</span><div class="prog"><sc-for list="{{dots}}" as="d" hint-placeholder-count="12"><button type="button" class="{{d.cls}}" onClick="{{d.pick}}">{{d.n}}</button></sc-for></div>
-<div class="ctl"><button type="button" onClick="{{next}}">Le MJ continue ▶</button><button type="button" onClick="{{restart}}">Recommencer</button></div></div></div>'''
+<div style="width: 420px; display: flex; flex-direction: column; gap: 14px; flex: none"><span class="lbl">Dans la tête de Marc</span><div class="think" style="margin-left: 24px">{{thought}}</div>
+<span class="lbl">La soirée · moment {{m}} sur 12</span><div class="prog"><sc-for list="{{dots}}" as="d" hint-placeholder-count="12"><button type="button" class="{{d.cls}}" onClick="{{d.pick}}">{{d.n}}</button></sc-for></div>
+<div class="ctl"><button type="button" onClick="{{next}}">Le MJ continue ▶</button><button type="button" onClick="{{restart}}">Recommencer</button></div></div>
+</div></div>'''
+side_r = ''
 JS = r'''
 class Component extends DCLogic {
   constructor(props) {
@@ -450,7 +455,8 @@ class Component extends DCLogic {
     for (let i = 1; i <= 12; i++) v['is' + i] = m === i && !s.ended;
     const seul = String(this.props.seul ?? false) === 'true';
     v.seul = seul; v.full = !seul;
-    v.rootStyle = seul ? 'width: 390px; height: 844px; padding: 0' : 'width: 1440px; height: 1000px; padding: 56px 64px';
+    v.rootStyle = seul ? 'width: 390px; height: 844px; padding: 0' : 'width: 1920px; height: 1160px; padding: 56px 64px';
+    v.tvDice = s.dice; v.tvAtk = s.atk; v.tvCard = s.card; v.tvFeed = s.feed; v.tvChoice = s.choice; v.tvSent = String(s.sent); v.tvMoved = String(s.moved); v.tvEquipped = s.equipped || '';
     return v;
   }
 }
@@ -469,12 +475,11 @@ html = f'''<!doctype html>
 <style>{css}</style>
 </helmet>
 <div class="pm" style="{{{{rootStyle}}}}; position: relative; overflow: hidden; display: flex; gap: 48px; box-sizing: border-box; align-items: flex-start">
-<sc-if value="{{{{full}}}}" hint-placeholder-val="{{{{ true }}}}">{side_l}</sc-if>
 {phone}
-<sc-if value="{{{{full}}}}" hint-placeholder-val="{{{{ true }}}}">{side_r}</sc-if>
+<sc-if value="{{{{full}}}}" hint-placeholder-val="{{{{ true }}}}">{side_l}</sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{{"moment":{{"editor":"int","default":1,"min":1,"max":12}},"seul":{{"editor":"boolean","default":false}},"onglet":{{"editor":"enum","options":["jeu","carte","perso","journal"],"default":"jeu"}},"$preview":{{"width":1440,"height":1000}}}}'>{JS}</script>
+<script type="text/x-dc" data-dc-script data-props='{{"moment":{{"editor":"int","default":1,"min":1,"max":12}},"seul":{{"editor":"boolean","default":false}},"onglet":{{"editor":"enum","options":["jeu","carte","perso","journal"],"default":"jeu"}},"$preview":{{"width":1920,"height":1160}}}}'>{JS}</script>
 </body>
 </html>
 '''
