@@ -229,6 +229,8 @@ class Component extends DCLogic {
     this.state = this.fresh();
     const pm = Number(props && props.moment);
     if (pm >= 1 && pm <= 12) { this.state.m = pm; if (pm >= 10) this.state.hp = 9; }
+    const tab = props && props.onglet;
+    if (['jeu', 'carte', 'perso', 'journal'].includes(tab)) this.state.tab = tab;
     this.timers = [];
     this.ac = null;
   }
@@ -472,7 +474,7 @@ html = f'''<!doctype html>
 <sc-if value="{{{{full}}}}" hint-placeholder-val="{{{{ true }}}}">{side_r}</sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{{"moment":{{"editor":"int","default":1,"min":1,"max":12}},"seul":{{"editor":"boolean","default":false}},"$preview":{{"width":1440,"height":1000}}}}'>{JS}</script>
+<script type="text/x-dc" data-dc-script data-props='{{"moment":{{"editor":"int","default":1,"min":1,"max":12}},"seul":{{"editor":"boolean","default":false}},"onglet":{{"editor":"enum","options":["jeu","carte","perso","journal"],"default":"jeu"}},"$preview":{{"width":1440,"height":1000}}}}'>{JS}</script>
 </body>
 </html>
 '''
