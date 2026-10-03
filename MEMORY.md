@@ -38,8 +38,10 @@ memory. If someone would re-litigate it in six months, it is.
 - **Maps: data and backdrop are separate.** Grid, walls, obstacles,
   positions and fog are data — the only reference for rules. A
   generated image is only a background; the app draws the grid over it.
-  Three levels: campaign (hex, ~10 km, day), region (hex, ~500 m, hour),
-  combat/place (square, 1.5 m, 6 s turn).
+  Three levels (revised in the October 2026 design pass): world (hex,
+  ~10 km, day), place (square, ~5 m), encounter (square, 1.5 m, 6 s
+  turn). The V1 "region in 500 m hexes" level is replaced by places on
+  a square grid.
 - **Media are pre-generated** (async jobs, cached on disk), never live
   by default. Cost is estimated before each batch and checked against
   the campaign's AI budget.

@@ -39,7 +39,7 @@ On repart d'une feuille blanche côté interface. Le V1 a montré que des
 écrans empilés au fil des épics ne font pas un jeu : on dessine d'abord
 les parcours, puis on code. Point de départ : `docs/design-brief.md`.
 
-### `design/map-user-journeys` · todo
+### `design/map-user-journeys` · doing — en attente de validation
 
 **Pourquoi** — Savoir ce que chacun fait, dans quel ordre, avant de
 dessiner un écran.
@@ -50,6 +50,10 @@ du joueur (rejoindre, choisir un personnage, jouer un tour, demander
 une action, lire le récapitulatif).
 
 **Fini quand** — Les parcours sont écrits et validés par Romain.
+
+**État** — Écrits dans `docs/user-journeys.md` et sur la planche
+« Parcours » du canevas : 11 écrans dessinés, 19 à dessiner, 5
+questions ouvertes à trancher.
 
 **Origine** — `docs/design-brief.md`
 
