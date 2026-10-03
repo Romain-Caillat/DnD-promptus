@@ -33,7 +33,8 @@ le récit de ce qui a été livré (→ `archive/tickets/`).
 
 Canevas de travail (privé) : https://claude.ai/artifact/AP3z1S5hbhqEiPzi5agTdy —
 fondations, construction d'histoire, écran MJ, TV, téléphone joueur.
-Décisions retenues : `MEMORY.md` §2.
+Décisions retenues : `MEMORY.md` §2. Copie des sources du canevas et
+mode d'emploi : `docs/design/README.md`.
 
 On repart d'une feuille blanche côté interface. Le V1 a montré que des
 écrans empilés au fil des épics ne font pas un jeu : on dessine d'abord
@@ -53,7 +54,9 @@ une action, lire le récapitulatif).
 
 **État** — Écrits dans `docs/user-journeys.md` et sur la planche
 « Parcours » du canevas : 11 écrans dessinés, 19 à dessiner, 5
-questions ouvertes à trancher.
+questions ouvertes à trancher par Romain (écran partagé TV ou Discord,
+moment de la création des personnages, ce qu'un joueur peut faire entre
+deux sessions, mort d'un personnage, spectateurs).
 
 **Origine** — `docs/design-brief.md`
 
@@ -66,6 +69,12 @@ couleurs, iconographie), cohérente entre téléphone et ordinateur.
 composants de base adaptés de shadcn, ton des textes.
 
 **Fini quand** — Le design system est publié et validé.
+
+**État** — Dessiné sur le canevas : gemmes de stats, cœurs, cases,
+horloges, boutons-cartes, cartes et raretés, objets, dés colorés,
+sprites, états, notifications (`MEMORY.md` §2). Reste : tokens écrits
+(couleurs, typo, espacements) dans un format réutilisable par le code,
+mode clair, ton des textes.
 
 **Origine** — `docs/design-brief.md`
 
@@ -80,6 +89,16 @@ doigt), fiche, actions, combat à son tour, musique, journal.
 **Fini quand** — Maquettes téléphone validées ; aucune action courante
 ne demande de viser ni de zoomer.
 
+**État** — La soirée de Marc (joueur novice) est jouable de bout en bout
+sur la planche « Jouer · la soirée de Marc » : scène, indices, dé,
+exploration, combat (main de cartes, « Autre… », arcade), butin, onglets
+Jeu, Carte, Personnage, Journal. Les planches Joueur et le storyboard
+sont ce même téléphone figé sur un moment. Reste à dessiner : rejoindre
+(lien, choix), créateur de personnage, « Précédemment… » hors session,
+voyage sur la carte du monde, fin de session et récapitulatif, joueur
+sur ordinateur, mort du personnage, mini-lecteur YouTube visible
+(`MEMORY.md` §4).
+
 **Origine** — `docs/design-brief.md`
 
 ### `design/draw-gm-screens` · doing
@@ -93,7 +112,52 @@ co-MJ, demandes des joueurs, combat, musique, fin de session).
 
 **Fini quand** — Maquettes ordinateur et tablette validées.
 
+**État** — Dessinés : construction d'histoire avec le LLM, écran MJ en
+direct (une version, avant la soirée de Marc), cartes (vue MJ, import
+d'image). Reste : la soirée de Marc côté MJ (prochaine étape : la même
+soirée, moment par moment, comme le téléphone et la TV), liste et
+création de campagne, éditeur du système de règles, suivi de génération
+et coût, fiche PNJ/monstre, éditeur de carte, médias et budget,
+invitation et validation des personnages, salon, jumelage de l'écran
+partagé, voyage, fin de session, version tablette.
+
 **Origine** — `docs/design-brief.md`
+
+### `design/verify-canvas-rendering` · todo
+
+**Pourquoi** — Les planches ont été écrites sans pouvoir les voir : le
+rendu n'a été contrôlé que par des scripts (classes définies, logique
+des 12 moments en Node). Romain a déjà trouvé des cadres déformés.
+
+**Périmètre** — Ouvrir chaque planche du canevas, la comparer à son
+intention (`MEMORY.md` §2, `docs/design/README.md`), corriger ce qui
+déborde, se chevauche ou ne s'aligne pas. Priorité : « Jouer · la
+soirée de Marc » (cliquer tous les moments), « TV · la soirée côté
+TV », « Joueur · la soirée de Marc », les planches Joueur, puis les
+autres.
+
+**Fini quand** — Chaque planche a été vue rendue, et Romain valide les
+trois planches de la soirée.
+
+**Origine** — Romain, 3 octobre 2026 : « TV · la soirée côté TV est
+cassé », « c'est pas aligné ».
+
+### `design/scope-legacy-boards` · todo
+
+**Pourquoi** — Le CSS d'une planche s'applique aux composants qu'elle
+importe (`MEMORY.md` §4). Seules les planches de la soirée sont
+préfixées ; les anciennes (Main, Pistes-UI, Objets, États, Notifs,
+Cartes, Extérieurs, Parcours, MJ, Histoire) utilisent des noms de
+classes génériques et peuvent casser un composant sans qu'on le voie.
+
+**Périmètre** — Passer chaque ancienne planche dans
+`docs/design/scope.py` avec son préfixe, vérifier le rendu avant et
+après.
+
+**Fini quand** — Plus aucune planche n'a de classe non préfixée hors
+modificateurs d'état, et le rendu est inchangé ou corrigé.
+
+**Origine** — Correctif de la TV du 3 octobre 2026
 
 ---
 

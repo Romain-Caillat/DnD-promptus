@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Grille radiale</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0A0A0A}
+.rg{display:grid;place-items:center;background:#0A0A0A}
+.rg i{display:block;background:currentColor;border-radius:1px;animation-iteration-count:infinite;animation-timing-function:ease-in-out;will-change:transform,opacity}
+.rg-vague i{animation-name:rgWave;animation-duration:2.8s}
+.rg-battement i{animation-name:rgBeat;animation-duration:1.25s;animation-timing-function:cubic-bezier(.3,0,.2,1)}
+.rg-onde i{animation-name:rgRipple;animation-duration:3.2s}
+.rg-scintillement i{animation-name:rgTwinkle;animation-duration:2.4s}
+.rg-souffle i{animation-name:rgBreath;animation-duration:6s}
+@keyframes rgWave{0%,100%{transform:scale(.3);opacity:.16}50%{transform:scale(1);opacity:.95}}
+@keyframes rgBeat{0%{transform:scale(.42);opacity:.22}8%{transform:scale(1.08);opacity:1}17%{transform:scale(.58);opacity:.42}27%{transform:scale(.96);opacity:.85}42%,100%{transform:scale(.42);opacity:.22}}
+@keyframes rgRipple{0%,62%,100%{transform:scale(.35);opacity:.12}74%{transform:scale(1.15);opacity:1}86%{transform:scale(.6);opacity:.35}}
+@keyframes rgTwinkle{0%,100%{transform:scale(.45);opacity:.08}50%{transform:scale(.95);opacity:.85}}
+@keyframes rgBreath{0%,100%{transform:scale(.5);opacity:.1}50%{transform:scale(.9);opacity:.42}}
+@media (prefers-reduced-motion: reduce){.rg i{animation:none;opacity:.35}}
+</style>
+</helmet>
+<div class="rg rg-{{pattern}}" aria-hidden="true" style="width: {{w}}px; height: {{h}}px; grid-template-columns: repeat({{cols}}, {{pitch}}px); grid-auto-rows: {{pitch}}px; color: {{tint}}; opacity: {{intensity}}; overflow: hidden">
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="64">
+<i style="width: {{c.s}}px; height: {{c.s}}px; animation-delay: {{c.d}}s"></i>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"cols":{"editor":"int","default":32,"min":4,"max":120},"rows":{"editor":"int","default":20,"min":2,"max":80},"pitch":{"editor":"int","default":18,"min":6,"max":64},"pattern":{"editor":"enum","options":["vague","battement","onde","scintillement","souffle"],"default":"vague"},"tint":{"editor":"color","default":"#F5F5F5","options":["#F5F5F5","#FF4D5E","#3D9BFF","#2EE6A6"]},"intensity":{"editor":"range","min":0.1,"max":1,"step":0.05,"default":1},"ox":{"editor":"range","min":0,"max":1,"step":0.05,"default":0.5},"oy":{"editor":"range","min":0,"max":1,"step":0.05,"default":0.5},"$preview":{"width":576,"height":360}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cols = Math.max(1, Number(this.props.cols ?? 32));
+    const rows = Math.max(1, Number(this.props.rows ?? 20));
+    const pitch = Math.max(4, Number(this.props.pitch ?? 18));
+    const pattern = this.props.pattern ?? 'vague';
+    const ox = Number(this.props.ox ?? 0.5) * (cols - 1);
+    const oy = Number(this.props.oy ?? 0.5) * (rows - 1);
+    const far = Math.max(
+      Math.hypot(ox, oy), Math.hypot(cols - 1 - ox, oy),
+      Math.hypot(ox, rows - 1 - oy), Math.hypot(cols - 1 - ox, rows - 1 - oy)
+    ) || 1;
+    const step = { vague: 0.11, battement: 0.03, onde: 0.085, souffle: 0.07 }[pattern] ?? 0.1;
+    const cells = [];
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const d = Math.hypot(x - ox, y - oy);
+        const t = d / far;
+        const s = Math.max(2, Math.round(pitch * 0.62 * (1 - 0.72 * t)));
+        let delay;
+        if (pattern === 'scintillement') {
+          const r = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+          delay = -((r - Math.floor(r)) * 2.4);
+        } else {
+          delay = -(d * step);
+        }
+        cells.push({ s, d: delay.toFixed(3) });
+      }
+    }
+    return {
+      cells, cols, pitch, pattern,
+      w: cols * pitch, h: rows * pitch,
+      tint: this.props.tint ?? '#F5F5F5',
+      intensity: this.props.intensity ?? 1
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Jouer la soirée de Marc</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A}
+.jm-pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 40% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.jm-ttl{font-family:'Cinzel',Georgia,serif;font-weight:800;letter-spacing:.02em}
+.jm-nar{margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-weight:500;line-height:1.3;color:#E5E5E5}
+.jm-lbl{font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.jm-grid{display:grid;grid-template-columns:repeat(4,390px);gap:60px 56px}
+.jm-mo{display:flex;flex-direction:column;gap:16px}
+.jm-mh{display:flex;align-items:baseline;gap:10px}
+.jm-mh b{font-family:'Cinzel',serif;font-size:13px;width:28px;height:28px;border-radius:7px;display:inline-grid;place-items:center;background:#EDEDED;color:#0A0A0A;box-shadow:0 2px 0 #6E6E6E;flex:none}
+.jm-mh span{font-family:'Cinzel',serif;font-weight:800;font-size:20px}
+.jm-cap{display:grid;grid-template-columns:76px 1fr;gap:6px 10px;font-size:13px;line-height:1.45;color:#D4D4D4}
+.jm-cap dt{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8C8C8C;padding-top:3px}
+.jm-cap dd{margin:0}
+.jm-ph{position:relative;width:390px;height:844px;border-radius:44px;overflow:hidden;border:10px solid #050505;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7);background:radial-gradient(130% 70% at 50% 0%,#1A1A1A 0,#0C0C0C 60%,#050505 100%);box-sizing:border-box;display:flex;flex-direction:column}
+.jm-hd{display:flex;align-items:center;gap:10px;padding:44px 16px 10px}
+.jm-pf{display:inline-grid;place-items:end center;border-radius:8px;background:linear-gradient(180deg,#262626,#121212);border:2px solid #3A3A3A;box-shadow:0 3px 0 #000;padding:2px 3px 0;flex:none}
+.jm-pf.foe{border-color:#F2F2F2;background:#0A0A0A}
+.jm-pv{font-weight:700;font-size:18px;color:#FF4D5E}
+.jm-pv small{font-size:11px;color:#8C8C8C;font-weight:600}
+.jm-bn{margin:0 12px;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;font-weight:700;font-size:15px}
+.jm-bn .jm-bi{display:grid;place-items:center;flex:none}
+.jm-bn.jm-listen{background:#161616;border:1px solid #2C2C2C;color:#D4D4D4}
+.jm-bn.jm-wait{background:#0A0A0A;border:1.5px dashed #5E5E5E;color:#D4D4D4}
+.jm-bn.jm-you{background:#EDEDED;color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A;animation:jm-bnPulse 1.6s ease-in-out infinite}
+.jm-bn.jm-turn{background:#FFD60A;color:#0A0A0A;box-shadow:0 3px 0 #8A6F00;font-family:'Cinzel',serif;font-size:18px;animation:jm-bnPulse 1.2s ease-in-out infinite}
+.jm-bn.jm-star{background:#EDEDED;color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.jm-bn.jm-hurt{background:#0A0A0A;border:1.5px solid #FF4D5E;color:#F2F2F2}
+@keyframes jm-bnPulse{0%,100%{transform:none}50%{transform:scale(1.02)}}
+.jm-body{flex:1;display:flex;flex-direction:column;padding:16px;min-height:0;overflow:hidden}
+.jm-ft{display:flex;flex-direction:column;gap:8px;padding:10px 14px 8px}
+.jm-idle{text-align:center;padding:16px;border-radius:12px;border:1.5px dashed #3A3A3A;color:#8C8C8C;font-size:13px;font-weight:600}
+.jm-nav{display:flex;border-top:1px solid #1F1F1F;background:#060606;padding:2px 8px 18px}
+.jm-nav button{flex:1;font:inherit;font-size:12px;color:#8C8C8C;background:none;border:0;min-height:44px;position:relative}
+.jm-nav button.on{color:#F2F2F2}
+.jm-nav button.on::before{content:'';position:absolute;top:0;left:50%;margin-left:-12px;width:24px;height:2px;background:#F2F2F2}
+.jm-link{font-size:12px;color:#A3A3A3;text-decoration:underline;text-underline-offset:3px}
+.jm-stage{display:flex;align-items:flex-end;gap:16px;padding:14px;border-radius:14px;background:radial-gradient(60% 30% at 30% 92%,rgba(255,255,255,.08),transparent),#141414;border:1px solid #2C2C2C}
+.jm-who{display:flex;align-items:center;gap:10px;font-size:14px;padding:8px 10px;border-radius:10px;background:#121212}
+.jm-who span:last-child{margin-left:auto;font-size:12px;color:#8C8C8C}
+.jm-dot{width:9px;height:9px;border-radius:50%;background:#3A3A3A;flex:none}
+.jm-dot.on{background:#F2F2F2;box-shadow:0 0 8px rgba(255,255,255,.6)}
+.jm-clue{display:flex;align-items:center;gap:12px;font-size:13px;padding:8px;border-radius:10px;background:#141414;border:1px solid #2C2C2C}
+.jm-art{height:200px;border-radius:14px;display:flex;align-items:flex-end;padding:14px;box-sizing:border-box;position:relative;background:radial-gradient(70% 80% at 50% 100%,rgba(10,10,10,.9),transparent),repeating-linear-gradient(135deg,#3A3A3A 0 2px,#2A2A2A 2px 7px);border:1px solid #2C2C2C}
+.jm-tag{position:absolute;right:10px;top:10px;font-size:9px;font-weight:700;letter-spacing:.14em;background:#0A0A0A;padding:3px 6px;border-radius:4px}
+.jm-typed{animation:jm-typeIn 4s steps(6) infinite}
+@keyframes jm-typeIn{0%{clip-path:inset(0 0 100% 0)}60%,100%{clip-path:inset(0 0 0 0)}}
+.jm-mini{display:flex;align-items:center;gap:10px;font-size:12px;padding:10px 12px;border-radius:10px;background:#141414;border:1px solid #2C2C2C}
+.jm-eq{display:flex;gap:2px;align-items:flex-end;height:14px}
+.jm-eq i{width:3px;background:#F2F2F2;animation:jm-eq .8s ease-in-out infinite}
+.jm-eq i:nth-child(2){animation-delay:-.3s}.jm-eq i:nth-child(3){animation-delay:-.6s}
+@keyframes jm-eq{0%,100%{height:4px}50%{height:14px}}
+.jm-opt{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:12px;background:#141414;border:1.5px solid #2C2C2C}
+.jm-opt b{font-family:'Cinzel',serif;font-size:16px}
+.jm-opt span{font-size:12px;color:#A3A3A3}
+.jm-opt.sel{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A;outline:1.5px solid #0A0A0A;outline-offset:-5px;box-shadow:0 3px 0 #8A8A8A}
+.jm-opt.sel span{color:#5A5A5A}
+.jm-opt.free{border-style:dashed}
+.jm-others{display:flex;gap:8px;align-items:baseline;font-size:12px;color:#A3A3A3;margin-top:4px}
+.jm-res{display:flex;gap:10px;align-items:baseline;font-weight:700;font-size:34px;animation:jm-resIn 3.6s ease-out infinite}
+.jm-res .jm-op{font-size:22px;color:#8C8C8C}
+@keyframes jm-resIn{0%,50%{opacity:0;transform:translateY(8px)}60%,100%{opacity:1;transform:none}}
+.jm-win{font-family:'Cinzel',serif;font-weight:800;font-size:28px;color:#0A0A0A;background:#F2F2F2;padding:4px 18px;border-radius:8px;box-shadow:0 4px 0 #6E6E6E;animation:jm-resIn 3.6s ease-out infinite}
+.jm-flip{animation:jm-flipIn 1.4s cubic-bezier(.2,.9,.25,1.1) both;perspective:900px}
+@keyframes jm-flipIn{0%{transform:rotateY(180deg) scale(.6);opacity:0}100%{transform:none;opacity:1}}
+.jm-mapw{position:relative;height:300px;overflow:hidden;border-top:1px solid #2C2C2C;border-bottom:1px solid #2C2C2C}
+.jm-mapw.jm-small{height:190px;border-radius:12px;border:1px solid #2C2C2C}
+.jm-reach{position:absolute;width:28px;height:28px;background:rgba(46,230,166,.28);box-shadow:inset 0 0 0 1.5px rgba(46,230,166,.85);z-index:950;animation:jm-rc 1.6s ease-in-out infinite}
+.jm-reach.jm-dst{background:rgba(46,230,166,.6);box-shadow:inset 0 0 0 2px #F2F2F2}
+@keyframes jm-rc{50%{opacity:.6}}
+.jm-legend{display:flex;gap:16px;padding:0 16px;font-size:12px;color:#A3A3A3}
+.jm-legend i{display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:-1px}
+.jm-legend i.jm-g{background:rgba(46,230,166,.5);box-shadow:inset 0 0 0 1.5px #2EE6A6}
+.jm-legend i.jm-f{background:#070707;box-shadow:inset 0 0 0 1px #3A3A3A}
+.jm-order{display:flex;align-items:flex-end;gap:10px}
+.jm-o{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;color:#8C8C8C}
+.jm-o.now span:last-child{color:#F2F2F2;font-weight:700}
+.jm-o.now .jm-pf{border-color:#F2F2F2;box-shadow:0 3px 0 #000,0 0 16px rgba(255,255,255,.35)}
+.jm-o.me span:last-child{color:#FFD60A;font-weight:700}
+.jm-o.me .jm-pf{border-color:#FFD60A}
+.jm-feed{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;background:#141414;border:1px solid #2C2C2C}
+.jm-feed p{margin:0;font-size:14px;line-height:1.45}
+.jm-steps{display:flex;gap:6px}
+.jm-steps span{flex:1;text-align:center;font-size:12px;font-weight:700;padding:8px 4px;border-radius:9px;background:#141414;color:#6E6E6E;border:1px solid #2C2C2C}
+.jm-steps .done{color:#A3A3A3}
+.jm-steps .cur{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A}
+.jm-tgt{position:absolute;width:40px;height:40px;border-radius:50%;border:2px dashed #FF9F1C;z-index:960;animation:jm-spin 4s linear infinite}
+@keyframes jm-spin{to{transform:rotate(360deg)}}
+.jm-acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.jm-act{display:flex;flex-direction:column;gap:3px;padding:10px;border-radius:10px;background:#141414;border:1.5px solid #2C2C2C;font-size:11px;color:#A3A3A3}
+.jm-act b{font-family:'Cinzel',serif;font-size:14px;color:#F2F2F2}
+.jm-act.sel{background:#EDEDED;border-color:#0A0A0A;color:#5A5A5A;box-shadow:0 3px 0 #8A8A8A}
+.jm-act.sel b{color:#0A0A0A}
+.jm-shake{animation:jm-shk 2.4s linear infinite}
+@keyframes jm-shk{0%,8%,100%{transform:none}2%{transform:translate(-5px,2px)}4%{transform:translate(5px,-2px)}6%{transform:translate(-3px,0)}}
+.jm-big{font-weight:700;font-size:56px;line-height:1;color:#FF4D5E;-webkit-text-stroke:3px #000;paint-order:stroke;text-shadow:0 4px 0 #000}
+.jm-tip{font-size:13px;line-height:1.5;padding:12px 14px;border-radius:12px;background:#141414;border:1px solid #2C2C2C;text-align:left}
+.jm-beam{position:relative;padding:20px}
+.jm-beam::before{content:'';position:absolute;left:50%;top:-40px;bottom:0;width:90px;margin-left:-45px;background:linear-gradient(0deg,rgba(255,226,140,.6),transparent);filter:blur(6px);animation:jm-rc 2s ease-in-out infinite}
+.jm-rec{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.45}
+.jm-gain{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:#141414;border:1px solid #2C2C2C}
+.jm-next{display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:12px;background:#EDEDED;color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.jm-next .jm-lbl{color:#5A5A5A}
+.jm-rule{display:flex;gap:12px;align-items:flex-start;font-size:13px;color:#D4D4D4;line-height:1.45}
+.jm-rule b{flex:none;width:24px;height:24px;border-radius:6px;background:#EDEDED;color:#0A0A0A;display:grid;place-items:center;font-family:'Cinzel',serif;box-shadow:0 2px 0 #6E6E6E}
+@media (prefers-reduced-motion: reduce){.jm-pm *{animation:none!important}}
+
+.jm-ph{flex:none}
+.jm-cb{font:inherit;display:block;width:100%;box-sizing:border-box;border:0;padding:6px;border-radius:12px;background:#EDEDED;color:#0A0A0A;text-align:left;cursor:pointer;box-shadow:0 4px 0 #8A8A8A,0 7px 0 #5A5A5A,0 14px 24px rgba(0,0,0,.5);transform-origin:50% 100%;transition:transform .1s,box-shadow .1s}
+.jm-cb .jm-in{display:flex;align-items:center;gap:12px;border:1.5px solid #0A0A0A;border-radius:8px;padding:8px 12px;min-height:40px}
+.jm-cb .jm-t{display:block;font-family:'Cinzel',Georgia,serif;font-weight:800;font-size:18px;line-height:1.05}
+.jm-cb .jm-s{display:block;font-size:11px;font-weight:600;color:#5A5A5A;margin-top:3px}
+.jm-cb .jm-chev{margin-left:auto;font-family:'Cinzel',serif;font-weight:800;font-size:22px}
+.jm-cb:active{transform:perspective(500px) rotateX(14deg) translateY(4px);box-shadow:0 1px 0 #8A8A8A,0 2px 0 #5A5A5A}
+.jm-cb.jm-dk{background:#141414;color:#F2F2F2;box-shadow:0 0 0 1.5px #3A3A3A,0 4px 0 #000}
+.jm-cb.jm-dk .jm-in{border-color:#5A5A5A}.jm-cb.jm-dk .jm-s{color:#8C8C8C}
+.jm-cb.off{opacity:.45;pointer-events:none}
+.jm-lnk{font:inherit;background:none;border:0;color:#A3A3A3;text-decoration:underline;text-underline-offset:3px;font-size:12px;cursor:pointer;padding:6px}
+.jm-opt{font:inherit;text-align:left;cursor:pointer;color:#F2F2F2}
+.jm-idle{position:relative;overflow:hidden}
+.jm-idle .jm-bar{position:absolute;left:0;bottom:0;height:3px;background:#F2F2F2;animation:jm-bar linear forwards}
+@keyframes jm-bar{from{width:0}to{width:100%}}
+.jm-dz{cursor:pointer;background:none;border:0;padding:0}
+.jm-reach{border:0;padding:0;cursor:pointer}
+.jm-reach.on{background:rgba(46,230,166,.65);box-shadow:inset 0 0 0 2px #F2F2F2}
+.jm-act{font:inherit;text-align:left;cursor:pointer}
+.jm-sent{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:#141414;border:1.5px dashed #5E5E5E;font-size:13px;color:#D4D4D4}
+.jm-spin{width:14px;height:14px;border-radius:50%;border:2px solid #5E5E5E;border-top-color:#F2F2F2;animation:jm-spin .8s linear infinite}
+.jm-zoom{position:absolute;inset:0;z-index:50;background:rgba(5,5,5,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;cursor:pointer}
+.jm-ok{display:inline-block;font-family:'Cinzel',serif;font-weight:800;font-size:22px;color:#0A0A0A;background:#F2F2F2;padding:4px 16px;border-radius:8px;box-shadow:0 4px 0 #6E6E6E}
+.jm-slam{position:absolute;left:0;right:0;top:300px;z-index:60;display:grid;place-items:center;pointer-events:none;animation:jm-slamOut 2.2s ease-in forwards}
+.jm-slam span{font-family:'Cinzel',serif;font-weight:800;font-size:40px;color:#0A0A0A;background:#FFD60A;padding:6px 22px;transform:rotate(-4deg);box-shadow:0 6px 0 #8A6F00,0 20px 40px rgba(0,0,0,.6);animation:jm-slamIn 2.2s cubic-bezier(.2,1.4,.3,1) forwards}
+@keyframes jm-slamIn{0%{transform:rotate(-4deg) scale(3);opacity:0}15%{transform:rotate(-4deg) scale(.92);opacity:1}22%,100%{transform:rotate(-4deg) scale(1)}}
+@keyframes jm-slamOut{0%,70%{opacity:1}100%{opacity:0}}
+.jm-endc{position:absolute;inset:0;z-index:70;background:rgba(5,5,5,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:30px}
+.jm-side{display:flex;flex-direction:column;gap:14px;width:440px;flex:none}
+.jm-disc{display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:16px;background:#111214;border:1px solid #2A2C30}
+.jm-disc .jm-hdr{display:flex;align-items:center;gap:8px;font-size:12px;color:#9AA0AA;font-weight:600}
+.jm-disc .jm-live{width:8px;height:8px;border-radius:50%;background:#2EE6A6;box-shadow:0 0 8px #2EE6A6}
+.jm-line{display:flex;gap:12px;align-items:flex-start;animation:jm-lineIn .5s ease-out both}
+@keyframes jm-lineIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.jm-av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;flex:none;background:#2A2C30}
+.jm-av.mj{background:#EDEDED;color:#0A0A0A;box-shadow:0 0 0 3px #2EE6A6}
+.jm-line b{display:block;font-size:13px;margin-bottom:2px}
+.jm-line p{margin:0;font-size:15px;line-height:1.45;color:#E5E5E5}
+.jm-line.mjl p{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:19px;line-height:1.3}
+.jm-think{position:relative;padding:16px 18px;border-radius:18px;background:#EDEDED;color:#0A0A0A;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:21px;line-height:1.3;box-shadow:0 4px 0 #8A8A8A}
+.jm-think::after{content:'';position:absolute;left:-14px;top:24px;width:18px;height:18px;border-radius:50%;background:#EDEDED}
+.jm-think::before{content:'';position:absolute;left:-26px;top:40px;width:9px;height:9px;border-radius:50%;background:#EDEDED}
+.jm-prog{display:flex;flex-wrap:wrap;gap:6px}
+.jm-hand{position:relative;height:150px;margin-top:6px}
+.jm-hand .jm-cw{position:absolute;bottom:0;background:none;border:0;padding:0;cursor:pointer;transform-origin:50% 140%;transition:transform .25s cubic-bezier(.2,1.3,.3,1),filter .25s}
+.jm-hand .jm-cw.sel{filter:drop-shadow(0 0 14px rgba(255,255,255,.35));z-index:5}
+.jm-other{width:80px;height:112px;border-radius:9px;border:2px dashed #8C8C8C;background:#0E0E0E;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#F2F2F2;box-sizing:border-box;box-shadow:0 4px 0 #000}
+.jm-other b{font-family:'Cinzel',serif;font-size:30px;line-height:1}
+.jm-other span{font-family:'Cinzel',serif;font-size:12px;font-weight:800}
+.jm-cw.sel .jm-other{border-color:#F2F2F2;background:#1A1A1A}
+.jm-txt{font:inherit;font-size:14px;width:100%;box-sizing:border-box;min-height:64px;resize:none;padding:10px 12px;border-radius:10px;background:#0A0A0A;color:#F2F2F2;border:1.5px solid #F2F2F2;outline:none}
+.jm-txt::placeholder{color:#6E6E6E}
+.jm-cardinfo{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px;color:#A3A3A3;margin-top:8px}
+.jm-cardinfo b{font-family:'Cinzel',serif;font-size:15px;color:#F2F2F2}
+.jm-mapov{position:absolute;left:0;right:0;top:96px;bottom:64px;z-index:40;background:#080808;display:flex;flex-direction:column;gap:10px;padding:12px 0 0;animation:jm-lineIn .25s ease-out both}
+.jm-mapov .jm-mw{position:relative;height:420px;overflow:hidden;border-top:1px solid #2C2C2C;border-bottom:1px solid #2C2C2C}
+.jm-here{position:absolute;z-index:970;transform:translate(-50%,-100%);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:#FFD60A;color:#0A0A0A;padding:2px 6px;border-radius:4px;white-space:nowrap}
+.jm-nav button{cursor:pointer}
+.jm-cbody{flex:1;display:flex;flex-direction:column;gap:8px;padding:44px 12px 0;min-height:0;overflow:hidden}
+.jm-trkrow{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px}
+.jm-trk{display:flex;align-items:center;gap:6px;padding:0 4px}
+.jm-trk .jm-pf.now{border-color:#FFD60A;box-shadow:0 4px 0 #000,0 0 22px rgba(255,214,10,.45)}
+.jm-rail{flex:1;height:2px;background:repeating-linear-gradient(90deg,#3A3A3A 0 4px,transparent 4px 8px);min-width:6px}
+.jm-cmap{position:relative;height:210px;border-radius:16px;overflow:hidden;border:1px solid #2C2C2C;box-shadow:inset 0 0 40px rgba(0,0,0,.8);flex:none}
+.jm-cmap .jm-hint{position:absolute;left:8px;bottom:8px;z-index:990;font-size:12px;font-weight:600;background:rgba(5,5,5,.85);border:1px solid #2C2C2C;border-radius:8px;padding:6px 10px}
+.jm-statrow{display:flex;align-items:center;gap:10px;padding:0 4px}
+.jm-gemw{display:inline-grid;flex:none;filter:drop-shadow(0 3px 0 rgba(0,0,0,.55))}
+.jm-gemw.jm-beat{animation:jm-gbeat .9s ease-in-out infinite}
+@keyframes jm-gbeat{0%,100%{transform:scale(1)}12%{transform:scale(1.2)}24%{transform:scale(.96)}36%{transform:scale(1.12)}}
+.jm-arcs{position:relative;height:112px;flex:none}
+.jm-arc{position:absolute;border-radius:50%;background:#0A0A0A;display:grid;place-items:center;box-shadow:0 0 0 3px #2C2C2C,0 6px 0 #000,inset 0 0 0 6px #161616;border:0;padding:0;cursor:pointer;font:inherit}
+.jm-arc .jm-top{border-radius:50%;background:radial-gradient(circle at 40% 30%,#FFFFFF,#CFCFCF 70%);color:#0A0A0A;display:grid;place-items:center;transform:translateY(-6px);box-shadow:0 6px 0 #7A7A7A,0 10px 14px rgba(0,0,0,.6);transition:transform .08s,box-shadow .08s}
+.jm-arc.jm-dk .jm-top{background:radial-gradient(circle at 40% 30%,#3A3A3A,#161616 70%);color:#F2F2F2;box-shadow:0 6px 0 #000,0 0 0 1.5px #5A5A5A}
+.jm-arc:active .jm-top{transform:translateY(-1px);box-shadow:0 1px 0 #7A7A7A}
+.jm-arc.jm-big::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid #F2F2F2;opacity:0;animation:jm-halo 2.4s ease-out infinite}
+@keyframes jm-halo{0%,78%{transform:scale(1);opacity:0}80%{opacity:.9}100%{transform:scale(1.3);opacity:0}}
+.jm-arc.busy{pointer-events:none;opacity:.6}
+.jm-alab{position:absolute;width:90px;text-align:center;font-size:11px;color:#A3A3A3}
+.jm-cres{display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;text-align:center;height:132px;flex:none}
+.jm-ov{position:absolute;left:0;right:0;top:96px;bottom:64px;z-index:40;background:#080808;overflow-y:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:16px;animation:jm-lineIn .25s ease-out both;box-sizing:border-box}
+.jm-sec{display:flex;flex-direction:column;gap:8px}
+.jm-trait{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:#141414;border:1px solid #2C2C2C;font-size:13px}
+.jm-trait span:last-child{margin-left:auto;font-size:12px;color:#8C8C8C}
+.jm-mini-hand{display:flex;gap:6px}
+.jm-slots{display:grid;grid-template-columns:repeat(5,56px);gap:8px}
+.jm-wear{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:10px;background:#141414;border:1px solid #2C2C2C;font-size:13px}
+.jm-wear small{display:block;font-size:11px;color:#8C8C8C}
+.jm-tl{display:flex;flex-direction:column;gap:0;border-left:2px solid #2C2C2C;margin-left:6px}
+.jm-ev{position:relative;padding:0 0 14px 18px;font-size:13px;line-height:1.45;color:#D4D4D4;animation:jm-lineIn .4s ease-out both}
+.jm-ev::before{content:'';position:absolute;left:-7px;top:4px;width:12px;height:12px;border-radius:3px;background:#3A3A3A;box-shadow:0 0 0 3px #080808}
+.jm-ev.key::before{background:#F2F2F2}
+.jm-ev time{display:block;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6E6E6E}
+.jm-clue2{font:inherit;color:#F2F2F2;text-align:left;cursor:pointer;display:flex;align-items:center;gap:12px;font-size:13px;padding:8px;border-radius:10px;background:#141414;border:1px solid #2C2C2C}
+.jm-clue2 .jm-new{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.12em;background:#F2F2F2;color:#0A0A0A;padding:2px 5px;border-radius:3px}
+.jm-prog button{font:inherit;font-size:12px;font-weight:700;width:34px;height:34px;border-radius:8px;border:1px solid #2C2C2C;background:#141414;color:#8C8C8C;cursor:pointer}
+.jm-prog button.done{color:#F2F2F2}
+.jm-prog button.cur{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A;box-shadow:0 2px 0 #8A8A8A}
+.jm-ctl{display:flex;gap:8px}
+.jm-ctl button{font:inherit;flex:1;min-height:42px;border-radius:10px;border:1px solid #3A3A3A;background:#141414;color:#F2F2F2;font-weight:700;font-size:13px;cursor:pointer}
+</style>
+</helmet>
+<div class="jm-pm" style="{{rootStyle}}; position: relative; overflow: hidden; display: flex; gap: 48px; box-sizing: border-box; align-items: flex-start">
+<div class="jm-ph"><sc-if value="{{headOn}}" hint-placeholder-val="{{ true }}"><div class="jm-hd"><span class="jm-pf"><dc-import name="Sprite" perso="borin" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><div style="display: flex; flex-direction: column; gap: 3px; flex: 1"><span class="jm-ttl" style="font-size: 14px">Borin</span><dc-import name="Coeurs" pv="{{hp}}" max="31" coeurs="8" px="2" degats="{{deg}}" hint-size="151px,16px"></dc-import></div><span class="jm-pv">{{hp}}<small> / 31 PV</small></span></div></sc-if><sc-if value="{{is1}}" hint-placeholder-val="{{ true }}"><div class="jm-bn jm-wait"><span>⏳ On attend le MJ</span></div><div class="jm-body"><div style="display: flex; flex-direction: column; gap: 4px"><span class="jm-lbl">Ce soir · 20 h 30</span><span class="jm-ttl" style="font-size: 26px; line-height: 1.1">La crypte des Valombre</span><span style="font-size: 13px; color: #A3A3A3">Session 3</span></div>
+<div class="jm-stage" style="margin-top: 16px"><dc-import name="Perso" perso="borin" px="5" etat="aucun" hint-size="100px,130px"></dc-import><div style="display: flex; flex-direction: column; gap: 4px"><span class="jm-lbl">Tu joues</span><span class="jm-ttl" style="font-size: 22px">Borin</span><span style="font-size: 12px; color: #A3A3A3">nain guerrier · niveau 3</span></div></div>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px"><span class="jm-lbl">Autour de la table</span><div class="jm-who"><span class="jm-dot on"></span><b>Romain</b><span>le MJ</span></div><div class="jm-who"><span class="jm-dot on"></span><b>Camille</b><span>joue Lyra</span></div><div class="jm-who"><span class="jm-dot on"></span><b>Hugo</b><span>joue Sef</span></div></div></div><div class="jm-ft"><sc-if value="{{noSound}}" hint-placeholder-val="{{ true }}"><button type="button" class="jm-cb  " onClick="{{sound}}"><span class="jm-in"><span style="flex: 1"><span class="jm-t">Activer le son</span><span class="jm-s">La musique de la partie passera ici</span></span><span class="jm-chev">›</span></span></button><button type="button" class="jm-lnk" onClick="{{mute}}">Continuer sans le son</button></sc-if><sc-if value="{{soundOn}}" hint-placeholder-val="{{ false }}"><div class="jm-sent"><span class="jm-spin"></span>C’est parti. Le MJ lance la partie…</div></sc-if></div></sc-if><sc-if value="{{is2}}" hint-placeholder-val="{{ false }}"><div class="jm-bn jm-listen"><span>👂 Le MJ commence</span></div><div class="jm-body"><span class="jm-ttl" style="font-size: 26px">Précédemment…</span>
+<p class="jm-nar" style="font-size: 20px; margin-top: 12px">Vous êtes descendus dans la crypte des Valombre. Les crânes regardent tous la porte nord. Borin a pris un mauvais coup.</p>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px"><span class="jm-lbl">Ce que vous savez</span><div class="jm-clue"><dc-import name="Objet" objet="parchemin" rarete="commune" taille="40" pips="false" hint-size="40px,40px"></dc-import><span><b>Le registre</b> : une page a été arrachée.</span></div><div class="jm-clue"><dc-import name="Objet" objet="anneau" rarete="peu" taille="40" pips="false" hint-size="40px,40px"></dc-import><span><b>La bague du gardien</b> : gravée d’un corbeau.</span></div></div></div><div class="jm-ft"><div class="jm-idle">Rien à faire : écoute le MJ<span class="jm-bar" style="animation-duration: 7000ms"></span></div></div></sc-if><sc-if value="{{is3}}" hint-placeholder-val="{{ false }}"><div class="jm-bn jm-listen"><span>👂 Le MJ raconte · écoute</span></div><div class="jm-body"><div class="jm-art"><span class="jm-ttl" style="font-size: 22px; color: #F2F2F2">La salle de l’autel</span><span class="jm-tag">[ILLUSTRATION]</span></div>
+<p class="jm-nar jm-typed" style="font-size: 20px; margin-top: 14px">L’escalier s’arrête devant un autel de pierre noire. Des cendres encore tièdes. Quelqu’un est passé ici il y a moins d’une heure.</p>
+<div class="jm-mini" style="margin-top: 14px"><span class="jm-eq"><i></i><i></i><i></i></span><span style="flex: 1">Ombres de la crypte</span><span style="color: #8C8C8C">{{soundTxt}}</span></div></div><div class="jm-ft"><div class="jm-idle">Rien à faire pour l’instant<span class="jm-bar" style="animation-duration: 8000ms"></span></div></div></sc-if><sc-if value="{{is4}}" hint-placeholder-val="{{ false }}"><div class="jm-bn jm-you"><span>✋ À vous : que faites-vous ?</span></div><div class="jm-body"><p class="jm-nar" style="font-size: 19px">« Devant l’autel, que faites-vous ? »</p>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px"><sc-for list="{{opts}}" as="o" hint-placeholder-count="4"><button type="button" class="jm-opt {{o.cls}}" onClick="{{o.pick}}"><b>{{o.t}}</b><span>{{o.d}}</span></button></sc-for></div>
+<sc-if value="{{freeOpen}}" hint-placeholder-val="{{ false }}"><textarea class="jm-txt" style="margin-top: 8px" placeholder="Ex. : je verse de l’eau sur les cendres pour voir ce qu’elles cachent"></textarea></sc-if>
+<div class="jm-others" style="margin-top: 10px"><span class="jm-lbl">Les autres</span><span>Lyra surveille l’escalier.</span></div></div><div class="jm-ft"><sc-if value="{{notSent}}" hint-placeholder-val="{{ true }}"><button type="button" class="jm-cb  " onClick="{{propose}}"><span class="jm-in"><span style="flex: 1"><span class="jm-t">Proposer au MJ</span><span class="jm-s">{{choiceName}}</span></span><span class="jm-chev">›</span></span></button></sc-if><sc-if value="{{sent}}" hint-placeholder-val="{{ false }}"><div class="jm-sent"><span class="jm-spin"></span>Envoyé. Le MJ lit ta proposition…</div></sc-if></div></sc-if><sc-if value="{{is5}}" hint-placeholder-val="{{ false }}"><div class="jm-bn jm-you"><span>🎲 À toi : lance le dé</span></div><div class="jm-body"><div style="display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center">
+<span class="jm-ttl" style="font-size: 22px">{{diceTitle}}</span>
+<span style="font-size: 15px; color: #D4D4D4">Il te faut <b style="font-size: 20px; color: #F2F2F2">13 ou plus</b></span>
+<sc-if value="{{diceIdle}}" hint-placeholder-val="{{ true }}"><button type="button" class="jm-dz" onClick="{{roll}}" aria-label="Lancer le dé"><dc-import name="De" de="d20" valeur="20" taille="150" anim="survol" hint-size="150px,150px"></dc-import></button><span style="font-size: 13px; color: #A3A3A3">Touche le dé</span></sc-if>
+<sc-if value="{{diceRolling}}" hint-placeholder-val="{{ false }}"><dc-import name="De" de="d20" valeur="16" taille="150" anim="roule" hint-size="150px,150px"></dc-import></sc-if>
+<sc-if value="{{diceDone}}" hint-placeholder-val="{{ false }}"><dc-import name="De" de="d20" valeur="16" taille="150" anim="fixe" hint-size="150px,150px"></dc-import><div class="jm-res" style="animation: none"><span>16</span><span class="jm-op">+ 4</span><span class="jm-op">=</span><span>20</span></div><span class="jm-win" style="animation: none">Réussi !</span><span style="font-size: 12px; color: #8C8C8C">+4, c’est ton bonus de Sagesse.</span></sc-if>
+</div></div><div class="jm-ft"><sc-if value="{{diceIdle}}" hint-placeholder-val="{{ true }}"><button type="button" class="jm-cb  " onClick="{{roll}}"><span class="jm-in"><span style="flex: 1"><span class="jm-t">Lancer le dé</span><span class="jm-s">Il te faut 13 ou plus</span></span><span class="jm-chev">›</span></span></button></sc-if><sc-if value="{{diceNotIdle}}" hint-placeholder-val="{{ false }}"><div class="jm-sent"><span class="jm-spin"></span>Le MJ découvre ton résultat…</div></sc-if></div></sc-if><sc-if value="{{is6}}" hint-placeholder-val="{{ false }}"><div class="jm-bn jm-star"><span>★ Tu as trouvé quelque chose</span></div><div class="jm-body"><div style="display: flex; flex-direction: column; gap: 14px; align-items: center">
+<button type="button" class="jm-dz jm-flip" onClick="{{zoom}}"><dc-import name="GameCard" titre="La page arrachée" type="Indice" texte="Coincée sous l’autel : la page qui manquait au registre." valeur="" stat="none" icon="parchemin" w="220" hint-size="220px,308px"></dc-import></button>
+<span style="font-size: 13px; color: #A3A3A3; text-align: center">Rangée dans le journal. Tout le groupe la voit.</span></div>
+<sc-if value="{{zoomed}}" hint-placeholder-val="{{ false }}"><div class="jm-zoom" onClick="{{zoom}}"><span class="jm-lbl">La page arrachée</span><p class="jm-nar" style="font-size: 22px; text-align: center">« Ici reposent les Valombre, gardiens de la porte nord. Que nul ne chante leur nom après le couvre-feu. »</p><span style="font-size: 12px; color: #8C8C8C">Touche pour fermer</span></div></sc-if></div><div class="jm-ft"><button type="button" class="jm-cb jm-dk " onClick="{{zoom}}"><span class="jm-in"><span style="flex: 1"><span class="jm-t">Lire en grand</span></span><span class="jm-chev">›</span></span></button><div class="jm-idle">Le MJ continue dans un instant<span class="jm-bar" style="animation-duration: 6500ms"></span></div></div></sc-if><sc-if value="{{is7}}" hint-placeholder-val="{{ false }}"><div class="jm-bn jm-you"><span>✋ Exploration · déplace-toi</span></div><div class="jm-body"><div class="jm-mapw" style="margin: 0 -16px"><div style="position: absolute; left: -12px; top: -8px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="28" vue="joueur" bx="{{bx}}" by="{{by}}" hint-size="392px,280px"></dc-import></div>
+<sc-if value="{{notMoved}}" hint-placeholder-val="{{ true }}"><sc-for list="{{reach}}" as="r" hint-placeholder-count="10"><button type="button" class="jm-reach {{r.cls}}" aria-label="Aller ici" style="left: {{r.l}}px; top: {{r.t}}px" onClick="{{r.pick}}"></button></sc-for></sc-if></div>
+<div class="jm-legend" style="margin-top: 10px; padding: 0"><span><i class="jm-g"></i>tu peux y aller</span><span><i class="jm-f"></i>pas encore vu</span></div>
+<div style="font-size: 13px; color: #D4D4D4; margin-top: 8px">{{moveTxt}}</div></div><div class="jm-ft"><sc-if value="{{notMoved}}" hint-placeholder-val="{{ true }}"><button type="button" class="jm-cb  {{moveCls}}" onClick="{{move}}"><span class="jm-in"><span style="flex: 1"><span class="jm-t">Y aller</span><span class="jm-s">{{moveSub}}</span></span><span class="jm-chev">›</span></span></button></sc-if><sc-if value="{{moved}}" hint-placeholder-val="{{ false }}"><div class="jm-sent"><span class="jm-spin"></span>Tu avances… quelque chose bouge dans l’ombre.</div></sc-if></div></sc-if><sc-if value="{{is8}}" hint-placeholder-val="{{ false }}"><div class="jm-bn jm-wait"><span>⏳ Combat · {{who}} joue</span></div><div class="jm-body"><div class="jm-order">
+<sc-for list="{{order}}" as="o" hint-placeholder-count="4"><div class="jm-o {{o.cls}}"><span class="jm-pf {{o.pf}}"><dc-import name="Sprite" perso="{{o.p}}" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><span>{{o.n}}</span></div></sc-for>
+</div>
+<div class="jm-feed" style="margin-top: 14px"><span class="jm-lbl">À l’instant</span><p>{{feedTxt}}</p></div>
+<div class="jm-feed" style="margin-top: 10px"><span class="jm-lbl">Ton tour arrive</span><p>{{feedNext}}</p></div></div><div class="jm-ft"><div class="jm-idle">Rien à faire : regarde, ton tour arrive<span class="jm-bar" style="animation-duration: 6500ms"></span></div></div></sc-if><sc-if value="{{is9}}" hint-placeholder-val="{{ false }}"><div class="jm-cbody">
+<div class="jm-trkrow"><span class="jm-lbl">Initiative · round 3</span><span class="jm-lbl" style="color: #FFD60A">À ton tour</span></div>
+<div class="jm-trk" aria-label="Ordre du tour">
+<span class="jm-pf"><dc-import name="Sprite" perso="lyra" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><span class="jm-rail"></span>
+<span class="jm-pf now"><dc-import name="Sprite" perso="borin" px="2" anim="repos" hint-size="40px,52px"></dc-import></span><span class="jm-rail"></span>
+<span class="jm-pf foe"><dc-import name="Sprite" perso="gobelin" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><span class="jm-rail"></span>
+<span class="jm-pf"><dc-import name="Sprite" perso="sef" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><span class="jm-rail"></span>
+<span class="jm-pf foe"><dc-import name="Sprite" perso="gobelin" px="1" anim="repos" hint-size="20px,26px"></dc-import></span>
+</div>
+<div class="jm-cmap"><div style="position: absolute; left: 18px; top: -138px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="34" vue="joueur" grille="false" combat="true" hint-size="476px,340px"></dc-import></div><span class="jm-tgt" style="left: 185px; top: 97px"></span><span class="jm-hint">Cible : <span style="color: #FF9F1C">le gobelin</span>, juste à côté</span></div>
+<sc-if value="{{notOtherSel}}" hint-placeholder-val="{{ true }}"><div class="jm-statrow"><span class="jm-gemw jm-beat"><dc-import name="Gemme" stat="pv" valeur="{{hp}}" taille="40" hint-size="40px,40px"></dc-import></span><div style="flex: 1; display: flex; flex-direction: column; gap: 3px"><dc-import name="Coeurs" pv="{{hp}}" max="31" coeurs="7" px="3" hint-size="201px,24px"></dc-import><span style="font-size: 11px; color: #FF4D5E; font-weight: 600">{{hp}} / 31 PV</span></div><span class="jm-gemw"><dc-import name="Gemme" stat="ca" valeur="18" taille="34" hint-size="34px,34px"></dc-import></span><span class="jm-gemw"><dc-import name="Gemme" stat="mvt" valeur="6" taille="34" hint-size="34px,34px"></dc-import></span></div></sc-if>
+<sc-if value="{{otherSel}}" hint-placeholder-val="{{ false }}"><textarea class="jm-txt" placeholder="Décris ton idée : je renverse la table sur le gobelin…"></textarea></sc-if>
+<sc-if value="{{atkIdle}}" hint-placeholder-val="{{ true }}"><div class="jm-hand" style="height: 132px"><sc-for list="{{acts}}" as="a" hint-placeholder-count="4"><button type="button" class="jm-cw {{a.cls}}" style="left: {{a.x}}px; transform: rotate({{a.r}}deg) translateY({{a.y}}px)" onClick="{{a.pick}}" aria-label="{{a.t}}"><sc-if value="{{a.isCard}}" hint-placeholder-val="{{ true }}"><dc-import name="GameCard" titre="{{a.t}}" type="{{a.ty}}" texte="{{a.tx}}" valeur="{{a.v}}" stat="{{a.st}}" icon="{{a.ic}}" rarete="{{a.ra}}" etat="{{a.et}}" w="80" hint-size="80px,112px"></dc-import></sc-if><sc-if value="{{a.isOther}}" hint-placeholder-val="{{ false }}"><span class="jm-other"><b>?</b><span>Autre…</span></span></sc-if></button></sc-for></div></sc-if>
+<sc-if value="{{atkBusy}}" hint-placeholder-val="{{ false }}"><div class="jm-cres"><sc-if value="{{atkRolling}}" hint-placeholder-val="{{ false }}"><dc-import name="De" de="d20" valeur="17" taille="80" anim="roule" couleur="atq" hint-size="80px,80px"></dc-import></sc-if><div class="jm-sent"><span class="jm-spin"></span>{{busyTxt}}</div></div></sc-if>
+<sc-if value="{{atkHit}}" hint-placeholder-val="{{ false }}"><div class="jm-cres"><div class="jm-res" style="animation: none; font-size: 28px"><span>17</span><span class="jm-op">+ 5</span><span class="jm-op">=</span><span>22</span></div><span class="jm-ok">Touché !</span><span style="font-size: 14px">La hache fait <b style="color: #FF4D5E">9 dégâts</b>.</span></div></sc-if>
+<sc-if value="{{atkCustom}}" hint-placeholder-val="{{ false }}"><div class="jm-cres"><span class="jm-ok">Le MJ accepte !</span><span style="font-size: 14px">Tu renverses la table : <b>le gobelin tombe à terre</b>.</span></div></sc-if>
+<sc-if value="{{atkSelf}}" hint-placeholder-val="{{ false }}"><div class="jm-cres"><span class="jm-ok">{{selfTxt}}</span><span style="font-size: 14px">{{selfSub}}</span></div></sc-if>
+<div class="jm-arcs" aria-label="Commandes">
+<button type="button" class="jm-arc jm-dk" aria-label="Ton sac" onClick="{{openBag}}" style="left: 40px; top: 26px; width: 58px; height: 58px"><span class="jm-top" style="width: 44px; height: 44px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v7.5L4.5 19A2 2 0 0 0 6.2 22h11.6a2 2 0 0 0 1.7-3L14 9.5V2M8.5 2h7M7 16h10"></path></svg></span></button>
+<span class="jm-alab" style="left: 24px; top: 94px">Sac</span>
+<button type="button" class="jm-arc jm-big {{bigCls}}" aria-label="{{atkLabel}}" onClick="{{bigAct}}" style="left: 131px; top: 0; width: 104px; height: 104px"><span class="jm-top" style="width: 80px; height: 80px"><span style="display: grid; place-items: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{bigIcon}}"></path></svg><span class="jm-ttl" style="font-size: 12px; margin-top: 2px">{{bigLbl}}</span></span></span></button>
+<button type="button" class="jm-arc jm-dk" aria-label="Fin du tour" onClick="{{finish}}" style="left: 268px; top: 26px; width: 58px; height: 58px"><span class="jm-top" style="width: 44px; height: 44px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"></path></svg></span></button>
+<span class="jm-alab" style="left: 252px; top: 94px">Fin du tour</span>
+</div></div></sc-if><sc-if value="{{is10}}" hint-placeholder-val="{{ false }}"><div class="jm-bn jm-hurt"><span>♥ Le gobelin te touche : −6 PV</span></div><div class="jm-body"><div style="display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center">
+<div class="jm-shake"><dc-import name="Perso" perso="borin" px="5" anim="touche" etat="aucun" hint-size="100px,130px"></dc-import></div>
+<span class="jm-big">−6</span><span style="font-size: 16px">Il te reste <b>{{hp}} PV sur 31</b></span>
+<sc-if value="{{danger}}" hint-placeholder-val="{{ true }}"><div class="jm-tip"><b>Tu es en danger.</b> À ton tour, ta carte <b>Second souffle</b> te rend 1d10 + 3 PV.</div></sc-if><sc-if value="{{safe}}" hint-placeholder-val="{{ false }}"><div class="jm-tip"><b>Tu tiens le coup</b> grâce à ton second souffle.</div></sc-if></div></div><div class="jm-ft"><div class="jm-idle">Rien à faire : c’est au tour de Lyra<span class="jm-bar" style="animation-duration: 5000ms"></span></div></div></sc-if><sc-if value="{{is11}}" hint-placeholder-val="{{ false }}"><div class="jm-bn jm-star"><span>★ Butin !</span></div><div class="jm-body"><div style="display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center">
+<div class="jm-beam"><dc-import name="Objet" objet="hache" rarete="leg" taille="140" hint-size="140px,140px"></dc-import></div>
+<span class="jm-ttl" style="font-size: 24px; color: #F3CC63">Hache des Valombre</span><span class="jm-lbl" style="color: #F3CC63">Légendaire</span>
+<span style="font-size: 15px">Mieux que ta hache : <b>+2 pour toucher</b>.</span>
+<sc-if value="{{equipped}}" hint-placeholder-val="{{ false }}"><span class="jm-ok">{{lootTxt}}</span></sc-if></div></div><div class="jm-ft"><sc-if value="{{notEquipped}}" hint-placeholder-val="{{ true }}"><button type="button" class="jm-cb  " onClick="{{equip}}"><span class="jm-in"><span style="flex: 1"><span class="jm-t">L’équiper</span><span class="jm-s">Remplace ta hache</span></span><span class="jm-chev">›</span></span></button><button type="button" class="jm-cb jm-dk " onClick="{{keep}}"><span class="jm-in"><span style="flex: 1"><span class="jm-t">La garder dans le sac</span></span><span class="jm-chev">›</span></span></button></sc-if></div></sc-if><sc-if value="{{is12}}" hint-placeholder-val="{{ false }}"><div class="jm-bn jm-listen"><span>★ Fin de la session</span></div><div class="jm-body"><span class="jm-ttl" style="font-size: 26px">Ce soir</span>
+<ul class="jm-rec" style="margin-top: 10px"><li>Vous avez trouvé la page arrachée du registre.</li><li>Vous avez vaincu les gobelins de la crypte.</li><li>La porte nord est ouverte. Quelque chose chante derrière.</li></ul>
+<div class="jm-gain" style="margin-top: 14px"><dc-import name="Objet" objet="hache" rarete="leg" taille="48" pips="false" hint-size="48px,48px"></dc-import><div style="display: flex; flex-direction: column; gap: 6px; flex: 1"><span style="font-size: 13px">Borin · bientôt niveau 4</span><dc-import name="Cases" stat="ini" valeur="8" max="10" h="10" largeur="200" hint-size="200px,16px"></dc-import></div></div>
+<div class="jm-next" style="margin-top: 14px"><span class="jm-lbl">Prochaine session</span><span class="jm-ttl" style="font-size: 20px">Jeudi 10 octobre · 20 h 30</span></div></div><div class="jm-ft"><button type="button" class="jm-cb  " onClick="{{end}}"><span class="jm-in"><span style="flex: 1"><span class="jm-t">À jeudi !</span><span class="jm-s">Ajouter à mon agenda</span></span><span class="jm-chev">›</span></span></button></div></sc-if><sc-if value="{{showMap}}" hint-placeholder-val="{{ false }}"><div class="jm-mapov"><div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 16px"><span class="jm-ttl" style="font-size: 18px">La crypte</span><span class="jm-lbl">ce que le groupe a vu</span></div>
+<div class="jm-mw"><div style="position: absolute; left: -26px; top: 40px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="30" vue="joueur" bx="{{bx}}" by="{{by}}" hint-size="420px,300px"></dc-import></div><span class="jm-here" style="left: {{hereX}}px; top: {{hereY}}px">Tu es ici</span></div>
+<div class="jm-legend" style="padding: 0 16px"><span><i class="jm-f"></i>pas encore vu</span><span>Glisse pour te déplacer sur la carte</span></div>
+<div style="padding: 0 14px"><button type="button" class="jm-cb jm-dk " onClick="{{backToGame}}"><span class="jm-in"><span style="flex: 1"><span class="jm-t">Retour au jeu</span></span><span class="jm-chev">›</span></span></button></div></div></sc-if><sc-if value="{{showPerso}}" hint-placeholder-val="{{ false }}"><div class="jm-ov">
+<div class="jm-stage"><dc-import name="Perso" perso="borin" px="4" etat="aucun" hint-size="80px,104px"></dc-import><div style="display: flex; flex-direction: column; gap: 4px; flex: 1"><span class="jm-ttl" style="font-size: 22px">Borin</span><span style="font-size: 12px; color: #A3A3A3">Nain guerrier · niveau 3</span><dc-import name="Cases" stat="ini" valeur="{{xp}}" max="10" h="8" largeur="170" hint-size="170px,14px"></dc-import><span style="font-size: 11px; color: #8C8C8C">{{xpTxt}}</span></div></div>
+<div class="jm-sec"><span class="jm-lbl">Ta vie</span><div class="jm-trait"><dc-import name="Coeurs" pv="{{hp}}" max="31" coeurs="8" px="2" anim="false" hint-size="151px,16px"></dc-import><span>{{hp}} / 31 PV</span></div></div>
+<div class="jm-sec"><span class="jm-lbl">Ce que tu es</span>
+<div class="jm-trait"><dc-import name="Gemme" stat="atq" valeur="+5" taille="30" anim="false" hint-size="30px,30px"></dc-import><b>Fort</b><span>tu touches souvent</span></div>
+<div class="jm-trait"><dc-import name="Gemme" stat="ca" valeur="18" taille="30" anim="false" hint-size="30px,30px"></dc-import><b>Solide</b><span>on te touche sur 18 ou plus</span></div>
+<div class="jm-trait"><dc-import name="Gemme" stat="mvt" valeur="6" taille="30" anim="false" hint-size="30px,30px"></dc-import><b>Lent</b><span>6 cases par tour</span></div>
+<div class="jm-trait"><dc-import name="Gemme" stat="ini" valeur="+1" taille="30" anim="false" hint-size="30px,30px"></dc-import><b>Attentif</b><span>bon pour fouiller (+4)</span></div></div>
+<div class="jm-sec"><span class="jm-lbl">Ce que tu sais faire</span><div class="jm-mini-hand">
+<dc-import name="GameCard" titre="Hache d’armes" type="Arme" texte="1d12 + 3 dégâts." valeur="+5" stat="atq" icon="epee" rarete="commune" w="80" hint-size="80px,112px"></dc-import>
+<dc-import name="GameCard" titre="Second souffle" type="Compétence" texte="Soigne 1d10 + 3." valeur="d10" stat="pv" icon="sort" rarete="peu-commune" w="80" hint-size="80px,112px"></dc-import>
+<dc-import name="GameCard" titre="Rage du nain" type="Compétence" texte="+2 dégâts." valeur="+2" stat="atq" icon="epee" rarete="rare" w="80" hint-size="80px,112px"></dc-import>
+<dc-import name="GameCard" titre="Fouiller" type="Sagesse" texte="Chercher, observer." valeur="+4" stat="none" icon="oeil" rarete="commune" w="80" hint-size="80px,112px"></dc-import></div></div>
+<div class="jm-sec"><span class="jm-lbl">Sur toi</span>
+<div class="jm-wear"><dc-import name="Objet" objet="hache" rarete="{{weaponRar}}" taille="44" pips="false" hint-size="44px,44px"></dc-import><div><b>{{weaponName}}</b><small>arme en main</small></div></div>
+<div class="jm-wear"><dc-import name="Objet" objet="bouclier" rarete="rare" taille="44" pips="false" hint-size="44px,44px"></dc-import><div><b>Écu de fer</b><small>au bras · compte dans « Solide »</small></div></div></div>
+<div class="jm-sec"><span class="jm-lbl">Ton sac</span><div class="jm-slots"><sc-for list="{{bag}}" as="b" hint-placeholder-count="10"><dc-import name="Objet" objet="{{b.o}}" rarete="{{b.r}}" taille="56" qte="{{b.q}}" pips="false" hint-size="56px,56px"></dc-import></sc-for></div></div>
+</div></sc-if><sc-if value="{{showJournal}}" hint-placeholder-val="{{ false }}"><div class="jm-ov">
+<div class="jm-sec"><span class="jm-lbl">Les indices du groupe</span><sc-for list="{{clues}}" as="c" hint-placeholder-count="3"><button type="button" class="jm-clue2" onClick="{{c.pick}}"><dc-import name="Objet" objet="{{c.o}}" rarete="{{c.r}}" taille="40" pips="false" hint-size="40px,40px"></dc-import><span><b>{{c.t}}</b> : {{c.d}}</span><sc-if value="{{c.isNew}}" hint-placeholder-val="{{ false }}"><span class="jm-new">NOUVEAU</span></sc-if></button></sc-for></div>
+<div class="jm-sec"><span class="jm-lbl">Ce soir</span><div class="jm-tl"><sc-for list="{{events}}" as="e" hint-placeholder-count="4"><div class="jm-ev {{e.cls}}"><time>{{e.h}}</time>{{e.t}}</div></sc-for></div></div>
+<sc-if value="{{clueOpen}}" hint-placeholder-val="{{ false }}"><div class="jm-zoom" onClick="{{closeClue}}"><span class="jm-lbl">{{clueTitle}}</span><p class="jm-nar" style="font-size: 22px; text-align: center">{{clueText}}</p><span style="font-size: 12px; color: #8C8C8C">Touche pour fermer</span></div></sc-if>
+</div></sc-if><nav class="jm-nav"><sc-for list="{{tabs}}" as="t" hint-placeholder-count="4"><button type="button" class="{{t.cls}}" onClick="{{t.pick}}">{{t.n}}</button></sc-for></nav><sc-if value="{{slam}}" hint-placeholder-val="{{ false }}"><div class="jm-slam"><span>À toi, Borin !</span></div></sc-if>
+<sc-if value="{{ended}}" hint-placeholder-val="{{ false }}"><div class="jm-endc"><span class="jm-ttl" style="font-size: 30px">Bonne nuit, Marc.</span><p class="jm-nar" style="font-size: 20px">La porte nord vous attend jeudi.</p><button type="button" class="jm-cb" style="width: 240px" onClick="{{restart}}"><span class="jm-in"><span style="flex: 1"><span class="jm-t">Rejouer la soirée</span></span><span class="jm-chev">›</span></span></button></div></sc-if></div>
+<sc-if value="{{full}}" hint-placeholder-val="{{ true }}"><div style="display: flex; flex-direction: column; gap: 20px; flex: 1; min-width: 0">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="jm-lbl">La TV du salon (ou l’écran partagé sur Discord)</span><span class="jm-lbl">synchronisée avec le téléphone</span></div>
+<div style="width: 1267px; height: 713px; border-radius: 14px; overflow: hidden; border: 1px solid #2C2C2C; box-shadow: 0 30px 60px rgba(0,0,0,.6)"><div style="width: 1920px; height: 1080px; transform: scale(.66); transform-origin: 0 0"><dc-import name="Ecran-TV" moment="{{m}}" hp="{{hp}}" deg="{{deg}}" dice="{{tvDice}}" atk="{{tvAtk}}" card="{{tvCard}}" feed="{{tvFeed}}" choice="{{tvChoice}}" sent="{{tvSent}}" moved="{{tvMoved}}" bx="{{bx}}" by="{{by}}" equipped="{{tvEquipped}}" hint-size="1920px,1080px"></dc-import></div></div>
+<div style="display: flex; gap: 24px; align-items: flex-start">
+<div class="jm-disc" style="flex: 1"><div class="jm-hdr"><span class="jm-live"></span>Discord · salon vocal « Crypte »</div>
+<sc-for list="{{lines}}" as="l" hint-placeholder-count="2"><div class="jm-line {{l.cls}}"><span class="jm-av {{l.av}}">{{l.ini}}</span><div><b>{{l.who}}</b><p>{{l.txt}}</p></div></div></sc-for></div>
+<div style="width: 420px; display: flex; flex-direction: column; gap: 14px; flex: none"><span class="jm-lbl">Dans la tête de Marc</span><div class="jm-think" style="margin-left: 24px">{{thought}}</div>
+<span class="jm-lbl">La soirée · moment {{m}} sur 12</span><div class="jm-prog"><sc-for list="{{dots}}" as="d" hint-placeholder-count="12"><button type="button" class="{{d.cls}}" onClick="{{d.pick}}">{{d.n}}</button></sc-for></div>
+<div class="jm-ctl"><button type="button" onClick="{{next}}">Le MJ continue ▶</button><button type="button" onClick="{{restart}}">Recommencer</button></div></div>
+</div></div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"moment":{"editor":"int","default":1,"min":1,"max":12},"seul":{"editor":"boolean","default":false},"onglet":{"editor":"enum","options":["jeu","carte","perso","journal"],"default":"jeu"},"$preview":{"width":1920,"height":1160}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = this.fresh();
+    const pm = Number(props && props.moment);
+    if (pm >= 1 && pm <= 12) { this.state.m = pm; if (pm >= 10) this.state.hp = 9; }
+    const tab = props && props.onglet;
+    if (['jeu', 'carte', 'perso', 'journal'].includes(tab)) this.state.tab = tab;
+    this.timers = [];
+    this.ac = null;
+  }
+  fresh() {
+    return { m: 1, tab: 'jeu', clueOpen: '', clueFull: '', sound: false, soundAsked: false, choice: 0, sent: false, dice: 'idle', zoomed: false, dest: -1, moved: false, feed: 0, card: 0, atk: 'idle', equipped: '', ended: false, hp: 15, deg: 0, slam: false };
+  }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+  clear() { this.timers.forEach((t) => clearTimeout(t)); this.timers = []; }
+  go(m) {
+    if (m > 12) return;
+    this.clear();
+    const patch = { m, deg: 0, zoomed: false, slam: false, tab: 'jeu' };
+    if (m < 10) patch.hp = 15;
+    if (m === 10) { patch.hp = Math.max(1, (this.state.hp || 15) - 6); patch.deg = 6; }
+    if (m <= 4) { patch.sent = false; }
+    if (m <= 5) patch.dice = 'idle';
+    if (m <= 7) { patch.moved = false; patch.dest = -1; }
+    if (m <= 8) patch.feed = 0;
+    if (m <= 9) patch.atk = 'idle';
+    if (m <= 11) patch.equipped = '';
+    if (m === 1) { patch.soundAsked = false; }
+    this.setState(patch);
+    const auto = { 2: 7000, 3: 8000, 6: 6500, 10: 5000 };
+    if (auto[m]) this.later(() => this.go(m + 1), auto[m]);
+    if (m === 8) {
+      this.sfx('drum');
+      this.later(() => { this.setState({ feed: 1 }); this.sfx('miss'); }, 2200);
+      this.later(() => { this.setState({ feed: 2 }); this.sfx('hit'); }, 4400);
+      this.later(() => this.go(9), 6500);
+    }
+    if (m === 9) { this.setState({ slam: true }); this.sfx('turn'); this.later(() => this.setState({ slam: false }), 2300); }
+    if (m === 10) this.sfx('hurt');
+    if (m === 11) this.sfx('loot');
+    if (m === 6) this.sfx('clue');
+    if (m === 12) this.sfx('win');
+  }
+  audio() {
+    if (this.ac) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      this.ac = new AC();
+      const g = this.ac.createGain(); g.gain.value = 0.05; g.connect(this.ac.destination);
+      [55, 82.41, 110, 164.8].forEach((f, i) => {
+        const o = this.ac.createOscillator(); o.type = i > 1 ? 'triangle' : 'sine'; o.frequency.value = f;
+        const og = this.ac.createGain(); og.gain.value = i > 1 ? 0.12 : 0.5;
+        const lfo = this.ac.createOscillator(); lfo.frequency.value = 0.08 + i * 0.05;
+        const lg = this.ac.createGain(); lg.gain.value = i > 1 ? 0.12 : 0.3;
+        lfo.connect(lg); lg.connect(og.gain); o.connect(og); og.connect(g); o.start(); lfo.start();
+      });
+    } catch (e) { this.ac = null; }
+  }
+  tone(f, t0, dur, type, vol) {
+    const ac = this.ac; const o = ac.createOscillator(); o.type = type; o.frequency.value = f;
+    const g = ac.createGain(); const t = ac.currentTime + t0;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + 0.05);
+  }
+  noise(t0, dur, vol, freq) {
+    const ac = this.ac; const n = Math.floor(ac.sampleRate * dur);
+    const buf = ac.createBuffer(1, n, ac.sampleRate); const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const s = ac.createBufferSource(); s.buffer = buf;
+    const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq || 1800;
+    const g = ac.createGain(); g.gain.value = vol;
+    s.connect(f); f.connect(g); g.connect(ac.destination); s.start(ac.currentTime + t0);
+  }
+  sfx(k) {
+    if (!this.ac) return;
+    try {
+      if (k === 'click') this.tone(660, 0, 0.08, 'square', 0.04);
+      if (k === 'dice') for (let i = 0; i < 10; i++) this.noise(i * 0.1 + Math.random() * 0.03, 0.05, 0.5, 2400);
+      if (k === 'win') [523, 659, 784, 1047].forEach((f, i) => this.tone(f, i * 0.09, 0.4, 'triangle', 0.12));
+      if (k === 'hit') { this.tone(110, 0, 0.3, 'sine', 0.5); this.noise(0, 0.12, 0.6, 900); }
+      if (k === 'hurt') { this.tone(80, 0, 0.5, 'sine', 0.7); this.noise(0, 0.2, 0.7, 600); this.tone(220, 0.05, 0.25, 'sawtooth', 0.05); }
+      if (k === 'miss') this.noise(0, 0.25, 0.3, 3500);
+      if (k === 'turn') { this.tone(392, 0, 0.15, 'square', 0.07); this.tone(587, 0.15, 0.35, 'square', 0.07); }
+      if (k === 'drum') for (let i = 0; i < 4; i++) this.tone(70, i * 0.35, 0.25, 'sine', 0.6);
+      if (k === 'loot') [784, 988, 1175, 1568].forEach((f, i) => this.tone(f, i * 0.07, 0.6, 'sine', 0.1));
+      if (k === 'clue') [440, 554, 659].forEach((f, i) => this.tone(f, i * 0.12, 0.6, 'sine', 0.08));
+    } catch (e) {}
+  }
+  stopAudio() { try { if (this.ac) this.ac.close(); } catch (e) {} this.ac = null; }
+  renderVals() {
+    const s = this.state;
+    const m = s.m;
+    const optsData = [
+      ['Fouiller l’autel', 'Chercher ce qui est caché. Tu es bon pour ça.'],
+      ['Lire les inscriptions', 'Comprendre ce qui est écrit.'],
+      ['Parler aux autres', 'Proposer un plan au groupe.'],
+      ['Autre chose…', 'Écris ton idée, le MJ décide.']
+    ];
+    const reachCells = [[3, 6], [5, 6], [6, 6], [7, 6], [8, 6], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7], [3, 5]];
+    const actsData = [
+      { t: 'Hache d’armes', ty: 'Arme', tx: '1d12 + 3 dégâts.', v: '+5', st: 'atq', ic: 'epee', ra: 'commune', btn: 'Attaquer le gobelin', sub: 'Touche sur 13 ou plus · 1d12 + 3', hint: 'touche sur 13+' },
+      { t: 'Second souffle', ty: 'Compétence', tx: 'Soigne 1d10 + 3. Une fois.', v: 'd10', st: 'pv', ic: 'sort', ra: 'peu-commune', btn: 'Reprendre mon souffle', sub: 'Soigne 1d10 + 3 PV', hint: 'une fois par combat' },
+      { t: 'Rage du nain', ty: 'Compétence', tx: '+2 dégâts ce combat.', v: '+2', st: 'atq', ic: 'epee', ra: 'rare', btn: 'Entrer en rage', sub: '+2 dégâts jusqu’à la fin du combat', hint: 'rare · une fois par jour' },
+      { t: 'Autre…', other: true, btn: 'Proposer au MJ', sub: 'Ton idée, le MJ décide', hint: 'le MJ décide' }
+    ];
+    const dest = s.dest >= 0 ? reachCells[s.dest] : null;
+    const L = (who, txt, mj) => ({ who, txt, ini: who[0], cls: mj ? 'mjl' : '', av: mj ? 'mj' : '' });
+    const lines = {
+      1: [L('Romain · MJ', 'Salut tout le monde ! Je lance dans une minute. Activez le son sur vos téléphones.', 1), L('Camille', 'Lyra est prête !')],
+      2: [L('Romain · MJ', 'Précédemment… vous êtes descendus dans la crypte des Valombre. Borin, tu as pris un mauvais coup la dernière fois.', 1)],
+      3: [L('Romain · MJ', 'L’escalier s’arrête devant un autel de pierre noire. Les cendres sont encore tièdes…', 1), L('Hugo', 'Ça sent le piège, ça.')],
+      4: [L('Romain · MJ', 'Devant l’autel… que faites-vous ?', 1), L('Camille', 'Lyra surveille l’escalier, arc en main.')],
+      5: [L('Romain · MJ', s.choice === 3 ? 'Ah, bonne idée ! Fais-moi un jet, il te faut 13.' : 'Borin fouille ? Fais-moi un jet. Il te faut 13.', 1)],
+      6: [L('Romain · MJ', 'Sous l’autel, coincée dans une fente… une page de parchemin. La page arrachée du registre !', 1), L('Hugo', 'Je le savais !')],
+      7: [L('Romain · MJ', 'La porte de droite est entrouverte. Borin, tu passes devant ?', 1)],
+      8: [L('Romain · MJ', 'Des gobelins surgissent ! Le premier tire sur Lyra…', 1), L('Camille', 'Noooon !')],
+      9: s.atk === 'done' && s.card === 3 ? [L('Romain · MJ', 'Hmm… j’adore. La table bascule, le gobelin s’étale par terre !', 1), L('Hugo', 'Ahah, magnifique.')] : [L('Romain · MJ', 'Borin, c’est à toi. Le gobelin est juste devant toi.', 1)],
+      10: [L('Romain · MJ', 'Le gobelin riposte… sa lame passe sous ton bouclier. Six dégâts.', 1), L('Hugo', 'Tiens bon, Borin !')],
+      11: [L('Romain · MJ', 'Le dernier gobelin s’effondre. Dans son sac… une hache magnifique.', 1)],
+      12: [L('Romain · MJ', 'On s’arrête là pour ce soir. Bravo tout le monde, à jeudi !', 1), L('Camille', 'Trop bien, à jeudi !')]
+    }[m];
+    const thoughts = {
+      1: 'Je suis au bon endroit, je joue Borin. On attend le MJ. Ah, il faut que j’active le son.',
+      2: 'Ah oui, la porte nord et le registre. Et Borin est blessé.',
+      3: 'J’écoute. Ce n’est pas encore à moi.',
+      4: s.choice === 3 ? 'J’ai mon idée à moi : je l’écris, le MJ décidera.' : 'Je peux fouiller, lire, parler… ou proposer autre chose.',
+      5: s.dice === 'done' ? '20 ! C’est réussi, je l’ai vu tout de suite.' : 'Il me faut 13. Allez…',
+      6: 'C’est important, c’est gardé. Je peux le relire quand je veux.',
+      7: s.dest >= 0 ? 'Je vais là. Le gris, on ne l’a pas encore vu.' : 'Je peux aller jusqu’aux cases vertes.',
+      8: 'Le gobelin attaque Lyra. Moi, c’est après Sef. Je me prépare.',
+      9: s.atk === 'done' ? 'C’est fait. Plus rien à faire, je finis mon tour.' : s.card === 3 ? 'Et si je renversais la table sur lui ? Je propose au MJ.' : 'Je suis à côté du gobelin. Je choisis une carte, et j’y vais.',
+      10: s.hp <= 10 ? 'Aïe. Il me reste ' + s.hp + ' PV. Au prochain tour, je me soigne.' : 'Aïe. Heureusement que j’ai repris mon souffle.',
+      11: 'Une hache légendaire ! Je la prends tout de suite.',
+      12: 'C’était bien. Vivement jeudi.'
+    }[m];
+    const feedTxt = ['Le gobelin tire sur Lyra…', 'Le gobelin tire sur Lyra… raté !', 'Sef lance une dague : touché, 4 dégâts.'][s.feed];
+    const order = [
+      { p: 'gobelin', n: s.feed < 2 ? 'maintenant' : 'a joué', pf: 'foe', cls: s.feed < 2 ? 'now' : '' },
+      { p: 'sef', n: s.feed === 2 ? 'maintenant' : 'Sef', pf: '', cls: s.feed === 2 ? 'now' : '' },
+      { p: 'borin', n: 'toi', pf: '', cls: 'me' },
+      { p: 'lyra', n: 'Lyra', pf: '', cls: '' }
+    ];
+    const v = {
+      m, hp: s.hp, deg: s.deg, soundOn: s.soundAsked, noSound: !s.soundAsked, soundTxt: s.sound ? 'son activé' : 'son coupé',
+      lines, thought: thoughts,
+      opts: optsData.map(([t, d], i) => ({ t, d, cls: (i === s.choice ? 'sel' : '') + (i === 3 ? ' free' : ''), pick: () => { if (!s.sent) { this.setState({ choice: i }); this.sfx('click'); } } })),
+      choiceName: optsData[s.choice][0], sent: s.sent, notSent: !s.sent,
+      diceIdle: s.dice === 'idle', diceRolling: s.dice === 'rolling', diceDone: s.dice === 'done', diceNotIdle: s.dice !== 'idle',
+      zoomed: s.zoomed,
+      bx: dest && s.moved ? dest[0] : 4, by: dest && s.moved ? dest[1] : 6,
+      reach: reachCells.map(([x, y], i) => ({ l: x * 28 - 12, t: (y + 1) * 28 - 8, cls: i === s.dest ? 'on' : '', pick: () => { this.setState({ dest: i }); this.sfx('click'); } })),
+      notMoved: !s.moved, moved: s.moved,
+      moveTxt: dest ? 'Tu vas sur la case choisie.' : 'Touche une case verte.',
+      moveSub: dest ? 'Case choisie' : 'Choisis d’abord une case', moveCls: dest ? '' : 'off',
+      who: s.feed < 2 ? 'le gobelin' : 'Sef', feedTxt, feedNext: s.feed < 2 ? 'Après Sef. Tu pourras bouger de 6 cases puis attaquer.' : 'C’est bientôt à toi !', order,
+      s2: s.atk === 'done' ? 'done' : 'cur', s3: s.atk === 'done' ? 'cur' : '',
+      atkIdle: s.atk === 'idle', atkRolling: s.atk === 'rolling', atkDone: s.atk === 'done',
+      acts: actsData.map((a, i) => ({ ...a, tx: a.tx || '', ty: a.ty || '', v: a.v || '', st: a.st || 'none', ic: a.ic || 'epee', ra: a.ra || 'aucune',
+        isCard: !a.other, isOther: !!a.other, et: i === s.card ? 'actif' : 'normal', cls: i === s.card ? 'sel' : '',
+        x: 10 + i * 84, r: [-9, -3, 3, 9][i], y: (i === 0 || i === 3 ? 10 : 0) - (i === s.card ? 18 : 0),
+        pick: () => { this.setState({ card: i }); this.sfx('click'); } })),
+      atkLabel: actsData[s.card].btn, atkSub: actsData[s.card].sub, cardHint: actsData[s.card].hint, otherSel: s.card === 3,
+      atkBusy: s.atk === 'rolling' || s.atk === 'asking', busyTxt: s.atk === 'asking' ? 'Le MJ lit ton idée…' : 'Le dé roule…',
+      atkAsking: s.atk === 'asking', atkHit: s.atk === 'done' && s.card === 0, atkCustom: s.atk === 'done' && s.card === 3,
+      atkSelf: s.atk === 'done' && (s.card === 1 || s.card === 2),
+      selfTxt: s.card === 1 ? 'Souffle repris !' : 'En rage !', selfSub: s.card === 1 ? 'Tu regagnes 7 PV.' : '+2 dégâts jusqu’à la fin du combat.',
+      notOtherSel: !(s.card === 3 && s.atk === 'idle'), headOn: m !== 9,
+      bigLbl: s.atk === 'done' ? 'Finir' : s.atk === 'idle' ? ['Frappe', 'Souffle', 'Rage', 'Proposer'][s.card] : '…',
+      bigIcon: s.atk === 'done' ? 'M5 12h14M13 6l6 6-6 6' : s.card === 3 ? 'M22 2 11 13M22 2l-7 20-4-9-9-4z' : s.card === 1 ? 'M12 21s-8-5.2-8-11a5 5 0 0 1 8-4 5 5 0 0 1 8 4c0 5.8-8 11-8 11z' : 'M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2',
+      bigCls: s.atk === 'rolling' || s.atk === 'asking' ? 'busy' : '',
+      bigAct: () => { if (this.state.atk === 'done') { this.sfx('click'); this.go(10); } else v.attack(); },
+      openBag: () => { this.setState({ tab: 'perso' }); this.sfx('click'); },
+      freeOpen: s.choice === 3 && !s.sent, diceTitle: s.choice === 3 ? 'Ton idée' : optsData[s.choice][0],
+      showMap: s.tab === 'carte' && !s.ended, hereX: (dest && s.moved ? dest[0] : 4) * 30 - 26 + 15, hereY: ((dest && s.moved ? dest[1] : 6) + 1) * 30 + 40 - 40,
+      tabs: [['jeu', 'Jeu'], ['carte', 'Carte'], ['perso', 'Personnage'], ['journal', 'Journal']].map(([id, n]) => ({ n, cls: (s.tab || 'jeu') === id ? 'on' : '', pick: () => { this.setState({ tab: id }); this.sfx('click'); } })),
+      showPerso: s.tab === 'perso' && !s.ended, showJournal: s.tab === 'journal' && !s.ended,
+      xp: m >= 12 ? 8 : m >= 10 ? 7 : 6, xpTxt: (m >= 12 ? 8 : m >= 10 ? 7 : 6) + ' / 10 · bientôt niveau 4',
+      weaponRar: s.equipped === 'equip' ? 'leg' : 'commune', weaponName: s.equipped === 'equip' ? 'Hache des Valombre' : 'Hache d’armes',
+      bag: [{ o: 'potion', r: 'commune', q: '2' }, { o: 'bourse', r: 'commune', q: '48' }, s.equipped === 'keep' ? { o: 'hache', r: 'leg', q: '' } : s.equipped === 'equip' ? { o: 'hache', r: 'commune', q: '' } : { o: 'aucun', r: 'commune', q: '' }, { o: 'aucun', r: 'commune', q: '' }, { o: 'aucun', r: 'commune', q: '' }, { o: 'aucun', r: 'commune', q: '' }, { o: 'aucun', r: 'commune', q: '' }, { o: 'aucun', r: 'commune', q: '' }, { o: 'aucun', r: 'commune', q: '' }, { o: 'aucun', r: 'commune', q: '' }],
+      clues: [
+        { o: 'parchemin', r: 'commune', t: 'Le registre', d: 'une page a été arrachée.', full: '« Registre des sépultures des Valombre. » Une page manque, arrachée net.', show: true, isNew: false },
+        { o: 'anneau', r: 'peu', t: 'La bague du gardien', d: 'gravée d’un corbeau.', full: 'Un anneau de fer noirci, gravé d’un corbeau aux ailes ouvertes.', show: true, isNew: false },
+        { o: 'parchemin', r: 'rare', t: 'La page arrachée', d: 'trouvée sous l’autel.', full: '« Ici reposent les Valombre, gardiens de la porte nord. Que nul ne chante leur nom après le couvre-feu. »', show: m >= 6, isNew: m >= 6 && m <= 8 }
+      ].filter((c) => c.show).map((c) => ({ ...c, pick: () => { this.setState({ clueOpen: c.t, clueFull: c.full }); this.sfx('click'); } })),
+      clueOpen: !!s.clueOpen, clueTitle: s.clueOpen || '', clueText: s.clueFull || '',
+      closeClue: () => this.setState({ clueOpen: '' }),
+      events: [
+        [2, '20:31', 'Précédemment : la crypte, la porte nord, Borin blessé.', ''],
+        [3, '20:34', 'Le groupe arrive dans la salle de l’autel.', ''],
+        [5, '20:38', s.choice === 3 ? 'Borin tente son idée : réussi (20).' : 'Borin fouille l’autel : réussi (20).', ''],
+        [6, '20:39', 'Indice trouvé : la page arrachée.', 'key'],
+        [7, '20:42', 'Le groupe avance vers la porte de droite.', ''],
+        [8, '20:43', 'Combat ! Des gobelins surgissent.', 'key'],
+        [9, '20:44', s.card === 3 ? 'Borin renverse la table : le gobelin tombe.' : s.card === 1 ? 'Borin reprend son souffle.' : s.card === 2 ? 'Borin entre en rage.' : 'Borin touche le gobelin : 9 dégâts.', ''],
+        [10, '20:45', 'Le gobelin blesse Borin : −6 PV.', ''],
+        [11, '20:52', 'Butin : Hache des Valombre (légendaire).', 'key'],
+        [12, '21:40', 'Fin de la session. Prochaine : jeudi 20 h 30.', 'key']
+      ].filter((e) => e[0] <= m && !(e[0] === 9 && m === 9 && s.atk !== 'done')).reverse().map(([, h, t, cls]) => ({ h, t, cls })),
+      backToGame: () => { this.setState({ tab: 'jeu' }); this.sfx('click'); },
+      equipped: !!s.equipped, notEquipped: !s.equipped, lootTxt: s.equipped === 'equip' ? 'Équipée !' : 'Dans ton sac',
+      slam: s.slam, ended: s.ended, danger: s.hp <= 10, safe: s.hp > 10,
+      dots: Array.from({ length: 12 }, (_, i) => ({ n: i + 1, cls: i + 1 === m ? 'cur' : i + 1 < m ? 'done' : '', pick: () => this.go(i + 1) })),
+      sound: () => { this.audio(); this.setState({ sound: true, soundAsked: true }); this.sfx('click'); this.later(() => this.go(2), 1800); },
+      mute: () => { this.setState({ soundAsked: true }); this.later(() => this.go(2), 1200); },
+      propose: () => { if (s.sent) return; this.setState({ sent: true }); this.sfx('click'); this.later(() => this.go(5), 2200); },
+      roll: () => { if (this.state.dice !== 'idle') return; this.setState({ dice: 'rolling' }); this.sfx('dice'); this.later(() => { this.setState({ dice: 'done' }); this.sfx('win'); }, 1600); this.later(() => this.go(6), 4800); },
+      zoom: () => { this.setState({ zoomed: !this.state.zoomed }); this.sfx('click'); },
+      move: () => { if (this.state.dest < 0) return; this.setState({ moved: true }); this.sfx('click'); this.later(() => this.go(8), 2600); },
+      attack: () => {
+        if (this.state.atk !== 'idle') return;
+        if (this.state.card === 1) { this.setState({ hp: 22, deg: 0, atk: 'done' }); this.sfx('win'); return; }
+        if (this.state.card === 2) { this.setState({ atk: 'done' }); this.sfx('turn'); return; }
+        if (this.state.card === 3) { this.setState({ atk: 'asking' }); this.sfx('click'); this.later(() => { this.setState({ atk: 'done' }); this.sfx('win'); }, 2600); return; }
+        this.setState({ atk: 'rolling' }); this.sfx('dice');
+        this.later(() => { this.setState({ atk: 'done' }); this.sfx('hit'); }, 1500);
+      },
+      finish: () => { this.sfx('click'); this.go(10); },
+      equip: () => { this.setState({ equipped: 'equip' }); this.sfx('loot'); this.later(() => this.go(12), 1800); },
+      keep: () => { this.setState({ equipped: 'keep' }); this.sfx('click'); this.later(() => this.go(12), 1800); },
+      end: () => { this.clear(); this.setState({ ended: true }); this.sfx('win'); this.later(() => this.stopAudio(), 1500); },
+      restart: () => { this.clear(); this.stopAudio(); this.setState(this.fresh()); },
+      next: () => { if (this.state.m < 12) this.go(this.state.m + 1); }
+    };
+    for (let i = 1; i <= 12; i++) v['is' + i] = m === i && !s.ended;
+    const seul = String(this.props.seul ?? false) === 'true';
+    v.seul = seul; v.full = !seul;
+    v.rootStyle = seul ? 'width: 390px; height: 844px; padding: 0' : 'width: 1920px; height: 1160px; padding: 56px 64px';
+    v.tvDice = s.dice; v.tvAtk = s.atk; v.tvCard = s.card; v.tvFeed = s.feed; v.tvChoice = s.choice; v.tvSent = String(s.sent); v.tvMoved = String(s.moved); v.tvEquipped = s.equipped || '';
+    return v;
+  }
+}
+</script>
+</body>
+</html>

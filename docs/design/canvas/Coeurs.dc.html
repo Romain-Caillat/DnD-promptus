@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Cœurs de vie</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0A0A0A}
+.hz{display:inline-flex;align-items:flex-end;vertical-align:middle}
+.hz .h{position:relative;flex:none}
+.hz .ly{position:absolute;background:transparent}
+.hz.on .h.hb{animation:hzBeat 1.3s ease-in-out infinite}
+.hz.on .h.dg{animation:hzBeat .7s ease-in-out infinite}
+@keyframes hzBeat{0%,34%,100%{transform:scale(1)}8%{transform:scale(1.24)}16%{transform:scale(.95)}24%{transform:scale(1.08)}}
+.hz .brk{opacity:0}
+.hz.on .brk{animation:hzBreak 3.2s ease-in infinite}
+@keyframes hzBreak{0%,30%{opacity:1;transform:none;filter:none}32%{transform:translate(-8%,0)}34%{transform:translate(8%,-4%)}36%{opacity:1;filter:brightness(3);transform:scale(1.25)}42%,100%{opacity:0;transform:scale(.5) translateY(30%)}}
+.hz .shd{position:absolute;background:#FF4D5E;opacity:0}
+.hz.on .shd{animation:3.2s ease-out infinite}
+.hz.on .shd.s1{animation-name:hzS1}.hz.on .shd.s2{animation-name:hzS2}.hz.on .shd.s3{animation-name:hzS3}.hz.on .shd.s4{animation-name:hzS4}
+@keyframes hzS1{0%,36%{opacity:0;transform:none}38%{opacity:1}70%,100%{opacity:0;transform:translate(-60%,-70%) rotate(90deg)}}
+@keyframes hzS2{0%,36%{opacity:0;transform:none}38%{opacity:1}70%,100%{opacity:0;transform:translate(60%,-60%) rotate(-90deg)}}
+@keyframes hzS3{0%,36%{opacity:0;transform:none}38%{opacity:1}70%,100%{opacity:0;transform:translate(-45%,60%) rotate(45deg)}}
+@keyframes hzS4{0%,36%{opacity:0;transform:none}38%{opacity:1}70%,100%{opacity:0;transform:translate(55%,70%) rotate(-45deg)}}
+@media (prefers-reduced-motion: reduce){.hz *{animation:none!important}.hz .brk,.hz .shd{display:none}}
+</style>
+</helmet>
+<div class="hz {{onCls}}" role="img" aria-label="{{label}}" style="gap: {{gap}}px">
+<sc-for list="{{hearts}}" as="h" hint-placeholder-count="10">
+<div class="h {{h.cls}}" style="width: {{hw}}px; height: {{hh}}px; animation-delay: {{h.d}}s">
+<div class="ly" style="left: -{{p}}px; top: -{{p}}px; width: {{p}}px; height: {{p}}px; box-shadow: {{h.base}}"></div>
+<sc-if value="{{h.brk}}" hint-placeholder-val="{{ false }}">
+<div class="ly brk" style="left: -{{p}}px; top: -{{p}}px; width: {{p}}px; height: {{p}}px; box-shadow: {{h.over}}; animation-delay: {{h.d}}s"></div>
+<i class="shd s1" style="left: {{sx}}px; top: {{sy}}px; width: {{ss}}px; height: {{ss}}px; animation-delay: {{h.d}}s"></i>
+<i class="shd s2" style="left: {{sx}}px; top: {{sy}}px; width: {{ss}}px; height: {{ss}}px; animation-delay: {{h.d}}s"></i>
+<i class="shd s3" style="left: {{sx}}px; top: {{sy}}px; width: {{ss}}px; height: {{ss}}px; animation-delay: {{h.d}}s"></i>
+<i class="shd s4" style="left: {{sx}}px; top: {{sy}}px; width: {{ss}}px; height: {{ss}}px; animation-delay: {{h.d}}s"></i>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"pv":{"editor":"int","default":18,"min":0,"max":999},"max":{"editor":"int","default":22,"min":1,"max":999},"px":{"editor":"int","default":3,"min":1,"max":8},"coeurs":{"editor":"int","default":0,"min":0,"max":20},"etat":{"editor":"enum","options":["auto","repos","coup","danger"],"default":"auto"},"degats":{"editor":"int","default":0,"min":0,"max":999},"anim":{"editor":"boolean","default":true},"$preview":{"width":300,"height":30}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const pv = Number(this.props.pv ?? 18);
+    const max = Math.max(1, Number(this.props.max ?? 22));
+    const p = Number(this.props.px ?? 3);
+    const degats = Number(this.props.degats ?? 0);
+    const anim = String(this.props.anim ?? true) === 'true';
+    // Two HP per heart, capped at ten hearts: beyond 20 HP each heart holds max/10.
+    const n = Number(this.props.coeurs ?? 0) || Math.min(10, Math.ceil(max / 2));
+    const per = max / n;
+    let etat = this.props.etat ?? 'auto';
+    if (etat === 'auto') etat = pv / max <= 0.3 ? 'danger' : degats > 0 ? 'coup' : 'repos';
+
+    const PAT = ['.XX.XX.', 'XXXXXXX', 'XXXXXXX', '.XXXXX.', '..XXX..', '...X...'];
+    const at = (x, y) => (PAT[y] || '')[x] === 'X';
+    const grid = [];
+    for (let y = -1; y <= PAT.length; y++) {
+      for (let x = -1; x <= PAT[0].length; x++) {
+        if (at(x, y)) grid.push([x + 1, y + 1, 'X']);
+        else if (at(x + 1, y) || at(x - 1, y) || at(x, y + 1) || at(x, y - 1)) grid.push([x + 1, y + 1, 'o']);
+      }
+    }
+    const red = (x, y) => (x === 2 && y === 2) ? '#FFFFFF' : (y <= 2 && x <= 3) ? '#FF8792' : y >= 5 ? '#C22A3C' : '#FF4D5E';
+    const grey = (x, y) => (x === 2 && y === 2) ? '#4A4A4A' : y >= 5 ? '#1E1E1E' : '#2A2A2A';
+    const heart = (f) => grid.map(([x, y, ch]) => {
+      const col = ch === 'o' ? '#0A0A0A' : (f > 0.97 || (x - 0.5) / 7 < f) ? red(x, y) : grey(x, y);
+      return ((x + 1) * p) + 'px ' + ((y + 1) * p) + 'px 0 0 ' + col;
+    }).join(', ');
+    const frac = (v, i) => Math.max(0, Math.min(1, (v - i * per) / per));
+
+    const before = pv + (etat === 'coup' ? degats : 0);
+    const hearts = Array.from({ length: n }, (_, i) => {
+      const f = frac(pv, i);
+      const f0 = frac(before, i);
+      const brk = etat === 'coup' && f0 > f;
+      return {
+        base: heart(f),
+        over: brk ? heart(f0) : '',
+        brk,
+        cls: f > 0 ? (etat === 'danger' ? 'dg' : etat === 'repos' ? 'hb' : '') : '',
+        d: brk ? ((Math.ceil(before / per) - 1 - i) * 0.22).toFixed(2) : (i * 0.07).toFixed(2)
+      };
+    });
+    return {
+      hearts, p, hw: 9 * p, hh: 8 * p, gap: Math.max(1, p - 1),
+      sx: Math.round(3.6 * p), sy: Math.round(2.6 * p), ss: p + 1,
+      onCls: anim ? 'on' : '',
+      label: 'Points de vie : ' + pv + ' sur ' + max
+    };
+  }
+}
+</script>
+</body>
+</html>

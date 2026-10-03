@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Dé à facettes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0A0A0A}
+.de{position:relative;display:inline-grid;place-items:center;font-family:'Chakra Petch',system-ui,sans-serif}
+.de svg{display:block;overflow:visible}
+.de-body{position:relative}
+.r-roule .de-body{animation:deSpin 3.6s cubic-bezier(.15,.7,.2,1) infinite}
+@keyframes deSpin{0%{transform:rotate(-540deg) scale(.55)}42%{transform:rotate(14deg) scale(1.08)}50%{transform:rotate(-4deg) scale(.98)}56%,100%{transform:none}}
+.de-win{position:absolute;left:25%;right:25%;overflow:hidden;display:grid}
+.de-strip{display:flex;flex-direction:column;align-items:center}
+.r-roule .de-strip{animation:deStrip 3.6s infinite}
+@keyframes deStrip{0%{transform:translateY(0);animation-timing-function:steps(6,end)}42%,100%{transform:translateY(-85.714%)}}
+.r-fixe .de-strip,.r-survol .de-strip{transform:translateY(-85.714%)}
+.de-glow{position:absolute;inset:-18%;border-radius:50%;background:radial-gradient(circle,rgba(255,214,10,.55) 0,rgba(255,214,10,.15) 40%,transparent 68%);opacity:0}
+.r-roule .de-glow{animation:deGlow 3.6s ease-out infinite}
+@keyframes deGlow{0%,44%{opacity:0;transform:scale(.6)}52%{opacity:1;transform:scale(1.1)}80%,100%{opacity:0;transform:scale(1.3)}}
+.de-rays{position:absolute;inset:-30%;border-radius:50%;background:repeating-conic-gradient(rgba(255,214,10,0) 0 10deg,rgba(255,214,10,.35) 10deg 12deg);opacity:0;-webkit-mask-image:radial-gradient(circle,#000 20%,transparent 65%);mask-image:radial-gradient(circle,#000 20%,transparent 65%)}
+.r-roule .de-rays{animation:deRays 3.6s ease-out infinite}
+@keyframes deRays{0%,46%{opacity:0;transform:rotate(0)}54%{opacity:1}90%,100%{opacity:0;transform:rotate(40deg)}}
+.r-survol .de-body{transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.r-survol:hover .de-body{transform:rotate(-14deg) scale(1.1)}
+@media (prefers-reduced-motion: reduce){.de *{animation:none!important}.de-strip{transform:translateY(-85.714%)}}
+</style>
+</helmet>
+<div class="de r-{{anim}}" role="img" aria-label="{{label}}" style="width: {{T}}px; height: {{T}}px">
+<div class="de-rays" style="background: repeating-conic-gradient({{c0}} 0 10deg, {{c35}} 10deg 12deg)"></div>
+<div class="de-glow" style="background: radial-gradient(circle, {{c55}} 0, {{c15}} 40%, transparent 68%)"></div>
+<div class="de-body" style="width: {{T}}px; height: {{T}}px">
+<svg width="{{T}}" height="{{T}}" viewBox="0 0 100 100" aria-hidden="true" style="position: absolute; inset: 0"><polygon points="{{outer}}" fill="{{outerC}}" stroke="#0A0A0A" stroke-width="2.5" stroke-linejoin="round"></polygon></svg>
+<sc-for list="{{faces}}" as="f" hint-placeholder-count="10"><svg width="{{T}}" height="{{T}}" viewBox="0 0 100 100" aria-hidden="true" style="position: absolute; inset: 0"><polygon points="{{f.p}}" fill="{{f.c}}" stroke="#0A0A0A" stroke-width="1.5" stroke-linejoin="round"></polygon></svg></sc-for>
+<div class="de-win" style="top: {{numTop}}px; height: {{lineH}}px">
+<div class="de-strip">
+<sc-for list="{{strip}}" as="s" hint-placeholder-count="7"><span style="height: {{lineH}}px; line-height: {{lineH}}px; font-size: {{numFs}}px; font-weight: 700; color: #0A0A0A">{{s}}</span></sc-for>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"de":{"editor":"enum","options":["d4","d6","d8","d10","d12","d20"],"default":"d20"},"valeur":{"editor":"int","default":17,"min":1,"max":20},"taille":{"editor":"int","default":120,"min":24,"max":400},"anim":{"editor":"enum","options":["roule","fixe","survol"],"default":"roule"},"couleur":{"editor":"enum","options":["blanc","pv","atq","ca","mag","mvt","ini"],"default":"blanc"},"$preview":{"width":120,"height":120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const de = this.props.de ?? 'd20';
+    const T = Number(this.props.taille ?? 120);
+    const sides = Number(String(de).slice(1)) || 20;
+    const v = Math.min(sides, Math.max(1, Number(this.props.valeur ?? sides)));
+    const anim = this.props.anim ?? 'roule';
+    const pt = (a) => a.map((p) => p.join(',')).join(' ');
+    const ring = (cx, cy, r, n, start) => Array.from({ length: n }, (_, i) => {
+      const a = (start + (360 / n) * i) * Math.PI / 180;
+      return [Math.round((cx + r * Math.cos(a)) * 10) / 10, Math.round((cy + r * Math.sin(a)) * 10) / 10];
+    });
+    const D = {};
+    D.d20 = {
+      outer: '50,2 93,27 93,73 50,98 7,73 7,27', cy: 54, fs: 0.2,
+      faces: [
+        ['7,27 50,2 50,22', '#CFCFCF'], ['50,2 93,27 50,22', '#E2E2E2'], ['7,27 50,22 22,68', '#B4B4B4'],
+        ['93,27 78,68 50,22', '#C4C4C4'], ['7,27 22,68 7,73', '#8E8E8E'], ['93,27 93,73 78,68', '#9E9E9E'],
+        ['7,73 22,68 50,98', '#6E6E6E'], ['93,73 50,98 78,68', '#7E7E7E'], ['22,68 78,68 50,98', '#A8A8A8'],
+        ['50,22 78,68 22,68', '#F7F7F7']
+      ]
+    };
+    D.d4 = {
+      outer: '50,4 96,86 80,96 20,96 4,86', cy: 62, fs: 0.18,
+      faces: [['4,86 96,86 80,96 20,96', '#7E7E7E'], ['50,4 96,86 4,86', '#F7F7F7']]
+    };
+    D.d6 = {
+      outer: '16,22 30,6 94,6 94,70 78,86 16,86', cy: 54, fs: 0.22,
+      faces: [['16,22 30,6 94,6 78,22', '#CFCFCF'], ['78,22 94,6 94,70 78,86', '#8E8E8E'], ['16,22 78,22 78,86 16,86', '#F7F7F7']]
+    };
+    D.d8 = {
+      outer: '50,2 96,50 50,98 4,50', cy: 42, fs: 0.18,
+      faces: [
+        ['4,50 50,4 14,62', '#B4B4B4'], ['96,50 86,62 50,4', '#CFCFCF'], ['14,62 86,62 50,98', '#A8A8A8'],
+        ['4,50 14,62 50,98', '#6E6E6E'], ['96,50 50,98 86,62', '#7E7E7E'], ['50,4 86,62 14,62', '#F7F7F7']
+      ]
+    };
+    D.d10 = {
+      outer: '50,2 96,44 50,98 4,44', cy: 44, fs: 0.18,
+      faces: [
+        ['50,2 50,10 24,48 4,44', '#CFCFCF'], ['50,2 96,44 76,48 50,10', '#E2E2E2'],
+        ['4,44 24,48 50,66 50,98', '#8E8E8E'], ['96,44 50,98 50,66 76,48', '#A8A8A8'],
+        ['50,10 76,48 50,66 24,48', '#F7F7F7']
+      ]
+    };
+    const O = ring(50, 50, 48, 10, -90);
+    const P = ring(50, 50, 26, 5, -90);
+    const shades = ['#E2E2E2', '#B4B4B4', '#7E7E7E', '#8E8E8E', '#C4C4C4'];
+    D.d12 = {
+      outer: pt(O), cy: 50, fs: 0.2,
+      faces: [
+        ...P.map((p, i) => [pt([p, O[2 * i], O[(2 * i + 1) % 10], O[(2 * i + 2) % 10], P[(i + 1) % 5]]), shades[i]]),
+        [pt(P), '#F7F7F7']
+      ]
+    };
+    const d = D[de] || D.d20;
+    // A coloured die rolls for that stat: its greys are re-shaded in the stat colour.
+    const colors = { pv: '#FF4D5E', atq: '#FF9F1C', ca: '#3D9BFF', mag: '#B28CFF', mvt: '#2EE6A6', ini: '#FFD60A' };
+    const base = colors[this.props.couleur ?? 'blanc'];
+    const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    const mix = (hex, to, t) => {
+      const b = to === 'w' ? [255, 255, 255] : [10, 10, 10];
+      return '#' + rgb(hex).map((x, i) => Math.round(x + (b[i] - x) * t).toString(16).padStart(2, '0')).join('');
+    };
+    const tint = (grey) => {
+      if (!base) return grey;
+      const t = (rgb(grey)[0] - 0x6E) / (0xF7 - 0x6E);
+      return t >= 0.55 ? mix(base, 'w', (t - 0.55) * 1.3) : mix(base, 'k', (0.55 - t) * 0.9);
+    };
+    const glow = rgb(base || '#FFD60A').join(',');
+    const lineH = Math.round(T * 0.26);
+    const strip = [3, 14, 8, 19, 6, 11, v].map((n, i) => (i === 6 ? n : ((n - 1) % sides) + 1));
+    return {
+      T, anim, label: de + ' : ' + v,
+      outer: d.outer, faces: d.faces.map(([p, c]) => ({ p, c: tint(c) })), outerC: base ? mix(base, 'k', 0.6) : '#5E5E5E',
+      c0: 'rgba(' + glow + ',0)', c15: 'rgba(' + glow + ',.15)', c35: 'rgba(' + glow + ',.35)', c55: 'rgba(' + glow + ',.55)',
+      strip, lineH, numFs: Math.round(T * d.fs),
+      numTop: Math.round(T * (d.cy / 100) - lineH / 2)
+    };
+  }
+}
+</script>
+</body>
+</html>

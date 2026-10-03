@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Cartes en trois échelles</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A}
+.pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 60% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.ttl{font-family:'Cinzel',Georgia,serif;font-weight:800;letter-spacing:.03em}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.slab{background:linear-gradient(180deg,#181818,#111);border:1px solid #2C2C2C;border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 30px rgba(0,0,0,.45)}
+.desc{margin:0;font-size:12px;color:#A3A3A3;line-height:1.5}
+.frame{border-radius:12px;overflow:hidden;border:1px solid #2C2C2C;box-shadow:inset 0 0 30px rgba(0,0,0,.8);position:relative}
+.hexes{position:relative}
+.hexes svg{position:absolute;overflow:visible}
+.hx-path{stroke-dasharray:4 4;animation:dash 1s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-8}}
+.seg{display:flex;background:#050505;border:1px solid #2C2C2C;border-radius:10px;padding:3px;gap:3px}
+.seg button{font:inherit;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#A3A3A3;background:transparent;border:0;border-radius:7px;min-height:34px;padding:0 12px;cursor:pointer}
+.seg button.on{background:#EDEDED;color:#0A0A0A;box-shadow:0 2px 0 #6E6E6E}
+.note{display:flex;gap:10px;align-items:flex-start}
+.note b{flex:none;width:22px;height:22px;border-radius:5px;background:#EDEDED;color:#0A0A0A;display:grid;place-items:center;font-family:'Cinzel',serif;font-size:12px;box-shadow:0 2px 0 #6E6E6E}
+.layer{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:#141414;border:1px solid #2C2C2C;font-size:13px}
+.layer .eye{width:26px;height:16px;border-radius:8px;background:#EDEDED;position:relative;flex:none}
+.layer .eye::after{content:'';position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#0A0A0A}
+.layer .eye.off{background:#2A2A2A}
+.layer .eye.off::after{right:auto;left:2px;background:#6E6E6E}
+.img{position:relative;width:760px;height:456px;background:radial-gradient(40% 50% at 30% 40%,#3A3530,transparent 70%),radial-gradient(35% 45% at 72% 60%,#2E3236,transparent 70%),repeating-linear-gradient(35deg,#24221F 0 6px,#2A2724 6px 14px)}
+.img .tag{position:absolute;right:10px;top:10px;font-size:10px;font-weight:700;letter-spacing:.14em;background:#0A0A0A;color:#F2F2F2;padding:3px 7px;border-radius:4px;z-index:5}
+.img .gr{position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.22) 0 1px,transparent 1px 38px),repeating-linear-gradient(180deg,rgba(255,255,255,.22) 0 1px,transparent 1px 38px);background-position:12px 7px}
+.img .cal{position:absolute;left:202px;top:197px;width:38px;height:38px;outline:2px solid #F2F2F2;box-shadow:0 0 0 9999px rgba(0,0,0,.25);animation:cal 3s ease-in-out infinite}
+@keyframes cal{0%,100%{transform:none}50%{transform:scale(1.06)}}
+.img .cal i{position:absolute;width:8px;height:8px;background:#F2F2F2;border:1px solid #0A0A0A}
+.img .tip{position:absolute;left:250px;top:186px;font-size:12px;font-weight:700;background:#EDEDED;color:#0A0A0A;padding:5px 9px;border-radius:6px;box-shadow:0 3px 0 #6E6E6E;z-index:4}
+.img .hd{position:absolute;display:grid;place-items:center;outline:2px dashed #F2F2F2;outline-offset:-2px;border-radius:6px}
+.img .hd span{position:absolute;top:-18px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:#F2F2F2;color:#0A0A0A;padding:1px 5px;border-radius:3px;white-space:nowrap}
+.wl{stroke:#F2F2F2;stroke-width:3;stroke-linecap:round}
+.wl-ai{stroke:#F2F2F2;stroke-width:3;stroke-dasharray:6 5;opacity:.7;animation:dash 1s linear infinite}
+@media (prefers-reduced-motion: reduce){.pm *{animation:none!important}}
+</style>
+</helmet>
+<div class="pm" style="width: 1440px; height: 2460px; position: relative; overflow: hidden">
+
+<div style="padding: 48px 64px 20px; display: flex; flex-direction: column; gap: 10px; max-width: 1080px">
+<div class="lbl">Cartes</div>
+<h1 class="ttl" style="margin: 0; font-size: 46px">Trois échelles, une même grille</h1>
+<p style="margin: 0; font-size: 15px; color: #A3A3A3; line-height: 1.5">Le monde en hexagones, le lieu et la rencontre en carrés. Partout, la grille porte les règles ; le dessin vient d’un jeu de tuiles posé automatiquement, en vue 3/4 : le dessus des murs, et leur face quand elle regarde vers nous.</p>
+</div>
+
+<div style="padding: 0 64px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px">
+
+<section class="slab" style="padding: 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="lbl">1 · Monde</span><span style="font-size: 12px; color: #8C8C8C">1 hexagone ≈ 10 km</span></div>
+<div class="frame" style="height: 264px; background: #070707">
+<div class="hexes" style="left: 12px; top: 14px; width: 370px; height: 240px">
+<sc-for list="{{hexes}}" as="h" hint-placeholder-count="40"><svg width="40" height="46" viewBox="-20 -23 40 46" style="left: {{h.x}}px; top: {{h.y}}px" aria-hidden="true"><polygon points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11" fill="{{h.fill}}" stroke="{{h.stroke}}" stroke-width="1.5" stroke-dasharray="{{h.dash}}"></polygon><text x="0" y="5" text-anchor="middle" font-size="13" fill="{{h.gc}}" font-family="Chakra Petch, sans-serif">{{h.g}}</text></svg></sc-for>
+<svg width="370" height="240" style="left: 0; top: 0" aria-hidden="true"><polyline class="hx-path" points="{{path}}" fill="none" stroke="#F2F2F2" stroke-width="2"></polyline></svg>
+<div style="position: absolute; left: {{px}}px; top: {{py}}px"><dc-import name="Sprite" perso="borin" px="1" anim="marche" hint-size="20px,26px"></dc-import></div>
+<span style="position: absolute; left: {{tx}}px; top: {{ty}}px; font-family: 'Cinzel', serif; font-weight: 800; font-size: 11px; background: #EDEDED; color: #0A0A0A; padding: 2px 7px; border-radius: 5px; box-shadow: 0 2px 0 #6E6E6E">Valombre</span>
+</div>
+</div>
+<p class="desc">Le groupe est un seul pion. Chaque hexagone traversé se révèle ; les inconnus restent en pointillés. Un jour de marche ≈ 3 hexagones.</p>
+</section>
+
+<section class="slab" style="padding: 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="lbl">2 · Lieu</span><span style="font-size: 12px; color: #8C8C8C">1 case ≈ 5 m</span></div>
+<div class="frame" style="height: 264px; display: grid; place-items: center"><dc-import name="Plan" theme="village" carte="village" pitch="22" vue="mj" hint-size="352px,242px"></dc-import></div>
+<p class="desc">Même grille carrée, plus grosse. Les bâtiments sont des murs comme les autres : toit en haut, façade en face. Chaque lieu nommé ouvre sa propre carte.</p>
+</section>
+
+<section class="slab" style="padding: 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="lbl">3 · Rencontre</span><span style="font-size: 12px; color: #8C8C8C">1 case = 1,5 m</span></div>
+<div class="frame" style="height: 264px; display: grid; place-items: center"><dc-import name="Plan" theme="crypte" carte="salle" pitch="26" vue="joueur" hint-size="364px,260px"></dc-import></div>
+<p class="desc">Le combat, avec les règles du serveur : déplacement, portée, ligne de vue. Ce que les joueurs n’ont pas encore vu reste dans le brouillard.</p>
+</section>
+
+</div>
+
+<section class="slab" style="padding: 22px; display: flex; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 12px; flex: none">
+<div style="display: flex; justify-content: space-between; align-items: center"><span class="lbl">Rencontre en vue 3/4 · la crypte</span>
+<div class="seg" role="group" aria-label="Point de vue"><sc-for list="{{views}}" as="v" hint-placeholder-count="2"><button type="button" class="{{v.cls}}" onClick="{{v.pick}}">{{v.name}}</button></sc-for></div></div>
+<div class="frame"><dc-import name="Plan" theme="crypte" carte="salle" pitch="56" vue="{{vue}}" hint-size="784px,560px"></dc-import></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 18px; padding-top: 40px">
+<div class="note"><b>1</b><p class="desc"><strong style="color: #F2F2F2">Le mur se dessine seul.</strong> Le MJ ou le LLM ne pose que des cases « mur ». Chaque case regarde ses voisines : rebord clair là où il n’y a pas de mur au-dessus, face en pierre quand la case du dessous est ouverte, ombre portée sur le sol.</p></div>
+<div class="note"><b>2</b><p class="desc"><strong style="color: #F2F2F2">Passer derrière.</strong> Le dessus d’un mur est dessiné une case plus haut. Lyra, juste au nord du mur, a les pieds cachés par lui ; Borin, au sud, passe devant les pierres. Les règles, elles, restent sur la grille.</p></div>
+<div class="note"><b>3</b><p class="desc"><strong style="color: #F2F2F2">Le caché est un calque.</strong> Le coffre en pointillés n’existe que pour le MJ. Côté joueur, la salle de droite et son gobelin sont dans le brouillard.</p></div>
+<div class="note"><b>4</b><p class="desc"><strong style="color: #F2F2F2">Un jeu de tuiles par décor.</strong> 16 tuiles suffisent par matière (méthode « double grille »), dessinées à la main ou générées une fois par l’IA, puis réutilisées pour toutes les cartes du décor.</p></div>
+</div>
+</section>
+
+<section class="slab" style="padding: 22px; display: flex; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 12px; flex: none">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="lbl">Carte en image · écran MJ</span><span style="font-size: 12px; color: #8C8C8C">image importée ou générée, la grille s’aligne dessus</span></div>
+<div class="frame img">
+<span class="tag">[IMAGE IMPORTÉE]</span>
+<div class="gr"></div>
+<svg width="760" height="456" style="position: absolute; inset: 0" aria-hidden="true"><polyline class="wl" points="88,83 468,83 468,235" fill="none"></polyline></svg>
+<svg width="760" height="456" style="position: absolute; inset: 0" aria-hidden="true"><polyline class="wl" points="88,83 88,387 620,387 620,235 468,235" fill="none"></polyline></svg>
+<svg width="760" height="456" style="position: absolute; inset: 0" aria-hidden="true"><polyline class="wl-ai" points="278,83 278,197 278,273 278,387" fill="none"></polyline></svg>
+<svg width="760" height="456" style="position: absolute; inset: 0" aria-hidden="true"><polyline class="wl-ai" points="468,235 468,311 544,311" fill="none"></polyline></svg>
+<div class="cal"><i style="left: -5px; top: -5px"></i><i style="right: -5px; top: -5px"></i><i style="left: -5px; bottom: -5px"></i><i style="right: -5px; bottom: -5px"></i></div>
+<span class="tip">1 case = 38 px · décalage 12, 7</span>
+<div class="hd" style="left: 392px; top: 121px; width: 38px; height: 38px"><dc-import name="Objet" objet="coffre" cadre="false" taille="38" hint-size="38px,38px"></dc-import><span>caché</span></div>
+<div class="hd" style="left: 278px; top: 311px; width: 38px; height: 38px"><dc-import name="Etat" etat="effraye" tours="" taille="26" hint-size="26px,26px"></dc-import><span>piège</span></div>
+<div class="hd" style="left: 278px; top: 197px; width: 38px; height: 76px"><span>passage secret</span></div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; flex: 1; padding-top: 30px">
+<span class="lbl">Calques</span>
+<sc-for list="{{layers}}" as="l" hint-placeholder-count="6"><div class="layer"><span class="eye {{l.off}}"></span><span style="flex: 1">{{l.name}}</span><span style="font-size: 11px; color: #8C8C8C">{{l.who}}</span></div></sc-for>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px">
+<dc-import name="Bouton" titre="L’IA propose les murs" stat="none" icon="oeil" variante="clair" taille="petit" largeur="300" hint-size="300px,36px"></dc-import>
+<dc-import name="Bouton" titre="Valider les murs en pointillés" stat="none" icon="plus" variante="sombre" taille="petit" largeur="300" hint-size="300px,36px"></dc-import>
+</div>
+<p class="desc">L’image n’est qu’un décor que tout le monde voit. Portes, coffres, pièges, passages secrets et lumières sont des objets posés sur la grille, révélés par le MJ. Les murs en trait plein sont validés ; en pointillés, ce que l’IA propose.</p>
+</div>
+</section>
+
+<section class="slab" style="padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="lbl">Autres univers · même salle, autre jeu de tuiles</span><span style="font-size: 12px; color: #8C8C8C">les règles, la grille et l’interface ne bougent pas</span></div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px">
+<sc-for list="{{themes}}" as="t" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div class="frame" style="display: grid; place-items: center; height: 330px"><dc-import name="Plan" theme="{{t.id}}" carte="salle" pitch="28" vue="mj" grille="false" hint-size="392px,280px"></dc-import></div>
+<span class="ttl" style="font-size: 18px">{{t.name}}</span>
+<p class="desc">{{t.desc}}</p>
+</div>
+</sc-for>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2460}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { vue: 'mj' };
+  }
+  renderVals() {
+    // Pointy-top hexes, odd rows shifted right.
+    const terrain = [
+      'PPFFMMMPP',
+      'PPFFFMMEP',
+      'PVPFFPEEP',
+      'PPPPPPEPP',
+      '?PPFF?PP?',
+      '??PFF????',
+      '???P?????'
+    ];
+    const known = {
+      P: { fill: '#262626', g: '', gc: '#5E5E5E' },
+      F: { fill: '#1C1C1C', g: '♣', gc: '#6E6E6E' },
+      M: { fill: '#3A3A3A', g: '▲', gc: '#9A9A9A' },
+      E: { fill: '#121A1F', g: '≈', gc: '#5E7A8A' },
+      V: { fill: '#EDEDED', g: '', gc: '#0A0A0A' }
+    };
+    const W = 38, Hh = 33;
+    const pos = (c, r) => [c * W + (r % 2 ? W / 2 : 0) + 20, r * Hh + 23];
+    const hexes = [];
+    terrain.forEach((row, r) => [...row].forEach((ch, c) => {
+      const [x, y] = pos(c, r);
+      const k = known[ch];
+      hexes.push(k
+        ? { x: x - 20, y: y - 23, fill: k.fill, stroke: '#0A0A0A', dash: 'none', g: k.g, gc: k.gc }
+        : { x: x - 20, y: y - 23, fill: '#0A0A0A', stroke: '#3A3A3A', dash: '3 3', g: '?', gc: '#3A3A3A' });
+    }));
+    const route = [[1, 2], [2, 3], [3, 3], [4, 4]].map(([c, r]) => pos(c, r));
+    const party = pos(3, 3);
+    const v = pos(1, 2);
+    return {
+      hexes, path: route.map((p) => p.join(',')).join(' '),
+      px: party[0] - 10, py: party[1] - 22, tx: v[0] - 30, ty: v[1] - 34,
+      vue: this.state.vue,
+      views: [['mj', 'MJ'], ['joueur', 'Joueur']].map(([id, name]) => ({ name, cls: id === this.state.vue ? 'on' : '', pick: () => this.setState({ vue: id }) })),
+      layers: [
+        { name: 'Décor (l’image)', who: 'tous', off: '' },
+        { name: 'Grille', who: 'tous', off: '' },
+        { name: 'Murs et portes', who: 'règles', off: '' },
+        { name: 'Objets cachés', who: 'MJ', off: '' },
+        { name: 'Lumières', who: 'règles', off: 'off' },
+        { name: 'Brouillard', who: 'joueurs', off: 'off' }
+      ],
+      themes: [
+        { id: 'crypte', name: 'Crypte · fantasy', desc: 'Pierre, briques, portes en bois. Le décor de base.' },
+        { id: 'hopital', name: 'Hôpital abandonné · zombies', desc: 'Carrelage blanc à mi-hauteur, sol en damier, flaque sombre. Les murs et les portes viennent du même autotiling.' },
+        { id: 'vaisseau', name: 'Coursive · spatial', desc: 'Panneaux rivetés, bande lumineuse, sas rayés noir et blanc. La même grille de 1,5 m.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

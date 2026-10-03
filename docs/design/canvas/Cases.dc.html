@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Barre en cases</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0A0A0A}
+.cz{display:grid;gap:2px;padding:3px;background:#050505;box-shadow:0 0 0 2px #0A0A0A,0 0 0 3px #2C2C2C;box-sizing:border-box;vertical-align:middle}
+.cz i{display:block}
+.cz.on i.gl{animation:czGlint 2.6s ease-in-out infinite}
+@keyframes czGlint{0%,100%{filter:none}4%{filter:brightness(1.9)}12%{filter:none}}
+.cz i.hit{opacity:0}
+.cz.on i.hit{animation:czHit 3.2s ease-in infinite}
+@keyframes czHit{0%,30%{opacity:1;transform:none}33%,40%{opacity:1;background:#FFFFFF;transform:none}62%{opacity:0;transform:translateY(22px) rotate(50deg)}63%,100%{opacity:0;transform:translateY(22px)}}
+.cz.on i.blink{animation:czBlink .9s ease-in-out infinite}
+@keyframes czBlink{50%{opacity:.3}}
+@media (prefers-reduced-motion: reduce){.cz i{animation:none!important}}
+</style>
+</helmet>
+<div class="cz {{onCls}}" role="img" aria-label="{{label}}" style="width: {{W}}px; grid-template-columns: repeat({{max}}, minmax(0, 1fr))">
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="12"><i class="{{c.cls}}" style="height: {{h}}px; background: {{c.bg}}; animation-delay: {{c.d}}s"></i></sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"stat":{"editor":"enum","options":["pv","atq","ca","mag","mvt","ini"],"default":"mag"},"valeur":{"editor":"int","default":3,"min":0,"max":99},"max":{"editor":"int","default":4,"min":1,"max":40},"rangs":{"editor":"int","default":1,"min":1,"max":2},"h":{"editor":"int","default":14,"min":4,"max":40},"largeur":{"editor":"int","default":160,"min":40,"max":800},"perdus":{"editor":"int","default":0,"min":0,"max":40},"anim":{"editor":"boolean","default":true},"$preview":{"width":160,"height":24}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const stat = this.props.stat ?? 'mag';
+    const v = Number(this.props.valeur ?? 3);
+    const max = Math.max(1, Number(this.props.max ?? 4));
+    const rows = Number(this.props.rangs ?? 1) === 2 ? 2 : 1;
+    const lost = Number(this.props.perdus ?? 0);
+    const anim = String(this.props.anim ?? true) === 'true';
+    const colors = { pv: '#FF4D5E', atq: '#FF9F1C', ca: '#3D9BFF', mag: '#B28CFF', mvt: '#2EE6A6', ini: '#FFD60A' };
+    const names = { pv: 'Points de vie', atq: 'Attaque', ca: 'Classe d’armure', mag: 'Emplacements de sort', mvt: 'Déplacement', ini: 'Initiative' };
+    const base = colors[stat] || colors.mag;
+    const mix = (hex, to, t) => {
+      const a = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+      const b = to === 'w' ? [255, 255, 255] : [10, 10, 10];
+      return '#' + a.map((x, i) => Math.round(x + (b[i] - x) * t).toString(16).padStart(2, '0')).join('');
+    };
+    const low = v / max <= 0.3;
+    const cells = [];
+    for (let r = 0; r < rows; r++) {
+      for (let i = 0; i < max; i++) {
+        const lit = rows === 1 ? mix(base, 'w', 0.08) : r === 0 ? mix(base, 'w', 0.2) : mix(base, 'k', 0.18);
+        const off = r === 0 ? '#1E1E1E' : '#171717';
+        if (i < v) cells.push({ bg: lit, cls: low ? 'blink' : (r === 0 ? 'gl' : ''), d: (i * 0.05).toFixed(2) });
+        else if (i < v + lost) cells.push({ bg: lit, cls: 'hit', d: ((v + lost - 1 - i) * 0.1).toFixed(2) });
+        else cells.push({ bg: off, cls: '', d: 0 });
+      }
+    }
+    return {
+      cells, max, h: Number(this.props.h ?? 14), W: Number(this.props.largeur ?? 160),
+      onCls: anim ? 'on' : '',
+      label: (names[stat] || '') + ' : ' + v + ' sur ' + max
+    };
+  }
+}
+</script>
+</body>
+</html>

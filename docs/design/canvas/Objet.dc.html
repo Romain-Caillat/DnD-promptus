@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Objet en case</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0A0A0A}
+.ob{position:relative;display:inline-block;vertical-align:middle;font-family:'Chakra Petch',system-ui,sans-serif;flex:none}
+.ob .fr{position:absolute;inset:0;border-radius:10px;overflow:hidden;box-sizing:border-box}
+.ob .in{position:absolute;border-radius:6px;background:radial-gradient(circle at 50% 40%,#232323,#121212 75%);box-shadow:inset 0 2px 6px rgba(0,0,0,.8)}
+.ob .it{position:absolute}
+.ob .it i{position:absolute;display:block;background:transparent}
+.ob.flot .it{animation:obFloat 2.6s ease-in-out infinite}
+@keyframes obFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6%)}}
+.ob .q{position:absolute;right:12%;bottom:8%;font-weight:700;line-height:1;color:#F2F2F2;-webkit-text-stroke:2px #000;paint-order:stroke;z-index:3}
+.ob .rar{position:absolute;left:0;right:0;display:flex;justify-content:center;z-index:3}
+.ob .rar b{display:block;transform:rotate(45deg);background:#0A0A0A;box-shadow:0 0 0 1px #EDEDED}
+.ob.sel::before{content:'';position:absolute;inset:-5px;border-radius:13px;border:2px solid #F2F2F2;animation:obSel 1s steps(2) infinite;z-index:4}
+@keyframes obSel{0%{opacity:1}100%{opacity:.25}}
+.ob.vide .in{background:#0E0E0E}
+/* commune: plain dark well, grey rim */
+.r-commune .fr{background:#2A2A2A;box-shadow:inset 0 1px 0 #3A3A3A}
+/* peu commune: double ivory rule */
+.r-peu .fr{background:#161616;box-shadow:inset 0 0 0 2px #CFCAC0}
+.r-peu .in{box-shadow:inset 0 0 0 1px #CFCAC0,inset 0 2px 6px rgba(0,0,0,.8)}
+/* rare: brushed silver */
+.r-rare .fr{background:repeating-linear-gradient(0deg,rgba(255,255,255,.35) 0 1px,rgba(0,0,0,.05) 1px 2px),linear-gradient(135deg,#F2F3F5 0,#AEB4BD 30%,#E6E8EB 50%,#8E959F 72%,#D5D8DC 100%)}
+.r-rare .in{box-shadow:inset 0 0 0 1px #3C424B,inset 0 2px 6px rgba(0,0,0,.8)}
+.r-rare .rar b{background:#3C424B;box-shadow:0 0 0 1px #E6E8EB}
+/* épique: black lacquer, white rule, sheen */
+.r-epique .fr{background:radial-gradient(60% 40% at 20% 15%,rgba(255,255,255,.2),transparent 60%),linear-gradient(135deg,#2A2A2A,#060606 45%,#1E1E1E 65%,#030303);box-shadow:inset 0 0 0 1px #CFCFCF,inset 0 0 0 3px #0A0A0A,inset 0 0 0 4px #5E5E5E}
+.r-epique .rar b{background:#F2F2F2;box-shadow:0 0 0 1px #111}
+/* légendaire: gold foil */
+.r-leg{filter:drop-shadow(0 0 10px rgba(224,168,46,.45))}
+.r-leg .fr{background:linear-gradient(135deg,#FFF3C4 0,#E0A82E 26%,#FFF7D6 46%,#B07A18 66%,#F7D774 84%,#C99327 100%)}
+.r-leg .in{box-shadow:inset 0 0 0 1px #5A3E08,inset 0 2px 6px rgba(0,0,0,.8)}
+.r-leg .rar b{background:#5A3E08;box-shadow:0 0 0 1px #FFF3C4}
+/* divine: holographic */
+.r-div{filter:drop-shadow(0 0 12px rgba(255,255,255,.35))}
+.r-div .fr{background:conic-gradient(from 0deg,#FF6B8B,#FFB86B,#FFF27A,#7BFFB0,#6BD6FF,#9C7BFF,#FF6BD6,#FF6B8B);animation:obHolo 6s linear infinite}
+@keyframes obHolo{to{filter:hue-rotate(360deg)}}
+.r-div .in{box-shadow:inset 0 0 0 1px #FFFFFF,inset 0 2px 6px rgba(0,0,0,.8)}
+.r-div .rar b{background:#FFFFFF;box-shadow:0 0 6px #FFFFFF}
+.ob .fr::after{content:'';position:absolute;top:0;bottom:0;width:50%;left:-70%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.75),transparent);pointer-events:none}
+.r-epique .fr::after{background:linear-gradient(105deg,transparent,rgba(255,255,255,.3),transparent)}
+.r-epique .fr::after,.r-leg .fr::after,.r-div .fr::after{animation:obSheen 3.4s ease-in-out infinite}
+@keyframes obSheen{0%,55%{left:-70%}85%,100%{left:130%}}
+.ob .rays{position:absolute;inset:-40%;border-radius:50%;background:repeating-conic-gradient(rgba(255,255,255,.18) 0 6deg,transparent 6deg 20deg);-webkit-mask-image:radial-gradient(circle,#000 25%,transparent 68%);mask-image:radial-gradient(circle,#000 25%,transparent 68%);animation:obRays 14s linear infinite;pointer-events:none}
+@keyframes obRays{to{transform:rotate(360deg)}}
+.ob .spark{position:absolute;z-index:4;pointer-events:none;background:#FFF6CF;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:obSpark 2.2s ease-in-out infinite;opacity:0}
+@keyframes obSpark{0%,100%{opacity:0;transform:scale(.3) rotate(0)}50%{opacity:1;transform:scale(1) rotate(90deg)}}
+@media (prefers-reduced-motion: reduce){.ob *,.ob::before{animation:none!important}}
+</style>
+</helmet>
+<div class="ob r-{{rar}} {{cls}}" role="img" aria-label="{{label}}" style="width: {{S}}px; height: {{S}}px">
+<sc-if value="{{isDiv}}" hint-placeholder-val="{{ false }}"><div class="rays"></div></sc-if>
+<sc-if value="{{cadre}}" hint-placeholder-val="{{ true }}"><div class="fr"></div><div class="in" style="inset: {{f}}px"></div></sc-if>
+<sc-if value="{{hasItem}}" hint-placeholder-val="{{ true }}"><div class="it" style="left: {{ix}}px; top: {{iy}}px; width: {{iw}}px; height: {{ih}}px"><i style="left: -{{p}}px; top: -{{p}}px; width: {{p}}px; height: {{p}}px; box-shadow: {{sh}}"></i></div></sc-if>
+<sc-if value="{{hasQ}}" hint-placeholder-val="{{ false }}"><span class="q" style="font-size: {{qfs}}px">{{qte}}</span></sc-if>
+<sc-if value="{{hasPips}}" hint-placeholder-val="{{ false }}"><div class="rar" style="bottom: {{pb}}px; gap: {{pg}}px"><sc-for list="{{pips}}" as="k" hint-placeholder-count="3"><b style="width: {{ps}}px; height: {{ps}}px"></b></sc-for></div></sc-if>
+<sc-if value="{{sparkle}}" hint-placeholder-val="{{ false }}"><sc-for list="{{sparks}}" as="k" hint-placeholder-count="3"><span class="spark" style="left: {{k.x}}%; top: {{k.y}}%; width: {{ks}}px; height: {{ks}}px; animation-delay: {{k.d}}s"></span></sc-for></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"objet":{"editor":"enum","options":["epee","hache","potion","bouclier","anneau","parchemin","couronne","orbe","bourse","coffre","aucun"],"default":"epee"},"rarete":{"editor":"enum","options":["commune","peu","rare","epique","leg","div"],"default":"rare"},"taille":{"editor":"int","default":72,"min":24,"max":320},"qte":{"editor":"text","default":""},"choisi":{"editor":"boolean","default":false},"cadre":{"editor":"boolean","default":true},"pips":{"editor":"boolean","default":true},"$preview":{"width":72,"height":72}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ITEMS = {"epee":{"pal":{"L":"#F2F2F2","M":"#A9B1BA","G":"#E0A82E","B":"#7A4A22"},"px":["..........LL",".........LLM","........LLM.",".......LLM..","......LLM...",".....LLM....","..G.LLM.....","...GLM......","...BGG......","..BB..G.....",".BB.........","GB.........."]},"hache":{"pal":{"L":"#E6E9EC","M":"#8E969F","B":"#8A5A2B","b":"#5C3A18","G":"#E0A82E"},"px":[".M....Bb....","MLM...Bb....","MLLM..Bb....","MLLLMMBbM...","MLLLLLBbMM..","MLLLMMBbM...","MLLM..Bb....","MLM...Bb....",".M....Bb....","......Bb....","......Bb....","......GG...."]},"potion":{"pal":{"C":"#8A5A2B","W":"#D8E4EA","G":"#9FB3BD","R":"#FF4D5E","r":"#C22A3C","h":"#FFFFFF"},"px":[".....CC.....",".....CC.....","....WGGW....",".....GG.....","....WGGW....","...WRRRRW...","..WRhRRRRW..","..WRhRRRRW..","..WRRRRRrW..","..WRRRRrrW..","...WRRRrW...","....WWWW...."]},"bouclier":{"pal":{"M":"#A9B1BA","L":"#E6E9EC","B":"#8A5A2B","b":"#6A4220"},"px":[".MMMMMMMMMM.",".MBBBLLBBBM.",".MBBBLLBBbM.",".MBBBLLBBbM.",".MLLLLLLLLM.",".MBBBLLBBbM.",".MBBBLLBBbM.","..MBBLLBbM..","..MBBLLBbM..","...MBLLbM...","....MLLM....",".....MM....."]},"anneau":{"pal":{"V":"#B28CFF","v":"#7A55D0","h":"#FFFFFF","G":"#F3CC63","g":"#B07A18"},"px":["............",".....VV.....","....VhVV....","....VVVv....",".....GG.....","...GG..GG...","..G......G..","..G......g..","..g......g..","...gg..gg...",".....gg.....","............"]},"parchemin":{"pal":{"P":"#EFE2C0","p":"#C9B48A","k":"#6E5A3A","R":"#C22A3C"},"px":["............",".pPPPPPPPPp.","pPPPPPPPPPPp",".pPPPPPPPPp.","..PkkkkkkP..","..PPPPPPPP..","..PkkkkPPP..","..PPPPPPRR..","..PkkkkPRR..",".pPPPPPPPPp.","pPPPPPPPPPPp",".pPPPPPPPPp."]},"couronne":{"pal":{"G":"#F3CC63","g":"#B07A18","h":"#FFF7D6","R":"#FF4D5E","B":"#3D9BFF"},"px":["............","............",".h...hh...h.",".G...GG...G.",".GG.GGGG.GG.",".GGGGGGGGGG.",".GhGGGGGGGG.",".GRGGBBGGRG.",".GGGGGGGGGG.",".gggggggggg.","............","............"]},"orbe":{"pal":{"W":"#FFFFFF","A":"#BDF4FF","a":"#7FD8F0","h":"#FFFFFF","G":"#F3CC63","g":"#B07A18"},"px":["............","....WWWW....","...WAAAAW...","..WAhhAAAW..","..WAhAAAAW..","..WAAAAAaW..","..WAAAAaaW..","...WAAaaW...","....WWWW....","....gGGg....","...gGGGGg...","..gggggggg.."]},"bourse":{"pal":{"B":"#9A6A3A","b":"#6A4220","h":"#C99A6A","G":"#F3CC63","k":"#4A2E12"},"px":["............","....k..k....",".....kk.....",".....GG.....","....BBBB....","...BBhBBB...","..BBhBBBBB..","..BBBBBBbB..","..BBBBBbbB..","..BBBBbbbB..","...BBBbbB...","....BBBB...."]},"coffre":{"pal":{"B":"#9A6A3A","b":"#6A4220","G":"#E0A82E","k":"#2A1A08"},"px":[".BBBBBBBBBB.","BbBBBBBBBBbB","BbBBBBBBBBbB","GGGGGGGGGGGG","BBBBBGGBBBBB","BbBBBGkBBBbB","BbBBBBBBBBbB","BbBBBBBBBBbB","BbBBBBBBBBbB","GGGGGGGGGGGG"]}};
+    const S = Number(this.props.taille ?? 72);
+    const rar = this.props.rarete ?? 'rare';
+    const key = this.props.objet ?? 'epee';
+    const cadre = String(this.props.cadre ?? true) === 'true';
+    const it = ITEMS[key];
+    const f = cadre ? Math.max(3, Math.round(S * 0.07)) : 0;
+    // Item pixels: 12 cells plus a one-cell outline, scaled to about two thirds of the slot.
+    const p = Math.max(1, Math.floor((cadre ? S * 0.72 : S) / 14));
+    let sh = '';
+    let gw = 14, gh = 14;
+    if (it) {
+      const g = it.px;
+      gh = g.length + 2;
+      const at = (x, y) => y >= 0 && y < g.length && x >= 0 && x < 12 && g[y][x] !== '.';
+      const out = [];
+      for (let y = -1; y <= g.length; y++) {
+        for (let x = -1; x <= 12; x++) {
+          let col = null;
+          if (at(x, y)) col = it.pal[g[y][x]];
+          else if (at(x + 1, y) || at(x - 1, y) || at(x, y + 1) || at(x, y - 1)) col = '#050505';
+          if (col) out.push(((x + 2) * p) + 'px ' + ((y + 2) * p) + 'px 0 0 ' + col);
+        }
+      }
+      sh = out.join(', ');
+    }
+    const n = { commune: 1, peu: 2, rare: 3, epique: 4, leg: 5, div: 6 }[rar] || 1;
+    const names = { commune: 'commune', peu: 'peu commune', rare: 'rare', epique: 'épique', leg: 'légendaire', div: 'divine' };
+    const qte = String(this.props.qte ?? '');
+    const ps = Math.max(3, Math.round(S * 0.06));
+    return {
+      S, rar, f, p, sh, cadre, hasItem: !!it,
+      iw: gw * p, ih: gh * p, ix: Math.round((S - gw * p) / 2), iy: Math.round((S - gh * p) / 2) - (cadre ? Math.round(S * 0.03) : 0),
+      cls: (String(this.props.choisi ?? false) === 'true' ? 'sel ' : '') + (rar === 'div' ? 'flot ' : '') + (it ? '' : 'vide'),
+      qte, hasQ: qte !== '', qfs: Math.max(10, Math.round(S * 0.22)),
+      hasPips: cadre && it && String(this.props.pips ?? true) === 'true' && S >= 56,
+      pips: Array.from({ length: n }, (_, i) => i), ps, pg: Math.round(ps * 0.7), pb: Math.round(f / 2 - ps / 2),
+      isDiv: rar === 'div' && cadre, sparkle: (rar === 'leg' || rar === 'div') && S >= 48,
+      sparks: [{ x: -6, y: 10, d: 0 }, { x: 86, y: 4, d: 0.7 }, { x: 90, y: 78, d: 1.4 }], ks: Math.max(6, Math.round(S * 0.14)),
+      label: it ? key + ', ' + names[rar] + (qte ? ', ' + qte : '') : 'case vide'
+    };
+  }
+}
+</script>
+</body>
+</html>

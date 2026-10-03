@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Gemme de statistique</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0A0A0A}
+.gm{position:relative;display:inline-grid;place-items:center;font-family:'Chakra Petch',system-ui,sans-serif;vertical-align:middle}
+.gm .ly{position:absolute;left:0;top:0;background:transparent}
+.gm .gl{opacity:0}
+.gm.on .gl{animation:gmGlint 2.8s ease-in-out infinite}
+@keyframes gmGlint{0%{opacity:0}6%{opacity:1}20%,100%{opacity:0}}
+.gm .val{position:relative;font-weight:700;line-height:1;color:#0A0A0A;text-shadow:0 1px 0 rgba(255,255,255,.55),0 0 2px rgba(255,255,255,.5)}
+@media (prefers-reduced-motion: reduce){.gm .gl{animation:none!important}}
+</style>
+</helmet>
+<div class="gm {{onCls}}" role="img" aria-label="{{label}}" style="width: {{S}}px; height: {{S}}px">
+<div class="ly" style="left: -{{c}}px; top: -{{c}}px; width: {{q}}px; height: {{q}}px; box-shadow: {{base}}"></div>
+<sc-for list="{{glints}}" as="g" hint-placeholder-count="6"><div class="ly gl" style="left: -{{c}}px; top: -{{c}}px; width: {{q}}px; height: {{q}}px; box-shadow: {{g.sh}}; animation-delay: {{g.d}}s; animation-duration: {{g.dur}}s"></div></sc-for>
+<sc-if value="{{hasVal}}" hint-placeholder-val="{{ true }}"><span class="val" style="font-size: {{fs}}px; margin-top: {{dy}}px">{{valeur}}</span></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"stat":{"editor":"enum","options":["pv","atq","ca","mag","mvt","ini"],"default":"atq"},"valeur":{"editor":"text","default":"+5"},"taille":{"editor":"int","default":64,"min":16,"max":256},"anim":{"editor":"boolean","default":true},"$preview":{"width":64,"height":64}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const stat = this.props.stat ?? 'atq';
+    const S = Number(this.props.taille ?? 64);
+    const valeur = String(this.props.valeur ?? '');
+    const anim = String(this.props.anim ?? true) === 'true';
+    const N = S < 30 ? 7 : S < 56 ? 9 : 11;
+    const c = Math.max(2, Math.floor(S / N));
+    const gap = c >= 5 ? 1 : 0;
+    const q = c - gap;
+    const off = Math.floor((S - c * N) / 2);
+    const colors = { pv: '#FF4D5E', atq: '#FF9F1C', ca: '#3D9BFF', mag: '#B28CFF', mvt: '#2EE6A6', ini: '#FFD60A' };
+    const names = { pv: 'Points de vie', atq: 'Attaque', ca: 'Classe d’armure', mag: 'Magie', mvt: 'Déplacement', ini: 'Initiative' };
+    const inside = {
+      atq: (u, v) => Math.abs(u - 0.5) + Math.abs(v - 0.5) <= 0.52,
+      ca: (u, v) => v >= 0.04 && !(v < 0.1 && Math.abs(u - 0.5) > 0.36) && (v <= 0.58 ? Math.abs(u - 0.5) <= 0.46 : Math.abs(u - 0.5) <= 0.46 * (1 - (v - 0.58) / 0.42) + 0.04),
+      mag: (u, v) => Math.abs(v - 0.5) <= 0.47 && Math.abs(u - 0.5) <= 0.52 - 0.5 * Math.abs(v - 0.5),
+      mvt: (u, v) => { const t = 1 - 2 * Math.abs(v - 0.5); return u <= 0.66 + 0.34 * t && u >= 0.32 * t; },
+      ini: (u, v) => (u - 0.5) ** 2 + (v - 0.5) ** 2 <= 0.26,
+      pv: (u, v) => { const x = (u - 0.5) * 2.6, y = (0.6 - v) * 2.6; return (x * x + y * y - 1) ** 3 - x * x * y * y * y <= 0; }
+    };
+    const fn = inside[stat] || inside.atq;
+    const base = colors[stat] || colors.atq;
+    const mix = (hex, to, t) => {
+      const a = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+      const b = to === 'w' ? [255, 255, 255] : [10, 10, 10];
+      return '#' + a.map((v, i) => Math.round(v + (b[i] - v) * t).toString(16).padStart(2, '0')).join('');
+    };
+    const cells = [];
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        if (fn((x + 0.5) / N, (y + 0.5) / N)) cells.push([x, y]);
+      }
+    }
+    const set = new Set(cells.map(([x, y]) => x + ',' + y));
+    const pos = (x, y) => (off + (x + 1) * c) + 'px ' + (off + (y + 1) * c) + 'px 0 0 ';
+    const baseSh = cells.map(([x, y]) => {
+      const edge = !set.has((x - 1) + ',' + y) || !set.has((x + 1) + ',' + y) || !set.has(x + ',' + (y - 1)) || !set.has(x + ',' + (y + 1));
+      const t = (x + y) / (2 * (N - 1));
+      let col = t < 0.5 ? mix(base, 'w', (0.5 - t) * 0.7) : mix(base, 'k', (t - 0.5) * 0.55);
+      if (edge) col = mix(col, 'k', 0.28);
+      if (x === Math.floor(N * 0.3) && y === Math.floor(N * 0.25)) col = '#FFFFFF';
+      return pos(x, y) + col;
+    }).join(', ');
+    const L = 8;
+    const TAU = Math.PI * 2;
+    const phase = {
+      pv: (u, v) => Math.min(1, Math.hypot(u - 0.5, v - 0.45) / 0.62),
+      mvt: (u) => u,
+      atq: (u, v) => (u + v) / 2,
+      ca: (u, v) => 1 - Math.min(1, Math.hypot(u - 0.5, v - 0.45) / 0.62),
+      mag: (u, v) => ((Math.atan2(v - 0.5, u - 0.5) + Math.PI) / TAU + Math.hypot(u - 0.5, v - 0.5)) % 1,
+      ini: (u, v) => (Math.atan2(u - 0.5, -(v - 0.5)) + Math.PI) / TAU
+    }[stat] || ((u, v) => (u + v) / 2);
+    const dur = stat === 'pv' ? 1.3 : 2.6;
+    const step = (dur * 0.45) / L;
+    const glints = Array.from({ length: L }, (_, j) => ({
+      d: (j * step).toFixed(3), dur,
+      sh: cells.filter(([x, y]) => Math.min(L - 1, Math.floor(phase((x + 0.5) / N, (y + 0.5) / N) * L)) === j)
+        .map(([x, y]) => pos(x, y) + mix(base, 'w', 0.7)).join(', ') || '0 0 0 0 transparent'
+    }));
+    return {
+      S, c, q, base: baseSh,
+      glints,
+      onCls: anim ? 'on' : '',
+      valeur, hasVal: valeur !== '',
+      fs: Math.round(S * (valeur.length > 2 ? 0.27 : 0.33)),
+      dy: stat === 'pv' ? -Math.round(S * 0.02) : stat === 'ca' ? -Math.round(S * 0.05) : 0,
+      label: (names[stat] || '') + (valeur ? ' : ' + valeur : '')
+    };
+  }
+}
+</script>
+</body>
+</html>

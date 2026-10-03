@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>La soirée de Marc</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A}
+.sm-pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 40% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.sm-ttl{font-family:'Cinzel',Georgia,serif;font-weight:800}
+.sm-lbl{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.sm-grid{display:grid;grid-template-columns:repeat(4,390px);gap:60px 56px}
+.sm-mo{display:flex;flex-direction:column;gap:16px}
+.sm-mh{display:flex;align-items:baseline;gap:10px}
+.sm-mh b{font-family:'Cinzel',serif;font-size:13px;width:28px;height:28px;border-radius:7px;display:inline-grid;place-items:center;background:#EDEDED;color:#0A0A0A;box-shadow:0 2px 0 #6E6E6E;flex:none}
+.sm-mh span{font-family:'Cinzel',serif;font-weight:800;font-size:20px}
+.sm-ph0{width:390px;height:844px}
+.sm-cap{display:grid;grid-template-columns:76px 1fr;gap:6px 10px;font-size:13px;line-height:1.45;color:#D4D4D4;margin:0}
+.sm-cap dt{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8C8C8C;padding-top:3px}
+.sm-cap dd{margin:0}
+.sm-rule{display:flex;gap:12px;align-items:flex-start;font-size:13px;color:#D4D4D4;line-height:1.45}
+.sm-rule b{flex:none;width:24px;height:24px;border-radius:6px;background:#EDEDED;color:#0A0A0A;display:grid;place-items:center;font-family:'Cinzel',serif;box-shadow:0 2px 0 #6E6E6E}
+</style>
+</helmet>
+<div class="sm-pm" style="width: 1920px; height: 3640px; position: relative; overflow: hidden">
+<div style="padding: 48px 64px 28px; display: flex; gap: 60px; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 900px">
+<div class="sm-lbl">Joueur · téléphone</div>
+<h1 class="sm-ttl" style="margin: 0; font-size: 50px">La soirée de Marc</h1>
+<p style="margin: 0; font-size: 16px; color: #A3A3A3; line-height: 1.5">Marc n’a jamais joué. Il est sur son téléphone, il parle avec les autres sur Discord. Il joue Borin. Chaque téléphone ci-dessous est la version jouable, arrêtée sur un moment : touche-le pour jouer à partir de là.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 760px">
+<div class="sm-rule"><b>1</b><span><strong style="color: #F2F2F2">En haut, un bandeau dit ce qui se passe.</strong> Gris : on écoute. Pointillés : on attend. Ivoire : à toi. Jaune : ton tour de combat.</span></div>
+<div class="sm-rule"><b>2</b><span><strong style="color: #F2F2F2">Au milieu, un seul sujet.</strong> En combat : l’ordre du tour, la carte, ses cœurs, sa main de cartes.</span></div>
+<div class="sm-rule"><b>3</b><span><strong style="color: #F2F2F2">En bas, une seule action principale</strong>, ou « Rien à faire ». Quatre onglets : Jeu, Carte, Personnage, Journal.</span></div>
+</div>
+</div>
+<div class="sm-grid" style="padding: 0 64px"><div class="sm-mo"><div class="sm-mh"><b>1</b><span>Il arrive</span></div><div class="sm-ph0"><dc-import name="Jouer-Marc" moment="1" seul="true" hint-size="390px,844px"></dc-import></div><dl class="sm-cap"><dt>Il voit</dt><dd>Le nom de la partie, l’heure, son personnage, qui est déjà là.</dd><dt>Il comprend</dt><dd>« Je suis bien au bon endroit, avec Borin. On attend le MJ. »</dd><dt>Il touche</dt><dd>Activer le son. C’est tout.</dd></dl></div><div class="sm-mo"><div class="sm-mh"><b>2</b><span>On lui rappelle où on en est</span></div><div class="sm-ph0"><dc-import name="Jouer-Marc" moment="2" seul="true" hint-size="390px,844px"></dc-import></div><dl class="sm-cap"><dt>Il voit</dt><dd>Trois phrases sur la dernière fois et les deux indices déjà trouvés.</dd><dt>Il comprend</dt><dd>« Ah oui, la porte nord et le registre. »</dd><dt>Il touche</dt><dd>Rien. Il lit pendant que le MJ en parle.</dd></dl></div><div class="sm-mo"><div class="sm-mh"><b>3</b><span>Le MJ raconte</span></div><div class="sm-ph0"><dc-import name="Jouer-Marc" moment="3" seul="true" hint-size="390px,844px"></dc-import></div><dl class="sm-cap"><dt>Il voit</dt><dd>Le lieu en grand, le texte qui s’écrit, la musique qui joue.</dd><dt>Il comprend</dt><dd>« J’écoute. Ce n’est pas encore à moi. »</dd><dt>Il touche</dt><dd>Rien. Il peut monter ou couper le son.</dd></dl></div><div class="sm-mo"><div class="sm-mh"><b>4</b><span>C’est à lui de proposer</span></div><div class="sm-ph0"><dc-import name="Jouer-Marc" moment="4" seul="true" hint-size="390px,844px"></dc-import></div><dl class="sm-cap"><dt>Il voit</dt><dd>La question du MJ, trois idées en clair, et « Autre chose » pour écrire la sienne.</dd><dt>Il comprend</dt><dd>« Je peux fouiller, lire, parler… ou proposer mon idée. »</dd><dt>Il touche</dt><dd>Une idée (ou son texte), puis « Proposer au MJ ».</dd></dl></div><div class="sm-mo"><div class="sm-mh"><b>5</b><span>Le MJ lui demande un jet</span></div><div class="sm-ph0"><dc-import name="Jouer-Marc" moment="5" seul="true" hint-size="390px,844px"></dc-import></div><dl class="sm-cap"><dt>Il voit</dt><dd>Le dé, ce qu’il faut faire (13 ou plus) et son bonus.</dd><dt>Il comprend</dt><dd>« Je lance. 16 + 4 = 20 : réussi. »</dd><dt>Il touche</dt><dd>Le dé. Une seule fois.</dd></dl></div><div class="sm-mo"><div class="sm-mh"><b>6</b><span>Il trouve un indice</span></div><div class="sm-ph0"><dc-import name="Jouer-Marc" moment="6" seul="true" hint-size="390px,844px"></dc-import></div><dl class="sm-cap"><dt>Il voit</dt><dd>Une carte qui se retourne avec ce qu’il a trouvé.</dd><dt>Il comprend</dt><dd>« C’est important, c’est gardé pour moi et le groupe. »</dd><dt>Il touche</dt><dd>« Lire en grand » s’il veut. Sinon rien.</dd></dl></div><div class="sm-mo"><div class="sm-mh"><b>7</b><span>Il se déplace</span></div><div class="sm-ph0"><dc-import name="Jouer-Marc" moment="7" seul="true" hint-size="390px,844px"></dc-import></div><dl class="sm-cap"><dt>Il voit</dt><dd>La carte en grand, son personnage, les cases où il peut aller en vert.</dd><dt>Il comprend</dt><dd>« Je peux aller jusqu’au vert. Le gris, on ne l’a pas encore vu. »</dd><dt>Il touche</dt><dd>Une case verte, puis « Y aller ».</dd></dl></div><div class="sm-mo"><div class="sm-mh"><b>8</b><span>Le combat commence, il attend</span></div><div class="sm-ph0"><dc-import name="Jouer-Marc" moment="8" seul="true" hint-size="390px,844px"></dc-import></div><dl class="sm-cap"><dt>Il voit</dt><dd>Qui joue maintenant, quand ce sera lui, ce qui vient de se passer.</dd><dt>Il comprend</dt><dd>« Le gobelin attaque Lyra. Moi, c’est après Sef. »</dd><dt>Il touche</dt><dd>Rien. Il peut préparer son action.</dd></dl></div><div class="sm-mo"><div class="sm-mh"><b>9</b><span>C’est son tour</span></div><div class="sm-ph0"><dc-import name="Jouer-Marc" moment="9" seul="true" hint-size="390px,844px"></dc-import></div><dl class="sm-cap"><dt>Il voit</dt><dd>L’ordre du tour, la carte centrée sur le gobelin, ses cœurs, sa main de cartes et le gros bouton.</dd><dt>Il comprend</dt><dd>« C’est à moi. Le gobelin est à côté. Je joue ma hache… ou j’ai une idée. »</dd><dt>Il touche</dt><dd>Une carte, puis le gros bouton. « Fin du tour » à droite, son sac à gauche.</dd></dl></div><div class="sm-mo"><div class="sm-mh"><b>10</b><span>Il est touché</span></div><div class="sm-ph0"><dc-import name="Jouer-Marc" moment="10" seul="true" hint-size="390px,844px"></dc-import></div><dl class="sm-cap"><dt>Il voit</dt><dd>Ses cœurs qui éclatent, combien il en reste, ce qu’il peut faire.</dd><dt>Il comprend</dt><dd>« J’ai mal : 9 PV. Au prochain tour, je me soigne. »</dd><dt>Il touche</dt><dd>Rien. Le conseil est là pour plus tard.</dd></dl></div><div class="sm-mo"><div class="sm-mh"><b>11</b><span>Le butin</span></div><div class="sm-ph0"><dc-import name="Jouer-Marc" moment="11" seul="true" hint-size="390px,844px"></dc-import></div><dl class="sm-cap"><dt>Il voit</dt><dd>L’objet en grand, sa rareté, ce qu’il change, en une phrase.</dd><dt>Il comprend</dt><dd>« Une meilleure hache, légendaire. Je la prends. »</dd><dt>Il touche</dt><dd>« L’équiper » ou « La garder dans le sac ».</dd></dl></div><div class="sm-mo"><div class="sm-mh"><b>12</b><span>Fin de soirée</span></div><div class="sm-ph0"><dc-import name="Jouer-Marc" moment="12" seul="true" hint-size="390px,844px"></dc-import></div><dl class="sm-cap"><dt>Il voit</dt><dd>Ce qui s’est passé, ce que Borin a gagné, la prochaine date.</dd><dt>Il comprend</dt><dd>« Bonne soirée. On se revoit jeudi. »</dd><dt>Il touche</dt><dd>« À jeudi ! »</dd></dl></div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":3640}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

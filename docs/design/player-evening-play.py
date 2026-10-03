@@ -483,14 +483,14 @@ html = f'''<!doctype html>
 </body>
 </html>
 '''
-open('design/project/Jouer-Marc.dc.html', 'w').write(html)
-d = json.load(open('design/project/canvas.json'))
-d['boards']['Jouer-Marc.dc.html'] = {"x": 4080, "y": 4720, "w": 1440, "h": 1000, "title": "Jouer · la soirée de Marc", "is_interactive": True}
+open('docs/design/canvas/Jouer-Marc.dc.html', 'w').write(html)
+d = json.load(open('docs/design/canvas/canvas.json'))
+d['boards'].setdefault('Jouer-Marc.dc.html', {"x": 4080, "y": 4720, "w": 1440, "h": 1000, "title": "Jouer · la soirée de Marc", "is_interactive": True})  # keep a layout set on the canvas
 if 'Jouer-Marc.dc.html' not in d['order']: d['order'].append('Jouer-Marc.dc.html')
-json.dump(d, open('design/project/canvas.json', 'w'), ensure_ascii=False, indent=2)
+json.dump(d, open('docs/design/canvas/canvas.json', 'w'), ensure_ascii=False, indent=2)
 print(len(html))
 
-import sys as _s; _s.path.insert(0, 'docs/design')
+import sys as _s; _s.path.insert(0, 'gen')
 from scope import scope
-_h = open('design/project/Jouer-Marc.dc.html').read()
-open('design/project/Jouer-Marc.dc.html', 'w').write(scope(_h, 'jm-', keep={'sel', 'free', 'mjl', 'mj', 'now', 'me', 'foe', 'done', 'cur', 'on', 'off', 'busy', 'key'})[0])
+_h = open('docs/design/canvas/Jouer-Marc.dc.html').read()
+open('docs/design/canvas/Jouer-Marc.dc.html', 'w').write(scope(_h, 'jm-', keep={'sel', 'free', 'mjl', 'mj', 'now', 'me', 'foe', 'done', 'cur', 'on', 'off', 'busy', 'key'})[0])

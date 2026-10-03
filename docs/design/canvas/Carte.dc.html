@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Carte à grille</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0A0A0A}
+.map{position:relative;background:#070707;font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2}
+.mg{display:grid}
+.cc{position:relative;display:grid;place-items:center}
+.cc.f,.cc.d,.cc.a{background:#1D1D1D;box-shadow:inset 1px 1px 0 rgba(255,255,255,.07),inset -1px -1px 0 rgba(0,0,0,.7)}
+.cc.t1{background:#212121}.cc.t2{background:#191919}
+.cc.a{background:repeating-linear-gradient(160deg,#151a1d 0 5px,#1c2226 5px 9px)}
+.cc.d{background:repeating-linear-gradient(90deg,#4A4A4A 0 3px,#3A3A3A 3px 6px);box-shadow:inset 0 0 0 3px #1D1D1D,inset 0 0 0 4px #000}
+.cc.w{background:linear-gradient(180deg,#DADADA 0,#B8B8B8 60%,#5E5E5E 60%,#3E3E3E 100%);box-shadow:inset 0 1px 0 #FFFFFF,0 6px 8px rgba(0,0,0,.55);z-index:1}
+.cc.v{background:#070707}
+.cc.fog::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(7,7,7,.78) 0 3px,rgba(7,7,7,.6) 3px 6px);z-index:2}
+.cc.h{background:#070707;box-shadow:none;z-index:2}
+.cc.h i{display:block;width:26%;height:26%;background:#F2F2F2;animation:mFog 2.6s ease-in-out infinite}
+@keyframes mFog{0%,100%{opacity:.05;transform:scale(.6)}50%{opacity:.4;transform:scale(1)}}
+.cc.r{background:#123329;box-shadow:inset 0 0 0 1px rgba(46,230,166,.6),inset 0 0 14px rgba(46,230,166,.25)}
+.cc.r i{display:block;width:30%;height:30%;background:#2EE6A6;transform:rotate(45deg);animation:mReach 1.8s ease-in-out infinite}
+@keyframes mReach{0%,100%{opacity:.35;transform:rotate(45deg) translateY(0) scale(.7)}50%{opacity:1;transform:rotate(45deg) translateY(-12%) scale(1)}}
+.cc.p{background:#123329;box-shadow:inset 0 0 0 1px rgba(46,230,166,.6)}
+.cc.p i{display:block;width:0;height:0;border-left:10px solid #F2F2F2;border-top:7px solid transparent;border-bottom:7px solid transparent;animation:mStep 1.2s ease-in-out infinite}
+@keyframes mStep{0%,100%{opacity:.3;transform:translateX(-20%)}50%{opacity:1;transform:translateX(20%)}}
+.cc.dst{box-shadow:inset 0 0 0 2px #F2F2F2,inset 0 0 18px rgba(46,230,166,.5)}
+.tk{position:absolute;display:grid;place-items:end center;z-index:3}
+.tk .spr{position:relative;z-index:1;margin-bottom:8%}
+.tk .tag{position:absolute;right:-2%;top:-2%;z-index:2;font-family:'Chakra Petch',sans-serif;font-weight:700;line-height:1;padding:2px 4px;border-radius:4px;background:#0A0A0A;color:#F2F2F2;border:1px solid #F2F2F2}
+.tk .sh{position:absolute;left:14%;right:14%;bottom:6%;height:22%;border-radius:50%;background:rgba(0,0,0,.65);filter:blur(2px)}
+.tk .disc{position:relative;width:74%;height:74%;border-radius:50%;display:grid;place-items:center;font-family:'Cinzel',Georgia,serif;font-weight:800;box-sizing:border-box;margin-top:-10%}
+.tk.pc .disc{background:radial-gradient(circle at 35% 30%,#FFFFFF,#D6D6D6 70%);color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A,0 5px 0 #5A5A5A}
+.tk.foe .disc{background:radial-gradient(circle at 35% 30%,#2E2E2E,#0A0A0A 70%);color:#F2F2F2;border:2px solid #F2F2F2;box-shadow:0 3px 0 #3A3A3A,0 5px 0 #1A1A1A}
+.tk.hid .disc{background:rgba(255,255,255,.04);color:#A3A3A3;border:2px dashed #8A8A8A;box-shadow:none}
+.tk.act .disc{animation:mBob 1.6s ease-in-out infinite}
+.tk.act .sh{animation:mShadow 1.6s ease-in-out infinite}
+.tk.act::before{content:'';position:absolute;left:6%;right:6%;bottom:2%;height:30%;border-radius:50%;border:2px solid #FFD60A;box-shadow:0 0 12px rgba(255,214,10,.6)}
+@keyframes mBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-14%)}}
+@keyframes mShadow{0%,100%{transform:scale(1);opacity:.65}50%{transform:scale(.75);opacity:.4}}
+.tk.tgt::after{content:'';position:absolute;inset:-4%;border-radius:50%;border:2px dashed #FF9F1C;animation:mTgt 4s linear infinite}
+@keyframes mTgt{to{transform:rotate(360deg)}}
+.hp{position:absolute;left:12%;right:12%;bottom:-4%;height:12%;min-height:4px;display:flex;gap:1px;padding:1px;background:#000;border-radius:2px}
+.hp i{flex:1;background:#FF4D5E;border-radius:1px}
+.hp i.lost{background:#333}
+.nm{position:absolute;top:100%;left:50%;transform:translateX(-50%);white-space:nowrap;font-family:'Cinzel',Georgia,serif;font-weight:700;padding:2px 10px;border-radius:6px;background:rgba(7,7,7,.85);border:1px solid #333;color:#F2F2F2;margin-top:6px}
+.mv{animation:mMove 6s cubic-bezier(.6,0,.2,1) infinite}
+@keyframes mMove{0%,8%{transform:translateX(-300%)}30%,100%{transform:translateX(0)}}
+.slash{position:absolute;height:4px;background:#FFFFFF;transform-origin:left center;border-radius:2px;box-shadow:0 0 16px #FF9F1C,0 0 4px #FFFFFF;z-index:4;animation:mSlash 6s ease-out infinite}
+@keyframes mSlash{0%,32%{transform:scaleX(0) rotate(-20deg);opacity:0}36%{transform:scaleX(1) rotate(0);opacity:1}44%,100%{transform:scaleX(1);opacity:0}}
+.burst{position:absolute;border-radius:50%;z-index:4;background:radial-gradient(circle,rgba(255,255,255,.95) 0,rgba(255,159,28,.8) 30%,rgba(255,159,28,0) 65%);animation:mBurst 6s ease-out infinite}
+@keyframes mBurst{0%,34%{transform:scale(.1);opacity:0}38%{transform:scale(1);opacity:1}55%,100%{transform:scale(1.6);opacity:0}}
+.dmg{position:absolute;z-index:5;font-family:'Chakra Petch',sans-serif;font-weight:700;color:#FF4D5E;-webkit-text-stroke:2px #000;paint-order:stroke;text-shadow:0 4px 0 #000;animation:mDmg 6s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes mDmg{0%,36%{transform:translateY(30%) scale(.3);opacity:0}41%{transform:translateY(-10%) scale(1.5);opacity:1}47%{transform:scale(1)}72%{opacity:1}86%,100%{transform:translateY(-90%);opacity:0}}
+.shake{animation:mShake 6s linear infinite}
+@keyframes mShake{0%,37%,47%,100%{transform:translate(0,0)}38%{transform:translate(-8%,3%)}40%{transform:translate(8%,-3%)}42%{transform:translate(-5%,0)}44%{transform:translate(4%,2%)}}
+@media (prefers-reduced-motion: reduce){.map *{animation:none!important}}
+</style>
+</helmet>
+<div class="map" style="width: {{W}}px; height: {{H}}px">
+<div class="mg" style="grid-template-columns: repeat(24, {{P}}px); grid-auto-rows: {{P}}px">
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="48">
+<div class="cc {{c.cls}}"><sc-if value="{{c.dot}}" hint-placeholder-val="{{ false }}"><i style="animation-delay: {{c.d}}s"></i></sc-if></div>
+</sc-for>
+</div>
+<sc-for list="{{tokens}}" as="t" hint-placeholder-count="5">
+<div class="tk {{t.cls}}" style="left: {{t.left}}px; top: {{t.top}}px; width: {{P}}px; height: {{P}}px">
+<div class="spr"><dc-import name="Sprite" perso="{{t.perso}}" px="{{spx}}" anim="{{t.anim}}" cache="{{t.cacheS}}" hint-size="{{sw2}}px,{{sh2}}px"></dc-import></div>
+<sc-if value="{{t.num}}" hint-placeholder-val="{{ false }}"><span class="tag" style="font-size: {{fs}}px">{{t.num}}</span></sc-if>
+<sc-if value="{{t.showHp}}" hint-placeholder-val="{{ false }}"><div class="hp"><sc-for list="{{t.segs}}" as="g" hint-placeholder-count="5"><i class="{{g.c}}"></i></sc-for></div></sc-if>
+<sc-if value="{{t.showName}}" hint-placeholder-val="{{ false }}"><div class="nm" style="font-size: {{nfs}}px">{{t.name}}</div></sc-if>
+</div>
+</sc-for>
+<sc-if value="{{fx}}" hint-placeholder-val="{{ false }}">
+<div class="slash" style="left: {{sx}}px; top: {{sy}}px; width: {{sw}}px"></div>
+<div class="burst" style="left: {{bx}}px; top: {{by}}px; width: {{bs}}px; height: {{bs}}px"></div>
+<div class="dmg" style="left: {{dx}}px; top: {{dy}}px; font-size: {{dfs}}px">−6</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"pitch":{"editor":"int","default":30,"min":10,"max":96},"vue":{"editor":"enum","options":["mj","joueur","tv"],"default":"mj"},"moment":{"editor":"enum","options":["tour","attaque"],"default":"tour"},"reach":{"editor":"boolean","default":true},"$preview":{"width":720,"height":420}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const P = Number(this.props.pitch ?? 30);
+    const vue = this.props.vue ?? 'mj';
+    const moment = this.props.moment ?? 'tour';
+    const reachOn = String(this.props.reach ?? true) === 'true';
+    const L = [
+      '########################',
+      '#......#.......#.......#',
+      '#......#.......#.......#',
+      '#......d.......#...~~..#',
+      '#......#.......d...~~..#',
+      '####d###.......#.......#',
+      '#......#.......#####d###',
+      '#..............#.......#',
+      '#......#.......#.......#',
+      '#......#####d###.......#',
+      '#......#.......#.......#',
+      '#......#.......d.......#',
+      '#......#.......#.......#',
+      '########################'
+    ];
+    const hidden = (x, y) => x >= 16;
+    const borin = moment === 'attaque' ? { x: 10, y: 7 } : { x: 7, y: 7 };
+    const toks = [
+      { label: 'L', perso: 'lyra', name: 'Lyra', x: 4, y: 7, kind: 'pc', hp: 18, max: 22 },
+      { label: 'B', perso: 'borin', name: 'Borin', x: borin.x, y: borin.y, kind: 'pc', hp: 9, max: 31, active: true },
+      { label: 'S', perso: 'sef', name: 'Sef', x: 5, y: 10, kind: 'pc', hp: 14, max: 16 },
+      { label: 'G1', perso: 'gobelin', num: '1', name: 'Gobelin', x: 11, y: 7, kind: 'foe', hp: 7, max: 7, target: true },
+      { label: 'G2', perso: 'gobelin', num: '2', name: 'Gobelin', x: 11, y: 3, kind: 'foe', hp: 7, max: 7 },
+      { label: 'C', perso: 'chef', name: 'Chef gobelin', x: 18, y: 2, kind: 'foe', hp: 21, max: 21, hid: true }
+    ];
+    const occupied = new Set(toks.map((t) => t.x + ',' + t.y));
+    const reach = new Map();
+    if (reachOn && moment === 'tour' && vue !== 'tv') {
+      const pass = (x, y) => y >= 0 && y < 14 && x >= 0 && x < 24 && '.d~'.includes(L[y][x]) && !hidden(x, y);
+      const q = [[borin.x, borin.y, 0]];
+      const best = new Map([[borin.x + ',' + borin.y, 0]]);
+      while (q.length) {
+        const [x, y, c] = q.shift();
+        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+          if (!dx && !dy) continue;
+          const nx = x + dx, ny = y + dy;
+          if (!pass(nx, ny)) continue;
+          if (dx && dy && (!pass(x + dx, y) || !pass(x, y + dy))) continue;
+          const nc = c + (L[ny][nx] === '~' ? 2 : 1);
+          if (nc > 6) continue;
+          const k = nx + ',' + ny;
+          if (best.has(k) && best.get(k) <= nc) continue;
+          best.set(k, nc);
+          q.push([nx, ny, nc]);
+        }
+      }
+      best.forEach((c, k) => { if (!occupied.has(k)) reach.set(k, c); });
+    }
+    const pathOn = vue === 'joueur' && moment === 'tour';
+    const pathSet = new Set(['8,7', '9,7', '10,7']);
+    const cells = [];
+    for (let y = 0; y < 14; y++) {
+      for (let x = 0; x < 24; x++) {
+        const ch = L[y][x];
+        const k = x + ',' + y;
+        let base = { '#': 'w', '.': 'f', 'd': 'd', '~': 'a' }[ch] || 'v';
+        if (base === 'f') { const hh = Math.sin(x * 7.13 + y * 3.71) * 1000; const fr = hh - Math.floor(hh); base += fr < 0.33 ? ' t1' : fr > 0.7 ? ' t2' : ''; }
+        if (hidden(x, y) && vue !== 'mj') {
+          const r = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+          cells.push({ cls: 'h', dot: true, d: (-(r - Math.floor(r)) * 2.6).toFixed(2) });
+        } else if (pathOn && pathSet.has(k)) {
+          cells.push({ cls: base + ' p' + (k === '10,7' ? ' dst' : ''), dot: k !== '10,7', d: (-(x - 7) * 0.15).toFixed(2) });
+        } else if (reach.has(k)) {
+          cells.push({ cls: base + ' r', dot: true, d: (-(reach.get(k)) * 0.12).toFixed(2) });
+        } else {
+          cells.push({ cls: base + (hidden(x, y) ? ' fog' : ''), dot: false, d: 0 });
+        }
+      }
+    }
+    const tokens = toks
+      .filter((t) => !(t.hid && vue !== 'mj'))
+      .map((t) => {
+        const isG1 = t.label === 'G1';
+        const fxOn = moment === 'attaque';
+        let cls = t.hid ? 'hid' : t.kind;
+        if (t.active) cls += ' act' + (fxOn && vue === 'tv' ? ' mv' : '');
+        if (t.target && moment === 'tour') cls += ' tgt';
+        
+        let anim = 'repos';
+        if (t.label === 'B') anim = fxOn ? 'attaque' : 'danger';
+        if (isG1 && fxOn) anim = 'touche';
+        return {
+          ...t, cls, anim, num: t.num || '', cacheS: t.hid ? 'true' : 'false',
+          left: t.x * P, top: t.y * P,
+          pct: Math.round((t.hp / t.max) * 100),
+          segs: Array.from({ length: 5 }, (_, j) => ({ c: j < Math.ceil((t.hp / t.max) * 5) ? '' : 'lost' })),
+          hpCls: isG1 && fxOn ? 'drain' : '',
+          showHp: t.kind === 'pc' || vue === 'mj',
+          showName: vue === 'tv' && t.kind === 'pc'
+        };
+      });
+    const g1 = { x: 11, y: 7 };
+    const bs = P * 2.2;
+    return {
+      P, W: 24 * P, H: 14 * P, cells, tokens,
+      spx: Math.max(1, Math.floor(P / 26)), sw2: 20 * Math.max(1, Math.floor(P / 26)), sh2: 26 * Math.max(1, Math.floor(P / 26)),
+      fs: Math.max(8, Math.round(P * 0.22)), nfs: Math.max(10, Math.round(P * 0.28)),
+      fx: moment === 'attaque',
+      sx: (borin.x + 0.5) * P, sy: (borin.y + 0.5) * P - 1.5, sw: P * 1.1,
+      bx: (g1.x + 0.5) * P - bs / 2, by: (g1.y + 0.5) * P - bs / 2, bs,
+      dx: (g1.x + 0.15) * P, dy: (g1.y - 1.1) * P, dfs: Math.round(P * 0.75)
+    };
+  }
+}
+</script>
+</body>
+</html>

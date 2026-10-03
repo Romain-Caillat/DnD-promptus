@@ -161,10 +161,10 @@ html = f'''<!doctype html>
 </body>
 </html>
 '''
-open('design/project/Ecran-TV.dc.html', 'w').write(html)
+open('docs/design/canvas/Ecran-TV.dc.html', 'w').write(html)
 print(len(html))
 
-import sys as _s; _s.path.insert(0, 'docs/design')
+import sys as _s; _s.path.insert(0, 'gen')
 from scope import scope
-_h = open('design/project/Ecran-TV.dc.html').read()
-open('design/project/Ecran-TV.dc.html', 'w').write(scope(_h, 'tv-')[0])
+_h = open('docs/design/canvas/Ecran-TV.dc.html').read()
+open('docs/design/canvas/Ecran-TV.dc.html', 'w').write(scope(_h, 'tv-')[0])

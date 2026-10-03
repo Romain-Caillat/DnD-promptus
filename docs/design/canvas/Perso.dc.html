@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Personnage et état</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0A0A0A}
+.pz{position:relative;display:inline-block;vertical-align:bottom;flex:none}
+.pz .body{position:absolute;inset:0;transform-origin:50% 100%}
+.pz .fx{position:absolute;pointer-events:none}
+/* poison: sickly tint pulse, bubbles rising */
+.e-poison .body{animation:pzSick 1.6s ease-in-out infinite}
+@keyframes pzSick{0%,100%{filter:none}50%{filter:sepia(.7) hue-rotate(38deg) saturate(1.8)}}
+.e-poison .fx{background:#A8D14A;box-shadow:0 0 0 1px #3E5A12;opacity:0;animation:pzBubble 1.8s ease-out infinite}
+@keyframes pzBubble{0%{opacity:0;transform:translateY(0) scale(.5)}20%{opacity:1}100%{opacity:0;transform:translateY(-260%) scale(1)}}
+/* stunned: stars circling the head */
+.e-etourdi .ring{position:absolute;left:10%;right:10%;top:-12%;height:24%;animation:pzOrbit 1.2s linear infinite}
+.e-etourdi .ring .fx{background:#FFFFFF;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
+@keyframes pzOrbit{0%{transform:scaleY(.4) rotate(0)}100%{transform:scaleY(.4) rotate(360deg)}}
+.e-etourdi .body{animation:pzSway 1.2s ease-in-out infinite}
+@keyframes pzSway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+/* asleep: slow breath, Z drifting up */
+.e-endormi .body{animation:pzBreath 2.4s ease-in-out infinite}
+@keyframes pzBreath{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.95)}}
+.e-endormi .fx{font-family:'Chakra Petch',system-ui,sans-serif;font-weight:700;color:#F2F2F2;-webkit-text-stroke:1px #000;paint-order:stroke;line-height:1;opacity:0;animation:pzZ 2.4s ease-out infinite}
+@keyframes pzZ{0%{opacity:0;transform:translate(0,0) scale(.6)}20%{opacity:1}100%{opacity:0;transform:translate(120%,-180%) scale(1.1)}}
+/* invisible: dithered ghost flicker */
+.e-invisible .body{animation:pzGhost 2s steps(3) infinite;filter:grayscale(1) brightness(1.4)}
+@keyframes pzGhost{0%{opacity:.12}33%{opacity:.35}66%{opacity:.2}}
+.e-invisible .fx{inset:-6%;border:2px dashed rgba(242,242,242,.35);border-radius:40% 40% 10% 10%}
+/* burning: flames licking up, body flickers */
+.e-feu .body{animation:pzBurn .3s steps(2) infinite}
+@keyframes pzBurn{0%{filter:brightness(1.15)}50%{filter:brightness(.9) sepia(.3)}}
+.e-feu .fx{transform-origin:50% 100%;animation:pzFlame .6s steps(3) infinite}
+@keyframes pzFlame{0%{transform:scaleY(.6) translateY(0);opacity:1}50%{transform:scaleY(1.2) translateY(-20%)}100%{transform:scaleY(.4) translateY(-60%);opacity:0}}
+/* restrained: chains across, small struggle */
+.e-entrave .body{animation:pzStruggle 1.4s steps(1) infinite}
+@keyframes pzStruggle{0%,70%,100%{transform:none}75%{transform:translateX(-4%)}85%{transform:translateX(4%)}}
+.e-entrave .fx{background:repeating-linear-gradient(90deg,#B4B4B4 0 33%,#5E5E5E 33% 50%);box-shadow:0 0 0 1px #0A0A0A;border-radius:2px}
+/* frightened: fast tremble, sweat drop */
+.e-effraye .body{animation:pzShiver .12s steps(2) infinite}
+@keyframes pzShiver{0%{transform:translateX(-2%)}100%{transform:translateX(2%)}}
+.e-effraye .fx{background:#CFE6F2;border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;box-shadow:0 0 0 1px #0A0A0A;animation:pzDrop 1.4s ease-in infinite}
+@keyframes pzDrop{0%,20%{opacity:0;transform:translateY(0)}30%{opacity:1}100%{opacity:0;transform:translateY(160%)}}
+/* blessed: halo, soft white glow, sparkles */
+.e-beni .body{animation:pzGlow 2s ease-in-out infinite}
+@keyframes pzGlow{0%,100%{filter:drop-shadow(0 0 2px rgba(255,255,255,.4))}50%{filter:drop-shadow(0 0 8px rgba(255,255,255,.9))}}
+.e-beni .halo{position:absolute;left:28%;right:28%;top:-10%;height:9%;border-radius:50%;border:2px solid #FFF6CF;box-shadow:0 0 8px #FFF6CF;animation:pzHalo 2s ease-in-out infinite}
+@keyframes pzHalo{0%,100%{transform:translateY(0)}50%{transform:translateY(-30%)}}
+.e-beni .fx{background:#FFF6CF;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);opacity:0;animation:pzSpark 1.8s ease-in-out infinite}
+@keyframes pzSpark{0%,100%{opacity:0;transform:scale(.3)}50%{opacity:1;transform:scale(1) rotate(90deg)}}
+@media (prefers-reduced-motion: reduce){.pz *{animation:none!important}.pz .fx{opacity:1}}
+</style>
+</helmet>
+<div class="pz e-{{etat}}" style="width: {{W}}px; height: {{H}}px">
+<div class="body"><dc-import name="Sprite" perso="{{perso}}" px="{{px}}" anim="{{anim}}" hint-size="{{W}}px,{{H}}px"></dc-import></div>
+<sc-if value="{{isRing}}" hint-placeholder-val="{{ false }}"><div class="ring"><sc-for list="{{parts}}" as="f" hint-placeholder-count="3"><span class="fx" style="left: {{f.x}}%; top: {{f.y}}%; width: {{f.w}}px; height: {{f.h}}px"></span></sc-for></div></sc-if>
+<sc-if value="{{isHalo}}" hint-placeholder-val="{{ false }}"><div class="halo"></div></sc-if>
+<sc-if value="{{isFree}}" hint-placeholder-val="{{ false }}"><sc-for list="{{parts}}" as="f" hint-placeholder-count="4"><span class="fx" style="left: {{f.x}}%; top: {{f.y}}%; width: {{f.w}}px; height: {{f.h}}px; font-size: {{f.fs}}px; background: {{f.bg}}; transform: {{f.tr}}; animation-delay: {{f.d}}s">{{f.t}}</span></sc-for></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"perso":{"editor":"enum","options":["borin","lyra","sef","gobelin","chef","mara","zombie","soldat","alien"],"default":"borin"},"px":{"editor":"int","default":4,"min":1,"max":8},"anim":{"editor":"enum","options":["repos","marche","attaque","touche","danger"],"default":"repos"},"etat":{"editor":"enum","options":["aucun","poison","etourdi","endormi","invisible","feu","entrave","effraye","beni"],"default":"poison"},"$preview":{"width":80,"height":104}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const px = Number(this.props.px ?? 4);
+    const etat = this.props.etat ?? 'poison';
+    const W = 20 * px, H = 26 * px;
+    const q = px;
+    let parts = [];
+    // Particle sets per state, positioned in % of the sprite box and sized in sprite pixels.
+    if (etat === 'poison') parts = [[30, 40, 2, 0], [60, 30, 3, 0.5], [45, 55, 2, 0.9], [70, 50, 2, 1.3]].map(([x, y, s, d]) => ({ x, y, w: s * q, h: s * q, d }));
+    if (etat === 'etourdi') parts = [[0, 30], [80, 30], [42, 80]].map(([x, y]) => ({ x, y, w: 3 * q, h: 3 * q }));
+    if (etat === 'endormi') parts = [[62, 4, 0], [70, -4, 0.8], [56, 0, 1.6]].map(([x, y, d], i) => ({ x, y, w: 0, h: 0, fs: (3 + i) * q, d, t: 'z' }));
+    if (etat === 'invisible') parts = [{ x: 0, y: 0, w: W, h: H, d: 0 }].map((f) => ({ ...f, x: -6, y: -6, w: W * 1.12, h: H * 1.1 }));
+    if (etat === 'feu') parts = [[22, 62, '#FF6A00'], [42, 50, '#FFD27A'], [60, 58, '#E0401A'], [34, 70, '#FFD27A'], [54, 72, '#FF6A00']].map(([x, y, bg], i) => ({ x, y, w: 3 * q, h: 6 * q, bg, d: i * 0.12 }));
+    if (etat === 'entrave') parts = [[-6, 48, 'rotate(18deg)'], [-6, 62, 'rotate(-14deg)']].map(([x, y, tr]) => ({ x, y, w: W * 1.12, h: 2 * q, tr }));
+    if (etat === 'effraye') parts = [{ x: 74, y: 6, w: 2 * q, h: 3 * q, d: 0 }];
+    if (etat === 'beni') parts = [[2, 20, 0], [84, 34, 0.6], [10, 64, 1.2], [80, 74, 0.9]].map(([x, y, d]) => ({ x, y, w: 3 * q, h: 3 * q, d }));
+    parts = parts.map((f) => ({ fs: 0, t: '', bg: '', tr: '', d: 0, ...f }));
+    return {
+      W, H, px, perso: this.props.perso ?? 'borin', anim: this.props.anim ?? 'repos', etat,
+      parts, isRing: etat === 'etourdi', isHalo: etat === 'beni', isFree: etat !== 'etourdi' && parts.length > 0
+    };
+  }
+}
+</script>
+</body>
+</html>
