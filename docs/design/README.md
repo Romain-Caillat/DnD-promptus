@@ -2,7 +2,7 @@
 
 The design lives in a private Claude design canvas:
 https://claude.ai/artifact/AP3z1S5hbhqEiPzi5agTdy (owner: Romain).
-`canvas/` is a snapshot of its sources (version 66, 3 October 2026).
+`canvas/` is a snapshot of its sources (version 68, 3 October 2026).
 The published canvas is the reference: if they differ, read the canvas
 back before editing, Romain moves and resizes boards there.
 
@@ -57,6 +57,7 @@ put `{"view":"canvas"}` back when done.
 | Ecran-TV | Composant — écran TV (soirée) | TV driven by moment and player actions |
 | Soiree-TV | TV · la soirée côté TV | storyboard, 12 `Ecran-TV` frames |
 | Mener-MJ | **Mener · la soirée de Marc côté MJ** | the playable evening on the GM laptop (1440 × 900), TV beside it; `seul=true` shows the laptop alone, frozen on `moment` |
+| Soiree-MJ | MJ · la soirée côté MJ | storyboard, 12 `Mener-MJ` frames (`seul=true`) |
 
 Components: GameCard, RadialGrid, Carte, Sprite, De, Gemme, Coeurs,
 Cases, Horloge, Bouton, Objet, Etat, Perso, Plan.
@@ -68,7 +69,7 @@ any board layout already set in `canvas.json`.
 
 - `player-evening-play.py` → `Jouer-Marc` (uses `player-evening.css`).
 - `tv-evening.py` → `Ecran-TV`.
-- `gm-evening-play.py` → `Mener-MJ`.
+- `gm-evening-play.py` → `Mener-MJ`; `gm-evening-storyboard.py` → `Soiree-MJ`.
 - `outdoor/*.py` → outdoor map PNGs; `items-prototype.py`,
   `walls-prototype.py`, `sprite-prototype.py` (+ `sprites.json`) →
   pixel-art previews.

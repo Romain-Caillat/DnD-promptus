@@ -119,8 +119,8 @@ sur l'ordinateur du MJ, une action principale par moment, demandes des
 joueurs en cartes, co-MJ en brouillon, journal qui montre aussi le
 caché, TV synchronisée à côté. Elle remplace la première version de
 l'écran MJ (planche « Écran MJ — en direct »), à retirer une fois
-validée. Reste : validation de la soirée côté MJ par Romain, son
-storyboard (12 écrans figés, comme côté TV), liste et
+validée. Son storyboard « MJ · la soirée côté MJ » montre les 12
+écrans figés. Reste : validation de la soirée côté MJ par Romain, liste et
 création de campagne, éditeur du système de règles, suivi de génération
 et coût, fiche PNJ/monstre, éditeur de carte, médias et budget,
 invitation et validation des personnages, salon, jumelage de l'écran
