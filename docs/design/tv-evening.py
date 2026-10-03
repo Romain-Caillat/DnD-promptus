@@ -163,3 +163,8 @@ html = f'''<!doctype html>
 '''
 open('design/project/Ecran-TV.dc.html', 'w').write(html)
 print(len(html))
+
+import sys as _s; _s.path.insert(0, 'docs/design')
+from scope import scope
+_h = open('design/project/Ecran-TV.dc.html').read()
+open('design/project/Ecran-TV.dc.html', 'w').write(scope(_h, 'tv-')[0])

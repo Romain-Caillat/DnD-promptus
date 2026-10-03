@@ -199,6 +199,13 @@ against the campaign budget; a batch that would exceed it is refused.
 
 ## 4. Traps
 
+- **Design canvas: a board's CSS leaks into the components it imports.**
+  A board class named `.fr` reshaped the item slot frame and broke the
+  pixel sprites. Prefix every board's classes and keyframes
+  (`docs/design/scope.py`); keep generic names only for runtime state
+  modifiers, always combined with a prefixed class. Template holes are
+  `{{name}}`: inside a Python f-string they must be written `{{{{name}}}}`.
+
 - **YouTube player must stay visible** (YouTube terms) and starts muted:
   each player taps "activate sound". Ads can desync a player; playback
   re-syncs on its own.
