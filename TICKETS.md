@@ -112,18 +112,24 @@ co-MJ, demandes des joueurs, combat, musique, fin de session).
 
 **Fini quand** — Maquettes ordinateur et tablette validées.
 
-**État** — Dessinés : construction d'histoire avec le LLM, cartes (vue
-MJ, import d'image), et la soirée de Marc côté MJ (planche jouable
-« Mener · la soirée de Marc côté MJ », 3 octobre 2026) : les 12 moments
-sur l'ordinateur du MJ, une action principale par moment, demandes des
-joueurs en cartes, co-MJ en brouillon, journal qui montre aussi le
-caché, TV synchronisée à côté. Elle remplace la première version de
-l'écran MJ, retirée du canevas. Son storyboard « MJ · la soirée côté MJ » montre les 12
-écrans figés. Reste : validation de la soirée côté MJ par Romain, liste et
-création de campagne, éditeur du système de règles, suivi de génération
-et coût, fiche PNJ/monstre, éditeur de carte, médias et budget,
-invitation et validation des personnages, salon, jumelage de l'écran
-partagé, voyage, fin de session, version tablette.
+**État** — Dessinés (3 octobre 2026), chacun en planche jouable sur
+l'ordinateur du MJ avec son storyboard :
+- la préparation d'une campagne (« Préparer · la campagne de Romain »,
+  10 moments) : liste des campagnes, univers, règles, pitch avec coût
+  estimé, génération suivie en direct, atelier avec le co-MJ (diff à
+  accepter), alerte de cohérence (règle des 3 indices), fiches, cartes et
+  médias lot par lot, validation avec lien d'invitation. Elle remplace la
+  planche « Construction d'histoire », dont l'atelier est le moment 6 ;
+- la soirée de Marc côté MJ (« Mener · la soirée de Marc côté MJ »,
+  12 moments) : une action principale par moment, demandes des joueurs
+  en cartes, co-MJ en brouillon, journal qui montre aussi le caché, TV
+  synchronisée. Elle remplace la première version de l'écran MJ ;
+- les cartes (vue MJ, import d'image).
+
+Reste : validation des deux parcours par Romain ; éditeur du système de
+règles (au-delà du choix du préréglage) ; éditeur de carte ; invitation
+et validation des personnages ; salon ; jumelage de l'écran partagé ;
+voyage ; version tablette.
 
 **Origine** — `docs/design-brief.md`
 
@@ -155,7 +161,7 @@ en colonne, gemme de carte sur le titre, cadres trop courts (Fondations,
 Jauges, Objets), butin sur son nom, dé TV sur les PV du groupe, « Tu es
 ici » sur Lyra, calibrage sur « passage secret », brouillard des
 extérieurs, barres de défilement des téléphones. Reste : validation des
-trois planches de la soirée par Romain. Vus, non corrigés : Histoire laisse un grand vide sous 1440 px ; petits
+trois planches de la soirée par Romain. Vus, non corrigés : petits
 défauts de Notifications ; barres de défilement des planches Sprite et
 Carte à jouer vues seules (cause hors du code des planches).
 
@@ -167,7 +173,7 @@ cassé », « c'est pas aligné ».
 **Pourquoi** — Le CSS d'une planche s'applique aux composants qu'elle
 importe (`MEMORY.md` §4). Seules les planches de la soirée sont
 préfixées ; les anciennes (Main, Pistes-UI, Objets, États, Notifs,
-Cartes, Extérieurs, Parcours, MJ, Histoire) utilisent des noms de
+Cartes, Extérieurs, Parcours) utilisent des noms de
 classes génériques et peuvent casser un composant sans qu'on le voie.
 
 **Périmètre** — Passer chaque ancienne planche dans

@@ -31,29 +31,30 @@ Rappels qui valent pour tous les parcours :
 ### M1 · Créer une campagne
 
 1. Le MJ se connecte (passkey) et arrive sur **la liste de ses
-   campagnes**. · *à dessiner*
+   campagnes**. · *dessiné* (Préparer)
 2. « Nouvelle campagne » : il choisit **l'univers** (fantasy, zombies,
    spatial…), qui fixe le pack de tuiles, de personnages et d'objets, et
-   les noms des statistiques. · *à dessiner*
+   les noms des statistiques. · *dessiné* (Préparer)
 3. Il choisit **le système de règles** : un préréglage (D&D 5e SRD)
-   qu'il peut modifier. · *à dessiner*
+   qu'il peut modifier. · *dessiné* (Préparer)
 4. Il écrit **le pitch** en quelques phrases (ton, durée, nombre de
-   joueurs, budget IA). · *à dessiner*
+   joueurs, budget IA). · *dessiné* (Préparer)
 
 ### M2 · Générer et relire l'histoire
 
 1. La génération démarre : **suivi en direct** (étapes, coût engagé,
-   budget restant). · *à dessiner*
+   budget restant). · *dessiné* (Préparer)
 2. Le MJ relit **la bible, les fronts et leurs horloges, le graphe des
    scènes et des indices**, en discutant avec le LLM : il demande,
-   l'IA propose un diff, il accepte ou refuse. · *dessiné* (Construction
-   d'histoire)
+   l'IA propose un diff, il accepte ou refuse. · *dessiné* (Préparer,
+   atelier)
 3. Les alertes de cohérence s'affichent (une révélation avec moins de
    trois indices, un PNJ orphelin). · *dessiné*
 4. Il relit **les fiches** : PNJ, monstres, objets et butin avec leur
    rareté. Il peut créer un PNJ avec le même créateur que les joueurs.
-   · *à dessiner* (fiche) · *dessiné* (objets, raretés)
-5. Il **valide la campagne** : elle devient jouable.
+   · *dessiné* (Préparer, fiches ; objets, raretés)
+5. Il **valide la campagne** : elle devient jouable. · *dessiné*
+   (Préparer)
 
 ### M3 · Préparer les cartes
 
@@ -70,9 +71,9 @@ Rappels qui valent pour tous les parcours :
 ### M4 · Préparer les médias
 
 1. Pour chaque scène : image, vidéo d'introduction, musique YouTube.
-   · *à dessiner*
+   · *dessiné* (Préparer, cartes et médias)
 2. Le coût est **estimé avant chaque lot** et comparé au budget ; les
-   tâches tournent en arrière-plan. · *à dessiner*
+   tâches tournent en arrière-plan. · *dessiné* (Préparer, cartes et médias)
 3. Le MJ valide ou relance chaque média.
 
 ### M5 · Inviter les joueurs
@@ -218,13 +219,8 @@ Classés par ordre de passage dans une campagne.
 
 | Écran | Parcours | Appareil |
 | --- | --- | --- |
-| Liste des campagnes | M1 | Ordinateur |
-| Nouvelle campagne (univers, règles, pitch) | M1 | Ordinateur |
 | Éditeur du système de règles | M1 | Ordinateur |
-| Suivi de génération et coût | M2 | Ordinateur |
-| Fiche PNJ / monstre | M2 | Ordinateur |
 | Éditeur de carte | M3 | Ordinateur |
-| Médias et budget | M4 | Ordinateur |
 | Invitation et validation des personnages | M5 | Ordinateur |
 | Rejoindre (lien, choix) | J1 | Téléphone |
 | Créateur de personnage | J2 | Téléphone |
