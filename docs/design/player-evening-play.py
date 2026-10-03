@@ -59,6 +59,27 @@ css += r'''
 .mapov .mw{position:relative;height:420px;overflow:hidden;border-top:1px solid #2C2C2C;border-bottom:1px solid #2C2C2C}
 .here{position:absolute;z-index:970;transform:translate(-50%,-100%);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:#FFD60A;color:#0A0A0A;padding:2px 6px;border-radius:4px;white-space:nowrap}
 .nav button{cursor:pointer}
+.cbody{flex:1;display:flex;flex-direction:column;gap:8px;padding:44px 12px 0;min-height:0;overflow:hidden}
+.trkrow{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px}
+.trk{display:flex;align-items:center;gap:6px;padding:0 4px}
+.trk .pf.now{border-color:#FFD60A;box-shadow:0 4px 0 #000,0 0 22px rgba(255,214,10,.45)}
+.rail{flex:1;height:2px;background:repeating-linear-gradient(90deg,#3A3A3A 0 4px,transparent 4px 8px);min-width:6px}
+.cmap{position:relative;height:210px;border-radius:16px;overflow:hidden;border:1px solid #2C2C2C;box-shadow:inset 0 0 40px rgba(0,0,0,.8);flex:none}
+.cmap .hint{position:absolute;left:8px;bottom:8px;z-index:990;font-size:12px;font-weight:600;background:rgba(5,5,5,.85);border:1px solid #2C2C2C;border-radius:8px;padding:6px 10px}
+.statrow{display:flex;align-items:center;gap:10px;padding:0 4px}
+.gemw{display:inline-grid;flex:none;filter:drop-shadow(0 3px 0 rgba(0,0,0,.55))}
+.gemw.beat{animation:gbeat .9s ease-in-out infinite}
+@keyframes gbeat{0%,100%{transform:scale(1)}12%{transform:scale(1.2)}24%{transform:scale(.96)}36%{transform:scale(1.12)}}
+.arcs{position:relative;height:112px;flex:none}
+.arc{position:absolute;border-radius:50%;background:#0A0A0A;display:grid;place-items:center;box-shadow:0 0 0 3px #2C2C2C,0 6px 0 #000,inset 0 0 0 6px #161616;border:0;padding:0;cursor:pointer;font:inherit}
+.arc .top{border-radius:50%;background:radial-gradient(circle at 40% 30%,#FFFFFF,#CFCFCF 70%);color:#0A0A0A;display:grid;place-items:center;transform:translateY(-6px);box-shadow:0 6px 0 #7A7A7A,0 10px 14px rgba(0,0,0,.6);transition:transform .08s,box-shadow .08s}
+.arc.dk .top{background:radial-gradient(circle at 40% 30%,#3A3A3A,#161616 70%);color:#F2F2F2;box-shadow:0 6px 0 #000,0 0 0 1.5px #5A5A5A}
+.arc:active .top{transform:translateY(-1px);box-shadow:0 1px 0 #7A7A7A}
+.arc.big::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid #F2F2F2;opacity:0;animation:halo 2.4s ease-out infinite}
+@keyframes halo{0%,78%{transform:scale(1);opacity:0}80%{opacity:.9}100%{transform:scale(1.3);opacity:0}}
+.arc.busy{pointer-events:none;opacity:.6}
+.alab{position:absolute;width:90px;text-align:center;font-size:11px;color:#A3A3A3}
+.cres{display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;text-align:center;height:132px;flex:none}
 .ov{position:absolute;left:0;right:0;top:96px;bottom:64px;z-index:40;background:#080808;overflow-y:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:16px;animation:lineIn .25s ease-out both;box-sizing:border-box}
 .sec{display:flex;flex-direction:column;gap:8px}
 .trait{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:#141414;border:1px solid #2C2C2C;font-size:13px}
@@ -85,7 +106,7 @@ def cb(label, sub='', on='', dark=False, extra=''):
     return f'<button type="button" class="cb {"dk" if dark else ""} {extra}" onClick="{{{{{on}}}}}"><span class="in"><span style="flex: 1"><span class="t">{label}</span>{s}</span><span class="chev">›</span></span></button>'
 def idle(text, ms):
     return f'<div class="idle">{text}<span class="bar" style="animation-duration: {ms}ms"></span></div>'
-HEAD = '''<div class="hd"><span class="pf"><dc-import name="Sprite" perso="borin" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><div style="display: flex; flex-direction: column; gap: 3px; flex: 1"><span class="ttl" style="font-size: 14px">Borin</span><dc-import name="Coeurs" pv="{{hp}}" max="31" coeurs="8" px="2" degats="{{deg}}" hint-size="151px,16px"></dc-import></div><span class="pv">{{hp}}<small> / 31 PV</small></span></div>'''
+HEAD = '''<sc-if value="{{headOn}}" hint-placeholder-val="{{ true }}"><div class="hd"><span class="pf"><dc-import name="Sprite" perso="borin" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><div style="display: flex; flex-direction: column; gap: 3px; flex: 1"><span class="ttl" style="font-size: 14px">Borin</span><dc-import name="Coeurs" pv="{{hp}}" max="31" coeurs="8" px="2" degats="{{deg}}" hint-size="151px,16px"></dc-import></div><span class="pv">{{hp}}<small> / 31 PV</small></span></div></sc-if>'''
 NAV = '<nav class="nav"><sc-for list="{{tabs}}" as="t" hint-placeholder-count="4"><button type="button" class="{{t.cls}}" onClick="{{t.pick}}">{{t.n}}</button></sc-for></nav>'
 def bn(kind, text): return f'<div class="bn {kind}"><span>{text}</span></div>'
 def block(n, banner, body, foot):
@@ -128,14 +149,30 @@ B.append(block(8, bn('wait', '⏳ Combat · {{who}} joue'), '''<div class="order
 </div>
 <div class="feed" style="margin-top: 14px"><span class="lbl">À l’instant</span><p>{{feedTxt}}</p></div>
 <div class="feed" style="margin-top: 10px"><span class="lbl">Ton tour arrive</span><p>{{feedNext}}</p></div>''', idle('Rien à faire : regarde, ton tour arrive', 6500)))
-B.append(block(9, bn('turn', '⚔ À toi, Borin !'), '''<div class="steps"><span class="done">1 · Bouger ✓</span><span class="{{s2}}">2 · Agir</span><span class="{{s3}}">3 · Finir</span></div>
-<div class="mapw small" style="margin-top: 10px; height: 170px"><div style="position: absolute; left: 18px; top: -120px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="34" vue="joueur" grille="false" combat="true" hint-size="476px,340px"></dc-import></div><span class="tgt" style="left: 185px; top: 115px"></span></div>
-<sc-if value="{{atkIdle}}" hint-placeholder-val="{{ true }}"><div class="cardinfo"><span>Ta main · cible : <b>le gobelin</b></span><span>{{cardHint}}</span></div>
-<div class="hand"><sc-for list="{{acts}}" as="a" hint-placeholder-count="4"><button type="button" class="cw {{a.cls}}" style="left: {{a.x}}px; transform: rotate({{a.r}}deg) translateY({{a.y}}px)" onClick="{{a.pick}}" aria-label="{{a.t}}"><sc-if value="{{a.isCard}}" hint-placeholder-val="{{ true }}"><dc-import name="GameCard" titre="{{a.t}}" type="{{a.ty}}" texte="{{a.tx}}" valeur="{{a.v}}" stat="{{a.st}}" icon="{{a.ic}}" rarete="{{a.ra}}" etat="{{a.et}}" w="80" hint-size="80px,112px"></dc-import></sc-if><sc-if value="{{a.isOther}}" hint-placeholder-val="{{ false }}"><span class="other"><b>?</b><span>Autre…</span></span></sc-if></button></sc-for></div>
-<sc-if value="{{otherSel}}" hint-placeholder-val="{{ false }}"><textarea class="txt" placeholder="Décris ton idée : je renverse la table sur le gobelin…"></textarea></sc-if></sc-if>
-<sc-if value="{{atkRolling}}" hint-placeholder-val="{{ false }}"><div style="display: flex; align-items: center; gap: 14px; margin-top: 12px"><dc-import name="De" de="d20" valeur="17" taille="80" anim="roule" couleur="atq" hint-size="80px,80px"></dc-import><span style="font-size: 15px">Tu frappes… il te faut <b>13</b>.</span></div></sc-if>
-<sc-if value="{{atkAsking}}" hint-placeholder-val="{{ false }}"><div class="sent" style="margin-top: 12px"><span class="spin"></span>Le MJ lit ton idée…</div></sc-if><sc-if value="{{atkCustom}}" hint-placeholder-val="{{ false }}"><div style="display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 12px; text-align: center"><span class="ok">Le MJ accepte !</span><span style="font-size: 14px">Tu renverses la table : <b>le gobelin tombe à terre</b>. Les autres auront l’avantage contre lui.</span></div></sc-if><sc-if value="{{atkHit}}" hint-placeholder-val="{{ false }}"><div style="display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 12px; text-align: center"><div class="res" style="animation: none; font-size: 28px"><span>17</span><span class="op">+ 5</span><span class="op">=</span><span>22</span></div><span class="ok">Touché !</span><span style="font-size: 14px">La hache fait <b style="color: #FF4D5E">9 dégâts</b>. Le gobelin chancelle.</span></div></sc-if>''',
-  '<sc-if value="{{atkIdle}}" hint-placeholder-val="{{ true }}">' + cb('{{atkLabel}}', '{{atkSub}}', 'attack') + '</sc-if><sc-if value="{{atkBusy}}" hint-placeholder-val="{{ false }}"><div class="sent"><span class="spin"></span>{{busyTxt}}</div></sc-if><sc-if value="{{atkDone}}" hint-placeholder-val="{{ false }}">' + cb('Finir mon tour', 'Plus rien à faire ce tour-ci', 'finish', dark=True) + '</sc-if>'))
+B.append('<sc-if value="{{is9}}" hint-placeholder-val="{{ false }}"><div class="cbody">' + """
+<div class="trkrow"><span class="lbl">Initiative · round 3</span><span class="lbl" style="color: #FFD60A">À ton tour</span></div>
+<div class="trk" aria-label="Ordre du tour">
+<span class="pf"><dc-import name="Sprite" perso="lyra" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><span class="rail"></span>
+<span class="pf now"><dc-import name="Sprite" perso="borin" px="2" anim="repos" hint-size="40px,52px"></dc-import></span><span class="rail"></span>
+<span class="pf foe"><dc-import name="Sprite" perso="gobelin" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><span class="rail"></span>
+<span class="pf"><dc-import name="Sprite" perso="sef" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><span class="rail"></span>
+<span class="pf foe"><dc-import name="Sprite" perso="gobelin" px="1" anim="repos" hint-size="20px,26px"></dc-import></span>
+</div>
+<div class="cmap"><div style="position: absolute; left: 18px; top: -138px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="34" vue="joueur" grille="false" combat="true" hint-size="476px,340px"></dc-import></div><span class="tgt" style="left: 185px; top: 97px"></span><span class="hint">Cible : <span style="color: #FF9F1C">le gobelin</span>, juste à côté</span></div>
+<sc-if value="{{notOtherSel}}" hint-placeholder-val="{{ true }}"><div class="statrow"><span class="gemw beat"><dc-import name="Gemme" stat="pv" valeur="{{hp}}" taille="40" hint-size="40px,40px"></dc-import></span><div style="flex: 1; display: flex; flex-direction: column; gap: 3px"><dc-import name="Coeurs" pv="{{hp}}" max="31" coeurs="7" px="3" hint-size="201px,24px"></dc-import><span style="font-size: 11px; color: #FF4D5E; font-weight: 600">{{hp}} / 31 PV</span></div><span class="gemw"><dc-import name="Gemme" stat="ca" valeur="18" taille="34" hint-size="34px,34px"></dc-import></span><span class="gemw"><dc-import name="Gemme" stat="mvt" valeur="6" taille="34" hint-size="34px,34px"></dc-import></span></div></sc-if>
+<sc-if value="{{otherSel}}" hint-placeholder-val="{{ false }}"><textarea class="txt" placeholder="Décris ton idée : je renverse la table sur le gobelin…"></textarea></sc-if>
+<sc-if value="{{atkIdle}}" hint-placeholder-val="{{ true }}"><div class="hand" style="height: 132px"><sc-for list="{{acts}}" as="a" hint-placeholder-count="4"><button type="button" class="cw {{a.cls}}" style="left: {{a.x}}px; transform: rotate({{a.r}}deg) translateY({{a.y}}px)" onClick="{{a.pick}}" aria-label="{{a.t}}"><sc-if value="{{a.isCard}}" hint-placeholder-val="{{ true }}"><dc-import name="GameCard" titre="{{a.t}}" type="{{a.ty}}" texte="{{a.tx}}" valeur="{{a.v}}" stat="{{a.st}}" icon="{{a.ic}}" rarete="{{a.ra}}" etat="{{a.et}}" w="80" hint-size="80px,112px"></dc-import></sc-if><sc-if value="{{a.isOther}}" hint-placeholder-val="{{ false }}"><span class="other"><b>?</b><span>Autre…</span></span></sc-if></button></sc-for></div></sc-if>
+<sc-if value="{{atkBusy}}" hint-placeholder-val="{{ false }}"><div class="cres"><sc-if value="{{atkRolling}}" hint-placeholder-val="{{ false }}"><dc-import name="De" de="d20" valeur="17" taille="80" anim="roule" couleur="atq" hint-size="80px,80px"></dc-import></sc-if><div class="sent"><span class="spin"></span>{{busyTxt}}</div></div></sc-if>
+<sc-if value="{{atkHit}}" hint-placeholder-val="{{ false }}"><div class="cres"><div class="res" style="animation: none; font-size: 28px"><span>17</span><span class="op">+ 5</span><span class="op">=</span><span>22</span></div><span class="ok">Touché !</span><span style="font-size: 14px">La hache fait <b style="color: #FF4D5E">9 dégâts</b>.</span></div></sc-if>
+<sc-if value="{{atkCustom}}" hint-placeholder-val="{{ false }}"><div class="cres"><span class="ok">Le MJ accepte !</span><span style="font-size: 14px">Tu renverses la table : <b>le gobelin tombe à terre</b>.</span></div></sc-if>
+<sc-if value="{{atkSelf}}" hint-placeholder-val="{{ false }}"><div class="cres"><span class="ok">{{selfTxt}}</span><span style="font-size: 14px">{{selfSub}}</span></div></sc-if>
+<div class="arcs" aria-label="Commandes">
+<button type="button" class="arc dk" aria-label="Ton sac" onClick="{{openBag}}" style="left: 40px; top: 26px; width: 58px; height: 58px"><span class="top" style="width: 44px; height: 44px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v7.5L4.5 19A2 2 0 0 0 6.2 22h11.6a2 2 0 0 0 1.7-3L14 9.5V2M8.5 2h7M7 16h10"></path></svg></span></button>
+<span class="alab" style="left: 24px; top: 94px">Sac</span>
+<button type="button" class="arc big {{bigCls}}" aria-label="{{atkLabel}}" onClick="{{bigAct}}" style="left: 131px; top: 0; width: 104px; height: 104px"><span class="top" style="width: 80px; height: 80px"><span style="display: grid; place-items: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{bigIcon}}"></path></svg><span class="ttl" style="font-size: 12px; margin-top: 2px">{{bigLbl}}</span></span></span></button>
+<button type="button" class="arc dk" aria-label="Fin du tour" onClick="{{finish}}" style="left: 268px; top: 26px; width: 58px; height: 58px"><span class="top" style="width: 44px; height: 44px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"></path></svg></span></button>
+<span class="alab" style="left: 252px; top: 94px">Fin du tour</span>
+</div>""" + '</div></sc-if>')
 B.append(block(10, bn('hurt', '♥ Le gobelin te touche : −6 PV'), '''<div style="display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center">
 <div class="shake"><dc-import name="Perso" perso="borin" px="5" anim="touche" etat="aucun" hint-size="100px,130px"></dc-import></div>
 <span class="big">−6</span><span style="font-size: 16px">Il te reste <b>{{hp}} PV sur 31</b></span>
@@ -190,6 +227,8 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = this.fresh();
+    const pm = Number(props && props.moment);
+    if (pm >= 1 && pm <= 12) { this.state.m = pm; if (pm >= 10) this.state.hp = 9; }
     this.timers = [];
     this.ac = null;
   }
@@ -342,11 +381,19 @@ class Component extends DCLogic {
       atkIdle: s.atk === 'idle', atkRolling: s.atk === 'rolling', atkDone: s.atk === 'done',
       acts: actsData.map((a, i) => ({ ...a, tx: a.tx || '', ty: a.ty || '', v: a.v || '', st: a.st || 'none', ic: a.ic || 'epee', ra: a.ra || 'aucune',
         isCard: !a.other, isOther: !!a.other, et: i === s.card ? 'actif' : 'normal', cls: i === s.card ? 'sel' : '',
-        x: 6 + i * 84, r: [-9, -3, 3, 9][i], y: (i === 0 || i === 3 ? 10 : 0) - (i === s.card ? 22 : 0),
+        x: 10 + i * 84, r: [-9, -3, 3, 9][i], y: (i === 0 || i === 3 ? 10 : 0) - (i === s.card ? 18 : 0),
         pick: () => { this.setState({ card: i }); this.sfx('click'); } })),
       atkLabel: actsData[s.card].btn, atkSub: actsData[s.card].sub, cardHint: actsData[s.card].hint, otherSel: s.card === 3,
       atkBusy: s.atk === 'rolling' || s.atk === 'asking', busyTxt: s.atk === 'asking' ? 'Le MJ lit ton idée…' : 'Le dé roule…',
-      atkAsking: s.atk === 'asking', atkHit: s.atk === 'done' && s.card !== 3, atkCustom: s.atk === 'done' && s.card === 3,
+      atkAsking: s.atk === 'asking', atkHit: s.atk === 'done' && s.card === 0, atkCustom: s.atk === 'done' && s.card === 3,
+      atkSelf: s.atk === 'done' && (s.card === 1 || s.card === 2),
+      selfTxt: s.card === 1 ? 'Souffle repris !' : 'En rage !', selfSub: s.card === 1 ? 'Tu regagnes 7 PV.' : '+2 dégâts jusqu’à la fin du combat.',
+      notOtherSel: !(s.card === 3 && s.atk === 'idle'), headOn: m !== 9,
+      bigLbl: s.atk === 'done' ? 'Finir' : s.atk === 'idle' ? ['Frappe', 'Souffle', 'Rage', 'Proposer'][s.card] : '…',
+      bigIcon: s.atk === 'done' ? 'M5 12h14M13 6l6 6-6 6' : s.card === 3 ? 'M22 2 11 13M22 2l-7 20-4-9-9-4z' : s.card === 1 ? 'M12 21s-8-5.2-8-11a5 5 0 0 1 8-4 5 5 0 0 1 8 4c0 5.8-8 11-8 11z' : 'M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2',
+      bigCls: s.atk === 'rolling' || s.atk === 'asking' ? 'busy' : '',
+      bigAct: () => { if (this.state.atk === 'done') { this.sfx('click'); this.go(10); } else v.attack(); },
+      openBag: () => { this.setState({ tab: 'perso' }); this.sfx('click'); },
       freeOpen: s.choice === 3 && !s.sent, diceTitle: s.choice === 3 ? 'Ton idée' : optsData[s.choice][0],
       showMap: s.tab === 'carte' && !s.ended, hereX: (dest && s.moved ? dest[0] : 4) * 30 - 26 + 15, hereY: ((dest && s.moved ? dest[1] : 6) + 1) * 30 + 40 - 40,
       tabs: [['jeu', 'Jeu'], ['carte', 'Carte'], ['perso', 'Personnage'], ['journal', 'Journal']].map(([id, n]) => ({ n, cls: (s.tab || 'jeu') === id ? 'on' : '', pick: () => { this.setState({ tab: id }); this.sfx('click'); } })),
@@ -399,6 +446,9 @@ class Component extends DCLogic {
       next: () => { if (this.state.m < 12) this.go(this.state.m + 1); }
     };
     for (let i = 1; i <= 12; i++) v['is' + i] = m === i && !s.ended;
+    const seul = String(this.props.seul ?? false) === 'true';
+    v.seul = seul; v.full = !seul;
+    v.rootStyle = seul ? 'width: 390px; height: 844px; padding: 0' : 'width: 1440px; height: 1000px; padding: 56px 64px';
     return v;
   }
 }
@@ -416,13 +466,13 @@ html = f'''<!doctype html>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
 <style>{css}</style>
 </helmet>
-<div class="pm" style="width: 1440px; height: 1000px; position: relative; overflow: hidden; display: flex; gap: 48px; padding: 56px 64px; box-sizing: border-box; align-items: flex-start">
-{side_l}
+<div class="pm" style="{{{{rootStyle}}}}; position: relative; overflow: hidden; display: flex; gap: 48px; box-sizing: border-box; align-items: flex-start">
+<sc-if value="{{{{full}}}}" hint-placeholder-val="{{{{ true }}}}">{side_l}</sc-if>
 {phone}
-{side_r}
+<sc-if value="{{{{full}}}}" hint-placeholder-val="{{{{ true }}}}">{side_r}</sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{{"$preview":{{"width":1440,"height":1000}}}}'>{JS}</script>
+<script type="text/x-dc" data-dc-script data-props='{{"moment":{{"editor":"int","default":1,"min":1,"max":12}},"seul":{{"editor":"boolean","default":false}},"$preview":{{"width":1440,"height":1000}}}}'>{JS}</script>
 </body>
 </html>
 '''

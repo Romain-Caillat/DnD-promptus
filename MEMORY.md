@@ -90,6 +90,14 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   diamonds, never from a hue (hues belong to stats): ivory, double
   rule, brushed silver, black card, gold foil, holographic. The divine
   card is the only rainbow in the app.
+- **The player phone has one source of truth:** the playable prototype
+  (canvas board "Jouer · la soirée de Marc"). The player screens and the
+  storyboard are that same phone frozen on a moment. Every screen has a
+  status banner, one subject and one main action; four tabs: Game, Map,
+  Character, Journal. A free-text "Other…" option lets the player
+  propose any idea to the GM, in a scene or in combat. The combat turn
+  keeps the original layout: turn order, map centred on the target,
+  hearts and gems, a fanned hand of skill cards, the arcade cluster.
 - **States show twice:** a pixel effect on the character (poison
   bubbles and tint, stun stars, sleep Z, invisible ghost, flames,
   chains, sweat drop, halo) and a square badge in the UI with turns
