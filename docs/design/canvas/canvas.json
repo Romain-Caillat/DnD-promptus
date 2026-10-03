@@ -150,15 +150,6 @@
       "x": 2000,
       "y": 3240
     },
-    "MJ.dc.html": {
-      "expand": "fill",
-      "h": 960,
-      "is_interactive": true,
-      "title": "Écran MJ — en direct",
-      "w": 1440,
-      "x": 1520,
-      "y": 1880
-    },
     "Main.dc.html": {
       "h": 1600,
       "title": "Fondations",
@@ -322,7 +313,6 @@
     "RadialGrid.dc.html",
     "Carte.dc.html",
     "Histoire.dc.html",
-    "MJ.dc.html",
     "TV.dc.html",
     "Joueur-Scene.dc.html",
     "Joueur-Combat.dc.html",

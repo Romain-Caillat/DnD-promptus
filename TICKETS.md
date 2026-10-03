@@ -118,8 +118,7 @@ MJ, import d'image), et la soirée de Marc côté MJ (planche jouable
 sur l'ordinateur du MJ, une action principale par moment, demandes des
 joueurs en cartes, co-MJ en brouillon, journal qui montre aussi le
 caché, TV synchronisée à côté. Elle remplace la première version de
-l'écran MJ (planche « Écran MJ — en direct »), à retirer une fois
-validée. Son storyboard « MJ · la soirée côté MJ » montre les 12
+l'écran MJ, retirée du canevas. Son storyboard « MJ · la soirée côté MJ » montre les 12
 écrans figés. Reste : validation de la soirée côté MJ par Romain, liste et
 création de campagne, éditeur du système de règles, suivi de génération
 et coût, fiche PNJ/monstre, éditeur de carte, médias et budget,
@@ -156,9 +155,7 @@ en colonne, gemme de carte sur le titre, cadres trop courts (Fondations,
 Jauges, Objets), butin sur son nom, dé TV sur les PV du groupe, « Tu es
 ici » sur Lyra, calibrage sur « passage secret », brouillard des
 extérieurs, barres de défilement des téléphones. Reste : validation des
-trois planches de la soirée par Romain. Vus, non corrigés : l'ancien écran MJ
-déborde même à 1440 px (remplacé par la soirée côté MJ, qui tient dans
-1440 × 900) ; Histoire laisse un grand vide sous 1440 px ; petits
+trois planches de la soirée par Romain. Vus, non corrigés : Histoire laisse un grand vide sous 1440 px ; petits
 défauts de Notifications ; barres de défilement des planches Sprite et
 Carte à jouer vues seules (cause hors du code des planches).
 

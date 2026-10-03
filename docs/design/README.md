@@ -2,7 +2,7 @@
 
 The design lives in a private Claude design canvas:
 https://claude.ai/artifact/AP3z1S5hbhqEiPzi5agTdy (owner: Romain).
-`canvas/` is a snapshot of its sources (version 68, 3 October 2026).
+`canvas/` is a snapshot of its sources (version 69, 3 October 2026).
 The published canvas is the reference: if they differ, read the canvas
 back before editing, Romain moves and resizes boards there.
 
@@ -46,7 +46,6 @@ put `{"view":"canvas"}` back when done.
 | --- | --- | --- |
 | Main | Fondations | colours, type, materials |
 | Histoire | Construction d'histoire (LLM) | GM prep, interactive |
-| MJ | Écran MJ — en direct | GM live, first draft, superseded by `Mener-MJ` |
 | TV | Écran TV | wrapper on `Ecran-TV`, combat moment |
 | Joueur-Scene / -Combat / -Carte / -Personnage / -Journal | player phone screens | wrappers on `Jouer-Marc` frozen on a moment and tab |
 | Pistes-UI, Raretes, Objets, Etats, Notifs | design system boards | |
