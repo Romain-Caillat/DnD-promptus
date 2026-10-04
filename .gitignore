@@ -41,3 +41,6 @@ coverage/
 # Misc
 *.pid
 *.seed
+
+# Images of the hand-run games (57 MB), kept out of git
+dnd-save/**/*.png

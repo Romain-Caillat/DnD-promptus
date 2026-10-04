@@ -1,0 +1,179 @@
+<svg viewBox="0 0 640 960" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0 H0 V40" fill="none" stroke="rgba(135,180,220,0.16)" stroke-width="1"/>
+    </pattern>
+    <radialGradient id="space" cx="0.5" cy="0.4" r="0.8">
+      <stop offset="0" stop-color="#101a2c"/>
+      <stop offset="1" stop-color="#05070e"/>
+    </radialGradient>
+    <linearGradient id="hull" x1="0" y1="0" x2="1" y2="0.4">
+      <stop offset="0" stop-color="#c9d3dd"/>
+      <stop offset="0.5" stop-color="#9aa6b4"/>
+      <stop offset="1" stop-color="#6f7c8b"/>
+    </linearGradient>
+    <radialGradient id="saucer" cx="0.42" cy="0.32" r="0.85">
+      <stop offset="0" stop-color="#d7e0e9"/>
+      <stop offset="0.6" stop-color="#9fabb9"/>
+      <stop offset="1" stop-color="#6c7886"/>
+    </radialGradient>
+    <radialGradient id="bussard" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffd9a0"/>
+      <stop offset="0.4" stop-color="#ff6a3d"/>
+      <stop offset="1" stop-color="#a31b16"/>
+    </radialGradient>
+    <radialGradient id="deflector" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffe6a8"/>
+      <stop offset="1" stop-color="#c8821f"/>
+    </radialGradient>
+    <radialGradient id="reactorG" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#bff0ff"/>
+      <stop offset="1" stop-color="#1f7bbf"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0" y="0" width="640" height="960" fill="url(#space)"/>
+
+  <!-- stars -->
+  <g fill="#dfe9f5">
+    <circle cx="60" cy="120" r="1.4"/><circle cx="120" cy="300" r="1"/><circle cx="40" cy="520" r="1.3"/>
+    <circle cx="90" cy="690" r="1"/><circle cx="580" cy="150" r="1.4"/><circle cx="610" cy="380" r="1"/>
+    <circle cx="560" cy="600" r="1.2"/><circle cx="600" cy="740" r="1"/><circle cx="300" cy="60" r="1.2"/>
+    <circle cx="500" cy="80" r="1"/><circle cx="160" cy="80" r="1"/><circle cx="40" cy="380" r="1"/>
+  </g>
+
+  <!-- title -->
+  <text x="320" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#d4a847">HMS-230 132 « Le Cure-Dent »</text>
+  <text x="320" y="51" text-anchor="middle" font-size="11" fill="#8fa3b5">Plan de pont — vue du dessus · 1 case = 1 unité de déplacement intérieur</text>
+
+  <!-- ===================== SHIP STRUCTURE ===================== -->
+  <!-- pylons -->
+  <polygon points="272,470 296,460 196,556 170,544" fill="#5b6776" stroke="#3a4350" stroke-width="2"/>
+  <polygon points="368,470 344,460 444,556 470,544" fill="#5b6776" stroke="#3a4350" stroke-width="2"/>
+
+  <!-- nacelles -->
+  <g>
+    <ellipse cx="150" cy="602" rx="26" ry="132" fill="url(#hull)" stroke="#4b5664" stroke-width="2.5"/>
+    <rect x="142" y="512" width="16" height="178" rx="8" fill="#3fa9ff" fill-opacity="0.35"/>
+    <circle cx="150" cy="486" r="18" fill="url(#bussard)" stroke="#ffb98a" stroke-width="1.5"/>
+  </g>
+  <g>
+    <ellipse cx="490" cy="602" rx="26" ry="132" fill="url(#hull)" stroke="#4b5664" stroke-width="2.5"/>
+    <rect x="482" y="512" width="16" height="178" rx="8" fill="#3fa9ff" fill-opacity="0.35"/>
+    <circle cx="490" cy="486" r="18" fill="url(#bussard)" stroke="#ffb98a" stroke-width="1.5"/>
+  </g>
+
+  <!-- engineering hull -->
+  <ellipse cx="320" cy="548" rx="66" ry="156" fill="url(#hull)" stroke="#4b5664" stroke-width="3"/>
+  <!-- deflector dish (front of engineering) -->
+  <ellipse cx="320" cy="416" rx="36" ry="17" fill="url(#deflector)" stroke="#8a5a14" stroke-width="2"/>
+  <!-- shuttlebay (rear) -->
+  <rect x="300" y="664" width="40" height="20" rx="5" fill="#2b3340" stroke="#6c7886" stroke-width="2"/>
+
+  <!-- neck -->
+  <polygon points="286,352 354,352 372,404 268,404" fill="url(#hull)" stroke="#4b5664" stroke-width="2.5"/>
+
+  <!-- saucer -->
+  <ellipse cx="320" cy="248" rx="164" ry="122" fill="url(#saucer)" stroke="#4b5664" stroke-width="3"/>
+  <ellipse cx="320" cy="248" rx="120" ry="88" fill="none" stroke="#7e8a99" stroke-width="1.5"/>
+  <ellipse cx="320" cy="248" rx="62" ry="46" fill="#aab6c4" fill-opacity="0.5" stroke="#7e8a99" stroke-width="1.5"/>
+
+  <!-- ===================== STATIONS ===================== -->
+  <!-- central corridor -->
+  <rect x="306" y="296" width="28" height="372" rx="6" fill="#2f3b49" fill-opacity="0.55"/>
+
+  <!-- Bridge / Passerelle -->
+  <circle cx="320" cy="248" r="20" fill="#cdd9e6" stroke="#7e8a99" stroke-width="2"/>
+  <circle cx="320" cy="226" r="9" fill="#9b59b6" stroke="#caa0e0" stroke-width="1.5"/>
+  <circle cx="298" cy="264" r="9" fill="#27ae60" stroke="#8fe3b4" stroke-width="1.5"/>
+  <circle cx="342" cy="264" r="9" fill="#d4a847" stroke="#ecd596" stroke-width="1.5"/>
+  <text x="320" y="312" text-anchor="middle" font-size="11" fill="#dbe4ee" font-weight="bold">PASSERELLE</text>
+
+  <!-- forward heavy cannon (FOR) -->
+  <line x1="320" y1="150" x2="320" y2="120" stroke="#e74c3c" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="320" cy="156" r="15" fill="#3a2230" stroke="#e74c3c" stroke-width="3"/>
+  <text x="320" y="161" text-anchor="middle" font-size="8" fill="#ffd4cc" font-weight="bold">FOR</text>
+
+  <!-- dorsal turret (DEX) -->
+  <circle cx="320" cy="196" r="15" fill="#2c2236" stroke="#9b59b6" stroke-width="2.5"/>
+  <circle cx="320" cy="196" r="7" fill="#3a2c47" stroke="#b97fd6" stroke-width="1.5"/>
+
+  <!-- flank turrets (DEX) -->
+  <circle cx="186" cy="248" r="15" fill="#2c2236" stroke="#9b59b6" stroke-width="2.5"/>
+  <line x1="171" y1="248" x2="146" y2="248" stroke="#9b59b6" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="454" cy="248" r="15" fill="#2c2236" stroke="#9b59b6" stroke-width="2.5"/>
+  <line x1="469" y1="248" x2="494" y2="248" stroke="#9b59b6" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- sas -->
+  <rect x="270" y="486" width="26" height="26" rx="4" fill="#6b7a8c" fill-opacity="0.3" stroke="#90a2b5" stroke-width="2" stroke-dasharray="5 3"/>
+  <rect x="344" y="486" width="26" height="26" rx="4" fill="#6b7a8c" fill-opacity="0.3" stroke="#90a2b5" stroke-width="2" stroke-dasharray="5 3"/>
+
+  <!-- Integrite (CON) -->
+  <rect x="286" y="450" width="68" height="22" rx="5" fill="#f39c12" fill-opacity="0.32" stroke="#f39c12" stroke-width="2"/>
+
+  <!-- reactor / machines (INT) -->
+  <circle cx="320" cy="556" r="22" fill="url(#reactorG)" stroke="#bfe6ff" stroke-width="2"/>
+  <text x="320" y="560" text-anchor="middle" font-size="11" fill="#06243a" font-weight="bold">⚛</text>
+
+  <!-- grid overlay (on the hull, for movement) -->
+  <rect x="80" y="100" width="480" height="640" fill="url(#grid)"/>
+
+  <!-- ===================== REAR BLIND ARC ===================== -->
+  <path d="M320 300 L150 880 L490 880 Z" fill="#ff3b30" fill-opacity="0.12"/>
+  <line x1="320" y1="300" x2="150" y2="880" stroke="#ff5a4d" stroke-width="1.5" stroke-dasharray="7 5" opacity="0.7"/>
+  <line x1="320" y1="300" x2="490" y2="880" stroke="#ff5a4d" stroke-width="1.5" stroke-dasharray="7 5" opacity="0.7"/>
+  <text x="320" y="836" text-anchor="middle" font-size="13" fill="#ff7066" font-weight="bold">ANGLE MORT ARRIÈRE</text>
+  <text x="320" y="853" text-anchor="middle" font-size="10" fill="#e09a93">Aucune tourelle ne couvre l'arrière — couvrez vos arrières</text>
+
+  <!-- ===================== CALLOUT LABELS ===================== -->
+  <g font-size="10.5" fill="#cfdae6">
+    <!-- left side -->
+    <line x1="186" y1="248" x2="78" y2="200" stroke="#5a6b7d" stroke-width="1"/>
+    <text x="74" y="197" text-anchor="end" fill="#e2d2f2">Tourelle bâbord (DEX)</text>
+    <line x1="320" y1="196" x2="120" y2="158" stroke="#5a6b7d" stroke-width="1"/>
+    <text x="116" y="155" text-anchor="end" fill="#e2d2f2">Tourelle dorsale (DEX)</text>
+    <line x1="270" y1="499" x2="120" y2="470" stroke="#5a6b7d" stroke-width="1"/>
+    <text x="116" y="467" text-anchor="end">Sas d'abordage</text>
+    <line x1="286" y1="461" x2="120" y2="540" stroke="#5a6b7d" stroke-width="1"/>
+    <text x="116" y="543" text-anchor="end" fill="#f4c777">Intégrité &amp; avaries (CON)</text>
+    <line x1="320" y1="556" x2="120" y2="616" stroke="#5a6b7d" stroke-width="1"/>
+    <text x="116" y="619" text-anchor="end" fill="#a9d4f2">Salle des machines (INT)</text>
+    <!-- right side -->
+    <line x1="320" y1="156" x2="520" y2="130" stroke="#5a6b7d" stroke-width="1"/>
+    <text x="524" y="127" fill="#f3b6ad">Canon lourd « Pic-Vert » (FOR)</text>
+    <line x1="454" y1="248" x2="560" y2="210" stroke="#5a6b7d" stroke-width="1"/>
+    <text x="564" y="207" fill="#e2d2f2">Tourelle tribord (DEX)</text>
+    <line x1="342" y1="264" x2="560" y2="300" stroke="#5a6b7d" stroke-width="1"/>
+    <text x="564" y="297" fill="#ecd596">Liaison (CHA)</text>
+    <line x1="320" y1="416" x2="560" y2="416" stroke="#5a6b7d" stroke-width="1"/>
+    <text x="564" y="419" fill="#ffd9a0">Déflecteur</text>
+    <line x1="490" y1="486" x2="556" y2="560" stroke="#5a6b7d" stroke-width="1"/>
+    <text x="560" y="563" fill="#9fc4e0">Nacelle de distorsion</text>
+  </g>
+  <!-- bridge console mini-labels -->
+  <text x="276" y="230" text-anchor="end" font-size="9" fill="#bfa9d6">Pilote</text>
+  <text x="276" y="285" text-anchor="end" font-size="9" fill="#9fe7bd">Capteurs · LUMEN</text>
+
+  <!-- orientation -->
+  <text x="600" y="60" text-anchor="end" font-size="12" fill="#5fd0e6" font-weight="bold">▲ AVANT</text>
+
+  <!-- ===================== LEGEND ===================== -->
+  <line x1="40" y1="872" x2="600" y2="872" stroke="#2a3644" stroke-width="1.5"/>
+  <g font-size="11" fill="#c2cedb">
+    <rect x="44" y="888" width="13" height="13" rx="2" fill="#e74c3c" fill-opacity="0.5" stroke="#e74c3c"/>
+    <text x="64" y="898">Canon (FOR)</text>
+    <rect x="172" y="888" width="13" height="13" rx="2" fill="#9b59b6" fill-opacity="0.5" stroke="#9b59b6"/>
+    <text x="192" y="898">Tourelles · Pilote (DEX)</text>
+    <rect x="360" y="888" width="13" height="13" rx="2" fill="#27ae60" fill-opacity="0.5" stroke="#27ae60"/>
+    <text x="380" y="898">Capteurs (SAG)</text>
+    <rect x="492" y="888" width="13" height="13" rx="2" fill="#d4a847" fill-opacity="0.5" stroke="#d4a847"/>
+    <text x="512" y="898">Liaison (CHA)</text>
+
+    <rect x="44" y="912" width="13" height="13" rx="2" fill="#3498db" fill-opacity="0.5" stroke="#3498db"/>
+    <text x="64" y="922">Ingénieur (INT)</text>
+    <rect x="172" y="912" width="13" height="13" rx="2" fill="#f39c12" fill-opacity="0.5" stroke="#f39c12"/>
+    <text x="192" y="922">Intégrité &amp; avaries (CON)</text>
+    <rect x="360" y="912" width="13" height="13" rx="2" fill="#ff3b30" fill-opacity="0.18" stroke="#ff5a4d"/>
+    <text x="380" y="922">Angle mort des tourelles</text>
+  </g>
+</svg>

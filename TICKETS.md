@@ -42,6 +42,10 @@ vraie plateforme, en jouant, et s'itère.
 
 ## Ordre de construction
 
+La méthode derrière cet ordre — quatre chaînes (règles, campagne,
+soirée, retour) tirées des deux parties que Romain a menées à la main —
+est dans `docs/lecons-des-parties.md`.
+
 Trois jalons. Chacun se termine par **une vraie soirée jouée** avec la
 table de Romain (règle 4 : « livré, jamais essayé » n'est pas fini). Un
 ticket d'un jalon ne laisse aucun bouton vers une fonction d'un jalon
@@ -67,6 +71,7 @@ chacun leur moment. Pas encore de génération de campagne.
 `ai/route-llm-provider` · `ai/count-ai-calls` · `copilot/draft-narration` ·
 `session/track-table-knowledge` · `player/read-the-rules` ·
 `gm/balance-spotlight` · `gm/adjust-sheets-fast` ·
+`engine/lint-rule-system` · `session/collect-player-feedback` ·
 `session/stream-live-changes` · `session/project-player-view` ·
 `session/invite-and-join` · `session/validate-characters` ·
 `session/open-lobby` · `session/drive-scenes` · `session/end-session` ·
@@ -79,9 +84,10 @@ chacun leur moment. Pas encore de génération de campagne.
 
 **Fini quand** — Une session de deux heures est jouée à distance avec six
 joueurs, de la création des personnages au dernier combat, sans que
-Romain ouvre autre chose que Promptus et Discord ; après la soirée,
-aucun joueur ne dit que les règles n'étaient pas claires, et chacun
-sait ce qu'il faut pour la session suivante.
+Romain ouvre autre chose que Promptus et Discord ; les réponses des
+joueurs en fin de soirée (`session/collect-player-feedback`) disent que
+les règles étaient claires, que chacun a eu son moment, et que chacun
+sait quoi faire ensuite.
 
 Le monde n'est pas encore choisi (reprendre les Corsaires, le Brasier,
 ou un nouveau) : le jalon ne dépend d'aucun contenu particulier.
@@ -93,6 +99,7 @@ ses médias, et la mène avec le co-MJ et la TV du salon. Les joueurs
 retrouvent leur personnage entre deux sessions.
 
 `ai/generate-campaign` · `campaign/check-player-knowledge` ·
+`campaign/check-act-readiness` · `ai/evaluate-on-real-campaigns` ·
 `player/buy-and-trade` ·
 `campaign/review-story-graph` · `media/generate-images-and-video` ·
 `copilot/propose-adversary-turns` ·
@@ -277,6 +284,25 @@ classe et de son niveau (tests `ruleset.test.ts` portés).
 
 **Origine** — V1 `ruleset.ts`, `ruleset-schema.ts` · planche « Règles »
 (moments 1 à 4 et 6) · `dnd-save/DnD-16-05-2026/regles_*.md`
+
+### `engine/lint-rule-system` · todo
+
+**Pourquoi** — Les règles des Corsaires se contredisaient sans que
+personne le voie (`docs/lecons-des-parties.md` §2).
+
+**Périmètre** — Contrôles d'un système de règles, sans jamais bloquer :
+cohérence (chaque terme employé est défini, chaque renvoi existe, un
+seul modèle de dégâts pour joueurs, PNJ et objets, valeurs des PNJ dans
+les tables de référence ou marquées comme exceptions, sens des
+recharges explicite) ; équilibre (total des caractéristiques par classe,
+dégâts par tour, XP par session et niveau atteint en fin de campagne).
+
+**Fini quand** — Sur le système des Corsaires importé, le contrôle
+signale les deux modèles de dégâts, « précision » non défini, la stat
+principale ambiguë, la CA des gardes hors table et le Canonnier à 63
+points ; sur le Brasier, le renvoi à `Combat_Sol.md` qui n'existe pas.
+
+**Origine** — `docs/lecons-des-parties.md` §2 et §3
 
 ### `engine/roll-checks` · todo
 
@@ -477,6 +503,24 @@ qui manquait pour l'acte 2.
 
 **Origine** — Romain, 4 octobre 2026 · `MEMORY.md` §6
 
+### `campaign/check-act-readiness` · todo
+
+**Pourquoi** — L'acte 1 du Brasier n'était pas prêt et rien ne le
+disait ; aux Corsaires, aucune scène n'était pensée pour un joueur en
+particulier.
+
+**Périmètre** — Une jauge par acte : chaque scène a ses champs
+(`campaign/model-story-graph`), chaque information nécessaire a au
+moins trois chemins, chaque joueur a au moins une accroche dans l'acte,
+chaque rencontre a ses adversaires chiffrés et leur tactique, chaque
+combat prévu a été simulé. La jauge dit ce qui manque, le MJ décide.
+
+**Fini quand** — La jauge déclare l'acte 1 du Brasier non prêt et dit
+pourquoi ; sur l'acte 1 des Corsaires, elle signale que la route du
+Greyhound n'est que dans une scène facultative.
+
+**Origine** — `docs/lecons-des-parties.md` §3 (chaîne 2)
+
 ### `campaign/track-factions-and-goals` · todo · à spécifier
 
 **Périmètre** — Jauges d'affinité par faction, où gagner la faveur des
@@ -516,6 +560,24 @@ passent par le même trait ; une sortie hors schéma est rejetée avec une
 erreur lisible.
 
 **Origine** — V1 `llm.ts`, `prompt-template.ts`, `scripts/fake-llm.ts`
+
+### `ai/evaluate-on-real-campaigns` · todo
+
+**Pourquoi** — Un prompt ou un modèle qui change ne doit pas dégrader
+en silence ce qui marchait.
+
+**Périmètre** — Un jeu d'évaluation tiré des deux parties : scènes
+générées comparées au standard de scène, situations réelles de l'acte 1
+des Corsaires (refuser l'offre de Vaubernier, l'incident de Jacquot, le
+combat du quai à six contre six) rejouées au co-MJ, réponses notées sur
+des critères écrits (cohérence avec ce que la table sait, PNJ fidèle à
+sa fiche, aucune règle inventée). Lancé à chaque changement de prompt ou
+de modèle, résultat comparé au précédent.
+
+**Fini quand** — Changer de modèle produit un rapport qui dit, cas par
+cas, ce qui s'est amélioré ou dégradé.
+
+**Origine** — `docs/lecons-des-parties.md` §4
 
 ### `ai/count-ai-calls` · todo
 
@@ -686,6 +748,23 @@ pour la même action.
 
 **Origine** — Romain, 4 octobre 2026 · `MEMORY.md` §6
 
+### `session/collect-player-feedback` · todo
+
+**Pourquoi** — Les leçons des Corsaires sont arrivées par des reproches
+oraux, après coup. Elles doivent arriver à chaque session, par écrit.
+
+**Périmètre** — À la fin de la session, chaque joueur répond en trente
+secondes sur son téléphone : les règles étaient-elles claires ? as-tu eu
+un moment à toi ? sais-tu ce que ton personnage veut faire la prochaine
+fois ? Le MJ voit les réponses à côté de ce que Promptus a mesuré
+(temps sans agir par joueur, jets contestés, informations manquantes
+pour la suite) et garde une note de ce qu'il change.
+
+**Fini quand** — Après la soirée du jalon 1, Romain lit les six
+réponses et les mesures sur un seul écran.
+
+**Origine** — `docs/lecons-des-parties.md` §3 (chaîne 4)
+
 ### `session/end-session` · todo
 
 **Périmètre** — « Terminer la session » enregistre l'état ; le MJ écrit
@@ -747,7 +826,9 @@ claires et pas toujours appliquées pareil.
 système de règles (rien d'écrit à la main qui puisse diverger) ; chaque
 jet montre son calcul (dé, stat, bonus, difficulté quand elle est
 connue) et son résultat parmi les quatre (1, échec, réussite, 20) ;
-chaque carte dit son coût en actions et sa recharge.
+chaque carte dit son coût en actions et sa recharge. Quand les règles
+ont changé depuis la dernière session, le joueur voit ce qui change
+avant la session suivante, jamais en pleine partie.
 
 **Fini quand** — Un joueur qui n'a pas lu les règles explique, après
 son premier combat, pourquoi son attaque a raté.

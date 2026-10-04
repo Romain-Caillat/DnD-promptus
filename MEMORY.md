@@ -267,8 +267,8 @@ against the campaign budget; a batch that would exceed it is refused.
 ## 6. What Romain's real games taught (before Promptus)
 
 Romain ran two games by hand before this rewrite. Their prep lives in
-`dnd-save/` at the root of the main checkout (untracked, 57 MB of
-images): read it before designing content formats or rules.
+`dnd-save/` (texts versioned; the PNG images, 57 MB, stay out of git):
+read it before designing content formats or rules.
 
 - **Corsaires de la Couronne** (played 16 May 2026, act 1 of 4): a
   pirate one-shot, **six players, fully remote**. Afterwards: the GM
@@ -301,5 +301,14 @@ images): read it before designing content formats or rules.
   stats, disposition, what they want, what they hide, inventory,
   portrait. Images share a per-campaign art direction prefix and come in
   three kinds: places, NPC portraits, action scenes.
+- **Rules are Romain's, not sacred.** He is happy to evolve his system;
+  a change ships as a new locked version that players see before the
+  next session, never mid-game.
+- **The method these games produced** — four chains (rules, campaign,
+  evening, feedback), each with a standard and checks that flag but
+  never block — is in `docs/lecons-des-parties.md`. Both games are
+  permanent test corpora: a check that misses their known defects
+  (two damage models, critical info only in an optional scene, a
+  missing referenced document) is broken.
 - **Which world comes next is undecided** (resume the Corsaires, the
   Brasier, or a new one): nothing in milestone 1 may depend on it.
