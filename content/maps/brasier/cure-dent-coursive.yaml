@@ -1,0 +1,106 @@
+# Le Brasier — la coursive centrale du Cure-Dent (HMS-230 132).
+# Source : dnd-save/DnD_07-06-2026/Plan_Cure-Dent.svg, « 1 case = 1 unité
+# de déplacement intérieur ». De la porte de la passerelle (nord) à la
+# salle des machines (sud) : accès aux tourelles, poste Intégrité &
+# avaries, les deux sas d'abordage, une gaine technique cachée. Prévue
+# pour repousser six abordeurs Vorr avec six PJ.
+version: 1
+id: cure-dent-coursive
+name: Coursive du Cure-Dent
+scale: encounter
+theme: vaisseau-confederation
+ambience:
+  light: dim
+  mood: coursive-alerte
+gm_notes: >-
+  Les Vorr ont arrimé leur navette au sas bâbord. LUMEN signale la brèche
+  avec un temps de retard. La balise de la gaine technique explique
+  comment ils ont retrouvé le Cure-Dent.
+layers:
+  - { id: base, name: Coursive, visibility: all }
+  - { id: abordage, name: Escouade Vorr, visibility: gm }
+  - { id: secrets, name: Secrets, visibility: gm }
+grid:
+  legend:
+    "#": { terrain: cloison, wall: true }
+    ".": { terrain: métal }
+    "g": { terrain: grille, difficult: true }
+  rows:
+    - "###############"
+    - "#.............#"
+    - "#.............#"
+    - "######...######"
+    - "######...######"
+    - "######...#....#"
+    - "######...#....#"
+    - "######...#....#"
+    - "######...######"
+    - "#....#...#....#"
+    - "#....#...#....#"
+    - "#....#...#....#"
+    - "######...######"
+    - "#gggg#...######"
+    - "#gggg#...######"
+    - "######...######"
+    - "#.............#"
+    - "#.............#"
+    - "#.............#"
+    - "###############"
+doors:
+  - { id: porte-passerelle, at: [7, 0], state: closed, label: Porte de la passerelle }
+  - { id: porte-integrite, at: [9, 6], state: open, label: Poste Intégrité & avaries }
+  - { id: sas-babord-interieur, at: [5, 10], state: closed, label: "Sas bâbord, porte intérieure" }
+  - { id: sas-babord-exterieur, at: [0, 10], state: locked, label: "Sas bâbord, écoutille extérieure" }
+  - { id: sas-tribord-interieur, at: [9, 10], state: open, label: "Sas tribord, porte intérieure" }
+  - { id: sas-tribord-exterieur, at: [14, 10], state: locked, label: "Sas tribord, écoutille extérieure" }
+  - { id: trappe-maintenance, at: [5, 13], state: closed, label: Trappe de maintenance, layer: secrets }
+props:
+  - { id: echelle-babord, kind: echelle, label: Échelle de la tourelle bâbord, at: [1, 1], climbable: true }
+  - { id: echelle-tribord, kind: echelle, label: Échelle de la tourelle tribord, at: [13, 1], climbable: true }
+  - { id: echelle-dorsale, kind: echelle, label: Échelle de la tourelle dorsale, at: [7, 2], climbable: true }
+  - { id: console-integrite, kind: console, label: Intégrité & avaries (CON), at: [12, 6], cover: half, blocks_movement: true }
+  - { id: casiers-sas, kind: casiers, label: Casiers à combinaisons, at: [12, 9], cover: three_quarters, blocks_movement: true }
+  - { id: reacteur, kind: reacteur, label: Réacteur, at: [6, 17], size: [3, 2], cover: total, blocks_movement: true }
+  - { id: pupitre-ingenieur, kind: console, label: Salle des machines (INT), at: [2, 17], cover: half, blocks_movement: true }
+  - { id: conduites, kind: conduites, label: Conduites de refroidissement, at: [10, 16], size: [3, 1], difficult: true }
+objects:
+  - id: balise-vorr
+    kind: balise
+    label: Balise de traque Vorr
+    at: [2, 14]
+    check: { stat: INT, dc: 12 }
+    notes: Posée lors du dernier arrimage ; elle guide l'escouade Vorr jusqu'au Cure-Dent.
+    layer: secrets
+lights:
+  - { id: plafonnier-nord, at: [7, 4], bright: 2, dim: 4, color: "#cfe8ff" }
+  - { id: plafonnier-sas, at: [7, 10], bright: 2, dim: 4, color: "#cfe8ff" }
+  - { id: alarme-sas, at: [2, 10], bright: 1, dim: 3, color: "#ff4d5e", flicker: true }
+  - { id: lueur-reacteur, at: [7, 16], bright: 3, dim: 6, color: "#5fd0e6" }
+exits:
+  - { id: vers-passerelle, cells: [[7, 0]], to: cure-dent-passerelle, label: Passerelle }
+  - { id: tourelle-babord, cells: [[1, 1]], to: cure-dent-tourelle-babord, label: Tourelle bâbord (DEX) }
+  - { id: tourelle-tribord, cells: [[13, 1]], to: cure-dent-tourelle-tribord, label: Tourelle tribord (DEX) }
+  - { id: tourelle-dorsale, cells: [[7, 2]], to: cure-dent-tourelle-dorsale, label: Tourelle dorsale (DEX) }
+  - { id: arrimage-babord, cells: [[0, 10]], to: vaisseau-arrime, label: Vers le vaisseau arrimé }
+  - { id: arrimage-tribord, cells: [[14, 10]], to: vaisseau-arrime, label: Vers le vaisseau arrimé }
+labels:
+  - { text: Accès aux tourelles, at: [7, 1] }
+  - { text: Coursive centrale, at: [7, 7] }
+  - { text: Intégrité & avaries, at: [11, 5] }
+  - { text: Sas d'abordage bâbord, at: [2, 10] }
+  - { text: Sas d'abordage tribord, at: [12, 10] }
+  - { text: Gaine technique, at: [2, 13], layer: secrets }
+  - { text: Salle des machines, at: [3, 16] }
+starts:
+  - { id: pj-1, side: party, at: [6, 3] }
+  - { id: pj-2, side: party, at: [7, 3] }
+  - { id: pj-3, side: party, at: [8, 3] }
+  - { id: pj-4, side: party, at: [6, 4] }
+  - { id: pj-5, side: party, at: [7, 4] }
+  - { id: pj-6, side: party, at: [8, 4] }
+  - { id: vorr-1, side: foes, at: [1, 9], entity: abordeur-vorr, layer: abordage }
+  - { id: vorr-2, side: foes, at: [2, 9], entity: abordeur-vorr, layer: abordage }
+  - { id: vorr-3, side: foes, at: [3, 9], entity: abordeur-vorr, layer: abordage }
+  - { id: vorr-4, side: foes, at: [1, 11], entity: abordeur-vorr, layer: abordage }
+  - { id: vorr-5, side: foes, at: [2, 11], entity: abordeur-vorr, layer: abordage }
+  - { id: vorr-6, side: foes, at: [3, 11], entity: chef-d-escouade-vorr, layer: abordage }
