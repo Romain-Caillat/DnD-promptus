@@ -45,7 +45,7 @@ model forced where the source was ambiguous.
 | `progression` | `{ upgrade_every_xp, upgrade_points, levels: [{ level, xp }] }` |
 | `zero_hp` | What 0 hit points does (below) |
 | `creation` | `{ abilities: from_class, free_action_slots }` |
-| `movement` | Per map scale (`world`, `place`, `encounter`): `cells_per_move`, `null` when unstated |
+| `movement` | Per map scale (`world`, `place`, `encounter`): `cells_per_move` (`null` when unstated) and optional `grid: { diagonal: chebyshev\|alternate, difficult_factor, climb_cost, max_step, swim_factor }` — the `maps::MovementRules` the grid reads |
 | `situations` | Circumstances the GM declares (`furtif`, `en_hauteur`) |
 | `resources` | `{ id, name, abbr, start }` (gold…) |
 | `conditions`, `classes`, `items`, `adversary_tiers`, `adversaries` | Below |

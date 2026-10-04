@@ -2,5 +2,10 @@
 //! engine and the domain models. No I/O lives here — callers read files
 //! and hand the text over; the server stays authoritative on every rule,
 //! and this crate is what it applies.
+//!
+//! `rules` is the rules engine, `story` the campaign graph, `maps` the
+//! grid maps and their geometry.
 
+pub mod maps;
 pub mod rules;
+pub mod story;

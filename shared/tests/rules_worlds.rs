@@ -1178,6 +1178,29 @@ fn the_same_seed_resolves_the_same_way() {
     assert_eq!(a, b);
 }
 
+#[test]
+fn a_system_can_set_the_grid_costs_the_maps_read() {
+    use promptus_shared::maps::MovementRules;
+    use promptus_shared::rules::model::MapScale;
+    for id in ["corsaires", "brasier"] {
+        assert_eq!(
+            system(id).movement(MapScale::Encounter).unwrap().grid,
+            None,
+            "{id}: unstated in the source"
+        );
+    }
+    let s = edited(
+        "corsaires",
+        "cells_per_move: null",
+        "cells_per_move: 6\n    grid: { diagonal: alternate, difficult_factor: 3, swim_factor: 2 }",
+    );
+    let rule = s.movement(MapScale::Encounter).unwrap();
+    assert_eq!(rule.cells_per_move, Some(6));
+    let grid: MovementRules = rule.grid.unwrap();
+    assert_eq!((grid.difficult_factor, grid.swim_factor), (3, Some(2)));
+    assert_eq!(grid.diagonal, promptus_shared::maps::Diagonal::Alternate);
+}
+
 // ------------------------------------------- rules are data: edit, re-run
 
 #[test]

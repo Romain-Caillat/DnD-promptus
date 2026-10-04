@@ -356,6 +356,11 @@ pub struct MovementRule {
     pub scale: MapScale,
     /// Cells one move action covers; `None` when the system does not say.
     pub cells_per_move: Option<u32>,
+    /// Path costs on the grid (diagonals, difficult terrain, climbing,
+    /// swimming), as `maps::check_path` reads them; `None` when the
+    /// system does not say (the maps then fall back to their defaults).
+    #[serde(default)]
+    pub grid: Option<crate::maps::MovementRules>,
     #[serde(default)]
     pub note: String,
 }
@@ -734,6 +739,10 @@ impl RuleSystem {
     }
     pub fn situation(&self, id: &str) -> Option<&Situation> {
         self.situations.iter().find(|s| s.id == id)
+    }
+    /// The movement rule of one map scale, if the system has one.
+    pub fn movement(&self, scale: MapScale) -> Option<&MovementRule> {
+        self.movement.iter().find(|m| m.scale == scale)
     }
     pub fn max_level(&self) -> u32 {
         self.progression

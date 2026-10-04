@@ -45,8 +45,14 @@ fn test_database_url() -> String {
 /// fails the test loudly rather than skipping it — a skipped suite reads
 /// as green and hides that nothing ran.
 pub async fn test_pool() -> PgPool {
+    test_pool_sized(2).await
+}
+
+/// [`test_pool`] with room for `max` concurrent connections, for tests
+/// that race transactions against each other.
+pub async fn test_pool_sized(max: u32) -> PgPool {
     let pool = PgPoolOptions::new()
-        .max_connections(2)
+        .max_connections(max)
         .connect(&test_database_url())
         .await
         .expect("connect to the test database");

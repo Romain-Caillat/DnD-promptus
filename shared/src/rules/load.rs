@@ -113,7 +113,12 @@ impl LoadError {
 impl RuleSystem {
     /// Parses and validates a rule system written in YAML.
     pub fn from_yaml(text: &str) -> Result<Self, LoadError> {
-        let system: RuleSystem = serde_saphyr::from_str(text).map_err(|e| {
+        // Variants with data are written as one-key maps (`damage: {…}`),
+        // not YAML tags (`!damage`): read every enum that way.
+        let de = serde_yaml_ng::Deserializer::from_str(text);
+        let parsed: Result<RuleSystem, serde_yaml_ng::Error> =
+            serde_yaml_ng::with::singleton_map_recursive::deserialize(de);
+        let system = parsed.map_err(|e| {
             let path = e
                 .location()
                 .map(|l| format!("line {}, column {}", l.line(), l.column()))
