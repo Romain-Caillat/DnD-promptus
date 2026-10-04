@@ -187,6 +187,20 @@ Rust contre Postgres, lint + typecheck + tests front, gitleaks.
 
 **Origine** — Alignement sur Devotion
 
+**État** — `.github/workflows/ci.yml` écrit, sur chaque PR et chaque
+push sur `main`, en trois jobs : `rust` (dépendances système de Tauri,
+création de `promptus_test` par `scripts/create-test-db.sql` dans un
+service Postgres 17, `cargo fmt --all --check`, clippy `--workspace
+--all-targets -D warnings`, `cargo test --workspace`), `front` (Bun
+1.4.2 comme dans PCT 105 : ESLint, `tsc -b`, knip, Vitest, sous Bun
+via `--bun`) et `secrets` (gitleaks 8.30.1, binaire épinglé et vérifié
+par somme SHA-256, sur tout l'historique). Le fichier passe
+`actionlint` (avec shellcheck), et chaque commande a été rejouée dans
+PCT 105 avec les mêmes variables — seule différence, le port 5433 d'un
+Postgres 17 jetable à la place du service. **Reste** : le premier
+passage sur GitHub (pousser, regarder les trois jobs passer), puis
+rendre les trois jobs obligatoires dans la protection de `main`.
+
 ### `platform/sign-in-gm` · todo
 
 **Pourquoi** — Le V1 laissait les pages MJ ouvertes à tous.
