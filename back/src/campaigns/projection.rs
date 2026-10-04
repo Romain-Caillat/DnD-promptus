@@ -113,7 +113,18 @@ pub fn project_for_players(campaign: &Campaign, world: &WorldState) -> PlayerCam
                     name: l.name.clone(),
                     description: l.description.clone(),
                 }),
-            music: node.ambience.music.clone(),
+            // A track still to choose (no link) is the GM's to-do, and
+            // its search hint is GM text.
+            music: node
+                .ambience
+                .music
+                .iter()
+                .filter(|t| !t.url.is_empty())
+                .map(|t| MusicTrack {
+                    search: String::new(),
+                    ..t.clone()
+                })
+                .collect(),
             npcs: node
                 .npcs
                 .iter()

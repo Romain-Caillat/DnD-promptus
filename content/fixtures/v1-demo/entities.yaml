@@ -1,0 +1,1240 @@
+# V1 entity export (GET /api/campaigns/{id}/entities/export) of the V1
+# demo campaign, regenerated from promptus-V1/scripts/seed-demo.ts with
+# stable ids (ent_ + slug of the name, as in content/maps/v1-demo).
+# Input of the V1 importer tests (shared/tests/import_export.rs).
+campaign: Le Donjon des gobelins (démo)
+exportedAt: '2026-05-01T00:00:00.000Z'
+entities:
+- id: ent_bobby_le_brave
+  type: character
+  name: Bobby le Brave
+  description: Jeune guerrier humain d’un village frontalier ; farouche, protecteur, trop sûr de lui.
+  tags:
+  - guerrier
+  - humain
+  - niv. 1
+  - PJ
+  attributes:
+    hp: 12
+    hpMax: 12
+    ac: 16
+    speed: 30
+    level: 1
+    classes:
+    - name: Guerrier
+      level: 1
+    abilityScores:
+      STR: 16
+      DEX: 13
+      CON: 14
+      INT: 10
+      WIS: 11
+      CHA: 8
+    proficiencyBonus: 2
+    attacks:
+    - name: Épée longue
+      bonus: 5
+      damage: 1d8+3
+      damageType: slashing
+      rangeMeters: 1.5
+    - name: Arbalète légère
+      bonus: 3
+      damage: 1d8+1
+      damageType: piercing
+      rangeMeters: 24
+      longRangeMeters: 96
+    initiativeBonus: 1
+  effects: []
+  visibility: public
+- id: ent_lea_mandetempete
+  type: character
+  name: Léa Mandetempête
+  description: Magicienne elfe au bâton taillé dans un if ancien ; curieuse, patiente, cache un côté impitoyable.
+  tags:
+  - magicien
+  - elfe
+  - niv. 1
+  - PJ
+  attributes:
+    hp: 7
+    hpMax: 7
+    ac: 12
+    speed: 30
+    level: 1
+    classes:
+    - name: Magicien
+      level: 1
+    abilityScores:
+      STR: 8
+      DEX: 14
+      CON: 12
+      INT: 16
+      WIS: 13
+      CHA: 10
+    proficiencyBonus: 2
+    attacks:
+    - name: Bâton
+      bonus: 1
+      damage: 1d6-1
+      damageType: bludgeoning
+      rangeMeters: 1.5
+    - name: Trait de feu
+      bonus: 5
+      damage: 1d10
+      damageType: fire
+      rangeMeters: 36
+    initiativeBonus: 2
+    spellSlots:
+      '1':
+        current: 2
+        max: 2
+  effects: []
+  visibility: public
+- id: ent_tom_doigts_agiles
+  type: character
+  name: Tom Doigts-Agiles
+  description: Roublard halfelin, trop de dagues et pas assez de morale ; furtif, stratège, loyal en secret.
+  tags:
+  - roublard
+  - halfelin
+  - niv. 1
+  - PJ
+  attributes:
+    hp: 9
+    hpMax: 9
+    ac: 14
+    speed: 25
+    level: 1
+    classes:
+    - name: Roublard
+      level: 1
+    abilityScores:
+      STR: 9
+      DEX: 17
+      CON: 13
+      INT: 12
+      WIS: 11
+      CHA: 14
+    proficiencyBonus: 2
+    attacks:
+    - name: Rapière
+      bonus: 5
+      damage: 1d8+3
+      damageType: piercing
+      rangeMeters: 1.5
+    - name: Arc court
+      bonus: 5
+      damage: 1d6+3
+      damageType: piercing
+      rangeMeters: 24
+      longRangeMeters: 96
+    initiativeBonus: 3
+  effects: []
+  visibility: public
+- id: ent_anais_porte_lumiere
+  type: character
+  name: Anaïs Porte-Lumière
+  description: Clerc humaine d’un dieu de l’aube oublié ; douce en conseil, farouche au combat, laisse rarement le groupe
+    se reposer.
+  tags:
+  - clerc
+  - humain
+  - niv. 1
+  - PJ
+  attributes:
+    hp: 10
+    hpMax: 10
+    ac: 18
+    speed: 25
+    level: 1
+    classes:
+    - name: Clerc
+      level: 1
+    abilityScores:
+      STR: 12
+      DEX: 10
+      CON: 14
+      INT: 11
+      WIS: 16
+      CHA: 13
+    proficiencyBonus: 2
+    attacks:
+    - name: Masse d’armes
+      bonus: 3
+      damage: 1d6+1
+      damageType: bludgeoning
+      rangeMeters: 1.5
+    - name: Flamme sacrée
+      bonus: 5
+      damage: 1d8
+      damageType: radiant
+      rangeMeters: 18
+    initiativeBonus: 0
+    spellSlots:
+      '1':
+        current: 2
+        max: 2
+  effects: []
+  visibility: public
+- id: ent_projectile_magique
+  type: spell
+  name: Projectile magique
+  description: Trois fléchettes de force frappent les cibles choisies sans jamais manquer.
+  tags:
+  - évocation
+  - niveau 1
+  attributes:
+    level: 1
+    school: evocation
+    castingTime: 1 action
+    range: 120 ft
+    components:
+    - V
+    - S
+    duration: instantaneous
+  effects:
+  - type: consume_resource
+    resource: spell_slot
+    amount: 1
+    level: 1
+    target:
+      type: caster
+  - type: damage
+    amount: 3d4+3
+    damageType: force
+    target:
+      type: single
+      entityId: ''
+  visibility: public
+- id: ent_boule_de_feu
+  type: spell
+  name: Boule de feu
+  description: Une explosion de flammes détone au point choisi.
+  tags:
+  - évocation
+  - niveau 3
+  attributes:
+    level: 3
+    school: evocation
+    castingTime: 1 action
+    range: 45 m
+    components:
+    - V
+    - S
+    - M
+    duration: instantaneous
+  effects:
+  - type: consume_resource
+    resource: spell_slot
+    amount: 1
+    level: 3
+    target:
+      type: caster
+  - type: roll_check
+    stat: DEX
+    dc: 15
+    target:
+      type: all_in_area
+    outcomeFail:
+    - type: damage
+      amount: 8d6
+      damageType: fire
+      target:
+        type: all_in_area
+    outcomeSuccess:
+    - type: damage
+      amount: 8d6/2
+      damageType: fire
+      target:
+        type: all_in_area
+  - type: play_sound
+    soundId: Scintillement magique
+  visibility: public
+- id: ent_soins
+  type: spell
+  name: Soins
+  description: La créature touchée récupère des points de vie.
+  tags:
+  - évocation
+  - niveau 1
+  attributes:
+    level: 1
+    school: evocation
+    castingTime: 1 action
+    range: touch
+    components:
+    - V
+    - S
+    duration: instantaneous
+  effects:
+  - type: consume_resource
+    resource: spell_slot
+    amount: 1
+    level: 1
+    target:
+      type: caster
+  - type: heal
+    amount: 1d8+3
+    target:
+      type: single
+      entityId: ''
+  visibility: public
+- id: ent_sommeil
+  type: spell
+  name: Sommeil
+  description: Un sommeil magique emporte les créatures les plus faibles de la zone.
+  tags:
+  - enchantement
+  - niveau 1
+  attributes:
+    level: 1
+    school: enchantment
+    castingTime: 1 action
+    range: 90 ft
+    components:
+    - V
+    - S
+    duration: instantaneous
+  effects:
+  - type: consume_resource
+    resource: spell_slot
+    amount: 1
+    level: 1
+    target:
+      type: caster
+  - type: apply_condition
+    conditionId: unconscious
+    duration:
+      minutes: 1
+    target:
+      type: all_in_area
+  visibility: public
+- id: ent_bouclier
+  type: spell
+  name: Bouclier
+  description: Une barrière de force invisible vous protège.
+  tags:
+  - abjuration
+  - niveau 1
+  attributes:
+    level: 1
+    school: abjuration
+    castingTime: 1 reaction
+    range: 30 ft
+    components:
+    - V
+    - S
+    duration: instantaneous
+  effects:
+  - type: consume_resource
+    resource: spell_slot
+    amount: 1
+    level: 1
+    target:
+      type: caster
+  - type: modify_stat
+    stat: AC
+    modifier: 5
+    duration:
+      rounds: 1
+    target:
+      type: self
+  visibility: public
+- id: ent_benediction
+  type: spell
+  name: Bénédiction
+  description: Les alliés gagnent un bonus aux attaques et aux sauvegardes.
+  tags:
+  - enchantement
+  - niveau 1
+  attributes:
+    level: 1
+    school: enchantment
+    castingTime: 1 action
+    range: 30 ft
+    components:
+    - V
+    - S
+    duration: instantaneous
+  effects:
+  - type: consume_resource
+    resource: spell_slot
+    amount: 1
+    level: 1
+    target:
+      type: caster
+  - type: modify_stat
+    stat: attack_bonus
+    modifier: 4
+    duration:
+      minutes: 1
+    target:
+      type: all_players
+  visibility: public
+- id: ent_flamme_sacree
+  type: spell
+  name: Flamme sacrée
+  description: Un feu radieux s’abat sur une cible.
+  tags:
+  - évocation
+  - niveau 0
+  attributes:
+    level: 0
+    school: evocation
+    castingTime: 1 action
+    range: 18 m
+    components:
+    - V
+    - S
+    duration: instantaneous
+  effects:
+  - type: roll_check
+    stat: DEX
+    dc: 13
+    target:
+      type: single
+      entityId: ''
+    outcomeFail:
+    - type: damage
+      amount: 1d8
+      damageType: radiant
+      target:
+        type: single
+        entityId: ''
+  visibility: public
+- id: ent_trait_de_feu
+  type: spell
+  name: Trait de feu
+  description: Une étincelle de feu file vers une cible.
+  tags:
+  - évocation
+  - niveau 0
+  attributes:
+    level: 0
+    school: evocation
+    castingTime: 1 action
+    range: 120 ft
+    components:
+    - V
+    - S
+    duration: instantaneous
+  effects:
+  - type: damage
+    amount: 1d10
+    damageType: fire
+    target:
+      type: single
+      entityId: ''
+  visibility: public
+- id: ent_decharge_occulte
+  type: spell
+  name: Décharge occulte
+  description: Un rayon d’énergie crépitante.
+  tags:
+  - évocation
+  - niveau 0
+  attributes:
+    level: 0
+    school: evocation
+    castingTime: 1 action
+    range: 120 ft
+    components:
+    - V
+    - S
+    duration: instantaneous
+  effects:
+  - type: damage
+    amount: 1d10
+    damageType: force
+    target:
+      type: single
+      entityId: ''
+  visibility: public
+- id: ent_poigne_electrique
+  type: spell
+  name: Poigne électrique
+  description: Un éclair jaillit de votre main et électrise la cible.
+  tags:
+  - évocation
+  - niveau 0
+  attributes:
+    level: 0
+    school: evocation
+    castingTime: 1 action
+    range: touch
+    components:
+    - V
+    - S
+    duration: instantaneous
+  effects:
+  - type: damage
+    amount: 1d8
+    damageType: lightning
+    target:
+      type: single
+      entityId: ''
+  visibility: public
+- id: ent_immobilisation_de_personne
+  type: spell
+  name: Immobilisation de personne
+  description: Un humanoïde que vous voyez doit réussir une sauvegarde de Sagesse ou être paralysé.
+  tags:
+  - enchantement
+  - niveau 2
+  attributes:
+    level: 2
+    school: enchantment
+    castingTime: 1 action
+    range: 18 m
+    components:
+    - V
+    - S
+    duration: instantaneous
+  effects:
+  - type: consume_resource
+    resource: spell_slot
+    amount: 1
+    level: 2
+    target:
+      type: caster
+  - type: roll_check
+    stat: WIS
+    dc: 13
+    target:
+      type: single
+      entityId: ''
+    outcomeFail:
+    - type: apply_condition
+      conditionId: paralyzed
+      duration:
+        minutes: 1
+      target:
+        type: single
+        entityId: ''
+  visibility: public
+- id: ent_foulee_brumeuse
+  type: spell
+  name: Foulée brumeuse
+  description: Entouré un instant d’une brume argentée, vous vous téléportez jusqu’à 9 m.
+  tags:
+  - invocation
+  - niveau 2
+  attributes:
+    level: 2
+    school: conjuration
+    castingTime: 1 action
+    range: 30 ft
+    components:
+    - V
+    - S
+    duration: instantaneous
+  effects:
+  - type: consume_resource
+    resource: spell_slot
+    amount: 1
+    level: 2
+    target:
+      type: caster
+  - type: display_text
+    text: Un filet de brume argentée marque votre départ.
+  visibility: public
+- id: ent_armure_de_mage
+  type: spell
+  name: Armure de mage
+  description: Une force magique protectrice entoure la cible.
+  tags:
+  - abjuration
+  - niveau 1
+  attributes:
+    level: 1
+    school: abjuration
+    castingTime: 1 action
+    range: 30 ft
+    components:
+    - V
+    - S
+    duration: instantaneous
+  effects:
+  - type: consume_resource
+    resource: spell_slot
+    amount: 1
+    level: 1
+    target:
+      type: caster
+  - type: modify_stat
+    stat: AC
+    modifier: 3
+    duration:
+      minutes: 480
+    target:
+      type: single
+      entityId: ''
+  visibility: public
+- id: ent_lumiere
+  type: spell
+  name: Lumière
+  description: L’objet touché émet une vive lumière.
+  tags:
+  - évocation
+  - niveau 0
+  attributes:
+    level: 0
+    school: evocation
+    castingTime: 1 action
+    range: 30 ft
+    components:
+    - V
+    - S
+    duration: instantaneous
+  effects:
+  - type: display_text
+    text: L’objet brille intensément.
+  visibility: public
+- id: ent_mains_brulantes
+  type: spell
+  name: Mains brûlantes
+  description: Une fine nappe de flammes jaillit du bout de vos doigts.
+  tags:
+  - évocation
+  - niveau 1
+  attributes:
+    level: 1
+    school: evocation
+    castingTime: 1 action
+    range: 15 ft cone
+    components:
+    - V
+    - S
+    duration: instantaneous
+  effects:
+  - type: consume_resource
+    resource: spell_slot
+    amount: 1
+    level: 1
+    target:
+      type: caster
+  - type: roll_check
+    stat: DEX
+    dc: 13
+    target:
+      type: all_in_area
+    outcomeFail:
+    - type: damage
+      amount: 3d6
+      damageType: fire
+      target:
+        type: all_in_area
+    outcomeSuccess:
+    - type: damage
+      amount: 3d6/2
+      damageType: fire
+      target:
+        type: all_in_area
+  visibility: public
+- id: ent_eclaireur_gobelin
+  type: monster
+  name: Éclaireur gobelin
+  description: Petit humanoïde sournois tapi dans l’ombre.
+  tags:
+  - monster
+  - CR 0.25
+  - gobelin
+  - humanoïde
+  attributes:
+    hp: 7
+    hpMax: 7
+    ac: 15
+    speed: 30
+    challengeRating: 0.25
+    size: Moyenne
+    abilityScores:
+      STR: 10
+      DEX: 14
+      CON: 10
+      INT: 10
+      WIS: 10
+      CHA: 10
+    initiativeBonus: 2
+    attacks:
+    - name: Cimeterre
+      bonus: 4
+      damage: 1d6+2
+      damageType: slashing
+      rangeMeters: 1.5
+    - name: Arc court
+      bonus: 4
+      damage: 1d6+2
+      damageType: piercing
+      rangeMeters: 24
+      longRangeMeters: 96
+  effects: []
+  visibility: mj_only
+- id: ent_guerrier_gobelin
+  type: monster
+  name: Guerrier gobelin
+  description: Un gobelin plus costaud, armé d’un cimeterre ébréché.
+  tags:
+  - monster
+  - CR 0.25
+  - gobelin
+  - humanoïde
+  attributes:
+    hp: 10
+    hpMax: 10
+    ac: 14
+    speed: 30
+    challengeRating: 0.25
+    size: Moyenne
+    abilityScores:
+      STR: 12
+      DEX: 13
+      CON: 10
+      INT: 10
+      WIS: 10
+      CHA: 10
+    initiativeBonus: 1
+    attacks:
+    - name: Cimeterre
+      bonus: 4
+      damage: 1d6+2
+      damageType: slashing
+      rangeMeters: 1.5
+    - name: Javeline
+      bonus: 3
+      damage: 1d6+1
+      damageType: piercing
+      rangeMeters: 9
+      longRangeMeters: 36
+  effects: []
+  visibility: mj_only
+- id: ent_chef_gobelin
+  type: monster
+  name: Chef gobelin
+  description: Chef rusé de la bande ; ne se bat jamais à la loyale.
+  tags:
+  - monster
+  - CR 1
+  - gobelin
+  - humanoïde
+  - chef
+  attributes:
+    hp: 21
+    hpMax: 21
+    ac: 17
+    speed: 30
+    challengeRating: 1
+    size: Moyenne
+    abilityScores:
+      STR: 10
+      DEX: 14
+      CON: 10
+      INT: 10
+      WIS: 10
+      CHA: 10
+    initiativeBonus: 2
+    attacks:
+    - name: Cimeterre
+      bonus: 4
+      damage: 1d6+2
+      damageType: slashing
+      rangeMeters: 1.5
+    - name: Javeline
+      bonus: 2
+      damage: 1d6
+      damageType: piercing
+      rangeMeters: 9
+      longRangeMeters: 36
+  effects: []
+  visibility: mj_only
+- id: ent_rat_geant
+  type: monster
+  name: Rat géant
+  description: Plus gros qu’un honnête rat n’a le droit de l’être.
+  tags:
+  - monster
+  - CR 0.125
+  - bête
+  attributes:
+    hp: 7
+    hpMax: 7
+    ac: 12
+    speed: 30
+    challengeRating: 0.125
+    size: Moyenne
+    abilityScores:
+      STR: 10
+      DEX: 11
+      CON: 10
+      INT: 10
+      WIS: 10
+      CHA: 10
+    initiativeBonus: 0
+    attacks:
+    - name: Morsure
+      bonus: 4
+      damage: 1d4+2
+      damageType: piercing
+      rangeMeters: 1.5
+  effects: []
+  visibility: mj_only
+- id: ent_araignee_geante
+  type: monster
+  name: Araignée géante
+  description: Huit pattes, huit yeux, et bien trop de patience.
+  tags:
+  - monster
+  - CR 1
+  - bête
+  - araignée
+  attributes:
+    hp: 26
+    hpMax: 26
+    ac: 14
+    speed: 30
+    challengeRating: 1
+    size: Moyenne
+    abilityScores:
+      STR: 10
+      DEX: 16
+      CON: 10
+      INT: 10
+      WIS: 10
+      CHA: 10
+    initiativeBonus: 3
+    attacks:
+    - name: Morsure
+      bonus: 5
+      damage: 1d8+3
+      damageType: piercing
+      rangeMeters: 1.5
+  effects: []
+  visibility: mj_only
+- id: ent_squelette
+  type: monster
+  name: Squelette
+  description: Des os que seule la malveillance tient ensemble.
+  tags:
+  - monster
+  - CR 0.25
+  - mort-vivant
+  attributes:
+    hp: 13
+    hpMax: 13
+    ac: 13
+    speed: 30
+    challengeRating: 0.25
+    size: Moyenne
+    abilityScores:
+      STR: 10
+      DEX: 14
+      CON: 10
+      INT: 10
+      WIS: 10
+      CHA: 10
+    initiativeBonus: 2
+    attacks:
+    - name: Épée courte
+      bonus: 4
+      damage: 1d6+2
+      damageType: piercing
+      rangeMeters: 1.5
+    - name: Arc court
+      bonus: 4
+      damage: 1d6+2
+      damageType: piercing
+      rangeMeters: 24
+      longRangeMeters: 96
+  effects: []
+  visibility: mj_only
+- id: ent_zombie
+  type: monster
+  name: Zombie
+  description: Lent, implacable, affamé.
+  tags:
+  - monster
+  - CR 0.25
+  - mort-vivant
+  attributes:
+    hp: 22
+    hpMax: 22
+    ac: 8
+    speed: 30
+    challengeRating: 0.25
+    size: Moyenne
+    abilityScores:
+      STR: 10
+      DEX: 10
+      CON: 16
+      INT: 10
+      WIS: 10
+      CHA: 10
+    initiativeBonus: 0
+    attacks:
+    - name: Coup
+      bonus: 3
+      damage: 1d6+1
+      damageType: bludgeoning
+      rangeMeters: 1.5
+  effects: []
+  visibility: mj_only
+- id: ent_bandit
+  type: monster
+  name: Bandit
+  description: Un humain masqué en quête d’argent facile.
+  tags:
+  - monster
+  - CR 0.125
+  - humanoïde
+  - criminel
+  attributes:
+    hp: 11
+    hpMax: 11
+    ac: 12
+    speed: 30
+    challengeRating: 0.125
+    size: Moyenne
+    abilityScores:
+      STR: 11
+      DEX: 12
+      CON: 10
+      INT: 10
+      WIS: 10
+      CHA: 10
+    initiativeBonus: 1
+    attacks:
+    - name: Cimeterre
+      bonus: 3
+      damage: 1d6+1
+      damageType: slashing
+      rangeMeters: 1.5
+    - name: Arbalète légère
+      bonus: 3
+      damage: 1d8+1
+      damageType: piercing
+      rangeMeters: 24
+      longRangeMeters: 96
+  effects: []
+  visibility: mj_only
+- id: ent_loup
+  type: monster
+  name: Loup
+  description: Chasseur de meute à la morsure cruelle.
+  tags:
+  - monster
+  - CR 0.25
+  - bête
+  attributes:
+    hp: 11
+    hpMax: 11
+    ac: 13
+    speed: 30
+    challengeRating: 0.25
+    size: Moyenne
+    abilityScores:
+      STR: 10
+      DEX: 15
+      CON: 10
+      INT: 10
+      WIS: 10
+      CHA: 10
+    initiativeBonus: 2
+    attacks:
+    - name: Morsure
+      bonus: 4
+      damage: 2d4+2
+      damageType: piercing
+      rangeMeters: 1.5
+  effects: []
+  visibility: mj_only
+- id: ent_revenant_mort_roi
+  type: monster
+  name: Revenant Mort-Roi
+  description: La dépouille squelettique du roi oublié refuse le repos.
+  tags:
+  - monster
+  - CR 5
+  - mort-vivant
+  - boss
+  - unique
+  attributes:
+    hp: 65
+    hpMax: 65
+    ac: 17
+    speed: 30
+    challengeRating: 5
+    size: Moyenne
+    abilityScores:
+      STR: 18
+      DEX: 14
+      CON: 16
+      INT: 10
+      WIS: 16
+      CHA: 10
+    initiativeBonus: 2
+    attacks:
+    - name: Épée longue maudite
+      bonus: 7
+      damage: 1d8+4
+      damageType: slashing
+      rangeMeters: 1.5
+    - name: Toucher glacial
+      bonus: 6
+      damage: 2d6
+      damageType: necrotic
+      rangeMeters: 1.5
+  effects: []
+  visibility: mj_only
+- id: ent_epee_longue
+  type: item
+  name: Épée longue
+  description: Une épée droite et polyvalente.
+  tags:
+  - arme
+  - de guerre
+  - corps à corps
+  attributes:
+    rarity: common
+    weight: 3
+    value: 15
+  effects: []
+  visibility: public
+- id: ent_arc_court
+  type: item
+  name: Arc court
+  description: Rapide et léger.
+  tags:
+  - arme
+  - distance
+  attributes:
+    rarity: common
+    weight: 3
+    value: 15
+  effects: []
+  visibility: public
+- id: ent_dague
+  type: item
+  name: Dague
+  description: Petite, rapide, facile à dissimuler.
+  tags:
+  - arme
+  - finesse
+  attributes:
+    rarity: common
+    weight: 3
+    value: 15
+  effects: []
+  visibility: public
+- id: ent_potion_de_soins
+  type: item
+  name: Potion de soins
+  description: Une petite fiole de liquide écarlate.
+  tags:
+  - potion
+  - soin
+  - consommable
+  attributes:
+    rarity: uncommon
+    weight: 3
+    value: 15
+  effects: []
+  visibility: public
+- id: ent_chemise_de_mailles
+  type: item
+  name: Chemise de mailles
+  description: De fins anneaux de métal sur un dos de cuir.
+  tags:
+  - armure
+  - intermédiaire
+  attributes:
+    rarity: common
+    weight: 3
+    value: 15
+  effects: []
+  visibility: public
+- id: ent_torche
+  type: item
+  name: Torche
+  description: Brûle une heure et diffuse une faible lumière.
+  tags:
+  - lumière
+  - consommable
+  attributes:
+    rarity: common
+    weight: 3
+    value: 15
+  effects: []
+  visibility: public
+- id: ent_corde_15_m
+  type: item
+  name: Corde (15 m)
+  description: En chanvre, solide.
+  tags:
+  - utilitaire
+  attributes:
+    rarity: common
+    weight: 3
+    value: 15
+  effects: []
+  visibility: public
+- id: ent_grimoire
+  type: item
+  name: Grimoire
+  description: Contient les sorts d’un apprenti mage.
+  tags:
+  - livre
+  - magie
+  - magicien
+  attributes:
+    rarity: common
+    weight: 3
+    value: 15
+  effects: []
+  visibility: public
+- id: ent_symbole_sacre
+  type: item
+  name: Symbole sacré
+  description: Un soleil rayonnant gravé dans l’argent.
+  tags:
+  - focaliseur
+  - clerc
+  attributes:
+    rarity: common
+    weight: 3
+    value: 15
+  effects: []
+  visibility: public
+- id: ent_banniere_gobeline
+  type: item
+  name: Bannière gobeline
+  description: Une bannière délavée et déchirée montrant un gobelin grimaçant.
+  tags:
+  - butin
+  - trophée
+  - unique
+  attributes:
+    rarity: uncommon
+    weight: 3
+    value: 15
+  effects: []
+  visibility: public
+- id: ent_village_de_creux_d_etain
+  type: location
+  name: Village de Creux-d’Étain
+  description: Village minier humide ; rues pavées, fumée d’étain dans l’air.
+  tags:
+  - taverne
+  - village
+  - ville
+  attributes:
+    defaultAmbienceName: Brouhaha de taverne
+  effects: []
+  visibility: public
+- id: ent_l_auberge_de_l_if
+  type: location
+  name: L’Auberge de l’If
+  description: Tables de bois, un feu qui ne réchauffe jamais vraiment, clients louches.
+  tags:
+  - taverne
+  - intérieur
+  attributes:
+    defaultAmbienceName: Brouhaha de taverne
+  effects: []
+  visibility: public
+- id: ent_la_crypte_oubliee
+  type: location
+  name: La Crypte oubliée
+  description: Un sanctuaire de pierre humide enfoui sous une vieille chapelle.
+  tags:
+  - crypte
+  - donjon
+  - souterrain
+  attributes:
+    defaultAmbienceName: Gouttes dans la crypte
+  effects: []
+  visibility: public
+- id: ent_le_bois_des_murmures
+  type: location
+  name: Le Bois des Murmures
+  description: De vieux chênes et un silence qui hérisse la nuque.
+  tags:
+  - forêt
+  - extérieur
+  - nuit
+  attributes:
+    defaultAmbienceName: Forêt de nuit
+  effects: []
+  visibility: public
+- id: ent_chateau_d_aldric
+  type: location
+  name: Château d’Aldric
+  description: Remparts en ruine, bannières d’une maison éteinte.
+  tags:
+  - château
+  - intérieur
+  - noble
+  attributes:
+    defaultAmbienceName: Grand hall de château
+  effects: []
+  visibility: public
+- id: ent_bortrand_le_robuste
+  type: npc
+  name: Bortrand le Robuste
+  description: Bourgmestre de Creux-d’Étain ; épuisé mais déterminé.
+  tags:
+  - conseil-de-creux-d’étain
+  attributes:
+    hp: 12
+    hpMax: 12
+    ac: 12
+    faction: Conseil de Creux-d’Étain
+    status: alive
+    motivation: Protéger son village des raids gobelins.
+    secret: Son fils a été enlevé par les gobelins il y a trois semaines.
+  effects: []
+  visibility: mj_only
+- id: ent_soeur_mira
+  type: npc
+  name: Sœur Mira
+  description: Prêtresse de l’aube à la chapelle du village.
+  tags:
+  - ordre-du-soleil-levant
+  attributes:
+    hp: 12
+    hpMax: 12
+    ac: 12
+    faction: Ordre du Soleil levant
+    status: alive
+    motivation: Découvrir ce qui profane les cryptes sous sa chapelle.
+    secret: Soupçonne le fils du bourgmestre d’être devenu un revenant.
+  effects: []
+  visibility: mj_only
+- id: ent_le_vieux_tomas
+  type: npc
+  name: Le vieux Tomas
+  description: Le forgeron. Connaît tout le monde, doit quelques faveurs, refuse de dire lesquelles.
+  tags:
+  - conseil-de-creux-d’étain
+  attributes:
+    hp: 12
+    hpMax: 12
+    ac: 12
+    faction: Conseil de Creux-d’Étain
+    status: alive
+    motivation: Garder les secrets du village.
+  effects: []
+  visibility: mj_only
+- id: ent_greta_la_brasseuse
+  type: npc
+  name: Greta la Brasseuse
+  description: Tenancière de l’Auberge de l’If. Bruyante, accueillante, traque les ragots comme du gibier.
+  tags:
+  - auberge-de-l’if
+  attributes:
+    hp: 12
+    hpMax: 12
+    ac: 12
+    faction: Auberge de l’If
+    status: alive
+    motivation: Garder ses clients contents et les informations qui circulent.
+  effects: []
+  visibility: mj_only

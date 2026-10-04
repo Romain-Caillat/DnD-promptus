@@ -207,6 +207,10 @@ pub struct PartyMember {
     /// Class, background, the one line that says who they are.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub concept: String,
+    /// The rule system's class this slot is written for, when the prep
+    /// assumes one (`validate::validate_with` checks it exists).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub class: Option<Id>,
 }
 
 /// An act groups nodes; a node names its act.
@@ -270,6 +274,11 @@ pub struct Node {
     /// Where it happens.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<Id>,
+    /// The grid map the scene is played on: a map file's `id`
+    /// (`content/maps/`), not a campaign id. Checked against the maps
+    /// supplied to `validate::validate_with`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub map: Option<String>,
     /// Shown or read to the players when the scene opens.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub read_aloud: String,
@@ -341,12 +350,18 @@ impl Ambience {
 }
 
 /// A YouTube track, chosen by the GM (`media/play-youtube-music`).
+/// A track still to choose has no `url`, only a `search` hint; the
+/// validator reports it and players never receive it.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct MusicTrack {
     pub mood: MusicMood,
     pub title: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub url: String,
+    /// What to search on YouTube while no link is chosen (GM).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub search: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -562,9 +577,16 @@ pub enum Disposition {
 /// Game statistics as written in the prep. Ability keys and damage
 /// formulas are rule-system data: the rules engine reads and checks
 /// them, this model only carries them.
+///
+/// Rules live in one copy (`docs/lecons-des-parties.md` §2): when the
+/// rule system already has the stat block, `from_rules` names it and
+/// the numbers stay there. Fields written next to it override it.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct StatBlock {
+    /// An adversary id of the campaign's rule system.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from_rules: Option<Id>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub abilities: BTreeMap<String, i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -644,6 +666,9 @@ pub struct Item {
     /// rule system.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub effect: String,
+    /// The rule system's item carrying its rule effects, when it has one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from_rules: Option<Id>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<u32>,
     #[serde(default, skip_serializing_if = "Rarity::is_common")]

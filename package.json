@@ -16,6 +16,7 @@
     "lint": "bun run lint:back && bun run lint:front",
     "lint:back": "cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings",
     "lint:front": "cd front && bun run lint && bun run typecheck && bun run knip",
+    "worlds": "cargo run -q -p promptus_shared --bin worlds",
     "db:start": "docker compose -f docker-compose.dev.yml up postgres -d --wait",
     "db:stop": "docker compose -f docker-compose.dev.yml stop postgres",
     "db:reset": "docker compose -f docker-compose.dev.yml down -v && bun run db:start"

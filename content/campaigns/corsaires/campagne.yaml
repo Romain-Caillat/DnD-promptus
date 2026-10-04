@@ -1,0 +1,1833 @@
+# Corsaires de la Couronne — la campagne, acte 1 réécrit
+# (campaign/rewrite-two-worlds).
+#
+# Réécrit, pas transcrit, à partir de dnd-save/DnD-16-05-2026/ (acte 1
+# joué le 16 mai 2026, six joueurs à distance). Ce qui change, et
+# pourquoi (docs/lecons-des-parties.md §2) :
+#   - Les quatre informations dont l'acte 2 a besoin (route du Greyhound,
+#     taille de son escorte, réparation de La Mâchoire, courants au sud
+#     de Belle-Île) ont chacune au moins trois indices, dans des scènes
+#     différentes, dont deux au moins obligatoires. Dans la version jouée,
+#     elles n'étaient que dans la scène 3, facultative (« ils ont pas
+#     réparé le bateau »). La version jouée reste un cas de test :
+#     content/fixtures/corsaires-acte-1-joue.yaml.
+#   - Six emplacements de personnage, et pour chacun une raison d'agir
+#     dans presque chaque scène (champ player_hooks).
+#   - Les règles n'existent qu'en un exemplaire : les fiches chiffrées des
+#     PNJ et les objets de la boutique renvoient au système de règles
+#     (stats.from_rules, items[].from_rules) au lieu de recopier les
+#     nombres. Ses défauts (deux modèles de dégâts…) se corrigent là-bas.
+#   - Toutes les difficultés sont celles du système (5, 10, 15, 20).
+#   - Aucune image importée : chaque champ art / portrait décrit un
+#     visuel en pixel art pour media/draw-pixel-art-assets.
+#   - Ce qui n'existait pas dans la source est marqué « INVENTÉ — à
+#     valider par Romain » dans les notes du MJ.
+#
+# Les identifiants de Gueule-Rouge et de ses marins (gueule-rouge,
+# marin-de-gueule-rouge) sont ceux que la carte quai-port-louis place :
+# ne pas les renommer sans changer la carte.
+format: 1
+id: corsaires-de-la-couronne
+title: Corsaires de la Couronne
+world: Bretagne, printemps 1718
+rules:
+  id: corsaires
+  version: 1
+
+bible:
+  pitch: >-
+    1718. Un équipage de pirates français, connu et recherché, reçoit
+    dans une taverne de Port-Louis les lettres de marque du Roi : s'il
+    intercepte le HMS Greyhound, un navire espion anglais qui porte les
+    plans d'une attaque contre les ports de l'Atlantique, il gagnera le
+    pardon royal et 500 pièces d'or par tête. Il a une nuit pour se
+    préparer.
+  tone: >-
+    Aventure de cape et d'épée, humour de taverne, tension de la nuit
+    avant l'appareillage. Les PNJ sont hauts en couleur ; la menace
+    anglaise est sérieuse.
+  themes:
+    - des hors-la-loi au service de ceux qui voulaient les pendre
+    - la course contre la marée
+    - la loyauté d'un équipage
+  art_direction: >-
+    Pixel art en couleurs sourdes, vue de trois quarts pour les lieux,
+    profils à la Terraria pour les personnages (contour sombre, lumière
+    venue d'en haut, ombre portée vers l'arrière ; héros tournés vers la
+    droite, ennemis vers la gauche). Palette de Port-Louis la nuit :
+    bleu-gris de la brume, noir humide des pavés, ocre des lanternes,
+    rouge sombre des vestes et du sang, or terni des galons royaux. Le
+    bleu roi et l'or de Vaubernier sont les seules couleurs vives. Les
+    gravures à l'encre de la partie jouée ne sont pas reprises.
+  truths:
+    - Une flotte anglaise se rassemble vraiment ; le Greyhound porte ses plans d'attaque.
+    - Le Greyhound longe la côte sud de Belle-Île avant de remonter vers le nord, dans trois jours.
+    - Il n'est pas seul ; un sloop armé de douze canons l'escorte.
+    - La Mâchoire a des traces de boulets mal rebouchées et un gréement lâche ; sans réparation elle ne tiendra pas un combat naval.
+    - Au sud de Belle-Île, le jusant de l'aube porte vers l'est le long de la côte ; un navire caché derrière la pointe de Kerdonis peut surgir dans le dos de qui passe.
+    - Gueule-Rouge veut les lettres de marque ; Fañch, son matelot, courtise Anaïs au Perroquet Noyé et lui sert d'espion.
+  secrets:
+    - Vaubernier sait que le Greyhound est escorté et le tait pour ne pas effrayer l'équipage.
+    - Morel doit 50 PO à des créanciers qui reviennent avant l'aube ; pour sauver sa peau, il donnera tout ce qu'il sait.
+    - Dents-de-Fer cache sous son comptoir une boussole volée à un officier anglais.
+  player_hook: >-
+    Vous êtes l'équipage de La Mâchoire, des pirates que la moitié de la
+    Bretagne voudrait voir pendus. Ce soir, au Perroquet Noyé, quelqu'un
+    de très important vient vous chercher.
+  start_node: sc_perroquet
+
+# Six emplacements, un par joueur. Les classes sont celles du système de
+# règles ; un joueur qui choisit le Flibustier reprend les accroches du
+# Bretteur, un joueur qui choisit le Boucanier celles de la Vigie.
+party:
+  - id: pj_bretteur
+    name: Le Bretteur
+    concept: Lame du bord, maître du duel ; l'honneur de l'équipage passe par son sabre.
+    class: bretteur
+  - id: pj_canonnier
+    name: Le Canonnier
+    concept: Artilleur et artificier, fait parler la poudre.
+    class: canonnier
+  - id: pj_navigateur
+    name: Le Navigateur
+    concept: Lit les vents, les étoiles et les courants ; c'est lui qui trouvera le Greyhound.
+    class: navigateur
+  - id: pj_chirurgien
+    name: Le Chirurgien de bord
+    concept: Recoud, soigne, et voit chez les autres ce qu'ils ne disent pas.
+    class: chirurgien
+  - id: pj_quartier_maitre
+    name: Le Quartier-maître
+    concept: Tient les comptes, les dettes et la parole de l'équipage.
+    class: quartier_maitre
+  - id: pj_vigie
+    name: La Vigie
+    concept: Des yeux partout ; repère le danger avant tout le monde.
+    class: vigie
+
+acts:
+  - id: acte_1
+    title: L'Offre qu'on ne refuse pas
+    summary: >-
+      Au Perroquet Noyé, l'émissaire royal Vaubernier fait de l'équipage
+      des corsaires et l'envoie intercepter le HMS Greyhound au large de
+      Belle-Île. Le groupe a une nuit pour se préparer dans le port —
+      réparer La Mâchoire, s'équiper, apprendre la route et l'escorte du
+      Greyhound — avant de briser l'embuscade de Gueule-Rouge sur le quai
+      et d'appareiller à l'aube.
+    opening: >-
+      Port-Louis, printemps 1718. La brume monte de la rade et avale les
+      lanternes une à une. Au fond du quartier bas, derrière une porte qui
+      ne ferme plus, le Perroquet Noyé sent le rhum renversé, le poisson et
+      le tabac froid. Vous êtes là, à votre table, comme tous les soirs où
+      il n'y a rien à piller.
+    closing: >-
+      Les voiles de La Mâchoire se gonflent dans la nuit. Port-Louis
+      s'efface dans la brume derrière vous. Devant : l'Atlantique noir,
+      Belle-Île quelque part dans l'obscurité, et le HMS Greyhound qui ne
+      vous attendra pas.
+    music:
+      - mood: epic
+        title: High Seas - Pirate Ship Ambience & Adventure Music
+        url: https://www.youtube.com/watch?v=tRfSVhB_HUo
+      - mood: epic
+        title: SAILS | 1 Hour Epic Pirate Adventure Music Mix
+        url: https://www.youtube.com/watch?v=LqVXs4enyG4
+      - mood: epic
+        title: Freehaven – Epic Pirate Fantasy Music | Cinematic High Seas
+        url: https://www.youtube.com/watch?v=lYwu5NYQD3g
+    gm_notes: >-
+      Les six joueurs de la partie du 16 mai (Antoine, Justin, Nadia,
+      Nicolas, Paul, Pierre) restent à associer à leurs emplacements.
+      Fil rouge de l'acte : la marée de l'aube (front_maree) et la
+      rancune de Gueule-Rouge (front_gueule_rouge) avancent pendant que le
+      groupe se prépare ; se séparer au port est la bonne idée et doit se
+      sentir comme telle. Les quatre informations dont l'acte 2 a besoin
+      sont données au moins deux fois dans des scènes obligatoires : si le
+      groupe ne fait qu'un lieu du port, il part quand même en sachant où
+      frapper. INVENTÉ — à valider par Romain : Fañch (le « marin douteux »
+      de la source) comme espion de Gueule-Rouge, l'avance de 50 PO de
+      Vaubernier, la table des marées, les deux horloges, et les indices
+      ajoutés dans les scènes 1, 2 et au quai.
+
+fronts:
+  - id: front_maree
+    name: La marée de l'aube
+    goal: Le Greyhound passe Belle-Île sans que La Mâchoire l'attende.
+    description: >-
+      INVENTÉ — à valider par Romain. Chaque lieu du port visité fait
+      avancer l'horloge d'un cran ; trois petits groupes qui se séparent
+      couvrent trois lieux pour un seul cran.
+    steps:
+      - label: Minuit, la marée monte
+        description: Vaubernier vient de partir ; tout le port est encore ouvert.
+      - label: Deux heures, les portes se ferment
+        description: Les créanciers de Morel arrivent au bureau ; Thomas éteint sa lanterne s'il n'a vu personne.
+      - label: Quatre heures, dernière chance
+        description: Dents-de-Fer remballe son étal ; il reste juste le temps de finir une réparation.
+      - label: L'aube, le jusant
+        description: Il faut larguer les amarres maintenant pour profiter du courant.
+      - label: Trop tard
+        description: >-
+          La Mâchoire rate la marée. Le Greyhound passera Belle-Île avant
+          elle ; l'acte 2 commence en poursuite, sans embuscade possible.
+  - id: front_gueule_rouge
+    name: La rancune de Gueule-Rouge
+    goal: Prendre les lettres de marque et devenir corsaire à la place du groupe.
+    steps:
+      - label: Une oreille qui traîne
+        description: Fañch entend l'offre de Vaubernier et file prévenir son capitaine.
+      - label: La bande se rassemble
+        description: Gueule-Rouge réunit cinq marins dans les entrepôts du quai.
+      - label: L'embuscade
+        description: Ils attendent le groupe entre les entrepôts et l'appontement de La Mâchoire.
+      - label: À bord
+        description: Lassé d'attendre, Gueule-Rouge monte sur La Mâchoire et l'attend sur le pont.
+      - label: La Mâchoire brûle
+        description: Sans lettres, il se venge sur le navire. Plus de navire, plus de mission.
+
+nodes:
+  - id: sc_perroquet
+    act: acte_1
+    title: Le Perroquet Noyé
+    summary: >-
+      Les personnages se présentent, la taverne vit autour d'eux ; trois
+      des informations critiques de l'acte traînent déjà dans la salle
+      pour qui écoute.
+    location: lieu_perroquet
+    read_aloud: >-
+      Salle enfumée, poutres basses, sol qui colle sous les bottes. Au-dessus
+      du comptoir, un perroquet empaillé — et franchement moisi — vous
+      regarde de son œil de verre. Un gamin massacre un air breton à la
+      vielle. Mère Goulven essuie le même verre depuis dix minutes en
+      écoutant tout le monde.
+    ambience:
+      mood: Taverne bruyante, soirée brumeuse de printemps
+      sounds: Vagues au loin, marins ivres, une vielle à roue qui grince
+      music:
+        - mood: calm
+          title: D&D Ambience - Pirate Tavern
+          url: https://www.youtube.com/watch?v=3M24gwUlaCE
+        - mood: calm
+          title: Pirate Tavern | D&D/TTRPG Music | 1 Hour
+          url: https://www.youtube.com/watch?v=x3M-5jMFPMY
+        - mood: calm
+          title: Pirate Tavern Ambience | Pirate Music with Inn Sounds
+          url: https://www.youtube.com/watch?v=jdKxWz2_pBA
+    flow: >-
+      Chaque joueur présente son personnage en deux phrases : à quoi il
+      ressemble et ce qu'il fait à table en ce moment. Le MJ passe la main
+      dans l'ordre des accroches ci-dessous, pour que chacun ait déjà agi
+      avant l'arrivée de Vaubernier. Dix à quinze minutes au plus.
+    hook: >-
+      Jacquot le Sourd titube vers la table, renverse sa chope sur le
+      Bretteur, s'excuse beaucoup trop fort puis s'énerve tout seul.
+    checks:
+      - action: Calmer Jacquot
+        stat: CHA
+        difficulty: 5
+        success: Il s'excuse, ému, et raconte à toute la salle l'état de La Mâchoire (indice cl_coque_jacquot).
+        failure: Il retourne cuver en grommelant.
+        natural_1: Jacquot vomit sur le personnage. La salle éclate de rire.
+        natural_20: Il paie une tournée avec ses trois derniers sous et devient l'ami du groupe pour la soirée.
+      - action: L'intimider en le soulevant de terre
+        stat: FOR
+        difficulty: 5
+        success: Il déguerpit en pleurnichant.
+        failure: Il ne remarque même pas qu'on le menace — il est sourd.
+        natural_1: Le personnage glisse sur le rhum renversé et s'étale.
+        natural_20: Jacquot, impressionné, jure fidélité éternelle et veut s'engager.
+      - action: Esquiver la chope
+        stat: DEX
+        difficulty: 10
+        success: Esquive élégante ; rires et applaudissements.
+        failure: Trempé de bière tiède.
+        natural_1: La chope atterrit sur Fañch, qui se lève, la main sur son couteau ; Anaïs le retient.
+        natural_20: Le personnage rattrape la chope au vol sans en renverser une goutte.
+      - action: Faire parler Mère Goulven
+        stat: CHA
+        difficulty: 10
+        success: Elle parle des voiles anglaises au sud de Belle-Île et du jusant (indices cl_route_goulven et cl_courants_goulven).
+        failure: « Paie ton ardoise d'abord. » Régler les 3 PO de l'ardoise du groupe la fait parler sans jet.
+        natural_1: Elle ressort une vieille ardoise de 10 PO au nom du Quartier-maître.
+        natural_20: Elle ajoute que le gamin à la vielle « en sait plus que moi sur ce qui se passe au port ».
+    npcs:
+      - npc: pnj_goulven
+        role: La tenancière ; rumeurs sur les Anglais et les courants, si on la traite bien ou si on règle l'ardoise.
+      - npc: pnj_jacquot
+        role: Déclencheur comique ; ancien canonnier sourd qui a vu La Mâchoire au chantier.
+      - npc: pnj_rene
+        role: Le gamin à la vielle ; a entendu parler d'un sloop anglais, et a vu un homme en habit chic rôder au port.
+      - npc: pnj_anais
+        role: La fille de Vieux Thomas, attablée avec Fañch ; on la retrouvera plus tard.
+      - npc: pnj_fanch
+        role: Le marin douteux qui courtise Anaïs ; il a l'œil sur la table du groupe.
+    key_points:
+      - Poser les personnages et l'ambiance, pas plus de quinze minutes.
+      - Chaque joueur doit avoir agi avant l'arrivée de Vaubernier (voir les accroches).
+      - Montrer Anaïs et Fañch sans insister ; ils serviront à la scène du chantier et au quai.
+      - La scène se termine par l'arrivée de Vaubernier.
+    transition: La porte s'ouvre d'un coup et le brouhaha s'arrête net.
+    exits:
+      - to: sc_proposition
+        label: Vaubernier entre dans la taverne
+    player_hooks:
+      - character: pj_bretteur
+        reason: La chope de Jacquot finit sur lui, devant toute la salle ; son honneur est en jeu, même face à un ivrogne.
+      - character: pj_canonnier
+        reason: Jacquot a été canonnier sur l'Intrépide, sourd depuis un coup de canon ; il reconnaît un collègue et lui parle à lui seul — à pleine voix.
+      - character: pj_navigateur
+        reason: Mère Goulven a été cuisinière de navire ; elle repère tout de suite celui qui sait lire le ciel et lui parle du courant au sud de Belle-Île.
+      - character: pj_chirurgien
+        reason: Jacquot titube, livide ; seul le Chirurgien voit qu'il est malade autant qu'ivre, et peut lui éviter de s'effondrer.
+      - character: pj_quartier_maitre
+        reason: Mère Goulven a une ardoise de 3 PO au nom de l'équipage ; le Quartier-maître tient les comptes et peut la régler pour lui délier la langue.
+      - character: pj_vigie
+        reason: Le marin attablé avec Anaïs regarde un peu trop la table du groupe ; la Vigie le remarque.
+    art: >-
+      Intérieur de taverne en pixel art, vue de trois quarts : poutres
+      basses noires, chandelles qui crachent une lumière ocre, tables
+      bancales, flaques de rhum qui reflètent les flammes. Au-dessus du
+      comptoir, un perroquet empaillé vert et gris, mité. Dans un coin, un
+      gamin roux avec une vielle à roue cabossée. Fumée en bandes
+      horizontales bleu-gris.
+    gm_notes: >-
+      Changé de la version jouée : difficultés ramenées sur l'échelle du
+      système (calmer un ivrogne est l'exemple même du « Facile ») ;
+      intimider en le soulevant reste de la FOR, l'intimidation verbale
+      serait du CHA. INVENTÉ — à valider par Romain : Jacquot ancien
+      canonnier, l'ardoise de 3 PO, Fañch et Anaïs déjà dans la salle.
+
+  - id: sc_proposition
+    act: acte_1
+    title: La Proposition
+    summary: >-
+      Vaubernier fait des pirates des corsaires de la Couronne et leur
+      confie le Greyhound ; il laisse filer sans le vouloir la route, la
+      présence d'une escorte et l'état de leur navire.
+    location: lieu_perroquet
+    read_aloud: >-
+      La porte claque contre le mur. Un homme entre, totalement déplacé
+      dans ce trou à rats : perruque poudrée, habit de velours bleu roi
+      brodé d'or, bottes cirées. Deux gardes en uniforme le suivent, la
+      main sur l'épée, le regard nerveux. Il traverse la salle sans voir
+      personne, s'assoit à votre table sans y être invité, et pose devant
+      vous un rouleau scellé aux armes de France.
+    ambience:
+      mood: Silence pesant, toute la taverne écoute
+      sounds: Plus un bruit ; le craquement du parquet sous les bottes des gardes
+      music:
+        - mood: tension
+          title: Suspense | D&D/TTRPG Music | 1 Hour
+          url: https://www.youtube.com/watch?v=EApZmmYg_oQ
+        - mood: mystery
+          title: Unveiling Secrets | D&D/TTRPG Mystery Music | 1 Hour
+          url: https://www.youtube.com/watch?v=l-vpJVMWUvk
+        - mood: mystery
+          title: Dark and Mysterious Ambient Music | D&D Ambience
+          url: https://www.youtube.com/watch?v=yEYxnJB4jZs
+    flow: >-
+      Vaubernier présente l'offre (voir key_points), puis laisse les
+      joueurs réagir librement : rien n'est scripté. Il répond aux
+      questions avec hauteur, sans mentir sur la menace. S'ils refusent, il
+      rappelle que l'alternative est la potence, sans forcer. Il part dès
+      que l'offre est acceptée, en précisant qu'il faut appareiller cette
+      nuit, et en laissant une bourse d'avance.
+    hook: Vaubernier pose les lettres de marque sur la table et attend qu'on le remercie.
+    checks:
+      - action: Lire le rapport d'espions joint aux lettres
+        stat: INT
+        difficulty: 10
+        success: Le passage du Greyhound est attendu par le sud de Belle-Île (indice cl_route_rapport).
+        failure: Une écriture serrée, des abréviations de marine royale ; il faudra quelqu'un pour le déchiffrer au calme.
+        natural_1: Le personnage renverse sa chope sur le rapport ; Vaubernier pâlit.
+        natural_20: Il lit aussi la date exacte et l'heure de marée prévue au passage de la pointe.
+      - action: Percer Vaubernier à jour
+        stat: SAG
+        difficulty: 15
+        success: Il cache quelque chose ; acculé, il concède que le Greyhound « n'est pas seul » (indice cl_escorte_vaubernier).
+        failure: Visage de marbre ; impossible de lire quoi que ce soit.
+        natural_1: Vaubernier se sent insulté et retire la bourse d'avance.
+        natural_20: Il avoue aussi la crainte d'un traître à la cour — dont il ne sait rien de plus.
+      - action: Faire parler un garde quand le Comte a le dos tourné
+        stat: CHA
+        difficulty: 10
+        success: Le garde lâche qu'à Lorient on parle d'un sloop anglais armé qui croise au large (indice cl_escorte_vaubernier, autre chemin).
+        failure: Le garde se raidit et regarde droit devant lui.
+        natural_1: Le garde appelle son collègue ; les deux posent la main sur l'épée.
+        natural_20: Il donne aussi le nombre de canons du sloop, douze.
+      - action: Négocier la prime ou l'avance
+        stat: CHA
+        difficulty: 15
+        success: Vaubernier double l'avance (100 PO au lieu de 50), avec une moue de dégoût.
+        failure: « Le pardon du Roi est déjà une générosité. »
+        natural_1: Il rappelle aux gardes l'adresse de la potence la plus proche.
+        natural_20: Il ajoute une lettre de recommandation pour le chantier naval, payée par la Couronne.
+    npcs:
+      - npc: pnj_vaubernier
+        role: L'émissaire royal ; sincère sur la menace, silencieux sur l'escorte.
+      - npc: pnj_goulven
+        role: Témoin ; elle mettra les lettres à l'abri si on le lui demande.
+      - npc: pnj_fanch
+        role: Écoute tout, puis s'éclipse discrètement pendant la négociation.
+    key_points:
+      - L'offre — intercepter le HMS Greyhound qui passe au large de Belle-Île dans trois jours, prendre ses plans d'attaque, les rapporter ; en échange le pardon royal et 500 PO par tête.
+      - La récompense est en pièces d'or (PO).
+      - Vaubernier remarque l'état de La Mâchoire, qu'il a vue en passant au port, et le dit avec mépris (indice cl_coque_vaubernier).
+      - Il nomme ceux qui peuvent aider cette nuit — Guérin le charpentier, le capitaine de port Morel, « et vos fournisseurs habituels ».
+      - Il laisse une bourse de 50 PO d'avance pour les préparatifs.
+      - Il insiste avant de partir — le Greyhound n'attendra pas, il faut appareiller cette nuit même.
+      - Les gardes n'interviennent que si l'on s'en prend physiquement au Comte.
+      - Fañch quitte la taverne pendant la scène ; seule la Vigie peut le voir partir.
+    loot:
+      - coins: 50
+        found: Bourse d'avance de Vaubernier, pour les préparatifs
+    transition: >-
+      Vaubernier se lève, époussette son habit et disparaît dans la brume
+      avec ses gardes. La taverne retrouve son bruit. Il reste quelques
+      heures avant l'aube.
+    exits:
+      - to: sc_port_nuit
+        label: Descendre au port préparer le départ
+    player_hooks:
+      - character: pj_quartier_maitre
+        reason: C'est à lui de discuter les conditions ; sa fausse lettre de marque lui permet de juger si la vraie est authentique.
+      - character: pj_navigateur
+        reason: Le rapport d'espions joint aux lettres parle de vents, de marées et de caps ; il est le seul à pouvoir le lire vite.
+      - character: pj_vigie
+        reason: Elle voit Fañch se glisser dehors au milieu de la négociation, et l'un des gardes qui transpire à grosses gouttes.
+      - character: pj_bretteur
+        reason: Les gardes le jaugent comme le plus dangereux de la table ; un regard de trop et l'épée sort à moitié du fourreau.
+      - character: pj_canonnier
+        reason: Vaubernier demande si l'équipage a « au moins de quoi tirer » ; le Canonnier sait ce qu'il manque en poudre.
+      - character: pj_chirurgien
+        reason: Le Comte a les mains qui tremblent légèrement ; le Chirurgien comprend qu'il a peur de cette mission autant qu'eux.
+    art: >-
+      Pixel art, vue de trois quarts : la même taverne figée, tous les
+      visages tournés vers la porte. Au centre, un aristocrate mince en
+      habit bleu roi et or, perruque blanche, seul personnage aux couleurs
+      vives, pose un parchemin au sceau rouge sur la table des héros. Deux
+      gardes en uniforme blanc et bleu, raides, derrière lui.
+    gm_notes: >-
+      La version jouée ne laissait rien filtrer ici ; les indices sur la
+      route, l'escorte et la coque sont INVENTÉS — à valider par Romain,
+      comme la bourse de 50 PO (elle était dans l'inventaire de Vaubernier
+      mais jamais donnée). Sans elle, les 60 PO de départ du groupe ne
+      suffisaient pas à la fois pour Morel et pour Thomas.
+
+  - id: sc_port_nuit
+    act: acte_1
+    title: Préparatifs au port
+    summary: >-
+      Le port de nuit, d'où l'on voit tout ce qu'il y a à faire. Le groupe
+      choisit où aller et, de préférence, se sépare.
+    location: lieu_port
+    read_aloud: >-
+      Quais glissants, brouillard bas qui rampe depuis la mer, lanternes
+      qui se balancent au vent. Les honnêtes gens dorment. Il ne reste que
+      les contrebandiers, les ivrognes, et ceux qui ont des affaires à
+      régler avant l'aube. Au bout du quai, La Mâchoire tire sur ses
+      amarres.
+    ambience:
+      mood: Nuit de préparatifs, tension qui monte
+      sounds: Clapotis contre les coques, rats entre les caisses, un chien qui aboie au loin
+      music:
+        - mood: exploration
+          title: D&D Ambience - Port During Storm
+          url: https://www.youtube.com/watch?v=eGCsUNVxEd8
+        - mood: tension
+          title: Evening In The City | Guards, Stealthy Figures, Medieval | 1 Hour
+          url: https://www.youtube.com/watch?v=FvgV3G-EnnQ
+        - mood: calm
+          title: D&D Ambience | On The Shore | Coast, Sea, Waves
+          url: https://www.youtube.com/watch?v=4W2EfqdOmiI
+    flow: >-
+      Le MJ décrit le port, puis présente les trois lieux ouverts à cette
+      heure (le marché noir de Kerjean, le chantier naval de Vieux Thomas,
+      le bureau du capitaine de port) et rappelle l'horloge de la marée.
+      Il propose aux joueurs de se séparer par deux, chaque lieu ayant deux
+      personnages qui y ont une raison d'être (voir les accroches des
+      scènes). Les scènes en petit groupe alternent toutes les cinq minutes
+      pour que personne n'attende.
+    hook: Petit René a suivi le groupe depuis la taverne et veut absolument servir à quelque chose.
+    checks:
+      - action: Observer La Mâchoire depuis le quai
+        stat: SAG
+        difficulty: 5
+        success: La pompe de cale tourne seule, le gréement pend ; elle prend l'eau (indice cl_coque_port).
+        failure: Elle a l'air d'un navire. Un navire fatigué.
+        natural_1: Le personnage glisse sur les pavés mouillés et finit dans l'eau froide.
+        natural_20: Il repère aussi la hanche bâbord mal rebouchée, exactement là où Thomas devra travailler.
+      - action: Déchiffrer la table des marées affichée à la capitainerie
+        stat: INT
+        difficulty: 10
+        success: Le jusant commence à l'aube et, à Belle-Île, porte vers l'est le long de la côte sud (indice cl_courants_marees).
+        failure: Des colonnes de chiffres ; on retient qu'il faut partir à l'aube.
+        natural_1: Le personnage arrache l'affiche en voulant la lire de plus près ; un guetteur siffle.
+        natural_20: Il calcule l'heure exacte où le courant sera le plus fort à la pointe de Kerdonis.
+      - action: Scruter les quais à la longue-vue
+        stat: SAG
+        difficulty: 10
+        success: Des silhouettes s'installent entre les caisses près de l'appontement (indice cl_espion_ombres).
+        failure: Brouillard, lanternes, rien d'autre.
+        natural_1: La lentille reflète une lanterne ; quelqu'un, là-bas, a vu qu'on le cherchait.
+        natural_20: Elle compte six silhouettes, et reconnaît la cicatrice rouge de Gueule-Rouge.
+    npcs:
+      - npc: pnj_rene
+        role: Suit le groupe ; connaît chaque recoin du port et sait que les pêcheurs de Locmaria voient passer les Anglais par le sud.
+    key_points:
+      - Présenter les trois lieux et l'horloge de la marée ; se séparer couvre plus de terrain pour le même temps.
+      - Les trois lieux sont facultatifs ; rien de ce qui est nécessaire à l'acte 2 n'y est seulement.
+      - Petit René peut guider un groupe et rapporter ce que fait un autre.
+    transition: Chacun part vers son affaire ; on se retrouve au navire avant l'aube.
+    exits:
+      - to: sc_marche_noir
+        label: Le marché noir de Kerjean
+      - to: sc_chantier
+        label: Le chantier naval
+      - to: sc_bureau_morel
+        label: Le bureau du capitaine de port
+      - to: sc_quai
+        label: Retourner directement à La Mâchoire
+    player_hooks:
+      - character: pj_vigie
+        reason: Avec sa longue-vue, elle peut voir, depuis la jetée, ce qui se prépare près de l'appontement.
+      - character: pj_navigateur
+        reason: La table des marées affichée sur la capitainerie est faite pour lui.
+      - character: pj_quartier_maitre
+        reason: C'est à lui de répartir l'équipage et la bourse d'avance entre les trois lieux.
+    art: >-
+      Pixel art, vue de trois quarts : un port breton de nuit, quais de
+      pierre mouillée, brick à deux mâts amarré au bout d'un appontement,
+      lanternes ocre qui se balancent, caisses et cordages. La citadelle de
+      Port-Louis en silhouette sur la colline. Brouillard bleu-gris en
+      bandes, lune voilée.
+    gm_notes: >-
+      La version jouée avait une seule « scène 3 » facultative. Ici le
+      port est une scène obligatoire courte, qui porte elle-même deux
+      indices critiques, et les trois lieux sont des scènes facultatives.
+      INVENTÉ — à valider par Romain : la table des marées, Petit René qui
+      suit le groupe, la proposition de se séparer par deux.
+
+  - id: sc_marche_noir
+    act: acte_1
+    title: Le marché noir de Kerjean
+    optional: true
+    summary: >-
+      Dents-de-Fer vend de tout, plus cher qu'en plein jour. Il sait des
+      choses sur les Anglais et cache une boussole sous son comptoir.
+    location: lieu_marche_noir
+    read_aloud: >-
+      Une arrière-cour coincée entre deux entrepôts, des lanternes à huile
+      pendues à des clous rouillés. Des caisses empilées servent de
+      comptoir. Ça sent le goudron et la poudre. Un homme trapu vous
+      accueille d'un sourire où brillent trois dents de métal.
+    ambience:
+      mood: Marchandage à la lanterne, un peu louche
+      sounds: Cliquetis de métal, une caisse qu'on cloue, chuchotements
+      music:
+        - mood: tension
+          title: Evening In The City | Guards, Stealthy Figures, Medieval | 1 Hour
+          url: https://www.youtube.com/watch?v=FvgV3G-EnnQ
+    flow: >-
+      Dents-de-Fer étale sa marchandise et négocie tout. On peut acheter,
+      marchander, fouiner. S'il sent un bon client, il parle des marins
+      anglais vus à Lorient et sort la boussole de sous le comptoir.
+    hook: « Spécial pour les amis », dit-il avant même de connaître vos noms.
+    checks:
+      - action: Marchander
+        stat: CHA
+        difficulty: 10
+        success: Un objet au choix à moitié prix (arrondi en faveur de Dents-de-Fer).
+        failure: Le prix ne bouge pas.
+        natural_1: Il augmente tous ses prix de 2 PO « pour le dérangement ».
+        natural_20: Il lâche aussi la boussole d'amiral pour 15 PO.
+      - action: Fouiner dans les caisses autour de l'étal
+        stat: SAG
+        difficulty: 15
+        success: Une boussole gravée aux armes anglaises dépasse d'un sac sous le comptoir.
+        failure: Des clous, de la ficelle, un rat.
+        natural_1: Une pile de caisses s'effondre ; Dents-de-Fer ajoute la casse à la note.
+        natural_20: Le personnage trouve aussi une lettre anglaise froissée (indice cl_escorte_dents, autre chemin).
+      - action: Le pousser à parler des Anglais
+        stat: CHA
+        difficulty: 10
+        success: Des marins anglais à Lorient la semaine dernière, venus d'un sloop armé (indices cl_lorient_dents et cl_escorte_dents).
+        failure: « Moi, je vends. Les nouvelles, c'est en plus. » Un achat de 10 PO ou plus le fait parler sans jet.
+        natural_1: Il se méfie et cache aussitôt la boussole ailleurs.
+        natural_20: Il sait aussi que ces marins cherchaient de la poudre en quantité — une flotte qui s'arme.
+    npcs:
+      - npc: pnj_dents_de_fer
+        role: Le seul fournisseur ouvert à cette heure ; négocie tout, sait des choses sur les Anglais.
+    key_points:
+      - Tout est plus cher qu'en plein jour, et il négocie sur tout.
+      - Les effets des objets sont ceux du système de règles ; s'ils prêtent à confusion, le noter pour les règles plutôt que trancher ici.
+      - La boussole d'amiral ne sort que pour un bon client ou un fouineur heureux.
+    loot:
+      - item: obj_boussole_amiral
+        found: Sous le comptoir de Dents-de-Fer (25 PO, ou moins pour un bon client)
+        hidden: true
+    transition: Les bras chargés, le groupe repart vers le quai.
+    exits:
+      - to: sc_quai
+        label: Rejoindre La Mâchoire
+      - to: sc_chantier
+        label: Passer au chantier naval
+      - to: sc_bureau_morel
+        label: Passer au bureau du capitaine de port
+    player_hooks:
+      - character: pj_canonnier
+        reason: La poudre, les barils et le pistolet sont là ; sans eux, le canon de La Mâchoire tirera à blanc.
+      - character: pj_quartier_maitre
+        reason: Dents-de-Fer arrondit tout en sa faveur ; c'est au Quartier-maître de défendre la bourse de l'équipage.
+      - character: pj_bretteur
+        reason: Une épée de bonne facture l'attend sur l'étal, et Dents-de-Fer le sait.
+    if_skipped: >-
+      Rien de critique ici. L'escorte est aussi donnée au Perroquet (René),
+      par Vaubernier ou son garde, au quai (Gueule-Rouge) et chez Morel.
+    art: >-
+      Pixel art, vue de trois quarts : arrière-cour étroite entre deux
+      murs d'entrepôt, lanternes accrochées à des clous, caisses en guise
+      de comptoir couvertes de sabres, pistolets et barils de poudre. Un
+      marchand trapu au bonnet de laine, trois dents de métal qui
+      accrochent la lumière.
+    gm_notes: >-
+      Boutique de la version jouée, sans ses nombres : chaque objet renvoie
+      à l'objet du système de règles. Le pistolet du marché noir y lance
+      1d8 quand le « Tir de silex » du Canonnier fait 4 dégâts fixes, et
+      l'« épée standard » et les « jets de soin » n'existent nulle part :
+      défauts à trancher dans le système de règles (engine/lint-rule-system
+      doit les signaler), pas dans la campagne.
+
+  - id: sc_chantier
+    act: acte_1
+    title: Le chantier naval
+    optional: true
+    summary: >-
+      Vieux Thomas peut remettre La Mâchoire en état cette nuit, mais il a
+      la tête ailleurs — sa fille Anaïs est au Perroquet avec un marin qui
+      ne lui plaît pas.
+    location: lieu_chantier
+    read_aloud: >-
+      Les cales sèches dorment à moitié dans l'ombre. Sous une lanterne, un
+      vieil homme voûté rabote une planche avec des gestes d'horloger. Il
+      ne lève pas la tête. « Votre rafiot, là-bas, il prend l'eau. Vous le
+      savez, au moins ? »
+    ambience:
+      mood: Atelier nocturne, calme et inquiet
+      sounds: Rabot sur le bois, clapotis contre la coque, une lanterne qui grésille
+      music:
+        - mood: calm
+          title: D&D Ambience | On The Shore | Coast, Sea, Waves
+          url: https://www.youtube.com/watch?v=4W2EfqdOmiI
+    flow: >-
+      Thomas diagnostique La Mâchoire sans qu'on lui demande. Il propose
+      un marché plutôt que de demander de l'aide — ramener Anaïs, et il
+      répare gratis dans l'heure, solidement. Sinon, 25 PO pour un travail
+      à moitié fait. Pendant qu'il travaille, il parle de la mer à qui sait
+      l'écouter.
+    hook: Thomas pose son rabot et regarde vers le Perroquet Noyé, dont on voit les fenêtres jaunes.
+    checks:
+      - action: Gagner sa confiance
+        stat: CHA
+        difficulty: 10
+        success: Il avoue sa peur que sa fille embarque et ne revienne jamais, comme sa femme ; il parle aussi du courant de Kerdonis.
+        failure: Il grogne et retourne à son rabot ; le marché tient toujours.
+        natural_1: Il prend la question pour de la pitié et double son prix.
+        natural_20: Il montre le médaillon de sa femme et promet de garder La Mâchoire comme si c'était la sienne.
+      - action: Aider à la réparation
+        stat: FOR
+        difficulty: 10
+        success: La réparation va deux fois plus vite ; l'horloge de la marée n'avance pas pour ce lieu.
+        failure: On porte des planches ; ça ne va pas plus vite.
+        natural_1: Une planche glisse et part à la mer ; il faut aller la repêcher.
+        natural_20: Thomas, impressionné, renforce aussi le gréement.
+    npcs:
+      - npc: pnj_thomas
+        role: Charpentier naval ; seul à pouvoir réparer La Mâchoire cette nuit.
+    key_points:
+      - Le marché — ramener Anaïs, et la réparation est gratuite, rapide et solide (La Mâchoire commence l'acte 2 réparée).
+      - Sans le service, 25 PO pour un travail à moitié fait (La Mâchoire commence l'acte 2 rafistolée).
+      - Thomas connaît le courant de Kerdonis comme sa poche.
+    transition: Thomas allume une deuxième lanterne et se met au travail sur la coque.
+    exits:
+      - to: sc_anais
+        label: Aller chercher Anaïs au Perroquet Noyé
+      - to: sc_quai
+        label: Rejoindre La Mâchoire
+      - to: sc_marche_noir
+        label: Passer au marché noir
+      - to: sc_bureau_morel
+        label: Passer au bureau du capitaine de port
+    player_hooks:
+      - character: pj_navigateur
+        reason: Thomas a navigué quarante ans ; il parle du courant de Kerdonis à qui sait déjà ce qu'est un jusant.
+      - character: pj_chirurgien
+        reason: Derrière la rudesse de Thomas, le Chirurgien voit un père mort d'inquiétude.
+      - character: pj_canonnier
+        reason: Les sabords de La Mâchoire sont mal calfatés ; le Canonnier sait où un tir de bordée fera céder la coque.
+    if_skipped: >-
+      La nécessité de réparer est aussi dite par Jacquot (Perroquet), par
+      Vaubernier, et se voit depuis le quai. Si personne ne vient ici,
+      Thomas, prévenu par Petit René, arrive en courant au quai après la
+      bagarre et propose un rafistolage pendant le chargement (25 PO,
+      travail à moitié fait).
+    art: >-
+      Pixel art, vue de trois quarts : cale sèche de nuit, un brick usé
+      sur ses tins, coque rapiécée, échafaudage contre le bordé. Un vieil
+      homme voûté à barbe blanche travaille seul sous une lanterne, copeaux
+      au sol, eau noire au fond du bassin.
+    gm_notes: >-
+      La source plaçait La Mâchoire au chantier ; ici elle est amarrée à
+      l'appontement du quai, comme sur la carte quai-port-louis, et Thomas
+      travaille dessus depuis la remise du chantier qui donne sur le quai.
+
+  - id: sc_anais
+    act: acte_1
+    title: Ramener Anaïs
+    optional: true
+    summary: >-
+      Retour au Perroquet Noyé pour convaincre Anaïs de rentrer, ou Fañch
+      de la lâcher. Fañch, lui, n'est plus là — ou y revient pour savoir où
+      va le groupe.
+    location: lieu_perroquet
+    read_aloud: >-
+      La taverne s'est vidée de moitié. À une table du fond, une jeune
+      femme aux cheveux noués d'un ruban rouge joue aux cartes avec des
+      marins. Elle vous voit entrer et lève les yeux au ciel. « C'est mon
+      père qui vous envoie, c'est ça ? »
+    ambience:
+      mood: Fin de soirée, on range les chaises
+      sounds: Chopes qu'on empile, un ivrogne qui chante faux
+      music:
+        - mood: calm
+          title: Pirate Tavern Ambience | Pirate Music with Inn Sounds
+          url: https://www.youtube.com/watch?v=jdKxWz2_pBA
+    flow: >-
+      Anaïs rêve de prendre la mer et trouve son père étouffant. Fañch lui
+      a promis de l'emmener. Elle se laisse convaincre par la vérité, pas
+      par la force. Elle raconte que Fañch lui a posé beaucoup de questions
+      sur « le monsieur en bleu » et ses papiers.
+    hook: Anaïs refuse d'abord de bouger ; elle attend Fañch, qui est « sorti voir un ami ».
+    checks:
+      - action: La convaincre de rentrer
+        stat: CHA
+        difficulty: 10
+        success: Elle rentre chez son père ; Thomas tient parole.
+        failure: Elle reste ; il faudra revenir avec un meilleur argument, ou payer Thomas.
+        natural_1: Elle se fâche et part rejoindre Fañch — sur le quai.
+        natural_20: Elle rentre, et dit tout de Fañch et de son capitaine (indice cl_espion_anais).
+      - action: Lui dire ce que Fañch prépare
+        stat: SAG
+        difficulty: 10
+        success: Elle comprend qu'il se servait d'elle, et rentre d'elle-même (indice cl_espion_anais).
+        failure: Elle défend Fañch avec véhémence.
+        natural_1: Elle accuse le groupe de mentir et sort en claquant la porte.
+        natural_20: Elle se souvient que Fañch portait un bout de carte marine « pour la route de Belle-Île ».
+    npcs:
+      - npc: pnj_anais
+        role: La fille de Thomas ; veut voir la mer, se laisse convaincre par la vérité.
+      - npc: pnj_goulven
+        role: Prend le parti du père ; aide si on la ménage.
+    key_points:
+      - Anaïs se convainc, elle ne s'arrache pas ; la force la braque.
+      - C'est ici qu'on peut apprendre que Fañch espionne pour Gueule-Rouge.
+    transition: Anaïs prend son châle ; on la raccompagne jusqu'au chantier.
+    exits:
+      - to: sc_quai
+        label: Raccompagner Anaïs et rejoindre La Mâchoire
+    player_hooks:
+      - character: pj_chirurgien
+        reason: Anaïs se confie plus volontiers à celui qui écoute qu'à celui qui commande.
+      - character: pj_quartier_maitre
+        reason: Il peut lui proposer mieux que Fañch — une vraie place à bord un jour, contre une parole tenue.
+      - character: pj_bretteur
+        reason: Si Fañch revient, c'est au Bretteur qu'il cherchera querelle.
+    if_skipped: >-
+      Rien de critique ici ; l'embuscade se devine aussi depuis la jetée,
+      et le fragment de carte est sur Fañch au quai.
+    art: >-
+      Pixel art, vue de trois quarts : la taverne à moitié vide, chaises
+      retournées sur les tables, une jeune femme brune au ruban rouge qui
+      tient une main de cartes, chandelles presque consumées.
+    gm_notes: >-
+      INVENTÉ — à valider par Romain : la source disait seulement « un
+      marin douteux » ; ici c'est Fañch, le matelot de Gueule-Rouge, ce qui
+      relie le service de Thomas à l'embuscade du quai.
+
+  - id: sc_bureau_morel
+    act: acte_1
+    title: Le bureau du capitaine de port
+    optional: true
+    summary: >-
+      Morel vend ce qu'il sait au plus offrant ; ses créanciers lui ont
+      laissé jusqu'à l'aube. Le sortir de là lui délie la langue.
+    location: lieu_bureau_port
+    read_aloud: >-
+      Un bâtiment de pierre, le blason de la marine royale au-dessus de la
+      porte. Mais c'est la porte de derrière qui est entrouverte, comme
+      d'habitude. Dedans, ça sent le tabac et le vin bon marché. Un homme
+      bedonnant, moustache cirée, sursaute derrière son bureau en vous
+      voyant, la main déjà sur sa bouteille.
+    ambience:
+      mood: Bureau sordide, peur mal cachée
+      sounds: Une pendule, la bouteille qu'on repose, des pas dehors qui font sursauter Morel
+      music:
+        - mood: tension
+          title: D&D Ambience - Port During Storm
+          url: https://www.youtube.com/watch?v=eGCsUNVxEd8
+    flow: >-
+      Morel vend la route du Greyhound (30 PO), la taille de son escorte
+      (20 PO) ou les deux (40 PO). Il cache qu'il a peur — 50 PO de dettes
+      de jeu, des créanciers qui reviennent avant l'aube. Régler sa dette,
+      ou faire fuir les créanciers, et il donne tout pour rien, registres
+      ouverts.
+    hook: Des pas s'arrêtent devant la porte de devant, puis repartent. Morel blêmit.
+    checks:
+      - action: Faire baisser son prix
+        stat: CHA
+        difficulty: 10
+        success: Le lot à 30 PO.
+        failure: Les prix ne bougent pas.
+        natural_1: Il appelle « la garde » — qui ne vient pas, mais il ne vend plus rien sans voir l'argent d'abord.
+        natural_20: Il donne la route gratis « pour la Couronne », en espérant une protection.
+      - action: Faire fuir les créanciers quand ils reviennent
+        stat: CHA
+        difficulty: 15
+        success: Ils partent en promettant de revenir — plus tard, beaucoup plus tard. Morel donne tout.
+        failure: Ils exigent l'argent maintenant ; Morel supplie le groupe de payer.
+        natural_1: Les créanciers prennent le groupe pour les associés de Morel et lui ajoutent leur dette.
+        natural_20: Ils effacent la dette et offrent un verre au groupe ; on ne sait pas trop pourquoi.
+      - action: Lire ses registres par-dessus son épaule
+        stat: DEX
+        difficulty: 15
+        success: La route du Greyhound, notée dans les rapports de patrouille, sans payer (indice cl_route_morel).
+        failure: Morel referme le registre d'un coup sec.
+        natural_1: Il voit le geste et triple ses prix.
+        natural_20: Le personnage lit aussi la composition de l'escorte (indice cl_escorte_morel).
+    npcs:
+      - npc: pnj_morel
+        role: Officier de port corrompu ; vend ses informations, terrifié par ses créanciers.
+    key_points:
+      - Prix — route 30 PO, escorte 20 PO, les deux 40 PO.
+      - Régler les 50 PO de dettes, ou faire fuir les créanciers, donne tout gratuitement.
+      - Le Registre de comptes du Quartier-maître connaît ces créanciers.
+    transition: Morel se ressert un verre ; pour la première fois de la soirée, ses mains ne tremblent plus.
+    exits:
+      - to: sc_quai
+        label: Rejoindre La Mâchoire
+      - to: sc_marche_noir
+        label: Passer au marché noir
+      - to: sc_chantier
+        label: Passer au chantier naval
+    player_hooks:
+      - character: pj_quartier_maitre
+        reason: Son Registre de comptes porte le nom des créanciers de Morel ; il sait combien et à qui.
+      - character: pj_vigie
+        reason: Par la porte de derrière, elle voit les créanciers revenir avant tout le monde.
+      - character: pj_chirurgien
+        reason: Les mains moites et le teint de Morel ne viennent pas que du vin ; le Chirurgien sait reconnaître la peur.
+    if_skipped: >-
+      La route est aussi chez Mère Goulven, dans le rapport de Vaubernier
+      et dans la bouche de Petit René ; l'escorte chez René, Vaubernier ou
+      son garde, Dents-de-Fer et Gueule-Rouge vaincu.
+    art: >-
+      Pixel art, vue de trois quarts : petit bureau officiel la nuit,
+      blason de la marine au mur, cartes marines et registres empilés,
+      bouteille de vin à moitié vide. Un officier bedonnant en uniforme
+      défraîchi, moustache cirée, avachi derrière le bureau ; porte de
+      derrière entrouverte sur le brouillard.
+    gm_notes: >-
+      Dans la version jouée, c'était le seul endroit où trouver la route
+      et l'escorte ; c'est ce qui a manqué à l'acte 2. Morel n'est plus
+      qu'un raccourci.
+
+  - id: sc_quai
+    act: acte_1
+    title: La bagarre du quai
+    summary: >-
+      Gueule-Rouge et ses marins barrent la route de La Mâchoire et
+      veulent les lettres de marque. Combat d'apprentissage, à six contre
+      six.
+    location: lieu_quai
+    map: quai-port-louis
+    read_aloud: >-
+      Le quai est désert. Trop désert. Entre les caisses, des silhouettes
+      se détachent du brouillard. Un colosse se plante devant vous, une
+      cicatrice rouge vif en travers de la joue, cinq marins armés dans son
+      dos. « Des lettres de marque, à vous ? C'est mon port, mes eaux. C'est
+      moi le corsaire. Donnez-les, et vous pourrez peut-être nager jusqu'à
+      votre baille. »
+    ambience:
+      mood: Tension, puis combat dans le brouillard
+      sounds: Lames qu'on tire, planches qui grincent, l'eau sous l'appontement
+      music:
+        - mood: combat
+          title: Ship Combat | D&D/TTRPG Battle Music | 1 Hour
+          url: https://www.youtube.com/watch?v=YWLllXzFFA8
+        - mood: combat
+          title: Pirate Attack! | D&D/TTRPG Battle Music | 1 Hour
+          url: https://www.youtube.com/watch?v=c4-S9N1ecOo
+        - mood: combat
+          title: Skirmish on the High Seas | 1 Hour Pirate Combat Music
+          url: https://www.youtube.com/watch?v=WOx_2u3EYbU
+    flow: >-
+      Gueule-Rouge fanfaronne, puis attaque : il est trop orgueilleux pour
+      reculer devant ses hommes. Seule une idée vraiment créative évite le
+      combat. Premier tour expliqué pas à pas (initiative, deux actions,
+      jet d'attaque contre la CA) ; ensuite, rythme rapide. Le décor sert —
+      caisses pour se percher, cordages à couper, tonneaux de rhum.
+    hook: Gueule-Rouge tend la main vers les lettres de marque.
+    checks:
+      - action: Grimper sur les caisses empilées
+        stat: DEX
+        difficulty: 5
+        success: Le personnage est en hauteur (situation « en hauteur » du système).
+        failure: Il glisse et perd l'action.
+        natural_1: La pile s'effondre sur lui et sur le marin le plus proche.
+        natural_20: Il saute de la pile directement sur un marin.
+      - action: Couper un cordage pour lâcher une charge
+        stat: DEX
+        difficulty: 10
+        success: Une palanquée de tonneaux roule sur les marins ; deux d'entre eux perdent leur prochaine action.
+        failure: Le cordage tient.
+        natural_1: La charge tombe du mauvais côté, sur un allié.
+        natural_20: La charge bloque aussi la fuite des marins vers les rues.
+      - action: Sommer les marins de se rendre
+        stat: CHA
+        difficulty: 10
+        success: Si Gueule-Rouge est à terre ou si trois marins sont tombés, ceux qui restent lâchent leurs armes.
+        failure: Ils hésitent, mais restent.
+        natural_1: Ils se ruent sur celui qui a parlé.
+        natural_20: Ils changent de camp et offrent de porter les barils à bord.
+      - action: Repérer la trappe sous l'appontement
+        stat: SAG
+        difficulty: 15
+        success: La cachette de la bande, avec du rhum de contrebande et une bourse.
+        failure: Des planches mouillées.
+        natural_1: Le personnage passe le pied au travers d'une planche pourrie.
+        natural_20: Il y trouve aussi une lettre de Gueule-Rouge à Fañch sur la route de Belle-Île.
+    npcs:
+      - npc: gueule-rouge
+        role: Le chef de la bande ; veut les lettres de marque et vise le personnage qui a l'air le plus fort.
+      - npc: pnj_fanch
+        role: Dans les rangs de Gueule-Rouge ; il porte le fragment de carte.
+    key_points:
+      - Combat tutoriel — prendre le temps d'expliquer le premier tour, puis accélérer ; quinze à vingt minutes en tout.
+      - Les marins sont faibles exprès ; les joueurs doivent se sentir puissants.
+      - Six contre six — jouer les marins d'un bloc, chacun frappant le personnage le plus proche, pour que le tour des adversaires tienne en une minute.
+      - Le fragment de carte est sur Fañch ; vaincu ou fouillé, il le lâche.
+    encounter:
+      opponents:
+        - who: gueule-rouge
+        - who: marin-de-gueule-rouge
+          count: 4
+        - who: pnj_fanch
+      tactics:
+        - Les marins foncent sur les joueurs un par un, sans coordination ; ce sont des brutes, pas des soldats.
+        - Gueule-Rouge vise le personnage qui a l'air le plus fort, ou celui qui l'a le plus insulté, et le provoque en duel.
+        - Fañch reste en arrière et tente d'atteindre La Mâchoire pour fouiller la cabine à la recherche des lettres.
+      morale:
+        - when: Trois marins sont tombés
+          then: Les deux derniers tentent de fuir vers les rues.
+        - when: Gueule-Rouge tombe
+          then: Tous les marins restants fuient immédiatement ; Fañch se rend s'il est acculé.
+      on_victory: >-
+        Gueule-Rouge est à terre, ses marins enfuis ou au sol. La route de
+        La Mâchoire est libre. Vaincu, Gueule-Rouge crache ce qu'il sait du
+        Greyhound pour sauver sa fierté.
+      on_defeat: >-
+        Gueule-Rouge fouille le groupe mais ne trouve pas les lettres (un
+        joueur les a cachées, ou Mère Goulven les garde au comptoir). Les
+        personnages se réveillent quelques minutes plus tard, cabossés mais
+        vivants, et peuvent appareiller ; Fañch a pris le fragment de carte.
+    loot:
+      - coins: 15
+        found: En vrac dans les poches des marins
+      - coins: 20
+        found: La bourse en cuir de Gueule-Rouge
+      - item: obj_fragment_carte
+        found: Sur Fañch
+      - item: obj_sabre_gueule_rouge
+        found: Le sabre d'abordage de Gueule-Rouge
+      - coins: 15
+        found: Bourse et rhum de contrebande dans la trappe sous l'appontement
+        hidden: true
+    xp:
+      - amount: 1
+        reason: Avoir défendu les lettres de marque (en plus de l'XP des jets, selon le système de règles)
+    transition: >-
+      Plus rien ne bouge sur le quai. On monte les barils à bord, on largue
+      les amarres. Il faut partir avec la marée.
+    exits:
+      - to: sc_depart
+        label: Monter à bord et appareiller
+    player_hooks:
+      - character: pj_bretteur
+        reason: Gueule-Rouge le provoque en duel devant ses hommes ; le battre fait fuir toute la bande.
+      - character: pj_vigie
+        reason: Perchée sur les caisses, elle domine le quai et peut tirer d'en haut.
+      - character: pj_canonnier
+        reason: Les tonneaux de rhum et la poudre achetée sont autant d'explosifs improvisés.
+      - character: pj_navigateur
+        reason: Le fragment de carte que porte Fañch montre les courants qu'il est le seul à savoir lire.
+      - character: pj_chirurgien
+        reason: Premier combat, premiers blessés ; c'est lui qui relève ceux qui tombent avant les trois tours.
+      - character: pj_quartier_maitre
+        reason: Dès que Gueule-Rouge tombe, une sommation bien placée fait déposer les armes à toute la bande.
+    art: >-
+      Pixel art, vue de trois quarts : quai de pierre de nuit, brouillard
+      épais, caisses et tonneaux empilés, cordages enroulés, un brick amarré
+      au bout de l'appontement avec son fanal allumé. Un colosse à la
+      cicatrice rouge et cinq marins sortent de l'ombre, tournés vers la
+      gauche ; les héros entrent par la gauche, tournés vers la droite.
+    gm_notes: >-
+      Carte de la rencontre — quai-port-louis ; Fañch y occupe la place de
+      marin-5. Les fiches chiffrées sont dans le système de règles
+      (gueule_rouge, marin_de_gueule_rouge). Dans la version jouée, chaque
+      touche donnait +1 XP, ce qui emballe l'économie ; c'est une règle à
+      revoir dans le système, pas ici. INVENTÉ — à valider par Romain : les
+      jets de décor, Fañch parmi les marins, les aveux de Gueule-Rouge.
+
+  - id: sc_depart
+    act: acte_1
+    title: Le départ de La Mâchoire
+    summary: >-
+      La Mâchoire quitte Port-Louis avec le jusant. Avant de prendre la
+      mer, le groupe met en commun ce qu'il sait pour l'acte 2.
+    location: lieu_machoire
+    requires:
+      - rev_route
+      - rev_escorte
+      - rev_coque
+      - rev_courants
+    read_aloud: >-
+      Les voiles se gonflent dans la nuit. Port-Louis s'efface dans la
+      brume. Devant : l'Atlantique noir, Belle-Île quelque part dans
+      l'obscurité, et le HMS Greyhound qui ne vous attendra pas.
+    ambience:
+      mood: Départ en mer, ouverture vers l'inconnu
+      sounds: Voiles qui claquent, grincement des haubans, la houle du large
+      music:
+        - mood: epic
+          title: High Seas - Pirate Ship Ambience & Adventure Music
+          url: https://www.youtube.com/watch?v=tRfSVhB_HUo
+        - mood: epic
+          title: SAILS | 1 Hour Epic Pirate Adventure Music Mix
+          url: https://www.youtube.com/watch?v=LqVXs4enyG4
+    flow: >-
+      Court moment de jeu à bord. Le MJ demande aux joueurs ce que leurs
+      personnages savent du Greyhound, de son escorte, de l'état de La
+      Mâchoire et des courants ; ce qui manque, il le glisse dans la
+      conversation de bord. On répartit le butin, on fixe le cap.
+    key_points:
+      - Vérifier à voix haute les quatre informations de l'acte 2 — route, escorte, état du navire, courants.
+      - Noter l'état de La Mâchoire — réparée par Thomas, rafistolée, ou telle quelle.
+      - Répartir le butin (20 PO de Gueule-Rouge et ce qu'on a trouvé).
+    transition: >-
+      À l'aube, La Mâchoire quitte Port-Louis. La brume se lève sur
+      l'Atlantique. Devant : Belle-Île et le HMS Greyhound.
+    player_hooks:
+      - character: pj_navigateur
+        reason: Il fixe le cap — par le sud de Belle-Île, avec le jusant, pour se cacher derrière la pointe de Kerdonis.
+      - character: pj_quartier_maitre
+        reason: Il répartit le butin et la bourse d'avance ; l'équipage attend son partage.
+      - character: pj_vigie
+        reason: Elle monte en haut du grand mât ; c'est elle qui verra les voiles du Greyhound la première.
+      - character: pj_canonnier
+        reason: Il arrime la poudre et compte les boulets ; il sait s'ils suffiront contre un sloop de douze canons.
+    if_skipped: >-
+      Ne pas sauter cette scène. C'est le dernier moment pour que la table
+      sache ce qu'il faut pour l'acte 2.
+    art: >-
+      Pixel art, vue de côté : un brick à deux mâts toutes voiles dehors
+      quitte un port dans la brume de l'aube, la citadelle en silhouette
+      derrière lui, la mer bleu-gris qui s'éclaircit vers l'horizon.
+    gm_notes: >-
+      La source avait une transition lue à voix haute ; la scène de bord
+      est INVENTÉE — à valider par Romain — pour vérifier avant l'acte 2
+      ce que la table sait, l'erreur de la partie jouée.
+
+revelations:
+  - id: rev_route
+    statement: >-
+      Le Greyhound longe la côte sud de Belle-Île avant de remonter vers
+      le nord, dans trois jours ; c'est au sud qu'on peut lui tendre une
+      embuscade.
+    importance: critical
+  - id: rev_escorte
+    statement: Le Greyhound n'est pas seul ; un sloop armé de douze canons l'escorte.
+    importance: critical
+  - id: rev_coque
+    statement: >-
+      La Mâchoire prend l'eau et son gréement est lâche ; il faut la
+      réparer cette nuit, et Vieux Thomas est le seul à pouvoir le faire.
+    importance: critical
+  - id: rev_courants
+    statement: >-
+      Au sud de Belle-Île, le jusant de l'aube porte vers l'est ; un navire
+      caché derrière la pointe de Kerdonis peut surgir dans le dos du
+      Greyhound.
+    importance: critical
+  - id: rev_espion
+    statement: Fañch, le galant d'Anaïs, est le matelot de Gueule-Rouge ; une embuscade attend le groupe sur le quai.
+    importance: optional
+  - id: rev_lorient
+    statement: Des marins anglais ont acheté de la poudre à Lorient ; la flotte anglaise s'arme vraiment.
+    importance: optional
+
+clues:
+  # La route du Greyhound — Perroquet, Proposition, Port (obligatoires),
+  # Bureau de Morel (facultatif).
+  - id: cl_route_goulven
+    revelation: rev_route
+    node: sc_perroquet
+    text: >-
+      Mère Goulven a entendu des marins de Locmaria — des voiles anglaises
+      passent toujours par le sud de Belle-Île, jamais par le nord.
+    discovery: La faire parler gentiment, ou régler l'ardoise du groupe.
+    source: pnj_goulven
+    check:
+      stat: CHA
+      difficulty: 10
+  - id: cl_route_rapport
+    revelation: rev_route
+    node: sc_proposition
+    text: >-
+      Le rapport d'espions joint aux lettres de marque attend le passage du
+      Greyhound par le sud de Belle-Île, cap au nord ensuite.
+    discovery: Lire le rapport à la table, ou le demander à Vaubernier.
+    source: obj_lettres_de_marque
+    check:
+      stat: INT
+      difficulty: 10
+  - id: cl_route_rene
+    revelation: rev_route
+    node: sc_port_nuit
+    text: >-
+      Petit René le tient de son oncle, pêcheur à Locmaria — deux fois ce
+      mois-ci, un grand trois-mâts anglais a longé la côte sud de Belle-Île
+      avant de remonter vers le nord.
+    discovery: Lui donner une pièce, ou simplement s'intéresser à lui.
+    source: pnj_rene
+  - id: cl_route_morel
+    revelation: rev_route
+    node: sc_bureau_morel
+    text: >-
+      Les rapports de patrouille de Morel donnent la route complète — côte
+      sud de Belle-Île, puis cap au nord vers la pointe des Poulains.
+    discovery: Payer Morel (30 PO), régler sa dette, ou lire le registre par-dessus son épaule.
+    source: obj_registres_port
+
+  # L'escorte — Perroquet, Proposition, Quai (obligatoires), Marché noir
+  # et Bureau de Morel (facultatifs).
+  - id: cl_escorte_rene
+    revelation: rev_escorte
+    node: sc_perroquet
+    text: >-
+      Petit René a entendu des marins parler d'un sloop anglais armé qui
+      tourne autour de Belle-Île depuis des semaines.
+    discovery: Lui donner une pièce, ou s'intéresser à lui.
+    source: pnj_rene
+    check:
+      stat: CHA
+      difficulty: 5
+  - id: cl_escorte_vaubernier
+    revelation: rev_escorte
+    node: sc_proposition
+    text: >-
+      Acculé, Vaubernier concède que le Greyhound « n'est pas seul » — un
+      sloop armé l'accompagne ; son garde parle de douze canons.
+    discovery: Percer Vaubernier à jour (SAG 15), ou faire parler un garde (CHA 10).
+    source: pnj_vaubernier
+    check:
+      stat: SAG
+      difficulty: 15
+  - id: cl_escorte_gueule_rouge
+    revelation: rev_escorte
+    node: sc_quai
+    text: >-
+      Vaincu, Gueule-Rouge ricane — « Vous croyez qu'un sloop de douze
+      canons va vous laisser approcher ? Moi, j'avais un plan. »
+    discovery: L'interroger une fois à terre.
+    source: gueule-rouge
+    check:
+      stat: CHA
+      difficulty: 10
+  - id: cl_escorte_dents
+    revelation: rev_escorte
+    node: sc_marche_noir
+    text: >-
+      Les marins anglais vus à Lorient venaient d'un sloop armé, détaché
+      pour escorter « un bateau qui transporte du papier ».
+    discovery: Le pousser à parler des Anglais, ou fouiller ses caisses avec chance.
+    source: pnj_dents_de_fer
+  - id: cl_escorte_morel
+    revelation: rev_escorte
+    node: sc_bureau_morel
+    text: >-
+      Rapport de patrouille — le Greyhound est accompagné d'au moins un
+      sloop armé de douze canons.
+    discovery: Payer Morel (20 PO), régler sa dette, ou un 20 naturel en lisant son registre.
+    source: obj_registres_port
+
+  # La coque — Perroquet, Proposition, Port (obligatoires), Chantier
+  # (facultatif).
+  - id: cl_coque_jacquot
+    revelation: rev_coque
+    node: sc_perroquet
+    text: >-
+      Jacquot hurle à toute la salle qu'il a vu « votre baille » au chantier
+      — elle prend l'eau par la hanche, les trous de boulets mal rebouchés,
+      « elle passera pas Belle-Île ! ».
+    discovery: Le calmer, ou simplement le laisser parler ; il est sourd et crie.
+    source: pnj_jacquot
+  - id: cl_coque_vaubernier
+    revelation: rev_coque
+    node: sc_proposition
+    text: >-
+      « J'ai vu votre… navire en passant. Faites-le réparer avant l'aube ;
+      la Couronne ne paiera pas pour une épave. Le charpentier Guérin
+      travaille tard. »
+    discovery: Vaubernier le dit de lui-même, avec mépris.
+    source: pnj_vaubernier
+  - id: cl_coque_port
+    revelation: rev_coque
+    node: sc_port_nuit
+    text: >-
+      La pompe de cale de La Mâchoire tourne seule et le gréement pend ; le
+      navire prend l'eau.
+    discovery: Regarder La Mâchoire depuis le quai.
+    source: lieu_machoire
+    check:
+      stat: SAG
+      difficulty: 5
+  - id: cl_coque_thomas
+    revelation: rev_coque
+    node: sc_chantier
+    text: >-
+      Vieux Thomas — la coque a des traces de boulets mal rebouchées et le
+      gréement doit être resserré ; il peut faire ça dans l'heure.
+    discovery: Thomas le dit dès qu'on entre.
+    source: pnj_thomas
+
+  # Les courants — Perroquet, Port, Quai (obligatoires), Chantier
+  # (facultatif).
+  - id: cl_courants_goulven
+    revelation: rev_courants
+    node: sc_perroquet
+    text: >-
+      Mère Goulven, ancienne cuisinière de navire — « Au sud de l'île, le
+      jusant tire vers l'est à la pointe de Kerdonis. Un bon pilote s'y
+      cache comme un chat derrière une porte. »
+    discovery: La faire parler ; elle parle plus volontiers à un marin qui sait lire le ciel.
+    source: pnj_goulven
+    check:
+      stat: CHA
+      difficulty: 10
+  - id: cl_courants_marees
+    revelation: rev_courants
+    node: sc_port_nuit
+    text: >-
+      La table des marées de la capitainerie — le jusant commence à l'aube
+      et, à Belle-Île, porte vers l'est le long de la côte sud.
+    discovery: Déchiffrer l'affiche clouée sur la porte de la capitainerie.
+    source: obj_table_marees
+    check:
+      stat: INT
+      difficulty: 10
+  - id: cl_courants_fragment
+    revelation: rev_courants
+    node: sc_quai
+    text: >-
+      Le fragment de carte que portait Fañch montre les courants au sud de
+      Belle-Île, et une croix derrière la pointe de Kerdonis.
+    discovery: Le prendre sur Fañch, puis le lire.
+    source: obj_fragment_carte
+    check:
+      stat: INT
+      difficulty: 10
+  - id: cl_courants_thomas
+    revelation: rev_courants
+    node: sc_chantier
+    text: >-
+      Thomas a pêché quarante ans au large de Belle-Île — derrière Kerdonis,
+      au jusant, on est invisible et le courant fait le reste.
+    discovery: Gagner sa confiance, ou l'aider à la réparation.
+    source: pnj_thomas
+
+  # Facultatives.
+  - id: cl_espion_vigie
+    revelation: rev_espion
+    node: sc_proposition
+    text: Le marin qui courtisait Anaïs s'est glissé dehors au milieu de l'offre de Vaubernier.
+    discovery: La Vigie le voit partir, ou quiconque surveille la porte.
+    source: pnj_fanch
+  - id: cl_espion_ombres
+    revelation: rev_espion
+    node: sc_port_nuit
+    text: Des silhouettes s'installent entre les caisses, près de l'appontement de La Mâchoire.
+    discovery: Scruter les quais à la longue-vue depuis la jetée.
+    source: lieu_quai
+    check:
+      stat: SAG
+      difficulty: 10
+  - id: cl_espion_anais
+    revelation: rev_espion
+    node: sc_anais
+    text: >-
+      Anaïs — Fañch lui a posé mille questions sur « le monsieur en bleu »
+      et ses papiers, puis il est parti voir « son capitaine ».
+    discovery: La convaincre, ou lui dire ce que Fañch prépare.
+    source: pnj_anais
+  - id: cl_lorient_dents
+    revelation: rev_lorient
+    node: sc_marche_noir
+    text: >-
+      Dents-de-Fer — des marins anglais sont venus acheter de la poudre à
+      Lorient la semaine dernière, en quantité.
+    discovery: Le pousser un peu ; un bon achat le rend bavard.
+    source: pnj_dents_de_fer
+    check:
+      stat: CHA
+      difficulty: 10
+
+npcs:
+  - id: pnj_goulven
+    name: Marguerite Goulven
+    title: Mère Goulven
+    age: 53 ans
+    appearance: >-
+      Femme massive aux bras épais comme des cordages, tablier taché,
+      cheveux gris en chignon serré, cicatrice de brûlure sur l'avant-bras
+      gauche. Regard perçant qui voit tout.
+    portrait: >-
+      Buste en pixel art, profil tourné vers la droite : femme massive aux
+      cheveux gris en chignon, tablier taché, louche en fer à la main,
+      cicatrice de brûlure rose sur l'avant-bras. Lumière ocre de chandelle
+      par en haut.
+    roleplay: Bourrue mais maternelle ; elle engueule ses clients comme ses enfants, mais gare à qui touche à « ses gars ».
+    traits:
+      - directe
+      - pas impressionnable
+      - mémoire infaillible des dettes
+    flaw: Rancunière ; elle n'oublie jamais une ardoise impayée.
+    motivation: Protéger son commerce et les habitués qu'elle considère comme sa famille.
+    disposition: friendly
+    wants: Que ses clients paient leurs consommations et ne cassent pas le mobilier.
+    hides: >-
+      Des marins lui ont parlé de voiles anglaises au sud de Belle-Île, et
+      elle connaît le courant de Kerdonis. Elle partage si on la traite
+      bien ou si l'on règle l'ardoise de 3 PO du groupe.
+    stats:
+      from_rules: mere_goulven
+    inventory:
+      - item: obj_rhum_naufrage
+    location: lieu_perroquet
+  - id: pnj_jacquot
+    name: Jacques Perrin
+    title: Jacquot le Sourd
+    age: 62 ans
+    appearance: >-
+      Petit bonhomme voûté, crâne dégarni aux mèches grasses, bouche
+      édentée, nez rougi par l'alcool, vêtements qui puent le poisson.
+      Parle très fort parce qu'il n'entend plus rien.
+    portrait: >-
+      Buste en pixel art, profil vers la droite : vieux marin voûté au nez
+      rouge vif, bouche édentée grande ouverte, chope ébréchée levée,
+      quelques mèches grises sur un crâne luisant.
+    roleplay: Un vieil ivrogne inoffensif qui parle trop fort et ne comprend pas la moitié de ce qu'on lui dit.
+    traits:
+      - bruyant
+      - sentimental quand il a bu
+      - raconte des histoires à moitié inventées
+    flaw: Complètement sourd et inconscient du chaos qu'il provoque.
+    motivation: Boire un dernier verre — toujours « le dernier ».
+    disposition: neutral
+    wants: Qu'on lui paie une tournée.
+    hides: >-
+      Rien, sauf qu'il a vu La Mâchoire au chantier cet après-midi et
+      qu'elle prend l'eau — il le hurlera à qui l'écoute. Ancien canonnier
+      de l'Intrépide (INVENTÉ — à valider par Romain).
+    stats:
+      from_rules: jacquot_le_sourd
+    location: lieu_perroquet
+  - id: pnj_rene
+    name: René Cabelec
+    title: Petit René
+    age: 15 ans
+    appearance: >-
+      Gamin maigre comme un clou, tignasse rousse en bataille, taches de
+      rousseur, vêtements de marin trop grands, une vielle à roue cabossée
+      en bandoulière.
+    portrait: >-
+      Buste en pixel art, profil vers la droite : gamin roux aux taches de
+      rousseur, sourire malin, vielle à roue cabossée contre la poitrine,
+      veste beaucoup trop grande.
+    roleplay: Un gamin des rues débrouillard qui joue mal mais écoute bien ; il sait tout ce qui se passe au port.
+    traits:
+      - curieux
+      - rapide
+      - bavard quand on le met en confiance
+    flaw: Trop curieux ; il fourre son nez partout.
+    motivation: Gagner quelques sous pour manger, et un jour embarquer sur un vrai navire.
+    disposition: friendly
+    wants: Des pourboires, et qu'on l'emmène en mer.
+    hides: >-
+      Il a vu un homme en habit chic rôder au port cet après-midi avec des
+      gardes (Vaubernier, venu voir La Mâchoire). Son oncle, pêcheur à
+      Locmaria, voit passer les Anglais par le sud de Belle-Île et parle
+      d'un sloop armé (INVENTÉ — à valider par Romain).
+    stats:
+      from_rules: petit_rene
+    location: lieu_perroquet
+  - id: pnj_vaubernier
+    name: Étienne de Vaubernier
+    title: Comte de Vaubernier, émissaire de Sa Majesté
+    age: 45 ans
+    appearance: >-
+      Grand, mince, posture rigide d'aristocrate. Perruque poudrée
+      impeccable, habit de velours bleu roi brodé d'or, chevalière au petit
+      doigt. Visage anguleux, regard froid.
+    portrait: >-
+      Buste en pixel art, profil vers la droite : aristocrate au visage
+      anguleux, perruque blanche poudrée, habit bleu roi brodé d'or, seul
+      éclat de couleur vive de la scène, menton relevé, lèvres pincées.
+    roleplay: Un aristocrate qui méprise les pirates mais qui est assez pragmatique pour reconnaître qu'il a besoin d'eux.
+    traits:
+      - hautain
+      - précis dans ses mots
+      - ne montre jamais ses émotions
+    flaw: Condescendant ; il regarde les pirates de haut, même quand il leur demande de l'aide.
+    motivation: Servir la Couronne et gravir les échelons ; cette mission est sa chance.
+    disposition: neutral
+    wants: Que les pirates acceptent la mission et ramènent les plans anglais. Ni plus, ni moins.
+    hides: >-
+      Il sait que le Greyhound est escorté et le tait pour ne pas effrayer
+      l'équipage. Il ne sait rien d'un éventuel traître dans la Couronne.
+    stats:
+      from_rules: vaubernier
+    inventory:
+      - item: obj_lettres_de_marque
+    faction: fac_couronne
+    gm_notes: Ne se bat pas ; c'est à ça que servent les gardes (adv_garde_royal, deux).
+  - id: pnj_dents_de_fer
+    name: Yann Kerjean
+    title: Dents-de-Fer
+    age: 42 ans
+    appearance: >-
+      Trapu, épaules larges d'ancien marin, peau tannée par le sel. Trois
+      dents de fer et d'étain dans un sourire carnassier permanent. Bonnet
+      de laine, veste de cuir pleine de poches.
+    portrait: >-
+      Buste en pixel art, profil vers la droite : marchand trapu au bonnet
+      de laine noir, sourire large où brillent trois dents de métal gris,
+      veste de cuir brune pleine de poches, lanterne à côté.
+    roleplay: Un marchand qui vendrait du sable à un Maure — sourire large, mains rapides, toujours un prix « spécial pour les amis ».
+    traits:
+      - bavard
+      - roublard
+      - opportuniste
+      - jamais hostile, un client est un client
+    flaw: Cupide ; il arrondit toujours en sa faveur.
+    motivation: L'argent ; il rêve d'une maison en pierre loin de la mer.
+    disposition: friendly
+    wants: Vendre le plus possible au prix le plus haut.
+    hides: >-
+      Une boussole d'amiral volée à un officier anglais, sous le comptoir.
+      Des marins anglais d'un sloop armé ont acheté de la poudre à Lorient
+      la semaine dernière ; il en parle si on le pousse un peu.
+    stats:
+      from_rules: dents_de_fer
+    inventory:
+      - item: obj_boussole_amiral
+    sells:
+      - item: obj_epee_bonne_facture
+        price: 15
+      - item: obj_pistolet_marche_noir
+        price: 20
+      - item: obj_barils_poudre
+        price: 12
+      - item: obj_provisions
+        price: 5
+      - item: obj_corde
+        price: 2
+      - item: obj_longue_vue
+        price: 10
+      - item: obj_kit_soins
+        price: 8
+    location: lieu_marche_noir
+  - id: pnj_thomas
+    name: Thomas Guérin
+    title: Vieux Thomas
+    age: 67 ans
+    appearance: >-
+      Grand mais voûté, mains énormes couvertes de cicatrices de bois,
+      barbe blanche jaunie de tabac, yeux bleus délavés, tablier de
+      charpentier, toujours un maillet à portée de main.
+    portrait: >-
+      Buste en pixel art, profil vers la droite : vieil homme voûté à barbe
+      blanche jaunie, yeux bleu pâle, tablier de cuir, maillet sur l'épaule,
+      chique gonflant la joue, lumière de lanterne.
+    roleplay: Un homme de peu de mots qui parle avec ses mains ; il grogne plus qu'il ne cause, mais son travail est impeccable.
+    traits:
+      - taiseux
+      - méticuleux
+      - loyal envers ceux qui le respectent
+    flaw: Trop fier ; il propose un marché plutôt que de demander de l'aide.
+    motivation: Protéger sa fille Anaïs ; c'est tout ce qu'il lui reste.
+    disposition: neutral
+    wants: Que quelqu'un ramène Anaïs du Perroquet Noyé, loin du marin louche avec qui elle traîne.
+    hides: >-
+      Il est terrifié qu'Anaïs embarque et ne revienne jamais, comme sa
+      femme autrefois. Il connaît le courant de Kerdonis par cœur.
+    stats:
+      from_rules: vieux_thomas
+    location: lieu_chantier
+    gm_notes: Passe de neutre à amical s'il récupère Anaïs.
+  - id: pnj_morel
+    name: Henri Morel
+    title: « Capitaine » Morel
+    age: 52 ans
+    appearance: >-
+      Ventre bedonnant, uniforme défraîchi aux boutons ternis, moustache
+      cirée dont il est très fier. Regard fuyant, mains moites, une
+      bouteille de vin toujours à portée de main.
+    portrait: >-
+      Buste en pixel art, profil vers la droite : officier bedonnant en
+      uniforme bleu marine délavé, moustache cirée en crocs, yeux fuyants,
+      bouteille de vin à la main, front luisant de sueur.
+    roleplay: Un fonctionnaire qui a vendu son honneur il y a longtemps et survit en vendant ce qu'il sait.
+    traits:
+      - nerveux
+      - obséquieux avec les puissants
+      - arrogant avec les faibles
+    flaw: Joueur compulsif ; ses dettes le mettent en danger.
+    motivation: Rembourser ses dettes et garder sa place, et sa tête.
+    disposition: neutral
+    wants: De l'argent, ou que quelqu'un règle ses 50 PO de dettes de jeu.
+    hides: >-
+      Il a peur ; ses créanciers reviennent avant l'aube. Il donnera tout
+      si on le sort de là. Il sait que le Greyhound est escorté par au
+      moins un sloop armé.
+    stats:
+      from_rules: capitaine_morel
+    inventory:
+      - item: obj_registres_port
+    location: lieu_bureau_port
+  - id: gueule-rouge
+    name: Bastien Léroux
+    title: Gueule-Rouge
+    age: 35 ans
+    appearance: >-
+      Costaud, mâchoire carrée, une cicatrice mal fermée qui lui traverse la
+      joue droite de l'œil au menton, rouge vif en permanence. Queue de rat,
+      gilet de cuir sans chemise, bras couverts de tatouages grossiers.
+    portrait: >-
+      Sprite en pixel art, profil tourné vers la gauche (ennemi) : colosse
+      à la mâchoire carrée, cicatrice rouge vif sur la joue, gilet de cuir
+      sur torse nu tatoué, sabre d'abordage entaillé à la main.
+    roleplay: Un chien enragé qui mord d'abord et ne réfléchit jamais ; tout est une question d'honneur et de territoire.
+    traits:
+      - impulsif
+      - orgueilleux
+      - territorial
+      - parle fort
+    flaw: Incapable de reculer devant un défi.
+    motivation: Être le pirate le plus craint de Port-Louis ; les lettres de marque sont la reconnaissance qu'il estime mériter.
+    disposition: hostile
+    wants: Les lettres de marque, qui lui reviennent de droit.
+    hides: Rien ; il est exactement ce qu'il a l'air d'être.
+    stats:
+      from_rules: gueule_rouge
+    inventory:
+      - item: obj_sabre_gueule_rouge
+    faction: fac_bande_gueule_rouge
+    location: lieu_quai
+  - id: pnj_anais
+    name: Anaïs Guérin
+    age: 19 ans
+    appearance: >-
+      Jeune femme brune aux cheveux noués d'un ruban rouge, mains de
+      charpentière comme son père, regard qui file toujours vers la mer.
+    portrait: >-
+      Buste en pixel art, profil vers la droite : jeune femme brune au
+      ruban rouge, châle de laine grise, cartes à jouer à la main, regard
+      tourné vers une fenêtre.
+    roleplay: Elle étouffe à terre et prend le premier sourire venu pour une promesse de voyage.
+    traits:
+      - têtue
+      - franche
+      - rêveuse
+    flaw: Croit trop vite ceux qui lui parlent de la mer.
+    motivation: Prendre la mer, comme sa mère.
+    disposition: neutral
+    wants: Que son père la laisse vivre.
+    hides: Fañch lui a posé beaucoup de questions sur Vaubernier et ses papiers.
+    location: lieu_perroquet
+    gm_notes: Nommée mais jamais décrite dans la source ; portrait et caractère INVENTÉS — à valider par Romain.
+  - id: pnj_fanch
+    name: Fañch Le Goff
+    title: Fañch le Beau
+    age: 24 ans
+    appearance: >-
+      Beau parleur aux boucles noires, chemise ouverte, sourire facile,
+      couteau à la ceinture et un bout de carte qui dépasse de sa poche.
+    portrait: >-
+      Sprite en pixel art, profil tourné vers la gauche (ennemi) : jeune
+      marin aux boucles noires, chemise blanche ouverte, sourire charmeur,
+      couteau à la main, bout de parchemin qui dépasse de la poche.
+    roleplay: Charmeur, menteur, lâche dès que ça tourne mal.
+    traits:
+      - charmeur
+      - menteur
+      - opportuniste
+    flaw: Lâche ; il se rend dès qu'il est acculé.
+    motivation: Monter en grade dans la bande de Gueule-Rouge.
+    disposition: hostile
+    wants: Savoir où sont les lettres de marque.
+    hides: Il espionne pour Gueule-Rouge et porte le fragment de carte des courants au sud de Belle-Île.
+    stats:
+      from_rules: marin_de_gueule_rouge
+    inventory:
+      - item: obj_fragment_carte
+    faction: fac_bande_gueule_rouge
+    location: lieu_perroquet
+    gm_notes: >-
+      INVENTÉ — à valider par Romain. La source a « un marin douteux » au
+      Perroquet et un fragment de carte sur « un des marins » ; c'est ici
+      le même homme.
+
+adversaries:
+  - id: marin-de-gueule-rouge
+    name: Marin de Gueule-Rouge
+    description: Brute du port armée d'un coutelas, plus bruyante que dangereuse.
+    art: >-
+      Sprite en pixel art, profil tourné vers la gauche : marin débraillé
+      au bonnet rouge, coutelas ébréché, ceinture de corde, posture
+      voûtée de bagarreur ; trois variantes de visage et de bonnet.
+    stats:
+      from_rules: marin_de_gueule_rouge
+  - id: adv_garde_royal
+    name: Garde royal
+    description: Soldat en uniforme avec plastron, raide et mal à l'aise dans une taverne.
+    art: >-
+      Sprite en pixel art, profil tourné vers la gauche : soldat en
+      uniforme blanc à parements bleus, plastron d'acier terne, tricorne,
+      main sur la poignée de l'épée.
+    stats:
+      from_rules: garde_royal
+    gm_notes: Figurants derrière Vaubernier ; n'interviennent que si l'on s'en prend au Comte.
+
+locations:
+  - id: lieu_port_louis
+    name: Port-Louis
+    description: >-
+      Port fortifié de Bretagne sud, face à Lorient, dominé par sa
+      citadelle. La nuit, le quartier bas appartient aux marins.
+    art: >-
+      Vue de trois quarts en pixel art : petite ville fortifiée au bord
+      d'une rade, citadelle en étoile, toits d'ardoise, mâts serrés dans
+      le port, brume au ras de l'eau.
+  - id: lieu_perroquet
+    name: Le Perroquet Noyé
+    description: >-
+      Taverne du quartier bas — poutres basses, sol collant de rhum, un
+      perroquet empaillé et moisi au-dessus du bar.
+    parent: lieu_port_louis
+    art: >-
+      Façade en pixel art : maison basse à colombages noirs, enseigne
+      peinte d'un perroquet vert la tête dans une chope, fenêtres jaunes
+      dans la brume.
+  - id: lieu_port
+    name: Le port de nuit
+    description: >-
+      Quais glissants, brouillard bas, lanternes qui se balancent ; il ne
+      reste que les contrebandiers et ceux qui ont des affaires à régler.
+    parent: lieu_port_louis
+    art: >-
+      Vue de trois quarts en pixel art : quais de pierre luisants, bittes
+      d'amarrage, lanternes ocre, navires à quai en ombres chinoises.
+  - id: lieu_marche_noir
+    name: Le marché noir de Kerjean
+    description: Une arrière-cour coincée entre deux entrepôts, éclairée par des lanternes à huile.
+    parent: lieu_port
+    art: >-
+      Vue de trois quarts en pixel art : cour étroite entre deux murs de
+      pierre, caisses en comptoir, armes et barils exposés, lanternes sur
+      clous rouillés.
+  - id: lieu_chantier
+    name: Le chantier naval
+    description: Les cales sèches du port, à moitié dans l'ombre, et la remise de Vieux Thomas sur le quai.
+    parent: lieu_port
+    art: >-
+      Vue de trois quarts en pixel art : cale sèche avec un échafaudage,
+      piles de planches, outils de charpentier, lanterne solitaire.
+  - id: lieu_bureau_port
+    name: Le bureau du capitaine de port
+    description: >-
+      Bâtiment officiel en pierre, blason de la marine royale au-dessus de
+      la porte ; la porte de derrière est toujours entrouverte.
+    parent: lieu_port
+    art: >-
+      Vue de trois quarts en pixel art : petit bâtiment de pierre grise au
+      blason fleurdelisé, porte de derrière entrouverte, rai de lumière
+      jaune sur les pavés.
+  - id: lieu_quai
+    name: Le quai de La Mâchoire
+    description: >-
+      Entre les entrepôts et l'appontement où La Mâchoire est amarrée —
+      caisses empilées, cordages, flaques d'eau de mer.
+    parent: lieu_port
+    art: >-
+      Vue de trois quarts en pixel art : quai pavé entre trois entrepôts,
+      caisses et tonneaux, appontement de planches vers un brick, fanal
+      jaune dans le brouillard.
+    gm_notes: Carte de rencontre — quai-port-louis.
+  - id: lieu_machoire
+    name: La Mâchoire
+    description: >-
+      Le brick de l'équipage — solide mais fatigué, des traces de boulets
+      mal rebouchées sur la coque et un gréement à resserrer.
+    parent: lieu_port
+    art: >-
+      Vue de côté en pixel art : brick à deux mâts à la coque noire
+      rapiécée de planches plus claires, figure de proue en mâchoire de
+      requin, voiles grises reprisées.
+  - id: lieu_belle_ile
+    name: Belle-Île
+    description: >-
+      Grande île au large de Quiberon. Au sud, la côte sauvage et la
+      pointe de Kerdonis ; au nord, la pointe des Poulains.
+    art: >-
+      Carte du monde en hexagones pixel art : île allongée, falaises au
+      sud, deux pointes marquées, flèches de courant vers l'est.
+    gm_notes: Lieu de l'acte 2.
+
+items:
+  - id: obj_lettres_de_marque
+    name: Lettres de marque
+    description: >-
+      Parchemin scellé aux armes de France qui fait de l'équipage des
+      corsaires de la Couronne — légalement, temporairement. Un rapport
+      d'espions y est joint.
+    effect: Tant qu'on les porte, l'équipage n'est plus pirate mais corsaire du Roi.
+    rarity: legendary
+    art: >-
+      Rouleau de parchemin crème en pixel art, ruban bleu et grand sceau de
+      cire rouge aux fleurs de lys dorées.
+  - id: obj_epee_bonne_facture
+    name: Épée de bonne facture
+    description: Une lame bien équilibrée, meilleure que ce qu'on trouve d'habitude sur le port.
+    from_rules: epee_de_bonne_facture
+    value: 15
+    rarity: uncommon
+    art: Épée droite en pixel art, lame d'acier clair, garde en coquille de laiton.
+  - id: obj_pistolet_marche_noir
+    name: Pistolet à silex
+    description: Un tir avant rechargement.
+    from_rules: pistolet_a_silex_marche_noir
+    value: 20
+    art: Pistolet à silex en pixel art, crosse de noyer sombre, canon d'acier, platine de laiton.
+  - id: obj_barils_poudre
+    name: Barils de poudre (x3)
+    description: Pour le canon, ou comme explosifs improvisés.
+    from_rules: barils_de_poudre
+    value: 12
+    art: Petit baril cerclé de fer en pixel art, mèche qui dépasse, marque « POUDRE » au pochoir.
+  - id: obj_provisions
+    name: Provisions de voyage (1 semaine)
+    description: Viande séchée, biscuits de mer, eau.
+    from_rules: provisions_de_voyage
+    value: 5
+    art: Sac de toile en pixel art, biscuits de mer et morceau de viande séchée qui dépassent.
+  - id: obj_corde
+    name: Corde de 30 m
+    description: Chanvre tressé, solide.
+    from_rules: corde_de_30m
+    value: 2
+    art: Rouleau de corde de chanvre beige en pixel art.
+  - id: obj_longue_vue
+    name: Longue-vue
+    description: Pour voir loin, depuis une vigie ou une jetée.
+    from_rules: longue_vue
+    value: 10
+    art: Longue-vue en pixel art, laiton et cuir, lentille qui accroche un reflet.
+  - id: obj_kit_soins
+    name: Kit de soins
+    description: Bandages, fil, aiguille et alcool ; trois utilisations.
+    from_rules: kit_de_soins
+    value: 8
+    art: Trousse de cuir roulée en pixel art, bandages blancs et petite fiole.
+  - id: obj_boussole_amiral
+    name: Boussole d'Amiral
+    description: >-
+      Boussole gravée aux armes anglaises, volée à un officier. Pas
+      magique, mais d'une précision remarquable.
+    effect: >-
+      INVENTÉ — à valider par Romain (et à porter dans le système de
+      règles) — une fois à l'acte 2, rend un jet de navigation plus facile
+      d'un cran (Difficile devient Moyen).
+    value: 25
+    rarity: rare
+    art: >-
+      Boussole ronde en pixel art, boîtier de laiton poli gravé d'un lion
+      anglais, aiguille rouge, verre qui brille.
+  - id: obj_fragment_carte
+    name: Fragment de carte maritime
+    description: >-
+      Un bout de carte déchiré montrant des courants au sud de Belle-Île,
+      avec une croix derrière une pointe.
+    effect: Le lire révèle le courant de Kerdonis (indice cl_courants_fragment).
+    rarity: uncommon
+    art: >-
+      Morceau de parchemin déchiré en pixel art, lignes de courant bleues,
+      contour d'île à l'encre brune, petite croix rouge.
+  - id: obj_sabre_gueule_rouge
+    name: Sabre d'abordage de Gueule-Rouge
+    description: Lame épaisse, entaillée, bien entretenue malgré tout.
+    from_rules: sabre_d_abordage
+    value: 10
+    art: Sabre d'abordage en pixel art, lame courbe entaillée, garde en coquille noircie.
+  - id: obj_rhum_naufrage
+    name: Bouteille de « Naufrage »
+    description: Le rhum maison de Mère Goulven, infâme mais costaud.
+    value: 2
+    art: Bouteille trapue de verre vert en pixel art, bouchon de cire rouge, étiquette au crayon.
+  - id: obj_registres_port
+    name: Registres du port
+    description: Mouvements des navires et rapports de patrouille ; pas à vendre, mais à lire.
+    art: Gros registre relié de cuir en pixel art, pages jaunies, signet rouge.
+  - id: obj_table_marees
+    name: Table des marées
+    description: Affiche clouée sur la porte de la capitainerie, colonnes d'heures et de coefficients.
+    art: Affiche de papier jauni en pixel art, colonnes de chiffres, coin déchiré, clou rouillé.
+  - id: obj_plans_greyhound
+    name: Plans d'attaque anglais
+    description: Les plans que transporte le HMS Greyhound.
+    rarity: epic
+    art: Liasse de documents en pixel art, ruban rouge, sceau de cire aux armes d'Angleterre.
+    gm_notes: Objet de l'acte 2 ; but de la campagne.
+
+factions:
+  - id: fac_couronne
+    name: La Couronne de France
+    description: Le pouvoir royal, qui fait de pirates des corsaires quand il en a besoin.
+    diplomacy: On lui obéit, on lui rapporte des résultats ; elle ne pardonne pas l'échec.
+    rivals:
+      - fac_bande_gueule_rouge
+    art: Bannière en pixel art, fleurs de lys d'or sur fond bleu roi.
+  - id: fac_bande_gueule_rouge
+    name: La bande de Gueule-Rouge
+    description: Pirates rivaux de Port-Louis, une douzaine de brutes autour d'un chef orgueilleux.
+    diplomacy: Seule la force et l'honneur comptent ; humilier le chef, c'est disperser la bande.
+    rivals:
+      - fac_couronne
+    art: Pavillon en pixel art, tête de mort à la mâchoire peinte en rouge sur fond noir.
+
+goals:
+  - id: but_plans_greyhound
+    title: Rapporter les plans du Greyhound
+    description: Intercepter le HMS Greyhound, prendre ses plans d'attaque, les rapporter à Vaubernier.
+    item: obj_plans_greyhound
+    gm_notes: En échange — le pardon royal et 500 PO par tête.
