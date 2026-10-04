@@ -24,7 +24,7 @@ memory. If someone would re-litigate it in six months, it is.
 - **Same stack and conventions as Devotion**: Rust/Axum + sqlx,
   React/Vite + shadcn, Tauri, Bun. React was chosen over Vue to reuse
   Devotion's mobile hooks, item menus, i18n setup and lint rules.
-- **Fully remote first.** Every player on their own device. A table +
+- **Fully remote first.** Every player on their own device (confirmed by the Corsaires game, §6). A table +
   TV mode comes later. Voice goes through an external tool (Discord…).
 - **Only the GM creates content.** Players do not author the world.
 - **Rules are data.** The GM defines a rule system per campaign
@@ -263,3 +263,43 @@ against the campaign budget; a batch that would exceed it is refused.
 - **No UI text in code.** Every word a person reads comes from `t()`,
   French as the reference locale.
 - **No mock.** No "not yet wired" button ships.
+
+## 6. What Romain's real games taught (before Promptus)
+
+Romain ran two games by hand before this rewrite. Their prep lives in
+`dnd-save/` at the root of the main checkout (untracked, 57 MB of
+images): read it before designing content formats or rules.
+
+- **Corsaires de la Couronne** (played 16 May 2026, act 1 of 4): a
+  pirate one-shot, **six players, fully remote**. Afterwards: the GM
+  struggled to keep the story continuous, to entertain six players at
+  once and to improvise; players found the rules unclear and not applied
+  consistently through act 1; they lacked information they needed for
+  act 2. These four pains are what milestone 1 is judged on.
+- **Le Brasier** (prepared 7 June 2026, not played): a space campaign
+  with a well-built world (four factions, affinity, an AI crew member
+  played by the GM). Its ship/crew combat was too messy and act 1 was
+  under-prepared: rules must be testable before the table sees them.
+- **The table is six players**, not the three of the design boards.
+  Every GM screen, TV layout and turn order must hold six players
+  against six adversaries.
+- **Romain's own system is not D&D 5e.** The "Corsaires" system: six
+  stats, mod = (score − 10) / 2, AC = 10 + DEX mod; checks d20 + mod
+  against 5 / 10 / 15 / 20 with four outcomes (natural 1, fail, success,
+  natural 20); 2 free actions per turn; class attacks with fixed damage,
+  a precision bonus and a cooldown in turns, unlocked at levels 1, 3, 7,
+  plus one free slot learned in play; +1 XP per success, every 5 XP one
+  point to add to a stat, level from total XP; 10 HP; at 0 HP out of the
+  fight, back for the next scene if nobody heals within 3 turns; no help
+  bonus on checks. The rules model must express it as data, alongside
+  the SRD.
+- **His prep format is the content model to aim for.** A scene: place,
+  mood and several YouTube tracks, flow, a hook with planned checks
+  (stat, DC, what a 1 does), NPCs, GM key points, adversary stat blocks
+  with tactics ("if three fall, the rest flee"), loot, XP, transition.
+  An NPC: identity, one-line roleplay summary, traits, flaw, motivation,
+  stats, disposition, what they want, what they hide, inventory,
+  portrait. Images share a per-campaign art direction prefix and come in
+  three kinds: places, NPC portraits, action scenes.
+- **Which world comes next is undecided** (resume the Corsaires, the
+  Brasier, or a new one): nothing in milestone 1 may depend on it.

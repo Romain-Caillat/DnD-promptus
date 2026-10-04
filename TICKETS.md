@@ -49,10 +49,13 @@ suivant : la fonction n'apparaît qu'une fois livrée.
 
 ### Jalon 1 · Une vraie soirée
 
-Romain mène la campagne de démo du V1, importée telle quelle, avec le
-préréglage D&D 5e (SRD). Ses joueurs rejoignent par un lien, créent leur
-personnage sur leur téléphone, explorent, demandent, lancent les dés et
-combattent. Pas encore de génération ni de co-MJ : le MJ écrit lui-même.
+Romain mène à distance, avec six joueurs, une campagne importée. Ses
+joueurs rejoignent par un lien, créent leur personnage sur leur
+téléphone, explorent, demandent, lancent les dés et combattent. Le jalon
+vise ce qui a manqué aux Corsaires (`MEMORY.md` §6) : des règles claires
+et appliquées pareil à chaque fois, la continuité de l'histoire, ce que
+la table sait, un co-MJ pour improviser, et les six joueurs qui ont
+chacun leur moment. Pas encore de génération de campagne.
 
 `platform/scaffold-workspace` · `platform/run-ci` · `platform/sign-in-gm` ·
 `platform/deploy-self-hosted` · `ui/write-design-tokens` ·
@@ -60,7 +63,10 @@ combattent. Pas encore de génération ni de co-MJ : le MJ écrit lui-même.
 `engine/model-rule-system` · `engine/roll-checks` ·
 `engine/resolve-actions` · `engine/apply-conditions` ·
 `engine/run-combat` · `campaign/model-story-graph` ·
-`campaign/import-v1-demo` · `campaign/list-campaigns` ·
+`campaign/import-campaigns` · `campaign/list-campaigns` ·
+`ai/route-llm-provider` · `ai/count-ai-calls` · `copilot/draft-narration` ·
+`session/track-table-knowledge` · `player/read-the-rules` ·
+`gm/balance-spotlight` · `gm/adjust-sheets-fast` ·
 `session/stream-live-changes` · `session/project-player-view` ·
 `session/invite-and-join` · `session/validate-characters` ·
 `session/open-lobby` · `session/drive-scenes` · `session/end-session` ·
@@ -71,9 +77,14 @@ combattent. Pas encore de génération ni de co-MJ : le MJ écrit lui-même.
 `maps/model-grid-maps` · `maps/render-three-quarter-tiles` ·
 `maps/reveal-fog-and-hidden`
 
-**Fini quand** — Une session de deux heures est jouée à distance, de la
-création des personnages au dernier combat, sans que Romain ouvre
-autre chose que Promptus et Discord.
+**Fini quand** — Une session de deux heures est jouée à distance avec six
+joueurs, de la création des personnages au dernier combat, sans que
+Romain ouvre autre chose que Promptus et Discord ; après la soirée,
+aucun joueur ne dit que les règles n'étaient pas claires, et chacun
+sait ce qu'il faut pour la session suivante.
+
+Le monde n'est pas encore choisi (reprendre les Corsaires, le Brasier,
+ou un nouveau) : le jalon ne dépend d'aucun contenu particulier.
 
 ### Jalon 2 · La campagne générée et le co-MJ
 
@@ -81,9 +92,10 @@ Romain prépare une nouvelle campagne depuis un pitch, la relit, génère
 ses médias, et la mène avec le co-MJ et la TV du salon. Les joueurs
 retrouvent leur personnage entre deux sessions.
 
-`ai/route-llm-provider` · `ai/count-ai-calls` · `ai/generate-campaign` ·
+`ai/generate-campaign` · `campaign/check-player-knowledge` ·
+`player/buy-and-trade` ·
 `campaign/review-story-graph` · `media/generate-images-and-video` ·
-`copilot/draft-narration` · `copilot/propose-adversary-turns` ·
+`copilot/propose-adversary-turns` ·
 `copilot/check-character-sheets` · `copilot/co-write-backstory` ·
 `session/write-recaps` · `session/schedule-sessions` ·
 `session/pair-shared-screen` · `tv/show-evening` · `gm/launch-session` ·
@@ -106,7 +118,9 @@ tablette.
 `maps/package-theme-packs` · `characters/walk-in-four-directions` ·
 `player/play-on-desktop` · `gm/run-on-tablet` · `copilot/listen-by-voice`
 
-Plus tard, sans jalon : `maps/support-hex-combat`.
+Plus tard, sans jalon : `maps/support-hex-combat`,
+`engine/support-vehicle-combat`, `campaign/track-factions-and-goals`
+(pour un monde comme le Brasier).
 
 ---
 
@@ -248,16 +262,21 @@ les tests unitaires de `src/lib/engine/` du V1
 **Périmètre** — Le système de règles : caractéristiques, statistiques
 de jeu et leur formule, formule de jet, difficultés nommées, actions
 (qui deviennent les cartes des joueurs), classes, peuples, états,
-ressources, mouvement par échelle de carte, limites de création.
-Préréglage D&D 5e (SRD 5.1) ; une campagne en garde une copie
-versionnée.
+ressources, mouvement par échelle de carte, limites de création,
+économie d'actions du tour, recharge des actions en tours, actions
+débloquées par niveau, progression (par niveau ou par réussite), ce qui
+arrive à 0 PV. Deux préréglages : **Corsaires** (le système maison de
+Romain, `MEMORY.md` §6 : 2 actions par tour, dégâts fixes, recharges,
++1 XP par réussite, hors combat après 3 tours sans soin) et D&D 5e
+(SRD 5.1). Une campagne garde une copie versionnée.
 
-**Fini quand** — Le préréglage SRD du V1 se charge, une campagne en
-copie une version, et les actions offertes à un personnage se dérivent
-de sa classe (tests `ruleset.test.ts` portés).
+**Fini quand** — Les deux préréglages se chargent ; le combat de la
+bagarre du quai (Corsaires, acte 1) et un combat SRD se jouent dans les
+tests du moteur ; les actions offertes à un personnage se dérivent de sa
+classe et de son niveau (tests `ruleset.test.ts` portés).
 
 **Origine** — V1 `ruleset.ts`, `ruleset-schema.ts` · planche « Règles »
-(moments 1 à 4 et 6)
+(moments 1 à 4 et 6) · `dnd-save/DnD-16-05-2026/regles_*.md`
 
 ### `engine/roll-checks` · todo
 
@@ -326,9 +345,11 @@ nouvelle carte, comme sur la planche.
 **Pourquoi** — Une mort de personnage ne doit jamais être un accident
 de calcul ; le MJ confirme.
 
-**Périmètre** — À 0 PV : jets contre la mort (trois réussites, trois
-échecs, 1 et 20 naturels), soin qui relève, dégâts qui comptent comme
-échec. La mort est proposée par le moteur et confirmée par le MJ.
+**Périmètre** — Ce qui arrive à 0 PV est une donnée du système : jets
+contre la mort en SRD (trois réussites, trois échecs, 1 et 20 naturels,
+soin qui relève), hors combat pour la scène après 3 tours sans soin
+chez les Corsaires. La mort, quand le système la prévoit, est proposée
+par le moteur et confirmée par le MJ.
 
 **Fini quand** — Les sept moments de la planche « Mourir » se rejouent
 dans les tests du moteur, la confirmation du MJ comprise.
@@ -351,9 +372,22 @@ effets primitifs existants.
 
 **Périmètre** — Simuler N combats avec les fiches réelles et les
 monstres d'une rencontre, sous une version des règles ; taux de victoire,
-durée, effet d'une règle maison.
+durée, effet d'une règle maison. C'est ce qui aurait permis de roder
+le combat de vaisseau du Brasier avant de le jouer.
 
-**Origine** — Planche « Règles » (moment 7)
+**Origine** — Planche « Règles » (moment 7) · `MEMORY.md` §6
+
+### `engine/support-vehicle-combat` · todo · à spécifier
+
+**Pourquoi** — Le Brasier fait du vaisseau un personnage partagé.
+
+**Périmètre** — Un véhicule à ressources propres (coque, boucliers,
+énergie à répartir), des postes tenus par les joueurs, l'orientation et
+les arcs de tir sur la grille, les avaries, le moral comme seconde voie
+de victoire, l'abordage qui bascule en combat au sol. À spécifier sur
+un système rodé par `engine/simulate-fights`.
+
+**Origine** — `dnd-save/DnD_07-06-2026/Combat_Vaisseau.md`, `Fiche_Cure-Dent.md`
 
 ---
 
@@ -369,7 +403,11 @@ la génération, le direct et le co-MJ lisent tous ce modèle.
 
 **Périmètre** — Schéma Postgres et types `shared/` : campagne, bible,
 fronts et horloges, nœuds, indices, entités (PNJ, monstres, objets,
-lieux), état vivant du monde ; validateur (chaque révélation atteinte par
+lieux), état vivant du monde. Une scène porte ce que Romain prépare
+déjà (`MEMORY.md` §6) : lieu, ambiance et musiques, déroulement, jets
+prévus (stat, difficulté, conséquence d'un 1 ou d'un 20), PNJ,
+points clés du MJ, tactique des adversaires, butin, transition. Un PNJ
+porte ce qu'il veut et ce qu'il cache. Validateur (chaque révélation atteinte par
 au moins trois indices dans des nœuds différents) ; verrou par
 campagne sur chaque écriture du monde (`MEMORY.md` §3).
 
@@ -380,18 +418,23 @@ s'écrasent pas.
 **Origine** — V1 `story.ts`, `story-validator.ts`, `world.ts`, `lock.ts`,
 migrations 0001 à 0003
 
-### `campaign/import-v1-demo` · todo
+### `campaign/import-campaigns` · todo
 
-**Pourquoi** — Jouer le jalon 1 sans attendre la génération.
+**Pourquoi** — Jouer le jalon 1 sans attendre la génération, et sur du
+vrai contenu.
 
 **Périmètre** — Import et export YAML des entités et de l'histoire au
 format du V1 ; la campagne de démo du V1 (`scripts/demo-story.ts`) et
-ses cartes chargées en une commande.
+ses cartes chargées en une commande ; l'acte 1 des Corsaires converti
+dans ce format (scènes, PNJ et portraits, images, musiques, boutique,
+butin, combat du quai) comme jeu de données réel des tests.
 
-**Fini quand** — `bun run demo` crée la campagne de démo complète,
-jouable ; test `import-export.test.ts` porté.
+**Fini quand** — `bun run demo` crée la campagne de démo, jouable ;
+l'acte 1 des Corsaires s'importe complet, portraits et musiques
+compris ; test `import-export.test.ts` porté.
 
-**Origine** — V1 `import-export.test.ts`, `scripts/demo-story.ts`
+**Origine** — V1 `import-export.test.ts`, `scripts/demo-story.ts` ·
+`dnd-save/DnD-16-05-2026/Acte_1/`
 
 ### `campaign/list-campaigns` · todo
 
@@ -417,6 +460,31 @@ campagne qui la rend jouable.
 co-MJ, résout une alerte et la valide.
 
 **Origine** — Planche « Préparer » (moments 6 à 8 et 10)
+
+### `campaign/check-player-knowledge` · todo
+
+**Pourquoi** — Aux Corsaires, il manquait aux joueurs des informations
+nécessaires pour l'acte 2.
+
+**Périmètre** — Chaque nœud déclare ce que les joueurs doivent savoir
+pour y entrer ; à la relecture, le validateur signale un nœud dont une
+information n'est donnée nulle part ; en fin de session, le MJ voit ce
+qui manque à la table pour la suite, et peut le glisser dans le
+« Précédemment… ».
+
+**Fini quand** — Sur l'acte 1 des Corsaires importé, l'outil signale ce
+qui manquait pour l'acte 2.
+
+**Origine** — Romain, 4 octobre 2026 · `MEMORY.md` §6
+
+### `campaign/track-factions-and-goals` · todo · à spécifier
+
+**Périmètre** — Jauges d'affinité par faction, où gagner la faveur des
+uns fait baisser celle de leurs rivaux ; objectifs de campagne à cocher
+(les quatre composants du Brasier) ; un PNJ permanent joué par le co-MJ
+(l'IA de bord LUMEN).
+
+**Origine** — `dnd-save/DnD_07-06-2026/Univers.md`
 
 ### `campaign/edit-rule-system` · todo
 
@@ -486,7 +554,9 @@ visible (`MEMORY.md` §4).
 
 **Périmètre** — Une musique YouTube par scène, choisie par le MJ ;
 mini-lecteur visible sur le téléphone, démarrage muet et « activer le
-son » ; synchronisation entre joueurs, qui se rattrape après une pub.
+son » ; synchronisation entre joueurs, qui se rattrape après une pub. Plusieurs
+musiques par scène, rangées par ambiance (exploration, combat, calme,
+épique), comme dans la préparation des Corsaires.
 
 **Fini quand** — Trois téléphones entendent la même musique à la même
 minute, et le changement de scène change la musique chez tous.
@@ -496,7 +566,10 @@ minute, et le changement de scène change la musique chez tous.
 ### `media/generate-images-and-video` · todo
 
 **Périmètre** — Image et vidéo d'introduction par scène, en tâches de
-fond, stockées sur disque ; le MJ valide ou relance chaque média ;
+fond, stockées sur disque ; trois sortes d'images (lieu, portrait de
+PNJ, scène d'action) ; une direction artistique par campagne, reprise
+dans chaque demande (la « gravure à l'encre » des Corsaires) ; le MJ
+valide ou relance chaque média ;
 coût compté (`ai/count-ai-calls`). Vérifier d'abord le format de sortie
 vidéo d'OpenRouter (`MEMORY.md` §4).
 
@@ -595,6 +668,24 @@ résultat d'un test, chez le MJ et trois joueurs.
 
 **Origine** — Planches « Jouer » et « Mener » · V1 `session/run-action.ts`
 
+### `session/track-table-knowledge` · todo
+
+**Pourquoi** — Aux Corsaires, tenir la continuité de l'histoire et
+appliquer les règles pareil d'un bout à l'autre a été le plus dur.
+
+**Périmètre** — Ce que la table sait : indices révélés, PNJ rencontrés,
+promesses et dettes, objets clés, visibles par le MJ et les joueurs
+(journal) ; les décisions de règle prises en jeu (« escalader le mât :
+DEX 10 »), gardées et reproposées quand la même situation revient ;
+ce que la prochaine scène demande et que la table ignore encore,
+signalé au MJ.
+
+**Fini quand** — Au milieu d'une soirée, le MJ retrouve en un geste ce
+que les joueurs savent d'un PNJ et la difficulté donnée la dernière fois
+pour la même action.
+
+**Origine** — Romain, 4 octobre 2026 · `MEMORY.md` §6
+
 ### `session/end-session` · todo
 
 **Périmètre** — « Terminer la session » enregistre l'état ; le MJ écrit
@@ -646,6 +737,30 @@ résultat.
 faisables dans l'app sur un iPhone et un Android.
 
 **Origine** — Planche « Jouer » · V1 écran joueur
+
+### `player/read-the-rules` · todo
+
+**Pourquoi** — Aux Corsaires, les joueurs ont trouvé les règles peu
+claires et pas toujours appliquées pareil.
+
+**Périmètre** — Les règles de la campagne en une page, tirées du
+système de règles (rien d'écrit à la main qui puisse diverger) ; chaque
+jet montre son calcul (dé, stat, bonus, difficulté quand elle est
+connue) et son résultat parmi les quatre (1, échec, réussite, 20) ;
+chaque carte dit son coût en actions et sa recharge.
+
+**Fini quand** — Un joueur qui n'a pas lu les règles explique, après
+son premier combat, pourquoi son attaque a raté.
+
+**Origine** — Règle de design 3 · Romain, 4 octobre 2026
+
+### `player/buy-and-trade` · todo
+
+**Périmètre** — L'or ; une boutique ouverte par le MJ (prix, stock,
+objet « sous le comptoir » révélé par un jet ou une discussion) ;
+marchander par un jet ; partager le butin.
+
+**Origine** — Marché noir de Kerjean, Corsaires acte 1
 
 ### `player/explore-map` · todo
 
@@ -721,8 +836,8 @@ principale par moment, scène et sorties, carte complète avec ce qui est
 caché, demandes des joueurs en cartes, journal qui montre aussi le
 caché, la table et ses présences, musique.
 
-**Fini quand** — Romain mène la soirée de la démo sans quitter cet
-écran.
+**Fini quand** — Romain mène une soirée à six joueurs sans quitter cet
+écran (les planches en montrent trois : tout doit tenir à six).
 
 **Origine** — Planche « Mener · la soirée de Marc côté MJ »
 
@@ -732,9 +847,32 @@ caché, la table et ses présences, musique.
 partout), initiative, jouer les adversaires, poser et retirer des
 états, valider le butin.
 
-**Fini quand** — Le combat de la démo se mène côté MJ jusqu'au butin.
+**Fini quand** — Un combat à six joueurs contre six adversaires (la
+bagarre du quai) se mène côté MJ jusqu'au butin.
 
 **Origine** — Planche « Mener » (combat)
+
+### `gm/balance-spotlight` · todo
+
+**Pourquoi** — Divertir six joueurs à la fois est ce qui épuise le MJ.
+
+**Périmètre** — Pour chaque joueur : depuis quand il n'a rien fait ni
+demandé, ses demandes en attente, les accroches de son histoire pas
+encore jouées ; le co-MJ propose une occasion de lui donner la main
+dans la scène en cours.
+
+**Fini quand** — Sur une soirée de deux heures, le MJ est averti dès
+qu'un des six joueurs reste vingt minutes sans moment à lui.
+
+**Origine** — Romain, 4 octobre 2026 · `MEMORY.md` §6
+
+### `gm/adjust-sheets-fast` · todo
+
+**Périmètre** — Depuis l'écran MJ, en un geste : +1 XP, retirer ou
+rendre des PV, donner un objet, de l'or ; la fiche du joueur change en
+direct, et chaque modification va dans l'historique de la session.
+
+**Origine** — `dnd-save/DnD-16-05-2026/prompt_plateforme_fiches.md`
 
 ### `gm/launch-session` · todo
 
@@ -763,9 +901,14 @@ valide (`MEMORY.md` §3). Spécification : V1 `copilot/` et ses tests.
 
 ### `copilot/draft-narration` · todo
 
+**Pourquoi** — Improviser quand les joueurs sortent du prévu est l'autre
+difficulté de Romain aux Corsaires.
+
 **Périmètre** — Décrire, conséquences, « et ensuite ? », faire parler un
-PNJ ; réponses modifiables avant d'être montrées ; identifiants inventés
-écartés.
+PNJ selon sa fiche (ce qu'il veut, ce qu'il cache) ; le co-MJ s'appuie
+sur ce que la table sait (`session/track-table-knowledge`) pour rester
+dans la continuité ; réponses modifiables avant d'être montrées ;
+identifiants inventés écartés.
 
 **Fini quand** — Test `copilot.test.ts` du V1 porté ; aucune réponse du
 co-MJ n'atteint un joueur sans geste du MJ.
@@ -811,8 +954,8 @@ proposition à valider.
 carte ou butin), lisible d'un canapé ; fil d'une ligne en bas ; grands
 moments (dés, coups, butin, niveaux, révélations) ; rien de secret.
 
-**Fini quand** — La TV suit la soirée de la démo comme sur la planche,
-sans action du MJ autre que l'appairage.
+**Fini quand** — La TV suit une soirée à six joueurs comme sur la
+planche, sans action du MJ autre que l'appairage.
 
 **Origine** — Planches « Écran TV » et « TV · la soirée côté TV »
 
