@@ -9,6 +9,11 @@ back before editing, Romain moves and resizes boards there.
 Decisions are in `MEMORY.md` §2, the closed design epic in
 `archive/tickets/design.md`, journeys in `docs/user-journeys.md`.
 
+In the app, the values of the « Fondations » board live in
+`front/src/styles/tokens.css` (Tailwind v4 `@theme` tokens and material
+utilities); the route `/reference` shows them. Change a colour, font or
+duration there, not in components.
+
 ## Rendering check
 
 Every board up to 3 October 2026 was checked rendered in Chrome and

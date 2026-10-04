@@ -258,6 +258,29 @@ forte.
 
 **Origine** — Planche « Fondations » · ancien ticket `design/build-design-system`
 
+**État** — Tokens dans `front/src/styles/tokens.css` (`@theme static`),
+valeurs relevées sur `Main.dc.html`, `kit.py`, `Bouton`, `GameCard` et
+`Gemme` : gris de la table, ivoire et encre, six couleurs de stats
+(formes documentées et dessinées en petite grille), rouge des dégâts,
+polices, échelle de texte, rayons, ombres dures, durées, courbes et
+animations ; matières en `@utility` (`surface-table`, `surface-slab`,
+`button-card`, `button-card-dark`, `card-frame`, `material-common` à
+`material-divine`, `damage-number`). La palette par défaut de Tailwind
+est retirée : aucune teinte ne peut entrer dans l'interface par erreur.
+Les variables shadcn pointent sur ces tokens (ivoire = action
+principale, rouge des dégâts = destructif) ; `<html class="dark">`,
+aucun thème clair. Les trois polices sont servies par l'app via
+`@fontsource` (sous-ensemble latin, œ compris), sans CDN. Animations
+réduites : une règle globale retire animations et transitions, chaque
+élément animé a un état de repos calme (reflet hors carte, dé posé,
+chiffre lisible) ; le mouvement piloté en JS lit
+`usePrefersReducedMotion` (testé sur le dé qui roule : il affiche son
+résultat tout de suite au lieu d'une face au hasard). Page de
+référence : `/reference`. Lint, typecheck, knip, tests et build
+passent dans PCT 105. **Reste** : un coup d'œil de Romain sur
+`/reference` dans un navigateur, animations réduites activées et
+désactivées — la page n'a été vérifiée que par le build et les tests.
+
 ### `ui/build-game-components` · todo
 
 **Pourquoi** — Le jeu tient dans une dizaine de pièces réutilisées
