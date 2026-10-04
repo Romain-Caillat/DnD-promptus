@@ -1,0 +1,722 @@
+# Corsaires de la Couronne — rule system, version 1.
+#
+# A FAITHFUL DRAFT of the rules as played on 16 May 2026, transcribed
+# from dnd-save/DnD-16-05-2026/. Its known defects are kept on purpose
+# (engine/lint-rule-system must find them; Romain decides the fixes):
+#   - two damage models: player actions deal fixed damage, NPCs and the
+#     black-market pistol roll dice;
+#   - "précision" is never tied to the attack roll (attack.precision);
+#   - "stat principale" is ambiguous: every class has two (attack.ability);
+#   - NPC armour classes outside the reference table (royal guards 14);
+#   - the Canonnier totals 63 ability points where the others total 64;
+#   - shop items whose effect points at nothing ("épée standard",
+#     "jets de soin").
+# Where the model forced a reading, the choice is marked INTERPRETATION.
+
+id: corsaires
+version: 1
+name: Corsaires de la Couronne
+description: >-
+  One-shot pirate, 1718. Six caractéristiques, d20 + modificateur contre
+  un seuil, deux actions libres par tour, attaques de classe à dégâts
+  fixes avec recharge, débloquées aux niveaux 1, 3 et 7.
+sources:
+  - dnd-save/DnD-16-05-2026/regles_combat.md
+  - dnd-save/DnD-16-05-2026/regles_interactions.md
+  - dnd-save/DnD-16-05-2026/prompt_contexte_dnd.md
+  - dnd-save/DnD-16-05-2026/prompt_plateforme_fiches.md
+  - dnd-save/DnD-16-05-2026/Acte_1/acte_1.md
+  - dnd-save/DnD-16-05-2026/Acte_1/pnj/
+
+abilities:
+  - { id: FOR, name: Force, description: "Effort physique brut : enfoncer une porte, soulever un tonneau, retenir un cordage." }
+  - { id: DEX, name: Dextérité, description: "Agilité et finesse : se faufiler, crocheter, pickpocket, garder l'équilibre." }
+  - { id: CON, name: Constitution, description: "Endurance et résistance : résister au poison, tenir l'alcool, encaisser le mal de mer." }
+  - { id: INT, name: Intelligence, description: "Réflexion et mémoire : résoudre une énigme, déchiffrer une carte, fabriquer un explosif." }
+  - { id: SAG, name: Sagesse, description: "Perception et intuition : repérer un piège, sentir un mensonge, lire les intentions." }
+  - { id: CHA, name: Charisme, description: "Persuasion et personnalité : convaincre, mentir, intimider, marchander, inspirer." }
+
+# "Modificateur = (score - 10) / 2 arrondi vers le bas" — `/` rounds down.
+modifier: "(score - 10) / 2"
+
+stats:
+  armor_class: { name: Classe d'armure, abbr: CA, formula: "10 + mod(DEX)" }
+  hit_points: { name: Points de vie, abbr: PV, formula: 10 }
+
+# No advantage/disadvantage anywhere in the source. "Pas d'entraide":
+# no help bonus exists in this model either.
+check: { dice: 1d20, advantage: false }
+
+difficulties:
+  - { id: facile, name: Facile, value: 5, description: "Convaincre un ivrogne, trouver une taverne." }
+  - { id: moyen, name: Moyen, value: 10, description: "Marchander un prix, escalader un mur." }
+  - { id: difficile, name: Difficile, value: 15, description: "Mentir à un officier royal, naviguer en tempête." }
+  - { id: tres_difficile, name: Très difficile, value: 20, description: "Bluffer le gouverneur, désamorcer un piège complexe." }
+
+outcomes:
+  critical_failure:
+    name: Échec critique
+    natural: [1]
+    description: "Ça tourne mal : arme qui glisse, PNJ qui s'énerve, objet qui casse. Conséquence narrative."
+  failure:
+    name: Échec
+    description: "Ça ne marche pas, mais pas de catastrophe. En combat : l'ennemi esquive ou pare."
+  success:
+    name: Réussite
+    description: "Ça fonctionne comme prévu. En combat : touché, les dégâts de l'attaque s'appliquent."
+    grants: { xp: 1 }
+  critical_success:
+    name: Réussite critique
+    natural: [20]
+    description: "Réussite parfaite avec un bonus. En combat : dégâts doublés."
+    grants: { xp: 1 }
+    damage_multiplier: 2
+
+# INTERPRETATION: the source has no group check. This rule comes from
+# the design board "Voyager" (half the group suffices); Romain to confirm.
+group_check:
+  succeeds_when: at_least_half
+  note: "Absent des règles jouées ; repris de la planche « Voyager »."
+
+attack:
+  # INTERPRETATION: "d20 + modificateur de votre stat principale" while
+  # each class has two. The worked examples of regles_combat.md use the
+  # FIRST one listed (Bretteur FOR +1 though DEX is +2; Canonnier INT;
+  # Vigie DEX), so first_primary.
+  ability: first_primary
+  # As written: precision appears on every attack card but the attack
+  # roll is "d20 + modif stat principale" and the examples never add it
+  # (Estocade +2 précision: 14 + 1 = 15). So precision changes nothing.
+  precision: not_applied
+  note: "d20 + modificateur de la stat principale contre la CA de la cible."
+
+initiative: { dice: 1d20, bonus: "mod(DEX)", ties: party_first }
+
+action_kinds:
+  - { id: attaque, name: Attaquer, cost: 1, description: "Utiliser une attaque de classe ou une attaque apprise." }
+  - { id: deplacement, name: Se déplacer, cost: 1, description: "Se mettre à couvert, se rapprocher, fuir." }
+  - { id: objet, name: Utiliser un objet, cost: 1, description: "Boire une potion, lancer un grappin, allumer une mèche." }
+  - { id: soin, name: Soigner un allié, cost: 1, description: "Avec une capacité ou un objet de soin ; relève un allié à 0 PV." }
+  - { id: autre, name: Autre action, cost: 1, description: "Renverser une table, couper un cordage…" }
+  - { id: fuite, name: Fuir, cost: 2, description: "Les deux actions du tour. Jet de DEX si la fuite est compliquée." }
+
+turn_contexts:
+  - id: sol
+    name: Combat
+    actions_per_turn: 2
+    # "Vous pouvez faire 2 fois la même action (2 attaques…)": no limit.
+    limits: []
+
+cooldowns:
+  # INTERPRETATION: "CD 1 tour" reads as "unusable during your next
+  # turn" (once every two turns), not "not twice in the same turn".
+  meaning: skip_next_turns
+  note: "« CD N tours » : inutilisable pendant vos N prochains tours."
+
+durations:
+  # INTERPRETATION: "(1 tour)" counts the bearer's turns; a buff a
+  # character puts on themself lasts through their next turn.
+  application_turn_counts: false
+
+progression:
+  upgrade_every_xp: 5
+  upgrade_points: 1
+  levels:
+    - { level: 1, xp: 0 }
+    - { level: 2, xp: 5 }
+    - { level: 3, xp: 10 }
+    - { level: 4, xp: 15 }
+    - { level: 5, xp: 20 }
+    - { level: 6, xp: 25 }
+    - { level: 7, xp: 30 }
+
+zero_hp:
+  rule: knocked_out
+  condition: inconscient
+  out_after_turns: 3
+  out_condition: hors_combat
+  note: "À 0 PV : inconscient. Sans soin pendant 3 tours, hors combat pour la scène ; revient à la scène suivante."
+
+creation:
+  abilities: from_class
+  free_action_slots: 1
+  note: "Les caractéristiques viennent de la classe ; un emplacement libre pour une attaque apprise en jeu."
+
+movement:
+  - scale: encounter
+    # The source only says "changer de position".
+    cells_per_move: null
+    note: "« Se déplacer — changer de position » ; aucune distance donnée."
+
+situations:
+  - { id: furtif, name: Furtif (non repéré) }
+  - { id: en_hauteur, name: En hauteur }
+
+resources:
+  - { id: or, name: Pièces d'or, abbr: PO, start: 10 }
+
+conditions:
+  - id: inconscient
+    name: Inconscient
+    kind: bane
+    description: "À 0 PV. Ne peut plus agir ; un soin le relève."
+    effects: [skips_turn]
+  - id: hors_combat
+    name: Hors combat
+    kind: bane
+    description: "Resté 3 tours inconscient sans soin : absent jusqu'à la scène suivante."
+    effects: [skips_turn]
+  - id: etourdi
+    name: Étourdi
+    kind: bane
+    description: "Perd son tour."
+    effects: [skips_turn]
+  - id: renverse
+    name: Renversé
+    kind: bane
+    description: "Au sol, perd son tour."
+    effects: [skips_turn]
+  - id: apeure
+    name: Apeuré
+    kind: bane
+    description: "Fuit ou passe son tour."
+    # INTERPRETATION: "fuit ou passe son tour" — the turn is lost; the
+    # flight is narrated by the GM.
+    effects: [skips_turn, { narrative: "Fuit ou passe son tour." }]
+  - id: immobilise
+    name: Immobilisé
+    kind: bane
+    description: "Ne peut plus se déplacer. Jet de FOR pour se libérer."
+    effects: [cannot_move, { narrative: "Jet de FOR pour se libérer (difficulté non précisée)." }]
+  - id: empoisonne
+    name: Empoisonné
+    kind: bane
+    description: "-1 à tous ses jets."
+    effects: [{ roll_modifier: { rolls: all, value: -1 } }]
+  - id: desoriente
+    name: Désorienté
+    kind: bane
+    description: "-2 précision."
+    effects: [{ precision: -2 }]
+  - id: saignement
+    name: Saignement
+    kind: bane
+    description: "-1 PV à chaque tour."
+    effects: [{ damage_per_turn: 1 }]
+  - id: maelstrom
+    name: Pris dans le Maelström
+    kind: bane
+    description: "3 dégâts par tour, mouvement réduit de moitié."
+    effects: [{ damage_per_turn: 3 }, { movement_percent: 50 }]
+  - id: point_faible
+    name: Point faible repéré
+    kind: bane
+    description: "Le prochain allié qui attaque la cible gagne +3 précision et +2 dégâts."
+    effects: [{ precision_against: 3 }, { damage_taken: 2 }, ends_when_attacked]
+
+classes:
+  - id: bretteur
+    name: Bretteur
+    description: Combattant agile au sabre, maître du duel et de l'esquive.
+    primary_abilities: [FOR, DEX]
+    abilities: { FOR: 13, DEX: 14, CON: 10, INT: 8, SAG: 10, CHA: 9 }
+    items:
+      - { item: sabre_d_abordage, qty: 1 }
+      - { item: dague_de_ceinture, qty: 1 }
+    actions:
+      - id: estocade
+        name: Estocade
+        description: Coup rapide et précis au point faible de l'adversaire.
+        kind: attaque
+        level: 1
+        target: enemy
+        roll: attack
+        tags: [{ damage: { amount: 3 } }, { precision: 2 }, { cooldown: 0 }]
+      - id: riposte_en_quarte
+        name: Riposte en quarte
+        description: Pare l'attaque suivante et contre-attaque immédiatement.
+        kind: attaque
+        level: 3
+        target: enemy
+        # INTERPRETATION: a counter-attack, resolved as an attack in the
+        # Bretteur's own turn; reactions do not exist in this system.
+        roll: attack
+        tags:
+          - { damage: { amount: 2, note: "Contre-attaque." } }
+          - { buff: { effects: [{ damage_taken: -2 }], kind: boon, turns: 1, to: self, note: "-2 dégâts reçus ce tour." } }
+          - { cooldown: 2 }
+      - id: danse_des_lames
+        name: Danse des lames
+        description: Enchaînement dévastateur sur tous les ennemis proches.
+        kind: attaque
+        level: 7
+        target: enemies
+        area: melee_burst
+        roll: attack
+        tags:
+          - { damage: { amount: 4 } }
+          - { precision: 1 }
+          - { control: { effects: [{ precision: -1 }], kind: bane, turns: 1, to: targets } }
+          - { cooldown: 4 }
+
+  - id: canonnier
+    name: Canonnier
+    description: Expert en artillerie et explosifs, terreur des navires ennemis.
+    primary_abilities: [INT, FOR]
+    # 63 points where every other class has 64 — kept as played.
+    abilities: { FOR: 12, DEX: 10, CON: 10, INT: 14, SAG: 9, CHA: 8 }
+    items:
+      - { item: pistolet_a_silex, qty: 1 }
+      - { item: sacoche_de_poudre, qty: 3 }
+    actions:
+      - id: tir_de_silex
+        name: Tir de silex
+        description: Tir de pistolet à distance. Puissant mais imprécis.
+        kind: attaque
+        level: 1
+        target: enemy
+        roll: attack
+        tags: [{ damage: { amount: 4 } }, { precision: 0 }, { cooldown: 1 }]
+      - id: bombe_a_meche
+        name: Bombe à mèche
+        description: Lance un explosif artisanal. Touche une zone.
+        kind: attaque
+        level: 3
+        target: enemies
+        area: zone
+        roll: attack
+        tags:
+          - { damage: { amount: 3 } }
+          # "jet SAG pour résister" gives no difficulty: the GM sets it.
+          - { control: { condition: etourdi, turns: 1, to: targets, save: { ability: SAG } } }
+          - { cooldown: 3 }
+      - id: salve_de_bordee
+        name: Salve de bordée
+        description: Volée de canons dévastatrice. Nécessite navire ou position.
+        kind: attaque
+        level: 7
+        target: enemies
+        area: line
+        roll: attack
+        tags:
+          - { damage: { amount: 7 } }
+          - { precision: 2 }
+          - { control: { condition: renverse, turns: 1, to: targets } }
+          - { note: "Nécessite un navire ou une position." }
+          - { cooldown: 5 }
+
+  - id: navigateur
+    name: Navigateur
+    description: Maître des cartes et des étoiles, guide infaillible des océans.
+    primary_abilities: [SAG, INT]
+    abilities: { FOR: 8, DEX: 10, CON: 9, INT: 13, SAG: 14, CHA: 10 }
+    items:
+      - { item: compas_enchante, qty: 1 }
+      - { item: carte_des_courants, qty: 1 }
+    actions:
+      - id: lecture_des_vents
+        name: Lecture des vents
+        description: Prédit les mouvements et guide un allié.
+        kind: attaque
+        level: 1
+        target: ally
+        roll: none
+        tags:
+          - { buff: { effects: [{ precision: 2 }], kind: boon, turns: 1, to: targets } }
+          - { cooldown: 0 }
+      - id: brume_marine
+        name: Brume marine
+        description: Brouillard épais qui désoriente les ennemis.
+        kind: attaque
+        level: 3
+        target: enemies
+        area: zone
+        roll: none
+        tags:
+          - { control: { effects: [{ precision: -2 }], kind: bane, turns: 2, to: targets } }
+          - { note: "Alliés insaisissables." }
+          - { cooldown: 3 }
+      - id: appel_du_maelstrom
+        name: Appel du Maelström
+        description: Déchaîne les courants. Piège mortel en zone.
+        kind: attaque
+        level: 7
+        target: enemies
+        area: zone
+        # INTERPRETATION: a class attack, so it rolls to hit each target.
+        roll: attack
+        tags:
+          - { control: { condition: maelstrom, turns: 3, to: targets } }
+          - { cooldown: 5 }
+
+  - id: chirurgien
+    name: Chirurgien de bord
+    description: Soigneur et empoisonneur, il décide qui vit et qui meurt.
+    primary_abilities: [SAG, CON]
+    abilities: { FOR: 8, DEX: 10, CON: 13, INT: 10, SAG: 14, CHA: 9 }
+    items:
+      - { item: sacoche_medicale, qty: 1 }
+      - { item: fiole_de_rhum_fortifiant, qty: 2 }
+    actions:
+      - id: premiers_soins
+        name: Premiers soins
+        description: Pansement rapide en plein combat.
+        # INTERPRETATION: heal-only cards spend the "Soigner un allié" action.
+        kind: soin
+        level: 1
+        target: ally_or_self
+        roll: none
+        tags: [{ heal: { amount: 3 } }, { cooldown: 0 }]
+      - id: lame_empoisonnee
+        name: Lame empoisonnée
+        description: Enduit une arme alliée de poison paralysant.
+        kind: attaque
+        level: 3
+        target: ally
+        roll: none
+        tags:
+          # INTERPRETATION: for 2 turns the ally's hits deal +2 and poison
+          # the target (-1 to all its rolls, 2 turns — duration unstated).
+          - buff:
+              effects:
+                - { damage_dealt: 2 }
+                - { on_hit: { condition: empoisonne, turns: 2, to: targets } }
+              kind: boon
+              turns: 2
+              to: targets
+          - { cooldown: 3 }
+      - id: chirurgie_de_guerre
+        name: Chirurgie de guerre
+        description: Opération miraculeuse. Relève ou soigne massivement.
+        kind: soin
+        level: 7
+        target: ally_or_self
+        roll: none
+        tags:
+          - { heal: { amount: 7, note: "Ou relève un allié à 0 PV." } }
+          - { buff: { effects: [{ ability_bonus: { value: 1 } }], kind: boon, turns: 1, to: targets } }
+          - { cooldown: 5 }
+
+  - id: quartier_maitre
+    name: Quartier-maître
+    description: Négociateur et gestionnaire, la voix de la raison (ou de la ruse).
+    primary_abilities: [CHA, INT]
+    abilities: { FOR: 8, DEX: 9, CON: 10, INT: 13, SAG: 10, CHA: 14 }
+    items:
+      - { item: registre_de_comptes, qty: 1 }
+      - { item: lettre_de_marque_fausse, qty: 1 }
+    actions:
+      - id: ordre_galvanisant
+        name: Ordre galvanisant
+        description: Cri de ralliement qui motive un allié.
+        kind: attaque
+        level: 1
+        target: ally
+        roll: none
+        tags:
+          - { buff: { effects: [{ damage_dealt: 1 }, { precision: 1 }], kind: boon, turns: 1, to: targets } }
+          - { cooldown: 0 }
+      - id: intimidation
+        name: Intimidation
+        description: Démoralise un ennemi. Jet CHA vs SAG.
+        kind: attaque
+        level: 3
+        target: enemy
+        # INTERPRETATION: "jet CHA vs SAG" is an opposed roll, both d20.
+        roll: { contest: { actor: CHA, target: SAG } }
+        tags:
+          # INTERPRETATION: no duration given; 1 turn like "Cri de guerre".
+          - { control: { condition: apeure, turns: 1, to: targets } }
+          - { cooldown: 2 }
+      - id: discours_du_capitaine
+        name: Discours du capitaine
+        description: Discours épique qui transcende l'équipage.
+        kind: attaque
+        level: 7
+        # INTERPRETATION: "TOUS alliés" includes the speaker.
+        target: all_allies
+        roll: none
+        tags:
+          - { buff: { effects: [{ damage_dealt: 2 }, { precision: 2 }], kind: boon, turns: 2, to: targets } }
+          - { heal: { amount: 2 } }
+          - { cooldown: 5 }
+
+  - id: vigie
+    name: Vigie
+    description: Éclaireur aux yeux perçants, rien n'échappe à son regard.
+    primary_abilities: [DEX, SAG]
+    abilities: { FOR: 9, DEX: 14, CON: 10, INT: 10, SAG: 13, CHA: 8 }
+    items:
+      - { item: longue_vue_en_laiton, qty: 1 }
+      - { item: grappin_et_corde, qty: 1 }
+    actions:
+      - id: tir_embusque
+        name: Tir embusqué
+        description: Tir précis depuis une position surélevée.
+        kind: attaque
+        level: 1
+        target: enemy
+        roll: attack
+        tags:
+          - { damage: { amount: 3 } }
+          - { precision: 3 }
+          - { situational: { situation: en_hauteur, precision: 1 } }
+          - { cooldown: 0 }
+      - id: point_faible_repere
+        name: Point faible repéré
+        description: Désigne une cible. Prochain allié à l'attaquer a un bonus.
+        kind: attaque
+        level: 3
+        target: enemy
+        roll: none
+        tags:
+          # INTERPRETATION: lasts until the next attack on the target, at
+          # most 1 turn (no duration given).
+          - { control: { condition: point_faible, turns: 1, to: targets } }
+          - { cooldown: 2 }
+      - id: oeil_du_faucon
+        name: Œil du faucon
+        description: Concentration absolue. Tir garanti au point vital.
+        kind: attaque
+        level: 7
+        target: enemy
+        roll: auto_hit
+        tags:
+          - { damage: { amount: 6, note: "Ignore l'armure." } }
+          - { control: { condition: saignement, turns: 3, to: targets } }
+          - { cooldown: 4 }
+
+  - id: flibustier
+    name: Flibustier
+    description: Brute d'abordage, premier à sauter sur le pont ennemi.
+    primary_abilities: [FOR, CON]
+    abilities: { FOR: 14, DEX: 9, CON: 13, INT: 8, SAG: 10, CHA: 10 }
+    items:
+      - { item: hache_d_abordage, qty: 1 }
+      - { item: bouclier_de_tonneau, qty: 1 }
+    actions:
+      - id: coup_de_hache
+        name: Coup de hache
+        description: Frappe lourde et brutale.
+        kind: attaque
+        level: 1
+        target: enemy
+        roll: attack
+        tags: [{ damage: { amount: 4 } }, { precision: 1 }, { cooldown: 0 }]
+      - id: cri_de_guerre
+        name: Cri de guerre
+        description: Hurlement terrifiant qui protège et effraie.
+        kind: attaque
+        level: 3
+        target: enemies
+        area: melee_burst
+        roll: none
+        tags:
+          - { buff: { effects: [{ damage_taken: -2 }], kind: boon, turns: 2, to: self } }
+          - { control: { condition: apeure, turns: 1, to: targets } }
+          - { cooldown: 3 }
+      - id: charge_devastatrice
+        name: Charge dévastatrice
+        description: Se jette avec la force d'un boulet de canon.
+        kind: attaque
+        level: 7
+        target: enemy
+        roll: attack
+        tags:
+          - { damage: { amount: 6 } }
+          - { control: { condition: renverse, turns: 1, to: targets, note: "La cible perd son prochain tour." } }
+          - { buff: { effects: [ignore_damage], kind: boon, turns: 1, to: self, note: "Ignore les dégâts reçus ce tour." } }
+          - { cooldown: 4 }
+
+  - id: boucanier
+    name: Boucanier
+    description: Chasseur furtif et trappeur, patient et mortel.
+    primary_abilities: [DEX, CON]
+    abilities: { FOR: 10, DEX: 14, CON: 13, INT: 9, SAG: 10, CHA: 8 }
+    items:
+      - { item: mousquet_court, qty: 1 }
+      - { item: kit_de_pieges, qty: 2 }
+    actions:
+      - id: tir_furtif
+        name: Tir furtif
+        description: Tir discret depuis l'ombre. Bonus si non repéré.
+        kind: attaque
+        level: 1
+        target: enemy
+        roll: attack
+        tags:
+          - { damage: { amount: 3 } }
+          - { situational: { situation: furtif, damage: 2 } }
+          - { precision: 2 }
+          - { cooldown: 0 }
+      - id: piege_a_machoires
+        name: Piège à mâchoires
+        description: Piège qui immobilise le premier ennemi.
+        kind: attaque
+        level: 3
+        target: enemy
+        roll: attack
+        tags:
+          - { damage: { amount: 2 } }
+          - { control: { condition: immobilise, turns: 2, to: targets } }
+          - { cooldown: 3 }
+      - id: embuscade_mortelle
+        name: Embuscade mortelle
+        description: Disparaît et frappe depuis les ombres. Critique garanti.
+        kind: attaque
+        level: 7
+        target: enemy
+        # INTERPRETATION: "critique auto" doubles the 8 (16) and, nothing
+        # being rolled, grants no XP.
+        roll: auto_critical
+        tags:
+          - { damage: { amount: 8 } }
+          - { control: { condition: desoriente, turns: 2, to: targets } }
+          - { cooldown: 5 }
+
+items:
+  # Starting equipment (prompt_plateforme_fiches.md).
+  - { id: sabre_d_abordage, name: Sabre d'abordage, description: Lame courbe idéale pour le combat rapproché en mer. }
+  - { id: dague_de_ceinture, name: Dague de ceinture, description: "Arme secondaire discrète, utile en dernier recours." }
+  - { id: pistolet_a_silex, name: Pistolet à silex, description: "Arme à feu à un coup, puissante mais lente à recharger." }
+  - { id: sacoche_de_poudre, name: Sacoche de poudre, description: Poudre noire pour recharger ou fabriquer des explosifs (3 charges). }
+  - { id: compas_enchante, name: Compas enchanté, description: "Pointe toujours vers le nord véritable, même en tempête." }
+  - { id: carte_des_courants, name: Carte des courants, description: Carte détaillée révélant les courants marins secrets. }
+  - { id: sacoche_medicale, name: Sacoche médicale, description: "Outils chirurgicaux, bandages et herbes médicinales." }
+  - id: fiole_de_rhum_fortifiant
+    name: Fiole de rhum fortifiant
+    description: Restaure 3 PV par utilisation.
+    consumable: true
+    action:
+      id: boire_rhum_fortifiant
+      name: Rhum fortifiant
+      kind: objet
+      target: ally_or_self
+      roll: none
+      tags: [{ heal: { amount: 3 } }]
+  - { id: registre_de_comptes, name: Registre de comptes, description: Contient les dettes et faveurs de nombreux contacts. }
+  - { id: lettre_de_marque_fausse, name: Lettre de marque (fausse), description: "Document officiel contrefait, utile pour bluffer." }
+  - { id: longue_vue_en_laiton, name: Longue-vue en laiton, description: Permet de repérer navires et dangers à grande distance. }
+  - { id: grappin_et_corde, name: Grappin et corde, description: "30 m de corde solide avec grappin, pour escalader ou aborder." }
+  - { id: hache_d_abordage, name: Hache d'abordage, description: Lourde hache dévastatrice au corps à corps. }
+  - { id: bouclier_de_tonneau, name: Bouclier de tonneau, description: "Couvercle de tonneau renforcé, protection improvisée." }
+  - { id: mousquet_court, name: Mousquet court, description: "Arme à feu compacte, bonne portée et discrète." }
+  - { id: kit_de_pieges, name: Kit de pièges, description: Pièges à poser pour embuscades ou capture. }
+  # Black market of Kerjean (acte_1.md, scene 3). Dice damage, as played.
+  - { id: epee_de_bonne_facture, name: Épée de bonne facture, price: 15, note: "+1 dégât par rapport à une épée standard (l'épée standard n'est définie nulle part)." }
+  # Same name as the Canonnier's starting pistol, but this one rolls 1d8
+  # where "Tir de silex" deals a fixed 4.
+  - id: pistolet_a_silex_marche_noir
+    name: Pistolet à silex
+    description: 1 tir avant rechargement.
+    price: 20
+    action:
+      id: tirer_pistolet_marche_noir
+      name: Tir de pistolet
+      kind: attaque
+      target: enemy
+      roll: attack
+      # INTERPRETATION: the shop does not say which ability; DEX for a gun.
+      ability: DEX
+      tags: [{ damage: { amount: 1d8 } }]
+  - { id: barils_de_poudre, name: Barils de poudre (x3), price: 12, description: Utiles pour le canon ou comme explosifs improvisés. }
+  - { id: provisions_de_voyage, name: Provisions de voyage (1 semaine), price: 5, description: "Viande séchée, biscuits de mer, eau." }
+  - { id: corde_de_30m, name: Corde de 30 m, price: 2, description: "Solide, chanvre tressé." }
+  - { id: longue_vue, name: Longue-vue, price: 10, description: Portée doublée pour la vigie. }
+  - { id: kit_de_soins, name: Kit de soins, price: 8, note: "+1 aux jets de soin, 3 utilisations — mais les soins ne se lancent pas." }
+
+# "CA des ennemis (référence MJ)", regles_combat.md.
+adversary_tiers:
+  - { id: matelot, name: Matelot / pirate basique, armor_class: 10 }
+  - { id: soldat_entraine, name: Soldat entraîné, armor_class: 12 }
+  - { id: officier, name: Officier / Capitaine, armor_class: 13 }
+  - { id: boss, name: Boss / Ennemi d'élite, armor_class: 15 }
+
+# Stat blocks as written (acte_1.md and pnj/*.md). Armour classes are
+# the stated ones, not 10 + DEX. INTERPRETATION: the source never says
+# which ability an NPC attacks with — melee and blunt uses FOR, guns and
+# thrown objects DEX. A tier is set only where the source names a type.
+adversaries:
+  - id: gueule_rouge
+    name: Gueule-Rouge
+    description: Pirate rival, colérique, veut les lettres de marque pour lui.
+    tier: boss
+    abilities: { FOR: 14, DEX: 12, CON: 13, INT: 9, SAG: 8, CHA: 11 }
+    armor_class: 12
+    hit_points: 10
+    tactics: "Vise le joueur qui a l'air le plus fort (ou celui qui l'a le plus insulté). S'il tombe, tous les marins restants fuient."
+    actions:
+      - { id: gueule_rouge_sabre, name: Sabre d'abordage, kind: attaque, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 1d6+2 } }] }
+      - { id: gueule_rouge_coup_de_tete, name: Coup de tête, kind: attaque, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 1d4+2 } }] }
+  - id: marin_de_gueule_rouge
+    name: Marin de Gueule-Rouge
+    description: Sbire générique.
+    tier: matelot
+    abilities: { FOR: 11, DEX: 10, CON: 10, INT: 8, SAG: 9, CHA: 8 }
+    armor_class: 10
+    hit_points: 4
+    tactics: "Foncent sur les joueurs un par un, sans coordination. Si 3 marins tombent, les 2 restants tentent de fuir."
+    actions:
+      - { id: marin_coutelas, name: Coutelas, kind: attaque, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 1d4+1 } }] }
+      - { id: marin_poing, name: Poing, kind: attaque, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 1d3 } }] }
+  - id: garde_royal
+    name: Garde royal
+    description: Figurant derrière Vaubernier ; n'intervient que si les joueurs s'en prennent au Comte.
+    tier: soldat_entraine
+    abilities: { FOR: 13, DEX: 11, CON: 12, INT: 10, SAG: 10, CHA: 9 }
+    armor_class: 14
+    hit_points: 6
+    note: "CA 14 (uniforme avec plastron) alors que la table donne 12 au soldat entraîné."
+    actions:
+      - { id: garde_epee, name: Épée de soldat, kind: attaque, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 1d6+1 } }] }
+  - id: capitaine_morel
+    name: Capitaine Morel
+    abilities: { FOR: 9, DEX: 10, CON: 11, INT: 14, SAG: 12, CHA: 11 }
+    armor_class: 10
+    hit_points: 5
+    actions:
+      - { id: morel_pistolet, name: Pistolet de service, description: Un seul tir., kind: attaque, target: enemy, roll: attack, ability: DEX, tags: [{ damage: { amount: 1d6 } }] }
+      - { id: morel_epee, name: Épée rouillée, kind: attaque, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 1d4 } }] }
+  - id: dents_de_fer
+    name: Dents-de-Fer
+    abilities: { FOR: 12, DEX: 13, CON: 11, INT: 14, SAG: 12, CHA: 15 }
+    armor_class: 11
+    hit_points: 7
+    actions:
+      - { id: dents_de_fer_dague, name: Dague cachée, kind: attaque, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 1d4+1 } }] }
+      - { id: dents_de_fer_poing, name: Coup de poing, kind: attaque, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 1d3 } }] }
+  - id: jacquot_le_sourd
+    name: Jacquot le Sourd
+    abilities: { FOR: 8, DEX: 7, CON: 12, INT: 9, SAG: 7, CHA: 8 }
+    armor_class: 9
+    hit_points: 4
+    actions:
+      - { id: jacquot_chope, name: Chope de bière, description: Lancée avec une précision lamentable., kind: attaque, target: enemy, roll: attack, ability: DEX, tags: [{ damage: { amount: 1d2 } }] }
+  - id: mere_goulven
+    name: Mère Goulven
+    abilities: { FOR: 13, DEX: 9, CON: 14, INT: 11, SAG: 15, CHA: 13 }
+    armor_class: 10
+    hit_points: 8
+    actions:
+      - { id: goulven_louche, name: Louche en fer, description: Improvisation., kind: attaque, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 1d4+1 } }] }
+  - id: petit_rene
+    name: Petit René
+    abilities: { FOR: 7, DEX: 14, CON: 10, INT: 12, SAG: 13, CHA: 11 }
+    armor_class: 12
+    hit_points: 3
+    actions:
+      - { id: rene_vielle, name: Coup de vielle, description: Désespéré., kind: attaque, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 1d2 } }] }
+  - id: vaubernier
+    name: Comte Étienne de Vaubernier
+    abilities: { FOR: 8, DEX: 10, CON: 9, INT: 15, SAG: 14, CHA: 16 }
+    armor_class: 10
+    hit_points: 5
+    note: "Aucune attaque : il ne se bat pas, c'est à ça que servent les gardes."
+    actions: []
+  - id: vieux_thomas
+    name: Vieux Thomas
+    abilities: { FOR: 14, DEX: 9, CON: 13, INT: 12, SAG: 13, CHA: 8 }
+    armor_class: 10
+    hit_points: 7
+    actions:
+      - { id: thomas_maillet, name: Maillet de charpentier, description: Lourd., kind: attaque, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 1d6+2 } }] }

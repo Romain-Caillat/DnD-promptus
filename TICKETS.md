@@ -381,7 +381,7 @@ Le serveur est seul juge (`MEMORY.md` §3). Spécification : le code et
 les tests unitaires de `src/lib/engine/` du V1
 (`archive/promptus-v1-nextjs.zip`), à porter test par test.
 
-### `engine/model-rule-system` · todo
+### `engine/model-rule-system` · doing
 
 **Pourquoi** — Les règles sont une donnée de la campagne, pas du code
 (`MEMORY.md` §1) : tout le reste en dépend.
@@ -406,6 +406,31 @@ règle dans le fichier (recharge, dégâts, actions par tour) change le
 résultat sans toucher au code ; les actions offertes à un personnage se
 dérivent de sa classe et de son niveau (tests `ruleset.test.ts` portés).
 
+**État** — Fait côté moteur, à valider par Romain. Le modèle vit dans
+`shared/src/rules/` (`model.rs`, chargé et validé par `load.rs`) et le
+format est décrit dans `docs/rules-format.md`. Un système est un fichier
+YAML (`content/rules/<id>/v<n>.yaml`) avec un id et une version :
+caractéristiques et formule du modificateur, CA et PV en formules (où
+`/` arrondit vers le bas), dé de test, difficultés nommées, les quatre
+bandes de résultat et ce qu'elles donnent (XP, dégâts doublés), jet de
+groupe, règle d'attaque (quelle stat principale, la précision compte ou
+non), économie d'actions par contexte (`sol` ; `vaisseau` avec « 1
+attaque max »), sens des recharges, décompte des durées, progression, ce
+qui arrive à 0 PV (KO puis hors combat, ou jets contre la mort), classes,
+objets, états, situations, ressources, paliers et fiches d'adversaires.
+Une seule forme d'action pour les cartes de classe, les attaques des PNJ
+et l'usage des objets. Le chargement refuse les références cassées avec
+un code, un chemin et un détail. Les deux brouillons, `corsaires/v1.yaml`
+et `brasier/v1.yaml`, transcrivent `dnd-save/` tel que joué, défauts
+compris (deux modèles de dégâts, précision qui ne compte pas, CA 14 des
+gardes, Canonnier à 63 points, renvoi à `Combat_Sol.md`) ; chaque
+lecture imposée par le modèle est marquée `INTERPRETATION` dans le
+fichier. Un test modifie le fichier (dégâts, recharge, actions par tour)
+et voit le jeu changer sans code. Reste : un combat complet de chaque
+monde (`engine/run-combat`) ; le mode « jet sous la compétence » (d100)
+du V1 n'est pas porté, aucun monde ne s'en sert ; le Brasier n'a encore
+aucune fiche d'adversaire au sol (la source n'en a pas).
+
 **Origine** — V1 `ruleset.ts`, `ruleset-schema.ts` · planche « Règles »
 (moments 1 à 4 et 6) · `dnd-save/DnD-16-05-2026/regles_*.md`
 
@@ -428,7 +453,7 @@ points ; sur le Brasier, le renvoi à `Combat_Sol.md` qui n'existe pas.
 
 **Origine** — `docs/lecons-des-parties.md` §2 et §3
 
-### `engine/roll-checks` · todo
+### `engine/roll-checks` · doing
 
 **Pourquoi** — Chaque demande d'un joueur finit en jet ou en refus
 expliqué.
@@ -440,10 +465,23 @@ côté serveur avec une source de hasard injectable pour les tests.
 **Fini quand** — Tests `dice.test.ts` et `skill-check.test.ts` du V1
 portés et verts.
 
+**État** — Fait côté moteur, à valider par Romain
+(`shared/src/rules/{dice,check}.rs`). Expressions `NdX+M` ou valeur fixe,
+bornées ; dé de test avec modificateurs de caractéristique et d'états ;
+avantage et désavantage seulement si le système les a (les deux
+brouillons non : une demande est refusée), et ils s'annulent ; les quatre
+bandes, le naturel passant avant le seuil ; jet de groupe (au moins la
+moitié — règle reprise de la planche « Voyager », absente des parties,
+à confirmer) ; chaque jet rend son détail (faces, face gardée, chaque
+modificateur et sa source, total, cible, bande). Hasard injectable :
+`SeededDice` (ChaCha8, reproductible) pour le serveur, `ScriptedDice`
+pour les tests. Intentions de `dice.test.ts` et des tests de jet du V1
+portées, sur les deux mondes.
+
 **Origine** — V1 `dice.ts`, `skill-check.ts` · planche « Voyager »
 (jet de groupe)
 
-### `engine/resolve-actions` · todo
+### `engine/resolve-actions` · doing
 
 **Pourquoi** — Une carte jouée doit produire le même effet chez tous,
 calculé une seule fois.
@@ -454,9 +492,26 @@ bonus déjà calculés pour l'affichage des cartes.
 
 **Fini quand** — Tests `resolver.test.ts` du V1 portés et verts.
 
+**État** — Fait côté moteur, à valider par Romain
+(`shared/src/rules/action.rs`). `resolve_action` prend une scène et rend
+la suivante avec ce qui s'est passé, ou un refus qui ne change rien :
+tour du joueur, état qui empêche d'agir, niveau, recharge, budget
+d'actions et limite par type, objet manquant, cibles (nombre, camp, à
+terre), situation inconnue, choix ou difficulté manquants. Puis jet pour
+toucher (ou jet opposé, ou touche / critique automatique), dégâts fixes
+ou aux dés avec leur détail, critique, soins, états avec jet de
+résistance, effets « au toucher », recharge, XP selon la bande, objet
+consommé. Les cartes d'un personnage se dérivent de sa classe, de son
+niveau et de son emplacement libre, bonus d'attaque déjà calculé. Testé
+sur les deux mondes ; intentions de `resolver.test.ts` portées (dégâts
+bornés à 0, soins bornés au max, état posé avec sa durée, résistance en
+cascade, attaque touchée, ratée, critique). Les 20 effets primitifs du
+V1 ne sont pas repris tels quels : les effets de monde (scènes, indices,
+musique) n'appartiennent pas au moteur de règles.
+
 **Origine** — V1 `resolver.ts`, `catalog.ts`
 
-### `engine/apply-conditions` · todo
+### `engine/apply-conditions` · doing
 
 **Périmètre** — Les états définis par le système de règles (étourdi,
 apeuré, immobilisé, empoisonné, renversé… ; les 14 du SRD le jour où il
@@ -466,6 +521,20 @@ et effet pixel).
 
 **Fini quand** — Les états des deux mondes s'appliquent dans les tests
 du moteur ; tests `conditions.test.ts` du V1 portés.
+
+**État** — Fait côté moteur, à valider par Romain
+(`shared/src/rules/conditions.rs`). Les états sont définis par le
+système (étourdi, renversé, apeuré, immobilisé, empoisonné, désorienté,
+saignement…) ou en ligne sur une carte ; leurs effets portent sur les
+jets, l'avantage, la précision, les dégâts donnés et reçus, les
+caractéristiques, le mouvement, le tour perdu, les dégâts par tour.
+`start_turn` fait avancer les recharges et vide le budget d'un
+combattant qui perd son tour ; `end_turn` applique les dégâts par tour,
+décompte les durées du porteur et passe en hors combat un KO resté 3
+tours sans soin. Chaque état garde ce que montre le badge (nom, bienfait
+ou malus, tours restants). Intentions de `conditions.test.ts` portées
+sur les états des deux mondes ; le catalogue des 14 états du SRD viendra
+avec `engine/add-srd-preset`.
 
 **Origine** — V1 `conditions.ts` · planche « États des personnages »
 
