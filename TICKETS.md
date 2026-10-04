@@ -231,6 +231,31 @@ rejoint ; une sauvegarde se restaure sur une base vide.
 
 **Origine** — Alignement sur Devotion
 
+**État** — Tout ce qui ne demande pas d'exposition publique est fait et
+vérifié dans PCT 105, sur une pile de test séparée
+(`promptus-prod-test`, `127.0.0.1:4380`, démontée ensuite) : un
+`Dockerfile` en trois étages (front Bun, serveur Rust, image
+`debian:trixie-slim` de ~170 Mo) où le serveur Axum sert aussi le front
+construit (`FRONT_DIR`, routes du client → `index.html`, `/assets`
+en cache long, `/api/*` inconnu → 404 JSON) ;
+`docker-compose.prod.yml` (app + Postgres 17, base jamais publiée) ;
+migrations au démarrage ; `GET /api/health` en health check ;
+`deploy/install.sh`, `deploy/backup.sh` (dump `pg_dump` en archive tar,
+chiffrement `age` optionnel par clé publique, rotation),
+`deploy/restore.sh` (refuse une base non vide sans `--force`, et
+sauvegarde alors d'abord ce qu'il remplace) et `deploy/prod-deploy.sh`,
+la boucle cron de Devotion (sauvegarde, sinon pas de déploiement) ;
+`docs/install.md`, `docs/backup.md`. Vérifié : image construite, santé
+200, front servi, sauvegarde → volume supprimé → restauration sur base
+vide → données revenues et santé 200 (aussi en chiffré, et sur une
+machine vierge). **Reste, pour Romain** : choisir l'hôte (proposition
+dans `docs/install.md` : un conteneur dédié plutôt que PCT 101), y
+faire la première installation, ajouter la route sur le Traefik de
+PCT 100 et l'enregistrement DNS chez Ionos, installer la boucle de
+déploiement sur l'hôte Proxmox — puis le test du téléphone en 4G, qui
+attend aussi `session/invite-and-join`. `prod-deploy.sh` n'a pas pu
+tourner sans conteneur cible.
+
 ---
 
 ## Épic `ui`

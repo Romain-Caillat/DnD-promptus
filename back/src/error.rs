@@ -12,6 +12,8 @@ pub enum AppError {
     /// A dependency the request needs (today: the database) is down.
     /// The body string is the machine-readable code.
     ServiceUnavailable(&'static str),
+    /// No such route or resource. The body string is the code.
+    NotFound(&'static str),
     Internal(String),
 }
 
@@ -23,6 +25,7 @@ impl IntoResponse for AppError {
                 code,
                 "a dependency is unavailable".to_string(),
             ),
+            Self::NotFound(code) => (StatusCode::NOT_FOUND, code, "not found".to_string()),
             Self::Internal(detail) => {
                 tracing::error!(%detail, "internal error");
                 (
