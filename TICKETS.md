@@ -95,11 +95,16 @@ exploration, combat (main de cartes, « Autre… », arcade), butin, onglets
 Jeu, Carte, Personnage, Journal. Les planches Joueur et le storyboard
 sont ce même téléphone figé sur un moment. Rejoindre (lien, pseudo,
 choix) et l'envoi du personnage au MJ sont dessinés sur la planche
-« Inviter ». Reste à dessiner : le créateur de personnage en couches
-(corps, tenue, couleurs, au hasard) et ses étapes de règles, « Précédemment… » hors session,
-voyage sur la carte du monde, fin de session et récapitulatif, joueur
-sur ordinateur, mort du personnage, mini-lecteur YouTube visible
-(`MEMORY.md` §4).
+« Inviter ». Dessinés le 4 octobre 2026, chacun avec son storyboard :
+le créateur de personnage en couches (« Créer », 8 moments : peuple,
+corps, tenue et arme, couleurs et « au hasard », classe, limite
+signalée, histoire avec le co-MJ, envoi), l'entre-deux-sessions
+(« Entre deux », 6 moments : niveau 4, récap, chronique, fiche, dates
+et rappel), le voyage (« Voyager »), le joueur sur ordinateur (« Jouer
+sur ordinateur · Sef ») et la mort du personnage (« Mourir », variante).
+
+Reste : vérifier ces planches rendues dans Chrome, et la revue des
+parcours avec Romain.
 
 **Origine** — `docs/design-brief.md`
 
@@ -134,9 +139,19 @@ l'ordinateur du MJ avec son storyboard :
   des joueurs, date de la première session ;
 - les cartes (vue MJ, import d'image).
 
-Reste : validation des trois parcours par Romain ; éditeur du système de
-règles (au-delà du choix du préréglage) ; éditeur de carte ; salon ;
-jumelage de l'écran partagé ; voyage ; version tablette.
+Dessinés le 4 octobre 2026, chacun avec son storyboard : le lancement
+de la session 4 avec la TV (« Lancer », 5 moments : code de la TV,
+arrivées, ce que la TV peut montrer, « Précédemment… », première
+scène), le voyage sur la carte du monde (« Voyager », 7 moments),
+l'éditeur du système de règles (« Règles », 7 moments, dont une règle
+maison écrite en français et un combat simulé), l'éditeur de carte
+(« Cartes · l'éditeur », 7 moments) et la version tablette
+(« Tablette », 5 moments : rail de grosses cibles, demandes au pouce,
+carte au doigt, co-MJ à la voix). Le salon et les récapitulatifs sont
+dans « Mener ».
+
+Reste : vérifier les nouvelles planches rendues dans Chrome, et la revue
+des parcours avec Romain.
 
 **Origine** — `docs/design-brief.md`
 

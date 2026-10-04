@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Entre deux sessions</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A;overflow:hidden}
+.es-pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 60% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.es-ttl{font-family:'Cinzel',Georgia,serif;font-weight:800;letter-spacing:.02em}
+.es-nar{margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-weight:500;line-height:1.35;color:#E5E5E5}
+.es-lbl{font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.es-mut{font-size:12px;color:#8C8C8C;line-height:1.5}
+.es-lap{position:relative;width:1440px;height:900px;flex:none;overflow:hidden;box-sizing:border-box;display:grid;grid-template-rows:52px 1fr 78px;background:radial-gradient(90% 70% at 50% 0%,#1A1A1A 0,#0C0C0C 60%,#050505 100%);border-radius:14px;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7)}
+.es-tab{position:relative;width:1180px;height:820px;flex:none;overflow:hidden;box-sizing:border-box;display:grid;grid-template-rows:56px 1fr 92px;background:radial-gradient(90% 70% at 50% 0%,#1A1A1A 0,#0C0C0C 60%,#050505 100%);border-radius:28px;border:12px solid #050505;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7)}
+.es-top{display:flex;align-items:center;gap:18px;padding:0 18px;border-bottom:1px solid #1F1F1F;font-size:12px;color:#A3A3A3;white-space:nowrap}
+.es-top .es-sep{width:1px;height:20px;background:#2A2A2A;flex:none}
+.es-tabs{display:flex;gap:20px;margin-left:24px}
+.es-tabs > span{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6E6E6E;padding:17px 0;border-bottom:2px solid transparent}
+.es-tabs > span.on{color:#F2F2F2;border-bottom-color:#F2F2F2}
+.es-cols{display:grid;grid-template-columns:300px 1fr 360px;gap:14px;padding:14px 18px 0;min-height:0}
+.es-col{display:flex;flex-direction:column;gap:14px;min-height:0;overflow:hidden}
+.es-panel{background:linear-gradient(180deg,#181818,#111);border:1px solid #2C2C2C;border-radius:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 30px rgba(0,0,0,.45)}
+.es-ph{display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px 8px}
+.es-stage{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.es-hd{display:flex;align-items:baseline;gap:14px}
+.es-foot{display:flex;align-items:center;gap:14px;padding:0 18px 14px}
+.es-bn{flex:1;display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;border-radius:12px;font-weight:700;font-size:15px;box-sizing:border-box}
+.es-bn.you{background:#161616;border:1px solid #2C2C2C;color:#F2F2F2}
+.es-bn.wait{background:#0A0A0A;border:1.5px dashed #5E5E5E;color:#D4D4D4}
+.es-bn.warn{background:#0A0A0A;border:1.5px solid #FF9F1C;color:#F2F2F2}
+.es-bn.hurt{background:#0A0A0A;border:1.5px solid #FF4D5E;color:#F2F2F2}
+.es-bn.turn{background:#FFD60A;color:#0A0A0A;box-shadow:0 3px 0 #8A6F00}
+.es-go{font:inherit;width:460px;flex:none;display:block;box-sizing:border-box;border:0;padding:6px;border-radius:12px;background:#EDEDED;color:#0A0A0A;text-align:left;cursor:pointer;box-shadow:0 4px 0 #8A8A8A,0 7px 0 #5A5A5A,0 14px 24px rgba(0,0,0,.5);transform-origin:50% 100%;transition:transform .1s,box-shadow .1s}
+.es-go .es-in{display:flex;align-items:center;gap:12px;border:1.5px solid #0A0A0A;border-radius:8px;padding:6px 14px;height:42px;box-sizing:border-box}
+.es-go .es-t{display:block;font-family:'Cinzel',Georgia,serif;font-weight:800;font-size:17px;line-height:1.05}
+.es-go .es-s{display:block;font-size:11px;font-weight:600;color:#5A5A5A;margin-top:2px}
+.es-go .es-chev{margin-left:auto;font-family:'Cinzel',serif;font-weight:800;font-size:22px}
+.es-go:active{transform:perspective(500px) rotateX(14deg) translateY(4px);box-shadow:0 1px 0 #8A8A8A,0 2px 0 #5A5A5A}
+.es-go.off{background:#141414;color:#8C8C8C;box-shadow:0 0 0 1.5px #2C2C2C;cursor:default;pointer-events:none}
+.es-go.off .es-in{border:1.5px dashed #3A3A3A}
+.es-go.off .es-s{color:#6E6E6E}
+.es-go.red{background:#FF4D5E;box-shadow:0 4px 0 #8A2A33,0 7px 0 #5A1A20,0 14px 24px rgba(0,0,0,.5)}
+.es-go.red .es-s{color:#3A0A10}
+.es-btn{font:inherit;font-family:'Cinzel',Georgia,serif;font-size:12px;font-weight:800;color:#F2F2F2;background:#141414;border:0;border-radius:8px;height:34px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:nowrap;outline:1.5px solid #5A5A5A;outline-offset:-4px;box-shadow:0 0 0 1.5px #3A3A3A,0 3px 0 #000;flex:none}
+.es-btn.es-lt{background:#EDEDED;color:#0A0A0A;outline-color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.es-sec{display:flex;flex-direction:column;gap:8px}
+.es-row2{display:flex;gap:14px;align-items:flex-start}
+.es-box{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;background:#0D0D0D;border:1px solid #333;font-size:14px}
+.es-box > code{flex:1;font-family:'Chakra Petch',monospace;font-size:14px;color:#F2F2F2}
+.es-edit{padding:14px 16px;border-radius:12px;background:#0D0D0D;border:1px solid #333;font-size:14px;line-height:1.55;color:#D4D4D4}
+.es-edit > .es-lbl{display:block;margin-bottom:8px}
+.es-rl{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:baseline;font-size:13px;line-height:1.45;padding:9px 12px;border-radius:10px;background:#121212;color:#D4D4D4}
+.es-chk{display:flex;align-items:flex-start;gap:10px;font-size:13px;padding:10px 12px;border-radius:10px;background:#121212;line-height:1.45}
+.es-chk > i{width:18px;height:18px;border-radius:5px;background:#EDEDED;color:#0A0A0A;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:11px;flex:none;margin-top:1px}
+.es-chk.warn{border:1.5px solid #FF9F1C}
+.es-chk.warn > i{background:#FF9F1C}
+.es-chk.es-pend > i{background:transparent;border:1.5px dashed #5E5E5E;color:#8C8C8C;box-sizing:border-box}
+.es-co{display:flex;flex-direction:column;gap:8px;padding:0 14px 14px}
+.es-note{padding:12px 14px;border-radius:12px;background:#EDEDED;color:#0A0A0A;font-size:13px;line-height:1.5;box-shadow:0 3px 0 #8A8A8A}
+.es-note > .es-lbl{display:block;color:#5A5A5A;margin-bottom:4px}
+.es-secret{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;background:#050505;border:1.5px dashed #5E5E5E;font-size:13px;line-height:1.5;color:#D4D4D4}
+.es-secret > .es-lbl{color:#F2F2F2}
+.es-hook{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:10px;background:#141414;border:1px solid #2C2C2C;font-size:13px;line-height:1.45;color:#D4D4D4}
+.es-hook > small{font-size:11px;color:#8C8C8C}
+.es-hook.on{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A}
+.es-hook.on > small{color:#5A5A5A}
+.es-ans{display:flex;align-items:center;gap:10px;font-size:13px;padding:8px 12px;border-radius:10px;background:#121212;color:#D4D4D4}
+.es-ans > b{width:80px;flex:none}
+.es-ans > em{margin-left:auto;font-style:normal;font-size:11px;color:#8C8C8C;white-space:nowrap}
+.es-st{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;border-radius:6px;white-space:nowrap;flex:none}
+.es-st.ok{background:#EDEDED;color:#0A0A0A}
+.es-st.todo{background:#FFD60A;color:#0A0A0A}
+.es-st.warn{background:#0A0A0A;color:#FF9F1C;border:1.5px solid #FF9F1C}
+.es-st.wait{border:1.5px dashed #5E5E5E;color:#A3A3A3}
+.es-st.off{color:#5A5A5A;border:1px solid #2C2C2C}
+.es-seat{display:flex;align-items:center;gap:12px;height:68px;padding:0 12px;margin:0 10px 6px;border-radius:12px;background:#121212;border:1px solid transparent}
+.es-seat.cur{border-color:#F2F2F2;background:#1C1C1C}
+.es-seat > .es-who{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.es-seat > .es-who > b{font-size:14px}
+.es-seat > .es-who > small{font-size:11px;color:#8C8C8C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.es-pf{display:inline-grid;place-items:end center;width:44px;height:56px;border-radius:9px;background:linear-gradient(180deg,#262626,#121212);border:2px solid #3A3A3A;box-shadow:0 3px 0 #000;box-sizing:border-box;flex:none;overflow:hidden}
+.es-pf.none{background:transparent;border:2px dashed #3A3A3A;box-shadow:none}
+.es-pf.down{border-color:#FF4D5E}
+.es-pres{width:9px;height:9px;border-radius:50%;background:#3A3A3A;flex:none}
+.es-pres.on{background:#F2F2F2;box-shadow:0 0 8px rgba(255,255,255,.6)}
+.es-pstage{display:flex;align-items:flex-end;gap:14px;padding:14px;border-radius:14px;background:radial-gradient(60% 30% at 30% 92%,rgba(255,255,255,.08),transparent),#141414;border:1px solid #2C2C2C}
+.es-abs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.es-ab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;border-radius:10px;background:#121212;border:1px solid #2C2C2C}
+.es-ab > small{font-size:10px;font-weight:700;letter-spacing:.14em;color:#8C8C8C}
+.es-ab > b{font-size:20px}
+.es-ab > em{font-style:normal;font-size:11px;color:#A3A3A3}
+.es-ab.es-fix{border:1.5px solid #F2F2F2;background:#1C1C1C}
+.es-gems{display:flex;gap:14px;align-items:flex-end}
+.es-gem{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#8C8C8C}
+.es-hand{display:flex;gap:12px}
+.es-sent{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:#141414;border:1.5px dashed #5E5E5E;font-size:13px;color:#D4D4D4}
+.es-spin{width:14px;height:14px;border-radius:50%;border:2px solid #3A3A3A;border-top-color:#F2F2F2;animation:es-spin 1s linear infinite;flex:none}
+@keyframes es-spin{to{transform:rotate(360deg)}}
+.es-toast{display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:14px;background:#EDEDED;color:#0A0A0A;box-shadow:0 6px 0 #8A8A8A,0 20px 40px rgba(0,0,0,.6)}
+.es-toast .es-lbl{color:#5A5A5A}
+.es-art{height:178px;border-radius:12px;position:relative;background:radial-gradient(70% 80% at 50% 100%,rgba(10,10,10,.9),transparent),repeating-linear-gradient(135deg,#3A3A3A 0 2px,#2A2A2A 2px 9px);flex:none;display:flex;align-items:flex-end;padding:14px;box-sizing:border-box}
+.es-tag{position:absolute;right:10px;top:10px;font-size:9px;font-weight:700;letter-spacing:.14em;background:#0A0A0A;padding:3px 6px;border-radius:4px}
+.es-yt{display:flex;align-items:center;gap:10px;padding:6px 10px 6px 6px;border-radius:10px;background:#141414;border:1px solid #2C2C2C;font-size:12px}
+.es-yt > .es-thumb{width:64px;height:36px;border-radius:5px;background:repeating-linear-gradient(135deg,#3A3A3A 0 2px,#262626 2px 7px);display:grid;place-items:center;flex:none;font-size:8px;font-weight:700;letter-spacing:.1em}
+.es-yt > span:last-child{margin-left:auto;color:#8C8C8C}
+.es-eq{display:flex;gap:2px;align-items:flex-end;height:14px}
+.es-eq > i{width:3px;height:6px;background:#F2F2F2;animation:es-eq .8s ease-in-out infinite}
+.es-eq > i:nth-child(2){animation-delay:-.3s}
+.es-eq > i:nth-child(3){animation-delay:-.6s}
+@keyframes es-eq{0%,100%{height:4px}50%{height:14px}}
+.es-endc{position:absolute;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;background:rgba(5,5,5,.94);padding:30px}
+.es-ph2{position:relative;width:390px;height:844px;border-radius:44px;overflow:hidden;border:10px solid #050505;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7);background:radial-gradient(130% 70% at 50% 0%,#1A1A1A 0,#0C0C0C 60%,#050505 100%);box-sizing:border-box;display:flex;flex-direction:column;flex:none}
+.es-pbn{margin:52px 12px 0;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;font-weight:700;font-size:14px}
+.es-pbn.you{background:#EDEDED;color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.es-pbn.wait{background:#0A0A0A;border:1.5px dashed #5E5E5E;color:#D4D4D4}
+.es-pbn.listen{background:#161616;border:1px solid #2C2C2C;color:#D4D4D4}
+.es-pbn.warn{background:#0A0A0A;border:1.5px solid #FF9F1C;color:#F2F2F2}
+.es-pbn.hurt{background:#0A0A0A;border:1.5px solid #FF4D5E;color:#F2F2F2}
+.es-pbn.turn{background:#FFD60A;color:#0A0A0A;box-shadow:0 3px 0 #8A6F00}
+.es-pbody{flex:1;display:flex;flex-direction:column;gap:12px;padding:16px;min-height:0;overflow:hidden}
+.es-pft{display:flex;flex-direction:column;gap:8px;padding:10px 14px 30px}
+.es-cb{font:inherit;display:block;box-sizing:border-box;width:100%;border:0;text-align:left;cursor:pointer;padding:6px;border-radius:12px;background:#EDEDED;color:#0A0A0A;box-shadow:0 4px 0 #8A8A8A,0 7px 0 #5A5A5A}
+.es-cb .es-in{display:flex;align-items:center;gap:12px;border:1.5px solid #0A0A0A;border-radius:8px;padding:8px 12px;min-height:40px}
+.es-cb .es-t{display:block;font-family:'Cinzel',serif;font-weight:800;font-size:17px}
+.es-cb .es-s{display:block;font-size:11px;font-weight:600;color:#5A5A5A;margin-top:2px}
+.es-cb .es-chev{margin-left:auto;font-family:'Cinzel',serif;font-weight:800;font-size:22px}
+.es-cb.es-dk{background:#141414;color:#F2F2F2;box-shadow:0 0 0 1.5px #3A3A3A,0 4px 0 #000}
+.es-cb.es-dk .es-in{border-color:#5A5A5A}
+.es-cb.es-dk .es-s{color:#8C8C8C}
+.es-cb.off{opacity:.45;pointer-events:none}
+.es-pnav{display:flex;border-top:1px solid #1F1F1F;background:#060606;padding:2px 8px 18px}
+.es-pnav > span{flex:1;font-size:12px;color:#8C8C8C;min-height:44px;display:grid;place-items:center;position:relative}
+.es-pnav > span.on{color:#F2F2F2}
+.es-pnav > span.on::before{content:'';position:absolute;top:0;left:50%;margin-left:-12px;width:24px;height:2px;background:#F2F2F2}
+.es-dots{display:flex;gap:6px}
+.es-dots > i{flex:1;height:4px;border-radius:2px;background:#2C2C2C}
+.es-dots > i.on{background:#F2F2F2}
+.es-chips{display:flex;flex-wrap:wrap;gap:8px}
+.es-chip{font:inherit;display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:#141414;border:1.5px solid #2C2C2C;font-size:13px;color:#D4D4D4;cursor:pointer}
+.es-chip.on{background:#EDEDED;border-color:#0A0A0A;color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.es-sw{font:inherit;width:40px;height:40px;border-radius:10px;border:2px solid #2C2C2C;cursor:pointer;padding:0;box-shadow:0 3px 0 #000}
+.es-sw.on{border-color:#F2F2F2;box-shadow:0 0 0 2px #0A0A0A,0 0 0 4px #F2F2F2}
+.es-tv{position:relative;width:960px;height:540px;flex:none;overflow:hidden;border-radius:10px;border:14px solid #050505;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7);background:radial-gradient(90% 80% at 50% 0%,#1C1C1C 0,#0A0A0A 60%,#030303 100%);box-sizing:content-box}
+.es-tvmini{position:relative;width:420px;height:236px;overflow:hidden;border-radius:8px;border:6px solid #050505;box-shadow:0 0 0 1.5px #2C2C2C;background:#0A0A0A;flex:none}
+.es-tvmini > .es-inner{position:absolute;left:0;top:0;width:960px;height:540px;transform:scale(.4375);transform-origin:0 0}
+.es-side{display:flex;flex-direction:column;gap:16px;width:420px;flex:none}
+.es-think{padding:14px 16px;border-radius:14px;background:#EDEDED;color:#0A0A0A;font-size:14px;line-height:1.45;box-shadow:0 3px 0 #8A8A8A;min-height:92px;box-sizing:border-box;display:flex;align-items:center}
+.es-why{padding:12px 14px;border-radius:12px;background:#141414;border:1px solid #2C2C2C;font-size:13px;line-height:1.5;color:#D4D4D4;min-height:110px;box-sizing:border-box}
+.es-prog{display:flex;flex-wrap:wrap;gap:6px}
+.es-prog > button{font:inherit;font-size:13px;font-weight:700;width:44px;height:36px;border-radius:8px;background:#141414;border:1px solid #2C2C2C;color:#6E6E6E;cursor:pointer}
+.es-prog > button.done{color:#A3A3A3}
+.es-prog > button.cur{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A}
+.es-ctl{display:flex;gap:10px}
+.es-ctl > button{font:inherit;font-size:13px;font-weight:600;height:40px;padding:0 16px;border-radius:10px;background:#141414;border:1px solid #3A3A3A;color:#D4D4D4;cursor:pointer}
+@media (prefers-reduced-motion: reduce){.es-pm *{animation:none!important}}
+
+.es-xp{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;background:#141414;border:1px solid #2C2C2C}
+.es-xp > .es-bar{height:10px;border-radius:5px;background:#0A0A0A;border:1px solid #3A3A3A;overflow:hidden}
+.es-xp > .es-bar > i{display:block;height:100%;background:#F2F2F2;transition:width 1.2s ease-out}
+.es-xp > span{display:flex;justify-content:space-between;font-size:12px;color:#A3A3A3}
+.es-li{display:flex;align-items:center;gap:12px;font-size:13px;padding:8px;border-radius:10px;background:#141414;border:1px solid #2C2C2C;line-height:1.4}
+.es-li > em{margin-left:auto;font-style:normal;font-size:11px;color:#8C8C8C;white-space:nowrap}
+.es-lvl{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px;border-radius:16px;background:#EDEDED;color:#0A0A0A;box-shadow:0 4px 0 #8A8A8A;text-align:center}
+.es-lvl > .es-lbl{color:#5A5A5A}
+.es-opt2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.es-op{font:inherit;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border-radius:12px;background:#141414;border:1.5px solid #2C2C2C;color:#D4D4D4;font-size:12px;cursor:pointer;text-align:center}
+.es-op > b{font-family:'Cinzel',serif;font-size:15px;color:#F2F2F2}
+.es-op.on{background:#EDEDED;border-color:#0A0A0A;color:#5A5A5A;box-shadow:0 3px 0 #8A8A8A}
+.es-op.on > b{color:#0A0A0A}
+.es-tl{display:flex;flex-direction:column;border-left:2px solid #2C2C2C;margin-left:6px}
+.es-ev{position:relative;display:flex;flex-direction:column;gap:3px;padding:0 0 14px 18px;font-size:13px;line-height:1.45;color:#D4D4D4}
+.es-ev::before{content:'';position:absolute;left:-7px;top:4px;width:12px;height:12px;border-radius:3px;background:#3A3A3A;box-shadow:0 0 0 3px #0C0C0C}
+.es-ev.es-key::before{background:#F2F2F2}
+.es-ev > time{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6E6E6E}
+.es-ev > b{font-family:'Cinzel',serif;font-size:15px;color:#F2F2F2}
+.es-thumbs{display:flex;gap:6px}
+.es-thumbs > i{width:64px;height:40px;border-radius:6px;background:repeating-linear-gradient(135deg,#3A3A3A 0 2px,#262626 2px 7px);border:1px solid #2C2C2C}
+.es-wear{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.es-detail{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:12px;background:#141414;border:1.5px solid #F2F2F2}
+.es-detail > div{display:flex;flex-direction:column;gap:4px;font-size:12px;line-height:1.45;color:#D4D4D4}
+.es-detail > div > b{font-family:'Cinzel',serif;font-size:16px;color:#F2F2F2}
+.es-days{display:flex;gap:6px}
+.es-day{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;padding:10px 0;border-radius:12px;background:#141414;border:1.5px solid #2C2C2C;font-size:11px;color:#A3A3A3}
+.es-day > b{font-family:'Cinzel',serif;font-size:22px;color:#F2F2F2}
+.es-day.on{background:#EDEDED;border-color:#0A0A0A;color:#5A5A5A;box-shadow:0 3px 0 #8A8A8A}
+.es-day.on > b{color:#0A0A0A}
+</style>
+</helmet>
+<div class="es-pm" style="{{rootStyle}}; position: relative; overflow: hidden; display: flex; gap: 40px; box-sizing: border-box; align-items: flex-start">
+<div class="es-ph2"><sc-if value="{{is1}}" hint-placeholder-val="{{ true }}"><div class="es-pbn listen"><span>Fin de la session 3</span></div><div class="es-pbody"><span class="es-lbl">Ce soir · 2 h 40 de jeu</span><span class="es-ttl" style="font-size: 26px; line-height: 1.1">La crypte des Valombre</span><p class="es-nar" style="font-size: 19px">« Vous ressortez à l’aube, la page arrachée dans la poche de Borin. »</p><div class="es-xp"><span><b style="color: #F2F2F2">Expérience</b><span>{{xpTxt}}</span></span><div class="es-bar"><i style="width: {{xpW}}"></i></div></div><span class="es-lbl">Ce que tu as gagné</span><div class="es-li"><dc-import name="Objet" objet="hache" rarete="leg" taille="40" pips="false" hint-size="40px,40px"></dc-import><span><b>Hache des Valombre</b> · équipée</span><em>légendaire</em></div><div class="es-li"><dc-import name="Objet" objet="bourse" rarete="commune" taille="40" pips="false" hint-size="40px,40px"></dc-import><span><b>34 pièces d’or</b></span><em>partagées</em></div><span class="es-mut">Romain relit le récapitulatif. Tu le recevras demain.</span></div><div class="es-pft"><sc-if value="{{lvlUp}}" hint-placeholder-val="{{ false }}"><button type="button" class="es-cb  " onClick="{{next}}"><span class="es-in"><span style="flex: 1"><span class="es-t">Passer au niveau 4</span><span class="es-s">Ça prend trente secondes</span></span><span class="es-chev">›</span></span></button></sc-if></div><nav class="es-pnav"><span class="on">Jeu</span><span class="">Carte</span><span class="">Perso</span><span class="">Journal</span></nav></sc-if><sc-if value="{{is2}}" hint-placeholder-val="{{ false }}"><div class="es-pbn you"><span>Borin passe au niveau 4</span></div><div class="es-pbody"><div class="es-lvl"><span class="es-lbl">Niveau 4</span><dc-import name="Perso" perso="borin" px="5" etat="aucun" hint-size="100px,130px"></dc-import><span class="es-ttl" style="font-size: 22px">Borin</span></div><span class="es-lbl">Tes points de vie</span><div class="es-opt2"><button type="button" class="es-op {{hpRoll}}" onClick="{{rollHp}}"><b>Lancer le dé</b><dc-import name="De" de="d10" valeur="7" taille="44" anim="fixe" couleur="pv" hint-size="44px,44px"></dc-import><span>{{rollTxt}}</span></button><button type="button" class="es-op {{hpAvg}}" onClick="{{avgHp}}"><b>La moyenne</b><span style="font-size: 26px; font-weight: 700; color: inherit">+9</span><span>6 + Constitution, sans risque</span></button></div><span class="es-lbl">Ta nouvelle carte · guerrier niveau 4</span><div style="display: flex; gap: 12px; align-items: center"><dc-import name="GameCard" w="100" titre="Plus fort" type="Amélioration" texte="+1 Force, +1 Constitution." valeur="+2" stat="none" icon="bouclier" rarete="rare" hint-size="100px,140px"></dc-import><span class="es-mut">Proposée par les règles pour un guerrier qui frappe. Tu peux la changer avant jeudi.</span></div></div><div class="es-pft"><button type="button" class="es-cb  " onClick="{{next}}"><span class="es-in"><span style="flex: 1"><span class="es-t">C’est noté</span><span class="es-s">Borin a {{hpMax}} PV</span></span><span class="es-chev">›</span></span></button></div><nav class="es-pnav"><span class="">Jeu</span><span class="">Carte</span><span class="on">Perso</span><span class="">Journal</span></nav></sc-if><sc-if value="{{is3}}" hint-placeholder-val="{{ false }}"><div class="es-pbn listen"><span>Romain a publié le récap</span></div><div class="es-pbody"><span class="es-lbl">Session 3 · relu par Romain</span><span class="es-ttl" style="font-size: 24px">Précédemment…</span><p class="es-nar" style="font-size: 18px">Sous l’autel de la crypte, Borin a trouvé la page arrachée du registre. Les Valombre y gardaient « la porte nord ». Deux gobelins défendaient la salle ; la hache de la famille a changé de mains.</p><span class="es-lbl">Ce que vous savez</span><div class="es-li"><dc-import name="Objet" objet="parchemin" rarete="commune" taille="36" pips="false" hint-size="36px,36px"></dc-import><span>La page arrachée nomme la porte nord.</span></div><div class="es-li"><dc-import name="Objet" objet="anneau" rarete="peu" taille="36" pips="false" hint-size="36px,36px"></dc-import><span>La bague du gardien porte un corbeau.</span></div><span class="es-lbl">Ce qui reste ouvert</span><div class="es-li"><span>Qui a laissé les cendres tièdes sur l’autel ?</span></div></div><div class="es-pft"><button type="button" class="es-cb es-dk " onClick="{{next}}"><span class="es-in"><span style="flex: 1"><span class="es-t">Lire la chronique</span><span class="es-s">Les trois sessions</span></span><span class="es-chev">›</span></span></button></div><nav class="es-pnav"><span class="">Jeu</span><span class="">Carte</span><span class="">Perso</span><span class="on">Journal</span></nav></sc-if><sc-if value="{{is4}}" hint-placeholder-val="{{ false }}"><div class="es-pbn listen"><span>La chronique de Valombre</span></div><div class="es-pbody"><div class="es-tl"><div class="es-ev"><time>Session 1 · 19 sept.</time><b>Une ville qui enterre deux fois</b><span>Arrivée à Valombre. Le maire ment sur la mine.</span></div><div class="es-ev"><time>Session 2 · 26 sept.</time><b>La mine d’argent</b><span>La lampe de Dorn, gravée à son nom. Borin ne dit rien.</span><span class="es-thumbs"><i></i><i></i></span></div><div class="es-ev es-key"><time>Session 3 · 3 oct.</time><b>La crypte des Valombre</b><span>La page arrachée. La hache légendaire. Les oiseaux de Lyra ont fui la colline.</span><span class="es-thumbs"><i></i><i></i><i></i></span></div></div><span class="es-mut">La chronique ne garde que ce que toute la table a vu. Les illustrations sont celles montrées en jeu.</span></div><div class="es-pft"><button type="button" class="es-cb es-dk " onClick="{{next}}"><span class="es-in"><span style="flex: 1"><span class="es-t">Voir Borin</span><span class="es-s">Ta fiche</span></span><span class="es-chev">›</span></span></button></div><nav class="es-pnav"><span class="">Jeu</span><span class="">Carte</span><span class="">Perso</span><span class="on">Journal</span></nav></sc-if><sc-if value="{{is5}}" hint-placeholder-val="{{ false }}"><div class="es-pbn listen"><span>Borin · niveau 4</span></div><div class="es-pbody"><div class="es-pstage"><dc-import name="Perso" perso="borin" px="4" etat="aucun" hint-size="80px,104px"></dc-import><div style="display: flex; flex-direction: column; gap: 6px; flex: 1"><span class="es-ttl" style="font-size: 20px">Borin</span><dc-import name="Coeurs" pv="41" max="41" coeurs="8" px="2" anim="false" hint-size="151px,16px"></dc-import><span class="es-mut">nain guerrier · 41 PV</span></div></div><div class="es-gems"><span class="es-gem"><dc-import name="Gemme" stat="ca" valeur="18" taille="36" anim="false" hint-size="36px,36px"></dc-import>Armure</span><span class="es-gem"><dc-import name="Gemme" stat="atq" valeur="+6" taille="36" anim="false" hint-size="36px,36px"></dc-import>Hache</span><span class="es-gem"><dc-import name="Gemme" stat="mvt" valeur="5" taille="36" anim="false" hint-size="36px,36px"></dc-import>Pas</span><span class="es-gem"><dc-import name="Gemme" stat="ini" valeur="+0" taille="36" anim="false" hint-size="36px,36px"></dc-import>Init.</span></div><span class="es-lbl">Sa main · touche une carte</span><div class="es-hand" style="gap: 6px"><dc-import name="GameCard" w="76" titre="Hache des Valombre" type="Arme" texte="1d12 + 4." valeur="+6" stat="atq" icon="epee" rarete="legendaire" hint-size="76px,106px"></dc-import><dc-import name="GameCard" w="76" titre="Second souffle" type="Compétence" texte="Soigne 1d10 + 2." valeur="d10" stat="pv" icon="sort" rarete="peu-commune" hint-size="76px,106px"></dc-import><dc-import name="GameCard" w="76" titre="Fougue" type="Compétence" texte="Une action de plus." valeur="" stat="none" icon="epee" rarete="rare" hint-size="76px,106px"></dc-import><dc-import name="GameCard" w="76" titre="Fouiller" type="Sagesse" texte="Chercher." valeur="+1" stat="none" icon="oeil" rarete="commune" hint-size="76px,106px"></dc-import></div><div class="es-detail"><div><b>Hache des Valombre</b><span>Arme légendaire. 1d12 + 4 dégâts, au corps à corps. Les morts-vivants touchés reculent d’une case.</span><span style="color: #8C8C8C">Trouvée sous l’autel · session 3</span></div></div></div><div class="es-pft"></div><nav class="es-pnav"><span class="">Jeu</span><span class="">Carte</span><span class="on">Perso</span><span class="">Journal</span></nav></sc-if><sc-if value="{{is6}}" hint-placeholder-val="{{ false }}"><div class="es-pbn you"><span>{{b6}}</span></div><div class="es-pbody"><sc-if value="{{notEnded}}" hint-placeholder-val="{{ true }}"><span class="es-lbl">Romain propose</span><div class="es-days"><div class="es-day {{d9}}"><span>mer.</span><b>9</b><span>oct.</span></div><div class="es-day {{d10}}"><span>jeu.</span><b>10</b><span>oct.</span></div><div class="es-day {{d11}}"><span>ven.</span><b>11</b><span>oct.</span></div></div><div class="es-ans"><b>Camille</b><span>jeu. · ven.</span></div><div class="es-ans"><b>Hugo</b><span>jeudi</span></div><span class="es-mut">Romain fixe la date quand tout le monde a répondu.</span></sc-if><sc-if value="{{ended}}" hint-placeholder-val="{{ false }}"><div class="es-toast"><span class="es-lbl">Dans une heure</span><b class="es-ttl" style="font-size: 20px">Session 4 · jeudi 10 octobre</b><span style="font-size: 12px">Le salon ouvre à 20 h 15. Prépare tes écouteurs.</span></div><div class="es-pstage"><dc-import name="Perso" perso="borin" px="4" etat="aucun" hint-size="80px,104px"></dc-import><span style="font-size: 13px; color: #D4D4D4; line-height: 1.5">Borin est prêt : niveau 4, la hache des Valombre en main.</span></div></sc-if></div><div class="es-pft"><sc-if value="{{notEnded}}" hint-placeholder-val="{{ true }}"><button type="button" class="es-cb  " onClick="{{send}}"><span class="es-in"><span style="flex: 1"><span class="es-t">Envoyer mes dispos</span><span class="es-s">Jeudi</span></span><span class="es-chev">›</span></span></button></sc-if><sc-if value="{{ended}}" hint-placeholder-val="{{ false }}"><button type="button" class="es-cb  "><span class="es-in"><span style="flex: 1"><span class="es-t">Rejoindre le salon</span><span class="es-s">La suite sur « Jouer · la soirée de Marc »</span></span><span class="es-chev">›</span></span></button></sc-if></div><nav class="es-pnav"><span class="on">Jeu</span><span class="">Carte</span><span class="">Perso</span><span class="">Journal</span></nav></sc-if></div><sc-if value="{{full}}" hint-placeholder-val="{{ true }}"><div class="es-side">
+<span class="es-lbl">Dans la tête de Marc, le joueur</span><div class="es-think">{{thought}}</div>
+<span class="es-lbl">Pourquoi cet écran</span><div class="es-why">{{why}}</div>
+<span class="es-lbl">Entre deux sessions · moment {{m}} sur 6</span><div class="es-prog"><sc-for list="{{dots}}" as="d" hint-placeholder-count="6"><button type="button" class="{{d.cls}}" onClick="{{d.pick}}">{{d.n}}</button></sc-for></div>
+<div class="es-ctl"><button type="button" onClick="{{restart}}">Recommencer</button></div>
+</div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"moment":{"editor":"int","default":1,"min":1,"max":6},"seul":{"editor":"boolean","default":false},"$preview":{"width":1018,"height":964}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = this.fresh();
+    this.timers = [];
+    const pm = Number(props && props.moment);
+    if (pm >= 1 && pm <= 6) Object.assign(this.state, this.settled(pm));
+  }
+  fresh() { return Object.assign({ m: 1, ended: false }, { xp: 620, hp: '', picked: '' }); }
+  // A frozen moment (storyboard) shows the screen once its people have acted.
+  settled(m) { return Object.assign({ m }, { xp: 900, hp: m >= 2 ? 'roll' : '', ended: m >= 6 }); }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+  clear() { this.timers.forEach((t) => clearTimeout(t)); this.timers = []; }
+  go(m) {
+    if (m > 6) return;
+    this.clear();
+    const c = {};
+    for (const k of []) c[k] = this.state[k];
+    this.setState(Object.assign(this.fresh(), c, { m }));
+    if (m === 1) this.later(() => this.setState({ xp: 900 }), 900); if (m > 2) this.setState({ hp: 'roll', xp: 900 });
+  }
+  end() { this.clear(); this.setState({ ended: true }); }
+  renderVals() {
+    const s = this.state, m = s.m;
+    
+    const T = {
+      1: { bn: ["you", "La soirée se termine"], main: ['', '', true, () => {  }], thought: s.xp >= 900 ? "Niveau 4 ! Je savais que ce gobelin valait le coup." : "On a fini tard. Combien d’expérience ?", why: "La fin de soirée arrive sur le téléphone tout de suite : expérience, butin gagné. Le récit, lui, attend que le MJ ait relu le récapitulatif." },
+      2: { bn: ["you", "Il monte de niveau"], main: ['', '', true, () => {  }], thought: s.hp ? "Je prends le risque du dé. 7, pas mal." : "Lancer ou prendre la moyenne ?", why: "Monter de niveau tient en un écran : un seul vrai choix (dé ou moyenne), le reste vient des règles et arrive tout seul dans sa main." },
+      3: { bn: ["you", "Le lendemain, le récap"], main: ['', '', true, () => {  }], thought: "La porte nord… Il faut qu’on y retourne.", why: "Le « Précédemment… » est écrit par le co-MJ et relu par le MJ avant de partir. Il ne contient que ce que les joueurs ont vu, et ce qui reste ouvert." },
+      4: { bn: ["you", "La chronique"], main: ['', '', true, () => {  }], thought: "Dorn… Je n’avais pas fait le lien avec la mine.", why: "La chronique s’allonge d’une entrée par session : un titre, deux lignes, les images montrées en jeu. Elle sert aussi à qui rate une soirée." },
+      5: { bn: ["you", "Sa fiche, hors session"], main: ['', '', true, () => {  }], thought: "Les morts-vivants reculent… Elle est faite pour la crypte, cette hache.", why: "Hors session, la fiche se lit sans rien casser : on touche une carte pour voir ce qu’elle fait et d’où elle vient. Rien ne se modifie sans le MJ." },
+      6: { bn: [s.ended ? "wait" : "you", s.ended ? "Jeudi soir, le rappel" : "La prochaine date"], main: ['', '', true, () => {  }], thought: s.ended ? "Le salon ouvre dans un quart d’heure. Les écouteurs !" : "Jeudi, c’est bon pour moi.", why: "Les disponibilités se donnent d’un doigt ; le MJ fixe la date. Le jour venu, le rappel mène droit au salon (planche « Jouer », moment 1)." }
+    }[m];
+    const main = T.main;
+    const v = {
+      m, ended: s.ended, notEnded: !s.ended,
+      bnCls: T.bn[0], bnTxt: T.bn[1], thought: T.thought, why: T.why,
+      mainLbl: main[0], mainSub: main[1], mainCls: (main[2] ? '' : 'off') + (main[4] ? ' ' + main[4] : ''), mainAct: () => { if (main[2] && main[3]) main[3](); },
+      dots: Array.from({ length: 6 }, (_, i) => ({ n: i + 1, cls: i + 1 === m ? 'cur' : i + 1 < m ? 'done' : '', pick: () => this.go(i + 1) })),
+      restart: () => { this.clear(); this.setState(this.fresh()); },
+      xpTxt: s.xp >= 900 ? '+280 · niveau 4 atteint !' : '2 450 / 2 700', xpW: Math.min(100, s.xp / 9) + '%', lvlUp: s.xp >= 900,
+      hpRoll: s.hp === 'roll' ? 'on' : '', hpAvg: s.hp === 'avg' ? 'on' : '', rollTxt: s.hp === 'roll' ? '7 + 3 = +10' : 'd10 + Constitution',
+      hpMax: s.hp === 'avg' ? '40' : '41', rollHp: () => this.setState({ hp: 'roll' }), avgHp: () => this.setState({ hp: 'avg' }),
+      b6: s.ended ? 'Ce soir, 20 h 30' : 'Session 4 : tu es libre quand ?', d9: '', d10: 'on', d11: '',
+      next: () => this.go(m + 1), send: () => this.end(),
+    };
+    for (const k in T) if (!(k in v) && k !== 'main' && k !== 'bn') v[k] = T[k];
+    for (let i = 1; i <= 6; i++) v['is' + i] = m === i;
+    const seul = String(this.props.seul ?? false) === 'true';
+    v.full = !seul;
+    v.rootStyle = seul ? 'width: 390px; height: 844px; padding: 0' : 'width: 1018px; height: 964px; padding: 60px 56px';
+    return v;
+  }
+}
+</script>
+</body>
+</html>

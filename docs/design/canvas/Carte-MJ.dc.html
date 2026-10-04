@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>L’éditeur de carte</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A;overflow:hidden}
+.em-pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 60% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.em-ttl{font-family:'Cinzel',Georgia,serif;font-weight:800;letter-spacing:.02em}
+.em-nar{margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-weight:500;line-height:1.35;color:#E5E5E5}
+.em-lbl{font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.em-mut{font-size:12px;color:#8C8C8C;line-height:1.5}
+.em-lap{position:relative;width:1440px;height:900px;flex:none;overflow:hidden;box-sizing:border-box;display:grid;grid-template-rows:52px 1fr 78px;background:radial-gradient(90% 70% at 50% 0%,#1A1A1A 0,#0C0C0C 60%,#050505 100%);border-radius:14px;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7)}
+.em-tab{position:relative;width:1180px;height:820px;flex:none;overflow:hidden;box-sizing:border-box;display:grid;grid-template-rows:56px 1fr 92px;background:radial-gradient(90% 70% at 50% 0%,#1A1A1A 0,#0C0C0C 60%,#050505 100%);border-radius:28px;border:12px solid #050505;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7)}
+.em-top{display:flex;align-items:center;gap:18px;padding:0 18px;border-bottom:1px solid #1F1F1F;font-size:12px;color:#A3A3A3;white-space:nowrap}
+.em-top .em-sep{width:1px;height:20px;background:#2A2A2A;flex:none}
+.em-tabs{display:flex;gap:20px;margin-left:24px}
+.em-tabs > span{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6E6E6E;padding:17px 0;border-bottom:2px solid transparent}
+.em-tabs > span.on{color:#F2F2F2;border-bottom-color:#F2F2F2}
+.em-cols{display:grid;grid-template-columns:300px 1fr 360px;gap:14px;padding:14px 18px 0;min-height:0}
+.em-col{display:flex;flex-direction:column;gap:14px;min-height:0;overflow:hidden}
+.em-panel{background:linear-gradient(180deg,#181818,#111);border:1px solid #2C2C2C;border-radius:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 30px rgba(0,0,0,.45)}
+.em-ph{display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px 8px}
+.em-stage{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.em-hd{display:flex;align-items:baseline;gap:14px}
+.em-foot{display:flex;align-items:center;gap:14px;padding:0 18px 14px}
+.em-bn{flex:1;display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;border-radius:12px;font-weight:700;font-size:15px;box-sizing:border-box}
+.em-bn.you{background:#161616;border:1px solid #2C2C2C;color:#F2F2F2}
+.em-bn.wait{background:#0A0A0A;border:1.5px dashed #5E5E5E;color:#D4D4D4}
+.em-bn.warn{background:#0A0A0A;border:1.5px solid #FF9F1C;color:#F2F2F2}
+.em-bn.hurt{background:#0A0A0A;border:1.5px solid #FF4D5E;color:#F2F2F2}
+.em-bn.turn{background:#FFD60A;color:#0A0A0A;box-shadow:0 3px 0 #8A6F00}
+.em-go{font:inherit;width:460px;flex:none;display:block;box-sizing:border-box;border:0;padding:6px;border-radius:12px;background:#EDEDED;color:#0A0A0A;text-align:left;cursor:pointer;box-shadow:0 4px 0 #8A8A8A,0 7px 0 #5A5A5A,0 14px 24px rgba(0,0,0,.5);transform-origin:50% 100%;transition:transform .1s,box-shadow .1s}
+.em-go .em-in{display:flex;align-items:center;gap:12px;border:1.5px solid #0A0A0A;border-radius:8px;padding:6px 14px;height:42px;box-sizing:border-box}
+.em-go .em-t{display:block;font-family:'Cinzel',Georgia,serif;font-weight:800;font-size:17px;line-height:1.05}
+.em-go .em-s{display:block;font-size:11px;font-weight:600;color:#5A5A5A;margin-top:2px}
+.em-go .em-chev{margin-left:auto;font-family:'Cinzel',serif;font-weight:800;font-size:22px}
+.em-go:active{transform:perspective(500px) rotateX(14deg) translateY(4px);box-shadow:0 1px 0 #8A8A8A,0 2px 0 #5A5A5A}
+.em-go.off{background:#141414;color:#8C8C8C;box-shadow:0 0 0 1.5px #2C2C2C;cursor:default;pointer-events:none}
+.em-go.off .em-in{border:1.5px dashed #3A3A3A}
+.em-go.off .em-s{color:#6E6E6E}
+.em-go.red{background:#FF4D5E;box-shadow:0 4px 0 #8A2A33,0 7px 0 #5A1A20,0 14px 24px rgba(0,0,0,.5)}
+.em-go.red .em-s{color:#3A0A10}
+.em-btn{font:inherit;font-family:'Cinzel',Georgia,serif;font-size:12px;font-weight:800;color:#F2F2F2;background:#141414;border:0;border-radius:8px;height:34px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:nowrap;outline:1.5px solid #5A5A5A;outline-offset:-4px;box-shadow:0 0 0 1.5px #3A3A3A,0 3px 0 #000;flex:none}
+.em-btn.em-lt{background:#EDEDED;color:#0A0A0A;outline-color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.em-sec{display:flex;flex-direction:column;gap:8px}
+.em-row2{display:flex;gap:14px;align-items:flex-start}
+.em-box{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;background:#0D0D0D;border:1px solid #333;font-size:14px}
+.em-box > code{flex:1;font-family:'Chakra Petch',monospace;font-size:14px;color:#F2F2F2}
+.em-edit{padding:14px 16px;border-radius:12px;background:#0D0D0D;border:1px solid #333;font-size:14px;line-height:1.55;color:#D4D4D4}
+.em-edit > .em-lbl{display:block;margin-bottom:8px}
+.em-rl{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:baseline;font-size:13px;line-height:1.45;padding:9px 12px;border-radius:10px;background:#121212;color:#D4D4D4}
+.em-chk{display:flex;align-items:flex-start;gap:10px;font-size:13px;padding:10px 12px;border-radius:10px;background:#121212;line-height:1.45}
+.em-chk > i{width:18px;height:18px;border-radius:5px;background:#EDEDED;color:#0A0A0A;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:11px;flex:none;margin-top:1px}
+.em-chk.warn{border:1.5px solid #FF9F1C}
+.em-chk.warn > i{background:#FF9F1C}
+.em-chk.em-pend > i{background:transparent;border:1.5px dashed #5E5E5E;color:#8C8C8C;box-sizing:border-box}
+.em-co{display:flex;flex-direction:column;gap:8px;padding:0 14px 14px}
+.em-note{padding:12px 14px;border-radius:12px;background:#EDEDED;color:#0A0A0A;font-size:13px;line-height:1.5;box-shadow:0 3px 0 #8A8A8A}
+.em-note > .em-lbl{display:block;color:#5A5A5A;margin-bottom:4px}
+.em-secret{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;background:#050505;border:1.5px dashed #5E5E5E;font-size:13px;line-height:1.5;color:#D4D4D4}
+.em-secret > .em-lbl{color:#F2F2F2}
+.em-hook{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:10px;background:#141414;border:1px solid #2C2C2C;font-size:13px;line-height:1.45;color:#D4D4D4}
+.em-hook > small{font-size:11px;color:#8C8C8C}
+.em-hook.on{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A}
+.em-hook.on > small{color:#5A5A5A}
+.em-ans{display:flex;align-items:center;gap:10px;font-size:13px;padding:8px 12px;border-radius:10px;background:#121212;color:#D4D4D4}
+.em-ans > b{width:80px;flex:none}
+.em-ans > em{margin-left:auto;font-style:normal;font-size:11px;color:#8C8C8C;white-space:nowrap}
+.em-st{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;border-radius:6px;white-space:nowrap;flex:none}
+.em-st.ok{background:#EDEDED;color:#0A0A0A}
+.em-st.todo{background:#FFD60A;color:#0A0A0A}
+.em-st.warn{background:#0A0A0A;color:#FF9F1C;border:1.5px solid #FF9F1C}
+.em-st.wait{border:1.5px dashed #5E5E5E;color:#A3A3A3}
+.em-st.off{color:#5A5A5A;border:1px solid #2C2C2C}
+.em-seat{display:flex;align-items:center;gap:12px;height:68px;padding:0 12px;margin:0 10px 6px;border-radius:12px;background:#121212;border:1px solid transparent}
+.em-seat.cur{border-color:#F2F2F2;background:#1C1C1C}
+.em-seat > .em-who{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.em-seat > .em-who > b{font-size:14px}
+.em-seat > .em-who > small{font-size:11px;color:#8C8C8C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.em-pf{display:inline-grid;place-items:end center;width:44px;height:56px;border-radius:9px;background:linear-gradient(180deg,#262626,#121212);border:2px solid #3A3A3A;box-shadow:0 3px 0 #000;box-sizing:border-box;flex:none;overflow:hidden}
+.em-pf.none{background:transparent;border:2px dashed #3A3A3A;box-shadow:none}
+.em-pf.down{border-color:#FF4D5E}
+.em-pres{width:9px;height:9px;border-radius:50%;background:#3A3A3A;flex:none}
+.em-pres.on{background:#F2F2F2;box-shadow:0 0 8px rgba(255,255,255,.6)}
+.em-pstage{display:flex;align-items:flex-end;gap:14px;padding:14px;border-radius:14px;background:radial-gradient(60% 30% at 30% 92%,rgba(255,255,255,.08),transparent),#141414;border:1px solid #2C2C2C}
+.em-abs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.em-ab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;border-radius:10px;background:#121212;border:1px solid #2C2C2C}
+.em-ab > small{font-size:10px;font-weight:700;letter-spacing:.14em;color:#8C8C8C}
+.em-ab > b{font-size:20px}
+.em-ab > em{font-style:normal;font-size:11px;color:#A3A3A3}
+.em-ab.em-fix{border:1.5px solid #F2F2F2;background:#1C1C1C}
+.em-gems{display:flex;gap:14px;align-items:flex-end}
+.em-gem{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#8C8C8C}
+.em-hand{display:flex;gap:12px}
+.em-sent{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:#141414;border:1.5px dashed #5E5E5E;font-size:13px;color:#D4D4D4}
+.em-spin{width:14px;height:14px;border-radius:50%;border:2px solid #3A3A3A;border-top-color:#F2F2F2;animation:em-spin 1s linear infinite;flex:none}
+@keyframes em-spin{to{transform:rotate(360deg)}}
+.em-toast{display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:14px;background:#EDEDED;color:#0A0A0A;box-shadow:0 6px 0 #8A8A8A,0 20px 40px rgba(0,0,0,.6)}
+.em-toast .em-lbl{color:#5A5A5A}
+.em-art{height:178px;border-radius:12px;position:relative;background:radial-gradient(70% 80% at 50% 100%,rgba(10,10,10,.9),transparent),repeating-linear-gradient(135deg,#3A3A3A 0 2px,#2A2A2A 2px 9px);flex:none;display:flex;align-items:flex-end;padding:14px;box-sizing:border-box}
+.em-tag{position:absolute;right:10px;top:10px;font-size:9px;font-weight:700;letter-spacing:.14em;background:#0A0A0A;padding:3px 6px;border-radius:4px}
+.em-yt{display:flex;align-items:center;gap:10px;padding:6px 10px 6px 6px;border-radius:10px;background:#141414;border:1px solid #2C2C2C;font-size:12px}
+.em-yt > .em-thumb{width:64px;height:36px;border-radius:5px;background:repeating-linear-gradient(135deg,#3A3A3A 0 2px,#262626 2px 7px);display:grid;place-items:center;flex:none;font-size:8px;font-weight:700;letter-spacing:.1em}
+.em-yt > span:last-child{margin-left:auto;color:#8C8C8C}
+.em-eq{display:flex;gap:2px;align-items:flex-end;height:14px}
+.em-eq > i{width:3px;height:6px;background:#F2F2F2;animation:em-eq .8s ease-in-out infinite}
+.em-eq > i:nth-child(2){animation-delay:-.3s}
+.em-eq > i:nth-child(3){animation-delay:-.6s}
+@keyframes em-eq{0%,100%{height:4px}50%{height:14px}}
+.em-endc{position:absolute;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;background:rgba(5,5,5,.94);padding:30px}
+.em-ph2{position:relative;width:390px;height:844px;border-radius:44px;overflow:hidden;border:10px solid #050505;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7);background:radial-gradient(130% 70% at 50% 0%,#1A1A1A 0,#0C0C0C 60%,#050505 100%);box-sizing:border-box;display:flex;flex-direction:column;flex:none}
+.em-pbn{margin:52px 12px 0;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;font-weight:700;font-size:14px}
+.em-pbn.you{background:#EDEDED;color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.em-pbn.wait{background:#0A0A0A;border:1.5px dashed #5E5E5E;color:#D4D4D4}
+.em-pbn.listen{background:#161616;border:1px solid #2C2C2C;color:#D4D4D4}
+.em-pbn.warn{background:#0A0A0A;border:1.5px solid #FF9F1C;color:#F2F2F2}
+.em-pbn.hurt{background:#0A0A0A;border:1.5px solid #FF4D5E;color:#F2F2F2}
+.em-pbn.turn{background:#FFD60A;color:#0A0A0A;box-shadow:0 3px 0 #8A6F00}
+.em-pbody{flex:1;display:flex;flex-direction:column;gap:12px;padding:16px;min-height:0;overflow:hidden}
+.em-pft{display:flex;flex-direction:column;gap:8px;padding:10px 14px 30px}
+.em-cb{font:inherit;display:block;box-sizing:border-box;width:100%;border:0;text-align:left;cursor:pointer;padding:6px;border-radius:12px;background:#EDEDED;color:#0A0A0A;box-shadow:0 4px 0 #8A8A8A,0 7px 0 #5A5A5A}
+.em-cb .em-in{display:flex;align-items:center;gap:12px;border:1.5px solid #0A0A0A;border-radius:8px;padding:8px 12px;min-height:40px}
+.em-cb .em-t{display:block;font-family:'Cinzel',serif;font-weight:800;font-size:17px}
+.em-cb .em-s{display:block;font-size:11px;font-weight:600;color:#5A5A5A;margin-top:2px}
+.em-cb .em-chev{margin-left:auto;font-family:'Cinzel',serif;font-weight:800;font-size:22px}
+.em-cb.em-dk{background:#141414;color:#F2F2F2;box-shadow:0 0 0 1.5px #3A3A3A,0 4px 0 #000}
+.em-cb.em-dk .em-in{border-color:#5A5A5A}
+.em-cb.em-dk .em-s{color:#8C8C8C}
+.em-cb.off{opacity:.45;pointer-events:none}
+.em-pnav{display:flex;border-top:1px solid #1F1F1F;background:#060606;padding:2px 8px 18px}
+.em-pnav > span{flex:1;font-size:12px;color:#8C8C8C;min-height:44px;display:grid;place-items:center;position:relative}
+.em-pnav > span.on{color:#F2F2F2}
+.em-pnav > span.on::before{content:'';position:absolute;top:0;left:50%;margin-left:-12px;width:24px;height:2px;background:#F2F2F2}
+.em-dots{display:flex;gap:6px}
+.em-dots > i{flex:1;height:4px;border-radius:2px;background:#2C2C2C}
+.em-dots > i.on{background:#F2F2F2}
+.em-chips{display:flex;flex-wrap:wrap;gap:8px}
+.em-chip{font:inherit;display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:#141414;border:1.5px solid #2C2C2C;font-size:13px;color:#D4D4D4;cursor:pointer}
+.em-chip.on{background:#EDEDED;border-color:#0A0A0A;color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.em-sw{font:inherit;width:40px;height:40px;border-radius:10px;border:2px solid #2C2C2C;cursor:pointer;padding:0;box-shadow:0 3px 0 #000}
+.em-sw.on{border-color:#F2F2F2;box-shadow:0 0 0 2px #0A0A0A,0 0 0 4px #F2F2F2}
+.em-tv{position:relative;width:960px;height:540px;flex:none;overflow:hidden;border-radius:10px;border:14px solid #050505;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7);background:radial-gradient(90% 80% at 50% 0%,#1C1C1C 0,#0A0A0A 60%,#030303 100%);box-sizing:content-box}
+.em-tvmini{position:relative;width:420px;height:236px;overflow:hidden;border-radius:8px;border:6px solid #050505;box-shadow:0 0 0 1.5px #2C2C2C;background:#0A0A0A;flex:none}
+.em-tvmini > .em-inner{position:absolute;left:0;top:0;width:960px;height:540px;transform:scale(.4375);transform-origin:0 0}
+.em-side{display:flex;flex-direction:column;gap:16px;width:420px;flex:none}
+.em-think{padding:14px 16px;border-radius:14px;background:#EDEDED;color:#0A0A0A;font-size:14px;line-height:1.45;box-shadow:0 3px 0 #8A8A8A;min-height:92px;box-sizing:border-box;display:flex;align-items:center}
+.em-why{padding:12px 14px;border-radius:12px;background:#141414;border:1px solid #2C2C2C;font-size:13px;line-height:1.5;color:#D4D4D4;min-height:110px;box-sizing:border-box}
+.em-prog{display:flex;flex-wrap:wrap;gap:6px}
+.em-prog > button{font:inherit;font-size:13px;font-weight:700;width:44px;height:36px;border-radius:8px;background:#141414;border:1px solid #2C2C2C;color:#6E6E6E;cursor:pointer}
+.em-prog > button.done{color:#A3A3A3}
+.em-prog > button.cur{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A}
+.em-ctl{display:flex;gap:10px}
+.em-ctl > button{font:inherit;font-size:13px;font-weight:600;height:40px;padding:0 16px;border-radius:10px;background:#141414;border:1px solid #3A3A3A;color:#D4D4D4;cursor:pointer}
+@media (prefers-reduced-motion: reduce){.em-pm *{animation:none!important}}
+
+.em-mapw{position:relative;isolation:isolate;width:672px;height:432px;overflow:hidden;border-radius:12px;border:1px solid #2C2C2C;flex:none;align-self:center}
+.em-ov{position:absolute;inset:0;z-index:950;pointer-events:none}
+.em-sel{position:absolute;border:2px dashed #F2F2F2;border-radius:4px;background:rgba(242,242,242,.08);box-sizing:border-box}
+.em-sel.em-warm{border-color:#FFD60A;background:rgba(255,214,10,.1)}
+.em-mk{position:absolute;transform:translate(-50%,-100%);font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 7px;border-radius:5px;background:#0A0A0A;border:1px solid #F2F2F2;white-space:nowrap}
+.em-mk.em-hid{border-style:dashed;color:#FFD60A;border-color:#FFD60A}
+.em-mk.em-ex{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A}
+.em-light{position:absolute;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(255,190,90,.35),rgba(255,190,90,.08) 55%,transparent 70%)}
+.em-dark{position:absolute;inset:0;background:rgba(0,0,0,.45);-webkit-mask:radial-gradient(circle at 120px 140px,transparent 70px,#000 120px),radial-gradient(circle at 400px 330px,transparent 70px,#000 120px);mask:radial-gradient(circle at 120px 140px,transparent 70px,#000 120px);mask-composite:intersect}
+.em-brush{position:absolute;width:40px;height:40px;border-radius:50%;border:2px solid #F2F2F2;transform:translate(-50%,-50%);box-shadow:0 0 0 2px #0A0A0A}
+.em-tools{display:flex;flex-direction:column;gap:3px;padding:0 10px 10px}
+.em-tl{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border-radius:10px;font-size:13px;color:#8C8C8C}
+.em-tl > kbd{margin-left:auto;font-family:inherit;font-size:10px;padding:1px 5px;border-radius:4px;border:1px solid #3A3A3A;color:#6E6E6E}
+.em-tl.cur{background:#EDEDED;color:#0A0A0A;font-weight:700;box-shadow:0 3px 0 #8A8A8A}
+.em-tl.cur > kbd{border-color:#5A5A5A;color:#5A5A5A}
+.em-pal{display:flex;gap:8px;flex-wrap:wrap}
+.em-pal > span{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:#141414;border:1.5px solid #2C2C2C;font-size:12px;color:#D4D4D4}
+.em-pal > span.on{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A}
+.em-pal > span > i{width:14px;height:14px;border-radius:3px;display:inline-block}
+.em-crumb{display:flex;gap:8px;align-items:center;font-size:12px;color:#8C8C8C}
+.em-crumb > b{color:#F2F2F2}
+.em-insp{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;background:#0D0D0D;border:1px solid #333;font-size:13px;line-height:1.45;color:#D4D4D4}
+.em-insp > b{font-family:'Cinzel',serif;font-size:16px;color:#F2F2F2}
+.em-vw{display:flex;gap:4px;padding:3px;border-radius:10px;background:#0D0D0D;border:1px solid #2C2C2C;align-self:flex-start}
+.em-vw > span{font-size:12px;font-weight:700;padding:6px 12px;border-radius:7px;color:#8C8C8C}
+.em-vw > span.on{background:#EDEDED;color:#0A0A0A}
+</style>
+</helmet>
+<div class="em-pm" style="{{rootStyle}}; position: relative; overflow: hidden; display: flex; gap: 40px; box-sizing: border-box; align-items: flex-start">
+<div class="em-lap"><header class="em-top"><span class="em-ttl" style="font-size: 13px; letter-spacing: .3em; color: #F2F2F2">PROMPTUS</span><span class="em-sep"></span><span class="em-ttl" style="font-size: 15px; color: #F2F2F2">Les Cendres de Valombre</span><span class="em-tabs"><span class="">Histoire</span><span class="">Règles</span><span class="on">Cartes</span><span class="">Médias</span><span class="">Joueurs</span><span class="">Sessions</span></span><span style="flex: 1"></span><span>{{saveTxt}}</span></header><div class="em-cols" style="grid-template-columns: 220px 1fr 340px"><div class="em-col"><section class="em-panel" style="flex: 1"><div class="em-ph"><span class="em-lbl" style="color: #F2F2F2">Outils</span></div><div class="em-tools"><span class="em-tl {{t0}}">Sélection<kbd>V</kbd></span><span class="em-tl {{t1}}">Murs<kbd>M</kbd></span><span class="em-tl {{t2}}">Sol et eau<kbd>S</kbd></span><span class="em-tl {{t3}}">Portes<kbd>P</kbd></span><span class="em-tl {{t4}}">Décors<kbd>D</kbd></span><span class="em-tl {{t5}}">Objets cachés<kbd>O</kbd></span><span class="em-tl {{t6}}">Lumières<kbd>L</kbd></span><span class="em-tl {{t7}}">Brouillard<kbd>B</kbd></span><span class="em-tl {{t8}}">Sorties<kbd>X</kbd></span></div></section></div><div class="em-col"><div class="em-stage"><sc-if value="{{is1}}" hint-placeholder-val="{{ true }}"><div class="em-hd"><span class="em-ttl" style="font-size: 26px">La salle de l’autel</span><span class="em-lbl">proposée par le co-MJ</span></div><div class="em-mapw"><div style="position: absolute; left: 0; top: -48px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="48" vue="mj" grille="true" bx="4" by="6" hint-size="672px,480px"></dc-import></div><div class="em-ov"><span class="em-mk " style="left: 168px; top: 100px">Autel</span><span class="em-mk em-hid" style="left: 600px; top: 52px">Coffre · caché</span><span class="em-mk " style="left: 264px; top: 292px">2 gobelins</span><span class="em-mk em-ex" style="left: 168px; top: 244px">Vers l’escalier</span></div></div><div class="em-crumb"><span>Monde</span>›<span>Valombre</span>›<span>La crypte</span>›<b>La salle de l’autel</b></div></sc-if><sc-if value="{{is2}}" hint-placeholder-val="{{ false }}"><div class="em-hd"><span class="em-ttl" style="font-size: 26px">Murs et terrains</span><span class="em-lbl">peindre au pinceau</span></div><div class="em-mapw"><div style="position: absolute; left: 0; top: -48px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="48" vue="mj" grille="true" bx="4" by="6" hint-size="672px,480px"></dc-import></div><div class="em-ov"><span class="em-sel em-warm" style="left: 384px; top: 288px; width: 240px; height: 96px"></span><span class="em-brush" style="left: 500px; top: 330px"></span><span class="em-mk " style="left: 504px; top: 292px">Eau peu profonde · terrain difficile</span></div></div><div class="em-pal"><span><i style="background: #3A3A40"></i>Mur</span><span><i style="background: #2A2622"></i>Dalles</span><span class="on"><i style="background: #1E2C3A"></i>Eau peu profonde</span><span><i style="background: #2E2A20"></i>Gravats</span><span><i style="background: #050505"></i>Gouffre</span></div></sc-if><sc-if value="{{is3}}" hint-placeholder-val="{{ false }}"><div class="em-hd"><span class="em-ttl" style="font-size: 26px">Portes et décors</span><span class="em-lbl">poser, tourner, verrouiller</span></div><div class="em-mapw"><div style="position: absolute; left: 0; top: -48px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="48" vue="mj" grille="true" bx="4" by="6" hint-size="672px,480px"></dc-import></div><div class="em-ov"><span class="em-sel " style="left: 336px; top: 144px; width: 48px; height: 48px"></span><span class="em-mk " style="left: 360px; top: 148px">Porte secrète</span><span class="em-mk " style="left: 168px; top: 100px">Autel</span><span class="em-mk " style="left: 72px; top: 52px">Sarcophage</span><span class="em-mk " style="left: 264px; top: 52px">Sarcophage</span><span class="em-mk " style="left: 504px; top: 340px">Colonne brisée</span></div></div><div class="em-pal"><span class="on">Autel</span><span>Sarcophage</span><span>Colonne</span><span>Brasero</span><span>Tas d’os</span><span>Statue</span><span>+ 14 du pack crypte</span></div></sc-if><sc-if value="{{is4}}" hint-placeholder-val="{{ false }}"><div class="em-hd"><span class="em-ttl" style="font-size: 26px">Objets cachés</span><span class="em-lbl">ce qu’un jet peut révéler</span></div><div class="em-mapw"><div style="position: absolute; left: 0; top: -48px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="48" vue="mj" grille="true" bx="4" by="6" hint-size="672px,480px"></dc-import></div><div class="em-ov"><span class="em-sel em-warm" style="left: 144px; top: 96px; width: 48px; height: 48px"></span><span class="em-mk em-hid" style="left: 168px; top: 100px">La page arrachée · SAG 13</span><span class="em-mk em-hid" style="left: 600px; top: 52px">Coffre · caché</span><span class="em-mk em-hid" style="left: 360px; top: 148px">Porte secrète · SAG 15</span></div></div><span class="em-mut">Un objet caché n’existe pas pour les joueurs tant qu’un jet ou ton geste ne l’a pas révélé. Le serveur garde le secret, pas leur téléphone.</span></sc-if><sc-if value="{{is5}}" hint-placeholder-val="{{ false }}"><div class="em-hd"><span class="em-ttl" style="font-size: 26px">Lumières et ambiance</span><span class="em-lbl">ce que les personnages voient</span></div><div class="em-mapw"><div style="position: absolute; left: 0; top: -48px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="48" vue="mj" grille="true" bx="4" by="6" hint-size="672px,480px"></dc-import></div><div class="em-ov"><span class="em-light" style="left: 168px; top: 120px; width: 260px; height: 260px"></span><span class="em-light" style="left: 408px; top: 312px; width: 240px; height: 240px"></span><span class="em-mk " style="left: 168px; top: 100px">Brasero · 4 cases</span><span class="em-mk " style="left: 408px; top: 292px">Torche murale · 3 cases</span></div></div><div class="em-rl"><span class="em-lbl">Ambiance</span><span>Sombre, cendres dans l’air. Musique : « Ombres de la crypte ». Borin voit dans le noir, Lyra et Sef ont besoin des braseros.</span></div></sc-if><sc-if value="{{is6}}" hint-placeholder-val="{{ false }}"><div class="em-hd"><span class="em-ttl" style="font-size: 26px">Ce que voient les joueurs</span><span class="em-lbl">aperçu</span></div><div class="em-vw"><span>Toi</span><span class="on">Les joueurs</span><span>La TV</span></div><div class="em-mapw"><div style="position: absolute; left: 0; top: -48px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="48" vue="joueur" grille="true" bx="4" by="6" hint-size="672px,480px"></dc-import></div><div class="em-ov"><span class="em-sel " style="left: 384px; top: 0px; width: 288px; height: 240px"></span><span class="em-mk " style="left: 504px; top: 100px">Brouillard · levé quand la porte s’ouvre</span></div></div><span class="em-mut">Le brouillard couvre la salle est. Le coffre et la porte secrète n’apparaissent pas : ils ne sont pas cachés sous le brouillard, ils ne sont pas envoyés.</span></sc-if><sc-if value="{{is7}}" hint-placeholder-val="{{ false }}"><div class="em-hd"><span class="em-ttl" style="font-size: 26px">Relier les échelles</span><span class="em-lbl">d’où on vient, où on va</span></div><div class="em-mapw"><div style="position: absolute; left: 0; top: -48px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="48" vue="mj" grille="true" bx="4" by="6" hint-size="672px,480px"></dc-import></div><div class="em-ov"><span class="em-mk em-ex" style="left: 168px; top: 244px">Escalier → l’entrée de la crypte</span><span class="em-mk em-ex" style="left: 600px; top: 292px">Puits → crypte, niveau 2</span><span class="em-mk em-ex" style="left: 360px; top: 148px">Porte nord → session 4</span></div></div><div class="em-crumb"><span>Monde · hexagone 12-3</span>›<span>Valombre · la crypte</span>›<b>La salle de l’autel</b>›<span>Rencontre : 2 gobelins</span></div></sc-if></div></div><div class="em-col"><sc-if value="{{is1}}" hint-placeholder-val="{{ true }}"><section class="em-panel"><div class="em-ph"><span class="em-lbl" style="color: #F2F2F2">Sélection</span></div><div class="em-co"><div class="em-insp"><b>Tirée du graphe</b><span>Le nœud « La salle de l’autel » demande : un autel, la page cachée, deux gobelins, une sortie vers l’escalier. Décor : crypte.</span></div></div></section></sc-if><sc-if value="{{is2}}" hint-placeholder-val="{{ false }}"><section class="em-panel"><div class="em-ph"><span class="em-lbl" style="color: #F2F2F2">Sélection</span></div><div class="em-co"><div class="em-insp"><b>Eau peu profonde</b><span>Terrain difficile : chaque case compte double pour le mouvement. Le serveur l’applique, les joueurs le voient en jeu.</span></div></div></section></sc-if><sc-if value="{{is3}}" hint-placeholder-val="{{ false }}"><section class="em-panel"><div class="em-ph"><span class="em-lbl" style="color: #F2F2F2">Sélection</span></div><div class="em-co"><div class="em-insp"><b>Porte secrète</b><span>Fermée, invisible tant qu’un jet de Sagesse 15 ne la trouve pas. Mène à la salle est.</span></div></div></section></sc-if><sc-if value="{{is4}}" hint-placeholder-val="{{ false }}"><section class="em-panel"><div class="em-ph"><span class="em-lbl" style="color: #F2F2F2">Sélection</span></div><div class="em-co"><div class="em-insp"><b>La page arrachée</b><span>Indice du nœud. Sagesse (Perception) DD 13. Révélée, elle part en carte dans le journal de tous.</span></div></div></section></sc-if><sc-if value="{{is5}}" hint-placeholder-val="{{ false }}"><section class="em-panel"><div class="em-ph"><span class="em-lbl" style="color: #F2F2F2">Sélection</span></div><div class="em-co"><div class="em-insp"><b>Brasero</b><span>Lumière vive sur 4 cases, faible sur 4 de plus. Allumé au début de la scène.</span></div></div></section></sc-if><sc-if value="{{is6}}" hint-placeholder-val="{{ false }}"><section class="em-panel"><div class="em-ph"><span class="em-lbl" style="color: #F2F2F2">Sélection</span></div><div class="em-co"><div class="em-insp"><b>Brouillard</b><span>Zone est : levée quand la porte secrète s’ouvre. Tu peux aussi la lever d’un geste en jeu.</span></div></div></section></sc-if><sc-if value="{{is7}}" hint-placeholder-val="{{ false }}"><section class="em-panel"><div class="em-ph"><span class="em-lbl" style="color: #F2F2F2">Sélection</span></div><div class="em-co"><div class="em-insp"><b>Sorties</b><span>Trois sorties. Chacune ouvre la carte suivante au bon moment, sans que tu aies à la chercher.</span></div></div></section></sc-if><section class="em-panel"><div class="em-ph"><span class="em-lbl" style="color: #F2F2F2">Le co-MJ</span></div><div class="em-co"><div class="em-note"><span class="em-lbl">Propose</span>{{coTxt}}</div></div></section></div></div><div class="em-foot"><div class="em-bn {{bnCls}}"><span>{{bnTxt}}</span></div><button type="button" class="em-go {{mainCls}}" onClick="{{mainAct}}"><span class="em-in"><span style="flex: 1"><span class="em-t">{{mainLbl}}</span><span class="em-s">{{mainSub}}</span></span><span class="em-chev">›</span></span></button></div></div><sc-if value="{{full}}" hint-placeholder-val="{{ true }}"><div class="em-side">
+<span class="em-lbl">Dans la tête de Romain, le MJ</span><div class="em-think">{{thought}}</div>
+<span class="em-lbl">Pourquoi cet écran</span><div class="em-why">{{why}}</div>
+<span class="em-lbl">L’éditeur de carte · moment {{m}} sur 7</span><div class="em-prog"><sc-for list="{{dots}}" as="d" hint-placeholder-count="7"><button type="button" class="{{d.cls}}" onClick="{{d.pick}}">{{d.n}}</button></sc-for></div>
+<div class="em-ctl"><button type="button" onClick="{{restart}}">Recommencer</button></div>
+</div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"moment":{"editor":"int","default":1,"min":1,"max":7},"seul":{"editor":"boolean","default":false},"$preview":{"width":2012,"height":1020}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = this.fresh();
+    this.timers = [];
+    const pm = Number(props && props.moment);
+    if (pm >= 1 && pm <= 7) Object.assign(this.state, this.settled(pm));
+  }
+  fresh() { return Object.assign({ m: 1, ended: false }, { ok: false }); }
+  // A frozen moment (storyboard) shows the screen once its people have acted.
+  settled(m) { return Object.assign({ m }, { ok: m >= 7 }); }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+  clear() { this.timers.forEach((t) => clearTimeout(t)); this.timers = []; }
+  go(m) {
+    if (m > 7) return;
+    this.clear();
+    const c = {};
+    for (const k of []) c[k] = this.state[k];
+    this.setState(Object.assign(this.fresh(), c, { m }));
+    
+  }
+  end() { this.clear(); this.setState({ ended: true }); }
+  renderVals() {
+    const s = this.state, m = s.m;
+    
+    const T = {
+      1: { bn: ["you", "Le co-MJ a dessiné la salle de l’autel"], main: ['Retoucher', 'L’éditeur, outil par outil', true, () => { this.go(2) }], thought: "Pas mal. Mais je veux de l’eau, une porte secrète et des sarcophages.", coTxt: "Je l’ai tirée du graphe : tout ce que la scène demande y est déjà.", why: "Chaque lieu du graphe reçoit une carte proposée par l’IA, dans le décor choisi. Le MJ part de là au lieu d’une page blanche." },
+      2: { bn: ["you", "Il peint l’eau"], main: ['Poser les décors', 'Portes, sarcophages', true, () => { this.go(3) }], thought: "Une flaque au sud. Les gobelins vont patauger.", coTxt: "L’eau ralentit tout le monde. Les gobelins y sont à désavantage pour esquiver.", why: "Murs et terrains se peignent au pinceau, sur la grille. Un terrain a une règle (difficile, gouffre) que le serveur applique en jeu." },
+      3: { bn: ["you", "Il pose une porte secrète"], main: ['Cacher la page', 'Sous l’autel', true, () => { this.go(4) }], thought: "Une porte secrète vers la salle est. Lyra va la trouver, j’espère.", coTxt: "La porte secrète relie la salle est au front du culte. Je l’ajoute au graphe ?", why: "Les décors viennent du pack de l’univers. Une porte est un objet posé sur la carte, qui peut être fermée, verrouillée ou secrète." },
+      4: { bn: ["you", "Les objets cachés"], main: ['Régler la lumière', 'Braseros et torches', true, () => { this.go(5) }], thought: "La page sous l’autel, Sagesse 13. Comme dans ma prépa.", coTxt: "La page est l’indice 3 sur 3 de la révélation « la porte nord ».", why: "Ce qui est caché est un objet posé par-dessus la carte, avec le jet qui le révèle. Les joueurs ne le reçoivent qu’une fois trouvé." },
+      5: { bn: ["you", "Lumières et ambiance"], main: ['Voir comme les joueurs', 'Avec le brouillard', true, () => { this.go(6) }], thought: "Deux braseros. Le reste dans le noir, sauf pour Borin.", coTxt: "Borin voit dans le noir : il verra le gobelin qui guette avant les autres.", why: "La lumière décide de ce que chaque personnage voit, selon ses sens. L’ambiance relie la carte à la musique de la scène." },
+      6: { bn: ["you", "L’aperçu des joueurs"], main: ['Relier les sorties', 'Escalier, puits, porte nord', true, () => { this.go(7) }], thought: "Rien ne dépasse. La salle est reste un mystère.", coTxt: "Aucun objet caché n’est envoyé aux joueurs. Vérifié.", why: "Le MJ voit sa carte comme la verront les joueurs et la TV. Ce qui est caché n’est pas recouvert : il n’est pas envoyé du tout." },
+      7: { bn: [s.ok ? "you" : "you", s.ok ? "Carte validée" : "Trois sorties reliées"], main: ['Valider la carte', 'Elle rejoint la campagne', !s.ok, () => { this.setState({ ok: true }) }], thought: s.ok ? "Validée. Plus que la salle est." : "Le puits mène au niveau 2. Ils ne sont pas prêts.", coTxt: "Il reste la salle est à dessiner. Je te la propose ?", why: "Les échelles se relient : le monde en hexagones mène au lieu, le lieu à la rencontre. En jeu, chaque sortie ouvre la bonne carte." }
+    }[m];
+    const main = T.main;
+    const v = {
+      m, ended: s.ended, notEnded: !s.ended,
+      bnCls: T.bn[0], bnTxt: T.bn[1], thought: T.thought, why: T.why,
+      mainLbl: main[0], mainSub: main[1], mainCls: (main[2] ? '' : 'off') + (main[4] ? ' ' + main[4] : ''), mainAct: () => { if (main[2] && main[3]) main[3](); },
+      dots: Array.from({ length: 7 }, (_, i) => ({ n: i + 1, cls: i + 1 === m ? 'cur' : i + 1 < m ? 'done' : '', pick: () => this.go(i + 1) })),
+      restart: () => { this.clear(); this.setState(this.fresh()); },
+      ...Object.fromEntries(['Sélection', 'Murs', 'Sol et eau', 'Portes', 'Décors', 'Objets cachés', 'Lumières', 'Brouillard', 'Sorties'].map((n, i) => ['t' + i, n === {1: 'Sélection', 2: 'Murs', 3: 'Décors', 4: 'Objets cachés', 5: 'Lumières', 6: 'Brouillard', 7: 'Sorties'}[m] ? 'cur' : ''])), saveTxt: s.ok ? 'Carte validée' : 'Brouillon · enregistré',
+    };
+    for (const k in T) if (!(k in v) && k !== 'main' && k !== 'bn') v[k] = T[k];
+    for (let i = 1; i <= 7; i++) v['is' + i] = m === i;
+    const seul = String(this.props.seul ?? false) === 'true';
+    v.full = !seul;
+    v.rootStyle = seul ? 'width: 1440px; height: 900px; padding: 0' : 'width: 2012px; height: 1020px; padding: 60px 56px';
+    return v;
+  }
+}
+</script>
+</body>
+</html>

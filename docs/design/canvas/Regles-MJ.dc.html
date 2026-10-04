@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Les règles de la campagne</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A;overflow:hidden}
+.rg-pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 60% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.rg-ttl{font-family:'Cinzel',Georgia,serif;font-weight:800;letter-spacing:.02em}
+.rg-nar{margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-weight:500;line-height:1.35;color:#E5E5E5}
+.rg-lbl{font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.rg-mut{font-size:12px;color:#8C8C8C;line-height:1.5}
+.rg-lap{position:relative;width:1440px;height:900px;flex:none;overflow:hidden;box-sizing:border-box;display:grid;grid-template-rows:52px 1fr 78px;background:radial-gradient(90% 70% at 50% 0%,#1A1A1A 0,#0C0C0C 60%,#050505 100%);border-radius:14px;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7)}
+.rg-tab{position:relative;width:1180px;height:820px;flex:none;overflow:hidden;box-sizing:border-box;display:grid;grid-template-rows:56px 1fr 92px;background:radial-gradient(90% 70% at 50% 0%,#1A1A1A 0,#0C0C0C 60%,#050505 100%);border-radius:28px;border:12px solid #050505;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7)}
+.rg-top{display:flex;align-items:center;gap:18px;padding:0 18px;border-bottom:1px solid #1F1F1F;font-size:12px;color:#A3A3A3;white-space:nowrap}
+.rg-top .rg-sep{width:1px;height:20px;background:#2A2A2A;flex:none}
+.rg-tabs{display:flex;gap:20px;margin-left:24px}
+.rg-tabs > span{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6E6E6E;padding:17px 0;border-bottom:2px solid transparent}
+.rg-tabs > span.on{color:#F2F2F2;border-bottom-color:#F2F2F2}
+.rg-cols{display:grid;grid-template-columns:300px 1fr 360px;gap:14px;padding:14px 18px 0;min-height:0}
+.rg-col{display:flex;flex-direction:column;gap:14px;min-height:0;overflow:hidden}
+.rg-panel{background:linear-gradient(180deg,#181818,#111);border:1px solid #2C2C2C;border-radius:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 30px rgba(0,0,0,.45)}
+.rg-ph{display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px 8px}
+.rg-stage{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.rg-hd{display:flex;align-items:baseline;gap:14px}
+.rg-foot{display:flex;align-items:center;gap:14px;padding:0 18px 14px}
+.rg-bn{flex:1;display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;border-radius:12px;font-weight:700;font-size:15px;box-sizing:border-box}
+.rg-bn.you{background:#161616;border:1px solid #2C2C2C;color:#F2F2F2}
+.rg-bn.wait{background:#0A0A0A;border:1.5px dashed #5E5E5E;color:#D4D4D4}
+.rg-bn.warn{background:#0A0A0A;border:1.5px solid #FF9F1C;color:#F2F2F2}
+.rg-bn.hurt{background:#0A0A0A;border:1.5px solid #FF4D5E;color:#F2F2F2}
+.rg-bn.turn{background:#FFD60A;color:#0A0A0A;box-shadow:0 3px 0 #8A6F00}
+.rg-go{font:inherit;width:460px;flex:none;display:block;box-sizing:border-box;border:0;padding:6px;border-radius:12px;background:#EDEDED;color:#0A0A0A;text-align:left;cursor:pointer;box-shadow:0 4px 0 #8A8A8A,0 7px 0 #5A5A5A,0 14px 24px rgba(0,0,0,.5);transform-origin:50% 100%;transition:transform .1s,box-shadow .1s}
+.rg-go .rg-in{display:flex;align-items:center;gap:12px;border:1.5px solid #0A0A0A;border-radius:8px;padding:6px 14px;height:42px;box-sizing:border-box}
+.rg-go .rg-t{display:block;font-family:'Cinzel',Georgia,serif;font-weight:800;font-size:17px;line-height:1.05}
+.rg-go .rg-s{display:block;font-size:11px;font-weight:600;color:#5A5A5A;margin-top:2px}
+.rg-go .rg-chev{margin-left:auto;font-family:'Cinzel',serif;font-weight:800;font-size:22px}
+.rg-go:active{transform:perspective(500px) rotateX(14deg) translateY(4px);box-shadow:0 1px 0 #8A8A8A,0 2px 0 #5A5A5A}
+.rg-go.off{background:#141414;color:#8C8C8C;box-shadow:0 0 0 1.5px #2C2C2C;cursor:default;pointer-events:none}
+.rg-go.off .rg-in{border:1.5px dashed #3A3A3A}
+.rg-go.off .rg-s{color:#6E6E6E}
+.rg-go.red{background:#FF4D5E;box-shadow:0 4px 0 #8A2A33,0 7px 0 #5A1A20,0 14px 24px rgba(0,0,0,.5)}
+.rg-go.red .rg-s{color:#3A0A10}
+.rg-btn{font:inherit;font-family:'Cinzel',Georgia,serif;font-size:12px;font-weight:800;color:#F2F2F2;background:#141414;border:0;border-radius:8px;height:34px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:nowrap;outline:1.5px solid #5A5A5A;outline-offset:-4px;box-shadow:0 0 0 1.5px #3A3A3A,0 3px 0 #000;flex:none}
+.rg-btn.rg-lt{background:#EDEDED;color:#0A0A0A;outline-color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.rg-sec{display:flex;flex-direction:column;gap:8px}
+.rg-row2{display:flex;gap:14px;align-items:flex-start}
+.rg-box{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;background:#0D0D0D;border:1px solid #333;font-size:14px}
+.rg-box > code{flex:1;font-family:'Chakra Petch',monospace;font-size:14px;color:#F2F2F2}
+.rg-edit{padding:14px 16px;border-radius:12px;background:#0D0D0D;border:1px solid #333;font-size:14px;line-height:1.55;color:#D4D4D4}
+.rg-edit > .rg-lbl{display:block;margin-bottom:8px}
+.rg-rl{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:baseline;font-size:13px;line-height:1.45;padding:9px 12px;border-radius:10px;background:#121212;color:#D4D4D4}
+.rg-chk{display:flex;align-items:flex-start;gap:10px;font-size:13px;padding:10px 12px;border-radius:10px;background:#121212;line-height:1.45}
+.rg-chk > i{width:18px;height:18px;border-radius:5px;background:#EDEDED;color:#0A0A0A;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:11px;flex:none;margin-top:1px}
+.rg-chk.warn{border:1.5px solid #FF9F1C}
+.rg-chk.warn > i{background:#FF9F1C}
+.rg-chk.rg-pend > i{background:transparent;border:1.5px dashed #5E5E5E;color:#8C8C8C;box-sizing:border-box}
+.rg-co{display:flex;flex-direction:column;gap:8px;padding:0 14px 14px}
+.rg-note{padding:12px 14px;border-radius:12px;background:#EDEDED;color:#0A0A0A;font-size:13px;line-height:1.5;box-shadow:0 3px 0 #8A8A8A}
+.rg-note > .rg-lbl{display:block;color:#5A5A5A;margin-bottom:4px}
+.rg-secret{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;background:#050505;border:1.5px dashed #5E5E5E;font-size:13px;line-height:1.5;color:#D4D4D4}
+.rg-secret > .rg-lbl{color:#F2F2F2}
+.rg-hook{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:10px;background:#141414;border:1px solid #2C2C2C;font-size:13px;line-height:1.45;color:#D4D4D4}
+.rg-hook > small{font-size:11px;color:#8C8C8C}
+.rg-hook.on{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A}
+.rg-hook.on > small{color:#5A5A5A}
+.rg-ans{display:flex;align-items:center;gap:10px;font-size:13px;padding:8px 12px;border-radius:10px;background:#121212;color:#D4D4D4}
+.rg-ans > b{width:80px;flex:none}
+.rg-ans > em{margin-left:auto;font-style:normal;font-size:11px;color:#8C8C8C;white-space:nowrap}
+.rg-st{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;border-radius:6px;white-space:nowrap;flex:none}
+.rg-st.ok{background:#EDEDED;color:#0A0A0A}
+.rg-st.todo{background:#FFD60A;color:#0A0A0A}
+.rg-st.warn{background:#0A0A0A;color:#FF9F1C;border:1.5px solid #FF9F1C}
+.rg-st.wait{border:1.5px dashed #5E5E5E;color:#A3A3A3}
+.rg-st.off{color:#5A5A5A;border:1px solid #2C2C2C}
+.rg-seat{display:flex;align-items:center;gap:12px;height:68px;padding:0 12px;margin:0 10px 6px;border-radius:12px;background:#121212;border:1px solid transparent}
+.rg-seat.cur{border-color:#F2F2F2;background:#1C1C1C}
+.rg-seat > .rg-who{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.rg-seat > .rg-who > b{font-size:14px}
+.rg-seat > .rg-who > small{font-size:11px;color:#8C8C8C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rg-pf{display:inline-grid;place-items:end center;width:44px;height:56px;border-radius:9px;background:linear-gradient(180deg,#262626,#121212);border:2px solid #3A3A3A;box-shadow:0 3px 0 #000;box-sizing:border-box;flex:none;overflow:hidden}
+.rg-pf.none{background:transparent;border:2px dashed #3A3A3A;box-shadow:none}
+.rg-pf.down{border-color:#FF4D5E}
+.rg-pres{width:9px;height:9px;border-radius:50%;background:#3A3A3A;flex:none}
+.rg-pres.on{background:#F2F2F2;box-shadow:0 0 8px rgba(255,255,255,.6)}
+.rg-pstage{display:flex;align-items:flex-end;gap:14px;padding:14px;border-radius:14px;background:radial-gradient(60% 30% at 30% 92%,rgba(255,255,255,.08),transparent),#141414;border:1px solid #2C2C2C}
+.rg-abs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.rg-ab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;border-radius:10px;background:#121212;border:1px solid #2C2C2C}
+.rg-ab > small{font-size:10px;font-weight:700;letter-spacing:.14em;color:#8C8C8C}
+.rg-ab > b{font-size:20px}
+.rg-ab > em{font-style:normal;font-size:11px;color:#A3A3A3}
+.rg-ab.rg-fix{border:1.5px solid #F2F2F2;background:#1C1C1C}
+.rg-gems{display:flex;gap:14px;align-items:flex-end}
+.rg-gem{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#8C8C8C}
+.rg-hand{display:flex;gap:12px}
+.rg-sent{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:#141414;border:1.5px dashed #5E5E5E;font-size:13px;color:#D4D4D4}
+.rg-spin{width:14px;height:14px;border-radius:50%;border:2px solid #3A3A3A;border-top-color:#F2F2F2;animation:rg-spin 1s linear infinite;flex:none}
+@keyframes rg-spin{to{transform:rotate(360deg)}}
+.rg-toast{display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:14px;background:#EDEDED;color:#0A0A0A;box-shadow:0 6px 0 #8A8A8A,0 20px 40px rgba(0,0,0,.6)}
+.rg-toast .rg-lbl{color:#5A5A5A}
+.rg-art{height:178px;border-radius:12px;position:relative;background:radial-gradient(70% 80% at 50% 100%,rgba(10,10,10,.9),transparent),repeating-linear-gradient(135deg,#3A3A3A 0 2px,#2A2A2A 2px 9px);flex:none;display:flex;align-items:flex-end;padding:14px;box-sizing:border-box}
+.rg-tag{position:absolute;right:10px;top:10px;font-size:9px;font-weight:700;letter-spacing:.14em;background:#0A0A0A;padding:3px 6px;border-radius:4px}
+.rg-yt{display:flex;align-items:center;gap:10px;padding:6px 10px 6px 6px;border-radius:10px;background:#141414;border:1px solid #2C2C2C;font-size:12px}
+.rg-yt > .rg-thumb{width:64px;height:36px;border-radius:5px;background:repeating-linear-gradient(135deg,#3A3A3A 0 2px,#262626 2px 7px);display:grid;place-items:center;flex:none;font-size:8px;font-weight:700;letter-spacing:.1em}
+.rg-yt > span:last-child{margin-left:auto;color:#8C8C8C}
+.rg-eq{display:flex;gap:2px;align-items:flex-end;height:14px}
+.rg-eq > i{width:3px;height:6px;background:#F2F2F2;animation:rg-eq .8s ease-in-out infinite}
+.rg-eq > i:nth-child(2){animation-delay:-.3s}
+.rg-eq > i:nth-child(3){animation-delay:-.6s}
+@keyframes rg-eq{0%,100%{height:4px}50%{height:14px}}
+.rg-endc{position:absolute;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;background:rgba(5,5,5,.94);padding:30px}
+.rg-ph2{position:relative;width:390px;height:844px;border-radius:44px;overflow:hidden;border:10px solid #050505;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7);background:radial-gradient(130% 70% at 50% 0%,#1A1A1A 0,#0C0C0C 60%,#050505 100%);box-sizing:border-box;display:flex;flex-direction:column;flex:none}
+.rg-pbn{margin:52px 12px 0;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;font-weight:700;font-size:14px}
+.rg-pbn.you{background:#EDEDED;color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.rg-pbn.wait{background:#0A0A0A;border:1.5px dashed #5E5E5E;color:#D4D4D4}
+.rg-pbn.listen{background:#161616;border:1px solid #2C2C2C;color:#D4D4D4}
+.rg-pbn.warn{background:#0A0A0A;border:1.5px solid #FF9F1C;color:#F2F2F2}
+.rg-pbn.hurt{background:#0A0A0A;border:1.5px solid #FF4D5E;color:#F2F2F2}
+.rg-pbn.turn{background:#FFD60A;color:#0A0A0A;box-shadow:0 3px 0 #8A6F00}
+.rg-pbody{flex:1;display:flex;flex-direction:column;gap:12px;padding:16px;min-height:0;overflow:hidden}
+.rg-pft{display:flex;flex-direction:column;gap:8px;padding:10px 14px 30px}
+.rg-cb{font:inherit;display:block;box-sizing:border-box;width:100%;border:0;text-align:left;cursor:pointer;padding:6px;border-radius:12px;background:#EDEDED;color:#0A0A0A;box-shadow:0 4px 0 #8A8A8A,0 7px 0 #5A5A5A}
+.rg-cb .rg-in{display:flex;align-items:center;gap:12px;border:1.5px solid #0A0A0A;border-radius:8px;padding:8px 12px;min-height:40px}
+.rg-cb .rg-t{display:block;font-family:'Cinzel',serif;font-weight:800;font-size:17px}
+.rg-cb .rg-s{display:block;font-size:11px;font-weight:600;color:#5A5A5A;margin-top:2px}
+.rg-cb .rg-chev{margin-left:auto;font-family:'Cinzel',serif;font-weight:800;font-size:22px}
+.rg-cb.rg-dk{background:#141414;color:#F2F2F2;box-shadow:0 0 0 1.5px #3A3A3A,0 4px 0 #000}
+.rg-cb.rg-dk .rg-in{border-color:#5A5A5A}
+.rg-cb.rg-dk .rg-s{color:#8C8C8C}
+.rg-cb.off{opacity:.45;pointer-events:none}
+.rg-pnav{display:flex;border-top:1px solid #1F1F1F;background:#060606;padding:2px 8px 18px}
+.rg-pnav > span{flex:1;font-size:12px;color:#8C8C8C;min-height:44px;display:grid;place-items:center;position:relative}
+.rg-pnav > span.on{color:#F2F2F2}
+.rg-pnav > span.on::before{content:'';position:absolute;top:0;left:50%;margin-left:-12px;width:24px;height:2px;background:#F2F2F2}
+.rg-dots{display:flex;gap:6px}
+.rg-dots > i{flex:1;height:4px;border-radius:2px;background:#2C2C2C}
+.rg-dots > i.on{background:#F2F2F2}
+.rg-chips{display:flex;flex-wrap:wrap;gap:8px}
+.rg-chip{font:inherit;display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:#141414;border:1.5px solid #2C2C2C;font-size:13px;color:#D4D4D4;cursor:pointer}
+.rg-chip.on{background:#EDEDED;border-color:#0A0A0A;color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.rg-sw{font:inherit;width:40px;height:40px;border-radius:10px;border:2px solid #2C2C2C;cursor:pointer;padding:0;box-shadow:0 3px 0 #000}
+.rg-sw.on{border-color:#F2F2F2;box-shadow:0 0 0 2px #0A0A0A,0 0 0 4px #F2F2F2}
+.rg-tv{position:relative;width:960px;height:540px;flex:none;overflow:hidden;border-radius:10px;border:14px solid #050505;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7);background:radial-gradient(90% 80% at 50% 0%,#1C1C1C 0,#0A0A0A 60%,#030303 100%);box-sizing:content-box}
+.rg-tvmini{position:relative;width:420px;height:236px;overflow:hidden;border-radius:8px;border:6px solid #050505;box-shadow:0 0 0 1.5px #2C2C2C;background:#0A0A0A;flex:none}
+.rg-tvmini > .rg-inner{position:absolute;left:0;top:0;width:960px;height:540px;transform:scale(.4375);transform-origin:0 0}
+.rg-side{display:flex;flex-direction:column;gap:16px;width:420px;flex:none}
+.rg-think{padding:14px 16px;border-radius:14px;background:#EDEDED;color:#0A0A0A;font-size:14px;line-height:1.45;box-shadow:0 3px 0 #8A8A8A;min-height:92px;box-sizing:border-box;display:flex;align-items:center}
+.rg-why{padding:12px 14px;border-radius:12px;background:#141414;border:1px solid #2C2C2C;font-size:13px;line-height:1.5;color:#D4D4D4;min-height:110px;box-sizing:border-box}
+.rg-prog{display:flex;flex-wrap:wrap;gap:6px}
+.rg-prog > button{font:inherit;font-size:13px;font-weight:700;width:44px;height:36px;border-radius:8px;background:#141414;border:1px solid #2C2C2C;color:#6E6E6E;cursor:pointer}
+.rg-prog > button.done{color:#A3A3A3}
+.rg-prog > button.cur{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A}
+.rg-ctl{display:flex;gap:10px}
+.rg-ctl > button{font:inherit;font-size:13px;font-weight:600;height:40px;padding:0 16px;border-radius:10px;background:#141414;border:1px solid #3A3A3A;color:#D4D4D4;cursor:pointer}
+@media (prefers-reduced-motion: reduce){.rg-pm *{animation:none!important}}
+
+.rg-nav2{display:flex;flex-direction:column;gap:4px;padding:0 10px 10px}
+.rg-nav2 > span{display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border-radius:10px;font-size:13px;color:#8C8C8C}
+.rg-nav2 > span > small{margin-left:auto;font-size:11px}
+.rg-nav2 > span.cur{background:#EDEDED;color:#0A0A0A;font-weight:700;box-shadow:0 3px 0 #8A8A8A}
+.rg-nav2 > span.done{color:#D4D4D4}
+.rg-tbl{display:flex;flex-direction:column;gap:4px}
+.rg-tr{display:grid;grid-template-columns:70px 1fr 1.3fr 90px;gap:12px;align-items:center;padding:8px 12px;border-radius:10px;background:#121212;font-size:13px;color:#D4D4D4}
+.rg-tr.rg-th{background:none;padding:0 12px}
+.rg-tr > b{font-size:12px;letter-spacing:.12em}
+.rg-tr.rg-ed{border:1.5px solid #F2F2F2;background:#1C1C1C}
+.rg-tr > code{font-family:'Chakra Petch',monospace;font-size:12px;color:#A3A3A3}
+.rg-dd{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.rg-dc{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px;border-radius:12px;background:#141414;border:1px solid #2C2C2C;font-size:12px;color:#A3A3A3}
+.rg-dc > b{font-size:26px;color:#F2F2F2}
+.rg-res{display:flex;align-items:center;gap:20px;padding:14px 16px;border-radius:12px;background:#0D0D0D;border:1px solid #333}
+.rg-res > div{display:flex;flex-direction:column;gap:4px;font-size:13px;line-height:1.5;color:#D4D4D4}
+.rg-acts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.rg-act{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;background:#141414;border:1px solid #2C2C2C;font-size:12px;line-height:1.4;color:#A3A3A3}
+.rg-act > div{display:flex;flex-direction:column;gap:3px}
+.rg-act > div > b{font-size:13px;color:#F2F2F2}
+.rg-act.off{opacity:.4}
+.rg-tog{width:30px;height:18px;border-radius:9px;background:#EDEDED;position:relative;flex:none;margin-left:auto}
+.rg-tog::after{content:'';position:absolute;right:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#0A0A0A}
+.rg-act.off .rg-tog{background:#2C2C2C}
+.rg-act.off .rg-tog::after{left:2px;right:auto;background:#5A5A5A}
+.rg-formal{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;padding:14px 16px;border-radius:12px;background:#0D0D0D;border:1px solid #333;font-size:13px;line-height:1.45;color:#D4D4D4}
+.rg-formal > span:nth-child(odd){font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8C8C8C;padding-top:3px}
+.rg-formal.on{border:1.5px solid #F2F2F2}
+.rg-case{display:flex;align-items:center;gap:10px;font-size:13px;padding:8px 12px;border-radius:10px;background:#121212;color:#D4D4D4}
+.rg-case > i{font-style:normal;font-size:11px;font-weight:700;padding:2px 6px;border-radius:5px;background:#EDEDED;color:#0A0A0A;flex:none}
+.rg-case > i.rg-no{background:#2C2C2C;color:#A3A3A3}
+.rg-lim{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rg-sim{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.rg-big{display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:12px;background:#141414;border:1px solid #2C2C2C;font-size:12px;color:#A3A3A3}
+.rg-big > b{font-size:30px;color:#F2F2F2}
+.rg-bars{display:flex;align-items:flex-end;gap:4px;height:90px;padding:10px 12px;border-radius:12px;background:#0D0D0D;border:1px solid #333}
+.rg-bars > i{flex:1;background:#5A5A5A;border-radius:3px 3px 0 0}
+.rg-bars > i.rg-hi{background:#F2F2F2}
+.rg-ver{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:#121212;font-size:13px}
+</style>
+</helmet>
+<div class="rg-pm" style="{{rootStyle}}; position: relative; overflow: hidden; display: flex; gap: 40px; box-sizing: border-box; align-items: flex-start">
+<div class="rg-lap"><header class="rg-top"><span class="rg-ttl" style="font-size: 13px; letter-spacing: .3em; color: #F2F2F2">PROMPTUS</span><span class="rg-sep"></span><span class="rg-ttl" style="font-size: 15px; color: #F2F2F2">Les Cendres de Valombre</span><span class="rg-tabs"><span class="">Histoire</span><span class="on">Règles</span><span class="">Cartes</span><span class="">Médias</span><span class="">Joueurs</span><span class="">Sessions</span></span><span style="flex: 1"></span><span>{{saveTxt}}</span></header><div class="rg-cols" style="grid-template-columns: 260px 1fr 320px"><div class="rg-col"><section class="rg-panel" style="flex: 1"><div class="rg-ph"><span class="rg-lbl" style="color: #F2F2F2">Règles de Valombre</span><span class="rg-lbl">version {{ver}}</span></div><div class="rg-nav2"><span class="{{n1}}">Préréglage<small>{{c1}}</small></span><span class="{{n2}}">Statistiques<small>{{c2}}</small></span><span class="{{n3}}">Les jets<small>{{c3}}</small></span><span class="{{n4}}">Actions<small>{{c4}}</small></span><span class="{{n5}}">Règles maison<small>{{c5}}</small></span><span class="{{n6}}">Création<small>{{c6}}</small></span><span class="{{n7}}">Tester<small>{{c7}}</small></span></div></section></div><div class="rg-col"><div class="rg-stage"><sc-if value="{{is1}}" hint-placeholder-val="{{ true }}"><div class="rg-hd"><span class="rg-ttl" style="font-size: 26px">Le système de règles</span><span class="rg-lbl">D&D 5e · SRD 5.1</span></div><div class="rg-rl"><span class="rg-lbl">Préréglage</span><span><b>D&amp;D 5e (SRD)</b>, la version libre de droits. Les autres : Simple d20, Horreur (d6), Science-fiction (2d6).</span></div><div class="rg-rl"><span class="rg-lbl">Contient</span><span>6 caractéristiques, 5 statistiques de jeu, jets d20 contre une difficulté, 18 actions, 4 classes, 9 états, les règles de voyage et de repos.</span></div><div class="rg-rl"><span class="rg-lbl">Utilisé par</span><span>Les Cendres de Valombre. Une copie est faite pour cette campagne : tes changements ne touchent pas le préréglage.</span></div><span class="rg-mut">Tout est lisible par toi et par le serveur, qui juge chaque règle en jeu. Les joueurs n’en voient que ce qui les concerne, sous forme de cartes.</span></sc-if><sc-if value="{{is2}}" hint-placeholder-val="{{ false }}"><div class="rg-hd"><span class="rg-ttl" style="font-size: 26px">Les statistiques</span><span class="rg-lbl">ce que les gemmes affichent</span></div><div class="rg-tbl"><div class="rg-tr rg-th"><span class="rg-lbl">Clé</span><span class="rg-lbl">Nom affiché</span><span class="rg-lbl">Formule</span><span class="rg-lbl">Gemme</span></div><div class="rg-tr "><b>PV</b><span>Vie</span><code>dé de vie + CON par niveau</code><span><dc-import name="Gemme" stat="pv" valeur="13" taille="30" anim="false" hint-size="30px,30px"></dc-import></span></div><div class="rg-tr "><b>CA</b><span>Armure</span><code>10 + DEX ou armure</code><span><dc-import name="Gemme" stat="ca" valeur="18" taille="30" anim="false" hint-size="30px,30px"></dc-import></span></div><div class="rg-tr "><b>ATQ</b><span>Attaque</span><code>maîtrise + FOR ou DEX</code><span><dc-import name="Gemme" stat="atq" valeur="+5" taille="30" anim="false" hint-size="30px,30px"></dc-import></span></div><div class="rg-tr rg-ed"><b>MVT</b><span>{{mvtName}}</span><code>{{mvtFormula}}</code><span><dc-import name="Gemme" stat="mvt" valeur="{{mvtVal}}" taille="30" anim="false" hint-size="30px,30px"></dc-import></span></div><div class="rg-tr "><b>INI</b><span>Initiative</span><code>DEX</code><span><dc-import name="Gemme" stat="ini" valeur="+0" taille="30" anim="false" hint-size="30px,30px"></dc-import></span></div></div><span class="rg-mut">Romain compte le mouvement en cases plutôt qu’en mètres : le serveur convertit, les joueurs voient « 5 cases ».</span></sc-if><sc-if value="{{is3}}" hint-placeholder-val="{{ false }}"><div class="rg-hd"><span class="rg-ttl" style="font-size: 26px">Les jets</span><span class="rg-lbl">comment un test se résout</span></div><div class="rg-res"><dc-import name="De" de="d20" valeur="14" taille="90" anim="fixe" hint-size="90px,90px"></dc-import><div><b style="font-size: 16px; color: #F2F2F2">d20 + caractéristique + maîtrise ≥ difficulté</b><span>Avantage : deux dés, le meilleur. Désavantage : le pire. 20 naturel : critique en attaque. 1 naturel : échec.</span></div></div><span class="rg-lbl">Les difficultés que tu donnes</span><div class="rg-dd"><div class="rg-dc"><b>{{dd1}}</b>Facile</div><div class="rg-dc"><b>13</b>Moyen</div><div class="rg-dc"><b>16</b>Difficile</div><div class="rg-dc"><b>20</b>Héroïque</div></div><div class="rg-rl"><span class="rg-lbl">Changé</span><span>« Facile » passe de 10 à {{dd1}} : à 10, presque tout réussissait au niveau 3.</span></div></sc-if><sc-if value="{{is4}}" hint-placeholder-val="{{ false }}"><div class="rg-hd"><span class="rg-ttl" style="font-size: 26px">Les actions</span><span class="rg-lbl">les cartes que les joueurs auront</span></div><div class="rg-acts"><div class="rg-act "><span><dc-import name="Objet" objet="epee" rarete="commune" taille="36" pips="false" cadre="false" hint-size="36px,36px"></dc-import></span><div><b>Attaquer</b><span>ATQ contre CA. Arme en main.</span></div><span class="rg-tog"></span></div><div class="rg-act "><span><dc-import name="Objet" objet="anneau" rarete="commune" taille="36" pips="false" cadre="false" hint-size="36px,36px"></dc-import></span><div><b>Se cacher</b><span>DEX (Discrétion) contre la Perception.</span></div><span class="rg-tog"></span></div><div class="rg-act "><span><dc-import name="Objet" objet="parchemin" rarete="commune" taille="36" pips="false" cadre="false" hint-size="36px,36px"></dc-import></span><div><b>Fouiller</b><span>SAG (Perception), difficulté du MJ.</span></div><span class="rg-tog"></span></div><div class="rg-act "><span><dc-import name="Objet" objet="bourse" rarete="commune" taille="36" pips="false" cadre="false" hint-size="36px,36px"></dc-import></span><div><b>Aider</b><span>Donne l’avantage à un allié.</span></div><span class="rg-tog"></span></div><div class="rg-act "><span><dc-import name="Objet" objet="bouclier" rarete="commune" taille="36" pips="false" cadre="false" hint-size="36px,36px"></dc-import></span><div><b>Se désengager</b><span>Bouger sans attaque d’opportunité.</span></div><span class="rg-tog"></span></div><div class="rg-act "><span><dc-import name="Objet" objet="bouclier" rarete="commune" taille="36" pips="false" cadre="false" hint-size="36px,36px"></dc-import></span><div><b>Esquiver</b><span>Désavantage aux attaques reçues.</span></div><span class="rg-tog"></span></div><div class="rg-act "><span><dc-import name="Objet" objet="hache" rarete="commune" taille="36" pips="false" cadre="false" hint-size="36px,36px"></dc-import></span><div><b>Pousser</b><span>FOR (Athlétisme) contre FOR ou DEX.</span></div><span class="rg-tog"></span></div><div class="rg-act "><span><dc-import name="Objet" objet="orbe" rarete="commune" taille="36" pips="false" cadre="false" hint-size="36px,36px"></dc-import></span><div><b>Lancer un sort</b><span>Selon la classe et les emplacements.</span></div><span class="rg-tog"></span></div><div class="rg-act off"><span><dc-import name="Objet" objet="couronne" rarete="commune" taille="36" pips="false" cadre="false" hint-size="36px,36px"></dc-import></span><div><b>Saisir</b><span>Remplacé par « Pousser » à cette table.</span></div><span class="rg-tog"></span></div></div><div class="rg-row2" style="align-items: center"><dc-import name="GameCard" w="100" titre="Se cacher" type="Action" texte="Discrétion contre leur Perception." valeur="+2" stat="none" icon="oeil" rarete="aucune" hint-size="100px,140px"></dc-import><span class="rg-mut" style="flex: 1">Chaque action active devient une carte dans la main des joueurs, avec son bonus déjà calculé. « Autre… » reste toujours là pour une idée hors des cartes.</span></div></sc-if><sc-if value="{{is5}}" hint-placeholder-val="{{ false }}"><div class="rg-hd"><span class="rg-ttl" style="font-size: 26px">Une règle maison</span><span class="rg-lbl">écrite en français</span></div><div class="rg-edit"><span class="rg-lbl">Ce que tu écris</span>Les morts-vivants ont peur du feu : quand l’un d’eux prend des dégâts de feu, il est effrayé jusqu’à la fin de son prochain tour.</div><sc-if value="{{formal}}" hint-placeholder-val="{{ false }}"><div class="rg-formal on"><span>Quand</span><span>une créature avec l’étiquette <b>mort-vivant</b> subit des dégâts de type <b>feu</b></span><span>Effet</span><span>état <b>Effrayé</b>, 1 tour (jusqu’à la fin de son prochain tour)</span><span>Exception</span><span>aucune : les chefs aussi (dis-le si tu veux les exclure)</span><span>Joueurs</span><span>voient l’état sur le monstre, pas la règle</span></div><div class="rg-case"><i>✓</i>Torche contre zombie : effrayé 1 tour</div><div class="rg-case"><i>✓</i>Sort de feu contre trois squelettes : les trois effrayés</div><div class="rg-case"><i class="rg-no">—</i>Feu contre le chef gobelin : rien, ce n’est pas un mort-vivant</div></sc-if><sc-if value="{{notFormal}}" hint-placeholder-val="{{ true }}"><div class="rg-sent"><span class="rg-spin"></span>Le co-MJ traduit ta règle…</div></sc-if></sc-if><sc-if value="{{is6}}" hint-placeholder-val="{{ false }}"><div class="rg-hd"><span class="rg-ttl" style="font-size: 26px">La création de personnage</span><span class="rg-lbl">ce que le créateur des joueurs applique</span></div><div class="rg-lim"><div class="rg-rl"><span class="rg-lbl">Niveau de départ</span><span>1</span></div><div class="rg-rl"><span class="rg-lbl">Caractéristiques</span><span>27 points · 15 maximum avant bonus du peuple</span></div><div class="rg-rl"><span class="rg-lbl">Peuples</span><span>nain, elfe, humain, halfelin</span></div><div class="rg-rl"><span class="rg-lbl">Classes</span><span>guerrier, rôdeur, roublard, magicien</span></div><div class="rg-rl"><span class="rg-lbl">Équipement</span><span>celui de la classe, pas d’achat</span></div><div class="rg-rl"><span class="rg-lbl">Hors limites</span><span>signalé au joueur, envoyé quand même, tu décides</span></div></div><div class="rg-secret"><span class="rg-lbl">Ce qui en découle</span><span>Une Force à 18 pour un nain sera signalée en orange au joueur, et par le co-MJ quand tu reliras la fiche (planche « Inviter », moment 4).</span></div></sc-if><sc-if value="{{is7}}" hint-placeholder-val="{{ false }}"><div class="rg-hd"><span class="rg-ttl" style="font-size: 26px">Tester avant de jouer</span><span class="rg-lbl">le co-MJ simule</span></div><div class="rg-sim"><div class="rg-big"><span class="rg-lbl">Borin contre 2 gobelins</span><b>{{win}}</b>de victoires sur 200 combats</div><div class="rg-big"><span class="rg-lbl">Durée moyenne</span><b>3,1</b>tours</div><div class="rg-big"><span class="rg-lbl">Torche contre zombies</span><b>+18 %</b>de victoires avec ta règle</div></div><div class="rg-bars"><i class="" style="height: 20%"></i><i class="" style="height: 55%"></i><i class="rg-hi" style="height: 100%"></i><i class="rg-hi" style="height: 80%"></i><i class="" style="height: 42%"></i><i class="" style="height: 18%"></i><i class="" style="height: 8%"></i><i class="" style="height: 4%"></i></div><div class="rg-chk warn"><i>!</i><span>Ta règle rend le feu très fort dans la crypte : Sef a deux fioles de feu grégeois. Pense à en limiter le nombre.</span></div><sc-if value="{{locked}}" hint-placeholder-val="{{ false }}"><div class="rg-ver"><span class="rg-st ok">verrouillée</span><span>Règles de Valombre · version 2. Les parties en cours passent à la version 2 au début de la prochaine session.</span></div></sc-if></sc-if></div></div><div class="rg-col"><section class="rg-panel"><div class="rg-ph"><span class="rg-lbl" style="color: #F2F2F2">Le co-MJ</span></div><div class="rg-co"><div class="rg-note"><span class="rg-lbl">{{coLbl}}</span>{{coTxt}}</div></div></section></div></div><div class="rg-foot"><div class="rg-bn {{bnCls}}"><span>{{bnTxt}}</span></div><button type="button" class="rg-go {{mainCls}}" onClick="{{mainAct}}"><span class="rg-in"><span style="flex: 1"><span class="rg-t">{{mainLbl}}</span><span class="rg-s">{{mainSub}}</span></span><span class="rg-chev">›</span></span></button></div></div><sc-if value="{{full}}" hint-placeholder-val="{{ true }}"><div class="rg-side">
+<span class="rg-lbl">Dans la tête de Romain, le MJ</span><div class="rg-think">{{thought}}</div>
+<span class="rg-lbl">Pourquoi cet écran</span><div class="rg-why">{{why}}</div>
+<span class="rg-lbl">Les règles · moment {{m}} sur 7</span><div class="rg-prog"><sc-for list="{{dots}}" as="d" hint-placeholder-count="7"><button type="button" class="{{d.cls}}" onClick="{{d.pick}}">{{d.n}}</button></sc-for></div>
+<div class="rg-ctl"><button type="button" onClick="{{restart}}">Recommencer</button></div>
+</div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"moment":{"editor":"int","default":1,"min":1,"max":7},"seul":{"editor":"boolean","default":false},"$preview":{"width":2012,"height":1020}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = this.fresh();
+    this.timers = [];
+    const pm = Number(props && props.moment);
+    if (pm >= 1 && pm <= 7) Object.assign(this.state, this.settled(pm));
+  }
+  fresh() { return Object.assign({ m: 1, ended: false }, { cases: false, formal: false, locked: false }); }
+  // A frozen moment (storyboard) shows the screen once its people have acted.
+  settled(m) { return Object.assign({ m }, { cases: m >= 2, formal: m >= 5, locked: m >= 7 }); }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+  clear() { this.timers.forEach((t) => clearTimeout(t)); this.timers = []; }
+  go(m) {
+    if (m > 7) return;
+    this.clear();
+    const c = {};
+    for (const k of []) c[k] = this.state[k];
+    this.setState(Object.assign(this.fresh(), c, { m }));
+    if (m > 2) this.setState({ cases: true }); if (m === 5) this.later(() => this.setState({ formal: true }), 2400); if (m > 5) this.setState({ formal: true });
+  }
+  end() { this.clear(); this.setState({ ended: true }); }
+  renderVals() {
+    const s = this.state, m = s.m;
+    
+    const T = {
+      1: { bn: ["you", "D&D 5e (SRD) choisi à la préparation"], main: ['Personnaliser', 'Une copie pour cette campagne', true, () => { this.go(2) }], thought: "Le SRD me va, mais il y a deux ou trois choses que je fais toujours autrement.", why: "Le MJ part d’un préréglage complet. Personnaliser crée une copie pour la campagne : on ne casse jamais le préréglage, ni une autre campagne.", coLbl: "Le co-MJ", coTxt: "Ce préréglage couvre tout ce que la campagne utilise. Je te signale ce que tes changements touchent." },
+      2: { bn: ["you", "Les statistiques de jeu"], main: ['Compter en cases', 'Mouvement : 9 m → 6 cases', !s.cases, () => { this.setState({ cases: true }) }], thought: s.cases ? "Six cases. Mes joueurs ne comptent pas en mètres." : "Les mètres, personne ne les compte à ma table.", why: "Les cinq statistiques sont celles des gemmes. Le MJ change un nom ou une formule ; la gemme en jeu suit, et le serveur calcule.", coLbl: "Le co-MJ", coTxt: s.cases ? "Fait : 1 case = 1,5 m. Les cartes et les gemmes affichent des cases." : "Tu peux aussi garder les mètres et laisser la carte convertir." },
+      3: { bn: ["you", "Les difficultés"], main: ['Garder 12 pour « facile »', 'Le reste ne change pas', true, () => { this.go(4) }], thought: "À 10, mes joueurs réussissaient tout. 12.", why: "La résolution est lisible en une phrase. Les difficultés sont les quatre que le MJ donnera en jeu d’un clic, sans chercher dans un tableau.", coLbl: "Le co-MJ", coTxt: "À 12 au lieu de 10, un niveau 3 avec +4 réussit 65 % du temps au lieu de 75 %." },
+      4: { bn: ["you", "Les actions des joueurs"], main: ['Garder ces 8 actions', '« Saisir » désactivée', true, () => { this.go(5) }], thought: "« Saisir » m’a toujours ennuyé. Pousser suffit.", why: "Les actions sont les cartes que les joueurs auront en main, dérivées des règles. Un joueur voit toujours ce qu’il peut faire, avec son bonus.", coLbl: "Le co-MJ", coTxt: "Sans « Saisir », le chef gobelin perd sa prise à la gorge : je lui propose « Pousser » à la place." },
+      5: { bn: [s.formal ? "you" : "wait", s.formal ? "Ta règle est formalisée" : "Le co-MJ lit ta règle…"], main: ['Ajouter la règle', 'Avec ses trois cas de test', s.formal, () => { this.go(6) }], thought: s.formal ? "C’est exactement ça. Et oui, les chefs aussi." : "Je l’écris comme je la dirais à la table.", why: "Une règle maison s’écrit en français. Le co-MJ la traduit en règle que le serveur sait juger, avec des cas concrets ; le MJ valide ce qu’il lit.", coLbl: "Le co-MJ", coTxt: s.formal ? "Trois cas de test. Dis-moi si un cas te surprend." : "Je cherche les créatures concernées dans ta campagne…" },
+      6: { bn: ["you", "La création de personnage"], main: ['Tester les règles', 'Le co-MJ simule des combats', true, () => { this.go(7) }], thought: "27 points, niveau 1, et je garde le dernier mot sur le reste.", why: "Ces limites pilotent le créateur des joueurs. Une limite dépassée est signalée au joueur, jamais bloquée : le MJ décide à la validation.", coLbl: "Le co-MJ", coTxt: "Les quatre classes ont leurs cartes de départ prêtes. Rien ne manque pour la création." },
+      7: { bn: [s.locked ? "you" : "warn", s.locked ? "Version 2 verrouillée" : "Un point d’attention"], main: ['Verrouiller la version 2', 'Elle s’applique à la prochaine session', !s.locked, () => { this.setState({ locked: true }) }], thought: s.locked ? "Version 2. Je limite les fioles de Sef dans le butin." : "Le feu devient fort. Je garde la règle, je limite les fioles.", why: "Avant de jouer, le co-MJ fait tourner des combats simulés avec les nouvelles règles. Le MJ voit l’effet de ses choix avant que ses joueurs le découvrent.", coLbl: "Le co-MJ", coTxt: "Simulé avec les fiches réelles de la table et les monstres de la crypte." }
+    }[m];
+    const main = T.main;
+    const v = {
+      m, ended: s.ended, notEnded: !s.ended,
+      bnCls: T.bn[0], bnTxt: T.bn[1], thought: T.thought, why: T.why,
+      mainLbl: main[0], mainSub: main[1], mainCls: (main[2] ? '' : 'off') + (main[4] ? ' ' + main[4] : ''), mainAct: () => { if (main[2] && main[3]) main[3](); },
+      dots: Array.from({ length: 7 }, (_, i) => ({ n: i + 1, cls: i + 1 === m ? 'cur' : i + 1 < m ? 'done' : '', pick: () => this.go(i + 1) })),
+      restart: () => { this.clear(); this.setState(this.fresh()); },
+      mvtName: s.cases ? 'Pas' : 'Mouvement', mvtFormula: s.cases ? 'vitesse ÷ 1,5 m · en cases' : 'vitesse du peuple · en mètres', mvtVal: s.cases ? '5' : '7,5',
+      dd1: m >= 3 ? '12' : '10', formal: s.formal, notFormal: !s.formal, locked: s.locked, win: '87 %', ver: s.locked ? '2' : '2 · brouillon',
+      saveTxt: s.locked ? 'Version 2 verrouillée' : 'Brouillon enregistré',
+      ...Object.fromEntries(Array.from({ length: 7 }, (_, i) => [['n' + (i + 1), i + 1 === m ? 'cur' : i + 1 < m ? 'done' : ''], ['c' + (i + 1), i + 1 < m || (i + 1 === 7 && s.locked) ? '✓' : '']]).flat()),
+    };
+    for (const k in T) if (!(k in v) && k !== 'main' && k !== 'bn') v[k] = T[k];
+    for (let i = 1; i <= 7; i++) v['is' + i] = m === i;
+    const seul = String(this.props.seul ?? false) === 'true';
+    v.full = !seul;
+    v.rootStyle = seul ? 'width: 1440px; height: 900px; padding: 0' : 'width: 2012px; height: 1020px; padding: 60px 56px';
+    return v;
+  }
+}
+</script>
+</body>
+</html>

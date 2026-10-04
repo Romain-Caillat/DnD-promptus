@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Régler le système, en images</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A;overflow:hidden}
+.sbr-pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 40% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.sbr-ttl{font-family:'Cinzel',Georgia,serif;font-weight:800}
+.sbr-lbl{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.sbr-grid{display:grid;gap:56px 48px}
+.sbr-mo{display:flex;flex-direction:column;gap:14px}
+.sbr-mh{display:flex;align-items:baseline;gap:10px}
+.sbr-mh > b{font-family:'Cinzel',serif;font-size:13px;width:28px;height:28px;border-radius:7px;display:inline-grid;place-items:center;background:#EDEDED;color:#0A0A0A;box-shadow:0 2px 0 #6E6E6E;flex:none}
+.sbr-mh > span{font-family:'Cinzel',serif;font-weight:800;font-size:20px}
+.sbr-fr{overflow:hidden;border-radius:10px;border:1px solid #2C2C2C;box-shadow:0 20px 40px rgba(0,0,0,.6)}
+.sbr-cap{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;font-size:13px;line-height:1.45;color:#D4D4D4;margin:0}
+.sbr-cap > dt{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8C8C8C;padding-top:3px}
+.sbr-cap > dd{margin:0}
+.sbr-rule{display:flex;gap:12px;align-items:flex-start;font-size:13px;color:#D4D4D4;line-height:1.45}
+.sbr-rule > b{flex:none;width:24px;height:24px;border-radius:6px;background:#EDEDED;color:#0A0A0A;display:grid;place-items:center;font-family:'Cinzel',serif;box-shadow:0 2px 0 #6E6E6E}
+</style>
+</helmet>
+<div class="sbr-pm" style="width: 2384px; height: 2324px; position: relative; overflow: hidden">
+<div style="padding: 48px 64px 32px; display: flex; gap: 80px; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 1000px">
+<div class="sbr-lbl">Storyboard · le MJ</div>
+<h1 class="sbr-ttl" style="margin: 0; font-size: 50px">Les règles de Valombre</h1>
+<p style="margin: 0; font-size: 16px; color: #A3A3A3; line-height: 1.5">Romain part du SRD de D&amp;D 5e et l’ajuste pour sa table : cases, difficultés, actions, une règle maison, puis un combat simulé.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 900px"><div class="sbr-rule"><b>1</b><span><strong style="color: #F2F2F2">Une copie, jamais le préréglage.</strong> Les changements restent dans la campagne.</span></div><div class="sbr-rule"><b>2</b><span><strong style="color: #F2F2F2">En français.</strong> Le MJ écrit sa règle, le co-MJ la formalise, le MJ relit.</span></div><div class="sbr-rule"><b>3</b><span><strong style="color: #F2F2F2">Tester avant de jouer.</strong> Une simulation montre l’effet des choix.</span></div></div>
+</div>
+<div class="sbr-grid" style="padding: 0 64px; grid-template-columns: repeat(3, 720px)"><div class="sbr-mo"><div class="sbr-mh"><b>1</b><span>Le préréglage</span></div><div class="sbr-fr" style="width: 720px; height: 450px"><div style="width: 1440px; height: 900px; transform: scale(0.5000); transform-origin: 0 0"><dc-import name="Regles-MJ" moment="1" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="sbr-cap"><dt>Romain</dt><dd>Personnalise le SRD.</dd><dt>Le co-MJ</dt><dd>Liste ce qu’il contient.</dd><dt>Pourquoi</dt><dd>On part d’un système complet.</dd></dl></div><div class="sbr-mo"><div class="sbr-mh"><b>2</b><span>Les statistiques</span></div><div class="sbr-fr" style="width: 720px; height: 450px"><div style="width: 1440px; height: 900px; transform: scale(0.5000); transform-origin: 0 0"><dc-import name="Regles-MJ" moment="2" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="sbr-cap"><dt>Romain</dt><dd>Compte le mouvement en cases.</dd><dt>Le co-MJ</dt><dd>Convertit : 6 cases.</dd><dt>Pourquoi</dt><dd>Les gemmes suivent les statistiques.</dd></dl></div><div class="sbr-mo"><div class="sbr-mh"><b>3</b><span>Les jets</span></div><div class="sbr-fr" style="width: 720px; height: 450px"><div style="width: 1440px; height: 900px; transform: scale(0.5000); transform-origin: 0 0"><dc-import name="Regles-MJ" moment="3" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="sbr-cap"><dt>Romain</dt><dd>Passe « facile » à 12.</dd><dt>Le co-MJ</dt><dd>Chiffre l’effet : 65 %.</dd><dt>Pourquoi</dt><dd>Quatre difficultés, données d’un clic en jeu.</dd></dl></div><div class="sbr-mo"><div class="sbr-mh"><b>4</b><span>Les actions</span></div><div class="sbr-fr" style="width: 720px; height: 450px"><div style="width: 1440px; height: 900px; transform: scale(0.5000); transform-origin: 0 0"><dc-import name="Regles-MJ" moment="4" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="sbr-cap"><dt>Romain</dt><dd>Désactive « Saisir ».</dd><dt>Le co-MJ</dt><dd>Adapte le chef gobelin.</dd><dt>Pourquoi</dt><dd>Les actions sont les cartes des joueurs.</dd></dl></div><div class="sbr-mo"><div class="sbr-mh"><b>5</b><span>Une règle maison</span></div><div class="sbr-fr" style="width: 720px; height: 450px"><div style="width: 1440px; height: 900px; transform: scale(0.5000); transform-origin: 0 0"><dc-import name="Regles-MJ" moment="5" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="sbr-cap"><dt>Romain</dt><dd>Écrit : les morts-vivants ont peur du feu.</dd><dt>Le co-MJ</dt><dd>La formalise, avec trois cas.</dd><dt>Pourquoi</dt><dd>Le MJ valide ce qu’il lit.</dd></dl></div><div class="sbr-mo"><div class="sbr-mh"><b>6</b><span>La création</span></div><div class="sbr-fr" style="width: 720px; height: 450px"><div style="width: 1440px; height: 900px; transform: scale(0.5000); transform-origin: 0 0"><dc-import name="Regles-MJ" moment="6" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="sbr-cap"><dt>Romain</dt><dd>Fixe 27 points, niveau 1.</dd><dt>Le co-MJ</dt><dd>Prépare les cartes de départ.</dd><dt>Pourquoi</dt><dd>Ces limites pilotent le créateur des joueurs.</dd></dl></div><div class="sbr-mo"><div class="sbr-mh"><b>7</b><span>La simulation</span></div><div class="sbr-fr" style="width: 720px; height: 450px"><div style="width: 1440px; height: 900px; transform: scale(0.5000); transform-origin: 0 0"><dc-import name="Regles-MJ" moment="7" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="sbr-cap"><dt>Romain</dt><dd>Verrouille la version 2.</dd><dt>Le co-MJ</dt><dd>Simule 200 combats : 87 %.</dd><dt>Pourquoi</dt><dd>Le MJ voit l’effet avant la table.</dd></dl></div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2384,"height":2324}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

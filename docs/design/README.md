@@ -2,7 +2,7 @@
 
 The design lives in a private Claude design canvas:
 https://claude.ai/artifact/AP3z1S5hbhqEiPzi5agTdy (owner: Romain).
-`canvas/` is a snapshot of its sources (version 78, 3 October 2026).
+`canvas/` is a snapshot of its sources (version 80, 4 October 2026).
 The published canvas is the reference: if they differ, read the canvas
 back before editing, Romain moves and resizes boards there.
 
@@ -60,6 +60,15 @@ put `{"view":"canvas"}` back when done.
 | Soiree-TV | TV · la soirée côté TV | storyboard, 12 `Ecran-TV` frames |
 | Mener-MJ | **Mener · la soirée de Marc côté MJ** | the playable evening on the GM laptop (1440 × 900), TV beside it; `seul=true` shows the laptop alone, frozen on `moment` |
 | Soiree-MJ | MJ · la soirée côté MJ | storyboard, 12 `Mener-MJ` frames (`seul=true`) |
+| Creer-Joueur / Creation-Joueur | **Créer · le personnage de Marc** | phone, 8 moments: layered dwarf (`avatar.py`), class, flagged limit, story with the co-GM |
+| Entre-Joueur / Entre-Sessions | **Entre deux · Marc entre les sessions** | phone, 6 moments: level 4, recap, chronicle, sheet, dates |
+| Lancer-MJ / Lancement-MJ | **Lancer · la TV et la session 4** | laptop and TV, 5 moments: pairing code, what the TV may show, « Précédemment… » |
+| Voyager-MJ / Voyage-MJ | **Voyager · de Valombre à Morneval** | laptop and phone, TV in the side panel, 7 moments on the hex map |
+| Regles-MJ / Systeme-Regles | **Règles · le système de Valombre** | laptop, 7 moments: SRD copy, house rule formalised, simulation |
+| Carte-MJ / Editeur-Carte | **Cartes · l'éditeur de la salle de l'autel** | laptop, 7 moments over the `Plan` component |
+| Joueur-Ordi / Ordi-Sef | **Jouer sur ordinateur · Sef** | player laptop, 6 moments, keyboard shortcuts |
+| Mourir-Borin / Mort-Borin | **Mourir · la dernière soirée de Borin** | variant of session 3, laptop and phone, 7 moments |
+| Tablette-MJ / Tablette-Soiree | **Tablette · mener la session 3 du canapé** | GM tablet (1180 × 820), 5 moments |
 
 Components: GameCard, RadialGrid, Carte, Sprite, De, Gemme, Coeurs,
 Cases, Horloge, Bouton, Objet, Etat, Perso, Plan.
@@ -74,6 +83,19 @@ any board layout already set in `canvas.json`.
 - `gm-evening-play.py` → `Mener-MJ`; `gm-evening-storyboard.py` → `Soiree-MJ`.
 - `gm-prep-play.py` → `Preparer-MJ`; `gm-prep-storyboard.py` → `Preparation-MJ`.
 - `gm-invite-play.py` → `Inviter-MJ`; `gm-invite-storyboard.py` → `Invitation-MJ`.
+- `kit.py` holds what the boards below share: device frames (laptop,
+  tablet, phone, TV), the side panel, `component()` for the moment
+  logic, `board()` and `storyboard()` which write, scope and place a
+  board. `avatar.py` is the layered pixel dwarf of the character creator.
+- `player-create-play.py` → `Creer-Joueur`, `player-between-play.py` →
+  `Entre-Joueur`, `gm-launch-play.py` → `Lancer-MJ`, `travel-play.py` →
+  `Voyager-MJ`, `gm-rules-play.py` → `Regles-MJ`, `gm-map-play.py` →
+  `Carte-MJ`, `player-desktop-play.py` → `Joueur-Ordi`, `death-play.py` →
+  `Mourir-Borin`, `gm-tablet-play.py` → `Tablette-MJ`.
+- `journey-storyboards.py` → the nine storyboards of those boards, and
+  their layout on the canvas (board and storyboard side by side, three
+  pairs per row). Run it after the board scripts; it overrides the
+  position of these eighteen boards.
 - `outdoor/*.py` → outdoor map PNGs; `items-prototype.py`,
   `walls-prototype.py`, `sprite-prototype.py` (+ `sprites.json`) →
   pixel-art previews.
