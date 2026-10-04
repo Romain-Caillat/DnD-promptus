@@ -4,9 +4,11 @@
 //! and this crate is what it applies.
 //!
 //! `rules` is the rules engine, `story` the campaign graph, `maps` the
-//! grid maps and their geometry, `combat` fights played on those maps.
+//! grid maps and their geometry, `combat` fights played on those maps;
+//! `issue` what their checks report.
 
 pub mod combat;
+pub mod issue;
 pub mod maps;
 pub mod rules;
 pub mod story;

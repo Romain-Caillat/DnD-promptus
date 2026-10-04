@@ -764,6 +764,9 @@ fn validate(s: &RuleSystem) -> Vec<RuleError> {
             );
         }
         v.score_table(&a.abilities, &format!("{path}.abilities"));
+        if let Some(reason) = &a.exception {
+            v.non_empty(reason, &format!("{path}.exception"));
+        }
         if a.hit_points <= 0 {
             v.err(
                 ErrorCode::InvalidValue,
