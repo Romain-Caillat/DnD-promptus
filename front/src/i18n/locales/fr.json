@@ -9,5 +9,119 @@
     "databaseDown": "Le serveur répond, mais sa base de données est injoignable.",
     "unreachable": "Le serveur est injoignable.",
     "retry": "Réessayer"
+  },
+  "reference": {
+    "kicker": "Système visuel · fondations",
+    "intro": "Un plateau, des cartes, des personnages en pixel, des dés. Le décor reste noir et blanc ; les chiffres prennent la couleur.",
+    "palette": {
+      "title": "Couleurs · table noire, cartes ivoire",
+      "note": "Six couleurs, réservées aux statistiques. Rien d’autre n’est en couleur.",
+      "tableDeep": "Table profonde",
+      "table": "Table",
+      "well": "Creux",
+      "surface": "Surface",
+      "slab": "Plaque",
+      "surfaceRaised": "Surface levée",
+      "line": "Filet",
+      "lineStrong": "Filet appuyé",
+      "lineDashed": "Pointillé",
+      "mute": "Discret",
+      "muteSoft": "Discret clair",
+      "chalkSoft": "Craie douce",
+      "chalk": "Craie",
+      "ivory": "Ivoire",
+      "ivoryEdge": "Tranche ivoire",
+      "ink": "Encre"
+    },
+    "stats": {
+      "title": "Statistiques · une couleur, une forme",
+      "note": "Chaque statistique a sa forme : la couleur n’est jamais le seul indice. Les dés prennent la couleur de ce qu’ils lancent.",
+      "hp": { "code": "PV", "name": "Points de vie", "shape": "cœur" },
+      "atk": { "code": "ATQ", "name": "Attaque", "shape": "losange" },
+      "ac": { "code": "CA", "name": "Classe d’armure", "shape": "écu" },
+      "mag": { "code": "MAG", "name": "Magie", "shape": "hexagone" },
+      "move": { "code": "MVT", "name": "Déplacement", "shape": "flèche" },
+      "init": { "code": "INIT", "name": "Initiative", "shape": "rond" },
+      "damage": "Dégâts",
+      "damageNote": "Le rouge des dégâts : les chiffres qui frappent, les dés de dégâts, le bouton fatal. Contour noir épais, toujours lisible."
+    },
+    "type": {
+      "title": "Typographie",
+      "sampleTitle": "La crypte des Valombre",
+      "sampleNarration": "« La porte cède. Derrière, l’odeur du fer et de la cire froide. »",
+      "sampleStats": "PV {{hp}} · CA {{ac}} · ATQ {{atk}}",
+      "note": "Cinzel pour les titres et les cartes · Cormorant pour ce qui se lit à voix haute · Chakra Petch pour l’interface et les chiffres. Les trois sont servies par l’application.",
+      "scale": {
+        "display": { "name": "Affiche", "meta": "Cinzel 800 · 84 px" },
+        "headingLg": { "name": "Titre de planche", "meta": "Cinzel 800 · 34 px" },
+        "heading": { "name": "Titre", "meta": "Cinzel 800 · 26 px" },
+        "cardTitle": { "name": "Titre de carte", "meta": "Cinzel 800 · 17 px" },
+        "narrationLg": { "name": "Narration d’ouverture", "meta": "Cormorant Garamond italique 500 · 30 px" },
+        "narration": { "name": "Narration", "meta": "Cormorant Garamond italique 500 · 24 px" },
+        "stat": { "name": "Ligne de stats", "meta": "Chakra Petch 600 · 18 px" },
+        "body": { "name": "Texte", "meta": "Chakra Petch 400 · 14 px" },
+        "caption": { "name": "Légende", "meta": "Chakra Petch 400 · 12 px" },
+        "label": { "name": "Étiquette", "meta": "Chakra Petch 600 · 11 px · capitales espacées" }
+      }
+    },
+    "materials": {
+      "title": "Matières · des cartes sur la table",
+      "buttons": "Boutons · des cartes",
+      "attack": "Attaquer",
+      "attackSub": "Hache d’armes · 1d12+3",
+      "endTurn": "Fin du tour",
+      "endTurnSub": "Il te reste 2 cases",
+      "accept": "Accepter",
+      "refuse": "Refuser",
+      "pressed": "Enfoncé, le bouton bascule vers l’avant",
+      "buttonsNote": "Cadre de carte, titre en Cinzel, la stat en gemme quand l’action en dépend. Ivoire pour l’action principale, noir pour le reste.",
+      "slab": "Plaque",
+      "slabNote": "La table se découpe en plaques : un dégradé sombre, un filet, une ombre portée dure.",
+      "rarity": "Rareté · six matières",
+      "rarityNote": "La rareté se lit à la matière de la carte et au nombre de losanges, jamais à une couleur : les couleurs restent aux statistiques. Seule la carte divine a droit à l’arc-en-ciel.",
+      "tiers": {
+        "common": { "name": "Commune", "how": "Ivoire, filet simple" },
+        "uncommon": { "name": "Peu commune", "how": "Lin, double filet" },
+        "rare": { "name": "Rare", "how": "Acier brossé" },
+        "epic": { "name": "Épique", "how": "Obsidienne, reflet qui passe" },
+        "legendary": { "name": "Légendaire", "how": "Feuille d’or, halo" },
+        "divine": { "name": "Divine", "how": "Holographique" }
+      },
+      "pips_one": "{{count}} losange",
+      "pips_other": "{{count}} losanges"
+    },
+    "motion": {
+      "title": "Mouvement",
+      "note": "Chaque animation a un sens. Quand l’appareil demande des animations réduites, tout s’arrête sur un état calme, jamais sur l’image forte.",
+      "reducedOn": "Animations réduites : demandées par cet appareil.",
+      "reducedOff": "Animations réduites : non demandées par cet appareil.",
+      "replay": "Rejouer",
+      "samples": {
+        "deal": "Carte distribuée",
+        "press": "Bouton enfoncé",
+        "pop": "Chiffre de dégâts",
+        "roll": "Dé d’attaque",
+        "bob": "Pion actif",
+        "sheen": "Reflet d’une matière rare"
+      },
+      "durationsTitle": "Durées",
+      "durations": {
+        "press": "Un bouton bascule",
+        "flip": "Une carte se lève ou se retourne",
+        "deal": "Une carte est distribuée",
+        "pop": "Un chiffre de dégâts jaillit",
+        "roll": "Un dé roule puis se pose",
+        "heartbeat": "Le battement des PV",
+        "bob": "Le pion actif respire",
+        "gemWave": "Le reflet d’une gemme",
+        "sheen": "La lumière sur une matière rare"
+      },
+      "easingsTitle": "Courbes",
+      "easings": {
+        "deal": "Distribuer : dépasse, puis se pose",
+        "settle": "Poser : rapide, puis doux",
+        "roll": "Lancer : ralentit jusqu’à l’arrêt"
+      }
+    }
   }
 }
