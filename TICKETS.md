@@ -538,7 +538,7 @@ avec `engine/add-srd-preset`.
 
 **Origine** — V1 `conditions.ts` · planche « États des personnages »
 
-### `engine/run-combat` · todo
+### `engine/run-combat` · doing
 
 **Pourquoi** — Le combat est le moment où les règles se voient le plus.
 
@@ -549,6 +549,39 @@ du combat et expérience gagnée.
 
 **Fini quand** — Tests `combat.test.ts` et `grid.test.ts` du V1 portés ;
 un combat de la démo se joue entièrement dans les tests du moteur.
+
+**État** — Fait côté moteur, à valider par Romain. Le combat vit dans
+`shared/src/combat/` : un combat est un état pur (positions sur la
+carte, ordre d'initiative, round, tour actif, qui est encore dedans) et
+chaque commande — se déplacer, agir, fuir, finir son tour, arrêt par le
+MJ — rend le combat suivant et ses événements, ou un refus sans rien
+changer. Initiative lue dans le système (égalités : joueurs d'abord ou
+relance) ; déplacement payé par l'action « Se déplacer », chemin vérifié
+case par case ; portée, ligne de vue (brouillard compris) et couvert lus
+sur la grille, le couvert entrant dans le jet ; zones, lignes et rafales
+au contact résolues depuis la grille ; adversaire à 0 PV vaincu et
+retiré, personnage KO resté au sol puis hors scène après 3 tours, fuite
+(jet de DEX si le MJ le demande) ; fin quand un camp n'a plus personne
+debout, avec l'XP gagnée par chacun. Le format gagne un bloc `combat`
+(action de déplacement, de fuite, couvert −2/−5, longue portée −2, rayon
+de zone) et `range`/`long_range` sur les actions, documentés dans
+`docs/rules-format.md`. `run_fight` joue un combat entier avec une
+politique par camp (base pour `engine/simulate-fights`). Tests :
+`combat_grid.rs` (intentions de `combat.test.ts` et `grid.test.ts` ; la
+géométrie pure déjà portée reste dans `maps_rules.rs`) et
+`combat_worlds.rs` — la bagarre du quai de Port-Louis jouée jusqu'au
+bout sur 20 graines avec la tactique de Gueule-Rouge (les joueurs
+gagnent les 20, en 2 à 7 rounds, des marins fuient), et la coursive du
+Cure-Dent contre six Vorr provisoires écrits dans le test (9 victoires
+sur 20 en fonçant un par un dans le sas). À valider par Romain, marqué
+`INTERPRETATION` : 6 cases par déplacement quand le système ne dit rien
+(D&D 5e), les portées en cases ajoutées aux actions des deux mondes
+d'après leur description, couvert et longue portée par défaut, un
+adversaire à 0 PV vaincu sur-le-champ, un corps au sol enjambable.
+Reste : le combat de démo gobelins du V1 n'est pas porté (il demande le
+SRD, `engine/add-srd-preset`) ; aucune XP de victoire séparée (les deux
+mondes n'en donnent pas) ; la lumière (nuit) ne gêne pas encore la vue ;
+les Vorr réels viendront de `campaign/rewrite-two-worlds`.
 
 **Origine** — V1 `combat.ts`, `grid.ts`
 

@@ -46,6 +46,7 @@ model forced where the source was ambiguous.
 | `zero_hp` | What 0 hit points does (below) |
 | `creation` | `{ abilities: from_class, free_action_slots }` |
 | `movement` | Per map scale (`world`, `place`, `encounter`): `cells_per_move` (`null` when unstated) and optional `grid: { diagonal: chebyshev\|alternate, difficult_factor, climb_cost, max_step, swim_factor }` — the `maps::MovementRules` the grid reads |
+| `combat` | Optional: fighting on a grid — move and flight actions, cover, long range, zone size (below) |
 | `situations` | Circumstances the GM declares (`furtif`, `en_hauteur`) |
 | `resources` | `{ id, name, abbr, start }` (gold…) |
 | `conditions`, `classes`, `items`, `adversary_tiers`, `adversaries` | Below |
@@ -101,6 +102,53 @@ zero_hp: { rule: death_saves, condition: mourant, difficulty: 10, successes: 3, 
 bearer's turns without one, `out_condition` replaces it.
 `death_saves` is modelled, played by `engine/save-against-death`.
 
+## Fighting on a grid
+
+The combat layer (`shared/src/combat/`) reads the map for range, sight,
+cover, areas and paths. What the rules say about it:
+
+```yaml
+combat:
+  move_kind: deplacement            # action kind one move spends; absent = one free move per turn
+  flee: { kind: fuite, ability: DEX } # absent = fleeing spends every action left, no roll
+  cover: { half: -2, three_quarters: -5 }  # default; added to attack rolls
+  long_range: { modifier: -2 }      # default; or `disadvantage` (needs `check.advantage`)
+  zone_radius: 1                    # default; cells around a zone's centre
+```
+
+- **Initiative** is `initiative.dice` + `initiative.bonus` for everyone,
+  highest first, the order kept for the whole fight. Ties: `party_first`
+  puts the party first (then the order combatants were placed in);
+  `reroll` rerolls the tied ones among themselves.
+- **A move** spends one `move_kind` action and covers `cells_per_move`
+  of the map's scale, scaled by `movement_percent` conditions, along a
+  path checked step by step (`maps::check_path`: walls, doors, enemies,
+  corners, climbing, water). When `cells_per_move` is `null` (both
+  witness worlds), the engine uses **6 cells** — 9 m on an encounter map,
+  the D&D 5e walk, the same source as the grid's movement defaults.
+- **Range** is in cells, with the system's diagonal rule. An action's
+  `range` (absent = 1, adjacent only) is how far its target, a zone's
+  centre or a line may reach; up to its optional `long_range` it still
+  goes, with the `long_range` penalty.
+- **Sight**: touching cells always see each other; farther, the line
+  must be clear (`maps::line_of_sight`) and within the map's
+  `sight_limit` (fog). The target's cover adds `cover.half` or
+  `cover.three_quarters` to the attack roll (shown in the breakdown as a
+  `cover` modifier); total cover means no line of sight.
+- **Areas** are resolved from the grid, enemies only: `melee_burst`
+  catches every enemy adjacent to the actor; `zone` every enemy within
+  `zone_radius` of a visible centre in range; `line` every enemy within
+  `range` on the line towards the aimed cell, walls stopping it.
+- **Leaving the fight**: an adversary at 0 HP is defeated at once (the
+  zero-HP rule is read for player characters); a character the rule
+  puts out of the scene leaves; a knocked-out one stays on the ground
+  (crossable, not a cell to stop on) until healed or out; a flight
+  succeeds unless the GM asks for the `flee.ability` roll and it fails.
+- **The end**: when a side has nobody in the fight above 0 HP, or when
+  the GM stops it. The summary lists the defeated, the fled, those out
+  of the scene and the XP each character gained (from their rolls'
+  bands; no separate victory XP exists in the format yet).
+
 ## Conditions
 
 ```yaml
@@ -155,6 +203,9 @@ Tags — they are the card's chips, and the engine's data:
   declares that situation.
 - `choice: [tag, tag]` — the player picks one option.
 - `note: "…"` — what the engine does not compute; shown to the GM.
+
+Optional on any action: `range: <cells>` and `long_range: <cells>`
+(see *Fighting on a grid*).
 
 An action is refused, with nothing changed, when it is not the actor's
 turn, a condition keeps them from acting, their level is too low, it is

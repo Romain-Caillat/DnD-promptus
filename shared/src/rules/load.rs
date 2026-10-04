@@ -457,6 +457,22 @@ impl<'a> V<'a> {
                 "attacks and contests target enemies",
             );
         }
+        if a.range == Some(0) {
+            self.err(
+                ErrorCode::InvalidValue,
+                format!("{path}.range"),
+                "a range is at least 1 cell",
+            );
+        }
+        if let Some(long) = a.long_range
+            && long <= a.reach()
+        {
+            self.err(
+                ErrorCode::InvalidValue,
+                format!("{path}.long_range"),
+                format!("{long} must exceed the range ({})", a.reach()),
+            );
+        }
         if a.target == Targeting::Enemies && a.area.is_none() {
             self.err(
                 ErrorCode::InvalidTargeting,
@@ -644,6 +660,32 @@ fn validate(s: &RuleSystem) -> Vec<RuleError> {
                 );
             }
         }
+    }
+
+    let combat = &s.combat;
+    let kinds = combat
+        .move_kind
+        .iter()
+        .map(|k| ("combat.move_kind", k))
+        .chain(combat.flee.iter().map(|f| ("combat.flee.kind", &f.kind)));
+    for (path, kind) in kinds {
+        if s.action_kind(kind).is_none() {
+            v.err(
+                ErrorCode::UnknownActionKind,
+                path,
+                format!("no action kind `{kind}`"),
+            );
+        }
+    }
+    if let Some(ability) = combat.flee.as_ref().and_then(|f| f.ability.as_ref()) {
+        v.ability(ability, "combat.flee.ability");
+    }
+    if combat.long_range == LongRangeRule::Disadvantage && !s.check.advantage {
+        v.err(
+            ErrorCode::AdvantageNotInSystem,
+            "combat.long_range",
+            "long range cannot impose disadvantage in a system without it",
+        );
     }
 
     v.unique(s.situations.iter().map(|x| x.id.as_str()), "situations");
@@ -875,6 +917,36 @@ classes:
                 })
                 .is_ok()
         );
+    }
+
+    #[test]
+    fn combat_fields_must_point_at_what_exists() {
+        let err = load_with("roll: attack\n", "roll: attack\n        range: 0\n").unwrap_err();
+        assert_eq!(err.codes(), vec![ErrorCode::InvalidValue]);
+        let err = load_with("roll: attack\n", "roll: attack\n        long_range: 1\n").unwrap_err();
+        assert_eq!(err.codes(), vec![ErrorCode::InvalidValue]);
+        let err =
+            load_with("conditions:", "combat: { move_kind: marcher }\nconditions:").unwrap_err();
+        assert_eq!(err.codes(), vec![ErrorCode::UnknownActionKind]);
+        let err = load_with(
+            "conditions:",
+            "combat: { flee: { kind: attaque, ability: CHA } }\nconditions:",
+        )
+        .unwrap_err();
+        assert_eq!(err.codes(), vec![ErrorCode::UnknownAbility]);
+        let err = load_with(
+            "conditions:",
+            "combat: { long_range: disadvantage }\nconditions:",
+        )
+        .unwrap_err();
+        assert_eq!(err.codes(), vec![ErrorCode::AdvantageNotInSystem]);
+        let s = load_with(
+            "conditions:",
+            "combat: { long_range: { modifier: -3 } }\nconditions:",
+        )
+        .unwrap();
+        assert_eq!(s.combat.long_range, LongRangeRule::Modifier(-3));
+        assert_eq!(s.combat.cover, CoverRule::default());
     }
 
     #[test]

@@ -167,28 +167,49 @@ impl Mover<'_> {
     }
 }
 
-/// Every cell a creature at `start` can end its move on with `budget`
-/// cells of movement, with the cheapest cost to get there (`start`
-/// itself at 0).
-pub fn reachable(
+/// Whether a creature can stand on `cell` at all (a starting position):
+/// on the map, not a wall, void, closed door or blocking prop, and not
+/// deep water unless the rules allow swimming.
+pub fn standable(map: &Map, rules: &MovementRules, cell: Cell) -> Result<(), Obstacle> {
+    let board = Board::new(map);
+    let info = board.get(cell).ok_or(Obstacle::OutOfMap)?;
+    if let Some(hard) = info.hard {
+        return Err(board.obstacle(hard));
+    }
+    if info.deep && rules.swim_factor.is_none() {
+        return Err(Obstacle::DeepWater);
+    }
+    Ok(())
+}
+
+/// Cheapest costs from `start` over cell × diagonal parity, with the
+/// state each was reached from.
+struct Search {
+    best: Vec<u32>,
+    parent: Vec<usize>,
+}
+
+/// State = cell index × diagonal parity (only the alternate rule uses it).
+fn state(idx: usize, parity: bool) -> usize {
+    idx * 2 + usize::from(parity)
+}
+
+fn search(
     map: &Map,
     rules: &MovementRules,
     occupancy: &Occupancy,
     start: Cell,
     budget: u32,
-) -> BTreeMap<Cell, u32> {
+) -> Option<Search> {
     let mover = Mover {
         board: Board::new(map),
         rules: *rules,
         occupancy,
     };
     let grid = &map.grid;
-    let Some(start_idx) = grid.index(start) else {
-        return BTreeMap::new();
-    };
-    // State = cell × diagonal parity (only the alternate rule uses it).
-    let state = |idx: usize, parity: bool| idx * 2 + usize::from(parity);
+    let start_idx = grid.index(start)?;
     let mut best = vec![u32::MAX; grid.len() * 2];
+    let mut parent = vec![usize::MAX; grid.len() * 2];
     let mut heap = BinaryHeap::new();
     best[state(start_idx, false)] = 0;
     heap.push(Reverse((0u32, start_idx, false)));
@@ -205,18 +226,36 @@ pub fn reachable(
                 continue;
             };
             let total = cost + step;
-            if total <= budget && total < best[state(next_idx, next_parity)] {
-                best[state(next_idx, next_parity)] = total;
+            let s = state(next_idx, next_parity);
+            if total <= budget && total < best[s] {
+                best[s] = total;
+                parent[s] = state(idx, parity);
                 heap.push(Reverse((total, next_idx, next_parity)));
             }
         }
     }
+    Some(Search { best, parent })
+}
+
+/// Every cell a creature at `start` can end its move on with `budget`
+/// cells of movement, with the cheapest cost to get there (`start`
+/// itself at 0).
+pub fn reachable(
+    map: &Map,
+    rules: &MovementRules,
+    occupancy: &Occupancy,
+    start: Cell,
+    budget: u32,
+) -> BTreeMap<Cell, u32> {
+    let Some(found) = search(map, rules, occupancy, start, budget) else {
+        return BTreeMap::new();
+    };
     let mut out = BTreeMap::new();
-    for (s, &cost) in best.iter().enumerate() {
+    for (s, &cost) in found.best.iter().enumerate() {
         if cost == u32::MAX {
             continue;
         }
-        let cell = grid.cell_at(s / 2);
+        let cell = map.grid.cell_at(s / 2);
         if cell != start && occupancy.allies.contains(&cell) {
             continue;
         }
@@ -225,6 +264,36 @@ pub fn reachable(
             .or_insert(cost);
     }
     out
+}
+
+/// The cheapest legal path from `start` to `goal` within `budget`: the
+/// cells entered, in order (what [`check_path`] takes), and its cost.
+/// `None` when `goal` cannot be reached or stopped on.
+pub fn shortest_path(
+    map: &Map,
+    rules: &MovementRules,
+    occupancy: &Occupancy,
+    start: Cell,
+    goal: Cell,
+    budget: u32,
+) -> Option<(Vec<Cell>, u32)> {
+    if goal != start && occupancy.allies.contains(&goal) {
+        return None;
+    }
+    let found = search(map, rules, occupancy, start, budget)?;
+    let goal_idx = map.grid.index(goal)?;
+    let end = [state(goal_idx, false), state(goal_idx, true)]
+        .into_iter()
+        .filter(|&s| found.best[s] != u32::MAX)
+        .min_by_key(|&s| found.best[s])?;
+    let mut path = Vec::new();
+    let mut s = end;
+    while found.parent[s] != usize::MAX {
+        path.push(map.grid.cell_at(s / 2));
+        s = found.parent[s];
+    }
+    path.reverse();
+    Some((path, found.best[end]))
 }
 
 /// Checks a path sent by a client: `path` lists the cells entered after

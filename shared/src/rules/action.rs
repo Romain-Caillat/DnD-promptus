@@ -3,6 +3,8 @@
 //! healing, conditions, cooldown and XP — one pure function from a scene
 //! to the next scene plus what happened.
 
+use std::collections::BTreeMap;
+
 use serde::Serialize;
 
 use super::check::{
@@ -33,6 +35,16 @@ pub struct ActionRequest {
     pub save_difficulty: Option<i32>,
     /// The option picked when the action offers a choice.
     pub choice: Option<usize>,
+    /// What the grid adds to the attack roll against each target (cover,
+    /// long range), by target id. Filled by the combat layer.
+    pub positional: BTreeMap<String, Positional>,
+}
+
+/// What a target's position does to an attack roll against it.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Positional {
+    pub modifiers: Vec<Modifier>,
+    pub disadvantage: bool,
 }
 
 impl ActionRequest {
@@ -44,6 +56,7 @@ impl ActionRequest {
             situations: Vec::new(),
             save_difficulty: None,
             choice: None,
+            positional: BTreeMap::new(),
         }
     }
 
@@ -181,7 +194,9 @@ pub fn attack_ability(
     })
 }
 
-fn find_action(
+/// The action a request names: one the actor owns, or the use of an
+/// item they carry.
+pub fn find_action(
     system: &RuleSystem,
     actor: &Combatant,
     r: &ActionRef,
@@ -319,6 +334,46 @@ fn is_attack(roll: &RollSpec) -> bool {
     )
 }
 
+/// Whether the actor's turn can still pay for one action of `kind`:
+/// enough actions left, and the context's limit on that kind not reached.
+pub fn affordable<'s>(
+    system: &'s RuleSystem,
+    scene: &Scene,
+    actor: &Combatant,
+    kind: &str,
+) -> Result<&'s ActionKind, Refusal> {
+    let ctx = system
+        .turn_context(&scene.context)
+        .ok_or_else(|| Refusal::Engine {
+            detail: format!("no turn context `{}`", scene.context),
+        })?;
+    let kind = system.action_kind(kind).ok_or_else(|| Refusal::Engine {
+        detail: format!("no action kind `{kind}`"),
+    })?;
+    if actor.turn.actions_left < kind.cost {
+        return Err(Refusal::NotEnoughActions {
+            cost: kind.cost,
+            left: actor.turn.actions_left,
+        });
+    }
+    if let Some(limit) = ctx.limits.iter().find(|l| l.kind == kind.id)
+        && actor.turn.spent_by_kind.get(&kind.id).copied().unwrap_or(0) >= limit.max_per_turn
+    {
+        return Err(Refusal::KindLimitReached {
+            kind: kind.id.clone(),
+            max: limit.max_per_turn,
+        });
+    }
+    Ok(kind)
+}
+
+/// Spends one action of `kind` from the actor's turn (after
+/// [`affordable`] said yes).
+pub fn spend(actor: &mut Combatant, kind: &ActionKind) {
+    actor.turn.actions_left -= kind.cost;
+    *actor.turn.spent_by_kind.entry(kind.id.clone()).or_insert(0) += 1;
+}
+
 /// Checks every gate of an action without resolving it.
 pub fn check_playable(
     system: &RuleSystem,
@@ -338,30 +393,7 @@ pub fn check_playable(
     }
     let action = find_action(system, actor, &req.action)?;
     gate(system, actor, &action)?;
-    let ctx = system
-        .turn_context(&scene.context)
-        .ok_or_else(|| Refusal::Engine {
-            detail: format!("no turn context `{}`", scene.context),
-        })?;
-    let kind = system
-        .action_kind(&action.kind)
-        .ok_or_else(|| Refusal::Engine {
-            detail: format!("no action kind `{}`", action.kind),
-        })?;
-    if actor.turn.actions_left < kind.cost {
-        return Err(Refusal::NotEnoughActions {
-            cost: kind.cost,
-            left: actor.turn.actions_left,
-        });
-    }
-    if let Some(limit) = ctx.limits.iter().find(|l| l.kind == kind.id)
-        && actor.turn.spent_by_kind.get(&kind.id).copied().unwrap_or(0) >= limit.max_per_turn
-    {
-        return Err(Refusal::KindLimitReached {
-            kind: kind.id.clone(),
-            max: limit.max_per_turn,
-        });
-    }
+    affordable(system, scene, actor, &action.kind)?;
     for s in &req.situations {
         if system.situation(s).is_none() {
             return Err(Refusal::UnknownSituation {
@@ -465,6 +497,7 @@ fn attack_roll(
     action: &ActionDef,
     target: &Combatant,
     situations: &[&SituationalBonus],
+    positional: Option<&Positional>,
     dice: &mut dyn DiceSource,
 ) -> Result<RollBreakdown, Refusal> {
     let ability = attack_ability(system, actor, action)?;
@@ -507,6 +540,10 @@ fn attack_roll(
             _ => {}
         }
     }
+    if let Some(p) = positional {
+        mods.extend(p.modifiers.iter().cloned());
+        dis |= p.disadvantage;
+    }
     Ok(check::roll(
         system,
         mods,
@@ -535,8 +572,7 @@ pub fn resolve_action(
     {
         let kind = system.action_kind(&action.kind).expect("checked");
         let actor = next.get_mut(actor_id).expect("checked");
-        actor.turn.actions_left -= kind.cost;
-        *actor.turn.spent_by_kind.entry(kind.id.clone()).or_insert(0) += 1;
+        spend(actor, kind);
         let cd = action.cooldown();
         if cd > 0 {
             let counter = cd
@@ -586,7 +622,15 @@ pub fn resolve_action(
             RollSpec::None | RollSpec::AutoHit => (true, false),
             RollSpec::AutoCritical => (true, true),
             RollSpec::Attack => {
-                let roll = attack_roll(system, &actor, &action, &target, &situational, dice)?;
+                let roll = attack_roll(
+                    system,
+                    &actor,
+                    &action,
+                    &target,
+                    &situational,
+                    req.positional.get(target_id),
+                    dice,
+                )?;
                 let band = roll.band;
                 events.push(Event::Roll {
                     roller: actor_id.into(),

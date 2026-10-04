@@ -74,6 +74,10 @@ pub enum ModifierSource {
     /// A condition (its name, as the badge shows it).
     Condition(String),
     Situation(String),
+    /// The target's cover on the grid.
+    Cover(crate::maps::Cover),
+    /// Beyond the action's range, within its long range.
+    LongRange,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

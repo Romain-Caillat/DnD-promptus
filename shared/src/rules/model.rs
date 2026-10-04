@@ -43,6 +43,11 @@ pub struct RuleSystem {
     pub creation: CreationRule,
     #[serde(default)]
     pub movement: Vec<MovementRule>,
+    /// How a fight on a grid reads the rules: which action a move and a
+    /// flight spend, what cover and long range do to an attack, how big
+    /// a zone is. Every field has a default (`docs/rules-format.md`).
+    #[serde(default)]
+    pub combat: CombatRule,
     #[serde(default)]
     pub situations: Vec<Situation>,
     #[serde(default)]
@@ -365,6 +370,94 @@ pub struct MovementRule {
     pub note: String,
 }
 
+/// Fighting on a grid (`combat/`): what the system says about moving,
+/// fleeing, cover, long range and areas.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CombatRule {
+    /// Action kind one move spends. `None`: one free move per turn.
+    #[serde(default)]
+    pub move_kind: Option<String>,
+    /// How a combatant leaves a fight. `None`: fleeing spends every
+    /// action left, with no roll.
+    #[serde(default)]
+    pub flee: Option<FleeRule>,
+    /// Attack roll modifier per cover level of the target.
+    #[serde(default)]
+    pub cover: CoverRule,
+    /// What attacking beyond an action's `range`, up to its
+    /// `long_range`, does to the roll.
+    #[serde(default)]
+    pub long_range: LongRangeRule,
+    /// Radius, in cells, of a `zone` area around the aimed cell.
+    #[serde(default = "default_zone_radius")]
+    pub zone_radius: u32,
+    #[serde(default)]
+    pub note: String,
+}
+
+fn default_zone_radius() -> u32 {
+    1
+}
+
+impl Default for CombatRule {
+    fn default() -> Self {
+        Self {
+            move_kind: None,
+            flee: None,
+            cover: CoverRule::default(),
+            long_range: LongRangeRule::default(),
+            zone_radius: default_zone_radius(),
+            note: String::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FleeRule {
+    /// Action kind a flight spends (its cost: usually the whole turn).
+    pub kind: String,
+    /// Ability rolled when the GM says the flight is hard; the GM gives
+    /// the difficulty when it happens.
+    #[serde(default)]
+    pub ability: Option<String>,
+}
+
+/// Added to attack rolls against a target behind cover (negative
+/// values make it harder to hit). Total cover blocks sight: no attack.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CoverRule {
+    pub half: i32,
+    pub three_quarters: i32,
+}
+
+impl Default for CoverRule {
+    /// The D&D 5e values (+2 and +5 to AC), as roll modifiers.
+    fn default() -> Self {
+        Self {
+            half: -2,
+            three_quarters: -5,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
+pub enum LongRangeRule {
+    /// Needs a system with advantage.
+    Disadvantage,
+    /// Added to the attack roll.
+    Modifier(i32),
+}
+
+impl Default for LongRangeRule {
+    fn default() -> Self {
+        Self::Modifier(-2)
+    }
+}
+
 /// A circumstance the GM declares when an action is played ("furtif",
 /// "en hauteur"), which some actions reward.
 #[derive(Debug, Clone, Deserialize)]
@@ -562,6 +655,14 @@ pub struct ActionDef {
     pub target: Targeting,
     #[serde(default)]
     pub area: Option<AreaShape>,
+    /// Reach in cells: how far the target (or a zone's centre, or a
+    /// line's end) may be. Absent = 1, adjacent cells only.
+    #[serde(default)]
+    pub range: Option<u32>,
+    /// Beyond `range` and up to this, the attack still goes with the
+    /// system's `combat.long_range` penalty.
+    #[serde(default)]
+    pub long_range: Option<u32>,
     pub roll: RollSpec,
     /// Ability added to the attack roll; absent = the system's rule.
     #[serde(default)]
@@ -578,6 +679,11 @@ impl ActionDef {
                 _ => None,
             })
             .unwrap_or(0)
+    }
+
+    /// Reach in cells (1 when the action does not say).
+    pub fn reach(&self) -> u32 {
+        self.range.unwrap_or(1)
     }
 
     pub fn precision(&self) -> i32 {
