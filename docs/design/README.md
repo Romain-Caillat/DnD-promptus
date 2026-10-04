@@ -2,17 +2,19 @@
 
 The design lives in a private Claude design canvas:
 https://claude.ai/artifact/AP3z1S5hbhqEiPzi5agTdy (owner: Romain).
-`canvas/` is a snapshot of its sources (version 80, 4 October 2026).
+`canvas/` is a snapshot of its sources (version 81, 4 October 2026).
 The published canvas is the reference: if they differ, read the canvas
 back before editing, Romain moves and resizes boards there.
 
-Decisions are in `MEMORY.md` §2, remaining work in `TICKETS.md`
-(epic `design`), journeys in `docs/user-journeys.md`.
+Decisions are in `MEMORY.md` §2, the closed design epic in
+`archive/tickets/design.md`, journeys in `docs/user-journeys.md`.
 
 ## Rendering check
 
-Every board was checked rendered in Chrome on 3 October 2026 and
-fixed; what remains is listed in `design/verify-canvas-rendering`.
+Every board up to 3 October 2026 was checked rendered in Chrome and
+fixed. The boards of 4 October were only checked by their logic tests:
+the design epic is closed (`archive/tickets/design.md`), and the rest is
+checked on the real platform.
 Chrome must stay in the foreground while checking, and has reduced
 motion on (`MEMORY.md` §4). To see one board large, set the index's
 `launch` to `{"view":"focused","file":"<board>"}`, publish, reload;
@@ -35,8 +37,8 @@ put `{"view":"canvas"}` back when done.
 - **A board's CSS reaches the components it imports.** Every board must
   prefix its classes and keyframes: `scope.py` does it
   (`scope(html, prefix, keep=…)`; `keep` lists runtime state modifiers,
-  always combined with a prefixed class). Done for the evening boards
-  only; see `design/scope-legacy-boards`.
+  always combined with a prefixed class). Done for every board since the
+  evening; the older boards were left as they are (`archive/tickets/design.md`).
 - **Python f-strings eat braces:** a hole is written `{{{{name}}}}`.
 - `support.js` (the canvas runtime) is not in the snapshot.
 

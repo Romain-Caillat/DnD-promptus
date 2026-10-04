@@ -38,8 +38,10 @@ and demo campaign are the specification to port. What shipped is
 summarized in `archive/tickets/v1.md`.
 
 The rewrite follows the Devotion model (same stack, same conventions).
-**Design comes before code**: see the `design` epic in `TICKETS.md` and
-`docs/design-brief.md`.
+The design is done (`archive/tickets/design.md`): the canvas boards are
+the visual specification (`docs/design/README.md`), and `TICKETS.md`
+orders the code work in three milestones, each ending with a real
+session played.
 
 ## Tech Stack (target)
 

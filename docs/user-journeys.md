@@ -1,6 +1,6 @@
 # Parcours utilisateurs — Promptus
 
-Ticket `design/map-user-journeys`. Ce document décrit ce que chacun
+Ticket `design/map-user-journeys` (archivé). Ce document décrit ce que chacun
 fait, dans quel ordre, et sur quel écran. Il sert à vérifier qu'aucun
 écran ne manque avant de coder. La version visuelle est sur la planche
 « Parcours » du canevas de design (lien dans `TICKETS.md`).
@@ -238,16 +238,8 @@ Romain.
 | Mort d'un personnage | J6, M8 | Ordinateur, téléphone | Mourir · la dernière soirée de Borin |
 | Mener sur tablette | M7, M8 | Tablette | Tablette · mener la session 3 du canapé |
 
-## Questions ouvertes
+## Questions tranchées
 
-1. **L'écran partagé** : `MEMORY.md` disait « table + TV plus tard » ;
-   on l'a dessiné dès maintenant. Est-ce un écran ouvert sur une vraie
-   TV, une fenêtre partagée sur Discord, ou les deux ?
-2. **Création des personnages** : avant la première session (le MJ
-   valide à froid), ou pendant une session zéro tous ensemble ?
-3. **Entre les sessions** : le joueur peut-il faire quelque chose
-   (équiper, gérer son sac, écrire au MJ), ou seulement lire ?
-4. **Mort d'un personnage** : quel parcours (spectateur, nouveau
-   personnage dans la session, attente) ?
-5. **Spectateurs** : utiles (un ami qui regarde, un joueur absent qui
-   suit), ou à retirer ?
+Les cinq questions ouvertes ont été tranchées par les planches ; la
+décision est dans `MEMORY.md` §1 (écran partagé, moment de la création,
+entre deux sessions, mort d'un personnage, spectateurs).

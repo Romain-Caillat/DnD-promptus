@@ -19,193 +19,94 @@ le récit de ce qui a été livré (→ `archive/tickets/`).
 
 ## Vue d'ensemble
 
+Le design est terminé (archivé dans `archive/tickets/design.md`) : les
+planches du canevas sont la spécification visuelle, `docs/user-journeys.md`
+dit quelle planche dessine quel écran. Ce qui reste se vérifie sur la
+vraie plateforme, en jouant, et s'itère.
+
 | Épic | Ce que ça apporte |
 | --- | --- |
-| `design` | Les écrans MJ et joueur dessinés avant d'écrire du code |
-| `platform` | Le squelette (Rust/React/Tauri), la CI, le déploiement, le compte MJ |
+| `platform` | Le squelette (Rust/React/Tauri), la CI, le compte MJ, le déploiement |
+| `ui` | Le design system du canevas en composants React : tokens, cartes-boutons, gemmes, cœurs, dés |
+| `engine` | Le moteur de règles dans `shared/` : système de règles en données, jets, actions, états, combat, niveaux |
+| `campaign` | La campagne : graphe d'histoire, fiches, préparation et relecture par le MJ |
+| `ai` | Le fournisseur LLM, le compteur de coût, la génération d'une campagne depuis un pitch |
+| `media` | Images, vidéos et musique YouTube des scènes |
+| `session` | Inviter, rejoindre, temps réel, projection joueur, salon, scènes, fin de session |
+| `player` | L'écran du joueur, téléphone d'abord, puis ordinateur |
+| `gm` | L'écran du MJ en direct, ordinateur puis tablette |
+| `copilot` | Le co-MJ : brouillons de narration, PNJ, tours des adversaires, vérification des fiches |
+| `tv` | L'écran partagé : TV du salon ou fenêtre partagée sur Discord |
 | `characters` | Chaque joueur crée son personnage pixel et le voit marcher dans les 4 directions |
 | `maps` | Des cartes à trois échelles, dessinées automatiquement en vue 3/4, dans tous les univers |
-| Épics de portage | À découper une fois le design validé (moteur, campagne, génération, médias, session, joueur, co-MJ, combat, continuité) |
 
----
+## Ordre de construction
 
-## Épic `design`
+Trois jalons. Chacun se termine par **une vraie soirée jouée** avec la
+table de Romain (règle 4 : « livré, jamais essayé » n'est pas fini). Un
+ticket d'un jalon ne laisse aucun bouton vers une fonction d'un jalon
+suivant : la fonction n'apparaît qu'une fois livrée.
 
-Canevas de travail (privé) : https://claude.ai/artifact/AP3z1S5hbhqEiPzi5agTdy —
-fondations, construction d'histoire, écran MJ, TV, téléphone joueur.
-Décisions retenues : `MEMORY.md` §2. Copie des sources du canevas et
-mode d'emploi : `docs/design/README.md`.
+### Jalon 1 · Une vraie soirée
 
-On repart d'une feuille blanche côté interface. Le V1 a montré que des
-écrans empilés au fil des épics ne font pas un jeu : on dessine d'abord
-les parcours, puis on code. Point de départ : `docs/design-brief.md`.
+Romain mène la campagne de démo du V1, importée telle quelle, avec le
+préréglage D&D 5e (SRD). Ses joueurs rejoignent par un lien, créent leur
+personnage sur leur téléphone, explorent, demandent, lancent les dés et
+combattent. Pas encore de génération ni de co-MJ : le MJ écrit lui-même.
 
-### `design/map-user-journeys` · doing — en attente de validation
+`platform/scaffold-workspace` · `platform/run-ci` · `platform/sign-in-gm` ·
+`platform/deploy-self-hosted` · `ui/write-design-tokens` ·
+`ui/build-game-components` · `ui/roll-faceted-dice` ·
+`engine/model-rule-system` · `engine/roll-checks` ·
+`engine/resolve-actions` · `engine/apply-conditions` ·
+`engine/run-combat` · `campaign/model-story-graph` ·
+`campaign/import-v1-demo` · `campaign/list-campaigns` ·
+`session/stream-live-changes` · `session/project-player-view` ·
+`session/invite-and-join` · `session/validate-characters` ·
+`session/open-lobby` · `session/drive-scenes` · `session/end-session` ·
+`media/play-youtube-music` · `player/play-scene` · `player/explore-map` ·
+`player/fight-turn` · `player/read-sheet-and-journal` ·
+`player/receive-rewards` · `gm/run-live-screen` · `gm/run-combat` ·
+`characters/render-layered-sprite` · `characters/build-character-creator` ·
+`maps/model-grid-maps` · `maps/render-three-quarter-tiles` ·
+`maps/reveal-fog-and-hidden`
 
-**Pourquoi** — Savoir ce que chacun fait, dans quel ordre, avant de
-dessiner un écran.
+**Fini quand** — Une session de deux heures est jouée à distance, de la
+création des personnages au dernier combat, sans que Romain ouvre
+autre chose que Promptus et Discord.
 
-**Périmètre** — Parcours du MJ (créer une campagne, la générer, la
-relire, préparer les médias, lancer la session, la mener, la clore) et
-du joueur (rejoindre, choisir un personnage, jouer un tour, demander
-une action, lire le récapitulatif).
+### Jalon 2 · La campagne générée et le co-MJ
 
-**Fini quand** — Les parcours sont écrits et validés par Romain.
+Romain prépare une nouvelle campagne depuis un pitch, la relit, génère
+ses médias, et la mène avec le co-MJ et la TV du salon. Les joueurs
+retrouvent leur personnage entre deux sessions.
 
-**État** — Écrits dans `docs/user-journeys.md` et sur la planche
-« Parcours » du canevas : 11 écrans dessinés, 19 à dessiner, 5
-questions ouvertes à trancher par Romain (écran partagé TV ou Discord,
-moment de la création des personnages, ce qu'un joueur peut faire entre
-deux sessions, mort d'un personnage, spectateurs).
+`ai/route-llm-provider` · `ai/count-ai-calls` · `ai/generate-campaign` ·
+`campaign/review-story-graph` · `media/generate-images-and-video` ·
+`copilot/draft-narration` · `copilot/propose-adversary-turns` ·
+`copilot/check-character-sheets` · `copilot/co-write-backstory` ·
+`session/write-recaps` · `session/schedule-sessions` ·
+`session/pair-shared-screen` · `tv/show-evening` · `gm/launch-session` ·
+`engine/level-up` · `engine/save-against-death` ·
+`player/play-between-sessions` · `player/face-death` ·
+`maps/edit-map-gm` · `maps/generate-map-llm` · `maps/import-image-map`
 
-**Origine** — `docs/design-brief.md`
+**Fini quand** — Une campagne générée depuis un pitch est jouée sur deux
+sessions, avec le co-MJ, la TV, un « Précédemment… » entre les deux.
 
-### `design/build-design-system` · doing
+### Jalon 3 · Profondeur et variantes
 
-**Pourquoi** — Une identité visuelle propre au jeu (ambiance, typo,
-couleurs, iconographie), cohérente entre téléphone et ordinateur.
+Le système de règles s'édite, le monde se voyage, les cartes sortent
+du donjon, les personnages marchent, et l'on joue sur ordinateur ou
+tablette.
 
-**Périmètre** — Tokens (couleurs clair/sombre, typo, espacements),
-composants de base adaptés de shadcn, ton des textes.
+`campaign/edit-rule-system` · `engine/formalise-house-rules` ·
+`engine/simulate-fights` · `maps/travel-hex-world` ·
+`maps/blend-outdoor-terrain` · `maps/build-tileset-packs` ·
+`maps/package-theme-packs` · `characters/walk-in-four-directions` ·
+`player/play-on-desktop` · `gm/run-on-tablet` · `copilot/listen-by-voice`
 
-**Fini quand** — Le design system est publié et validé.
-
-**État** — Dessiné sur le canevas : gemmes de stats, cœurs, cases,
-horloges, boutons-cartes, cartes et raretés, objets, dés colorés,
-sprites, états, notifications (`MEMORY.md` §2). Reste : tokens écrits
-(couleurs, typo, espacements) dans un format réutilisable par le code,
-mode clair, ton des textes.
-
-**Origine** — `docs/design-brief.md`
-
-### `design/draw-player-screens` · doing
-
-**Pourquoi** — Le joueur joue sur téléphone : c'est l'écran qui décide
-si la partie est agréable.
-
-**Périmètre** — Rejoindre, scène en cours, carte (déplacement au
-doigt), fiche, actions, combat à son tour, musique, journal.
-
-**Fini quand** — Maquettes téléphone validées ; aucune action courante
-ne demande de viser ni de zoomer.
-
-**État** — La soirée de Marc (joueur novice) est jouable de bout en bout
-sur la planche « Jouer · la soirée de Marc » : scène, indices, dé,
-exploration, combat (main de cartes, « Autre… », arcade), butin, onglets
-Jeu, Carte, Personnage, Journal. Les planches Joueur et le storyboard
-sont ce même téléphone figé sur un moment. Rejoindre (lien, pseudo,
-choix) et l'envoi du personnage au MJ sont dessinés sur la planche
-« Inviter ». Dessinés le 4 octobre 2026, chacun avec son storyboard :
-le créateur de personnage en couches (« Créer », 8 moments : peuple,
-corps, tenue et arme, couleurs et « au hasard », classe, limite
-signalée, histoire avec le co-MJ, envoi), l'entre-deux-sessions
-(« Entre deux », 6 moments : niveau 4, récap, chronique, fiche, dates
-et rappel), le voyage (« Voyager »), le joueur sur ordinateur (« Jouer
-sur ordinateur · Sef ») et la mort du personnage (« Mourir », variante).
-
-Reste : vérifier ces planches rendues dans Chrome, et la revue des
-parcours avec Romain.
-
-**Origine** — `docs/design-brief.md`
-
-### `design/draw-gm-screens` · doing
-
-**Pourquoi** — Le MJ mène toute la partie depuis un seul écran sans se
-perdre.
-
-**Périmètre** — Préparation (campagne, graphe d'histoire, fiches,
-cartes, médias, règles, budget) et direct (scène, carte complète,
-co-MJ, demandes des joueurs, combat, musique, fin de session).
-
-**Fini quand** — Maquettes ordinateur et tablette validées.
-
-**État** — Dessinés (3 octobre 2026), chacun en planche jouable sur
-l'ordinateur du MJ avec son storyboard :
-- la préparation d'une campagne (« Préparer · la campagne de Romain »,
-  10 moments) : liste des campagnes, univers, règles, pitch avec coût
-  estimé, génération suivie en direct, atelier avec le co-MJ (diff à
-  accepter), alerte de cohérence (règle des 3 indices), fiches, cartes et
-  médias lot par lot, validation avec lien d'invitation. Elle remplace la
-  planche « Construction d'histoire », dont l'atelier est le moment 6 ;
-- la soirée de Marc côté MJ (« Mener · la soirée de Marc côté MJ »,
-  12 moments) : une action principale par moment, demandes des joueurs
-  en cartes, co-MJ en brouillon, journal qui montre aussi le caché, TV
-  synchronisée. Elle remplace la première version de l'écran MJ ;
-- l'invitation et la validation des personnages (« Inviter · la table
-  de Romain », 7 moments, ordinateur du MJ et téléphone de Marc côte à
-  côte) : lien et message à coller sur Discord, arrivée sans compte,
-  relecture d'une fiche vérifiée par le co-MJ, renvoi avec un mot quand
-  une règle n'est pas respectée, accroches secrètes tirées des histoires
-  des joueurs, date de la première session ;
-- les cartes (vue MJ, import d'image).
-
-Dessinés le 4 octobre 2026, chacun avec son storyboard : le lancement
-de la session 4 avec la TV (« Lancer », 5 moments : code de la TV,
-arrivées, ce que la TV peut montrer, « Précédemment… », première
-scène), le voyage sur la carte du monde (« Voyager », 7 moments),
-l'éditeur du système de règles (« Règles », 7 moments, dont une règle
-maison écrite en français et un combat simulé), l'éditeur de carte
-(« Cartes · l'éditeur », 7 moments) et la version tablette
-(« Tablette », 5 moments : rail de grosses cibles, demandes au pouce,
-carte au doigt, co-MJ à la voix). Le salon et les récapitulatifs sont
-dans « Mener ».
-
-Reste : vérifier les nouvelles planches rendues dans Chrome, et la revue
-des parcours avec Romain.
-
-**Origine** — `docs/design-brief.md`
-
-### `design/verify-canvas-rendering` · doing
-
-**Pourquoi** — Les planches ont été écrites sans pouvoir les voir : le
-rendu n'a été contrôlé que par des scripts (classes définies, logique
-des 12 moments en Node). Romain a déjà trouvé des cadres déformés.
-
-**Périmètre** — Ouvrir chaque planche du canevas, la comparer à son
-intention (`MEMORY.md` §2, `docs/design/README.md`), corriger ce qui
-déborde, se chevauche ou ne s'aligne pas. Priorité : « Jouer · la
-soirée de Marc » (cliquer tous les moments), « TV · la soirée côté
-TV », « Joueur · la soirée de Marc », les planches Joueur, puis les
-autres.
-
-**Fini quand** — Chaque planche a été vue rendue, et Romain valide les
-trois planches de la soirée.
-
-**État** — Les trois planches de la soirée ont été vues rendues dans
-Chrome le 3 octobre 2026 (les 12 moments de « Jouer » cliqués) et
-corrigées : personnages cachés sous les hauts de mur (rayons X), brouillard
-en carrés blancs quand les animations sont réduites, bannière « À toi,
-Borin ! » sous la carte, titre de carte d'indice décentré, main de cartes
-hors de l'écran, libellé « Frappe » illisible, sélecteur de moments qui
-sautait, dégâts TV au-dessus du mauvais personnage. Toutes les autres
-planches ont ensuite été vues rendues et corrigées : horloge « 3/6 » empilée
-en colonne, gemme de carte sur le titre, cadres trop courts (Fondations,
-Jauges, Objets), butin sur son nom, dé TV sur les PV du groupe, « Tu es
-ici » sur Lyra, calibrage sur « passage secret », brouillard des
-extérieurs, barres de défilement des téléphones. Reste : validation des
-trois planches de la soirée par Romain. Vus, non corrigés : petits
-défauts de Notifications ; barres de défilement des planches Sprite et
-Carte à jouer vues seules (cause hors du code des planches).
-
-**Origine** — Romain, 3 octobre 2026 : « TV · la soirée côté TV est
-cassé », « c'est pas aligné ».
-
-### `design/scope-legacy-boards` · todo
-
-**Pourquoi** — Le CSS d'une planche s'applique aux composants qu'elle
-importe (`MEMORY.md` §4). Seules les planches de la soirée sont
-préfixées ; les anciennes (Main, Pistes-UI, Objets, États, Notifs,
-Cartes, Extérieurs, Parcours) utilisent des noms de
-classes génériques et peuvent casser un composant sans qu'on le voie.
-
-**Périmètre** — Passer chaque ancienne planche dans
-`docs/design/scope.py` avec son préfixe, vérifier le rendu avant et
-après.
-
-**Fini quand** — Plus aucune planche n'a de classe non préfixée hors
-modificateurs d'état, et le rendu est inchangé ou corrigé.
-
-**Origine** — Correctif de la TV du 3 octobre 2026
+Plus tard, sans jalon : `maps/support-hex-combat`.
 
 ---
 
@@ -234,22 +135,686 @@ Rust contre Postgres, lint + typecheck + tests front, gitleaks.
 
 **Origine** — Alignement sur Devotion
 
-### `platform/sign-in-gm` · todo · à spécifier
+### `platform/sign-in-gm` · todo
 
 **Pourquoi** — Le V1 laissait les pages MJ ouvertes à tous.
 
-**Périmètre** — Compte MJ avec passkey (comme Devotion) ; les joueurs
-restent sans compte (jeton haché).
+**Périmètre** — Compte MJ avec passkey (comme Devotion) ; chaque route
+MJ exige la session du MJ propriétaire de la campagne ; les joueurs
+restent sans compte (jeton haché, `session/invite-and-join`).
+
+**Fini quand** — Un test parcourt chaque route MJ sans session, puis
+avec le compte d'un autre MJ : toutes refusent.
 
 **Origine** — `MEMORY.md` §4
 
-### `platform/deploy-self-hosted` · todo · à spécifier
+### `platform/deploy-self-hosted` · todo
 
-**Périmètre** — Docker Compose de production, migrations au démarrage,
-sauvegarde avant chaque déploiement, déploiement continu (modèle
-`deploy/` de Devotion), `docs/install.md` et `docs/backup.md`.
+**Pourquoi** — Les joueurs jouent depuis chez eux : l'app doit être
+joignable sur Internet, sans VPN.
+
+**Périmètre** — Docker Compose de production (serveur Axum + Postgres
+17), migrations au démarrage, sauvegarde avant chaque déploiement,
+déploiement continu (modèle `deploy/` de Devotion), `docs/install.md`
+et `docs/backup.md`. Sur le serveur de Romain : stack sur PCT 101,
+sous-domaine public routé par le Traefik de PCT 100 comme `party`,
+enregistrement DNS chez Ionos.
+
+**Fini quand** — Un téléphone en 4G ouvre un lien d'invitation et
+rejoint ; une sauvegarde se restaure sur une base vide.
 
 **Origine** — Alignement sur Devotion
+
+---
+
+## Épic `ui`
+
+Le design system dessiné sur le canevas (`MEMORY.md` §2), en composants
+React partagés par le téléphone, l'ordinateur, la tablette et la TV.
+Chaque composant du canevas (« Composant — … ») a son équivalent ici.
+
+### `ui/write-design-tokens` · todo
+
+**Pourquoi** — Le noir et blanc, les couleurs de stats, les trois
+polices et le mouvement doivent être les mêmes partout, sans valeur
+recopiée à la main.
+
+**Périmètre** — Tokens Tailwind v4 (`@theme`) : noir et blanc de
+l'interface, six couleurs de stats avec leur forme, rouge des dégâts,
+matières des six raretés ; Cinzel, Cormorant Garamond, Chakra Petch
+servies par l'app (pas de CDN) ; durées et courbes d'animation, avec un
+état de repos calme sous `prefers-reduced-motion` (`MEMORY.md` §4). Les
+composants shadcn reçoivent ces tokens.
+
+**Fini quand** — Une page de référence dans l'app reproduit la planche
+« Fondations » ; animations réduites, rien ne reste figé sur une image
+forte.
+
+**Origine** — Planche « Fondations » · ancien ticket `design/build-design-system`
+
+### `ui/build-game-components` · todo
+
+**Pourquoi** — Le jeu tient dans une dizaine de pièces réutilisées
+partout ; les refaire écran par écran donnerait dix variantes.
+
+**Périmètre** — Bouton-carte (ivoire pour l'action principale, noir
+pour le reste, bascule à l'appui) et grappe arcade du combat ; gemme de
+stat en pixels avec sa vague de lumière ; cœurs (2 PV par cœur,
+éclatement au coup) ; barre de cases ; horloge de menace ; carte à
+jouer (action, indice, scène) avec ses six raretés ; case d'objet ;
+badge d'état ; bandeau de statut ; toasts en trois tons ; panneau qui
+monte du bas. Chaque composant est une fonction de ses props, sans
+appel réseau.
+
+**Fini quand** — Chaque composant du canevas a son équivalent, montré
+dans la page de référence avec ses états ; un test par composant qui a
+une règle (cœurs au-delà de 20 PV, cases dépensées, rareté lue sans
+couleur).
+
+**Origine** — Planches « Jauges et boutons », « Rareté des
+compétences », « Objets et butin », « États des personnages »,
+« Notifications »
+
+### `ui/roll-faceted-dice` · todo
+
+**Pourquoi** — Le dé est le moment de tension de chaque tour : il doit
+rouler, pas afficher un nombre.
+
+**Périmètre** — Dés à facettes d4 à d20, faces ombrées teintées de la
+couleur de la stat lancée (blanc pour un simple test) ; les chiffres
+roulent puis se posent avec un éclat. Le résultat vient du serveur :
+le dé anime un tirage déjà fait, il ne le décide pas.
+
+**Fini quand** — Les sept dés roulent à 60 images/s sur un téléphone
+milieu de gamme, et un test prouve que la valeur affichée est celle du
+serveur.
+
+**Origine** — Composant « dé » du canevas · `MEMORY.md` §2
+
+---
+
+## Épic `engine`
+
+Le moteur de règles, dans `shared/`, pur et sans base de données.
+Le serveur est seul juge (`MEMORY.md` §3). Spécification : le code et
+les tests unitaires de `src/lib/engine/` du V1
+(`archive/promptus-v1-nextjs.zip`), à porter test par test.
+
+### `engine/model-rule-system` · todo
+
+**Pourquoi** — Les règles sont une donnée de la campagne, pas du code
+(`MEMORY.md` §1) : tout le reste en dépend.
+
+**Périmètre** — Le système de règles : caractéristiques, statistiques
+de jeu et leur formule, formule de jet, difficultés nommées, actions
+(qui deviennent les cartes des joueurs), classes, peuples, états,
+ressources, mouvement par échelle de carte, limites de création.
+Préréglage D&D 5e (SRD 5.1) ; une campagne en garde une copie
+versionnée.
+
+**Fini quand** — Le préréglage SRD du V1 se charge, une campagne en
+copie une version, et les actions offertes à un personnage se dérivent
+de sa classe (tests `ruleset.test.ts` portés).
+
+**Origine** — V1 `ruleset.ts`, `ruleset-schema.ts` · planche « Règles »
+(moments 1 à 4 et 6)
+
+### `engine/roll-checks` · todo
+
+**Pourquoi** — Chaque demande d'un joueur finit en jet ou en refus
+expliqué.
+
+**Périmètre** — Dés et formules, avantage et désavantage, critiques,
+test contre une difficulté, jet de groupe (la moitié suffit), tirages
+côté serveur avec une source de hasard injectable pour les tests.
+
+**Fini quand** — Tests `dice.test.ts` et `skill-check.test.ts` du V1
+portés et verts.
+
+**Origine** — V1 `dice.ts`, `skill-check.ts` · planche « Voyager »
+(jet de groupe)
+
+### `engine/resolve-actions` · todo
+
+**Pourquoi** — Une carte jouée doit produire le même effet chez tous,
+calculé une seule fois.
+
+**Périmètre** — Le résolveur déclaratif du V1 : 20 effets primitifs,
+catalogue d'actions, résolution d'attaque (toucher, dégâts, critique),
+bonus déjà calculés pour l'affichage des cartes.
+
+**Fini quand** — Tests `resolver.test.ts` du V1 portés et verts.
+
+**Origine** — V1 `resolver.ts`, `catalog.ts`
+
+### `engine/apply-conditions` · todo
+
+**Périmètre** — Les 14 états du SRD, leur durée en tours, leurs effets
+sur les jets et le mouvement ; ce qui doit être montré au joueur (badge
+et effet pixel).
+
+**Fini quand** — Tests `conditions.test.ts` du V1 portés et verts.
+
+**Origine** — V1 `conditions.ts` · planche « États des personnages »
+
+### `engine/run-combat` · todo
+
+**Pourquoi** — Le combat est le moment où les règles se voient le plus.
+
+**Périmètre** — Initiative, ordre du tour, tour d'un combattant
+(mouvement, action, fin du tour), attaque avec portée et ligne de vue
+lues sur la grille (`maps/model-grid-maps`), mort d'un adversaire, fin
+du combat et expérience gagnée.
+
+**Fini quand** — Tests `combat.test.ts` et `grid.test.ts` du V1 portés ;
+un combat de la démo se joue entièrement dans les tests du moteur.
+
+**Origine** — V1 `combat.ts`, `grid.ts`
+
+### `engine/level-up` · todo
+
+**Périmètre** — Niveaux par expérience ; points de vie au dé de vie ou à
+la moyenne, au choix du joueur ; nouvelles cartes de classe.
+
+**Fini quand** — Borin passe niveau 4 avec ses deux options de PV et sa
+nouvelle carte, comme sur la planche.
+
+**Origine** — Planche « Entre deux » (moments 1 et 2)
+
+### `engine/save-against-death` · todo
+
+**Pourquoi** — Une mort de personnage ne doit jamais être un accident
+de calcul ; le MJ confirme.
+
+**Périmètre** — À 0 PV : jets contre la mort (trois réussites, trois
+échecs, 1 et 20 naturels), soin qui relève, dégâts qui comptent comme
+échec. La mort est proposée par le moteur et confirmée par le MJ.
+
+**Fini quand** — Les sept moments de la planche « Mourir » se rejouent
+dans les tests du moteur, la confirmation du MJ comprise.
+
+**Origine** — Planche « Mourir »
+
+### `engine/formalise-house-rules` · todo · à spécifier
+
+**Pourquoi** — Un MJ écrit sa règle en français ; le serveur doit
+pouvoir la juger.
+
+**Périmètre** — Le co-MJ traduit une règle maison en règle formelle
+(déclencheur, effet, exceptions, ce que voient les joueurs) avec des
+cas de test ; le MJ relit et valide. Format formel à définir sur les
+effets primitifs existants.
+
+**Origine** — Planche « Règles » (moment 5)
+
+### `engine/simulate-fights` · todo · à spécifier
+
+**Périmètre** — Simuler N combats avec les fiches réelles et les
+monstres d'une rencontre, sous une version des règles ; taux de victoire,
+durée, effet d'une règle maison.
+
+**Origine** — Planche « Règles » (moment 7)
+
+---
+
+## Épic `campaign`
+
+Le modèle de campagne du V1 (bible, fronts, nœuds, indices, entités,
+état vivant), et les écrans de préparation du MJ.
+
+### `campaign/model-story-graph` · todo
+
+**Pourquoi** — L'histoire est un graphe, pas un script (`MEMORY.md` §1) :
+la génération, le direct et le co-MJ lisent tous ce modèle.
+
+**Périmètre** — Schéma Postgres et types `shared/` : campagne, bible,
+fronts et horloges, nœuds, indices, entités (PNJ, monstres, objets,
+lieux), état vivant du monde ; validateur (chaque révélation atteinte par
+au moins trois indices dans des nœuds différents) ; verrou par
+campagne sur chaque écriture du monde (`MEMORY.md` §3).
+
+**Fini quand** — Tests `story-validator.test.ts`, `world.test.ts` et
+`concurrency.test.ts` du V1 portés ; deux écritures concurrentes ne
+s'écrasent pas.
+
+**Origine** — V1 `story.ts`, `story-validator.ts`, `world.ts`, `lock.ts`,
+migrations 0001 à 0003
+
+### `campaign/import-v1-demo` · todo
+
+**Pourquoi** — Jouer le jalon 1 sans attendre la génération.
+
+**Périmètre** — Import et export YAML des entités et de l'histoire au
+format du V1 ; la campagne de démo du V1 (`scripts/demo-story.ts`) et
+ses cartes chargées en une commande.
+
+**Fini quand** — `bun run demo` crée la campagne de démo complète,
+jouable ; test `import-export.test.ts` porté.
+
+**Origine** — V1 `import-export.test.ts`, `scripts/demo-story.ts`
+
+### `campaign/list-campaigns` · todo
+
+**Périmètre** — Liste des campagnes du MJ, création d'une campagne vide
+(univers, préréglage de règles), réglages, budget IA.
+
+**Fini quand** — Le MJ crée une campagne, la retrouve, la rouvre ; un
+autre compte MJ ne la voit pas.
+
+**Origine** — Planche « Préparer » (moments 1 à 3)
+
+### `campaign/review-story-graph` · todo
+
+**Pourquoi** — Le MJ relit et corrige tout ce que l'IA propose avant que
+ça existe.
+
+**Périmètre** — Écran de relecture : bible, fronts, graphe de nœuds et
+indices, fiches ; atelier avec le co-MJ (diff à accepter ou refuser) ;
+alerte de cohérence (règle des trois indices) ; validation de la
+campagne qui la rend jouable.
+
+**Fini quand** — Le MJ corrige une campagne générée, accepte un diff du
+co-MJ, résout une alerte et la valide.
+
+**Origine** — Planche « Préparer » (moments 6 à 8 et 10)
+
+### `campaign/edit-rule-system` · todo
+
+**Périmètre** — L'éditeur du système de règles : statistiques et
+formules, difficultés, actions activées, limites de création, version
+verrouillée qui s'applique à la prochaine session.
+
+**Fini quand** — Les sept moments de la planche « Règles » sont faisables
+dans l'app, la règle maison et la simulation comprises (via
+`engine/formalise-house-rules` et `engine/simulate-fights`).
+
+**Origine** — Planche « Règles »
+
+---
+
+## Épic `ai`
+
+### `ai/route-llm-provider` · todo
+
+**Pourquoi** — Changer de modèle ou de fournisseur sans toucher au jeu.
+
+**Périmètre** — Trait de fournisseur (LLM, image, vidéo) avec
+OpenRouter comme première implémentation ; gabarits de prompts
+versionnés ; sorties validées par schéma ; faux fournisseur
+déterministe pour les tests et le développement (comme `fake-llm.ts`).
+
+**Fini quand** — Un appel réel à OpenRouter et le faux fournisseur
+passent par le même trait ; une sortie hors schéma est rejetée avec une
+erreur lisible.
+
+**Origine** — V1 `llm.ts`, `prompt-template.ts`, `scripts/fake-llm.ts`
+
+### `ai/count-ai-calls` · todo
+
+**Pourquoi** — Chaque appel IA coûte (`MEMORY.md` §3).
+
+**Périmètre** — Chaque appel LLM, image ou vidéo enregistré avec son
+coût ; budget par campagne ; coût estimé avant chaque lot ; un lot qui
+dépasserait le budget est refusé.
+
+**Fini quand** — Un test prouve qu'un lot au-delà du budget n'émet aucun
+appel.
+
+**Origine** — `MEMORY.md` §3 · planche « Préparer » (coût estimé)
+
+### `ai/generate-campaign` · todo
+
+**Périmètre** — Pitch → bible, fronts, nœuds, indices, entités, en
+tâches de fond suivies en direct ; rien n'est appliqué avant la
+relecture du MJ (`campaign/review-story-graph`) ; identifiants inventés
+écartés.
+
+**Fini quand** — Un pitch produit une campagne valide (validateur vert)
+que le MJ relit et applique ; tests `generation.test.ts` du V1 portés.
+
+**Origine** — V1 `generation/pipeline.ts` · planche « Préparer »
+(moments 4 et 5)
+
+---
+
+## Épic `media`
+
+### `media/play-youtube-music` · todo
+
+**Pourquoi** — La musique fait l'ambiance, et YouTube impose un lecteur
+visible (`MEMORY.md` §4).
+
+**Périmètre** — Une musique YouTube par scène, choisie par le MJ ;
+mini-lecteur visible sur le téléphone, démarrage muet et « activer le
+son » ; synchronisation entre joueurs, qui se rattrape après une pub.
+
+**Fini quand** — Trois téléphones entendent la même musique à la même
+minute, et le changement de scène change la musique chez tous.
+
+**Origine** — V1 `youtube.ts` · planche « Jouer » (scène)
+
+### `media/generate-images-and-video` · todo
+
+**Périmètre** — Image et vidéo d'introduction par scène, en tâches de
+fond, stockées sur disque ; le MJ valide ou relance chaque média ;
+coût compté (`ai/count-ai-calls`). Vérifier d'abord le format de sortie
+vidéo d'OpenRouter (`MEMORY.md` §4).
+
+**Fini quand** — Une campagne générée a ses images et vidéos validées,
+affichées sur les téléphones et la TV.
+
+**Origine** — V1 `media/` · planche « Préparer » (moment 9)
+
+---
+
+## Épic `session`
+
+Le direct : comment une table se réunit et ce qui circule entre les
+écrans. Invariants : projection joueur unique, temps réel sans données
+de jeu, jetons hachés (`MEMORY.md` §3).
+
+### `session/stream-live-changes` · todo
+
+**Périmètre** — WebSocket Axum par session : « ceci a changé » (Postgres
+NOTIFY relayé) et présence ; les clients relisent par l'API ;
+reconnexion qui rattrape l'état.
+
+**Fini quand** — Un téléphone coupé dix secondes revient sur l'état
+exact de la table sans recharger la page.
+
+**Origine** — V1 `realtime/`, `notify.ts`
+
+### `session/project-player-view` · todo
+
+**Pourquoi** — C'est l'invariant qui protège les secrets du MJ.
+
+**Périmètre** — Un seul point de projection serveur pour tout ce qu'un
+joueur (ou la TV) reçoit : pas de notes MJ, pas de cases non révélées,
+pas d'objets cachés, ni nom ni PV d'un adversaire non révélé.
+
+**Fini quand** — Tests `projection.test.ts` du V1 portés, plus un test
+qui parcourt chaque route joueur et TV.
+
+**Origine** — V1 `projection.ts` · `MEMORY.md` §3
+
+### `session/invite-and-join` · todo
+
+**Périmètre** — Lien d'invitation de la campagne avec message prêt à
+coller sur Discord ; le joueur ouvre le lien dans le navigateur de son
+téléphone, choisit un pseudo, puis créer, reprendre ou regarder ; jeton
+secret sur l'appareil, empreinte seule côté serveur.
+
+**Fini quand** — Marc rejoint depuis son téléphone sans compte, ferme
+le navigateur, revient le lendemain et retrouve son personnage.
+
+**Origine** — Planche « Inviter » (moments 1 et 2)
+
+### `session/validate-characters` · todo
+
+**Périmètre** — Le MJ voit sa table se remplir, relit chaque fiche,
+valide ou renvoie avec un mot ; le joueur corrige et renvoie, le MJ ne
+relit que la différence ; accroches secrètes tirées des histoires.
+
+**Fini quand** — Les moments 3 à 6 de la planche « Inviter » sont
+faisables dans l'app.
+
+**Origine** — Planche « Inviter »
+
+### `session/schedule-sessions` · todo
+
+**Périmètre** — Les joueurs donnent leurs disponibilités, le MJ choisit
+la date ; rappel avant la session ; le salon ouvre à l'heure dite.
+
+**Fini quand** — Le rappel arrive sur le téléphone de Marc et le mène
+au salon d'un toucher.
+
+**Origine** — Planches « Inviter » (moment 7) et « Entre deux » (moment 6)
+
+### `session/open-lobby` · todo
+
+**Périmètre** — Le salon d'avant-session : présence en direct, test du
+son, qui joue à distance ; le MJ lance quand la table est là.
+
+**Fini quand** — Le MJ voit les trois joueurs arriver et lance la
+session.
+
+**Origine** — Planches « Mener » et « Lancer »
+
+### `session/drive-scenes` · todo
+
+**Pourquoi** — La boucle principale d'une soirée.
+
+**Périmètre** — Le MJ montre une scène (texte lu, image), révèle un
+indice ou une zone ; les joueurs proposent une carte d'action ou
+« Autre… » ; la demande arrive au MJ en carte : valider, refuser avec
+une raison, ou demander un test (difficulté en un geste) ; le résultat
+revient au joueur ; le journal garde ce que le groupe sait.
+
+**Fini quand** — Une scène de la démo se joue de la description au
+résultat d'un test, chez le MJ et trois joueurs.
+
+**Origine** — Planches « Jouer » et « Mener » · V1 `session/run-action.ts`
+
+### `session/end-session` · todo
+
+**Périmètre** — « Terminer la session » enregistre l'état ; le MJ écrit
+ou colle le récapitulatif ; la chronique s'allonge d'une entrée.
+
+**Fini quand** — La session suivante reprend exactement où la
+précédente s'est arrêtée.
+
+**Origine** — Planche « Mener » (fin) · V1 `continuity/`
+
+### `session/write-recaps` · todo
+
+**Périmètre** — Le co-MJ rédige le récapitulatif MJ, le « Précédemment… »
+des joueurs et l'entrée de chronique ; le MJ relit et publie.
+
+**Fini quand** — Tests `recap.test.ts` et `continuity.test.ts` du V1
+portés ; Marc lit le « Précédemment… » le lendemain.
+
+**Origine** — V1 `continuity/recap.ts` · planches « Mener » et « Entre deux »
+
+### `session/pair-shared-screen` · todo
+
+**Périmètre** — La TV ouvre une page qui affiche un code et un QR ; le
+MJ tape le code et la TV rejoint la session avec la projection « tous
+les joueurs ». Ou le MJ partage cette page dans une fenêtre sur Discord.
+Le MJ choisit ce que la TV peut montrer.
+
+**Fini quand** — Une TV s'appaire en moins de 30 secondes et ne montre
+rien de ce que la projection joueur refuse.
+
+**Origine** — Planche « Lancer » (moments 1 à 3)
+
+---
+
+## Épic `player`
+
+L'écran du joueur, d'après la planche « Jouer · la soirée de Marc » :
+un bandeau de statut, un sujet, une action principale ; quatre onglets
+Jeu, Carte, Perso, Journal.
+
+### `player/play-scene` · todo
+
+**Périmètre** — Onglet Jeu : la scène (lieu, texte lu, image), le
+mini-lecteur de musique, les indices reçus en cartes, la main de cartes
+d'action et « Autre… », le dé à lancer quand le MJ demande un test, le
+résultat.
+
+**Fini quand** — Les moments de scène de la planche « Jouer » sont
+faisables dans l'app sur un iPhone et un Android.
+
+**Origine** — Planche « Jouer » · V1 écran joueur
+
+### `player/explore-map` · todo
+
+**Périmètre** — Onglet Carte : carte révélée, pion glissé au doigt, cases
+atteignables surlignées, trajet validé par le serveur, brouillard,
+fantôme quand on est invisible.
+
+**Fini quand** — Marc déplace Borin au doigt sans jamais viser ni
+zoomer.
+
+**Origine** — Planche « Jouer » (carte)
+
+### `player/fight-turn` · todo
+
+**Périmètre** — « À toi, Borin ! » ; ordre du tour, carte centrée sur la
+cible, cœurs et gemmes, main de cartes en éventail, grappe arcade
+(gros bouton, objet, fin du tour), dé coloré, dégâts.
+
+**Fini quand** — Le combat de la démo se joue du premier tour au butin.
+
+**Origine** — Planche « Jouer » (combat)
+
+### `player/read-sheet-and-journal` · todo
+
+**Périmètre** — Onglet Perso (fiche, cartes, sac, équiper) et onglet
+Journal (ce que le groupe sait).
+
+**Origine** — Planche « Jouer » (onglets) · planches Joueur
+
+### `player/receive-rewards` · todo
+
+**Périmètre** — Toasts qui tombent et s'empilent, butin, compétence
+débloquée, niveau.
+
+**Origine** — Planches « Notifications » et « Objets et butin »
+
+### `player/play-between-sessions` · todo
+
+**Périmètre** — Monter de niveau à la fin de la soirée, lire le récap
+et la chronique, consulter sa fiche hors session, donner ses dates.
+
+**Fini quand** — Les six moments de la planche « Entre deux » sont
+faisables dans l'app.
+
+**Origine** — Planche « Entre deux »
+
+### `player/face-death` · todo
+
+**Périmètre** — Jets contre la mort sur le téléphone, derniers mots,
+puis la suite : regarder, créer un nouveau personnage, ou attendre une
+accroche du MJ.
+
+**Origine** — Planche « Mourir »
+
+### `player/play-on-desktop` · todo
+
+**Périmètre** — La même partie dépliée sur un grand écran : scène, main,
+carte et combat côte à côte ; raccourcis clavier (chiffres pour les
+cartes, espace pour le dé).
+
+**Origine** — Planche « Jouer sur ordinateur »
+
+---
+
+## Épic `gm`
+
+### `gm/run-live-screen` · todo
+
+**Pourquoi** — Le MJ mène toute la soirée d'un seul écran.
+
+**Périmètre** — L'écran MJ en direct sur ordinateur : une action
+principale par moment, scène et sorties, carte complète avec ce qui est
+caché, demandes des joueurs en cartes, journal qui montre aussi le
+caché, la table et ses présences, musique.
+
+**Fini quand** — Romain mène la soirée de la démo sans quitter cet
+écran.
+
+**Origine** — Planche « Mener · la soirée de Marc côté MJ »
+
+### `gm/run-combat` · todo
+
+**Périmètre** — Lancer une rencontre (la carte de combat s'ouvre
+partout), initiative, jouer les adversaires, poser et retirer des
+états, valider le butin.
+
+**Fini quand** — Le combat de la démo se mène côté MJ jusqu'au butin.
+
+**Origine** — Planche « Mener » (combat)
+
+### `gm/launch-session` · todo
+
+**Périmètre** — Le lancement : salon, TV, « Précédemment… » lu ligne à
+ligne, première scène.
+
+**Origine** — Planche « Lancer » (moments 4 et 5)
+
+### `gm/run-on-tablet` · todo
+
+**Périmètre** — L'écran MJ sur tablette : rail de grosses cibles à la
+place des onglets, demandes au pouce, carte au doigt (un doigt peint le
+brouillard, deux déplacent, pincer zoome), propositions du co-MJ en
+trois grosses touches.
+
+**Fini quand** — Romain mène une soirée entière depuis un iPad.
+
+**Origine** — Planche « Tablette »
+
+---
+
+## Épic `copilot`
+
+Tout ce que le co-MJ produit est un brouillon que le MJ modifie ou
+valide (`MEMORY.md` §3). Spécification : V1 `copilot/` et ses tests.
+
+### `copilot/draft-narration` · todo
+
+**Périmètre** — Décrire, conséquences, « et ensuite ? », faire parler un
+PNJ ; réponses modifiables avant d'être montrées ; identifiants inventés
+écartés.
+
+**Fini quand** — Test `copilot.test.ts` du V1 porté ; aucune réponse du
+co-MJ n'atteint un joueur sans geste du MJ.
+
+**Origine** — V1 `copilot.ts` · planche « Mener »
+
+### `copilot/propose-adversary-turns` · todo
+
+**Périmètre** — En combat, le co-MJ propose le tour de chaque adversaire
+(cible, action, jet déjà résolu) ; le MJ valide, change ou fait fuir.
+
+**Origine** — Planches « Mener » et « Tablette » (moment 4)
+
+### `copilot/check-character-sheets` · todo
+
+**Périmètre** — Le co-MJ vérifie une fiche envoyée contre les limites
+de création et propose un mot au joueur ; le MJ décide.
+
+**Origine** — Planches « Inviter » (moments 3 et 4) et « Créer » (moment 6)
+
+### `copilot/co-write-backstory` · todo
+
+**Périmètre** — Le co-MJ pose des questions au joueur pour écrire son
+histoire, sans rien inventer à sa place ; il en tire des accroches
+secrètes pour le MJ.
+
+**Origine** — Planche « Créer » (moment 7)
+
+### `copilot/listen-by-voice` · todo · à spécifier
+
+**Périmètre** — Dicter au co-MJ (tablette surtout) ; transcription et
+proposition à valider.
+
+**Origine** — Planche « Tablette » (moment 5)
+
+---
+
+## Épic `tv`
+
+### `tv/show-evening` · todo
+
+**Périmètre** — L'écran partagé : un point focal à la fois (histoire, dé,
+carte ou butin), lisible d'un canapé ; fil d'une ligne en bas ; grands
+moments (dés, coups, butin, niveaux, révélations) ; rien de secret.
+
+**Fini quand** — La TV suit la soirée de la démo comme sur la planche,
+sans action du MJ autre que l'appairage.
+
+**Origine** — Planches « Écran TV » et « TV · la soirée côté TV »
 
 ---
 
@@ -259,7 +824,24 @@ Les personnages sont des sprites pixel art en couleur, façon Terraria /
 Starbound (voir `MEMORY.md` §2). Dans le design actuel, ils sont fixes
 et vus de profil ; dans l'app, chaque joueur fabrique le sien.
 
-### `characters/build-character-creator` · todo · à spécifier
+### `characters/render-layered-sprite` · todo
+
+**Pourquoi** — Le personnage est une description (couches et couleurs),
+pas une image : la carte, la TV, la fiche et le créateur le dessinent
+tous à partir d'elle.
+
+**Périmètre** — Format de description dans `shared/` ; rendu en pixels
+des couches (corps, barbe, coiffe, tenue, arme…) avec palettes, contour
+calculé sans masquer le visage, ombres ; pièces du pack fantasy de
+départ (nain, elfe, humain, halfelin) ; effets d'état (`MEMORY.md` §2).
+
+**Fini quand** — Borin, Lyra, Sef et les gobelins de la démo sont
+dessinés par l'app à partir de leur description, identiques sur le
+téléphone, l'écran MJ et la TV.
+
+**Origine** — `docs/design/avatar.py`, `docs/design/sprite-prototype.py`
+
+### `characters/build-character-creator` · todo
 
 **Pourquoi** — Le personnage est la pièce du joueur sur le plateau :
 le créer soi-même, c'est s'y attacher dès la première session.
@@ -271,13 +853,19 @@ personnage est stocké comme une description (couches + couleurs), pas
 comme une image : l'app le dessine, le contour et les ombres sont
 calculés. Le MJ fait de même pour les PNJ et les monstres.
 
+Les étapes de règles suivent le créateur d'apparence : peuple, classe,
+caractéristiques (limite dépassée signalée, jamais bloquée), histoire,
+envoi au MJ.
+
 **Fini quand** — Un joueur crée son personnage depuis son téléphone en
-moins de deux minutes et le retrouve sur la carte, la TV et sa fiche.
+moins de deux minutes et le retrouve sur la carte, la TV et sa fiche ;
+les huit moments de la planche « Créer » sont faisables dans l'app.
 
-**Origine** — Romain, session de design du 3 octobre 2026 ·
-prototype : `docs/design/sprite-prototype.py`
+**Origine** — Romain, session de design du 3 octobre 2026 · planche
+« Créer » · prototypes : `docs/design/avatar.py`,
+`docs/design/sprite-prototype.py`
 
-### `characters/walk-in-four-directions` · todo · à spécifier
+### `characters/walk-in-four-directions` · todo
 
 **Pourquoi** — Sur la carte, un personnage qui se tourne vers là où il
 va rend le déplacement lisible et vivant.
@@ -305,7 +893,7 @@ dessin n'est qu'une projection. Le serveur reste seul juge du
 déplacement, de la portée et de la ligne de vue ; un joueur ne reçoit
 jamais ce qu'il n'a pas le droit de voir (projection joueur, `MEMORY.md` §3).
 
-### `maps/model-grid-maps` · todo · à spécifier
+### `maps/model-grid-maps` · todo
 
 **Pourquoi** — Tout le reste (rendu, règles, brouillard, génération)
 lit la même description de carte.
@@ -324,7 +912,7 @@ de vue dessus.
 
 **Origine** — Session de design du 3 octobre 2026 · V1 (format YAML des cartes)
 
-### `maps/render-three-quarter-tiles` · todo · à spécifier
+### `maps/render-three-quarter-tiles` · todo
 
 **Pourquoi** — Le MJ ou le LLM ne pose que des cases ; la carte doit
 se dessiner seule, belle, dans le style des personnages.
@@ -343,7 +931,7 @@ préparée, à 60 images/s sur un téléphone milieu de gamme.
 
 **Origine** — Planches « Cartes » du canevas · `docs/design/walls-prototype.py`
 
-### `maps/blend-outdoor-terrain` · todo · à spécifier
+### `maps/blend-outdoor-terrain` · todo
 
 **Pourquoi** — Sans extérieurs crédibles, on ne joue ni une rue
 post-apo ni une bataille sur une planète.
@@ -361,7 +949,7 @@ jet d'attaque calculé par le serveur.
 
 **Origine** — Planche « Cartes · extérieurs » · `docs/design/outdoor/`
 
-### `maps/build-tileset-packs` · todo · à spécifier
+### `maps/build-tileset-packs` · todo
 
 **Pourquoi** — Chaque décor (crypte, forêt, rue, désert, coursive…)
 a besoin de son jeu de tuiles et de ses décors, sans dessiner à la main
@@ -378,7 +966,7 @@ l'utilise sur une carte sans retouche manuelle.
 
 **Origine** — Session de design du 3 octobre 2026
 
-### `maps/package-theme-packs` · todo · à spécifier
+### `maps/package-theme-packs` · todo
 
 **Pourquoi** — On jouera aussi en zombies et en spatial, pas seulement
 en fantasy.
@@ -396,7 +984,7 @@ composants existants (cases, horloges, badges).
 
 **Origine** — Romain, session de design du 3 octobre 2026
 
-### `maps/edit-map-gm` · todo · à spécifier
+### `maps/edit-map-gm` · todo
 
 **Pourquoi** — Le MJ garde le dernier mot sur chaque carte.
 
@@ -405,11 +993,12 @@ poser décors, portes, objets cachés et lumières, régler l'ambiance,
 pinceau de brouillard, révéler un calque ou un objet en direct.
 
 **Fini quand** — Le MJ crée une carte de rencontre complète en moins
-de dix minutes et révèle un passage secret pendant la session.
+de dix minutes et révèle un passage secret pendant la session ; les sept
+moments de la planche « Cartes · l'éditeur » sont faisables dans l'app.
 
-**Origine** — Planche « Cartes · trois échelles »
+**Origine** — Planches « Cartes · trois échelles » et « Cartes · l'éditeur »
 
-### `maps/generate-map-llm` · todo · à spécifier
+### `maps/generate-map-llm` · todo
 
 **Pourquoi** — Préparer une carte doit être aussi rapide que décrire
 la scène.
@@ -425,7 +1014,7 @@ validée par le MJ, en une génération et quelques retouches.
 
 **Origine** — Règles de design 1 et 2 (`CLAUDE.md`)
 
-### `maps/import-image-map` · todo · à spécifier
+### `maps/import-image-map` · todo
 
 **Pourquoi** — Beaucoup de MJ ont déjà des cartes (achetées, faites
 dans Dungeondraft ou Dungeon Alchemist, générées).
@@ -441,7 +1030,7 @@ jouables, avec ligne de vue correcte, en moins de cinq minutes.
 
 **Origine** — Recherche sur Foundry VTT et Owlbear Rodeo, session du 3 octobre 2026
 
-### `maps/reveal-fog-and-hidden` · todo · à spécifier
+### `maps/reveal-fog-and-hidden` · todo
 
 **Pourquoi** — Explorer, c'est découvrir : ce qui n'est pas vu ne doit
 pas fuiter.
@@ -456,7 +1045,7 @@ révélée ou d'un objet caché n'atteint un client joueur.
 
 **Origine** — `MEMORY.md` §3 (projection joueur)
 
-### `maps/travel-hex-world` · todo · à spécifier
+### `maps/travel-hex-world` · todo
 
 **Pourquoi** — Le voyage entre les lieux est une partie du jeu, pas un
 écran de chargement.
@@ -466,10 +1055,15 @@ un seul pion, avance par portions de journée, révèle les hexagones
 traversés et découvre les lieux ; un lieu ouvre sa carte (lieu ou
 rencontre). En spatial, la même mécanique sert la carte du système.
 
-**Fini quand** — Le groupe voyage de Valombre à la crypte sur la carte
-du monde puis entre dans la crypte sans quitter l'écran de jeu.
+Côté table : deux routes proposées, vote des joueurs, portions de
+journée lues par le MJ, événement proposé par le co-MJ, jet de groupe,
+garde de nuit, arrivée qui ouvre la carte du lieu.
 
-**Origine** — Planche « Cartes · trois échelles »
+**Fini quand** — Le groupe voyage de Valombre à Morneval sur la carte
+du monde puis entre dans l'abbaye sans quitter l'écran de jeu ; les sept
+moments de la planche « Voyager » sont faisables dans l'app.
+
+**Origine** — Planches « Cartes · trois échelles » et « Voyager »
 
 ### `maps/support-hex-combat` · todo · à spécifier
 

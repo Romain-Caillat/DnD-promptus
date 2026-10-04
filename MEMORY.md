@@ -42,6 +42,15 @@ memory. If someone would re-litigate it in six months, it is.
   ~10 km, day), place (square, ~5 m), encounter (square, 1.5 m, 6 s
   turn). The V1 "region in 500 m hexes" level is replaced by places on
   a square grid.
+- **Table questions settled by the design pass (October 2026).** The
+  shared screen is both: a real TV paired with a code, or the same page
+  shared in a Discord window. Characters are created before the first
+  session and validated by the GM cold, not in a session zero. Between
+  sessions a player levels up, reads the recap and chronicle, checks
+  their sheet and gives availability. A character's death goes through
+  death saves the GM confirms, last words, then the player watches,
+  creates a new character or waits for a hook. Spectators stay (a friend
+  watching, a dead character's player).
 - **Media are pre-generated** (async jobs, cached on disk), never live
   by default. Cost is estimated before each batch and checked against
   the campaign's AI budget.
