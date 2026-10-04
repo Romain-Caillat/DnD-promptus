@@ -434,7 +434,7 @@ aucune fiche d'adversaire au sol (la source n'en a pas).
 **Origine** — V1 `ruleset.ts`, `ruleset-schema.ts` · planche « Règles »
 (moments 1 à 4 et 6) · `dnd-save/DnD-16-05-2026/regles_*.md`
 
-### `engine/lint-rule-system` · todo
+### `engine/lint-rule-system` · doing — reste l'affichage au MJ et la relecture des seuils par Romain
 
 **Pourquoi** — Les règles des Corsaires se contredisaient sans que
 personne le voie (`docs/lecons-des-parties.md` §2).
@@ -450,6 +450,31 @@ dégâts par tour, XP par session et niveau atteint en fin de campagne).
 signale les deux modèles de dégâts, « précision » non défini, la stat
 principale ambiguë, la CA des gardes hors table et le Canonnier à 63
 points ; sur le Brasier, le renvoi à `Combat_Sol.md` qui n'existe pas.
+
+**État** — Contrôle pur dans `shared/src/rules/lint/` :
+`rules::lint(&système)` (ou `lint_with` pour une campagne donnée) rend
+des problèmes au format commun avec le validateur de campagne
+(`promptus_shared::issue::Issue` : gravité erreur/avertissement/info,
+code stable, chemin, détail anglais, message français pour le MJ), sans
+jamais empêcher le chargement. Treize contrôles, listés dans
+`docs/rules-format.md` § Lint. Sur les Corsaires : les deux modèles de
+dégâts (PNJ et pistolet du marché noir), « précision » qui ne change
+aucun jet, la stat principale ambiguë (6 classes), les gardes à CA 14
+et Gueule-Rouge à 12 hors table, trois PNJ dont la CA ne suit pas
+10 + DEX, le Canonnier à 63 points, « épée standard » et « jets de
+soin » non définis, deux « Pistolet à silex ». Sur le Brasier : le
+renvoi à `Combat_Sol.md` (erreur), la précision, la seule attaque à bord
+contre deux au sol (info, à confirmer), le sens des recharges jamais
+écrit. Champ `exception: <raison>` ajouté aux PNJ. L'équilibre sort en
+chiffres (`rules::balance_report`, imprimable) : dégâts attendus par
+tour et par niveau contre chaque palier de CA, XP par session, niveau
+final ; avec 4 sessions de 2 combats de 4 tours, Bretteur, Vigie,
+Flibustier et Boucanier (Pilote et Mécano au Brasier) sont niveau 7
+dès la session 3, et les deux Canonniers font moins de la moitié des
+dégâts des autres. Tests sur les deux brouillons et sur leurs copies
+corrigées. Reste : montrer ces problèmes au MJ (aucune route ni écran
+ne les expose encore), et que Romain valide les seuils et les
+paramètres de campagne par défaut.
 
 **Origine** — `docs/lecons-des-parties.md` §2 et §3
 
