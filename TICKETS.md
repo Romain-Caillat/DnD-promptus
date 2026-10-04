@@ -46,88 +46,107 @@ La méthode derrière cet ordre — quatre chaînes (règles, campagne,
 soirée, retour) tirées des deux parties que Romain a menées à la main —
 est dans `docs/lecons-des-parties.md`.
 
-Trois jalons. Chacun se termine par **une vraie soirée jouée** avec la
-table de Romain (règle 4 : « livré, jamais essayé » n'est pas fini). Un
-ticket d'un jalon ne laisse aucun bouton vers une fonction d'un jalon
-suivant : la fonction n'apparaît qu'une fois livrée.
+**Deux mondes témoins.** Les Corsaires de la Couronne et le Brasier
+sont construits en même temps, du premier ticket au dernier : un ticket
+n'est fini que lorsqu'il marche sur les deux. Ils sont **réécrits**
+dans le format de Promptus à partir de `dnd-save/`, pas convertis, et
+tous leurs visuels sont refaits en pixel art. Leurs règles sont des
+brouillons que Romain fera évoluer : rien n'est figé, tout s'édite et
+se versionne (`MEMORY.md` §6).
+
+Six phases en trois jalons. Chaque jalon se termine par **une vraie
+soirée jouée** avec la table de Romain (règle 4) ; chaque phase par une
+démo sur les deux mondes. Un ticket ne laisse aucun bouton vers une
+fonction d'une phase suivante.
 
 ### Jalon 1 · Une vraie soirée
 
-Romain mène à distance, avec six joueurs, une campagne importée. Ses
-joueurs rejoignent par un lien, créent leur personnage sur leur
-téléphone, explorent, demandent, lancent les dés et combattent. Le jalon
-vise ce qui a manqué aux Corsaires (`MEMORY.md` §6) : des règles claires
-et appliquées pareil à chaque fois, la continuité de l'histoire, ce que
-la table sait, un co-MJ pour improviser, et les six joueurs qui ont
-chacun leur moment. Pas encore de génération de campagne.
-
-`platform/scaffold-workspace` · `platform/run-ci` · `platform/sign-in-gm` ·
-`platform/deploy-self-hosted` · `ui/write-design-tokens` ·
-`ui/build-game-components` · `ui/roll-faceted-dice` ·
-`engine/model-rule-system` · `engine/roll-checks` ·
-`engine/resolve-actions` · `engine/apply-conditions` ·
-`engine/run-combat` · `campaign/model-story-graph` ·
-`campaign/import-campaigns` · `campaign/list-campaigns` ·
-`ai/route-llm-provider` · `ai/count-ai-calls` · `copilot/draft-narration` ·
-`session/track-table-knowledge` · `player/read-the-rules` ·
-`gm/balance-spotlight` · `gm/adjust-sheets-fast` ·
-`engine/lint-rule-system` · `session/collect-player-feedback` ·
-`session/stream-live-changes` · `session/project-player-view` ·
-`session/invite-and-join` · `session/validate-characters` ·
-`session/open-lobby` · `session/drive-scenes` · `session/end-session` ·
-`media/play-youtube-music` · `player/play-scene` · `player/explore-map` ·
-`player/fight-turn` · `player/read-sheet-and-journal` ·
-`player/receive-rewards` · `gm/run-live-screen` · `gm/run-combat` ·
-`characters/render-layered-sprite` · `characters/build-character-creator` ·
-`maps/model-grid-maps` · `maps/render-three-quarter-tiles` ·
-`maps/reveal-fog-and-hidden`
+Romain mène à distance, avec six joueurs, l'un des deux mondes ; l'autre
+est jouable de bout en bout en test. Le jalon vise ce qui a manqué aux
+Corsaires : des règles claires et appliquées pareil, la continuité de
+l'histoire, ce que la table sait, un co-MJ pour improviser, et six
+joueurs qui ont chacun leur moment.
 
 **Fini quand** — Une session de deux heures est jouée à distance avec six
 joueurs, de la création des personnages au dernier combat, sans que
 Romain ouvre autre chose que Promptus et Discord ; les réponses des
 joueurs en fin de soirée (`session/collect-player-feedback`) disent que
 les règles étaient claires, que chacun a eu son moment, et que chacun
-sait quoi faire ensuite.
+sait quoi faire ensuite. Le monde joué n'est pas encore choisi.
 
-Le monde n'est pas encore choisi (reprendre les Corsaires, le Brasier,
-ou un nouveau) : le jalon ne dépend d'aucun contenu particulier.
+**Phase 0 · Le socle** — `platform/scaffold-workspace` ·
+`platform/run-ci` · `platform/sign-in-gm` · `platform/deploy-self-hosted` ·
+`ui/write-design-tokens`
 
-### Jalon 2 · La campagne générée et le co-MJ
+**Phase 1 · Les deux mondes en données, sans interface** — le moteur,
+les deux systèmes de règles en brouillon, les deux mondes réécrits, le
+contrôle et la simulation. Démo : un rapport en ligne de commande qui
+retrouve les défauts connus des deux systèmes et simule leurs combats,
+pour que Romain fasse évoluer ses règles avant qu'une table ne les voie.
+`engine/model-rule-system` · `engine/lint-rule-system` ·
+`engine/roll-checks` · `engine/resolve-actions` · `engine/apply-conditions` ·
+`engine/run-combat` · `engine/simulate-fights` · `maps/model-grid-maps` ·
+`campaign/model-story-graph` · `campaign/rewrite-two-worlds`
 
-Romain prépare une nouvelle campagne depuis un pitch, la relit, génère
-ses médias, et la mène avec le co-MJ et la TV du salon. Les joueurs
-retrouvent leur personnage entre deux sessions.
+**Phase 2 · Les fiches en direct** — le premier morceau utilisable à
+une vraie table : rejoindre, créer son personnage, la fiche tenue par le
+serveur, les actions rapides du MJ, les règles lisibles. Démo : une
+table Corsaires et une table Brasier ouvertes côte à côte, six fiches
+chacune. `session/stream-live-changes` · `session/project-player-view` ·
+`session/invite-and-join` · `session/validate-characters` ·
+`campaign/list-campaigns` · `characters/render-layered-sprite` ·
+`characters/build-character-creator` · `ui/build-game-components` ·
+`player/read-sheet-and-journal` · `player/read-the-rules` ·
+`gm/adjust-sheets-fast`
 
-`ai/generate-campaign` · `campaign/check-player-knowledge` ·
-`campaign/check-act-readiness` · `ai/evaluate-on-real-campaigns` ·
-`player/buy-and-trade` ·
-`campaign/review-story-graph` · `media/generate-images-and-video` ·
-`copilot/propose-adversary-turns` ·
-`copilot/check-character-sheets` · `copilot/co-write-backstory` ·
-`session/write-recaps` · `session/schedule-sessions` ·
-`session/pair-shared-screen` · `tv/show-evening` · `gm/launch-session` ·
-`engine/level-up` · `engine/save-against-death` ·
-`player/play-between-sessions` · `player/face-death` ·
-`maps/edit-map-gm` · `maps/generate-map-llm` · `maps/import-image-map`
+**Phase 3 · La soirée** — scènes, demandes, dés, carte et combat sur
+grille (le quai de Port-Louis, une coursive du Cure-Dent), mémoire de la
+table, équilibre entre joueurs, co-MJ, fin de session et retour des
+joueurs. Démo : la soirée du jalon. `ui/roll-faceted-dice` ·
+`session/open-lobby` · `session/drive-scenes` ·
+`session/track-table-knowledge` · `session/end-session` ·
+`session/collect-player-feedback` · `media/play-youtube-music` ·
+`media/draw-pixel-art-assets` · `player/play-scene` · `player/explore-map` ·
+`player/fight-turn` · `player/receive-rewards` · `gm/run-live-screen` ·
+`gm/run-combat` · `gm/balance-spotlight` · `ai/route-llm-provider` ·
+`ai/count-ai-calls` · `copilot/draft-narration` ·
+`copilot/propose-adversary-turns` · `maps/render-three-quarter-tiles` ·
+`maps/reveal-fog-and-hidden` · `maps/blend-outdoor-terrain` ·
+`maps/build-tileset-packs` · `maps/package-theme-packs`
 
-**Fini quand** — Une campagne générée depuis un pitch est jouée sur deux
-sessions, avec le co-MJ, la TV, un « Précédemment… » entre les deux.
+### Jalon 2 · Préparer, et les vaisseaux
 
-### Jalon 3 · Profondeur et variantes
+**Fini quand** — Romain a écrit dans Promptus l'acte 2 des Corsaires et
+l'acte 1 du Brasier, leurs jauges au vert, et les a joués : l'interception
+du Greyhound en mer et un combat du Cure-Dent, avec la TV et un
+« Précédemment… » entre deux sessions.
 
-Le système de règles s'édite, le monde se voyage, les cartes sortent
-du donjon, les personnages marchent, et l'on joue sur ordinateur ou
-tablette.
+**Phase 4 · Préparer** — le modèle de scène complet, la jauge d'un acte
+prêt, ce que les joueurs doivent savoir, l'éditeur de règles, la
+génération assistée, les images. Démo : les deux actes manquants écrits
+dans Promptus. `campaign/edit-rule-system` · `campaign/review-story-graph` ·
+`campaign/check-player-knowledge` · `campaign/check-act-readiness` ·
+`ai/generate-campaign` · `ai/evaluate-on-real-campaigns` ·
+`media/generate-images-and-video` · `maps/edit-map-gm` ·
+`maps/generate-map-llm` · `maps/import-image-map` ·
+`copilot/check-character-sheets` · `copilot/co-write-backstory`
 
-`campaign/edit-rule-system` · `engine/formalise-house-rules` ·
-`engine/simulate-fights` · `maps/travel-hex-world` ·
-`maps/blend-outdoor-terrain` · `maps/build-tileset-packs` ·
-`maps/package-theme-packs` · `characters/walk-in-four-directions` ·
+**Phase 5 · Les vaisseaux, et entre deux sessions** — le combat de
+véhicule, commun au brick et au Cure-Dent ; les factions ; la TV ; la
+continuité entre sessions. `engine/support-vehicle-combat` ·
+`campaign/track-factions-and-goals` · `engine/level-up` ·
+`engine/save-against-death` · `session/write-recaps` ·
+`session/schedule-sessions` · `session/pair-shared-screen` ·
+`tv/show-evening` · `gm/launch-session` · `player/play-between-sessions` ·
+`player/face-death` · `player/buy-and-trade`
+
+### Jalon 3 · Les variantes
+
+**Phase 6** — `engine/formalise-house-rules` · `engine/add-srd-preset` ·
+`maps/travel-hex-world` · `characters/walk-in-four-directions` ·
 `player/play-on-desktop` · `gm/run-on-tablet` · `copilot/listen-by-voice`
 
-Plus tard, sans jalon : `maps/support-hex-combat`,
-`engine/support-vehicle-combat`, `campaign/track-factions-and-goals`
-(pour un monde comme le Brasier).
+Plus tard, sans jalon : `maps/support-hex-combat`.
 
 ---
 
@@ -272,15 +291,19 @@ de jeu et leur formule, formule de jet, difficultés nommées, actions
 ressources, mouvement par échelle de carte, limites de création,
 économie d'actions du tour, recharge des actions en tours, actions
 débloquées par niveau, progression (par niveau ou par réussite), ce qui
-arrive à 0 PV. Deux préréglages : **Corsaires** (le système maison de
-Romain, `MEMORY.md` §6 : 2 actions par tour, dégâts fixes, recharges,
-+1 XP par réussite, hors combat après 3 tours sans soin) et D&D 5e
-(SRD 5.1). Une campagne garde une copie versionnée.
+arrive à 0 PV. Rien n'est codé en dur : un système est un fichier de
+données (YAML dans `content/rules/`) que Romain édite, et chaque
+modification crée une version ; une campagne pointe sur une version.
+Deux premiers systèmes, en brouillon : **Corsaires** et **Brasier**,
+tirés de `dnd-save/` (`MEMORY.md` §6 : 2 actions par tour, dégâts fixes,
+recharges, +1 XP par réussite, hors combat après 3 tours sans soin).
+Ils sont faits pour changer : une règle changée ne demande aucun code.
 
-**Fini quand** — Les deux préréglages se chargent ; le combat de la
-bagarre du quai (Corsaires, acte 1) et un combat SRD se jouent dans les
-tests du moteur ; les actions offertes à un personnage se dérivent de sa
-classe et de son niveau (tests `ruleset.test.ts` portés).
+**Fini quand** — Les deux systèmes se chargent ; un combat de chaque
+monde se joue dans les tests du moteur ; changer une valeur ou une
+règle dans le fichier (recharge, dégâts, actions par tour) change le
+résultat sans toucher au code ; les actions offertes à un personnage se
+dérivent de sa classe et de son niveau (tests `ruleset.test.ts` portés).
 
 **Origine** — V1 `ruleset.ts`, `ruleset-schema.ts` · planche « Règles »
 (moments 1 à 4 et 6) · `dnd-save/DnD-16-05-2026/regles_*.md`
@@ -297,7 +320,7 @@ les tables de référence ou marquées comme exceptions, sens des
 recharges explicite) ; équilibre (total des caractéristiques par classe,
 dégâts par tour, XP par session et niveau atteint en fin de campagne).
 
-**Fini quand** — Sur le système des Corsaires importé, le contrôle
+**Fini quand** — Sur le premier brouillon du système des Corsaires, le contrôle
 signale les deux modèles de dégâts, « précision » non défini, la stat
 principale ambiguë, la CA des gardes hors table et le Canonnier à 63
 points ; sur le Brasier, le renvoi à `Combat_Sol.md` qui n'existe pas.
@@ -334,11 +357,14 @@ bonus déjà calculés pour l'affichage des cartes.
 
 ### `engine/apply-conditions` · todo
 
-**Périmètre** — Les 14 états du SRD, leur durée en tours, leurs effets
+**Périmètre** — Les états définis par le système de règles (étourdi,
+apeuré, immobilisé, empoisonné, renversé… ; les 14 du SRD le jour où il
+existe), leur durée en tours, leurs effets
 sur les jets et le mouvement ; ce qui doit être montré au joueur (badge
 et effet pixel).
 
-**Fini quand** — Tests `conditions.test.ts` du V1 portés et verts.
+**Fini quand** — Les états des deux mondes s'appliquent dans les tests
+du moteur ; tests `conditions.test.ts` du V1 portés.
 
 **Origine** — V1 `conditions.ts` · planche « États des personnages »
 
@@ -372,9 +398,9 @@ nouvelle carte, comme sur la planche.
 de calcul ; le MJ confirme.
 
 **Périmètre** — Ce qui arrive à 0 PV est une donnée du système : jets
-contre la mort en SRD (trois réussites, trois échecs, 1 et 20 naturels,
-soin qui relève), hors combat pour la scène après 3 tours sans soin
-chez les Corsaires. La mort, quand le système la prévoit, est proposée
+contre la mort (trois réussites, trois échecs, 1 et 20 naturels, soin
+qui relève), ou hors combat pour la scène après 3 tours sans soin comme
+dans le premier brouillon des Corsaires. La mort, quand le système la prévoit, est proposée
 par le moteur et confirmée par le MJ.
 
 **Fini quand** — Les sept moments de la planche « Mourir » se rejouent
@@ -394,26 +420,54 @@ effets primitifs existants.
 
 **Origine** — Planche « Règles » (moment 5)
 
-### `engine/simulate-fights` · todo · à spécifier
+### `engine/add-srd-preset` · todo · à spécifier
+
+**Pourquoi** — Beaucoup de MJ jouent à D&D 5e ; le SRD 5.1 est la partie
+libre de ses règles, publiable sous licence Creative Commons.
+
+**Périmètre** — Le SRD comme troisième système de règles, à côté des
+deux mondes ; vérifier que le modèle le porte sans cas particulier.
+
+**Origine** — Romain, 4 octobre 2026 (sorti du jalon 1)
+
+### `engine/simulate-fights` · todo
 
 **Périmètre** — Simuler N combats avec les fiches réelles et les
 monstres d'une rencontre, sous une version des règles ; taux de victoire,
-durée, effet d'une règle maison. C'est ce qui aurait permis de roder
-le combat de vaisseau du Brasier avant de le jouer.
+durée en tours et en minutes estimées à six joueurs, dégâts par classe,
+effet d'une règle changée (comparer deux versions). C'est ce qui aurait
+permis de roder le combat de vaisseau du Brasier avant de le jouer.
+
+**Fini quand** — Le rapport de la phase 1 simule la bagarre du quai et
+un combat au sol du Brasier, et compare deux versions d'une règle.
 
 **Origine** — Planche « Règles » (moment 7) · `MEMORY.md` §6
 
-### `engine/support-vehicle-combat` · todo · à spécifier
+### `engine/support-vehicle-combat` · todo
 
-**Pourquoi** — Le Brasier fait du vaisseau un personnage partagé.
+**Pourquoi** — Les deux mondes se battent en vaisseau : le brick des
+Corsaires contre le Greyhound à l'acte 2, le Cure-Dent dans le Brasier.
+Un seul système, deux habillages.
 
-**Périmètre** — Un véhicule à ressources propres (coque, boucliers,
-énergie à répartir), des postes tenus par les joueurs, l'orientation et
-les arcs de tir sur la grille, les avaries, le moral comme seconde voie
-de victoire, l'abordage qui bascule en combat au sol. À spécifier sur
-un système rodé par `engine/simulate-fights`.
+**Périmètre** — Dans le système de règles, en données : un véhicule est
+un personnage partagé avec ses ressources (coque ; boucliers ou voilure ;
+énergie ou équipage à répartir), ses postes tenus par les joueurs (barre,
+pièces d'artillerie, réparations, vigie ou capteurs, liaison), ses armes
+avec leur arc et leur portée. Sur la grille : orientation de la proue,
+arcs de tir, angle mort, vent ou gravité comme terrain. Avaries
+(incendie, brèche, poste hors service), moral comme seconde voie de
+victoire, abordage qui bascule en combat au sol sur la carte du pont.
+Un tour reste court à six joueurs : chacun agit à son poste en même
+temps, le MJ voit l'ensemble. Rodé par `engine/simulate-fights` avant
+d'être joué ; les écrans joueur et MJ et la TV s'y adaptent.
 
-**Origine** — `dnd-save/DnD_07-06-2026/Combat_Vaisseau.md`, `Fiche_Cure-Dent.md`
+**Fini quand** — L'interception du Greyhound et un combat du Cure-Dent
+contre une escouade Vorr se simulent, puis se jouent à six, chacun en
+moins de 45 minutes ; un abordage passe au combat sur le pont sans
+quitter l'écran.
+
+**Origine** — `dnd-save/DnD_07-06-2026/Combat_Vaisseau.md`,
+`Fiche_Cure-Dent.md` · Corsaires acte 2 · Romain, 4 octobre 2026
 
 ---
 
@@ -444,23 +498,27 @@ s'écrasent pas.
 **Origine** — V1 `story.ts`, `story-validator.ts`, `world.ts`, `lock.ts`,
 migrations 0001 à 0003
 
-### `campaign/import-campaigns` · todo
+### `campaign/rewrite-two-worlds` · todo
 
-**Pourquoi** — Jouer le jalon 1 sans attendre la génération, et sur du
-vrai contenu.
+**Pourquoi** — Les deux mondes témoins doivent exister dans Promptus
+dès la phase 1, et pas tels quels : leurs défauts sont ce qu'on veut
+corriger (`docs/lecons-des-parties.md`).
 
-**Périmètre** — Import et export YAML des entités et de l'histoire au
-format du V1 ; la campagne de démo du V1 (`scripts/demo-story.ts`) et
-ses cartes chargées en une commande ; l'acte 1 des Corsaires converti
-dans ce format (scènes, PNJ et portraits, images, musiques, boutique,
-butin, combat du quai) comme jeu de données réel des tests.
+**Périmètre** — Réécrire, dans le format de `campaign/model-story-graph`,
+à partir de `dnd-save/` : l'acte 1 des Corsaires (scènes complètes avec
+ce que les joueurs doivent savoir et une accroche par joueur, PNJ,
+boutique, butin, combat du quai, musiques par ambiance) et le Brasier
+(monde, quatre factions, quatre composants, Cure-Dent, classes, une
+première scène jouable). Aucune image importée : chaque visuel est une
+description que `media/draw-pixel-art-assets` dessinera en pixel art.
+Import et export YAML, pour que Romain relise et corrige les mondes
+comme du texte ; l'import du format V1 sert aux tests portés.
 
-**Fini quand** — `bun run demo` crée la campagne de démo, jouable ;
-l'acte 1 des Corsaires s'importe complet, portraits et musiques
-compris ; test `import-export.test.ts` porté.
+**Fini quand** — `bun run worlds` charge les deux mondes ; le contrôle
+des règles et le validateur d'histoire tournent dessus ; test
+`import-export.test.ts` porté.
 
-**Origine** — V1 `import-export.test.ts`, `scripts/demo-story.ts` ·
-`dnd-save/DnD-16-05-2026/Acte_1/`
+**Origine** — `dnd-save/` · V1 `import-export.test.ts`
 
 ### `campaign/list-campaigns` · todo
 
@@ -498,8 +556,8 @@ information n'est donnée nulle part ; en fin de session, le MJ voit ce
 qui manque à la table pour la suite, et peut le glisser dans le
 « Précédemment… ».
 
-**Fini quand** — Sur l'acte 1 des Corsaires importé, l'outil signale ce
-qui manquait pour l'acte 2.
+**Fini quand** — Sur la version de l'acte 1 des Corsaires telle que
+Romain l'a jouée, l'outil signale ce qui manquait pour l'acte 2.
 
 **Origine** — Romain, 4 octobre 2026 · `MEMORY.md` §6
 
@@ -516,8 +574,8 @@ chaque rencontre a ses adversaires chiffrés et leur tactique, chaque
 combat prévu a été simulé. La jauge dit ce qui manque, le MJ décide.
 
 **Fini quand** — La jauge déclare l'acte 1 du Brasier non prêt et dit
-pourquoi ; sur l'acte 1 des Corsaires, elle signale que la route du
-Greyhound n'est que dans une scène facultative.
+pourquoi ; sur l'acte 1 des Corsaires tel qu'il a été joué, elle
+signale que la route du Greyhound n'est que dans une scène facultative.
 
 **Origine** — `docs/lecons-des-parties.md` §3 (chaîne 2)
 
@@ -532,9 +590,14 @@ uns fait baisser celle de leurs rivaux ; objectifs de campagne à cocher
 
 ### `campaign/edit-rule-system` · todo
 
+**Pourquoi** — Les règles des deux mondes vont changer souvent : les
+éditer doit être aussi simple que les écrire sur une feuille.
+
 **Périmètre** — L'éditeur du système de règles : statistiques et
-formules, difficultés, actions activées, limites de création, version
-verrouillée qui s'applique à la prochaine session.
+formules, difficultés, actions et classes, limites de création ; chaque
+changement montre ce qu'il touche (contrôle et simulation relancés) et
+crée une version, verrouillée pour la prochaine session ; l'historique
+des versions se relit et se compare.
 
 **Fini quand** — Les sept moments de la planche « Règles » sont faisables
 dans l'app, la règle maison et la simulation comprises (via
@@ -625,13 +688,30 @@ minute, et le changement de scène change la musique chez tous.
 
 **Origine** — V1 `youtube.ts` · planche « Jouer » (scène)
 
+### `media/draw-pixel-art-assets` · todo
+
+**Pourquoi** — Tout ce que voient les joueurs est en pixel art
+(`MEMORY.md` §2) ; les illustrations des deux mondes sont à refaire dans
+ce style.
+
+**Périmètre** — Générer en pixel art, à partir des descriptions des
+mondes : illustrations de lieux, portraits de PNJ, scènes d'action,
+objets ; une palette et une ambiance par monde (le port de 1718 la nuit,
+le Brasier) dans un seul style ; génération par IA (type PixelLab), coût
+compté, chaque image relue et validée ou relancée par le MJ.
+
+**Fini quand** — Les scènes et les PNJ de l'acte 1 des Corsaires et de
+la première scène du Brasier ont leurs images validées, cohérentes avec
+les sprites et les cartes.
+
+**Origine** — Romain, 4 octobre 2026
+
 ### `media/generate-images-and-video` · todo
 
-**Périmètre** — Image et vidéo d'introduction par scène, en tâches de
-fond, stockées sur disque ; trois sortes d'images (lieu, portrait de
-PNJ, scène d'action) ; une direction artistique par campagne, reprise
-dans chaque demande (la « gravure à l'encre » des Corsaires) ; le MJ
-valide ou relance chaque média ;
+**Périmètre** — Les médias des actes écrits ou générés dans Promptus :
+images pixel art par scène (`media/draw-pixel-art-assets`) et vidéo
+d'introduction, en tâches de fond, stockées sur disque ; le MJ valide
+ou relance chaque média ;
 coût compté (`ai/count-ai-calls`). Vérifier d'abord le format de sortie
 vidéo d'OpenRouter (`MEMORY.md` §4).
 
@@ -1056,12 +1136,14 @@ tous à partir d'elle.
 
 **Périmètre** — Format de description dans `shared/` ; rendu en pixels
 des couches (corps, barbe, coiffe, tenue, arme…) avec palettes, contour
-calculé sans masquer le visage, ombres ; pièces du pack fantasy de
-départ (nain, elfe, humain, halfelin) ; effets d'état (`MEMORY.md` §2).
+calculé sans masquer le visage, ombres ; pièces des deux packs de départ,
+humains seulement : marins et corsaires de 1718, équipage spatial ;
+effets d'état (`MEMORY.md` §2).
 
-**Fini quand** — Borin, Lyra, Sef et les gobelins de la démo sont
-dessinés par l'app à partir de leur description, identiques sur le
-téléphone, l'écran MJ et la TV.
+**Fini quand** — Les six personnages types de chaque monde et leurs
+adversaires (marins de Gueule-Rouge, chasseurs Vorr) sont dessinés par
+l'app à partir de leur description, identiques sur le téléphone, l'écran
+MJ et la TV.
 
 **Origine** — `docs/design/avatar.py`, `docs/design/sprite-prototype.py`
 
@@ -1130,9 +1212,10 @@ des lumières, une ambiance, et des calques avec leur visibilité
 (tous, MJ, joueurs). Format versionné, stocké en base, porté depuis les
 cartes YAML du V1.
 
-**Fini quand** — Les cartes de la campagne de démo V1 se chargent dans
-le nouveau modèle et le moteur de règles calcule déplacement et ligne
-de vue dessus.
+**Fini quand** — Les cartes des deux mondes (le quai de Port-Louis, une
+coursive du Cure-Dent) et celles de la démo V1 se chargent dans le
+nouveau modèle, et le moteur de règles calcule déplacement et ligne de
+vue dessus.
 
 **Origine** — Session de design du 3 octobre 2026 · V1 (format YAML des cartes)
 
@@ -1182,8 +1265,9 @@ a besoin de son jeu de tuiles et de ses décors, sans dessiner à la main
 **Périmètre** — Format d'un jeu de tuiles (16 tuiles par matière,
 faces de mur, décors avec leur emprise et leurs règles) ; génération
 par IA une fois par décor (type PixelLab), relue et validée par le MJ,
-puis réutilisée ; premiers packs : crypte et forêt (fantasy), rue
-(zombies), désert et coursive (spatial).
+puis réutilisée ; premiers packs : le port de 1718 (quai, taverne, pont
+de navire) et le vaisseau spatial (coursive, passerelle, salle des
+machines).
 
 **Fini quand** — Le MJ génère un nouveau décor, le valide, et
 l'utilise sur une carte sans retouche manuelle.
@@ -1192,8 +1276,8 @@ l'utilise sur une carte sans retouche manuelle.
 
 ### `maps/package-theme-packs` · todo
 
-**Pourquoi** — On jouera aussi en zombies et en spatial, pas seulement
-en fantasy.
+**Pourquoi** — Les deux mondes témoins sont un monde pirate de 1718 et
+un monde spatial : le thème est là dès le jalon 1.
 
 **Périmètre** — Un thème regroupe ses jeux de tuiles, ses pièces de
 personnage, ses objets, les noms de ses six statistiques (MAG peut
@@ -1202,9 +1286,10 @@ bruit…) et éventuellement sa police de titres. L'interface, la grille
 et le moteur de règles ne changent pas. Le système de règles est une
 donnée de la campagne, pas du code.
 
-**Fini quand** — Une campagne zombie et une campagne spatiale se
-jouent de bout en bout avec leurs ressources affichées dans les
-composants existants (cases, horloges, badges).
+**Fini quand** — Les Corsaires et le Brasier se jouent avec leur propre
+thème (tuiles, pièces de personnage, objets, ressources : poudre,
+munitions, énergie) dans les composants existants (cases, horloges,
+badges).
 
 **Origine** — Romain, session de design du 3 octobre 2026
 

@@ -29,8 +29,10 @@ memory. If someone would re-litigate it in six months, it is.
 - **Only the GM creates content.** Players do not author the world.
 - **Rules are data.** The GM defines a rule system per campaign
   (abilities, roll formula, actions, conditions, resources, movement per
-  map level). A "D&D 5e (SRD)" preset is the editable starting point.
-  The player UI is derived from it.
+  map level, action economy, cooldowns). A rule system is a versioned
+  data file the GM edits; no rule is hard-coded. The first two systems
+  are drafts drawn from Romain's games (§6); the D&D 5e SRD comes later
+  as a third. The player UI is derived from the rule system.
 - **Story is a graph, not a script.** Bible → fronts (threats with a
   4–6 step clock) → nodes (scenes/places) linked by clues; every key
   revelation is reachable through ≥ 3 clues in different nodes. Stable
@@ -69,6 +71,10 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
 - **Exception: characters are in colour.** Pixel-art sprites in the
   Terraria / Starbound style: side view, dark outline, top-light and
   back-shadow shading, heroes face right and enemies face left.
+- **Every visual players see is pixel art**: sprites, items, maps, and
+  also scene illustrations and NPC portraits (decided 4 October 2026;
+  the ink-engraving images of the Corsaires are not reused). Each world
+  keeps its own palette and mood inside that one style.
 - **Items are pixel art in colour too** (12 × 12 cells plus outline),
   shown in square inventory slots like Terraria. An item's rarity is
   the slot frame's material, the same six as skill cards, plus 1 to 6
@@ -299,8 +305,8 @@ read it before designing content formats or rules.
   with tactics ("if three fall, the rest flee"), loot, XP, transition.
   An NPC: identity, one-line roleplay summary, traits, flaw, motivation,
   stats, disposition, what they want, what they hide, inventory,
-  portrait. Images share a per-campaign art direction prefix and come in
-  three kinds: places, NPC portraits, action scenes.
+  portrait. Images come in three kinds: places, NPC portraits, action
+  scenes.
 - **Rules are Romain's, not sacred.** He is happy to evolve his system;
   a change ships as a new locked version that players see before the
   next session, never mid-game.
@@ -310,5 +316,15 @@ read it before designing content formats or rules.
   permanent test corpora: a check that misses their known defects
   (two damage models, critical info only in an optional scene, a
   missing referenced document) is broken.
+- **Two witness worlds, built together.** The Corsaires and the Brasier
+  are developed side by side from the first ticket: a ticket is done only
+  when it works on both. They are **rewritten** in Promptus's format from
+  `dnd-save/`, not converted: their defects are what the rewrite fixes,
+  and none of their images is imported — every visual is redrawn in
+  pixel art. Their rule systems are drafts meant to change.
+- **Vehicle combat is shared.** The brig of the Corsaires (act 2: the
+  Greyhound interception) and the Cure-Dent use one vehicle system with
+  two skins, in milestone 2.
 - **Which world comes next is undecided** (resume the Corsaires, the
-  Brasier, or a new one): nothing in milestone 1 may depend on it.
+  Brasier, or a new one): milestone 1 plays one of the two witness
+  worlds and keeps the other playable in tests.

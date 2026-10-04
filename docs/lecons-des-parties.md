@@ -198,8 +198,9 @@ manquantes pour la suite), et décide ce qu'il change : une règle (chaîne
 Les deux dossiers deviennent des jeux de données permanents, pas des
 souvenirs :
 
-- **L'acte 1 des Corsaires** est importé dans le format de Promptus
-  (`campaign/import-campaigns`). Les contrôles doivent y retrouver
+- **L'acte 1 des Corsaires** est réécrit dans le format de Promptus
+  (`campaign/rewrite-two-worlds`), visuels refaits en pixel art ; la
+  version jouée reste dans `dnd-save/` comme cas de test. Les contrôles doivent y retrouver
   ce que la partie a révélé : l'information critique cachée dans la
   scène facultative, les deux modèles de dégâts, les termes non définis.
   Si un contrôle ne voit pas ces défauts, il ne verra pas ceux de la
