@@ -68,7 +68,10 @@ fn export_then_import_is_an_identity() {
 
 #[test]
 fn a_typo_in_a_key_is_refused_with_its_line() {
-    let typo = FIXTURE.replace("    hides: Il paie le douanier.", "    hidez: Il paie le douanier.");
+    let typo = FIXTURE.replace(
+        "    hides: Il paie le douanier.",
+        "    hidez: Il paie le douanier.",
+    );
     assert_ne!(typo, FIXTURE);
     let err = from_yaml(&typo).unwrap_err().to_string();
     assert!(err.contains("hidez"), "{err}");
@@ -107,9 +110,16 @@ fn a_critical_revelation_with_two_clues_breaks_the_three_clue_rule() {
 fn three_clues_in_the_same_two_nodes_still_break_the_rule() {
     let mut c = fixture();
     // Move the phare clue to the tavern: three clues, two nodes.
-    c.clues.iter_mut().find(|x| x.id == "cl_carte").unwrap().node = "sc_taverne".into();
+    c.clues
+        .iter_mut()
+        .find(|x| x.id == "cl_carte")
+        .unwrap()
+        .node = "sc_taverne".into();
     let issues = validate(&c);
-    assert_eq!(codes(&issues), vec![("THREE_CLUE_RULE", "revelations[1]".into())]);
+    assert_eq!(
+        codes(&issues),
+        vec![("THREE_CLUE_RULE", "revelations[1]".into())]
+    );
 }
 
 #[test]
@@ -124,13 +134,17 @@ fn an_optional_revelation_needs_only_one_clue() {
         statement: "Personne ne le saura.".into(),
         importance: Importance::Optional,
     });
-    assert_eq!(codes(&validate(&c)), vec![("REVELATION_NO_CLUE", "revelations[3]".into())]);
+    assert_eq!(
+        codes(&validate(&c)),
+        vec![("REVELATION_NO_CLUE", "revelations[3]".into())]
+    );
 }
 
 #[test]
 fn a_dangling_clue_is_an_error_on_each_broken_reference() {
     let mut c = fixture();
-    c.clues.push(clue("cl_fantome", "rev_inexistante", "sc_nulle_part"));
+    c.clues
+        .push(clue("cl_fantome", "rev_inexistante", "sc_nulle_part"));
     let issues = validate(&c);
     let errors: Vec<_> = issues
         .iter()
@@ -155,10 +169,7 @@ fn a_reference_to_the_wrong_kind_is_caught() {
         to: "pnj_gwen".into(),
         label: "Suivre Gwen".into(),
     });
-    let got: Vec<_> = validate(&c)
-        .into_iter()
-        .map(|i| (i.code, i.path))
-        .collect();
+    let got: Vec<_> = validate(&c).into_iter().map(|i| (i.code, i.path)).collect();
     assert_eq!(
         got,
         vec![
@@ -211,7 +222,10 @@ fn every_kind_of_reference_is_checked() {
         "goals[0].item",
         "goals[0].held_by",
     ] {
-        assert!(dangling.iter().any(|p| p == path), "{path} not reported: {dangling:?}");
+        assert!(
+            dangling.iter().any(|p| p == path),
+            "{path} not reported: {dangling:?}"
+        );
     }
 }
 
@@ -222,8 +236,14 @@ fn ids_are_unique_across_the_whole_campaign_and_well_formed() {
     c.items[0].id = "pnj_gwen".into();
     c.locations[0].id = "Lieu Port".into();
     let got = codes(&validate(&c));
-    assert!(got.contains(&("ID_DUPLICATE", "items[0].id".into())), "{got:?}");
-    assert!(got.contains(&("ID_INVALID", "locations[0].id".into())), "{got:?}");
+    assert!(
+        got.contains(&("ID_DUPLICATE", "items[0].id".into())),
+        "{got:?}"
+    );
+    assert!(
+        got.contains(&("ID_INVALID", "locations[0].id".into())),
+        "{got:?}"
+    );
 }
 
 #[test]
@@ -232,7 +252,8 @@ fn required_knowledge_given_nowhere_else_is_reported() {
     // The crique requires rev_crique; leave only a clue placed in the
     // crique itself (useless: the players need it before entering).
     c.clues.retain(|x| x.revelation != "rev_crique");
-    c.clues.push(clue("cl_sur_place", "rev_crique", "sc_crique"));
+    c.clues
+        .push(clue("cl_sur_place", "rev_crique", "sc_crique"));
     let got = codes(&validate(&c));
     assert!(
         got.contains(&("KNOWLEDGE_NEVER_GIVEN", "nodes[3].requires[0]".into())),
@@ -244,7 +265,8 @@ fn required_knowledge_given_nowhere_else_is_reported() {
 fn required_knowledge_only_in_optional_scenes_is_reported() {
     // The Corsaires defect: the Greyhound route only in an optional scene.
     let mut c = fixture();
-    c.clues.retain(|x| x.revelation != "rev_crique" || x.node == "sc_port");
+    c.clues
+        .retain(|x| x.revelation != "rev_crique" || x.node == "sc_port");
     assert!(c.node("sc_port").unwrap().optional);
     let got = codes(&validate(&c));
     assert!(
@@ -254,7 +276,10 @@ fn required_knowledge_only_in_optional_scenes_is_reported() {
     // Making the port mandatory clears that warning (the three-clue one stays).
     c.nodes[1].optional = false;
     let got = codes(&validate(&c));
-    assert!(!got.iter().any(|(code, _)| code.starts_with("KNOWLEDGE")), "{got:?}");
+    assert!(
+        !got.iter().any(|(code, _)| code.starts_with("KNOWLEDGE")),
+        "{got:?}"
+    );
 }
 
 #[test]
@@ -284,14 +309,20 @@ fn structural_checks() {
         );
     }
     // Only the unreachable node is unreachable.
-    assert_eq!(got.iter().filter(|(c, _)| *c == "NODE_UNREACHABLE").count(), 1);
+    assert_eq!(
+        got.iter().filter(|(c, _)| *c == "NODE_UNREACHABLE").count(),
+        1
+    );
 }
 
 #[test]
 fn a_campaign_with_nodes_needs_an_opening_node() {
     let mut c = fixture();
     c.bible.start_node = None;
-    assert_eq!(codes(&validate(&c)), vec![("START_NODE_MISSING", "bible.start_node".into())]);
+    assert_eq!(
+        codes(&validate(&c)),
+        vec![("START_NODE_MISSING", "bible.start_node".into())]
+    );
 }
 
 // --- World -------------------------------------------------------------------
@@ -313,7 +344,10 @@ fn a_revelation_is_known_once_any_of_its_clues_is_found() {
         ClueReveal::Reinforced("rev_crique".into())
     );
     // …and finding a clue twice changes nothing.
-    assert_eq!(w.reveal_clue(&c, "cl_carte").unwrap(), ClueReveal::AlreadyFound);
+    assert_eq!(
+        w.reveal_clue(&c, "cl_carte").unwrap(),
+        ClueReveal::AlreadyFound
+    );
     assert_eq!(w.found_clues.len(), 2);
     assert_eq!(
         w.reveal_clue(&c, "cl_invente"),

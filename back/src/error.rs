@@ -13,6 +13,12 @@ use serde_json::json;
 pub enum AppError {
     /// 400 — the request itself is malformed or a field is invalid.
     BadRequest(&'static str),
+    /// 400 — like `BadRequest`, with a detail the person must read to
+    /// fix their input (the line and column of a YAML error).
+    Invalid {
+        code: &'static str,
+        detail: String,
+    },
     /// 401 — no valid GM session (missing, unknown, expired or signed
     /// out), or a passkey answer that does not verify.
     Unauthorized(&'static str),
@@ -37,21 +43,22 @@ impl AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, code, message) = match self {
-            Self::BadRequest(code) => (StatusCode::BAD_REQUEST, code, "invalid request"),
-            Self::Unauthorized(code) => (StatusCode::UNAUTHORIZED, code, "not signed in"),
-            Self::Forbidden(code) => (StatusCode::FORBIDDEN, code, "not allowed"),
-            Self::NotFound(code) => (StatusCode::NOT_FOUND, code, "not found"),
+            Self::BadRequest(code) => (StatusCode::BAD_REQUEST, code, "invalid request".into()),
+            Self::Invalid { code, detail } => (StatusCode::BAD_REQUEST, code, detail),
+            Self::Unauthorized(code) => (StatusCode::UNAUTHORIZED, code, "not signed in".into()),
+            Self::Forbidden(code) => (StatusCode::FORBIDDEN, code, "not allowed".into()),
+            Self::NotFound(code) => (StatusCode::NOT_FOUND, code, "not found".into()),
             Self::ServiceUnavailable(code) => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 code,
-                "a dependency is unavailable",
+                "a dependency is unavailable".into(),
             ),
             Self::Internal(detail) => {
                 tracing::error!(%detail, "internal error");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "INTERNAL_ERROR",
-                    "internal error",
+                    "internal error".to_string(),
                 )
             }
         };

@@ -149,7 +149,9 @@ impl Campaign {
 
     /// The clues that lead to `revelation`.
     pub fn clues_for<'a>(&'a self, revelation: &'a str) -> impl Iterator<Item = &'a Clue> + 'a {
-        self.clues.iter().filter(move |c| c.revelation == revelation)
+        self.clues
+            .iter()
+            .filter(move |c| c.revelation == revelation)
     }
 }
 

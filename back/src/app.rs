@@ -4,7 +4,7 @@ use axum::Router;
 use axum::http::header::CACHE_CONTROL;
 use axum::http::{HeaderValue, Method};
 use axum::middleware;
-use axum::routing::{any, delete, get, post};
+use axum::routing::{any, delete, get, post, put};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::set_header::SetResponseHeader;
@@ -66,6 +66,21 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             get(api::gm::list_invites).post(api::gm::create_invite),
         )
         .route("/api/gm-invites/{id}", delete(api::gm::revoke_invite))
+        .route(
+            "/api/campaigns",
+            get(api::campaigns::list).post(api::campaigns::create),
+        )
+        .route("/api/campaigns/import", post(api::campaigns::import_new))
+        .route("/api/campaigns/{id}", get(api::campaigns::get))
+        .route("/api/campaigns/{id}/export", get(api::campaigns::export))
+        .route(
+            "/api/campaigns/{id}/import",
+            put(api::campaigns::import_replace),
+        )
+        .route(
+            "/api/campaigns/{id}/player-view",
+            get(api::campaigns::player_view),
+        )
         .route_layer(middleware::from_fn_with_state(state.clone(), require_gm));
 
     public

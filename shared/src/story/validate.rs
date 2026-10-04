@@ -160,9 +160,14 @@ fn valid_id(id: &str) -> bool {
 }
 
 fn is_youtube(url: &str) -> bool {
-    ["https://www.youtube.com/", "https://youtube.com/", "https://youtu.be/", "https://music.youtube.com/"]
-        .iter()
-        .any(|p| url.starts_with(p))
+    [
+        "https://www.youtube.com/",
+        "https://youtube.com/",
+        "https://youtu.be/",
+        "https://music.youtube.com/",
+    ]
+    .iter()
+    .any(|p| url.starts_with(p))
 }
 
 /// Every issue of `campaign`, in document order within each check.
@@ -178,7 +183,10 @@ pub fn validate(campaign: &Campaign) -> Vec<Issue> {
         ck.error(
             "FORMAT_UNSUPPORTED",
             "format".into(),
-            format!("format {} is not {FORMAT_VERSION}, the version this server reads", c.format),
+            format!(
+                "format {} is not {FORMAT_VERSION}, the version this server reads",
+                c.format
+            ),
         );
     }
 
@@ -271,7 +279,11 @@ fn check_references(ck: &mut Checker<'_>, c: &Campaign) {
     }
     for (i, x) in c.clues.iter().enumerate() {
         let p = format!("clues[{i}]");
-        ck.reference(&x.revelation, format!("{p}.revelation"), &[Kind::Revelation]);
+        ck.reference(
+            &x.revelation,
+            format!("{p}.revelation"),
+            &[Kind::Revelation],
+        );
         ck.reference(&x.node, format!("{p}.node"), &[Kind::Node]);
         if let Some(s) = &x.source {
             ck.reference(
@@ -397,7 +409,10 @@ fn check_structure(ck: &mut Checker<'_>, c: &Campaign) {
             ck.error(
                 "AFFINITY_RANGE",
                 format!("factions[{i}].affinity"),
-                format!("`{}`: affinity needs min < max and start between them", f.id),
+                format!(
+                    "`{}`: affinity needs min < max and start between them",
+                    f.id
+                ),
             );
         }
         for (j, r) in f.rivals.iter().enumerate() {
@@ -429,7 +444,12 @@ fn check_structure(ck: &mut Checker<'_>, c: &Campaign) {
     let exits: HashMap<&str, Vec<&str>> = c
         .nodes
         .iter()
-        .map(|n| (n.id.as_str(), n.exits.iter().map(|x| x.to.as_str()).collect()))
+        .map(|n| {
+            (
+                n.id.as_str(),
+                n.exits.iter().map(|x| x.to.as_str()).collect(),
+            )
+        })
         .collect();
     let mut reached = BTreeSet::from([start]);
     let mut queue = VecDeque::from([start]);
@@ -445,7 +465,10 @@ fn check_structure(ck: &mut Checker<'_>, c: &Campaign) {
             ck.warn(
                 "NODE_UNREACHABLE",
                 format!("nodes[{i}]"),
-                format!("`{}` cannot be reached from the opening node `{start}`", n.id),
+                format!(
+                    "`{}` cannot be reached from the opening node `{start}`",
+                    n.id
+                ),
             );
         }
     }

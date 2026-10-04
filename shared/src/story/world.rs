@@ -144,7 +144,11 @@ impl WorldState {
     /// # Errors
     ///
     /// `UnknownClue` when the campaign has no such clue.
-    pub fn reveal_clue(&mut self, campaign: &Campaign, clue: &str) -> Result<ClueReveal, WorldError> {
+    pub fn reveal_clue(
+        &mut self,
+        campaign: &Campaign,
+        clue: &str,
+    ) -> Result<ClueReveal, WorldError> {
         let c = campaign
             .clue(clue)
             .ok_or_else(|| WorldError::UnknownClue(clue.to_string()))?;
