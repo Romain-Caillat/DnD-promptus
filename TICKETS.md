@@ -658,7 +658,7 @@ deux mondes ; vérifier que le modèle le porte sans cas particulier.
 
 **Origine** — Romain, 4 octobre 2026 (sorti du jalon 1)
 
-### `engine/simulate-fights` · todo
+### `engine/simulate-fights` · doing — reste le recalage du temps et la relecture par Romain
 
 **Périmètre** — Simuler N combats avec les fiches réelles et les
 monstres d'une rencontre, sous une version des règles ; taux de victoire,
@@ -668,6 +668,49 @@ permis de roder le combat de vaisseau du Brasier avant de le jouer.
 
 **Fini quand** — Le rapport de la phase 1 simule la bagarre du quai et
 un combat au sol du Brasier, et compare deux versions d'une règle.
+
+**État** — Fait côté moteur, à valider par Romain. Une rencontre est un
+scénario en données (`content/scenarios/<monde>/<id>.yaml`) : carte,
+contexte, portes, les deux camps (classe et niveau, ou fiche
+d'adversaire ; case de départ), tactiques, moral (qui fuit, quand),
+graine, nombre de combats et variantes de règles. Une variante est une
+liste `chemin: valeur` appliquée en mémoire au brouillon avant son
+chargement (`attack.precision`, `cooldowns.meaning`,
+`adversaries[gueule_rouge].actions[…].tags[0].damage.amount`…) : le
+fichier de règles n'est jamais modifié. `combat::simulate` joue N
+combats sur des graines suivies et rend, de façon reproductible et en
+JSON : victoires, défaites, nuls et arrêts ; rounds et minutes estimées
+(moyenne, médiane, min–max) ; par classe et par fiche d'adversaire,
+dégâts infligés et reçus, taux de touche, KO, hors scène, fuites, XP ;
+refus du moteur (toujours 0). `compare` donne l'écart d'une variante
+sur les mêmes graines. Deux tactiques de référence, pas une IA :
+« bagarreur » (le plus proche) et « concentré » (le plus faible à
+portée, case de tir la moins chère, jamais arrêté dans une porte).
+`bun run rules-report` (`--world`, `--n`, `--seed`, `--json`,
+`--markdown`) imprime pour chaque monde le contrôle des règles,
+l'équilibre, les combats et les comparaisons ; sortie complète dans
+`docs/rapport-phase-1.md`. Sur 200 combats : la bagarre du quai est
+gagnée à 98 % en bagarreur (3,3 rounds, ~23 min estimées), 94 % en
+concentré ; compter la précision (+13 à +17 points de touche pour le
+Bretteur et la Vigie) et passer Gueule-Rouge et ses marins en dégâts
+fixes raccourcissent le combat et font remonter le concentré à 99–100 %.
+L'abordage de la coursive passe de 86 % (bagarreur, entonnoir dans le
+sas) à 100 % (concentré), 24 à 30 min ; lire « CD 1 » comme « pas deux
+fois dans le même tour » ajoute 1,4 dégât par combat au Canonnier, seul
+concerné, et efface son `DAMAGE_PER_TURN_LOW`. Sur le quai, le
+Navigateur et le Chirurgien n'attaquent jamais ; dans la coursive, le
+Xénologue, le Toubib et le Quartier-maître non plus (leurs cartes ne
+font aucun dégât, à aucun niveau). Les Vorr sont les
+fiches de la campagne du Brasier, recopiées au format des règles dans le
+scénario (un test vérifie qu'elles n'en divergent pas) ; le moteur
+exigeait ce que la campagne ne dit pas — type d'action, caractéristique,
+portée du crachat (6 cases, inventée). À valider par Romain, marqué
+INTERPRÉTATION : le modèle de temps (2 min de mise en place, 60 s par
+tour de PJ, 30 s par tour d'adversaire, 5 s par tour vide), les dégâts
+fixes arrondis à l'inférieur, les tactiques. Reste : recaler le temps
+sur un combat chronométré ; non simulés, le crachat qui marque une cible,
+l'initiative unique de l'escouade vorr et sa course vers le réacteur ;
+le combat de vaisseau attend `engine/support-vehicle-combat`.
 
 **Origine** — Planche « Règles » (moment 7) · `MEMORY.md` §6
 

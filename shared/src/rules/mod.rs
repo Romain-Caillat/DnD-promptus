@@ -11,6 +11,7 @@
 //! - [`progression`] — XP, upgrade points, levels
 //! - [`lint`] — whether the rules are good: coherence and balance checks
 //!   that report and never block (`lint::lint`, `lint::balance_report`)
+//! - [`variant`] — "what if" edits applied to a draft before it loads
 
 pub mod action;
 pub mod check;
@@ -23,6 +24,7 @@ pub mod load;
 pub mod model;
 pub mod progression;
 pub mod sheet;
+pub mod variant;
 
 pub use lint::{BalanceParams, BalanceReport, balance_report, lint, lint_with};
 pub use load::{ErrorCode, LoadError, RuleError};

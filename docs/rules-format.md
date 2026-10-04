@@ -271,6 +271,52 @@ each class playing its best sustainable mix of unlocked actions under
 the turn budget, kind limits and cooldowns; a contest counts as a check
 against 11. `Display` prints it as a plain table.
 
+## Scenarios, variants and simulated fights
+
+An encounter to rehearse is a scenario, `content/scenarios/<world>/<id>.yaml`
+(`combat::scenario`): the rule system and map it uses, the turn
+context, door states, the two rosters (`class` + `level`, or
+`adversary`; `at` or the map's next start cell for that side), the
+policies each side may play (`brawler`, `focus`), a side's `morale`
+(`leader`, `flee_when_fallen`, `retreat_all`), stand-in stat blocks the
+rules lack (`adversaries`, added only for that scenario and only when
+the rules have no block with the same id), the default `simulation: {
+fights, seed }` and the rule `variants` to try.
+
+A **variant** (`rules::variant`) is a named set of `path: value` edits
+applied to the draft's YAML in memory before it loads; the file is
+never touched. Paths use the lint's notation — keys, `[id]` for the list
+element with that id, `[n]` for an index:
+
+```yaml
+variants:
+  - id: precision-au-jet
+    name: La précision compte au jet d'attaque
+    set:
+      attack.precision: added_to_attack_roll
+      adversaries[gueule_rouge].actions[gueule_rouge_sabre].tags[0].damage.amount: 5
+```
+
+Every step must exist except a mapping's last key, which is added. The
+edited system then loads like any version, so a variant that breaks the
+rules is refused with the loader's errors.
+
+`combat::simulate::simulate` plays a scenario N times (fight `i` on seed
+`seed + i`) and sums it up: party wins, losses, draws and stops; rounds
+and estimated minutes (mean, median, min, max); per class or stat block,
+damage dealt and taken, hit rate, knock-outs, out of the scene, flights,
+defeats and XP; refusals (always 0 — the policies only ask for what the
+engine accepts). `compare` gives a variant's difference with the base
+run on the same seeds. Minutes follow `TimeModel` (INTERPRETATION until
+a fight is timed): 2 minutes of setup, 60 s per character turn, 30 s per
+adversary turn, 5 s per empty turn.
+
+`bun run rules-report` (`shared/src/bin/rules_report.rs`) prints, per
+world, the lint findings, the balance numbers, every scenario's runs
+and every variant's comparison, in French; `--world`, `--n`, `--seed`,
+`--json`, `--markdown [file]` (default `docs/rapport-phase-1.md`). It
+exits non-zero only when a file, a scenario or a variant does not load.
+
 ## Not yet in the format
 
 Vehicles (`engine/support-vehicle-combat`) and death saves played out
