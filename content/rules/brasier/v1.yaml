@@ -143,6 +143,18 @@ creation:
 movement:
   - { scale: encounter, cells_per_move: null, note: "Aucune distance donnée." }
 
+# INTERPRETATION (engine/run-combat): the source names the move and the
+# flight but gives no distance at all. A move is one "Se déplacer"
+# action; fleeing is "Fuir" (both actions), with a DEX roll when the GM
+# says it is hard ("jet de DEX si la fuite est compliquée"). Cover, long
+# range and zone size keep the format's defaults. Every `range:` on an
+# action below (in cells) is a reading of its description ("tir",
+# "grenade", "arc"); an action without one reaches adjacent
+# cells only.
+combat:
+  move_kind: deplacement
+  flee: { kind: fuite, ability: DEX }
+
 conditions:
   - { id: inconscient, name: Inconscient, kind: bane, description: "À 0 PV. Ne peut plus agir ; un soin le relève.", effects: [skips_turn] }
   - { id: hors_combat, name: Hors combat, kind: bane, description: "Resté 3 tours inconscient sans soin.", effects: [skips_turn] }
@@ -178,6 +190,7 @@ classes:
         kind: attaque
         level: 1
         target: enemy
+        range: 12
         roll: attack
         tags: [{ damage: { amount: 3 } }, { precision: 2 }, { cooldown: 0 }]
       - id: tir_en_mouvement
@@ -185,6 +198,7 @@ classes:
         kind: attaque
         level: 3
         target: enemy
+        range: 12
         roll: attack
         tags:
           - { damage: { amount: 3, note: "En se repositionnant." } }
@@ -195,6 +209,7 @@ classes:
         kind: attaque
         level: 7
         target: enemy
+        range: 16
         roll: auto_hit
         tags:
           - { damage: { amount: 6, note: "Ignore couvert et armure." } }
@@ -221,6 +236,7 @@ classes:
         kind: attaque
         level: 1
         target: enemy
+        range: 10
         roll: attack
         tags: [{ damage: { amount: 4 } }, { precision: 0 }, { cooldown: 1 }]
       - id: grenade_a_plasma
@@ -228,6 +244,7 @@ classes:
         kind: attaque
         level: 3
         target: enemies
+        range: 6
         area: zone
         roll: attack
         tags:
@@ -239,6 +256,7 @@ classes:
         kind: attaque
         level: 7
         target: enemies
+        range: 12
         area: line
         roll: attack
         tags:
@@ -265,6 +283,7 @@ classes:
         kind: attaque
         level: 1
         target: enemy
+        range: 4
         roll: attack
         tags:
           - { damage: { amount: 3, note: "Ignore les boucliers d'énergie." } }
@@ -275,6 +294,7 @@ classes:
         kind: attaque
         level: 3
         target: enemy
+        range: 8
         roll: none
         tags:
           # "-2 à toucher ou -2 dégâts": "à toucher" is the roll itself,
@@ -289,6 +309,7 @@ classes:
         kind: attaque
         level: 7
         target: enemies
+        range: 6
         area: zone
         roll: attack
         tags:
@@ -314,6 +335,7 @@ classes:
         kind: attaque
         level: 1
         target: enemy
+        range: 12
         roll: none
         tags:
           - { control: { condition: marque, turns: 1, to: targets } }
@@ -323,6 +345,7 @@ classes:
         kind: attaque
         level: 3
         target: enemy
+        range: 8
         roll: { contest: { actor: SAG, target: SAG } }
         tags:
           - control:
@@ -338,6 +361,7 @@ classes:
         kind: attaque
         level: 7
         target: enemies
+        range: 8
         area: zone
         roll: none
         tags:
@@ -408,6 +432,7 @@ classes:
         kind: attaque
         level: 1
         target: ally
+        range: 6
         roll: none
         tags:
           - { buff: { effects: [{ damage_dealt: 1 }, { precision: 1 }], kind: boon, turns: 1, to: targets } }
@@ -417,6 +442,7 @@ classes:
         kind: attaque
         level: 3
         target: enemy
+        range: 6
         # "jet CHA vs SAG/Moral": Moral belongs to ships; on the ground SAG.
         roll: { contest: { actor: CHA, target: SAG } }
         tags:

@@ -6,7 +6,7 @@ use std::path::Path;
 
 use promptus_shared::maps::{
     Cell, Cover, Diagonal, DoorState, LightLevel, Map, MovementRules, Obstacle, Occupancy,
-    PathError, check_path, illumination, line_of_sight, reachable, visible_cells,
+    PathError, check_path, illumination, line_of_sight, reachable, shortest_path, visible_cells,
 };
 
 fn load(rel: &str) -> Map {
@@ -112,6 +112,36 @@ fn enemies_block_and_allies_can_be_crossed_but_not_stopped_on() {
     let r = reachable(&map, &rules(), &ally, c(0, 0), 5);
     assert!(!r.contains_key(&c(1, 0)), "cannot stop on an ally");
     assert_eq!(r.get(&c(2, 0)), Some(&2), "but can cross one");
+}
+
+#[test]
+fn the_shortest_path_is_one_check_path_accepts_at_its_reach_cost() {
+    let map = tiny(
+        &["..#...", "..#...", "..#...", "..#...", "......", "......"],
+        "",
+    );
+    for rules in [
+        rules(),
+        MovementRules {
+            diagonal: Diagonal::Alternate,
+            ..rules()
+        },
+    ] {
+        let reach = reachable(&map, &rules, &nobody(), c(1, 0), 9);
+        for (&goal, &cost) in &reach {
+            let (path, found) =
+                shortest_path(&map, &rules, &nobody(), c(1, 0), goal, 9).expect("reachable");
+            assert_eq!(found, cost, "{goal:?}");
+            assert_eq!(
+                check_path(&map, &rules, &nobody(), c(1, 0), &path, cost),
+                Ok(cost)
+            );
+        }
+        assert_eq!(
+            shortest_path(&map, &rules, &nobody(), c(1, 0), c(3, 0), 9),
+            None
+        );
+    }
 }
 
 #[test]
