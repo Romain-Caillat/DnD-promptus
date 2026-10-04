@@ -152,7 +152,7 @@ Plus tard, sans jalon : `maps/support-hex-combat`.
 
 ## Épic `platform`
 
-### `platform/scaffold-workspace` · todo
+### `platform/scaffold-workspace` · doing — reste le simulateur iOS (Mac)
 
 **Pourquoi** — Démarrer la réécriture sur la même base que Devotion.
 
@@ -178,7 +178,7 @@ passe ; l'app Tauri compile en debug et en release (`tauri build
 demande macOS (`tauri ios init` puis `bun run dev:ios` sur le Mac de
 Romain). Les icônes Tauri sont provisoires.
 
-### `platform/run-ci` · todo
+### `platform/run-ci` · doing — reste le premier passage sur GitHub
 
 **Périmètre** — CI GitHub calquée sur Devotion : fmt, clippy, tests
 Rust contre Postgres, lint + typecheck + tests front, gitleaks.
@@ -201,7 +201,7 @@ Postgres 17 jetable à la place du service. **Reste** : le premier
 passage sur GitHub (pousser, regarder les trois jobs passer), puis
 rendre les trois jobs obligatoires dans la protection de `main`.
 
-### `platform/sign-in-gm` · doing
+### `platform/sign-in-gm` · doing — reste une vraie cérémonie en HTTPS
 
 **Pourquoi** — Le V1 laissait les pages MJ ouvertes à tous.
 
@@ -241,7 +241,7 @@ puis archiver. Hors périmètre, à décider : récupérer un compte dont la
 passkey est perdue, ajouter une seconde passkey, limiter le débit des
 routes publiques, les passkeys dans l'app Tauri.
 
-### `platform/deploy-self-hosted` · todo
+### `platform/deploy-self-hosted` · doing — reste le choix de l'hôte et la mise en ligne
 
 **Pourquoi** — Les joueurs jouent depuis chez eux : l'app doit être
 joignable sur Internet, sans VPN.
@@ -291,7 +291,7 @@ Le design system dessiné sur le canevas (`MEMORY.md` §2), en composants
 React partagés par le téléphone, l'ordinateur, la tablette et la TV.
 Chaque composant du canevas (« Composant — … ») a son équivalent ici.
 
-### `ui/write-design-tokens` · todo
+### `ui/write-design-tokens` · doing — reste la relecture de /reference par Romain
 
 **Pourquoi** — Le noir et blanc, les couleurs de stats, les trois
 polices et le mouvement doivent être les mêmes partout, sans valeur
