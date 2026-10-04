@@ -46,7 +46,7 @@ Keys are English snake_case; content (names, texts) is French.
 | `world` | no | The universe, in a few words |
 | `rules` | yes | `{ id, version }` — the rule system version the campaign plays (`engine/model-rule-system`) |
 | `bible` | yes | See below |
-| `party` | no | Player character slots: `id`, `name`, `player`, `concept` |
+| `party` | no | Player character slots: `id`, `name`, `player`, `concept`, `class` (a class id of the rule system, when the prep assumes one) |
 | `acts`, `fronts`, `nodes`, `revelations`, `clues` | no | The story |
 | `npcs`, `adversaries`, `locations`, `items`, `factions`, `goals` | no | The entities |
 
@@ -73,8 +73,9 @@ the catastrophe).
 | `optional` | `true` when the scene may be skipped |
 | `summary` | For the GM, one or two sentences |
 | `location` | A location id |
+| `map` | The grid map the scene is played on: a map file's `id` (`content/maps/`), not a campaign id |
 | `read_aloud` | Shown or read to the players on entering |
-| `ambience` | `mood`, `sounds`, `music`: list of `{ mood, title, url }` — `mood` is `calm`, `exploration`, `tension`, `mystery`, `combat` or `epic`; `url` a YouTube link |
+| `ambience` | `mood`, `sounds`, `music`: list of `{ mood, title, url, search }` — `mood` is `calm`, `exploration`, `tension`, `mystery`, `combat` or `epic`; `url` a YouTube link; a track still to choose has no `url`, only a `search` hint, and never reaches players |
 | `flow` | How the scene unfolds |
 | `hook` | The event that sets it in motion |
 | `checks` | Planned checks: `action`, `stat`, `difficulty`, `success`, `failure`, `natural_1`, `natural_20` |
@@ -113,6 +114,13 @@ system's ability ids to scores), `armor_class`, `hit_points`, `attacks`
 (`{ name, damage, notes }`, `damage` a formula like `1d6+2`). The rules
 engine checks these against the campaign's rule system.
 
+**Rules live in one copy.** When the rule system already has the stat
+block, `stats: { from_rules: <adversary id> }` names it and the numbers
+stay in the rule system; fields written next to it override it. An item
+of the campaign likewise names its rule-system item with `from_rules`
+(the shop's prices and descriptions stay in the campaign, the rule
+effects in the rule system).
+
 **`adversaries`** — stat-block creatures without an NPC sheet: `id`,
 `name`, `description`, `art`, `stats` (required), `gm_notes`.
 
@@ -149,4 +157,46 @@ issues come back with it (`issues`: `severity`, `code`, `path`,
 | `KNOWLEDGE_ONLY_OPTIONAL` | warning | …or that only optional scenes give |
 | `START_NODE_MISSING`, `NODE_UNREACHABLE` | warning | No opening node; a node no exit path reaches from it |
 | `FRONT_CLOCK_LENGTH` | warning | A clock outside 4–6 steps |
-| `EXIT_TO_SELF`, `LOOT_EMPTY`, `ENCOUNTER_EMPTY`, `MUSIC_NOT_YOUTUBE`, `FACTION_SELF_RIVAL` | warning | Structural slips |
+| `EXIT_TO_SELF`, `LOOT_EMPTY`, `ENCOUNTER_EMPTY`, `MUSIC_NOT_YOUTUBE`, `MUSIC_NO_URL`, `FACTION_SELF_RIVAL` | warning | Structural slips |
+| `PLAYER_WITHOUT_HOOK` | warning | A party member has no hook in an act that has scenes |
+
+### Against the rule system and the maps
+
+`story::validate_with(campaign, &Library { rules, maps })` runs the
+checks above, then those that need what the campaign points at. Each
+part is optional; what is not supplied is not checked.
+
+| Code | Severity | Meaning |
+| --- | --- | --- |
+| `RULES_MISMATCH` | error | The rule system supplied is not the one `rules` names (nothing else is checked against it) |
+| `RULES_UNKNOWN_CLASS`, `RULES_UNKNOWN_ADVERSARY`, `RULES_UNKNOWN_ITEM`, `RULES_UNKNOWN_ABILITY` | error | A `class`, `from_rules` or check `stat` names nothing in the rule system |
+| `DIFFICULTY_OFF_SCALE` | warning | A planned or clue check difficulty that is none of the rule system's named difficulties |
+| `MAP_UNKNOWN` | error | A node's `map` is no known map |
+| `MAP_ENTITY_UNKNOWN` | warning | A map a node uses places a token whose `entity` is no NPC or adversary of the campaign |
+
+Two more checks of the campaign alone came with the witness worlds:
+`PLAYER_WITHOUT_HOOK` (warning: a party member has no hook in any scene
+of an act that has scenes) and `MUSIC_NO_URL` (warning: a track still
+to choose).
+
+## The witness worlds and `bun run worlds`
+
+The two worlds live in `content/campaigns/<world>/campagne.yaml`, next
+to `content/rules/<world>/` and `content/maps/<world>/`. `bun run
+worlds` loads every rule system, map and campaign under `content/`,
+runs the rule lint and balance report, the map checks and
+`validate_with`, and prints a French report per world. It exits
+non-zero only when a file does not load; checks never block.
+
+The Corsaires' act 1 as played is kept as a test case,
+`content/fixtures/corsaires-acte-1-joue.yaml`: the checks must keep
+finding its defects (`shared/tests/witness_worlds.rs`).
+
+## Importing a V1 campaign
+
+`story::v1::import_v1(entities_yaml, story_json, rules)` converts a V1
+campaign — its entity export (YAML, single, list, `{ entities }` or a
+multi-document stream) and its story JSON — into one campaign, and
+lists what it dropped (spells, events, conditions, triggers, effects).
+The V1 demo is `content/fixtures/v1-demo/`; its maps are converted by
+`maps::load_v1_story_maps` (`content/maps/v1-demo/`).

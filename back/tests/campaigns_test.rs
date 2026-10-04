@@ -377,3 +377,41 @@ async fn the_gm_previews_what_players_see() {
     assert!(!body.contains("Corentin"), "{body}");
     assert!(!body.contains("statement"), "{body}");
 }
+
+/// campaign/rewrite-two-worlds — both witness worlds go through the
+/// database and come back as the same campaign, so Romain can export
+/// one, edit it as text and re-import it.
+#[tokio::test]
+async fn both_witness_worlds_round_trip_through_the_database() {
+    let pool = common::test_pool().await;
+    let app = common::app(pool.clone());
+    let (_, token) = common::signed_in_gm(&pool, "Romain").await;
+
+    for world in [
+        include_str!("../../content/campaigns/corsaires/campagne.yaml"),
+        include_str!("../../content/campaigns/brasier/campagne.yaml"),
+    ] {
+        let original = from_yaml(world).unwrap();
+        let r = call(
+            &app,
+            Some(&token),
+            "POST",
+            "/api/campaigns/import",
+            Some(json!({ "yaml": world })),
+        )
+        .await;
+        assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
+        let id = r.body["data"]["id"].as_str().unwrap().to_string();
+        let r = call(
+            &app,
+            Some(&token),
+            "GET",
+            &format!("/api/campaigns/{id}/export"),
+            None,
+        )
+        .await;
+        assert_eq!(r.status, StatusCode::OK);
+        let exported = r.body["data"]["yaml"].as_str().unwrap();
+        assert_eq!(from_yaml(exported).unwrap(), original, "{}", original.id);
+    }
+}

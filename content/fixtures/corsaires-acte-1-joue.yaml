@@ -1,0 +1,104 @@
+# Test fixture — the Corsaires' act 1 AS PLAYED on 16 May 2026
+# (dnd-save/DnD-16-05-2026/Acte_1/acte_1.md), reduced to what the checks
+# need. Not a world: content/campaigns/corsaires/ is the rewrite.
+#
+# Its known defects must be found (docs/lecons-des-parties.md §2, §4):
+#   - the Greyhound's route and escort are only at Morel, the repair only
+#     at Thomas — the three places of scene 3, all optional;
+#   - no scene says which player acts in it;
+#   - checks at difficulties 8 and 6, off the rule system's scale.
+# The departure node `requires` what act 2 needs: that is the analysis,
+# the source only had a transition paragraph.
+format: 1
+id: corsaires-acte-1-joue
+title: Corsaires de la Couronne — acte 1 joué
+rules:
+  id: corsaires
+  version: 1
+bible:
+  pitch: Des pirates deviennent corsaires du Roi pour intercepter le HMS Greyhound.
+  start_node: sc_perroquet
+
+party:
+  - { id: pj_antoine, name: Antoine }
+  - { id: pj_justin, name: Justin }
+  - { id: pj_nadia, name: Nadia }
+  - { id: pj_nicolas, name: Nicolas }
+  - { id: pj_paul, name: Paul }
+  - { id: pj_pierre, name: Pierre }
+
+acts:
+  - id: acte_1
+    title: L'Offre qu'on ne refuse pas
+
+nodes:
+  - id: sc_perroquet
+    act: acte_1
+    title: Le Perroquet Noyé
+    checks:
+      - { action: Calmer Jacquot, stat: CHA, difficulty: 8 }
+      - { action: L'intimider, stat: FOR, difficulty: 6 }
+      - { action: Esquiver la chope, stat: DEX, difficulty: 10 }
+    exits:
+      - { to: sc_proposition, label: Vaubernier entre }
+  - id: sc_proposition
+    act: acte_1
+    title: La Proposition
+    exits:
+      - { to: sc_marche_noir, label: Le marché noir }
+      - { to: sc_chantier, label: Le chantier naval }
+      - { to: sc_bureau_morel, label: Le bureau du capitaine de port }
+      - { to: sc_quai, label: Retourner au navire }
+  - id: sc_marche_noir
+    act: acte_1
+    title: Le marché noir de Kerjean
+    optional: true
+    exits:
+      - { to: sc_quai, label: Retourner au navire }
+  - id: sc_chantier
+    act: acte_1
+    title: Le chantier naval
+    optional: true
+    exits:
+      - { to: sc_quai, label: Retourner au navire }
+  - id: sc_bureau_morel
+    act: acte_1
+    title: Le bureau du capitaine de port
+    optional: true
+    exits:
+      - { to: sc_quai, label: Retourner au navire }
+  - id: sc_quai
+    act: acte_1
+    title: La Bagarre du quai
+    encounter:
+      opponents:
+        - who: adv_gueule_rouge
+        - { who: adv_marin, count: 5 }
+    exits:
+      - { to: sc_depart, label: Appareiller }
+  - id: sc_depart
+    act: acte_1
+    title: Transition vers l'acte 2
+    requires: [rev_route, rev_escorte, rev_reparation]
+
+revelations:
+  - { id: rev_route, statement: Le Greyhound longe la côte sud de Belle-Île., importance: critical }
+  - { id: rev_escorte, statement: Le Greyhound est escorté d'au moins un sloop armé., importance: critical }
+  - { id: rev_reparation, statement: Thomas peut réparer La Mâchoire cette nuit., importance: critical }
+  - { id: rev_anglais, statement: Des navires anglais ont été vus au large de Belle-Île., importance: optional }
+  - { id: rev_courants, statement: Des courants au sud de Belle-Île., importance: optional }
+
+clues:
+  - { id: cl_route, revelation: rev_route, node: sc_bureau_morel, text: Route probable du Greyhound (30 PO). }
+  - { id: cl_escorte, revelation: rev_escorte, node: sc_bureau_morel, text: Taille de l'escorte (20 PO). }
+  - { id: cl_reparation, revelation: rev_reparation, node: sc_chantier, text: Thomas répare contre un service ou 25 PO. }
+  - { id: cl_anglais, revelation: rev_anglais, node: sc_perroquet, text: Mère Goulven a entendu parler de navires anglais. }
+  - { id: cl_fragment, revelation: rev_courants, node: sc_quai, text: Un fragment de carte sur un des marins. }
+
+adversaries:
+  - id: adv_gueule_rouge
+    name: Gueule-Rouge
+    stats: { from_rules: gueule_rouge }
+  - id: adv_marin
+    name: Marin de Gueule-Rouge
+    stats: { from_rules: marin_de_gueule_rouge }

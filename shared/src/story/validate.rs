@@ -17,14 +17,16 @@
 //!   scenes (the Greyhound route of the Corsaires' act 1);
 //! - structure: front clocks of 4–6 steps, an opening node, nodes
 //!   reachable from it, exits that go somewhere else, loot that is
-//!   something, sane affinity bounds, music that is a YouTube link.
+//!   something, sane affinity bounds, music that is a YouTube link (or
+//!   a track still to choose);
+//! - players: every party member has a hook in each act with scenes.
 //!
 //! Rule-system data (stats, difficulties, damage formulas) is checked
 //! by the rules engine against the campaign's rule system, not here.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
 
-use super::model::{Campaign, FORMAT_VERSION, Importance};
+use super::model::{Campaign, FORMAT_VERSION, Importance, MusicTrack};
 
 pub const MIN_CRITICAL_CLUE_NODES: usize = 3;
 pub const FRONT_STEPS_MIN: usize = 4;
@@ -217,6 +219,7 @@ pub fn validate(campaign: &Campaign) -> Vec<Issue> {
     check_structure(&mut ck, c);
     check_clues(&mut ck, c);
     check_required_knowledge(&mut ck, c);
+    check_player_hooks(&mut ck, c);
     ck.issues
 }
 
@@ -365,26 +368,10 @@ fn check_structure(ck: &mut Checker<'_>, c: &Campaign) {
                 }
             }
         }
-        for (j, t) in n.ambience.music.iter().enumerate() {
-            if !is_youtube(&t.url) {
-                ck.warn(
-                    "MUSIC_NOT_YOUTUBE",
-                    format!("{p}.ambience.music[{j}].url"),
-                    format!("`{}` is not a YouTube link", t.url),
-                );
-            }
-        }
+        check_music(ck, &n.ambience.music, &format!("{p}.ambience.music"));
     }
     for (i, a) in c.acts.iter().enumerate() {
-        for (j, t) in a.music.iter().enumerate() {
-            if !is_youtube(&t.url) {
-                ck.warn(
-                    "MUSIC_NOT_YOUTUBE",
-                    format!("acts[{i}].music[{j}].url"),
-                    format!("`{}` is not a YouTube link", t.url),
-                );
-            }
-        }
+        check_music(ck, &a.music, &format!("acts[{i}].music"));
     }
 
     for (i, f) in c.factions.iter().enumerate() {
@@ -454,6 +441,52 @@ fn check_structure(ck: &mut Checker<'_>, c: &Campaign) {
                     n.id
                 ),
             );
+        }
+    }
+}
+
+fn check_music(ck: &mut Checker<'_>, tracks: &[MusicTrack], path: &str) {
+    for (j, t) in tracks.iter().enumerate() {
+        if t.url.is_empty() {
+            ck.warn(
+                "MUSIC_NO_URL",
+                format!("{path}[{j}].url"),
+                format!("`{}` has no link yet: a track to choose", t.title),
+            );
+        } else if !is_youtube(&t.url) {
+            ck.warn(
+                "MUSIC_NOT_YOUTUBE",
+                format!("{path}[{j}].url"),
+                format!("`{}` is not a YouTube link", t.url),
+            );
+        }
+    }
+}
+
+/// Every party member has a reason to act somewhere in each act that
+/// has scenes (`docs/lecons-des-parties.md` §2: six players, one head).
+/// An act with no scene yet is unprepared, which is not this check's
+/// concern.
+fn check_player_hooks(ck: &mut Checker<'_>, c: &Campaign) {
+    for (i, act) in c.acts.iter().enumerate() {
+        let scenes: Vec<_> = c.nodes.iter().filter(|n| n.act == act.id).collect();
+        if scenes.is_empty() {
+            continue;
+        }
+        for p in &c.party {
+            let hooked = scenes
+                .iter()
+                .any(|n| n.player_hooks.iter().any(|h| h.character == p.id));
+            if !hooked {
+                ck.warn(
+                    "PLAYER_WITHOUT_HOOK",
+                    format!("acts[{i}]"),
+                    format!(
+                        "`{}` has no player hook in any scene of act `{}`",
+                        p.id, act.id
+                    ),
+                );
+            }
         }
     }
 }

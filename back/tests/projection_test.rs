@@ -6,7 +6,7 @@
 //! the fields players are entitled to must.
 
 use promptus_back::campaigns::projection::{UNKNOWN_OPPONENT, project_for_players};
-use promptus_shared::story::{Campaign, WorldState, from_yaml};
+use promptus_shared::story::{Campaign, MusicMood, MusicTrack, WorldState, from_yaml};
 
 const FIXTURE: &str = include_str!("../../content/fixtures/phare-de-kerbrume.yaml");
 /// Hit points no text of the fixture contains.
@@ -54,6 +54,17 @@ fn marked() -> Campaign {
         n.hook = m("nodes.hook");
         n.ambience.mood = m("nodes.ambience.mood");
         n.ambience.sounds = m("nodes.ambience.sounds");
+        for t in &mut n.ambience.music {
+            t.search = m("nodes.ambience.music.search");
+        }
+        // A track still to choose: no link, so nothing to play.
+        n.ambience.music.push(MusicTrack {
+            mood: MusicMood::Calm,
+            title: m("nodes.ambience.music (no url)"),
+            url: String::new(),
+            search: m("nodes.ambience.music.search"),
+        });
+        n.map = Some(m("nodes.map"));
         for k in &mut n.checks {
             k.action = m("nodes.checks.action");
             k.success = m("nodes.checks.success");
@@ -94,6 +105,9 @@ fn marked() -> Campaign {
             n.title = m("nodes.title (other scene)");
             n.read_aloud = m("nodes.read_aloud (other scene)");
         }
+    }
+    for p in &mut c.party {
+        p.class = Some(m("party.class"));
     }
     for n in &mut c.npcs {
         n.portrait = m("npcs.portrait");

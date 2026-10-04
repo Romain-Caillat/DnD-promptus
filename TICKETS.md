@@ -746,7 +746,7 @@ marquant chaque champ réservé au MJ. Tests V1 portés (validateur,
 monde, concurrence). Reste à faire relire le format à Romain sur un
 vrai monde (`campaign/rewrite-two-worlds`).
 
-### `campaign/rewrite-two-worlds` · todo
+### `campaign/rewrite-two-worlds` · doing — reste la relecture des deux mondes par Romain
 
 **Pourquoi** — Les deux mondes témoins doivent exister dans Promptus
 dès la phase 1, et pas tels quels : leurs défauts sont ce qu'on veut
@@ -767,6 +767,40 @@ des règles et le validateur d'histoire tournent dessus ; test
 `import-export.test.ts` porté.
 
 **Origine** — `dnd-save/` · V1 `import-export.test.ts`
+
+**État** — Les deux mondes sont écrits dans
+`content/campaigns/<monde>/campagne.yaml` et se relisent comme du texte.
+**Corsaires** : l'acte 1 réécrit (neuf scènes, dix PNJ, la boutique de
+Dents-de-Fer, le combat du quai sur sa carte, musiques de `dnd-save/`
+par ambiance, visuels décrits en pixel art). Les quatre informations de
+l'acte 2 (route du Greyhound, escorte, réparation, courants) ont chacune
+trois indices ou plus dans des scènes différentes, dont au moins deux
+obligatoires ; six emplacements de personnage (un par classe jouée, le
+Flibustier et le Boucanier reprennent les accroches du Bretteur et de la
+Vigie) ont chacun des accroches dans au moins deux scènes ; les
+difficultés sont celles du système ; les fiches chiffrées et les objets
+renvoient au système de règles (`from_rules`) au lieu de recopier ses
+nombres. Le validateur n'y trouve rien. La version jouée reste un cas de
+test (`content/fixtures/corsaires-acte-1-joue.yaml`) : le validateur y
+retrouve l'information critique seulement dans les lieux facultatifs,
+l'absence d'accroches et les difficultés hors échelle. **Brasier** :
+bible, quatre factions (rivalités et affinité de départ inventées), quatre
+composants comme objectifs, le Cure-Dent et LUMEN, six emplacements de
+classe, et une première scène jouable, « Le Toboggan » (six postes, six
+jets, puis l'abordage Vorr sur la carte de la coursive) ; la suite de
+l'acte 1 est une ébauche et le validateur le dit. Tout ce qui est
+inventé est marqué « INVENTÉ — à valider par Romain ». Le Brasier n'a
+aucune musique dans la source : morceaux à choisir, sans lien. Nouveaux
+champs et contrôles (carte d'une scène, classe d'un emplacement,
+`from_rules`, contrôles contre le système de règles et les cartes,
+accroche par joueur et par acte) dans `docs/campaign-format.md`.
+`bun run worlds` charge tout `content/` et imprime par monde le contrôle
+des règles, l'équilibre, les cartes et le validateur d'histoire.
+Importeur V1 (entités YAML + histoire JSON) et tests
+`import-export.test.ts` portés sur la démo V1. Reste : que Romain relise
+les deux mondes et tranche ce qui est inventé ; choisir les musiques du
+Brasier ; porter les fiches Vorr dans le système de règles quand il
+accueillera des adversaires au sol.
 
 ### `campaign/list-campaigns` · todo
 
