@@ -13,7 +13,7 @@ formula that does not evaluate, levels out of order. Each error has a
 stable `code`, a `path` (`classes[bretteur].actions[estocade].tags[2]`,
 or a line and column for a syntax error) and an English `detail`; the
 UI translates the code. Whether the rules are *good* is a separate,
-non-blocking check (`engine/lint-rule-system`).
+non-blocking check (`rules::lint`, see *Lint* below).
 
 Ids are `snake_case` (abilities are written as on the sheet: `FOR`,
 `DEX`…). Game text — names, descriptions, notes — is French.
@@ -172,12 +172,53 @@ items:
 adversary_tiers:
   - { id: soldat_entraine, name: Soldat entraîné, armor_class: 12 }
 adversaries:
-  - { id, name, description, tier?, abilities, armor_class, hit_points, actions, tactics, note }
+  - { id, name, description, tier?, abilities, armor_class, hit_points, actions, tactics, note, exception? }
 ```
 
 A class must give a score for every ability. An adversary's armour class
-and hit points are stated, not derived. Action ids are unique across the
+and hit points are stated, not derived. The lint compares a tiered
+adversary's armour class with its tier, and an untiered one's with the
+`stats.armor_class` formula; `exception: "<raison>"` (non-empty) says
+the difference is intended and silences both for that stat block. Action ids are unique across the
 whole system (they key cooldowns on a sheet).
+
+## Lint
+
+`rules::lint(&system)` (or `lint_with` for a given campaign) checks
+whether the rules are *good*. It never blocks: a system with issues
+loads and plays. Each issue has a `severity` (`error`, `warning`,
+`info`), a stable `code`, a `path` in the style above, an English
+`detail` and a French `message` for the GM — the same shape as the
+campaign validator's issues (`promptus_shared::issue::Issue`).
+
+| Code | Severity | What it flags |
+| --- | --- | --- |
+| `DAMAGE_MODEL_MIXED` | warning | players, NPCs, items or conditions do not share one damage model (fixed vs dice); the players' model is the reference |
+| `PRECISION_NOT_APPLIED` | warning | precision values on cards or conditions while `attack.precision` is `not_applied` |
+| `PRIMARY_ABILITY_AMBIGUOUS` | warning | `attack.ability: first_primary` with classes that attack and have several primaries |
+| `ADVERSARY_AC_OFF_TIER` | warning | a tiered adversary's AC is not its tier's (unless `exception`) |
+| `ADVERSARY_AC_FORMULA` | warning | an untiered adversary's AC is not the AC formula's (unless `exception`) |
+| `REFERENCE_MISSING` | error | a `references` entry, or a file name cited in free text, is not among the `sources` |
+| `UNDEFINED_TERM` | warning | free text compares with something undefined (« par rapport à une épée standard ») or names a roll that does not exist (« jets de soin ») |
+| `NAME_DUPLICATE` | warning | two items, or two different class actions, share a name |
+| `COOLDOWN_UNEXPLAINED` | info | cooldowns are used and `cooldowns.note` does not say what they mean |
+| `TURN_CONTEXTS_DIFFER` | info | a turn context's budget or limits differ from the first context's — the GM confirms |
+| `ABILITY_TOTAL_OUTLIER` | warning | a class's ability total differs from the median class's |
+| `DAMAGE_PER_TURN_LOW` | info | a damage-dealing class deals under half the median at level 1 |
+| `PROGRESSION_MAX_EARLY` | warning | a class reaches the top level before the campaign's last session |
+
+The balance numbers behind the last three come from
+`rules::balance_report(&system, &BalanceParams)`: per class, the ability
+total, the expected damage per turn at each level against each
+adversary tier (or the median class AC when there is no tier), the XP
+expected per session and the level at the end of the campaign.
+`BalanceParams` sets the campaign (default: 4 sessions, 2 fights of 4
+rounds and 6 checks per player each session, checks against the median
+difficulty, the first turn context). The numbers are expectations, not
+a simulation: one target, base scores, no situational bonus or buff,
+each class playing its best sustainable mix of unlocked actions under
+the turn budget, kind limits and cooldowns; a contest counts as a check
+against 11. `Display` prints it as a plain table.
 
 ## Not yet in the format
 

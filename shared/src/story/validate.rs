@@ -24,30 +24,13 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
 
-use serde::Serialize;
-
 use super::model::{Campaign, FORMAT_VERSION, Importance};
 
 pub const MIN_CRITICAL_CLUE_NODES: usize = 3;
 pub const FRONT_STEPS_MIN: usize = 4;
 pub const FRONT_STEPS_MAX: usize = 6;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Severity {
-    /// Something is broken: a reference to nothing, a duplicate id.
-    Error,
-    /// A design flaw the GM should look at.
-    Warning,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct Issue {
-    pub severity: Severity,
-    pub code: &'static str,
-    pub path: String,
-    pub detail: String,
-}
+pub use crate::issue::{Issue, Severity};
 
 /// The kinds of things an id can name.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -99,6 +82,7 @@ impl<'a> Checker<'a> {
             code,
             path,
             detail,
+            message: None,
         });
     }
 
