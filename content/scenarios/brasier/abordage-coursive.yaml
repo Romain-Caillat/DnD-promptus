@@ -1,0 +1,91 @@
+# Le Brasier — combat au sol : l'abordage de la coursive du Cure-Dent.
+# Les Vorr ont arrimé leur navette au sas bâbord et forcé la porte
+# intérieure ; l'équipage descend de la passerelle. Rejoué par
+# `bun run rules-report` et par shared/tests/combat_worlds.rs.
+id: abordage-coursive
+name: L'abordage de la coursive
+description: >-
+  Six membres d'équipage de niveau 1 contre une escouade d'abordage vorr
+  entrée par le sas bâbord.
+source: dnd-save/DnD_07-06-2026/Plan_Cure-Dent.svg (coursive, sas bâbord)
+rules: brasier
+version: 1
+map: cure-dent-coursive
+context: sol
+doors:
+  sas-babord-interieur: open
+
+party:
+  policies: [brawler, focus]
+  fighters:
+    - { id: pilote, class: pilote }
+    - { id: canonnier, class: canonnier }
+    - { id: mecano, class: mecano }
+    - { id: xenologue, class: xenologue }
+    - { id: toubib, class: toubib }
+    - { id: quartier_maitre, class: quartier_maitre }
+
+opposition:
+  policies: [brawler]
+  # campagne.yaml, scène « Le Toboggan » : « Le chef d'escouade tombe →
+  # les abordeurs refluent » ; « Trois abordeurs sont tombés → le chef
+  # sonne la retraite » (toute l'escouade part, le chef compris).
+  morale: { leader: chef, flee_when_fallen: 3, retreat_all: true }
+  fighters:
+    - { id: vorr_1, adversary: abordeur-vorr, name: Abordeur 1 }
+    - { id: vorr_2, adversary: abordeur-vorr, name: Abordeur 2 }
+    - { id: vorr_3, adversary: abordeur-vorr, name: Abordeur 3 }
+    - { id: vorr_4, adversary: abordeur-vorr, name: Abordeur 4 }
+    - { id: vorr_5, adversary: abordeur-vorr, name: Abordeur 5 }
+    - { id: chef, adversary: chef-d-escouade-vorr, name: Chef d'escouade }
+
+# Les fiches vorr de la campagne (content/campaigns/brasier/campagne.yaml,
+# `adversaries`), recopiées au format du système de règles : le brouillon
+# de règles du Brasier n'en a encore aucune. Mêmes id, caractéristiques,
+# CA, PV et dégâts (fixes) que la campagne — un test du moteur
+# (shared/tests/combat_worlds.rs) vérifie qu'elles n'en divergent pas.
+# Ce que la fiche de campagne ne dit pas et que le moteur exige :
+# le type d'action (attaque), le jet (attaque), la caractéristique (FOR
+# au corps à corps, DEX à distance) et la portée du crachat (6 cases,
+# INVENTÉ). Non simulé : le crachat qui « marque la cible pour toute
+# l'escouade », l'initiative unique de l'escouade, la course vers la
+# salle des machines et le chef qui reste dans le sas.
+# Ces fiches ne s'ajoutent qu'à ce scénario ; une fiche du même id écrite
+# un jour dans content/rules/brasier/ prend leur place.
+adversaries:
+  - id: abordeur-vorr
+    name: Abordeur Vorr
+    abilities: { FOR: 12, DEX: 12, CON: 10, INT: 6, SAG: 10, CHA: 4 }
+    armor_class: 11
+    hit_points: 4
+    actions:
+      - { id: abordeur_vorr_mandibules, name: Mandibules, kind: attaque, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 2 } }] }
+  - id: chef-d-escouade-vorr
+    name: Chef d'escouade Vorr
+    abilities: { FOR: 14, DEX: 12, CON: 12, INT: 8, SAG: 12, CHA: 6 }
+    armor_class: 12
+    hit_points: 10
+    exception: "Carapace : CA 12 au lieu de 11 par la formule (campagne)."
+    actions:
+      - { id: chef_vorr_faux, name: Faux de chitine, kind: attaque, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 3 } }] }
+      - { id: chef_vorr_crachat, name: Crachat corrosif, kind: attaque, target: enemy, range: 6, roll: attack, ability: DEX, tags: [{ damage: { amount: 2 } }] }
+
+simulation: { fights: 200, seed: 1 }
+
+variants:
+  - id: cd-tour-d-usage
+    name: « CD 1 » = pas deux fois dans le même tour
+    description: >-
+      Le brouillon lit « CD N » comme « inutilisable pendant vos N
+      prochains tours » (CD 1 = un tour sur deux). L'autre lecture : le
+      tour d'usage compte (CD 1 = pas deux fois dans le même tour).
+    set:
+      cooldowns.meaning: turn_of_use_counts
+
+  - id: precision-au-jet
+    name: La précision compte au jet d'attaque
+    description: >-
+      Comme aux Corsaires, la précision des cartes n'entre pas au jet.
+      Ici, elle s'ajoute au d20.
+    set:
+      attack.precision: added_to_attack_roll

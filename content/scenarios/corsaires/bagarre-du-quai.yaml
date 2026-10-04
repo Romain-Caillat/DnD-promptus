@@ -1,0 +1,66 @@
+# Corsaires de la Couronne — acte 1, scène 4 : la bagarre du quai.
+# Six PJ de niveau 1 contre Gueule-Rouge et ses cinq marins, sur le quai
+# de Port-Louis, chacun à la place que lui donne la carte. Rejoué par
+# `bun run rules-report` et par shared/tests/combat_worlds.rs.
+id: bagarre-du-quai
+name: La bagarre du quai
+description: >-
+  Combat tutoriel de l'acte 1 : les six corsaires tombent sur
+  Gueule-Rouge et ses marins entre les entrepôts et l'appontement.
+source: dnd-save/DnD-16-05-2026/Acte_1/acte_1.md (scène 4)
+rules: corsaires
+version: 1
+map: quai-port-louis
+context: sol
+
+party:
+  # brawler : chacun frappe l'ennemi le plus proche ; focus : le plus
+  # faible à portée, sans s'arrêter dans une porte. Deux tactiques de
+  # référence, pas une IA.
+  policies: [brawler, focus]
+  fighters:
+    - { id: bretteur, class: bretteur }
+    - { id: canonnier, class: canonnier }
+    - { id: navigateur, class: navigateur }
+    - { id: chirurgien, class: chirurgien }
+    - { id: vigie, class: vigie }
+    - { id: flibustier, class: flibustier }
+
+opposition:
+  policies: [brawler]
+  # acte_1.md : « Si 3 marins tombent, les 2 restants tentent de fuir.
+  # Si Gueule-Rouge tombe, tous les marins restants fuient. »
+  morale: { leader: gueule_rouge, flee_when_fallen: 3 }
+  fighters:
+    - { id: gueule_rouge, adversary: gueule_rouge, name: Gueule-Rouge }
+    - { id: marin_1, adversary: marin_de_gueule_rouge, name: Marin 1 }
+    - { id: marin_2, adversary: marin_de_gueule_rouge, name: Marin 2 }
+    - { id: marin_3, adversary: marin_de_gueule_rouge, name: Marin 3 }
+    - { id: marin_4, adversary: marin_de_gueule_rouge, name: Marin 4 }
+    - { id: marin_5, adversary: marin_de_gueule_rouge, name: Marin 5 }
+
+simulation: { fights: 200, seed: 1 }
+
+variants:
+  - id: precision-au-jet
+    name: La précision compte au jet d'attaque
+    description: >-
+      Les règles affichent une précision sur chaque carte mais ne
+      l'ajoutent jamais au jet. Ici, elle s'ajoute au d20.
+    set:
+      attack.precision: added_to_attack_roll
+
+  - id: degats-fixes-pnj
+    name: Un seul modèle de dégâts (PNJ à dégâts fixes)
+    description: >-
+      Les joueurs font des dégâts fixes, les PNJ lancent des dés. Ici,
+      Gueule-Rouge et ses marins font des dégâts fixes : la moyenne du
+      dé, arrondie à l'inférieur (1d6+2 → 5, 1d4+2 → 4, 1d4+1 → 3,
+      1d3 → 2). Arrondir à l'inférieur leur retire un peu de dégâts
+      moyens : la comparaison mêle donc la fin du hasard et cette
+      petite baisse.
+    set:
+      adversaries[gueule_rouge].actions[gueule_rouge_sabre].tags[0].damage.amount: 5
+      adversaries[gueule_rouge].actions[gueule_rouge_coup_de_tete].tags[0].damage.amount: 4
+      adversaries[marin_de_gueule_rouge].actions[marin_coutelas].tags[0].damage.amount: 3
+      adversaries[marin_de_gueule_rouge].actions[marin_poing].tags[0].damage.amount: 2
