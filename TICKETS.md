@@ -187,7 +187,7 @@ Rust contre Postgres, lint + typecheck + tests front, gitleaks.
 
 **Origine** — Alignement sur Devotion
 
-### `platform/sign-in-gm` · todo
+### `platform/sign-in-gm` · doing
 
 **Pourquoi** — Le V1 laissait les pages MJ ouvertes à tous.
 
@@ -199,6 +199,33 @@ restent sans compte (jeton haché, `session/invite-and-join`).
 avec le compte d'un autre MJ : toutes refusent.
 
 **Origine** — `MEMORY.md` §4
+
+**État** — Livré côté serveur et interface, vérifié dans PCT 105. Un
+MJ n'a ni mot de passe ni e-mail : un nom affiché et une ou plusieurs
+passkeys découvrables (webauthn-rs 0.5, vérification de l'utilisateur
+exigée), donc la connexion ne demande aucun identifiant. Session côté
+serveur (`gm_sessions`, jeton aléatoire de 256 bits stocké en SHA-256,
+30 jours) dans un cookie `promptus_gm` `HttpOnly`, `SameSite=Strict`,
+`Path=/api`, `Secure` dès que `PUBLIC_ORIGIN` est en HTTPS. Le premier
+compte exige le **code de démarrage** (aléatoire, affiché dans le
+journal du serveur au démarrage tant qu'aucun MJ n'existe, ou fixé par
+`GM_SETUP_TOKEN`) ; les suivants, une **invitation** à usage unique
+(7 jours, hachée, révocable) créée par un MJ connecté. Toutes les routes
+MJ (`/api/me`, `/api/auth/sign-out`, `/api/gm-invites`…) passent par le
+middleware `require_gm` (401 `UNAUTHENTICATED`) ; une ressource d'un
+autre MJ répond 404, comme une ressource inexistante (`owned_by` dans
+`back/src/auth/guard.rs`, prêt pour les campagnes). Interface :
+`/connexion`, `/inscription` (code prérempli par le lien d'invitation),
+accueil MJ avec invitations et déconnexion. Tests : les cérémonies avec
+un authentificateur logiciel (inscription, connexion, rejeu, course
+entre deux premiers comptes, invitation utilisée, révoquée ou expirée,
+passkey d'un autre MJ), le balayage de chaque route MJ sans session,
+avec un faux cookie, une session expirée ou fermée, puis avec un autre
+MJ. **Reste** : une vraie cérémonie dans un navigateur (Safari iOS,
+Chrome) une fois l'app servie en HTTPS (`platform/deploy-self-hosted`),
+puis archiver. Hors périmètre, à décider : récupérer un compte dont la
+passkey est perdue, ajouter une seconde passkey, limiter le débit des
+routes publiques, les passkeys dans l'app Tauri.
 
 ### `platform/deploy-self-hosted` · todo
 

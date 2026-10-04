@@ -16,7 +16,7 @@ fn get_health() -> Request<Body> {
 #[tokio::test]
 async fn health_is_ok_when_the_database_answers() {
     let pool = common::test_pool().await;
-    let app = promptus_back::app::router(pool, &[]);
+    let app = common::app(pool);
 
     let response = app.oneshot(get_health()).await.unwrap();
 
@@ -33,7 +33,7 @@ async fn health_is_unavailable_when_the_database_is_down() {
         .acquire_timeout(Duration::from_secs(2))
         .connect_lazy("postgres://promptus:promptus@127.0.0.1:1/promptus")
         .unwrap();
-    let app = promptus_back::app::router(pool, &[]);
+    let app = common::app(pool);
 
     let response = app.oneshot(get_health()).await.unwrap();
 

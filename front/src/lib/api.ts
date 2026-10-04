@@ -28,6 +28,52 @@ export async function fetchHealth(signal?: AbortSignal): Promise<HealthStatus> {
   return 'unreachable'
 }
 
+/**
+ * A refused API call. `code` is the server's machine-readable code
+ * (`{ error: { code } }`), `UNREACHABLE` when no answer came back, and
+ * `UNEXPECTED` when the answer was not the API's envelope.
+ */
+export class ApiError extends Error {
+  readonly status: number
+  readonly code: string
+
+  constructor(status: number, code: string) {
+    super(`API error ${status} ${code}`)
+    this.name = 'ApiError'
+    this.status = status
+    this.code = code
+  }
+}
+
+/**
+ * Call the API and return the `data` of its envelope (`undefined` for a
+ * 204). Throws `ApiError` on anything else. The GM session travels in
+ * its HttpOnly cookie, which `fetch` sends on same-origin calls.
+ */
+export async function apiRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      method,
+      credentials: 'same-origin',
+      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+  } catch {
+    throw new ApiError(0, 'UNREACHABLE')
+  }
+  if (response.status === 204) return undefined as T
+  const json: unknown = await response.json().catch(() => null)
+  if (!response.ok) {
+    const code = readPath(json, 'error', 'code')
+    throw new ApiError(response.status, typeof code === 'string' ? code : 'UNEXPECTED')
+  }
+  if (typeof json !== 'object' || json === null || !('data' in json)) {
+    throw new ApiError(response.status, 'UNEXPECTED')
+  }
+  return (json as { data: T }).data
+}
+
 function readPath(value: unknown, ...keys: string[]): unknown {
   let current = value
   for (const key of keys) {

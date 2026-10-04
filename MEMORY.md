@@ -208,6 +208,17 @@ Players join with an invite link, a nickname and a free character —
 no account. The secret token lives on the device; the server stores
 only its hash.
 
+### GM routes sit behind the GM guard
+
+Every GM route is mounted on the GM router in `back/src/app.rs`, behind
+`require_gm` (no valid session cookie: 401), and is listed in
+`back/tests/gm_routes_test.rs`, which sweeps them all. A resource is
+checked with `owned_by` (`back/src/auth/guard.rs`): another GM's row
+answers 404, exactly like a missing one — never 403, which would
+confirm it exists. The first GM is created with the setup code from
+the server log, every other one through an invitation: registration is
+never open to whoever reaches the server first.
+
 ### Every AI call is counted
 
 Each LLM, image or video call is recorded with its cost and counted
@@ -250,8 +261,9 @@ against the campaign budget; a batch that would exceed it is refused.
   re-syncs on its own.
 - **OpenRouter video output format was never verified** (no network
   during V1 development). Check it before designing around it.
-- **V1 GM pages had no authentication.** The rewrite needs a GM account
-  from day one (passkeys, as in Devotion); `/play/*` stays tokenless.
+- **V1 GM pages had no authentication.** The rewrite has a GM account
+  from day one (passkeys, `platform/sign-in-gm`, see §3 "GM routes");
+  `/play/*` stays accountless.
 - **YouTube player must stay visible** also applies to the phone design:
   the scene screen currently hides music behind a button — needs a
   visible mini-player before it ships.

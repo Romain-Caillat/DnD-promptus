@@ -7,28 +7,51 @@ use serde_json::json;
 /// `{ "error": { "code": "...", "message": "..." } }`: the front
 /// dispatches on `code` and shows its own translated text — `message`
 /// is for logs and humans reading the network tab, never for the UI.
+///
+/// Each variant carries its machine-readable code.
 #[derive(Debug)]
 pub enum AppError {
-    /// A dependency the request needs (today: the database) is down.
-    /// The body string is the machine-readable code.
+    /// 400 — the request itself is malformed or a field is invalid.
+    BadRequest(&'static str),
+    /// 401 — no valid GM session (missing, unknown, expired or signed
+    /// out), or a passkey answer that does not verify.
+    Unauthorized(&'static str),
+    /// 403 — the caller is known (or holds a code) but is not allowed
+    /// to do this, whatever the resource.
+    Forbidden(&'static str),
+    /// 404 — the resource does not exist **or belongs to another GM**:
+    /// the two are indistinguishable on purpose (see `auth::guard`).
+    NotFound(&'static str),
+    /// A dependency the request needs (today: the database) is down, or
+    /// the server refuses new work for a moment.
     ServiceUnavailable(&'static str),
     Internal(String),
+}
+
+impl AppError {
+    pub fn internal(context: &str, e: impl std::fmt::Display) -> Self {
+        Self::Internal(format!("{context}: {e}"))
+    }
 }
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, code, message) = match self {
+            Self::BadRequest(code) => (StatusCode::BAD_REQUEST, code, "invalid request"),
+            Self::Unauthorized(code) => (StatusCode::UNAUTHORIZED, code, "not signed in"),
+            Self::Forbidden(code) => (StatusCode::FORBIDDEN, code, "not allowed"),
+            Self::NotFound(code) => (StatusCode::NOT_FOUND, code, "not found"),
             Self::ServiceUnavailable(code) => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 code,
-                "a dependency is unavailable".to_string(),
+                "a dependency is unavailable",
             ),
             Self::Internal(detail) => {
                 tracing::error!(%detail, "internal error");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "INTERNAL_ERROR",
-                    "internal error".to_string(),
+                    "internal error",
                 )
             }
         };
