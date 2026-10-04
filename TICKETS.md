@@ -1320,7 +1320,7 @@ dessin n'est qu'une projection. Le serveur reste seul juge du
 déplacement, de la portée et de la ligne de vue ; un joueur ne reçoit
 jamais ce qu'il n'a pas le droit de voir (projection joueur, `MEMORY.md` §3).
 
-### `maps/model-grid-maps` · todo
+### `maps/model-grid-maps` · doing — reste le stockage en base (avec la campagne)
 
 **Pourquoi** — Tout le reste (rendu, règles, brouillard, génération)
 lit la même description de carte.
@@ -1337,6 +1337,33 @@ cartes YAML du V1.
 coursive du Cure-Dent) et celles de la démo V1 se chargent dans le
 nouveau modèle, et le moteur de règles calcule déplacement et ligne de
 vue dessus.
+
+**État** — Modèle et règles livrés dans `shared/src/maps/`, format
+décrit dans `docs/map-format.md` (YAML pour écrire, même forme en JSON
+pour la base). Une carte = échelle, légende de glyphes + rangées
+(terrain, mur, eau peu profonde ou profonde, terrain difficile, vide,
+hauteur), portes (ouverte, fermée, verrouillée ; une porte secrète est
+une porte sur un calque MJ, sa case reste un mur pour les joueurs),
+décors avec emprise et règles (couvert ½, ¾ ou total, bloque le passage,
+difficile, escaladable), objets à trouver (jet et notes réservés au MJ),
+lumières, ambiance (heure, météo, lumière de base, portée de vue, humeur,
+vent), sorties vers d'autres cartes, étiquettes, positions de départ, et
+calques visibles de tous, du MJ seul, ou des joueurs seuls (illusion,
+ignorée par les règles). Le moteur calcule cases atteignables, validation
+d'un chemin envoyé par le client, portée, ligne de vue avec niveau de
+couvert, cases vues depuis un point (pour le brouillard) et éclairage ;
+`Map::project` est le point unique qui retire aux joueurs ce qu'ils ne
+doivent pas voir. Hexagones : coordonnées, distance, voisins et
+déplacement d'un pas par hexagone pour le monde. Les deux cartes témoins
+sont écrites (`content/maps/corsaires/quai-port-louis.yaml`,
+`content/maps/brasier/cure-dent-coursive.yaml`, six contre six) et les
+quatre cartes de la démo V1 se chargent (`content/maps/v1-demo/`,
+chargeur `load_v1_story_maps`). 34 tests dans `shared/`. Reste : le
+stockage en base (table et migration, avec `campaign/model-story-graph`)
+et le branchement des paramètres de déplacement (`MovementRules`) sur le
+système de règles (`engine/model-rule-system`). Le rendu, le brouillard,
+les véhicules (orientation, arcs) et le voyage en hexagones lisent ce
+modèle sans le changer.
 
 **Origine** — Session de design du 3 octobre 2026 · V1 (format YAML des cartes)
 

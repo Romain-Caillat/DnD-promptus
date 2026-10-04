@@ -1,0 +1,102 @@
+# Corsaires de la Couronne, acte 1, scène 4 — la bagarre du quai.
+# Source : dnd-save/DnD-16-05-2026/Acte_1/acte_1.md. Six PJ contre
+# Gueule-Rouge et cinq marins, de nuit, dans le brouillard, entre les
+# entrepôts et l'appontement où La Mâchoire est amarrée.
+version: 1
+id: quai-port-louis
+name: Le quai de Port-Louis
+scale: encounter
+theme: port-1718
+ambience:
+  time: night
+  weather: fog
+  sight_limit: 10
+  mood: quai-tension
+  wind: { from: w, strength: 1 }
+gm_notes: >-
+  Combat tutoriel : expliquer initiative, actions et jets d'attaque au
+  premier tour. Gueule-Rouge vise le PJ qui a l'air le plus fort. Si trois
+  marins tombent, les deux autres fuient ; si Gueule-Rouge tombe, tous
+  fuient.
+layers:
+  - { id: base, name: Quai, visibility: all }
+  - { id: embuscade, name: Embuscade de Gueule-Rouge, visibility: gm }
+  - { id: secrets, name: Secrets, visibility: gm }
+grid:
+  legend:
+    "#": { terrain: pierre, wall: true }
+    ":": { terrain: plancher }
+    ".": { terrain: pavés }
+    ",": { terrain: flaque, difficult: true }
+    "~": { terrain: eau, water: deep }
+    "_": { terrain: planches }
+    "/": { terrain: passerelle, elevation: 1 }
+    "=": { terrain: pont, elevation: 1 }
+  rows:
+    - "########################"
+    - "#:::::#:::::::#::::::::#"
+    - "#:::::#:::::::#::::::::#"
+    - "########################"
+    - "........................"
+    - "........................"
+    - "...........,,..........."
+    - "........................"
+    - "...............,,......."
+    - "....,..................."
+    - "~~~~~~~~~___~~~~~~~~~~~~"
+    - "~~~~~~~~~___~==========~"
+    - "~~~~~~~~~___/==========~"
+    - "~~~~~~~~~___~==========~"
+    - "~~~~~~~~~___~==========~"
+    - "~~~~~~~~~~~~~~~~~~~~~~~~"
+doors:
+  - { id: porte-kerjean, at: [3, 3], state: locked, label: Entrepôt de Kerjean }
+  - { id: porte-douanes, at: [10, 3], state: closed, label: Entrepôt des douanes }
+  - { id: porte-chantier, at: [18, 3], state: open, label: Remise du chantier naval }
+props:
+  - { id: caisses-pile-1, kind: caisses, label: Caisses empilées, at: [7, 5], size: [2, 2], cover: total, blocks_movement: true }
+  - { id: caisse-1, kind: caisse, label: Caisse, at: [11, 7], cover: half, blocks_movement: true }
+  - { id: caisses-pile-2, kind: caisses, label: Caisses empilées, at: [16, 5], size: [1, 2], cover: total, blocks_movement: true }
+  - { id: tonneaux, kind: tonneaux, label: Tonneaux de rhum, at: [19, 7], size: [2, 1], cover: three_quarters, blocks_movement: true }
+  - { id: cordages-1, kind: cordages, label: Cordages enroulés, at: [5, 8], size: [2, 1], difficult: true }
+  - { id: cordages-2, kind: cordages, label: Cordages enroulés, at: [13, 9], difficult: true }
+  - { id: bitte, kind: bitte, label: Bitte d'amarrage, at: [8, 9], cover: half, blocks_movement: true }
+  - { id: bastingage-nord, kind: bastingage, at: [13, 11], size: [10, 1], cover: half, blocks_movement: true }
+  - { id: bastingage-sud, kind: bastingage, at: [13, 14], size: [10, 1], cover: half, blocks_movement: true }
+  - { id: bastingage-ouest, kind: bastingage, at: [13, 13], cover: half, blocks_movement: true }
+  - { id: bastingage-est, kind: bastingage, at: [22, 12], size: [1, 2], cover: half, blocks_movement: true }
+  - { id: grand-mat, kind: mat, label: Grand mât, at: [18, 12], cover: total, blocks_movement: true }
+objects:
+  - id: trappe-contrebande
+    kind: trappe
+    label: Trappe sous l'appontement
+    at: [10, 13]
+    check: { stat: SAG, dc: 15 }
+    notes: Cachette des marins de Gueule-Rouge — rhum de contrebande et une bourse de 15 PO.
+    layer: secrets
+lights:
+  - { id: lanterne-kerjean, at: [3, 4], bright: 1, dim: 3, color: "#ffb35c", flicker: true }
+  - { id: lanterne-chantier, at: [18, 4], bright: 1, dim: 3, color: "#ffb35c", flicker: true }
+  - { id: fanal-machoire, at: [21, 12], bright: 2, dim: 4, color: "#ffd27a", flicker: true }
+exits:
+  - { id: vers-les-rues, cells: [[0, 4], [0, 5], [0, 6], [0, 7], [0, 8], [0, 9]], to: port-louis-rues, label: Vers les rues de Port-Louis }
+  - { id: ecoutille, cells: [[20, 13]], to: machoire-entrepont, label: Écoutille de La Mâchoire }
+labels:
+  - { text: Entrepôt de Kerjean, at: [3, 1] }
+  - { text: Entrepôt des douanes, at: [10, 1] }
+  - { text: Chantier naval, at: [18, 1] }
+  - { text: Appontement, at: [10, 10] }
+  - { text: La Mâchoire, at: [17, 13] }
+starts:
+  - { id: pj-1, side: party, at: [0, 5] }
+  - { id: pj-2, side: party, at: [0, 6] }
+  - { id: pj-3, side: party, at: [0, 7] }
+  - { id: pj-4, side: party, at: [1, 5] }
+  - { id: pj-5, side: party, at: [1, 6] }
+  - { id: pj-6, side: party, at: [1, 7] }
+  - { id: gueule-rouge, side: foes, at: [13, 6], entity: gueule-rouge, layer: embuscade }
+  - { id: marin-1, side: foes, at: [10, 5], entity: marin-de-gueule-rouge, layer: embuscade }
+  - { id: marin-2, side: foes, at: [14, 4], entity: marin-de-gueule-rouge, layer: embuscade }
+  - { id: marin-3, side: foes, at: [12, 8], entity: marin-de-gueule-rouge, layer: embuscade }
+  - { id: marin-4, side: foes, at: [17, 7], entity: marin-de-gueule-rouge, layer: embuscade }
+  - { id: marin-5, side: foes, at: [9, 7], entity: marin-de-gueule-rouge, layer: embuscade }

@@ -2,6 +2,7 @@
 //! engine and the domain models. No I/O lives here — the server stays
 //! authoritative on every rule, and this crate is what it applies.
 //!
-//! Empty until the `engine` epic lands; nothing depends on it yet.
+//! `story` is the campaign graph, `maps` the grid maps and their geometry.
 
+pub mod maps;
 pub mod story;

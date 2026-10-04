@@ -3084,7 +3084,9 @@ name = "promptus_shared"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_json",
  "serde_yaml_ng",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
