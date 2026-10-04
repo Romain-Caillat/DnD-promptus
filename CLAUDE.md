@@ -38,8 +38,10 @@ and demo campaign are the specification to port. What shipped is
 summarized in `archive/tickets/v1.md`.
 
 The rewrite follows the Devotion model (same stack, same conventions).
-**Design comes before code**: see the `design` epic in `TICKETS.md` and
-`docs/design-brief.md`.
+The design is done (`archive/tickets/design.md`): the canvas boards are
+the visual specification (`docs/design/README.md`), and `TICKETS.md`
+orders the code work in three milestones, each ending with a real
+session played.
 
 ## Tech Stack (target)
 
@@ -53,21 +55,70 @@ The rewrite follows the Devotion model (same stack, same conventions).
 - **AI**: OpenRouter (LLM, image, video), behind swappable provider traits
 - **Music**: YouTube (chosen, not generated), synced player-side
 - **Package manager**: Bun (frontend + scripts), Cargo (Rust workspace)
-- **Deployment**: Docker Compose (Axum server + PostgreSQL) on a home server
+- **Deployment**: Docker Compose (Axum server + PostgreSQL) on a home server —
+  one image, the server also serves the built front (`FRONT_DIR`);
+  `docker-compose.prod.yml`, `docs/install.md`, `docs/backup.md`
 
-## Project Structure (target)
+## Project Structure
 
 ```
-front/          # React frontend (Vite)
-back/           # Rust/Axum backend (API + WebSocket)
+front/          # React frontend (Vite), i18n in src/i18n (fr.json = reference)
+back/           # Rust/Axum backend (API + WebSocket), sqlx migrations
 shared/         # Shared Rust crate (rules engine, models)
 src-tauri/      # Tauri 2.x shell (desktop/mobile app)
+scripts/        # Dev helpers (test database creation)
+deploy/         # Production: install, backup, restore, continuous deploy (docs/install.md)
 docs/           # Reference docs (design brief, security, realtime…)
 archive/        # V1 zip, retired BMad artifacts, shipped tickets per epic
 ```
 
-None of these code folders exist yet; they are created by
-`platform/scaffold-workspace` once the design is settled.
+The workspace is a skeleton (`platform/scaffold-workspace`): a
+`GET /api/health` that checks the database, one migration
+(`set_updated_at()` trigger function), and a French placeholder page
+that calls the health endpoint.
+
+## Development environment
+
+The Proxmox host has **no Rust and no Docker** (and Docker must never
+run there). Everything builds and runs in the LXC container **PCT 105**,
+which mounts `/mnt/storage/DnD-promptus` at the same path:
+
+```bash
+pct exec 105 -- bash -lc 'cd /mnt/storage/DnD-promptus && bun run test'
+```
+
+PCT 105 is unprivileged (root inside = uid 100000 on the host). Files
+created from the host (editor, Claude's Write/Edit tools) belong to
+uid 0 and are **not writable from inside the container**, which then
+also cannot create `target/` or `node_modules/` under them. After
+writing files on the host and before running anything in PCT 105:
+
+```bash
+chown -R --from=0:0 100000:100000 /mnt/storage/DnD-promptus
+```
+
+Git runs fine on the host. Inside PCT 105 there is **no Node**: Bun
+stands in for it (`bun run` shims `node`; call a Node CLI directly with
+`bun --bun node_modules/.bin/<cli>`). Vitest is pinned to 4.x —
+Vitest 5 + jsdom 30 fail to start their workers under Bun.
+
+| Command | What it does |
+|---------|--------------|
+| `bun run dev` | Postgres (Docker), Axum on `:4333` (bacon, reloads on change), Vite on `:4334` proxying `/api` |
+| `bun run test` | `cargo test --workspace` against `TEST_DATABASE_URL`, then Vitest |
+| `bun run lint` | `cargo fmt --check`, clippy `-D warnings`, ESLint, `tsc -b`, knip |
+| `bun run db:start` / `db:stop` / `db:reset` | Dev Postgres 17 on `127.0.0.1:5432` |
+| `bun run build:tauri` | Production Tauri build (`dev:tauri`, `dev:ios` for live runs) |
+
+First time: `cp .env.example .env`. Postgres holds two databases,
+`promptus` (dev) and `promptus_test` (integration tests, created by
+`scripts/create-test-db.sql` on a fresh volume). Integration tests
+**fail** — they do not skip — when `TEST_DATABASE_URL` is unset, and
+refuse to run when it equals `DATABASE_URL`. The compose project name
+is fixed (`promptus-dev`), so every worktree shares one database.
+
+The iOS simulator needs macOS: `tauri ios init` / `bun run dev:ios`
+are run on Romain's Mac, not in PCT 105.
 
 ## Tickets and memory
 

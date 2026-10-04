@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Inviter la table</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A;overflow:hidden}
+.imj-pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 40% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.imj-ttl{font-family:'Cinzel',Georgia,serif;font-weight:800}
+.imj-lbl{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.imj-grid{display:grid;grid-template-columns:repeat(3,720px);gap:56px 48px}
+.imj-mo{display:flex;flex-direction:column;gap:14px}
+.imj-mh{display:flex;align-items:baseline;gap:10px}
+.imj-mh > b{font-family:'Cinzel',serif;font-size:13px;width:28px;height:28px;border-radius:7px;display:inline-grid;place-items:center;background:#EDEDED;color:#0A0A0A;box-shadow:0 2px 0 #6E6E6E;flex:none}
+.imj-mh > span{font-family:'Cinzel',serif;font-weight:800;font-size:20px}
+.imj-fr{width:720px;height:345px;overflow:hidden;border-radius:10px;border:1px solid #2C2C2C;box-shadow:0 20px 40px rgba(0,0,0,.6)}
+.imj-cap{display:grid;grid-template-columns:130px 1fr;gap:6px 10px;font-size:13px;line-height:1.45;color:#D4D4D4;margin:0}
+.imj-cap > dt{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8C8C8C;padding-top:3px}
+.imj-cap > dd{margin:0}
+.imj-rule{display:flex;gap:12px;align-items:flex-start;font-size:13px;color:#D4D4D4;line-height:1.45}
+.imj-rule > b{flex:none;width:24px;height:24px;border-radius:6px;background:#EDEDED;color:#0A0A0A;display:grid;place-items:center;font-family:'Cinzel',serif;box-shadow:0 2px 0 #6E6E6E}
+</style>
+</helmet>
+<div class="imj-pm" style="width: 2384px; height: 1780px; position: relative; overflow: hidden">
+<div style="padding: 48px 64px 32px; display: flex; gap: 80px; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 1000px">
+<div class="imj-lbl">MJ · ordinateur</div>
+<h1 class="imj-ttl" style="margin: 0; font-size: 50px">Inviter la table</h1>
+<p style="margin: 0; font-size: 16px; color: #A3A3A3; line-height: 1.5">Romain invite Camille, Marc et Hugo dans « Les Cendres de Valombre ». À gauche son ordinateur, à droite le téléphone de Marc. Chaque personnage passe par le MJ avant d’entrer en jeu. La planche « Inviter » la rejoue en entier.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 900px">
+<div class="imj-rule"><b>1</b><span><strong style="color: #F2F2F2">Un lien, pas de compte.</strong> Le joueur choisit un pseudo ; son appareil garde sa place.</span></div><div class="imj-rule"><b>2</b><span><strong style="color: #F2F2F2">Le MJ valide chaque personnage.</strong> Le co-MJ vérifie les règles et écrit le mot ; le MJ tranche.</span></div><div class="imj-rule"><b>3</b><span><strong style="color: #F2F2F2">Les histoires servent la campagne.</strong> Ce que les joueurs écrivent devient des accroches secrètes dans le graphe.</span></div>
+</div>
+</div>
+<div class="imj-grid" style="padding: 0 64px"><div class="imj-mo"><div class="imj-mh"><b>1</b><span>Le lien</span></div><div class="imj-fr"><div style="width: 1880px; height: 900px; transform: scale(.383); transform-origin: 0 0"><dc-import name="Inviter-MJ" moment="1" seul="true" hint-size="1880px,900px"></dc-import></div></div><dl class="imj-cap"><dt>Le MJ</dt><dd>Copie le lien et un message prêt à coller sur Discord.</dd><dt>Marc</dt><dd>Reçoit le message de Romain avec la carte d’invitation.</dd><dt>Pourquoi</dt><dd>Le MJ invite là où sa table parle déjà ; pas de compte à créer.</dd></dl></div><div class="imj-mo"><div class="imj-mh"><b>2</b><span>Ils arrivent</span></div><div class="imj-fr"><div style="width: 1880px; height: 900px; transform: scale(.383); transform-origin: 0 0"><dc-import name="Inviter-MJ" moment="2" seul="true" hint-size="1880px,900px"></dc-import></div></div><dl class="imj-cap"><dt>Le MJ</dt><dd>Voit sa table se remplir et Lyra arriver pour validation.</dd><dt>Marc</dt><dd>Choisit un pseudo et commence son personnage, sans compte.</dd><dt>Pourquoi</dt><dd>L’appareil du joueur garde une clé secrète ; le serveur n’en garde que l’empreinte.</dd></dl></div><div class="imj-mo"><div class="imj-mh"><b>3</b><span>Lyra</span></div><div class="imj-fr"><div style="width: 1880px; height: 900px; transform: scale(.383); transform-origin: 0 0"><dc-import name="Inviter-MJ" moment="3" seul="true" hint-size="1880px,900px"></dc-import></div></div><dl class="imj-cap"><dt>Le MJ</dt><dd>Relit la fiche de Camille, vérifiée par le co-MJ, et la valide.</dd><dt>Marc</dt><dd>Choisit sa classe : guerrier.</dd><dt>Pourquoi</dt><dd>Le co-MJ vérifie les règles, le MJ lit l’histoire.</dd></dl></div><div class="imj-mo"><div class="imj-mh"><b>4</b><span>Borin</span></div><div class="imj-fr"><div style="width: 1880px; height: 900px; transform: scale(.383); transform-origin: 0 0"><dc-import name="Inviter-MJ" moment="4" seul="true" hint-size="1880px,900px"></dc-import></div></div><dl class="imj-cap"><dt>Le MJ</dt><dd>Voit la Force à 18 signalée et le mot proposé pour Marc.</dd><dt>Marc</dt><dd>Attend la réponse du MJ.</dd><dt>Pourquoi</dt><dd>Un point hors règles n’est pas un refus sec : c’est un mot, et le MJ peut accepter quand même.</dd></dl></div><div class="imj-mo"><div class="imj-mh"><b>5</b><span>Le renvoi</span></div><div class="imj-fr"><div style="width: 1880px; height: 900px; transform: scale(.383); transform-origin: 0 0"><dc-import name="Inviter-MJ" moment="5" seul="true" hint-size="1880px,900px"></dc-import></div></div><dl class="imj-cap"><dt>Le MJ</dt><dd>Attend, puis voit ce qui a changé : Force 17, Sagesse 13.</dd><dt>Marc</dt><dd>Lit le mot, déplace le point, renvoie.</dd><dt>Pourquoi</dt><dd>Le joueur corrige seul ; le MJ ne relit que la différence.</dd></dl></div><div class="imj-mo"><div class="imj-mh"><b>6</b><span>La table complète</span></div><div class="imj-fr"><div style="width: 1880px; height: 900px; transform: scale(.383); transform-origin: 0 0"><dc-import name="Inviter-MJ" moment="6" seul="true" hint-size="1880px,900px"></dc-import></div></div><dl class="imj-cap"><dt>Le MJ</dt><dd>Ajoute en secret deux accroches tirées des histoires des joueurs.</dd><dt>Marc</dt><dd>Voit Borin validé et sa table.</dd><dt>Pourquoi</dt><dd>Les histoires des joueurs nourrissent la campagne sans rien leur dévoiler.</dd></dl></div><div class="imj-mo"><div class="imj-mh"><b>7</b><span>La date</span></div><div class="imj-fr"><div style="width: 1880px; height: 900px; transform: scale(.383); transform-origin: 0 0"><dc-import name="Inviter-MJ" moment="7" seul="true" hint-size="1880px,900px"></dc-import></div></div><dl class="imj-cap"><dt>Le MJ</dt><dd>Choisit le jeudi où tout le monde est libre et l’envoie.</dd><dt>Marc</dt><dd>Reçoit la date et l’ajoute à son agenda.</dd><dt>Pourquoi</dt><dd>L’invitation se ferme sur un rendez-vous ; le salon ouvrira avant.</dd></dl></div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2384,"height":1780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

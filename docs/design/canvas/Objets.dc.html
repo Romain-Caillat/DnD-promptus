@@ -25,7 +25,7 @@ body{margin:0;background:#0A0A0A}
 .t-div{background:linear-gradient(90deg,#FF6B8B,#FFB86B,#FFF27A,#7BFFB0,#6BD6FF,#9C7BFF);-webkit-background-clip:text;background-clip:text;color:transparent}
 
 /* loot drop */
-.loot{position:relative;height:270px;flex:1}
+.loot{position:relative;height:330px;flex:1}
 .loot .floor{position:absolute;left:50%;bottom:22px;width:150px;height:26px;margin-left:-75px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.12),transparent)}
 .loot .chest{position:absolute;left:50%;bottom:24px;margin-left:-42px;animation:chest 4.4s ease-in-out infinite;transform-origin:50% 100%}
 @keyframes chest{0%,4%{transform:none}8%{transform:rotate(-5deg)}12%{transform:rotate(5deg)}16%{transform:rotate(-4deg)}20%{transform:rotate(3deg)}24%{transform:scale(1.08,.9)}28%{transform:scale(.96,1.06)}32%,100%{transform:none}}
@@ -44,7 +44,7 @@ body{margin:0;background:#0A0A0A}
 @media (prefers-reduced-motion: reduce){.loot *{animation:none!important}.loot .drop,.loot .beam,.loot .name{opacity:1}.loot .drop{transform:translateY(-100px)}}
 </style>
 </helmet>
-<div class="pm" style="width: 1440px; height: 1220px; position: relative; overflow: hidden">
+<div class="pm" style="width: 1440px; height: 1300px; position: relative; overflow: hidden">
 
 <div style="padding: 48px 64px 20px; display: flex; flex-direction: column; gap: 10px; max-width: 1000px">
 <div class="lbl">Fondations · objets</div>
@@ -113,7 +113,7 @@ body{margin:0;background:#0A0A0A}
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1220}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
 class Component extends DCLogic {
   renderVals() {
     const inv = [

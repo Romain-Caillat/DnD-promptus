@@ -63,7 +63,7 @@
       "title": "États des personnages",
       "w": 1440,
       "x": 4320,
-      "y": 1300
+      "y": 1380
     },
     "Exterieurs.dc.html": {
       "h": 3380,
@@ -86,15 +86,6 @@
       "x": 2496,
       "y": 300
     },
-    "Histoire.dc.html": {
-      "expand": "fill",
-      "h": 960,
-      "is_interactive": true,
-      "title": "Construction d'histoire (LLM)",
-      "w": 1440,
-      "x": 0,
-      "y": 1880
-    },
     "Horloge.dc.html": {
       "h": 112,
       "title": "Composant — horloge de menace",
@@ -103,12 +94,12 @@
       "y": 640
     },
     "Jouer-Marc.dc.html": {
-      "x": 4080,
-      "y": 4720,
-      "w": 1440,
-      "h": 1000,
+      "h": 1206,
+      "is_interactive": true,
       "title": "Jouer · la soirée de Marc",
-      "is_interactive": true
+      "w": 1961,
+      "x": 4080,
+      "y": 4720
     },
     "Joueur-Carte.dc.html": {
       "h": 844,
@@ -150,17 +141,8 @@
       "x": 2000,
       "y": 3240
     },
-    "MJ.dc.html": {
-      "expand": "fill",
-      "h": 960,
-      "is_interactive": true,
-      "title": "Écran MJ — en direct",
-      "w": 1440,
-      "x": 1520,
-      "y": 1880
-    },
     "Main.dc.html": {
-      "h": 1480,
+      "h": 1600,
       "title": "Fondations",
       "w": 1440,
       "x": 0,
@@ -181,7 +163,7 @@
       "y": 780
     },
     "Objets.dc.html": {
-      "h": 1220,
+      "h": 1300,
       "title": "Objets et butin",
       "w": 1440,
       "x": 4320,
@@ -202,7 +184,7 @@
       "y": 780
     },
     "Pistes-UI.dc.html": {
-      "h": 1160,
+      "h": 1280,
       "title": "Jauges et boutons — pistes",
       "w": 1440,
       "x": 2800,
@@ -257,6 +239,195 @@
       "w": 1920,
       "x": 0,
       "y": 3240
+    },
+    "Mener-MJ.dc.html": {
+      "h": 1020,
+      "is_interactive": true,
+      "title": "Mener · la soirée de Marc côté MJ",
+      "w": 2240,
+      "x": 4080,
+      "y": 6060
+    },
+    "Soiree-MJ.dc.html": {
+      "x": 4080,
+      "y": 7200,
+      "w": 2384,
+      "h": 2760,
+      "title": "MJ · la soirée côté MJ"
+    },
+    "Preparer-MJ.dc.html": {
+      "h": 1020,
+      "is_interactive": true,
+      "title": "Préparer · la campagne de Romain",
+      "w": 2120,
+      "x": 0,
+      "y": 1880
+    },
+    "Preparation-MJ.dc.html": {
+      "x": 6560,
+      "y": 7200,
+      "w": 2384,
+      "h": 2760,
+      "title": "MJ · préparer une campagne"
+    },
+    "Inviter-MJ.dc.html": {
+      "x": 0,
+      "y": 11400,
+      "w": 2450,
+      "h": 1020,
+      "title": "Inviter · la table de Romain",
+      "is_interactive": true
+    },
+    "Invitation-MJ.dc.html": {
+      "x": 2560,
+      "y": 11400,
+      "w": 2384,
+      "h": 1780,
+      "title": "MJ · inviter la table"
+    },
+    "Creer-Joueur.dc.html": {
+      "x": 0,
+      "y": 13600,
+      "w": 1018,
+      "h": 964,
+      "title": "Créer · le personnage de Marc",
+      "is_interactive": true
+    },
+    "Entre-Joueur.dc.html": {
+      "x": 3170,
+      "y": 13600,
+      "w": 1018,
+      "h": 964,
+      "title": "Entre deux · Marc entre les sessions",
+      "is_interactive": true
+    },
+    "Lancer-MJ.dc.html": {
+      "x": 6340,
+      "y": 13600,
+      "w": 2580,
+      "h": 1020,
+      "title": "Lancer · la TV et la session 4",
+      "is_interactive": true
+    },
+    "Voyager-MJ.dc.html": {
+      "x": 0,
+      "y": 16614,
+      "w": 2490,
+      "h": 1020,
+      "title": "Voyager · de Valombre à Morneval",
+      "is_interactive": true
+    },
+    "Regles-MJ.dc.html": {
+      "x": 5194,
+      "y": 16614,
+      "w": 2012,
+      "h": 1020,
+      "title": "Règles · le système de Valombre",
+      "is_interactive": true
+    },
+    "Carte-MJ.dc.html": {
+      "x": 9910,
+      "y": 16614,
+      "w": 2012,
+      "h": 1020,
+      "title": "Cartes · l’éditeur de la salle de l’autel",
+      "is_interactive": true
+    },
+    "Joueur-Ordi.dc.html": {
+      "x": 0,
+      "y": 19538,
+      "w": 2012,
+      "h": 1020,
+      "title": "Jouer sur ordinateur · Sef",
+      "is_interactive": true
+    },
+    "Mourir-Borin.dc.html": {
+      "x": 4716,
+      "y": 19538,
+      "w": 2450,
+      "h": 1020,
+      "title": "Mourir · la dernière soirée de Borin (variante)",
+      "is_interactive": true
+    },
+    "Tablette-MJ.dc.html": {
+      "x": 9870,
+      "y": 19538,
+      "w": 1752,
+      "h": 960,
+      "title": "Tablette · mener la session 3 du canapé",
+      "is_interactive": true
+    },
+    "Creation-Joueur.dc.html": {
+      "x": 1098,
+      "y": 13600,
+      "title": "Storyboard · Marc crée Borin",
+      "is_interactive": false,
+      "w": 1832,
+      "h": 2414
+    },
+    "Entre-Sessions.dc.html": {
+      "x": 4268,
+      "y": 13600,
+      "title": "Storyboard · Marc entre deux soirées",
+      "is_interactive": false,
+      "w": 1832,
+      "h": 2414
+    },
+    "Lancement-MJ.dc.html": {
+      "x": 9000,
+      "y": 13600,
+      "title": "Storyboard · Romain lance la session 4",
+      "is_interactive": false,
+      "w": 2384,
+      "h": 1252
+    },
+    "Voyage-MJ.dc.html": {
+      "x": 2570,
+      "y": 16614,
+      "title": "Storyboard · De Valombre à Morneval",
+      "is_interactive": false,
+      "w": 2384,
+      "h": 2009
+    },
+    "Systeme-Regles.dc.html": {
+      "x": 7286,
+      "y": 16614,
+      "title": "Storyboard · Les règles de Valombre",
+      "is_interactive": false,
+      "w": 2384,
+      "h": 2324
+    },
+    "Editeur-Carte.dc.html": {
+      "x": 12002,
+      "y": 16614,
+      "title": "Storyboard · La salle de l’autel",
+      "is_interactive": false,
+      "w": 2384,
+      "h": 2324
+    },
+    "Ordi-Sef.dc.html": {
+      "x": 2092,
+      "y": 19538,
+      "title": "Storyboard · Hugo joue Sef sur son ordi",
+      "is_interactive": false,
+      "w": 2384,
+      "h": 1626
+    },
+    "Mort-Borin.dc.html": {
+      "x": 7246,
+      "y": 19538,
+      "title": "Storyboard · La dernière soirée de Borin",
+      "is_interactive": false,
+      "w": 2384,
+      "h": 2009
+    },
+    "Tablette-Soiree.dc.html": {
+      "x": 11702,
+      "y": 19538,
+      "title": "Storyboard · La session 3 du canapé",
+      "is_interactive": false,
+      "w": 2384,
+      "h": 1726
     }
   },
   "createdOnFiles": {
@@ -299,6 +470,38 @@
       "w": 240,
       "x": 0,
       "y": 4440
+    },
+    "row5": {
+      "kind": "title1",
+      "maxW": 11384,
+      "text": "Les écrans qui manquaient · créer, entre deux, lancer",
+      "w": 240,
+      "x": 0,
+      "y": 13300
+    },
+    "row6": {
+      "kind": "title1",
+      "maxW": 14386,
+      "text": "Préparer en profondeur · voyager, régler, dessiner",
+      "w": 240,
+      "x": 0,
+      "y": 16314
+    },
+    "row7": {
+      "kind": "title1",
+      "maxW": 14086,
+      "text": "Les variantes · ordinateur, mort, tablette",
+      "w": 240,
+      "x": 0,
+      "y": 19238
+    },
+    "row4": {
+      "kind": "title1",
+      "maxW": 4944,
+      "text": "Inviter la table",
+      "w": 240,
+      "x": 0,
+      "y": 11100
     }
   },
   "order": [
@@ -306,8 +509,6 @@
     "GameCard.dc.html",
     "RadialGrid.dc.html",
     "Carte.dc.html",
-    "Histoire.dc.html",
-    "MJ.dc.html",
     "TV.dc.html",
     "Joueur-Scene.dc.html",
     "Joueur-Combat.dc.html",
@@ -336,7 +537,31 @@
     "Joueur-Personnage.dc.html",
     "Joueur-Journal.dc.html",
     "Ecran-TV.dc.html",
-    "Soiree-TV.dc.html"
+    "Soiree-TV.dc.html",
+    "Mener-MJ.dc.html",
+    "Soiree-MJ.dc.html",
+    "Preparer-MJ.dc.html",
+    "Preparation-MJ.dc.html",
+    "Inviter-MJ.dc.html",
+    "Invitation-MJ.dc.html",
+    "Creer-Joueur.dc.html",
+    "Entre-Joueur.dc.html",
+    "Lancer-MJ.dc.html",
+    "Voyager-MJ.dc.html",
+    "Regles-MJ.dc.html",
+    "Carte-MJ.dc.html",
+    "Joueur-Ordi.dc.html",
+    "Mourir-Borin.dc.html",
+    "Tablette-MJ.dc.html",
+    "Creation-Joueur.dc.html",
+    "Entre-Sessions.dc.html",
+    "Lancement-MJ.dc.html",
+    "Voyage-MJ.dc.html",
+    "Systeme-Regles.dc.html",
+    "Editeur-Carte.dc.html",
+    "Ordi-Sef.dc.html",
+    "Mort-Borin.dc.html",
+    "Tablette-Soiree.dc.html"
   ],
   "pages": [],
   "title": "Promptus — écrans"

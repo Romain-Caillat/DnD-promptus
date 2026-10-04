@@ -40,7 +40,7 @@ css += r'''
 .line b{display:block;font-size:13px;margin-bottom:2px}
 .line p{margin:0;font-size:15px;line-height:1.45;color:#E5E5E5}
 .line.mjl p{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:19px;line-height:1.3}
-.think{position:relative;padding:16px 18px;border-radius:18px;background:#EDEDED;color:#0A0A0A;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:21px;line-height:1.3;box-shadow:0 4px 0 #8A8A8A}
+.think{position:relative;box-sizing:border-box;min-height:87px;display:flex;align-items:center;padding:16px 18px;border-radius:18px;background:#EDEDED;color:#0A0A0A;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:21px;line-height:1.3;box-shadow:0 4px 0 #8A8A8A}
 .think::after{content:'';position:absolute;left:-14px;top:24px;width:18px;height:18px;border-radius:50%;background:#EDEDED}
 .think::before{content:'';position:absolute;left:-26px;top:40px;width:9px;height:9px;border-radius:50%;background:#EDEDED}
 .prog{display:flex;flex-wrap:wrap;gap:6px}
@@ -56,7 +56,7 @@ css += r'''
 .cardinfo{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px;color:#A3A3A3;margin-top:8px}
 .cardinfo b{font-family:'Cinzel',serif;font-size:15px;color:#F2F2F2}
 .mapov{position:absolute;left:0;right:0;top:96px;bottom:64px;z-index:40;background:#080808;display:flex;flex-direction:column;gap:10px;padding:12px 0 0;animation:lineIn .25s ease-out both}
-.mapov .mw{position:relative;height:420px;overflow:hidden;border-top:1px solid #2C2C2C;border-bottom:1px solid #2C2C2C}
+.mapov .mw{position:relative;isolation:isolate;height:420px;overflow:hidden;border-top:1px solid #2C2C2C;border-bottom:1px solid #2C2C2C}
 .here{position:absolute;z-index:970;transform:translate(-50%,-100%);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:#FFD60A;color:#0A0A0A;padding:2px 6px;border-radius:4px;white-space:nowrap}
 .nav button{cursor:pointer}
 .cbody{flex:1;display:flex;flex-direction:column;gap:8px;padding:44px 12px 0;min-height:0;overflow:hidden}
@@ -64,7 +64,7 @@ css += r'''
 .trk{display:flex;align-items:center;gap:6px;padding:0 4px}
 .trk .pf.now{border-color:#FFD60A;box-shadow:0 4px 0 #000,0 0 22px rgba(255,214,10,.45)}
 .rail{flex:1;height:2px;background:repeating-linear-gradient(90deg,#3A3A3A 0 4px,transparent 4px 8px);min-width:6px}
-.cmap{position:relative;height:210px;border-radius:16px;overflow:hidden;border:1px solid #2C2C2C;box-shadow:inset 0 0 40px rgba(0,0,0,.8);flex:none}
+.cmap{position:relative;isolation:isolate;height:210px;border-radius:16px;overflow:hidden;border:1px solid #2C2C2C;box-shadow:inset 0 0 40px rgba(0,0,0,.8);flex:none}
 .cmap .hint{position:absolute;left:8px;bottom:8px;z-index:990;font-size:12px;font-weight:600;background:rgba(5,5,5,.85);border:1px solid #2C2C2C;border-radius:8px;padding:6px 10px}
 .statrow{display:flex;align-items:center;gap:10px;padding:0 4px}
 .gemw{display:inline-grid;flex:none;filter:drop-shadow(0 3px 0 rgba(0,0,0,.55))}
@@ -75,7 +75,7 @@ css += r'''
 .arc .top{border-radius:50%;background:radial-gradient(circle at 40% 30%,#FFFFFF,#CFCFCF 70%);color:#0A0A0A;display:grid;place-items:center;transform:translateY(-6px);box-shadow:0 6px 0 #7A7A7A,0 10px 14px rgba(0,0,0,.6);transition:transform .08s,box-shadow .08s}
 .arc.dk .top{background:radial-gradient(circle at 40% 30%,#3A3A3A,#161616 70%);color:#F2F2F2;box-shadow:0 6px 0 #000,0 0 0 1.5px #5A5A5A}
 .arc:active .top{transform:translateY(-1px);box-shadow:0 1px 0 #7A7A7A}
-.arc.big::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid #F2F2F2;opacity:0;animation:halo 2.4s ease-out infinite}
+.arc.main::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid #F2F2F2;opacity:0;animation:halo 2.4s ease-out infinite}
 @keyframes halo{0%,78%{transform:scale(1);opacity:0}80%{opacity:.9}100%{transform:scale(1.3);opacity:0}}
 .arc.busy{pointer-events:none;opacity:.6}
 .alab{position:absolute;width:90px;text-align:center;font-size:11px;color:#A3A3A3}
@@ -169,7 +169,7 @@ B.append('<sc-if value="{{is9}}" hint-placeholder-val="{{ false }}"><div class="
 <div class="arcs" aria-label="Commandes">
 <button type="button" class="arc dk" aria-label="Ton sac" onClick="{{openBag}}" style="left: 40px; top: 26px; width: 58px; height: 58px"><span class="top" style="width: 44px; height: 44px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v7.5L4.5 19A2 2 0 0 0 6.2 22h11.6a2 2 0 0 0 1.7-3L14 9.5V2M8.5 2h7M7 16h10"></path></svg></span></button>
 <span class="alab" style="left: 24px; top: 94px">Sac</span>
-<button type="button" class="arc big {{bigCls}}" aria-label="{{atkLabel}}" onClick="{{bigAct}}" style="left: 131px; top: 0; width: 104px; height: 104px"><span class="top" style="width: 80px; height: 80px"><span style="display: grid; place-items: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{bigIcon}}"></path></svg><span class="ttl" style="font-size: 12px; margin-top: 2px">{{bigLbl}}</span></span></span></button>
+<button type="button" class="arc main {{bigCls}}" aria-label="{{atkLabel}}" onClick="{{bigAct}}" style="left: 131px; top: 0; width: 104px; height: 104px"><span class="top" style="width: 80px; height: 80px"><span style="display: grid; place-items: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{bigIcon}}"></path></svg><span style="font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-top: 3px">{{bigLbl}}</span></span></span></button>
 <button type="button" class="arc dk" aria-label="Fin du tour" onClick="{{finish}}" style="left: 268px; top: 26px; width: 58px; height: 58px"><span class="top" style="width: 44px; height: 44px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"></path></svg></span></button>
 <span class="alab" style="left: 252px; top: 94px">Fin du tour</span>
 </div>""" + '</div></sc-if>')
@@ -388,7 +388,7 @@ class Component extends DCLogic {
       atkIdle: s.atk === 'idle', atkRolling: s.atk === 'rolling', atkDone: s.atk === 'done',
       acts: actsData.map((a, i) => ({ ...a, tx: a.tx || '', ty: a.ty || '', v: a.v || '', st: a.st || 'none', ic: a.ic || 'epee', ra: a.ra || 'aucune',
         isCard: !a.other, isOther: !!a.other, et: i === s.card ? 'actif' : 'normal', cls: i === s.card ? 'sel' : '',
-        x: 10 + i * 84, r: [-9, -3, 3, 9][i], y: (i === 0 || i === 3 ? 10 : 0) - (i === s.card ? 18 : 0),
+        x: 19 + i * 80, r: [-7, -2, 2, 7][i], y: (i === 0 || i === 3 ? 10 : 0) - (i === s.card ? 18 : 0),
         pick: () => { this.setState({ card: i }); this.sfx('click'); } })),
       atkLabel: actsData[s.card].btn, atkSub: actsData[s.card].sub, cardHint: actsData[s.card].hint, otherSel: s.card === 3,
       atkBusy: s.atk === 'rolling' || s.atk === 'asking', busyTxt: s.atk === 'asking' ? 'Le MJ lit ton idée…' : 'Le dé roule…',
@@ -402,7 +402,7 @@ class Component extends DCLogic {
       bigAct: () => { if (this.state.atk === 'done') { this.sfx('click'); this.go(10); } else v.attack(); },
       openBag: () => { this.setState({ tab: 'perso' }); this.sfx('click'); },
       freeOpen: s.choice === 3 && !s.sent, diceTitle: s.choice === 3 ? 'Ton idée' : optsData[s.choice][0],
-      showMap: s.tab === 'carte' && !s.ended, hereX: (dest && s.moved ? dest[0] : 4) * 30 - 26 + 15, hereY: ((dest && s.moved ? dest[1] : 6) + 1) * 30 + 40 - 40,
+      showMap: s.tab === 'carte' && !s.ended, hereX: (dest && s.moved ? dest[0] : 4) * 30 - 26 + 15, hereY: ((dest && s.moved ? dest[1] : 6) + 1) * 30 + 40 - 2,
       tabs: [['jeu', 'Jeu'], ['carte', 'Carte'], ['perso', 'Personnage'], ['journal', 'Journal']].map(([id, n]) => ({ n, cls: (s.tab || 'jeu') === id ? 'on' : '', pick: () => { this.setState({ tab: id }); this.sfx('click'); } })),
       showPerso: s.tab === 'perso' && !s.ended, showJournal: s.tab === 'journal' && !s.ended,
       xp: m >= 12 ? 8 : m >= 10 ? 7 : 6, xpTxt: (m >= 12 ? 8 : m >= 10 ? 7 : 6) + ' / 10 · bientôt niveau 4',

@@ -85,7 +85,7 @@ body{margin:0;background:#0A0A0A}
 <div class="gc" style="width: {{w}}px; height: {{h}}px; font-size: {{fs}}px">
 <sc-if value="{{face}}" hint-placeholder-val="{{ true }}">
 <div class="gc-in">
-<div class="gc-t" style="font-size: 1em">{{titre}}</div>
+<div class="gc-t" style="font-size: 1em; padding-left: {{tPad}}px">{{titre}}</div>
 <div class="gc-art">
 <sc-if value="{{i.epee}}" hint-placeholder-val="{{ false }}"><svg width="{{icon}}" height="{{icon}}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 3H21v6.5L10.5 20 4 13.5z"></path><path d="M6.5 16l-3.5 3.5"></path><path d="M8 11l5 5"></path></svg></sc-if>
 <sc-if value="{{i.bouclier}}" hint-placeholder-val="{{ false }}"><svg width="{{icon}}" height="{{icon}}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M12 7v10"></path></svg></sc-if>
@@ -146,7 +146,7 @@ class Component extends DCLogic {
       titre: this.props.titre ?? 'Frappe',
       type: this.props.type ?? 'Action',
       texte: this.props.texte ?? 'Attaque au corps à corps.',
-      valeur, hasGem: valeur !== '', stat,
+      valeur, hasGem: valeur !== '', tPad: valeur !== '' ? Math.round(w * 0.27) : Math.round(w * 0.05), stat,
       statGem: valeur !== '' && stat !== 'none', plainGem: valeur !== '' && stat === 'none', gs: Math.round(w * 0.34),
       gemBg: colors[stat] || colors.none,
       gemFg: stat === 'none' ? '#F2F2F2' : '#0A0A0A',

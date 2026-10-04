@@ -23,7 +23,7 @@ body{margin:0;background:#0A0A0A}
 .chip{position:absolute;z-index:300;font-size:11px;font-weight:700;background:#0A0A0A;color:#F2F2F2;border:1px solid #F2F2F2;padding:2px 7px;border-radius:5px;white-space:nowrap}
 .chip.iv{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A}
 .fog{position:absolute;background:#070707;z-index:200;display:grid;place-items:center}
-.fog i{display:block;width:24%;height:24%;background:#F2F2F2;animation:fog 2.6s ease-in-out infinite}
+.fog i{display:block;width:24%;height:24%;background:#F2F2F2;opacity:.12;transform:scale(.7);animation:fog 2.6s ease-in-out infinite}
 @keyframes fog{0%,100%{opacity:.05;transform:scale(.6)}50%{opacity:.4;transform:scale(1)}}
 .rain{position:absolute;inset:-40px;z-index:250;pointer-events:none;background:repeating-linear-gradient(105deg,transparent 0 22px,rgba(200,210,220,.10) 22px 23px);animation:rain .5s linear infinite}
 @keyframes rain{to{transform:translate(-12px,40px)}}

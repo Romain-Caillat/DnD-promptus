@@ -1,0 +1,519 @@
+/*
+ * Promptus design tokens — the single source for colours, type, materials
+ * and motion (MEMORY.md §2). Values come from the design canvas board
+ * « Fondations » (docs/design/canvas/Main.dc.html) and the shared journey
+ * CSS (docs/design/kit.py); the in-app page /reference shows them all.
+ *
+ * - `@theme static` tokens become Tailwind utilities (`bg-ivory`,
+ *   `text-stat-atk`, `font-title`, `text-label`, `shadow-ivory`,
+ *   `ease-deal`, `animate-deal`…) and are always emitted as CSS variables.
+ * - `@utility` blocks are the materials: things a single colour cannot
+ *   say (gradients, card buttons, rarity materials).
+ * - The bottom of the file maps shadcn's variables onto these tokens.
+ *
+ * The black table is the only look: there is no light theme.
+ */
+
+@theme static {
+  /*
+   * Colours. The UI is black and white; colour is reserved for numbers.
+   * Tailwind's default palette is removed so `bg-blue-500` cannot sneak
+   * a hue into the interface.
+   */
+  --color-*: initial;
+  --color-black: #000000;
+  --color-white: #ffffff;
+
+  /* The table (backgrounds, darkest first). */
+  --color-table-deep: #050505;
+  --color-table: #0a0a0a;
+  --color-well: #121212;
+  --color-surface: #141414;
+  --color-slab: #181818;
+  --color-slab-low: #111111;
+  --color-surface-raised: #1c1c1c;
+
+  /* Lines. */
+  --color-line: #2c2c2c;
+  --color-line-strong: #3a3a3a;
+  --color-line-dashed: #5e5e5e;
+
+  /* Text on the table. */
+  --color-chalk: #f2f2f2;
+  --color-chalk-soft: #d4d4d4;
+  --color-mute-soft: #a3a3a3;
+  --color-mute: #8c8c8c;
+
+  /* Ivory playing cards and their edge (the stacked bottom shadow). */
+  --color-ivory: #ededed;
+  --color-ivory-edge: #8a8a8a;
+  --color-ivory-edge-deep: #5a5a5a;
+  --color-ink: #0a0a0a;
+  --color-ink-soft: #5a5a5a;
+
+  /*
+   * The six stat colours. Each stat also has a shape, so colour is never
+   * the only cue: HP heart, ATK diamond, AC shield, MAG hexagon,
+   * MOVE arrow, INIT round. Dice take the colour of the stat they roll.
+   */
+  --color-stat-hp: #ff4d5e;
+  --color-stat-atk: #ff9f1c;
+  --color-stat-ac: #3d9bff;
+  --color-stat-mag: #b28cff;
+  --color-stat-move: #2ee6a6;
+  --color-stat-init: #ffd60a;
+  /* Bottom edge of the yellow "your turn" banner. */
+  --color-stat-init-edge: #8a6f00;
+
+  /* Damage: numbers that hit, damage dice, the lethal button. */
+  --color-damage: #ff4d5e;
+  --color-damage-edge: #8a2a33;
+  --color-damage-edge-deep: #5a1a20;
+
+  /* Type. Chakra Petch is the default sans: every UI word and number. */
+  --font-sans: "Chakra Petch", system-ui, sans-serif;
+  --font-title: "Cinzel", Georgia, serif;
+  --font-narration: "Cormorant Garamond", Georgia, serif;
+
+  --text-label: 0.6875rem; /* 11px, uppercase, tracked */
+  --text-label--line-height: 1.4;
+  --text-label--letter-spacing: 0.2em;
+  --text-label--font-weight: 600;
+  --text-caption: 0.75rem; /* 12px */
+  --text-caption--line-height: 1.5;
+  --text-body: 0.875rem; /* 14px */
+  --text-body--line-height: 1.5;
+  --text-stat: 1.125rem; /* 18px, stat lines « PV 18/22 · CA 16 » */
+  --text-stat--line-height: 1.3;
+  --text-stat--font-weight: 600;
+  --text-card-title: 1.0625rem; /* 17px, card button title */
+  --text-card-title--line-height: 1.05;
+  --text-heading: 1.625rem; /* 26px */
+  --text-heading--line-height: 1.1;
+  --text-heading-lg: 2.125rem; /* 34px */
+  --text-heading-lg--line-height: 1.1;
+  --text-display: 5.25rem; /* 84px */
+  --text-display--line-height: 0.95;
+  --text-narration: 1.5rem; /* 24px */
+  --text-narration--line-height: 1.35;
+  --text-narration-lg: 1.875rem; /* 30px */
+  --text-narration-lg--line-height: 1.2;
+
+  /* Radii. */
+  --radius-frame: 8px; /* inner frame of a card button */
+  --radius-button: 12px;
+  --radius-panel: 14px;
+  --radius-slab: 16px;
+
+  /* Shadows: hard stacked edges, like cardboard, never soft glows. */
+  --shadow-slab: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 12px 30px rgb(0 0 0 / 0.45);
+  --shadow-ivory: 0 4px 0 #8a8a8a, 0 7px 0 #5a5a5a, 0 14px 24px rgb(0 0 0 / 0.5);
+  --shadow-ivory-pressed: 0 1px 0 #8a8a8a, 0 2px 0 #5a5a5a, 0 4px 8px rgb(0 0 0 / 0.5);
+  --shadow-ivory-flat: 0 3px 0 #8a8a8a;
+  --shadow-dark: 0 0 0 1.5px #3a3a3a, 0 4px 0 #000000, 0 14px 24px rgb(0 0 0 / 0.5);
+  --shadow-dark-pressed: 0 0 0 1.5px #3a3a3a, 0 1px 0 #000000;
+  --shadow-card: 0 2px 0 #9a9a9a, 0 4px 0 #6a6a6a, 0 14px 28px rgb(0 0 0 / 0.55);
+  --shadow-turn: 0 3px 0 #8a6f00;
+  --drop-shadow-gem: 0 3px 0 rgb(0 0 0 / 0.55);
+
+  /*
+   * Motion. Every animation has a meaning (MEMORY.md §2). Durations are
+   * plain variables: `duration-(--duration-press)`.
+   */
+  --duration-press: 100ms; /* a card button tips forward */
+  --duration-flip: 350ms; /* a card lifts or flips */
+  --duration-deal: 700ms; /* a card is dealt into the hand */
+  --duration-pop: 1200ms; /* a damage number pops and floats away */
+  --duration-roll: 1400ms; /* a die tumbles, then its number settles */
+  --duration-heartbeat: 1300ms; /* the HP gem's light wave */
+  --duration-bob: 1600ms; /* the active token breathes */
+  --duration-gem-wave: 2600ms; /* the other gems' light wave */
+  --duration-sheen: 3200ms; /* light crossing a rare material */
+
+  --ease-deal: cubic-bezier(0.2, 0.9, 0.25, 1.15); /* overshoots, lands */
+  --ease-settle: cubic-bezier(0.2, 0.8, 0.2, 1); /* fast out, soft stop */
+  --ease-roll: cubic-bezier(0.2, 0.7, 0.2, 1); /* a throw that slows down */
+
+  /*
+   * Animations play once by default: a hit, a deal, a roll is an event.
+   * Loops (`bob`, `sheen`, `holo`) are ambient states. Every animated
+   * element keeps a calm resting style: under reduced motion the
+   * animation is removed and that resting style is what stays on screen.
+   */
+  --animate-deal: deal var(--duration-deal) var(--ease-deal) both;
+  --animate-press-demo: press 2400ms ease-in-out infinite; /* a reference loop of the press */
+  --animate-pop: pop var(--duration-pop) ease-out both;
+  --animate-tumble: tumble var(--duration-roll) var(--ease-roll);
+  --animate-bob: bob var(--duration-bob) ease-in-out infinite;
+  --animate-sheen: sheen var(--duration-sheen) ease-in-out infinite;
+  --animate-holo: holo 6s linear infinite;
+
+  @keyframes deal {
+    0% {
+      opacity: 0;
+      transform: translateY(60px) rotate(-14deg) scale(0.85);
+    }
+    100% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes press {
+    0%,
+    72%,
+    100% {
+      transform: none;
+    }
+    78%,
+    86% {
+      transform: perspective(500px) rotateX(14deg) translateY(4px);
+    }
+  }
+  @keyframes pop {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.3);
+    }
+    15% {
+      opacity: 1;
+      transform: scale(1.4);
+    }
+    30% {
+      transform: scale(1);
+    }
+    75% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-24px);
+    }
+  }
+  @keyframes tumble {
+    0% {
+      transform: rotate(0) scale(0.7);
+    }
+    85% {
+      transform: rotate(1080deg) scale(1.08);
+    }
+    100% {
+      transform: rotate(1080deg) scale(1);
+    }
+  }
+  @keyframes bob {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-16%);
+    }
+  }
+  @keyframes sheen {
+    0%,
+    35% {
+      transform: translateX(-120%);
+    }
+    70%,
+    100% {
+      transform: translateX(120%);
+    }
+  }
+  @keyframes holo {
+    to {
+      filter: hue-rotate(360deg);
+    }
+  }
+}
+
+/* --- Type ------------------------------------------------------------ */
+
+@utility type-title {
+  font-family: var(--font-title);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+@utility type-narration {
+  font-family: var(--font-narration);
+  font-style: italic;
+  font-weight: 500;
+}
+
+@utility type-label {
+  font-size: var(--text-label);
+  line-height: var(--text-label--line-height);
+  letter-spacing: var(--text-label--letter-spacing);
+  font-weight: var(--text-label--font-weight);
+  text-transform: uppercase;
+  color: var(--color-mute);
+}
+
+/* A damage number: damage red, thick black stroke, hard drop. */
+@utility damage-number {
+  font-weight: 700;
+  color: var(--color-damage);
+  -webkit-text-stroke: 2px #000000;
+  paint-order: stroke;
+  text-shadow: 0 3px 0 #000000;
+}
+
+/* --- Surfaces -------------------------------------------------------- */
+
+/* The black table: light falls from the top centre. */
+@utility surface-table {
+  background: radial-gradient(120% 80% at 50% 0%, #1c1c1c 0, #0c0c0c 55%, #050505 100%);
+}
+
+/* A slab of the table: panels, side boards. */
+@utility surface-slab {
+  background: linear-gradient(180deg, #181818, #111111);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-slab);
+  box-shadow: var(--shadow-slab);
+}
+
+/* --- Card buttons ---------------------------------------------------- */
+
+/*
+ * Buttons are cards: an inner frame (`card-frame`), Cinzel label, the
+ * stat gem when the action depends on one. Ivory for the main action,
+ * black for the rest; pressing tips the card forward.
+ */
+@utility button-card {
+  --frame-color: var(--color-ink);
+  --sub-color: var(--color-ink-soft);
+  display: block;
+  box-sizing: border-box;
+  padding: 6px;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: var(--color-ivory);
+  color: var(--color-ink);
+  text-align: left;
+  cursor: pointer;
+  transform-origin: 50% 100%;
+  box-shadow: var(--shadow-ivory);
+  transition:
+    transform var(--duration-press),
+    box-shadow var(--duration-press);
+
+  &:active {
+    transform: perspective(500px) rotateX(14deg) translateY(4px);
+    box-shadow: var(--shadow-ivory-pressed);
+  }
+}
+
+@utility button-card-dark {
+  --frame-color: var(--color-ivory-edge-deep);
+  --sub-color: var(--color-mute);
+  background: var(--color-surface);
+  color: var(--color-chalk);
+  box-shadow: var(--shadow-dark);
+
+  &:active {
+    box-shadow: var(--shadow-dark-pressed);
+  }
+}
+
+@utility card-frame {
+  border: 1.5px solid var(--frame-color, currentColor);
+  border-radius: var(--radius-frame);
+}
+
+/* --- Rarity materials ------------------------------------------------ */
+
+/*
+ * Six tiers, read from the material and from 1 to 6 diamonds, never from
+ * a hue (hues belong to stats). Each material sets the card face, its
+ * text colour and edge, and three variables for the parts inside:
+ * `--frame-color` (inner frame), `--frame-bg` (inside the frame) and
+ * `--pip-color` (the rarity diamonds). Epic and above carry a sheen whose
+ * resting position is off the card, so reduced motion leaves it hidden.
+ */
+@utility material-common {
+  --frame-color: var(--color-ink);
+  --frame-bg: transparent;
+  --pip-color: var(--color-ink);
+  background: var(--color-ivory);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-card);
+}
+
+/* Linen, double rule, marked corners. */
+@utility material-uncommon {
+  --frame-color: var(--color-ink);
+  --frame-bg:
+    repeating-linear-gradient(0deg, rgb(0 0 0 / 0.035) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 0.035) 0 1px, transparent 1px 3px), #ece7db;
+  --pip-color: var(--color-ink);
+  background: #e6e1d5;
+  color: var(--color-ink);
+  box-shadow: var(--shadow-card);
+}
+
+/* Brushed steel. */
+@utility material-rare {
+  --frame-color: #3c424b;
+  --frame-bg:
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.4) 0 1px, rgb(0 0 0 / 0.04) 1px 2px),
+    linear-gradient(180deg, #dcdfe3, #b9bec6);
+  --pip-color: #3c424b;
+  background:
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.35) 0 1px, rgb(0 0 0 / 0.05) 1px 2px),
+    linear-gradient(135deg, #f2f3f5 0, #aeb4bd 30%, #e6e8eb 50%, #8e959f 72%, #d5d8dc 100%);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-card);
+}
+
+/* Veined obsidian, a sheen passing. */
+@utility material-epic {
+  --frame-color: #cfcfcf;
+  --frame-bg: linear-gradient(160deg, #151515, #070707 60%, #121212);
+  --pip-color: var(--color-chalk);
+  --sheen: rgb(255 255 255 / 0.28);
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(60% 40% at 20% 15%, rgb(255 255 255 / 0.18), transparent 60%),
+    linear-gradient(135deg, #2a2a2a, #060606 45%, #1e1e1e 65%, #030303);
+  color: var(--color-chalk);
+  box-shadow:
+    0 2px 0 #444444,
+    0 4px 0 #222222,
+    0 14px 30px rgb(0 0 0 / 0.7),
+    0 0 0 1px #8a8a8a;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(115deg, transparent 38%, var(--sheen) 48%, transparent 58%);
+    transform: translateX(-120%);
+    animation: var(--animate-sheen);
+  }
+}
+
+/* Gold foil, a warm halo. */
+@utility material-legendary {
+  --frame-color: #5a3e08;
+  --frame-bg:
+    radial-gradient(circle at 50% 0%, rgb(255 255 255 / 0.45), transparent 55%),
+    linear-gradient(160deg, #f7d774, #d9a23a 45%, #f3cc63 70%, #b9831c);
+  --pip-color: #5a3e08;
+  --sheen: rgb(255 255 255 / 0.85);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #fff3c4 0, #e0a82e 26%, #fff7d6 46%, #b07a18 66%, #f7d774 84%, #c99327 100%);
+  color: #3a2604;
+  box-shadow:
+    var(--shadow-card),
+    0 0 16px rgb(224 168 46 / 0.5);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(115deg, transparent 36%, var(--sheen) 48%, transparent 60%);
+    transform: translateX(-120%);
+    animation: var(--animate-sheen);
+  }
+}
+
+/* Holographic: the only rainbow in the app. */
+@utility material-divine {
+  --frame-color: #ffffff;
+  --frame-bg:
+    linear-gradient(
+      125deg,
+      rgb(255 255 255 / 0.55),
+      rgb(255 255 255 / 0) 30%,
+      rgb(255 255 255 / 0.45) 50%,
+      rgb(255 255 255 / 0) 70%,
+      rgb(255 255 255 / 0.5)
+    ),
+    conic-gradient(from 90deg at 50% 60%, #ff8fa8, #ffd08f, #fff59a, #9fffc8, #8fe2ff, #b8a0ff, #ff8fe2, #ff8fa8);
+  --pip-color: #ffffff;
+  --sheen: rgb(255 255 255 / 0.6);
+  position: relative;
+  overflow: hidden;
+  background: conic-gradient(
+    from 0deg,
+    #ff6b8b,
+    #ffb86b,
+    #fff27a,
+    #7bffb0,
+    #6bd6ff,
+    #9c7bff,
+    #ff6bd6,
+    #ff6b8b
+  );
+  color: var(--color-ink);
+  box-shadow:
+    var(--shadow-card),
+    0 0 20px rgb(255 255 255 / 0.4);
+  animation: var(--animate-holo);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(115deg, transparent 30%, var(--sheen) 48%, transparent 66%);
+    transform: translateX(-120%);
+    animation: var(--animate-sheen);
+  }
+}
+
+/* --- Reduced motion -------------------------------------------------- */
+
+/*
+ * Romain's Windows asks for reduced motion (MEMORY.md §4). Animations and
+ * transitions are removed outright, so what stays on screen is each
+ * element's resting style: keep it calm (the settled die, the card in
+ * hand, the sheen off the card), never the loud frame. JS-driven motion
+ * reads the same preference through `usePrefersReducedMotion`.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- shadcn/ui ------------------------------------------------------- */
+
+/*
+ * shadcn components read these variables (mapped to Tailwind colours in
+ * index.css). They point at the tokens above: ivory is the primary
+ * action, damage red the destructive one. `<html class="dark">` is set
+ * once in index.html so shadcn's `dark:` variants apply; there are no
+ * light values.
+ */
+:root {
+  color-scheme: dark;
+  --radius: var(--radius-button);
+  --background: var(--color-table);
+  --foreground: var(--color-chalk);
+  --card: var(--color-slab);
+  --card-foreground: var(--color-chalk);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-chalk);
+  --primary: var(--color-ivory);
+  --primary-foreground: var(--color-ink);
+  --secondary: var(--color-surface);
+  --secondary-foreground: var(--color-chalk);
+  --muted: var(--color-well);
+  --muted-foreground: var(--color-mute);
+  --accent: var(--color-surface-raised);
+  --accent-foreground: var(--color-chalk);
+  --destructive: var(--color-damage);
+  --border: var(--color-line);
+  --input: var(--color-line-strong);
+  --ring: var(--color-mute);
+}

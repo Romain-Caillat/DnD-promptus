@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Soirée côté MJ</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A;overflow:hidden}
+.smj-pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 40% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.smj-ttl{font-family:'Cinzel',Georgia,serif;font-weight:800}
+.smj-lbl{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.smj-grid{display:grid;grid-template-columns:repeat(3,720px);gap:56px 48px}
+.smj-mo{display:flex;flex-direction:column;gap:14px}
+.smj-mh{display:flex;align-items:baseline;gap:10px}
+.smj-mh > b{font-family:'Cinzel',serif;font-size:13px;width:28px;height:28px;border-radius:7px;display:inline-grid;place-items:center;background:#EDEDED;color:#0A0A0A;box-shadow:0 2px 0 #6E6E6E;flex:none}
+.smj-mh > span{font-family:'Cinzel',serif;font-weight:800;font-size:20px}
+.smj-fr{width:720px;height:450px;overflow:hidden;border-radius:10px;border:1px solid #2C2C2C;box-shadow:0 20px 40px rgba(0,0,0,.6)}
+.smj-cap{display:grid;grid-template-columns:130px 1fr;gap:6px 10px;font-size:13px;line-height:1.45;color:#D4D4D4;margin:0}
+.smj-cap > dt{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8C8C8C;padding-top:3px}
+.smj-cap > dd{margin:0}
+.smj-rule{display:flex;gap:12px;align-items:flex-start;font-size:13px;color:#D4D4D4;line-height:1.45}
+.smj-rule > b{flex:none;width:24px;height:24px;border-radius:6px;background:#EDEDED;color:#0A0A0A;display:grid;place-items:center;font-family:'Cinzel',serif;box-shadow:0 2px 0 #6E6E6E}
+</style>
+</helmet>
+<div class="smj-pm" style="width: 2384px; height: 2760px; position: relative; overflow: hidden">
+<div style="padding: 48px 64px 32px; display: flex; gap: 80px; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 1000px">
+<div class="smj-lbl">MJ · ordinateur</div>
+<h1 class="smj-ttl" style="margin: 0; font-size: 50px">La soirée côté MJ</h1>
+<p style="margin: 0; font-size: 16px; color: #A3A3A3; line-height: 1.5">La même soirée, vue par Romain depuis son ordinateur. Il mène tout d’un seul écran : la soirée à gauche, le moment au centre, le co-MJ et le journal à droite. Chaque écran est figé une fois que les joueurs ont agi ; la planche « Mener » la rejoue en entier.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 900px">
+<div class="smj-rule"><b>1</b><span><strong style="color: #F2F2F2">Une action principale par moment.</strong> Une bannière dit au MJ ce qui l’attend, un seul gros bouton fait avancer la soirée.</span></div><div class="smj-rule"><b>2</b><span><strong style="color: #F2F2F2">Le public et le secret côte à côte.</strong> Ce qui part aux joueurs est en clair, ce qui reste au MJ est en pointillés.</span></div><div class="smj-rule"><b>3</b><span><strong style="color: #F2F2F2">L’IA propose, le MJ valide.</strong> Le co-MJ écrit des brouillons et joue des suggestions ; rien ne part sans un clic.</span></div>
+</div>
+</div>
+<div class="smj-grid" style="padding: 0 64px"><div class="smj-mo"><div class="smj-mh"><b>1</b><span>Le salon</span></div><div class="smj-fr"><div style="width: 1440px; height: 900px; transform: scale(.5); transform-origin: 0 0"><dc-import name="Mener-MJ" moment="1" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="smj-cap"><dt>Le MJ</dt><dd>Voit qui est arrivé et si le son marche chez chacun, puis lance la session.</dd><dt>Lui seul voit</dt><dd>Rien encore : la session n’a pas commencé.</dd><dt>Pourquoi</dt><dd>Le MJ ne lance que quand tout le monde est prêt, sans demander à voix haute.</dd></dl></div><div class="smj-mo"><div class="smj-mh"><b>2</b><span>Précédemment…</span></div><div class="smj-fr"><div style="width: 1440px; height: 900px; transform: scale(.5); transform-origin: 0 0"><dc-import name="Mener-MJ" moment="2" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="smj-cap"><dt>Le MJ</dt><dd>Laisse passer le résumé écrit par le co-MJ, relu avant la partie.</dd><dt>Lui seul voit</dt><dd>Les PV de Borin, le chef gobelin qui attend derrière la porte est.</dd><dt>Pourquoi</dt><dd>La partie repart sans que le MJ ait à se souvenir de tout.</dd></dl></div><div class="smj-mo"><div class="smj-mh"><b>3</b><span>La scène</span></div><div class="smj-fr"><div style="width: 1440px; height: 900px; transform: scale(.5); transform-origin: 0 0"><dc-import name="Mener-MJ" moment="3" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="smj-cap"><dt>Le MJ</dt><dd>Lit le texte à voix haute pendant qu’il s’affiche partout.</dd><dt>Lui seul voit</dt><dd>Où est la page arrachée et quel jet la trouve, les gobelins derrière la porte.</dd><dt>Pourquoi</dt><dd>Le texte public et les notes secrètes sont côte à côte, jamais mélangés.</dd></dl></div><div class="smj-mo"><div class="smj-mh"><b>4</b><span>Que faites-vous ?</span></div><div class="smj-fr"><div style="width: 1440px; height: 900px; transform: scale(.5); transform-origin: 0 0"><dc-import name="Mener-MJ" moment="4" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="smj-cap"><dt>Le MJ</dt><dd>Reçoit la proposition de Marc en carte et demande un jet.</dd><dt>Lui seul voit</dt><dd>Rien de plus : la décision est la sienne.</dd><dt>Pourquoi</dt><dd>Une demande = une carte, avec ses réponses possibles. Le MJ tranche en un clic.</dd></dl></div><div class="smj-mo"><div class="smj-mh"><b>5</b><span>Le jet de Borin</span></div><div class="smj-fr"><div style="width: 1440px; height: 900px; transform: scale(.5); transform-origin: 0 0"><dc-import name="Mener-MJ" moment="5" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="smj-cap"><dt>Le MJ</dt><dd>Regarde le dé tomber et ce qu’il avait prévu pour la réussite et l’échec.</dd><dt>Lui seul voit</dt><dd>Le résultat raté qu’il n’utilisera pas.</dd><dt>Pourquoi</dt><dd>Le serveur lance ; le MJ n’a rien à calculer.</dd></dl></div><div class="smj-mo"><div class="smj-mh"><b>6</b><span>L’indice</span></div><div class="smj-fr"><div style="width: 1440px; height: 900px; transform: scale(.5); transform-origin: 0 0"><dc-import name="Mener-MJ" moment="6" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="smj-cap"><dt>Le MJ</dt><dd>Révèle la page et voit où en est la révélation : 3 indices sur 3.</dd><dt>Lui seul voit</dt><dd>Ce que les indices permettent de comprendre.</dd><dt>Pourquoi</dt><dd>Le MJ sait si les joueurs ont de quoi avancer, sans leur souffler la réponse.</dd></dl></div><div class="smj-mo"><div class="smj-mh"><b>7</b><span>La carte</span></div><div class="smj-fr"><div style="width: 1440px; height: 900px; transform: scale(.5); transform-origin: 0 0"><dc-import name="Mener-MJ" moment="7" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="smj-cap"><dt>Le MJ</dt><dd>Voit toute la crypte et ce que les joueurs ne voient pas, puis lance la rencontre.</dd><dt>Lui seul voit</dt><dd>La zone en brouillard, le gobelin qui guette, le coffre.</dd><dt>Pourquoi</dt><dd>Un seul plan pour tout le monde ; le brouillard ne s’applique qu’aux joueurs.</dd></dl></div><div class="smj-mo"><div class="smj-mh"><b>8</b><span>Le combat</span></div><div class="smj-fr"><div style="width: 1440px; height: 900px; transform: scale(.5); transform-origin: 0 0"><dc-import name="Mener-MJ" moment="8" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="smj-cap"><dt>Le MJ</dt><dd>Joue le premier gobelin sur proposition du co-MJ.</dd><dt>Lui seul voit</dt><dd>Les PV des gobelins, dans l’ordre du tour.</dd><dt>Pourquoi</dt><dd>Le MJ joue les adversaires en validant, pas en remplissant des fiches.</dd></dl></div><div class="smj-mo"><div class="smj-mh"><b>9</b><span>Le tour de Borin</span></div><div class="smj-fr"><div style="width: 1440px; height: 900px; transform: scale(.5); transform-origin: 0 0"><dc-import name="Mener-MJ" moment="9" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="smj-cap"><dt>Le MJ</dt><dd>Regarde le serveur résoudre la frappe de Marc.</dd><dt>Lui seul voit</dt><dd>Il reste 7 PV au gobelin.</dd><dt>Pourquoi</dt><dd>Le tour d’un joueur ne demande rien au MJ, sauf si le joueur propose une idée.</dd></dl></div><div class="smj-mo"><div class="smj-mh"><b>10</b><span>La riposte</span></div><div class="smj-fr"><div style="width: 1440px; height: 900px; transform: scale(.5); transform-origin: 0 0"><dc-import name="Mener-MJ" moment="10" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="smj-cap"><dt>Le MJ</dt><dd>Joue la riposte, puis voit le butin prévu pour ce combat.</dd><dt>Lui seul voit</dt><dd>La hache légendaire qui attend la fin du combat.</dd><dt>Pourquoi</dt><dd>La récompense est préparée ; le MJ la valide au bon moment.</dd></dl></div><div class="smj-mo"><div class="smj-mh"><b>11</b><span>Le butin</span></div><div class="smj-fr"><div style="width: 1440px; height: 900px; transform: scale(.5); transform-origin: 0 0"><dc-import name="Mener-MJ" moment="11" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="smj-cap"><dt>Le MJ</dt><dd>Voit Marc équiper la hache et l’expérience de chacun.</dd><dt>Lui seul voit</dt><dd>Rien : tout est public maintenant.</dd><dt>Pourquoi</dt><dd>Le MJ suit la récompense sans la manipuler.</dd></dl></div><div class="smj-mo"><div class="smj-mh"><b>12</b><span>Fin de soirée</span></div><div class="smj-fr"><div style="width: 1440px; height: 900px; transform: scale(.5); transform-origin: 0 0"><dc-import name="Mener-MJ" moment="12" seul="true" hint-size="1440px,900px"></dc-import></div></div><dl class="smj-cap"><dt>Le MJ</dt><dd>Relit les deux récapitulatifs, le sien et celui des joueurs, puis publie.</dd><dt>Lui seul voit</dt><dd>Le récap MJ : fils ouverts, menace à faire avancer.</dd><dt>Pourquoi</dt><dd>Le MJ ferme la soirée en deux minutes, et jeudi est déjà prêt.</dd></dl></div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2384,"height":2760}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

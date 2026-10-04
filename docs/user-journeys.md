@@ -1,6 +1,6 @@
 # Parcours utilisateurs — Promptus
 
-Ticket `design/map-user-journeys`. Ce document décrit ce que chacun
+Ticket `design/map-user-journeys` (archivé). Ce document décrit ce que chacun
 fait, dans quel ordre, et sur quel écran. Il sert à vérifier qu'aucun
 écran ne manque avant de coder. La version visuelle est sur la planche
 « Parcours » du canevas de design (lien dans `TICKETS.md`).
@@ -31,37 +31,38 @@ Rappels qui valent pour tous les parcours :
 ### M1 · Créer une campagne
 
 1. Le MJ se connecte (passkey) et arrive sur **la liste de ses
-   campagnes**. · *à dessiner*
+   campagnes**. · *dessiné* (Préparer)
 2. « Nouvelle campagne » : il choisit **l'univers** (fantasy, zombies,
    spatial…), qui fixe le pack de tuiles, de personnages et d'objets, et
-   les noms des statistiques. · *à dessiner*
+   les noms des statistiques. · *dessiné* (Préparer)
 3. Il choisit **le système de règles** : un préréglage (D&D 5e SRD)
-   qu'il peut modifier. · *à dessiner*
+   qu'il peut modifier. · *dessiné* (Préparer)
 4. Il écrit **le pitch** en quelques phrases (ton, durée, nombre de
-   joueurs, budget IA). · *à dessiner*
+   joueurs, budget IA). · *dessiné* (Préparer)
 
 ### M2 · Générer et relire l'histoire
 
 1. La génération démarre : **suivi en direct** (étapes, coût engagé,
-   budget restant). · *à dessiner*
+   budget restant). · *dessiné* (Préparer)
 2. Le MJ relit **la bible, les fronts et leurs horloges, le graphe des
    scènes et des indices**, en discutant avec le LLM : il demande,
-   l'IA propose un diff, il accepte ou refuse. · *dessiné* (Construction
-   d'histoire)
+   l'IA propose un diff, il accepte ou refuse. · *dessiné* (Préparer,
+   atelier)
 3. Les alertes de cohérence s'affichent (une révélation avec moins de
    trois indices, un PNJ orphelin). · *dessiné*
 4. Il relit **les fiches** : PNJ, monstres, objets et butin avec leur
    rareté. Il peut créer un PNJ avec le même créateur que les joueurs.
-   · *à dessiner* (fiche) · *dessiné* (objets, raretés)
-5. Il **valide la campagne** : elle devient jouable.
+   · *dessiné* (Préparer, fiches ; objets, raretés)
+5. Il **valide la campagne** : elle devient jouable. · *dessiné*
+   (Préparer)
 
 ### M3 · Préparer les cartes
 
 1. Pour chaque lieu du graphe, l'IA **propose une carte** dans le décor
-   choisi (crypte, forêt, rue, désert…). · *à dessiner* (éditeur)
+   choisi (crypte, forêt, rue, désert…). · *dessiné* (Carte-MJ)
 2. Le MJ la retouche dans **l'éditeur** : peindre murs et terrains,
    poser décors, portes, objets cachés, lumières, régler l'ambiance.
-   · *à dessiner*
+   · *dessiné* (Carte-MJ, 7 moments)
 3. Ou il **importe une image** et aligne la grille ; l'IA propose les
    murs, il les valide. · *dessiné* (planche Cartes, vue MJ)
 4. Il relie les échelles : **monde** en hexagones → **lieu** → **rencontre**.
@@ -70,27 +71,27 @@ Rappels qui valent pour tous les parcours :
 ### M4 · Préparer les médias
 
 1. Pour chaque scène : image, vidéo d'introduction, musique YouTube.
-   · *à dessiner*
+   · *dessiné* (Préparer, cartes et médias)
 2. Le coût est **estimé avant chaque lot** et comparé au budget ; les
-   tâches tournent en arrière-plan. · *à dessiner*
+   tâches tournent en arrière-plan. · *dessiné* (Préparer, cartes et médias)
 3. Le MJ valide ou relance chaque média.
 
 ### M5 · Inviter les joueurs
 
-1. Le MJ copie **le lien d'invitation** de la campagne. · *à dessiner*
+1. Le MJ copie **le lien d'invitation** de la campagne. · *dessiné* (Inviter)
 2. Il voit qui a rejoint, et **valide les personnages** créés par les
    joueurs (un personnage hors règles est renvoyé avec un mot).
-   · *à dessiner*
-3. Il fixe la date de la prochaine session.
+   · *dessiné* (Inviter)
+3. Il fixe la date de la prochaine session. · *dessiné* (Inviter)
 
 ### M6 · Lancer la session
 
 1. **Le salon** : les joueurs arrivent, présence en direct, test du son.
-   · *à dessiner*
+   · *dessiné* (Mener, Jouer, Lancer)
 2. Le MJ ouvre éventuellement **l'écran partagé** (code ou QR à saisir
-   sur la TV, ou partage d'écran). · *à dessiner*
+   sur la TV, ou partage d'écran). · *dessiné* (Lancer)
 3. Il diffuse **« Précédemment… »** puis la première scène.
-   · *dessiné* (notifications) · *à dessiner* (écran « Précédemment »)
+   · *dessiné* (Lancer, Mener)
 
 ### M7 · Mener la scène
 
@@ -105,7 +106,7 @@ La boucle principale, sur **l'écran MJ en direct**. · *dessiné*
    conséquences d'un choix ; tout reste un brouillon.
 5. Les **horloges des fronts** avancent quand personne n'agit.
 6. Entre deux lieux, le groupe **voyage** sur la carte du monde, par
-   portions de journée. · *à dessiner* (écran de voyage)
+   portions de journée. · *dessiné* (Voyager)
 
 ### M8 · Mener un combat
 
@@ -123,10 +124,11 @@ La boucle principale, sur **l'écran MJ en direct**. · *dessiné*
 ### M9 · Clore la session
 
 1. « Terminer la session » : l'état de la campagne est enregistré.
-   · *à dessiner*
+   · *dessiné* (Mener)
 2. L'IA rédige **le récapitulatif MJ** et **le « Précédemment… »
-   joueurs** ; le MJ les relit et les publie. · *à dessiner*
-3. La **chronique de campagne** s'allonge d'une entrée. · *à dessiner*
+   joueurs** ; le MJ les relit et les publie. · *dessiné* (Mener)
+3. La **chronique de campagne** s'allonge d'une entrée. · *dessiné*
+   (Mener, Entre deux)
 
 ---
 
@@ -135,26 +137,28 @@ La boucle principale, sur **l'écran MJ en direct**. · *dessiné*
 ### J1 · Rejoindre
 
 1. Il ouvre **le lien** reçu (sans compte, un jeton reste sur son
-   téléphone). · *à dessiner*
+   téléphone). · *dessiné* (Inviter)
 2. Il choisit : **créer son personnage**, **reprendre** le sien, ou
-   **regarder** en spectateur. · *à dessiner*
+   **regarder** en spectateur. · *dessiné* (Inviter ; « reprendre » vu
+   côté MJ seulement)
 
 ### J2 · Créer son personnage
 
 1. **Le créateur en couches** : corps, peau, cheveux, tenue, arme,
    accessoire, couleurs, bouton « au hasard ». Les pièces viennent du
-   pack de l'univers. · *à dessiner*
+   pack de l'univers. · *dessiné* (Créer)
 2. Il remplit ce que les règles demandent (classe, caractéristiques),
-   guidé pas à pas. · *à dessiner*
-3. Il l'envoie au MJ et attend la validation.
+   guidé pas à pas. · *dessiné* (Créer ; Inviter pour le renvoi avec
+   le mot du MJ)
+3. Il l'envoie au MJ et attend la validation. · *dessiné* (Créer, Inviter)
 
 Objectif : moins de deux minutes, sur un téléphone.
 
 ### J3 · Entre deux sessions
 
-1. Il lit **« Précédemment… »**. · *à dessiner*
+1. Il lit **« Précédemment… »**. · *dessiné* (Entre deux)
 2. Il consulte **sa fiche** et **son sac**, équipe un objet.
-   · *dessiné* (sac) · *à dessiner* (fiche)
+   · *dessiné* (sac ; fiche dans Entre deux)
 
 ### J4 · Vivre la scène
 
@@ -167,7 +171,7 @@ Sur **l'écran scène** du téléphone. · *dessiné*
    ou écrit une demande libre.
 4. Le MJ répond : un test de dé à lancer, un résultat, ou un refus
    expliqué.
-5. Le **journal** garde ce que tout le groupe sait. · *à dessiner*
+5. Le **journal** garde ce que tout le groupe sait. · *dessiné* (Jouer)
 
 ### J5 · Explorer la carte
 
@@ -197,14 +201,14 @@ son téléphone, le grand moment passe sur la TV. · *dessiné*
 ### J8 · Après la session
 
 Il lit le récapitulatif, la chronique, et retrouve son personnage
-pour la prochaine fois. · *à dessiner*
+pour la prochaine fois. · *dessiné* (Entre deux)
 
 ---
 
 ## Écran partagé (TV)
 
 1. Le MJ l'ouvre ; la TV affiche un code, ou il partage la fenêtre.
-   · *à dessiner*
+   · *dessiné* (Lancer)
 2. Elle montre la carte, la scène, l'ordre du tour, le groupe, les
    menaces, et joue les grands moments (dés, coups, butin, niveaux,
    révélations). · *dessiné*
@@ -212,41 +216,30 @@ pour la prochaine fois. · *à dessiner*
 
 ---
 
-## Écrans à dessiner
+## Écrans dessinés en dernier
 
-Classés par ordre de passage dans une campagne.
+Tous les écrans de la liste sont dessinés (4 octobre 2026), chacun en
+planche jouable avec son storyboard. Reste la revue des parcours avec
+Romain.
 
-| Écran | Parcours | Appareil |
-| --- | --- | --- |
-| Liste des campagnes | M1 | Ordinateur |
-| Nouvelle campagne (univers, règles, pitch) | M1 | Ordinateur |
-| Éditeur du système de règles | M1 | Ordinateur |
-| Suivi de génération et coût | M2 | Ordinateur |
-| Fiche PNJ / monstre | M2 | Ordinateur |
-| Éditeur de carte | M3 | Ordinateur |
-| Médias et budget | M4 | Ordinateur |
-| Invitation et validation des personnages | M5 | Ordinateur |
-| Rejoindre (lien, choix) | J1 | Téléphone |
-| Créateur de personnage | J2 | Téléphone |
-| Fiche du personnage | J3 | Téléphone |
-| Salon d'avant-session | M6 | Ordinateur et téléphone |
-| Jumelage de l'écran partagé | M6 | TV |
-| « Précédemment… » | M6, J3 | Téléphone, TV |
-| Journal du groupe | J4 | Téléphone |
-| Voyage sur la carte du monde | M7 | Ordinateur, téléphone, TV |
-| Fin de session et récapitulatifs | M9, J8 | Ordinateur, téléphone |
-| Joueur sur ordinateur | J4–J6 | Ordinateur |
+| Écran | Parcours | Appareil | Planche |
+| --- | --- | --- | --- |
+| Éditeur du système de règles | M1 | Ordinateur | Règles · le système de Valombre |
+| Éditeur de carte | M3 | Ordinateur | Cartes · l'éditeur de la salle de l'autel |
+| Invitation et validation des personnages | M5 | Ordinateur | Inviter · la table de Romain |
+| Rejoindre (lien, choix) | J1 | Téléphone | Inviter · la table de Romain |
+| Créateur de personnage | J2 | Téléphone | Créer · le personnage de Marc |
+| Fiche du personnage, « Précédemment… », fin de session | J3, J8 | Téléphone | Entre deux · Marc entre les sessions |
+| Salon, jumelage de la TV, « Précédemment… » | M6 | Ordinateur, TV | Lancer · la TV et la session 4 (et Mener) |
+| Journal du groupe | J4 | Téléphone | Jouer · la soirée de Marc |
+| Voyage sur la carte du monde | M7 | Ordinateur, téléphone, TV | Voyager · de Valombre à Morneval |
+| Récapitulatifs et chronique côté MJ | M9 | Ordinateur | Mener · la soirée de Marc côté MJ |
+| Joueur sur ordinateur | J4–J6 | Ordinateur | Jouer sur ordinateur · Sef |
+| Mort d'un personnage | J6, M8 | Ordinateur, téléphone | Mourir · la dernière soirée de Borin |
+| Mener sur tablette | M7, M8 | Tablette | Tablette · mener la session 3 du canapé |
 
-## Questions ouvertes
+## Questions tranchées
 
-1. **L'écran partagé** : `MEMORY.md` disait « table + TV plus tard » ;
-   on l'a dessiné dès maintenant. Est-ce un écran ouvert sur une vraie
-   TV, une fenêtre partagée sur Discord, ou les deux ?
-2. **Création des personnages** : avant la première session (le MJ
-   valide à froid), ou pendant une session zéro tous ensemble ?
-3. **Entre les sessions** : le joueur peut-il faire quelque chose
-   (équiper, gérer son sac, écrire au MJ), ou seulement lire ?
-4. **Mort d'un personnage** : quel parcours (spectateur, nouveau
-   personnage dans la session, attente) ?
-5. **Spectateurs** : utiles (un ami qui regarde, un joueur absent qui
-   suit), ou à retirer ?
+Les cinq questions ouvertes ont été tranchées par les planches ; la
+décision est dans `MEMORY.md` §1 (écran partagé, moment de la création,
+entre deux sessions, mort d'un personnage, spectateurs).

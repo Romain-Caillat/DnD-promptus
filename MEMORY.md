@@ -24,13 +24,15 @@ memory. If someone would re-litigate it in six months, it is.
 - **Same stack and conventions as Devotion**: Rust/Axum + sqlx,
   React/Vite + shadcn, Tauri, Bun. React was chosen over Vue to reuse
   Devotion's mobile hooks, item menus, i18n setup and lint rules.
-- **Fully remote first.** Every player on their own device. A table +
+- **Fully remote first.** Every player on their own device (confirmed by the Corsaires game, §6). A table +
   TV mode comes later. Voice goes through an external tool (Discord…).
 - **Only the GM creates content.** Players do not author the world.
 - **Rules are data.** The GM defines a rule system per campaign
   (abilities, roll formula, actions, conditions, resources, movement per
-  map level). A "D&D 5e (SRD)" preset is the editable starting point.
-  The player UI is derived from it.
+  map level, action economy, cooldowns). A rule system is a versioned
+  data file the GM edits; no rule is hard-coded. The first two systems
+  are drafts drawn from Romain's games (§6); the D&D 5e SRD comes later
+  as a third. The player UI is derived from the rule system.
 - **Story is a graph, not a script.** Bible → fronts (threats with a
   4–6 step clock) → nodes (scenes/places) linked by clues; every key
   revelation is reachable through ≥ 3 clues in different nodes. Stable
@@ -42,6 +44,15 @@ memory. If someone would re-litigate it in six months, it is.
   ~10 km, day), place (square, ~5 m), encounter (square, 1.5 m, 6 s
   turn). The V1 "region in 500 m hexes" level is replaced by places on
   a square grid.
+- **Table questions settled by the design pass (October 2026).** The
+  shared screen is both: a real TV paired with a code, or the same page
+  shared in a Discord window. Characters are created before the first
+  session and validated by the GM cold, not in a session zero. Between
+  sessions a player levels up, reads the recap and chronicle, checks
+  their sheet and gives availability. A character's death goes through
+  death saves the GM confirms, last words, then the player watches,
+  creates a new character or waits for a hook. Spectators stay (a friend
+  watching, a dead character's player).
 - **Media are pre-generated** (async jobs, cached on disk), never live
   by default. Cost is estimated before each batch and checked against
   the campaign's AI budget.
@@ -60,6 +71,10 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
 - **Exception: characters are in colour.** Pixel-art sprites in the
   Terraria / Starbound style: side view, dark outline, top-light and
   back-shadow shading, heroes face right and enemies face left.
+- **Every visual players see is pixel art**: sprites, items, maps, and
+  also scene illustrations and NPC portraits (decided 4 October 2026;
+  the ink-engraving images of the Corsaires are not reused). Each world
+  keeps its own palette and mood inside that one style.
 - **Items are pixel art in colour too** (12 × 12 cells plus outline),
   shown in square inventory slots like Terraria. An item's rarity is
   the slot frame's material, the same six as skill cards, plus 1 to 6
@@ -120,7 +135,8 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   Maker): the GM or the LLM only places wall cells; autotiling draws the
   wall top one tile up and the front face when the cell below is open.
   Later rows paint over earlier ones, so a token north of a wall goes
-  behind it; rules stay on the logical grid. One tileset per decor
+  behind it, and that wall top turns see-through (x-ray) so the token
+  stays visible; rules stay on the logical grid. One tileset per decor
   (16 tiles per material, dual-grid), hand-drawn or AI-generated once.
   Top-down and isometric were considered and set aside.
 - **Outdoor maps use the same engine:** terrains blended with noise
@@ -192,6 +208,17 @@ Players join with an invite link, a nickname and a free character —
 no account. The secret token lives on the device; the server stores
 only its hash.
 
+### GM routes sit behind the GM guard
+
+Every GM route is mounted on the GM router in `back/src/app.rs`, behind
+`require_gm` (no valid session cookie: 401), and is listed in
+`back/tests/gm_routes_test.rs`, which sweeps them all. A resource is
+checked with `owned_by` (`back/src/auth/guard.rs`): another GM's row
+answers 404, exactly like a missing one — never 403, which would
+confirm it exists. The first GM is created with the setup code from
+the server log, every other one through an invitation: registration is
+never open to whoever reaches the server first.
+
 ### Every AI call is counted
 
 Each LLM, image or video call is recorded with its cost and counted
@@ -205,14 +232,38 @@ against the campaign budget; a batch that would exceed it is refused.
   (`docs/design/scope.py`); keep generic names only for runtime state
   modifiers, always combined with a prefixed class. Template holes are
   `{{name}}`: inside a Python f-string they must be written `{{{{name}}}}`.
+- **Design canvas: the same leak hits a board's own modifiers.** The
+  combat button carried `big`, which is also the damage-number class
+  (thick black stroke): its label became unreadable. A modifier name
+  must not already be a style of the same board.
+- **Design canvas: boards must survive reduced motion.** Romain's
+  Windows asks for reduced motion, and `@media (prefers-reduced-motion)`
+  turns animations off: an element whose resting style is the animation's
+  loud frame then shows that frame forever (fog dots became white
+  squares). Give every animated element a calm resting style.
+- **Design canvas: a map inside a phone needs `isolation: isolate`.**
+  The `Plan` cells use z-indexes up to 900; without a stacking context
+  on the wrapper they paint over the board's own overlays (banners).
+- **Design canvas: element selectors leak into imported components too.**
+  `.req .hd div{display:flex}` reached the divs inside an imported
+  `Sprite` and pushed the pixel character over the buttons. Scoping only
+  renames classes: write element selectors as children (`.req .hd > div`).
+- **Checking the canvas in Chrome:** the window must stay in the
+  foreground, or the page is reported hidden and never renders. Zoom
+  and shortcuts do not reach the canvas through the extension: open a
+  board large by setting `launch` to focused (`docs/design/README.md`).
+- **Design canvas: a grid or flex box splits mixed text into items.**
+  `<b>{{a}}/{{b}}</b>` with `display:grid` puts each text node on its own
+  row (the clock showed 3 / 6 stacked). Wrap mixed text in one `<span>`.
 
 - **YouTube player must stay visible** (YouTube terms) and starts muted:
   each player taps "activate sound". Ads can desync a player; playback
   re-syncs on its own.
 - **OpenRouter video output format was never verified** (no network
   during V1 development). Check it before designing around it.
-- **V1 GM pages had no authentication.** The rewrite needs a GM account
-  from day one (passkeys, as in Devotion); `/play/*` stays tokenless.
+- **V1 GM pages had no authentication.** The rewrite has a GM account
+  from day one (passkeys, `platform/sign-in-gm`, see §3 "GM routes");
+  `/play/*` stays accountless.
 - **YouTube player must stay visible** also applies to the phone design:
   the scene screen currently hides music behind a button — needs a
   visible mini-player before it ships.
@@ -230,3 +281,62 @@ against the campaign budget; a batch that would exceed it is refused.
 - **No UI text in code.** Every word a person reads comes from `t()`,
   French as the reference locale.
 - **No mock.** No "not yet wired" button ships.
+
+## 6. What Romain's real games taught (before Promptus)
+
+Romain ran two games by hand before this rewrite. Their prep lives in
+`dnd-save/` (texts versioned; the PNG images, 57 MB, stay out of git):
+read it before designing content formats or rules.
+
+- **Corsaires de la Couronne** (played 16 May 2026, act 1 of 4): a
+  pirate one-shot, **six players, fully remote**. Afterwards: the GM
+  struggled to keep the story continuous, to entertain six players at
+  once and to improvise; players found the rules unclear and not applied
+  consistently through act 1; they lacked information they needed for
+  act 2. These four pains are what milestone 1 is judged on.
+- **Le Brasier** (prepared 7 June 2026, not played): a space campaign
+  with a well-built world (four factions, affinity, an AI crew member
+  played by the GM). Its ship/crew combat was too messy and act 1 was
+  under-prepared: rules must be testable before the table sees them.
+- **The table is six players**, not the three of the design boards.
+  Every GM screen, TV layout and turn order must hold six players
+  against six adversaries.
+- **Romain's own system is not D&D 5e.** The "Corsaires" system: six
+  stats, mod = (score − 10) / 2, AC = 10 + DEX mod; checks d20 + mod
+  against 5 / 10 / 15 / 20 with four outcomes (natural 1, fail, success,
+  natural 20); 2 free actions per turn; class attacks with fixed damage,
+  a precision bonus and a cooldown in turns, unlocked at levels 1, 3, 7,
+  plus one free slot learned in play; +1 XP per success, every 5 XP one
+  point to add to a stat, level from total XP; 10 HP; at 0 HP out of the
+  fight, back for the next scene if nobody heals within 3 turns; no help
+  bonus on checks. The rules model must express it as data, alongside
+  the SRD.
+- **His prep format is the content model to aim for.** A scene: place,
+  mood and several YouTube tracks, flow, a hook with planned checks
+  (stat, DC, what a 1 does), NPCs, GM key points, adversary stat blocks
+  with tactics ("if three fall, the rest flee"), loot, XP, transition.
+  An NPC: identity, one-line roleplay summary, traits, flaw, motivation,
+  stats, disposition, what they want, what they hide, inventory,
+  portrait. Images come in three kinds: places, NPC portraits, action
+  scenes.
+- **Rules are Romain's, not sacred.** He is happy to evolve his system;
+  a change ships as a new locked version that players see before the
+  next session, never mid-game.
+- **The method these games produced** — four chains (rules, campaign,
+  evening, feedback), each with a standard and checks that flag but
+  never block — is in `docs/lecons-des-parties.md`. Both games are
+  permanent test corpora: a check that misses their known defects
+  (two damage models, critical info only in an optional scene, a
+  missing referenced document) is broken.
+- **Two witness worlds, built together.** The Corsaires and the Brasier
+  are developed side by side from the first ticket: a ticket is done only
+  when it works on both. They are **rewritten** in Promptus's format from
+  `dnd-save/`, not converted: their defects are what the rewrite fixes,
+  and none of their images is imported — every visual is redrawn in
+  pixel art. Their rule systems are drafts meant to change.
+- **Vehicle combat is shared.** The brig of the Corsaires (act 2: the
+  Greyhound interception) and the Cure-Dent use one vehicle system with
+  two skins, in milestone 2.
+- **Which world comes next is undecided** (resume the Corsaires, the
+  Brasier, or a new one): milestone 1 plays one of the two witness
+  worlds and keeps the other playable in tests.

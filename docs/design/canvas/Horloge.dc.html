@@ -23,7 +23,7 @@ body{margin:0;background:#0A0A0A}
 </helmet>
 <div class="hg {{onCls}}" role="img" aria-label="{{label}}" style="width: {{S}}px; height: {{S}}px">
 <sc-for list="{{sq}}" as="k" hint-placeholder-count="30"><i class="{{k.cls}}" style="left: {{k.x}}px; top: {{k.y}}px; width: {{s}}px; height: {{s}}px; animation-delay: {{k.d}}s"></i></sc-for>
-<sc-if value="{{texte}}" hint-placeholder-val="{{ true }}"><b style="font-size: {{fs}}px">{{rempli}}/{{parts}}</b></sc-if>
+<sc-if value="{{texte}}" hint-placeholder-val="{{ true }}"><b style="font-size: {{fs}}px"><span>{{rempli}}/{{parts}}</span></b></sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"parts":{"editor":"int","default":6,"min":2,"max":12},"rempli":{"editor":"int","default":3,"min":0,"max":12},"taille":{"editor":"int","default":112,"min":32,"max":320},"prochaine":{"editor":"boolean","default":true},"texte":{"editor":"boolean","default":true},"$preview":{"width":112,"height":112}}'>

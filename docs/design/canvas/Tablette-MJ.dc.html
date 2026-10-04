@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mener sur tablette</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&amp;family=Chakra+Petch:wght@400;500;600;700&amp;family=Cormorant+Garamond:ital,wght@1,500;1,600&amp;display=swap">
+<style>
+body{margin:0;background:#0A0A0A;overflow:hidden}
+.tb-pm{font-family:'Chakra Petch',system-ui,sans-serif;color:#F2F2F2;background:radial-gradient(120% 60% at 50% 0%,#1C1C1C 0,#0C0C0C 55%,#050505 100%);-webkit-font-smoothing:antialiased}
+.tb-ttl{font-family:'Cinzel',Georgia,serif;font-weight:800;letter-spacing:.02em}
+.tb-nar{margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-weight:500;line-height:1.35;color:#E5E5E5}
+.tb-lbl{font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#8C8C8C}
+.tb-mut{font-size:12px;color:#8C8C8C;line-height:1.5}
+.tb-lap{position:relative;width:1440px;height:900px;flex:none;overflow:hidden;box-sizing:border-box;display:grid;grid-template-rows:52px 1fr 78px;background:radial-gradient(90% 70% at 50% 0%,#1A1A1A 0,#0C0C0C 60%,#050505 100%);border-radius:14px;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7)}
+.tb-tab{position:relative;width:1180px;height:820px;flex:none;overflow:hidden;box-sizing:border-box;display:grid;grid-template-rows:56px 1fr 92px;background:radial-gradient(90% 70% at 50% 0%,#1A1A1A 0,#0C0C0C 60%,#050505 100%);border-radius:28px;border:12px solid #050505;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7)}
+.tb-top{display:flex;align-items:center;gap:18px;padding:0 18px;border-bottom:1px solid #1F1F1F;font-size:12px;color:#A3A3A3;white-space:nowrap}
+.tb-top .tb-sep{width:1px;height:20px;background:#2A2A2A;flex:none}
+.tb-tabs{display:flex;gap:20px;margin-left:24px}
+.tb-tabs > span{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6E6E6E;padding:17px 0;border-bottom:2px solid transparent}
+.tb-tabs > span.on{color:#F2F2F2;border-bottom-color:#F2F2F2}
+.tb-cols{display:grid;grid-template-columns:300px 1fr 360px;gap:14px;padding:14px 18px 0;min-height:0}
+.tb-col{display:flex;flex-direction:column;gap:14px;min-height:0;overflow:hidden}
+.tb-panel{background:linear-gradient(180deg,#181818,#111);border:1px solid #2C2C2C;border-radius:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 30px rgba(0,0,0,.45)}
+.tb-ph{display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px 8px}
+.tb-stage{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.tb-hd{display:flex;align-items:baseline;gap:14px}
+.tb-foot{display:flex;align-items:center;gap:14px;padding:0 18px 14px}
+.tb-bn{flex:1;display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;border-radius:12px;font-weight:700;font-size:15px;box-sizing:border-box}
+.tb-bn.you{background:#161616;border:1px solid #2C2C2C;color:#F2F2F2}
+.tb-bn.wait{background:#0A0A0A;border:1.5px dashed #5E5E5E;color:#D4D4D4}
+.tb-bn.warn{background:#0A0A0A;border:1.5px solid #FF9F1C;color:#F2F2F2}
+.tb-bn.hurt{background:#0A0A0A;border:1.5px solid #FF4D5E;color:#F2F2F2}
+.tb-bn.turn{background:#FFD60A;color:#0A0A0A;box-shadow:0 3px 0 #8A6F00}
+.tb-go{font:inherit;width:460px;flex:none;display:block;box-sizing:border-box;border:0;padding:6px;border-radius:12px;background:#EDEDED;color:#0A0A0A;text-align:left;cursor:pointer;box-shadow:0 4px 0 #8A8A8A,0 7px 0 #5A5A5A,0 14px 24px rgba(0,0,0,.5);transform-origin:50% 100%;transition:transform .1s,box-shadow .1s}
+.tb-go .tb-in{display:flex;align-items:center;gap:12px;border:1.5px solid #0A0A0A;border-radius:8px;padding:6px 14px;height:42px;box-sizing:border-box}
+.tb-go .tb-t{display:block;font-family:'Cinzel',Georgia,serif;font-weight:800;font-size:17px;line-height:1.05}
+.tb-go .tb-s{display:block;font-size:11px;font-weight:600;color:#5A5A5A;margin-top:2px}
+.tb-go .tb-chev{margin-left:auto;font-family:'Cinzel',serif;font-weight:800;font-size:22px}
+.tb-go:active{transform:perspective(500px) rotateX(14deg) translateY(4px);box-shadow:0 1px 0 #8A8A8A,0 2px 0 #5A5A5A}
+.tb-go.off{background:#141414;color:#8C8C8C;box-shadow:0 0 0 1.5px #2C2C2C;cursor:default;pointer-events:none}
+.tb-go.off .tb-in{border:1.5px dashed #3A3A3A}
+.tb-go.off .tb-s{color:#6E6E6E}
+.tb-go.red{background:#FF4D5E;box-shadow:0 4px 0 #8A2A33,0 7px 0 #5A1A20,0 14px 24px rgba(0,0,0,.5)}
+.tb-go.red .tb-s{color:#3A0A10}
+.tb-btn{font:inherit;font-family:'Cinzel',Georgia,serif;font-size:12px;font-weight:800;color:#F2F2F2;background:#141414;border:0;border-radius:8px;height:34px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:nowrap;outline:1.5px solid #5A5A5A;outline-offset:-4px;box-shadow:0 0 0 1.5px #3A3A3A,0 3px 0 #000;flex:none}
+.tb-btn.tb-lt{background:#EDEDED;color:#0A0A0A;outline-color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.tb-sec{display:flex;flex-direction:column;gap:8px}
+.tb-row2{display:flex;gap:14px;align-items:flex-start}
+.tb-box{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;background:#0D0D0D;border:1px solid #333;font-size:14px}
+.tb-box > code{flex:1;font-family:'Chakra Petch',monospace;font-size:14px;color:#F2F2F2}
+.tb-edit{padding:14px 16px;border-radius:12px;background:#0D0D0D;border:1px solid #333;font-size:14px;line-height:1.55;color:#D4D4D4}
+.tb-edit > .tb-lbl{display:block;margin-bottom:8px}
+.tb-rl{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:baseline;font-size:13px;line-height:1.45;padding:9px 12px;border-radius:10px;background:#121212;color:#D4D4D4}
+.tb-chk{display:flex;align-items:flex-start;gap:10px;font-size:13px;padding:10px 12px;border-radius:10px;background:#121212;line-height:1.45}
+.tb-chk > i{width:18px;height:18px;border-radius:5px;background:#EDEDED;color:#0A0A0A;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:11px;flex:none;margin-top:1px}
+.tb-chk.warn{border:1.5px solid #FF9F1C}
+.tb-chk.warn > i{background:#FF9F1C}
+.tb-chk.tb-pend > i{background:transparent;border:1.5px dashed #5E5E5E;color:#8C8C8C;box-sizing:border-box}
+.tb-co{display:flex;flex-direction:column;gap:8px;padding:0 14px 14px}
+.tb-note{padding:12px 14px;border-radius:12px;background:#EDEDED;color:#0A0A0A;font-size:13px;line-height:1.5;box-shadow:0 3px 0 #8A8A8A}
+.tb-note > .tb-lbl{display:block;color:#5A5A5A;margin-bottom:4px}
+.tb-secret{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;background:#050505;border:1.5px dashed #5E5E5E;font-size:13px;line-height:1.5;color:#D4D4D4}
+.tb-secret > .tb-lbl{color:#F2F2F2}
+.tb-hook{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:10px;background:#141414;border:1px solid #2C2C2C;font-size:13px;line-height:1.45;color:#D4D4D4}
+.tb-hook > small{font-size:11px;color:#8C8C8C}
+.tb-hook.on{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A}
+.tb-hook.on > small{color:#5A5A5A}
+.tb-ans{display:flex;align-items:center;gap:10px;font-size:13px;padding:8px 12px;border-radius:10px;background:#121212;color:#D4D4D4}
+.tb-ans > b{width:80px;flex:none}
+.tb-ans > em{margin-left:auto;font-style:normal;font-size:11px;color:#8C8C8C;white-space:nowrap}
+.tb-st{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;border-radius:6px;white-space:nowrap;flex:none}
+.tb-st.ok{background:#EDEDED;color:#0A0A0A}
+.tb-st.todo{background:#FFD60A;color:#0A0A0A}
+.tb-st.warn{background:#0A0A0A;color:#FF9F1C;border:1.5px solid #FF9F1C}
+.tb-st.wait{border:1.5px dashed #5E5E5E;color:#A3A3A3}
+.tb-st.off{color:#5A5A5A;border:1px solid #2C2C2C}
+.tb-seat{display:flex;align-items:center;gap:12px;height:68px;padding:0 12px;margin:0 10px 6px;border-radius:12px;background:#121212;border:1px solid transparent}
+.tb-seat.cur{border-color:#F2F2F2;background:#1C1C1C}
+.tb-seat > .tb-who{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.tb-seat > .tb-who > b{font-size:14px}
+.tb-seat > .tb-who > small{font-size:11px;color:#8C8C8C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-pf{display:inline-grid;place-items:end center;width:44px;height:56px;border-radius:9px;background:linear-gradient(180deg,#262626,#121212);border:2px solid #3A3A3A;box-shadow:0 3px 0 #000;box-sizing:border-box;flex:none;overflow:hidden}
+.tb-pf.none{background:transparent;border:2px dashed #3A3A3A;box-shadow:none}
+.tb-pf.down{border-color:#FF4D5E}
+.tb-pres{width:9px;height:9px;border-radius:50%;background:#3A3A3A;flex:none}
+.tb-pres.on{background:#F2F2F2;box-shadow:0 0 8px rgba(255,255,255,.6)}
+.tb-pstage{display:flex;align-items:flex-end;gap:14px;padding:14px;border-radius:14px;background:radial-gradient(60% 30% at 30% 92%,rgba(255,255,255,.08),transparent),#141414;border:1px solid #2C2C2C}
+.tb-abs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.tb-ab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;border-radius:10px;background:#121212;border:1px solid #2C2C2C}
+.tb-ab > small{font-size:10px;font-weight:700;letter-spacing:.14em;color:#8C8C8C}
+.tb-ab > b{font-size:20px}
+.tb-ab > em{font-style:normal;font-size:11px;color:#A3A3A3}
+.tb-ab.tb-fix{border:1.5px solid #F2F2F2;background:#1C1C1C}
+.tb-gems{display:flex;gap:14px;align-items:flex-end}
+.tb-gem{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#8C8C8C}
+.tb-hand{display:flex;gap:12px}
+.tb-sent{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:#141414;border:1.5px dashed #5E5E5E;font-size:13px;color:#D4D4D4}
+.tb-spin{width:14px;height:14px;border-radius:50%;border:2px solid #3A3A3A;border-top-color:#F2F2F2;animation:tb-spin 1s linear infinite;flex:none}
+@keyframes tb-spin{to{transform:rotate(360deg)}}
+.tb-toast{display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:14px;background:#EDEDED;color:#0A0A0A;box-shadow:0 6px 0 #8A8A8A,0 20px 40px rgba(0,0,0,.6)}
+.tb-toast .tb-lbl{color:#5A5A5A}
+.tb-art{height:178px;border-radius:12px;position:relative;background:radial-gradient(70% 80% at 50% 100%,rgba(10,10,10,.9),transparent),repeating-linear-gradient(135deg,#3A3A3A 0 2px,#2A2A2A 2px 9px);flex:none;display:flex;align-items:flex-end;padding:14px;box-sizing:border-box}
+.tb-tag{position:absolute;right:10px;top:10px;font-size:9px;font-weight:700;letter-spacing:.14em;background:#0A0A0A;padding:3px 6px;border-radius:4px}
+.tb-yt{display:flex;align-items:center;gap:10px;padding:6px 10px 6px 6px;border-radius:10px;background:#141414;border:1px solid #2C2C2C;font-size:12px}
+.tb-yt > .tb-thumb{width:64px;height:36px;border-radius:5px;background:repeating-linear-gradient(135deg,#3A3A3A 0 2px,#262626 2px 7px);display:grid;place-items:center;flex:none;font-size:8px;font-weight:700;letter-spacing:.1em}
+.tb-yt > span:last-child{margin-left:auto;color:#8C8C8C}
+.tb-eq{display:flex;gap:2px;align-items:flex-end;height:14px}
+.tb-eq > i{width:3px;height:6px;background:#F2F2F2;animation:tb-eq .8s ease-in-out infinite}
+.tb-eq > i:nth-child(2){animation-delay:-.3s}
+.tb-eq > i:nth-child(3){animation-delay:-.6s}
+@keyframes tb-eq{0%,100%{height:4px}50%{height:14px}}
+.tb-endc{position:absolute;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;background:rgba(5,5,5,.94);padding:30px}
+.tb-ph2{position:relative;width:390px;height:844px;border-radius:44px;overflow:hidden;border:10px solid #050505;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7);background:radial-gradient(130% 70% at 50% 0%,#1A1A1A 0,#0C0C0C 60%,#050505 100%);box-sizing:border-box;display:flex;flex-direction:column;flex:none}
+.tb-pbn{margin:52px 12px 0;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;font-weight:700;font-size:14px}
+.tb-pbn.you{background:#EDEDED;color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.tb-pbn.wait{background:#0A0A0A;border:1.5px dashed #5E5E5E;color:#D4D4D4}
+.tb-pbn.listen{background:#161616;border:1px solid #2C2C2C;color:#D4D4D4}
+.tb-pbn.warn{background:#0A0A0A;border:1.5px solid #FF9F1C;color:#F2F2F2}
+.tb-pbn.hurt{background:#0A0A0A;border:1.5px solid #FF4D5E;color:#F2F2F2}
+.tb-pbn.turn{background:#FFD60A;color:#0A0A0A;box-shadow:0 3px 0 #8A6F00}
+.tb-pbody{flex:1;display:flex;flex-direction:column;gap:12px;padding:16px;min-height:0;overflow:hidden}
+.tb-pft{display:flex;flex-direction:column;gap:8px;padding:10px 14px 30px}
+.tb-cb{font:inherit;display:block;box-sizing:border-box;width:100%;border:0;text-align:left;cursor:pointer;padding:6px;border-radius:12px;background:#EDEDED;color:#0A0A0A;box-shadow:0 4px 0 #8A8A8A,0 7px 0 #5A5A5A}
+.tb-cb .tb-in{display:flex;align-items:center;gap:12px;border:1.5px solid #0A0A0A;border-radius:8px;padding:8px 12px;min-height:40px}
+.tb-cb .tb-t{display:block;font-family:'Cinzel',serif;font-weight:800;font-size:17px}
+.tb-cb .tb-s{display:block;font-size:11px;font-weight:600;color:#5A5A5A;margin-top:2px}
+.tb-cb .tb-chev{margin-left:auto;font-family:'Cinzel',serif;font-weight:800;font-size:22px}
+.tb-cb.tb-dk{background:#141414;color:#F2F2F2;box-shadow:0 0 0 1.5px #3A3A3A,0 4px 0 #000}
+.tb-cb.tb-dk .tb-in{border-color:#5A5A5A}
+.tb-cb.tb-dk .tb-s{color:#8C8C8C}
+.tb-cb.off{opacity:.45;pointer-events:none}
+.tb-pnav{display:flex;border-top:1px solid #1F1F1F;background:#060606;padding:2px 8px 18px}
+.tb-pnav > span{flex:1;font-size:12px;color:#8C8C8C;min-height:44px;display:grid;place-items:center;position:relative}
+.tb-pnav > span.on{color:#F2F2F2}
+.tb-pnav > span.on::before{content:'';position:absolute;top:0;left:50%;margin-left:-12px;width:24px;height:2px;background:#F2F2F2}
+.tb-dots{display:flex;gap:6px}
+.tb-dots > i{flex:1;height:4px;border-radius:2px;background:#2C2C2C}
+.tb-dots > i.on{background:#F2F2F2}
+.tb-chips{display:flex;flex-wrap:wrap;gap:8px}
+.tb-chip{font:inherit;display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:#141414;border:1.5px solid #2C2C2C;font-size:13px;color:#D4D4D4;cursor:pointer}
+.tb-chip.on{background:#EDEDED;border-color:#0A0A0A;color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.tb-sw{font:inherit;width:40px;height:40px;border-radius:10px;border:2px solid #2C2C2C;cursor:pointer;padding:0;box-shadow:0 3px 0 #000}
+.tb-sw.on{border-color:#F2F2F2;box-shadow:0 0 0 2px #0A0A0A,0 0 0 4px #F2F2F2}
+.tb-tv{position:relative;width:960px;height:540px;flex:none;overflow:hidden;border-radius:10px;border:14px solid #050505;box-shadow:0 0 0 2px #2C2C2C,0 30px 60px rgba(0,0,0,.7);background:radial-gradient(90% 80% at 50% 0%,#1C1C1C 0,#0A0A0A 60%,#030303 100%);box-sizing:content-box}
+.tb-tvmini{position:relative;width:420px;height:236px;overflow:hidden;border-radius:8px;border:6px solid #050505;box-shadow:0 0 0 1.5px #2C2C2C;background:#0A0A0A;flex:none}
+.tb-tvmini > .tb-inner{position:absolute;left:0;top:0;width:960px;height:540px;transform:scale(.4375);transform-origin:0 0}
+.tb-side{display:flex;flex-direction:column;gap:16px;width:420px;flex:none}
+.tb-think{padding:14px 16px;border-radius:14px;background:#EDEDED;color:#0A0A0A;font-size:14px;line-height:1.45;box-shadow:0 3px 0 #8A8A8A;min-height:92px;box-sizing:border-box;display:flex;align-items:center}
+.tb-why{padding:12px 14px;border-radius:12px;background:#141414;border:1px solid #2C2C2C;font-size:13px;line-height:1.5;color:#D4D4D4;min-height:110px;box-sizing:border-box}
+.tb-prog{display:flex;flex-wrap:wrap;gap:6px}
+.tb-prog > button{font:inherit;font-size:13px;font-weight:700;width:44px;height:36px;border-radius:8px;background:#141414;border:1px solid #2C2C2C;color:#6E6E6E;cursor:pointer}
+.tb-prog > button.done{color:#A3A3A3}
+.tb-prog > button.cur{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A}
+.tb-ctl{display:flex;gap:10px}
+.tb-ctl > button{font:inherit;font-size:13px;font-weight:600;height:40px;padding:0 16px;border-radius:10px;background:#141414;border:1px solid #3A3A3A;color:#D4D4D4;cursor:pointer}
+@media (prefers-reduced-motion: reduce){.tb-pm *{animation:none!important}}
+
+.tb-tab .tb-go{width:520px}
+.tb-tab .tb-go .tb-in{height:58px}
+.tb-tab .tb-go .tb-t{font-size:19px}
+.tb-tab .tb-bn{height:62px;font-size:16px}
+.tb-rail{display:flex;flex-direction:column;gap:8px}
+.tb-rail > span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:72px;border-radius:14px;background:#121212;border:1px solid #2C2C2C;font-size:11px;font-weight:600;color:#8C8C8C}
+.tb-rail > span > b{font-family:'Cinzel',serif;font-size:22px;color:#A3A3A3}
+.tb-rail > span.cur{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.tb-rail > span.cur > b{color:#0A0A0A}
+.tb-rail > span > i{position:absolute;margin:-40px 0 0 40px;width:10px;height:10px;border-radius:50%;background:#FFD60A}
+.tb-mapw{position:relative;isolation:isolate;width:672px;height:432px;overflow:hidden;border-radius:14px;border:1px solid #2C2C2C;flex:none;align-self:center}
+.tb-ov{position:absolute;inset:0;z-index:950;pointer-events:none}
+.tb-fog{position:absolute;background:rgba(5,5,5,.78);border-left:2px dashed #5E5E5E}
+.tb-finger{position:absolute;width:64px;height:64px;border-radius:50%;transform:translate(-50%,-50%);border:2px solid #F2F2F2;background:rgba(242,242,242,.14);box-shadow:0 0 0 3px #0A0A0A}
+.tb-trail{position:absolute;height:64px;border-radius:32px;transform:translateY(-50%);background:rgba(242,242,242,.1)}
+.tb-hint{position:absolute;left:12px;bottom:12px;display:flex;gap:8px}
+.tb-hint > span{font-size:12px;font-weight:600;padding:6px 10px;border-radius:8px;background:#0A0A0A;border:1px solid #3A3A3A;color:#D4D4D4}
+.tb-req{display:flex;flex-direction:column;gap:14px;padding:18px;border-radius:16px;background:#EDEDED;color:#0A0A0A;box-shadow:0 6px 0 #8A8A8A,0 20px 40px rgba(0,0,0,.6)}
+.tb-req > .tb-lbl{color:#5A5A5A}
+.tb-req > q{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:24px;line-height:1.3;quotes:none}
+.tb-dcs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tb-dcs > span{display:flex;flex-direction:column;align-items:center;justify-content:center;height:72px;border-radius:12px;background:#FFF;border:2px solid #0A0A0A;font-size:12px;font-weight:600;color:#5A5A5A}
+.tb-dcs > span > b{font-size:26px;color:#0A0A0A}
+.tb-dcs > span.on{background:#0A0A0A;color:#A3A3A3}
+.tb-dcs > span.on > b{color:#F2F2F2}
+.tb-yn{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tb-yn > span{display:flex;align-items:center;justify-content:center;height:60px;border-radius:12px;border:2px dashed #8A8A8A;font-weight:700;font-size:15px;color:#3A3A3A}
+.tb-stat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:#141414;border:1px solid #2C2C2C;font-size:14px;color:#D4D4D4}
+.tb-stat > b{margin-left:auto;font-size:22px;color:#F2F2F2}
+.tb-init{display:flex;gap:8px}
+.tb-init > span{display:flex;align-items:center;gap:8px;height:60px;padding:0 12px 0 6px;border-radius:12px;background:#121212;border:1px solid #2C2C2C;font-size:13px;font-weight:700;color:#A3A3A3}
+.tb-init > span.now{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.tb-prop{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;background:#0D0D0D;border:1.5px solid #F2F2F2;font-size:15px;line-height:1.5;color:#D4D4D4}
+.tb-prop > b{font-family:'Cinzel',serif;font-size:20px;color:#F2F2F2}
+.tb-big3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
+.tb-big3 > span{display:flex;align-items:center;justify-content:center;height:64px;border-radius:12px;background:#141414;border:1.5px solid #3A3A3A;font-weight:700;font-size:15px}
+.tb-big3 > span.on{background:#EDEDED;color:#0A0A0A;border-color:#0A0A0A;box-shadow:0 4px 0 #8A8A8A}
+.tb-drawer{position:absolute;right:0;top:56px;bottom:92px;width:440px;z-index:60;display:flex;flex-direction:column;gap:12px;padding:18px;box-sizing:border-box;background:#0E0E0E;border-left:1px solid #3A3A3A;box-shadow:-30px 0 60px rgba(0,0,0,.7);animation:tb-slide .35s ease-out}
+@keyframes tb-slide{from{transform:translateX(100%)}to{transform:none}}
+.tb-msg{padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.45}
+.tb-msg.tb-me{background:#1C1C1C;border:1px solid #3A3A3A;color:#F2F2F2;align-self:flex-end;max-width:85%}
+.tb-msg.tb-ai{background:#EDEDED;color:#0A0A0A;box-shadow:0 3px 0 #8A8A8A}
+.tb-msg.tb-ai > .tb-lbl{display:block;color:#5A5A5A;margin-bottom:4px}
+.tb-mic{display:flex;align-items:center;gap:12px;margin-top:auto;padding:10px;border-radius:14px;background:#141414;border:1px solid #2C2C2C;font-size:14px;color:#A3A3A3}
+.tb-mic > b{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:#FF4D5E;color:#0A0A0A;font-size:22px;flex:none;box-shadow:0 0 0 6px rgba(255,77,94,.2)}
+.tb-mic.idle > b{background:#2C2C2C;color:#A3A3A3;box-shadow:none}
+.tb-seatc{display:flex;align-items:center;gap:10px;height:64px;padding:0 10px;margin:0 10px 6px;border-radius:12px;background:#121212}
+.tb-seatc > .tb-who{display:flex;flex-direction:column;gap:2px;flex:1}
+.tb-seatc > .tb-who > b{font-size:14px}
+.tb-seatc > .tb-who > small{font-size:11px;color:#8C8C8C}
+.tb-seatc.ask{border:1.5px solid #FFD60A}
+</style>
+</helmet>
+<div class="tb-pm" style="{{rootStyle}}; position: relative; overflow: hidden; display: flex; gap: 40px; box-sizing: border-box; align-items: flex-start">
+<div class="tb-tab"><header class="tb-top"><span class="tb-ttl" style="font-size: 13px; letter-spacing: .3em; color: #F2F2F2">PROMPTUS</span><span class="tb-sep"></span><span class="tb-ttl" style="font-size: 15px; color: #F2F2F2">Session 3 · la crypte</span><span class="tb-tabs"></span><span style="flex: 1"></span><span>Soirée · 1 h 52</span><span class="tb-sep"></span><span>TV connectée</span></header><div class="tb-cols" style="grid-template-columns: 84px 1fr 300px"><div class="tb-col"><div class="tb-rail"><span class="{{r0}}"><b>❖</b>Scène</span><span class="{{r1}}"><b>☰</b>Table</span><span class="{{r2}}"><b>▦</b>Carte</span><span class="{{r3}}"><b>✎</b>Journal</span><span class="{{r4}}"><b>✦</b>Co-MJ</span></div></div><div class="tb-col"><div class="tb-stage"><sc-if value="{{is1}}" hint-placeholder-val="{{ true }}"><div class="tb-hd"><span class="tb-ttl" style="font-size: 26px">La salle de l’autel</span><span class="tb-lbl">scène 3 sur 5 · révélée</span></div><div class="tb-art" style="height: 230px"><span class="tb-tag">IMAGE · RÉVÉLÉE</span><p class="tb-nar" style="font-size: 22px; max-width: 560px">Des braseros éteints depuis des siècles s’allument d’eux-mêmes. Sur l’autel, une page arrachée tremble sans vent.</p></div><div class="tb-row2"><div class="tb-note"><span class="tb-lbl">À lire si on te demande</span>L’autel porte le sceau du culte de la Cendre. Sagesse 13 pour la page, 15 pour la porte secrète.</div><div class="tb-yt" style="flex: none; align-self: flex-start"><span class="tb-thumb">YT</span><span>Ombres de la crypte</span><span class="tb-eq"><i></i><i></i><i></i></span></div></div><span class="tb-mut">Tout se touche : une scène, une carte, un bouton. Rien de plus petit qu’un doigt.</span></sc-if><sc-if value="{{is2}}" hint-placeholder-val="{{ false }}"><div class="tb-req"><span class="tb-lbl">Lyra · Camille demande</span><q>Je fouille l’autel, je cherche ce qui fait trembler la page.</q><span class="tb-lbl">Un jet de Sagesse (Perception), difficulté</span><div class="tb-dcs"><span class="{{dc12}}"><b>12</b>Facile</span><span class="{{dc13}}"><b>13</b>Moyen</span><span class="{{dc16}}"><b>16</b>Difficile</span><span class="{{dc20}}"><b>20</b>Héroïque</span></div><div class="tb-yn"><span>Oui, sans jet</span><span>Non, rien ici</span></div></div><sc-if value="{{asked}}" hint-placeholder-val="{{ false }}"><div class="tb-sent"><span class="tb-spin"></span>Camille lance le dé sur son téléphone…</div></sc-if><sc-if value="{{found}}" hint-placeholder-val="{{ false }}"><div class="tb-stat"><dc-import name="De" de="d20" valeur="15" taille="56" anim="fixe" hint-size="56px,56px"></dc-import><span>Lyra : 15 + 3 = <b style="font-size: 16px">18</b> contre 13</span><b>Réussi</b></div><div class="tb-chk"><i>✓</i><span>La page arrachée part dans le journal de tous. La porte secrète (15) aussi : 18 la trouve. Tu révèles ?</span></div></sc-if></sc-if><sc-if value="{{is3}}" hint-placeholder-val="{{ false }}"><div class="tb-hd"><span class="tb-ttl" style="font-size: 22px">La carte</span><span class="tb-lbl">au doigt</span></div><div class="tb-mapw"><div style="position: absolute; left: 0; top: -48px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="48" vue="mj" grille="true" combat="false" bx="4" by="6" hint-size="672px,480px"></dc-import></div><div class="tb-ov"><span class="tb-fog" style="left: {{fogX}}px; top: 0; right: 0; bottom: 0"></span><span class="tb-trail" style="left: 340px; top: 170px; width: 150px"></span><span class="tb-finger" style="left: 490px; top: 170px"></span><div class="tb-hint"><span>Un doigt : peindre le brouillard</span><span>Deux doigts : déplacer</span><span>Pincer : zoomer</span></div></div></div><span class="tb-mut">Romain efface le brouillard du doigt, là où Lyra ouvre la porte secrète. Ce qui est levé part sur les téléphones et la TV au relâcher.</span></sc-if><sc-if value="{{is4}}" hint-placeholder-val="{{ false }}"><div class="tb-init"><span class=""><span class="tb-pf" style="width: 36px; height: 46px"><dc-import name="Sprite" perso="sef" px="1" anim="repos" hint-size="20px,26px"></dc-import></span>Sef</span><span class="now"><span class="tb-pf" style="width: 36px; height: 46px"><dc-import name="Sprite" perso="gobelin" px="1" anim="repos" hint-size="20px,26px"></dc-import></span>Gobelin 1</span><span class=""><span class="tb-pf" style="width: 36px; height: 46px"><dc-import name="Sprite" perso="borin" px="1" anim="repos" hint-size="20px,26px"></dc-import></span>Borin</span><span class=""><span class="tb-pf" style="width: 36px; height: 46px"><dc-import name="Sprite" perso="lyra" px="1" anim="repos" hint-size="20px,26px"></dc-import></span>Lyra</span><span class=""><span class="tb-pf" style="width: 36px; height: 46px"><dc-import name="Sprite" perso="gobelin" px="1" anim="repos" hint-size="20px,26px"></dc-import></span>Gobelin 2</span></div><div class="tb-mapw"><div style="position: absolute; left: 0; top: -48px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="48" vue="mj" grille="true" combat="true" bx="4" by="6" hint-size="672px,480px"></dc-import></div><div class="tb-ov"></div></div><sc-if value="{{notHit}}" hint-placeholder-val="{{ true }}"><div class="tb-prop"><span class="tb-lbl">Le co-MJ propose</span><b>Le gobelin 1 frappe Borin au cimeterre</b><span>Attaque 14 + 4 = 18 contre CA 18 : touché, 6 dégâts. Borin passe à 9 / 31.</span><div class="tb-big3"><span class="on">Valider</span><span>Changer</span><span>Il fuit</span></div></div></sc-if><sc-if value="{{hit}}" hint-placeholder-val="{{ false }}"><div class="tb-chk"><i>✓</i><span>Validé. Marc voit ses cœurs baisser, la TV montre le coup. Au tour de Borin.</span></div></sc-if></sc-if><sc-if value="{{is5}}" hint-placeholder-val="{{ false }}"><div class="tb-hd"><span class="tb-ttl" style="font-size: 26px">La salle de l’autel</span><span class="tb-lbl">combat · tour 3</span></div><div class="tb-mapw"><div style="position: absolute; left: 0; top: -48px"><dc-import name="Plan" theme="crypte" carte="salle" pitch="48" vue="mj" grille="true" combat="true" bx="4" by="6" hint-size="672px,480px"></dc-import></div><div class="tb-ov"></div></div><span class="tb-mut">Le tiroir du co-MJ glisse par-dessus la scène, sans la quitter. On lui parle comme à un assistant à côté de soi.</span></sc-if></div></div><div class="tb-col"><section class="tb-panel"><div class="tb-ph"><span class="tb-lbl" style="color: #F2F2F2">La table</span><span class="tb-lbl">3 sur 3</span></div><div class="tb-seatc "><span class="tb-pf" style="width: 40px; height: 50px"><dc-import name="Sprite" perso="borin" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><div class="tb-who"><b>Borin</b><small>Marc · {{borinHp}} / 31</small></div><span class="tb-pres on"></span></div><div class="tb-seatc {{lyraCls}}"><span class="tb-pf" style="width: 40px; height: 50px"><dc-import name="Sprite" perso="lyra" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><div class="tb-who"><b>Lyra</b><small>Camille · 20 / 24</small></div><span class="tb-pres on"></span></div><div class="tb-seatc "><span class="tb-pf" style="width: 40px; height: 50px"><dc-import name="Sprite" perso="sef" px="1" anim="repos" hint-size="20px,26px"></dc-import></span><div class="tb-who"><b>Sef</b><small>Hugo · à distance</small></div><span class="tb-pres on"></span></div></section><section class="tb-panel"><div class="tb-ph"><span class="tb-lbl" style="color: #F2F2F2">Le co-MJ</span><span class="tb-lbl">tiroir</span></div><div class="tb-co"><div class="tb-note"><span class="tb-lbl">{{coLbl}}</span>{{coTxt}}</div></div></section></div></div><div class="tb-foot"><div class="tb-bn {{bnCls}}"><span>{{bnTxt}}</span></div><button type="button" class="tb-go {{mainCls}}" onClick="{{mainAct}}"><span class="tb-in"><span style="flex: 1"><span class="tb-t">{{mainLbl}}</span><span class="tb-s">{{mainSub}}</span></span><span class="tb-chev">›</span></span></button></div><sc-if value="{{drawer}}" hint-placeholder-val="{{ false }}"><div class="tb-drawer"><div class="tb-hd"><span class="tb-ttl" style="font-size: 20px">Le co-MJ</span><span class="tb-lbl">à la voix</span></div><div class="tb-msg tb-me">{{said}}</div><sc-if value="{{replied}}" hint-placeholder-val="{{ false }}"><div class="tb-msg tb-ai"><span class="tb-lbl">Je propose</span>Le gobelin 2 lâche son arme et file vers le puits. Il atteint la margelle au tour suivant, sauf si quelqu’un l’arrête. Sef peut lui couper la route : 4 cases.</div><div class="tb-big3"><span class="on">Faire</span><span>Changer</span><span>Non</span></div></sc-if><div class="tb-mic {{micCls}}"><b>●</b><span>{{micTxt}}</span></div></div></sc-if></div><sc-if value="{{full}}" hint-placeholder-val="{{ true }}"><div class="tb-side">
+<span class="tb-lbl">Dans la tête de Romain, le MJ</span><div class="tb-think">{{thought}}</div>
+<span class="tb-lbl">Pourquoi cet écran</span><div class="tb-why">{{why}}</div>
+<span class="tb-lbl">La tablette · moment {{m}} sur 5</span><div class="tb-prog"><sc-for list="{{dots}}" as="d" hint-placeholder-count="5"><button type="button" class="{{d.cls}}" onClick="{{d.pick}}">{{d.n}}</button></sc-for></div>
+<div class="tb-ctl"><button type="button" onClick="{{restart}}">Recommencer</button></div>
+</div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"moment":{"editor":"int","default":1,"min":1,"max":5},"seul":{"editor":"boolean","default":false},"$preview":{"width":1752,"height":960}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = this.fresh();
+    this.timers = [];
+    const pm = Number(props && props.moment);
+    if (pm >= 1 && pm <= 5) Object.assign(this.state, this.settled(pm));
+  }
+  fresh() { return Object.assign({ m: 1, ended: false }, { asked: false, found: false, fog: false, hit: false, said: false, replied: false, done: false }); }
+  // A frozen moment (storyboard) shows the screen once its people have acted.
+  settled(m) { return Object.assign({ m }, { asked: m >= 2, found: m >= 2, fog: m >= 4, hit: m >= 5, said: m >= 5, replied: m >= 5 }); }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+  clear() { this.timers.forEach((t) => clearTimeout(t)); this.timers = []; }
+  go(m) {
+    if (m > 5) return;
+    this.clear();
+    const c = {};
+    for (const k of []) c[k] = this.state[k];
+    this.setState(Object.assign(this.fresh(), c, { m }));
+    if (m === 5) { this.later(() => this.setState({ said: true }), 700); this.later(() => this.setState({ replied: true }), 2400); }
+  }
+  end() { this.clear(); this.setState({ ended: true }); }
+  renderVals() {
+    const s = this.state, m = s.m;
+    this.ask = () => { this.setState({ asked: true }); this.later(() => this.setState({ found: true }), 1800); };
+    const T = {
+      1: { bn: ["you", "La scène est révélée"], main: ['Ouvrir la demande de Lyra', 'Une main levée', true, () => { this.go(2) }], thought: "Le canapé, la tablette sur les genoux. Je vois tout sans me lever.", why: "Sur tablette, le MJ mène debout ou assis loin de la table. Le rail remplace les onglets : cinq cibles de la taille d’un doigt, toujours au même endroit.", coLbl: "Le co-MJ", coTxt: "Lyra lève la main. Les deux autres écoutent." },
+      2: { bn: [s.found ? "you" : s.asked ? "wait" : "you", s.found ? "Lyra a trouvé la page" : s.asked ? "Camille lance le dé" : "Lyra demande à fouiller l’autel"], main: s.found ? ["Révéler la page et la porte", "Journal de tous, brouillard levé", true, () => this.go(3)] : ["Demander Sagesse 13", "Moyen · Camille lance", !s.asked, () => this.ask()], thought: s.found ? "18. Elle trouve tout, la porte aussi." : "Moyen. Treize. Elle est douée, mais c’est caché.", why: "Une demande arrive en carte, pas en notification perdue. Les difficultés sont quatre grosses touches : le MJ répond d’un pouce, sans clavier.", coLbl: "Le co-MJ", coTxt: s.found ? "La porte secrète demandait 15 : je la révèle aussi si tu valides." : "La page demande Sagesse 13, comme dans ta prépa." },
+      3: { bn: ["you", "La porte secrète est ouverte"], main: ['Lever le brouillard ici', 'La salle est, pour tous', !s.fog, () => { this.setState({ fog: true }); this.later(() => this.go(4), 900) }], thought: s.fog ? "Et les gobelins qui attendaient derrière." : "Du doigt, juste la salle est. Pas le puits.", why: "La carte se manie comme une photo : un doigt peint le brouillard, deux doigts déplacent, on pince pour zoomer. Rien ne part avant le relâcher.", coLbl: "Le co-MJ", coTxt: "Deux gobelins dans la salle est. Je prépare l’initiative ?" },
+      4: { bn: [s.hit ? "you" : "turn", s.hit ? "Au tour de Borin" : "Tour du gobelin 1"], main: s.hit ? ["Ouvrir le co-MJ", "Le gobelin 2 a peur", true, () => this.go(5)] : ["Valider l’attaque", "6 dégâts à Borin", true, () => this.setState({ hit: true })], thought: s.hit ? "Marc va grogner. Le gobelin 2, lui, il tremble." : "18 contre 18, ça touche. D’accord.", why: "En combat, le co-MJ propose le tour des monstres et le MJ valide d’un geste. « Changer » et « Il fuit » restent à portée de pouce, jamais cachés.", coLbl: "Le co-MJ", coTxt: s.hit ? "Le gobelin 2 est à 3 PV. Il pourrait fuir." : "Je propose, tu tranches." },
+      5: { bn: [s.replied ? "you" : "wait", s.replied ? "Le co-MJ propose une fuite" : "Romain parle au co-MJ"], main: s.done ? ["Fait", "Le gobelin file vers le puits", false, null] : ["Faire fuir le gobelin", "Sef peut lui couper la route", s.replied, () => this.setState({ done: true })], thought: s.done ? "Sef va adorer. Hugo, à toi." : "Je ne tape pas, je parle. Comme à un ami à côté.", why: "Le co-MJ s’ouvre en tiroir par-dessus la scène et s’écoute à la voix : sur tablette, dicter va plus vite que taper. Sa proposition reste à valider.", coLbl: "Le co-MJ", coTxt: s.done ? "Fait. Hugo voit le gobelin courir sur sa carte." : "J’écoute." }
+    }[m];
+    const main = T.main;
+    const v = {
+      m, ended: s.ended, notEnded: !s.ended,
+      bnCls: T.bn[0], bnTxt: T.bn[1], thought: T.thought, why: T.why,
+      mainLbl: main[0], mainSub: main[1], mainCls: (main[2] ? '' : 'off') + (main[4] ? ' ' + main[4] : ''), mainAct: () => { if (main[2] && main[3]) main[3](); },
+      dots: Array.from({ length: 5 }, (_, i) => ({ n: i + 1, cls: i + 1 === m ? 'cur' : i + 1 < m ? 'done' : '', pick: () => this.go(i + 1) })),
+      restart: () => { this.clear(); this.setState(this.fresh()); },
+      asked: s.asked && !s.found, found: s.found, hit: s.hit, notHit: !s.hit, replied: s.replied, drawer: m === 5,
+      said: s.said ? 'Le gobelin 2 a peur. Fais-le fuir, mais laisse une chance à Sef.' : '…',
+      micCls: s.replied ? 'idle' : '', micTxt: s.replied ? 'Touche pour parler' : 'J’écoute…',
+      fogX: m === 3 && !s.fog ? 336 : 672, borinHp: m >= 4 && s.hit || m === 5 ? '9' : '15', lyraCls: m === 2 && !s.found ? 'ask' : '',
+      ...Object.fromEntries([12, 13, 16, 20].map((v) => ['dc' + v, m === 2 && v === 13 && s.asked ? 'on' : ''])),
+      ...Object.fromEntries(['Scène', 'Table', 'Carte', 'Journal', 'Co-MJ'].map((n, i) => ['r' + i, n === {1: 'Scène', 2: 'Scène', 3: 'Carte', 4: 'Carte', 5: 'Co-MJ'}[m] ? 'cur' : ''])),
+    };
+    for (const k in T) if (!(k in v) && k !== 'main' && k !== 'bn') v[k] = T[k];
+    for (let i = 1; i <= 5; i++) v['is' + i] = m === i;
+    const seul = String(this.props.seul ?? false) === 'true';
+    v.full = !seul;
+    v.rootStyle = seul ? 'width: 1180px; height: 820px; padding: 0' : 'width: 1752px; height: 960px; padding: 60px 56px';
+    return v;
+  }
+}
+</script>
+</body>
+</html>
