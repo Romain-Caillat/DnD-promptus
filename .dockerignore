@@ -1,0 +1,16 @@
+# Only front/, back/, shared/ and the Cargo files reach the build.
+**/target
+**/node_modules
+front/dist
+.git
+.claude
+archive
+dnd-save
+docs
+backups
+src-tauri
+# Secrets never enter an image.
+.env
+.env.*
+!.env.example
+!.env.production.example
