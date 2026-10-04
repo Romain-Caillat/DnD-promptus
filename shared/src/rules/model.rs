@@ -543,6 +543,10 @@ pub struct AdversaryDef {
     pub tactics: String,
     #[serde(default)]
     pub note: String,
+    /// Why this stat block departs from its tier or the armour-class
+    /// formula on purpose; the lint then leaves those values alone.
+    #[serde(default)]
+    pub exception: Option<String>,
 }
 
 /// An action a combatant can play — a class attack, an adversary's

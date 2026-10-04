@@ -1,0 +1,702 @@
+# Le Brasier — la campagne : bible, factions, composants, Cure-Dent et
+# une première scène jouable (campaign/rewrite-two-worlds).
+#
+# Réécrit à partir de dnd-save/DnD_07-06-2026/ (préparé le 7 juin 2026,
+# jamais joué). La source a un monde solide et un acte 1 réduit à une
+# ligne, dont le premier contact était « à trancher ». Ce fichier :
+#   - reprend le monde (Univers.md), les quatre races, les quatre
+#     composants, le Cure-Dent et LUMEN ;
+#   - laisse les classes au système de règles (content/rules/brasier) :
+#     les six emplacements de personnage n'en donnent que l'identifiant ;
+#   - écrit UNE première scène jouable, « Le Toboggan », sur la carte
+#     cure-dent-coursive : l'arrivée, les avaries, puis l'abordage Vorr
+#     (la source proposait « attaque des Vorr à l'arrivée, tutoriel de
+#     combat ») ;
+#   - laisse la suite de l'acte 1 en ébauche : la campagne n'est PAS
+#     prête au-delà de la première scène, et le validateur le dit.
+# Tout ce qui n'est pas dans la source est marqué « INVENTÉ — à valider
+# par Romain ». La source n'a aucune musique : les morceaux sont à
+# choisir (titre et recherche YouTube, pas de lien). Aucune image
+# importée : chaque visuel est une description en pixel art.
+#
+# Les identifiants abordeur-vorr et chef-d-escouade-vorr sont ceux que
+# la carte cure-dent-coursive place.
+format: 1
+id: le-brasier
+title: Le Brasier
+world: Un système stellaire en guerre, à l'autre bout de la galaxie
+rules:
+  id: brasier
+  version: 1
+
+bible:
+  pitch: >-
+    Un équipage humain de cartographes, projeté par un trou de ver à
+    l'autre bout de la galaxie avec un moteur de distorsion en panne,
+    échoue dans un système stellaire en guerre entre quatre races
+    aliennes. Le seul chemin du retour — arracher à chacune la pièce qui
+    manque, par la diplomatie ou par les armes.
+  tone: >-
+    Exploration et émerveillement (Outer Wilds), univers vivant et
+    économie de frontière (Star Citizen). Solitude cosmique, puis
+    politique. L'inconnu est un système bien vivant, pas une civilisation
+    disparue.
+  themes:
+    - soumettre par la guerre ou rallier vers la paix
+    - le petit engrenage qui devient le centre du monde
+    - aucune alliance n'est gratuite
+    - un vaisseau irremplaçable qu'on use à chaque combat
+  art_direction: >-
+    Pixel art spatial. Noirs profonds piqués d'étoiles ; l'étoile du
+    Brasier en braise orange qui teinte tout le système. Le Cure-Dent en
+    blanc cassé et cyan d'écrans de la Confédération, lumière froide
+    venue d'en haut. Chaque race garde sa palette — Vorr en chitine vert
+    sombre et ambre luisant, Sereth en bronze et vert-de-gris, Mireth en
+    nacre et violet pâle, Céphalopodes en peaux qui changent de couleur
+    (magenta, turquoise, or). Personnages de profil à la Terraria,
+    contour sombre, héros tournés vers la droite.
+  truths:
+    - Le Toboggan, un trou de ver non répertorié, a happé le Cure-Dent pendant un saut de routine et l'a recraché dans le Brasier.
+    - Le module longue distance du moteur de distorsion est brisé ; la courte portée fonctionne, on peut naviguer dans tout le système.
+    - Personne dans le Brasier ne maîtrise la distorsion longue distance ; les quatre races y sont piégées, d'où la guerre.
+    - Seul l'équipage sait réparer un moteur longue distance. Il lui manque quatre composants, un par race.
+    - La Moelle vive (refroidissement) est aux Vorr, la Lentille-écho (cap) aux Sereth, le Cristal de résonance (stabilisation) aux Mireth, le Plasma du Brasier (énergie) aux Céphalopodes.
+    - Gagner la faveur d'une race fait chuter celle de ses rivales.
+  secrets:
+    - Le jour où une race comprend que l'équipage sait réparer la distorsion, il devient le centre du monde — et une proie.
+    - Les Sereth connaissent peut-être l'origine du Toboggan.
+    - LUMEN a perdu dans le Toboggan une partie de sa mémoire de navigation, dont les coordonnées d'entrée du trou de ver (INVENTÉ — à valider par Romain).
+    - Au premier contact, un éclaireur Vorr s'est brièvement arrimé au Cure-Dent et a posé une balise de traque dans une gaine technique (INVENTÉ — à valider par Romain, d'après la carte cure-dent-coursive).
+  player_hook: >-
+    Vous êtes l'équipage du HMS-230 132, le « Cure-Dent », un explorateur
+    de la Confédération. Cartographes, récupérateurs, personne
+    d'important. Ce soir, un saut de routine vers la base.
+  start_node: sc_toboggan
+
+party:
+  - id: pj_pilote
+    name: Le Pilote
+    concept: L'as du manche ; tient le vaisseau en vie par le mouvement, et au sol la meilleure gâchette.
+    class: pilote
+  - id: pj_canonnier
+    name: Le Canonnier
+    concept: La puissance de feu ; sert le canon Pic-Vert et mène la défense contre les abordeurs.
+    class: canonnier
+  - id: pj_mecano
+    name: Le Mécano
+    concept: Le cœur technique ; sans lui, plus de boucliers, plus d'énergie, plus de moteur.
+    class: mecano
+  - id: pj_xenologue
+    name: Le Xénologue
+    concept: Les yeux du vaisseau ; capteurs, analyse et premier contact, avec LUMEN.
+    class: xenologue
+  - id: pj_toubib
+    name: Le Toubib
+    concept: La survie de l'équipage — et du vaisseau — sous le feu.
+    class: toubib
+  - id: pj_quartier_maitre
+    name: Le Quartier-maître
+    concept: La voix ; négocie, brise le moral, joue les quatre factions les unes contre les autres.
+    class: quartier_maitre
+
+acts:
+  - id: acte_1
+    title: Le Naufrage
+    summary: >-
+      Le saut, le Toboggan, l'arrivée en catastrophe, le moteur hors
+      service, le premier contact. Seule la première scène est écrite —
+      l'abordage Vorr ; le secours des Sereth reste à écrire.
+    opening: >-
+      Saut de routine, HMS-230 132. Les étoiles s'étirent en lignes
+      blanches sur la verrière de la passerelle. LUMEN égrène le compte à
+      rebours d'une voix calme. Puis les lignes se tordent.
+    music:
+      - mood: epic
+        title: Le saut (à choisir)
+        search: sci-fi hyperspace jump epic ambient music
+    gm_notes: >-
+      Le premier contact « à trancher » de la source est tranché ainsi —
+      INVENTÉ — à valider par Romain — l'abordage Vorr sert de combat
+      d'apprentissage (première scène, écrite), puis une Carapace Sereth
+      arrive, secours ou menace (ébauche, à écrire au jalon 2). Le combat
+      de vaisseau attend engine/support-vehicle-combat ; la première scène
+      se joue au sol, dans la coursive.
+  - id: acte_2
+    title: Premiers contacts
+    summary: Rencontrer les factions, comprendre la guerre, choisir vers qui se tourner.
+    gm_notes: À écrire.
+  - id: acte_3
+    title: Au cœur du conflit
+    summary: S'enfoncer dans la guerre, une trahison, les vrais enjeux.
+    gm_notes: À écrire.
+  - id: acte_4
+    title: Le choix
+    summary: Réparer, prendre parti ou imposer la paix — et lancer la campagne 2.
+    gm_notes: À écrire.
+
+fronts:
+  - id: front_ruche
+    name: La Ruche s'étend
+    goal: Dévorer le Cure-Dent, son énergie et son équipage.
+    description: >-
+      Les Vorr ne négocient pas ; ils submergent. La balise posée au
+      premier contact les guide vers le Cure-Dent tant qu'elle émet.
+      INVENTÉ — à valider par Romain.
+    steps:
+      - label: Un éclaireur marque la proie
+        description: Un chasseur Vorr s'arrime une seconde à la coque et pose une balise ; LUMEN croit à un débris.
+      - label: L'escouade d'abordage
+        description: Une navette Vorr s'arrime au sas bâbord ; six abordeurs entrent dans la coursive.
+      - label: L'essaim
+        description: Trois à cinq chasseurs Vorr, une seule initiative, traquent le Cure-Dent à travers le système.
+      - label: Le vaisseau-ruche
+        description: Un vaisseau-mère Vorr se détache du front de la guerre pour venir chercher la proie.
+      - label: Dévoré
+        description: Le Cure-Dent est pris, son réacteur arraché ; l'équipage est cocooné.
+  - id: front_cephalopodes
+    name: Le marché du Cure-Dent
+    goal: Vendre le vaisseau inconnu, ou ce qu'il sait faire, au plus offrant.
+    description: >-
+      Les Marchands céphalopodes jouent toutes les factions ; un vaisseau
+      venu d'ailleurs est la marchandise de l'année. INVENTÉ — à valider
+      par Romain.
+    steps:
+      - label: Une signature inconnue
+        description: Un courtier céphalopode capte la signature du Cure-Dent à sa sortie du Toboggan.
+      - label: Les enchères
+        description: La position du vaisseau est mise en vente auprès des quatre peuples.
+      - label: Le sauvetage payant
+        description: Les Céphalopodes offrent à l'équipage une aide « désintéressée » qui crée une dette.
+      - label: La dette réclamée
+        description: Ils exigent en paiement le savoir-faire de la distorsion ; s'il est refusé, ils le vendent quand même.
+
+nodes:
+  - id: sc_toboggan
+    act: acte_1
+    title: Le Toboggan
+    summary: >-
+      Le Cure-Dent sort du trou de ver, en panne, dans un système inconnu.
+      Chacun tient son poste pour sauver le vaisseau, LUMEN dresse le
+      bilan, puis une escouade Vorr aborde par le sas bâbord.
+    location: lieu_coursive
+    map: cure-dent-coursive
+    read_aloud: >-
+      Les lignes d'étoiles se tordent, se nouent, se déchirent. Le
+      Cure-Dent est aspiré dans un tunnel de lumière qui n'est sur aucune
+      carte, secoué comme une feuille, puis recraché. Silence. Puis toutes
+      les alarmes à la fois. Par la verrière, une étoile orange, énorme,
+      que vous n'avez jamais vue. « Équipage… », dit LUMEN, et sa voix
+      grésille. « Je ne sais pas où nous sommes. »
+    ambience:
+      mood: Alarme, panne, émerveillement inquiet, puis combat à l'étroit
+      sounds: Sirènes, crépitement d'un incendie, coque qui gémit, puis cliquetis de chitine dans le sas
+      music:
+        - mood: tension
+          title: Alarme à bord (à choisir)
+          search: sci-fi spaceship alarm red alert ambience
+        - mood: mystery
+          title: Une étoile inconnue (à choisir)
+          search: mysterious space ambient music outer wilds
+        - mood: combat
+          title: Abordage dans la coursive (à choisir)
+          search: sci-fi boarding combat music alien
+    flow: >-
+      Trois temps. 1. Les avaries — chaque joueur court à son poste et
+      tente un jet (voir checks) ; le MJ passe de l'un à l'autre, une
+      minute chacun, pour que les six aient agi avant la fin du premier
+      quart d'heure. 2. Le bilan de LUMEN — moteur longue distance hors
+      service, système inconnu, quatre signatures de vaisseaux qui se
+      battent au loin, une petite signature qui approche. 3. L'abordage —
+      l'alarme du sas bâbord, la porte intérieure qui cède, six Vorr dans
+      la coursive. Combat d'apprentissage au sol, sur la carte.
+    hook: Une détonation sourde dans la salle des machines ; la fumée envahit la coursive.
+    checks:
+      - action: Stabiliser le Cure-Dent à la sortie du Toboggan
+        stat: DEX
+        difficulty: 10
+        success: Le vaisseau se stabilise derrière un gros astéroïde ; l'équipage a un tour de préparation avant l'abordage.
+        failure: Le vaisseau tangue ; au début du combat, un personnage au hasard perd une action.
+        natural_1: Collision avec un débris ; une brèche s'ouvre près du sas tribord.
+        natural_20: Le Pilote cache le Cure-Dent si bien que la navette Vorr s'arrime de travers ; deux abordeurs arrivent un tour plus tard.
+      - action: Diagnostiquer le moteur de distorsion
+        stat: INT
+        difficulty: 10
+        success: Courte portée intacte, module longue distance brisé (indice cl_moteur_mecano).
+        failure: Le moteur ne répond plus ; impossible de dire quoi encore.
+        natural_1: Une surtension grille le pupitre ; il faudra le réparer avant de comprendre.
+        natural_20: Le Mécano voit aussi les quatre fonctions à remplacer — refroidissement, cap, stabilisation, énergie.
+      - action: Éteindre l'incendie de la salle des machines
+        stat: CON
+        difficulty: 10
+        success: Le feu est éteint ; la coursive sud reste praticable.
+        failure: Le feu couve ; les conduites de refroidissement brûlent pendant le combat (case dangereuse).
+        natural_1: Le Toubib respire la fumée ; il commence le combat avec 2 PV de moins.
+        natural_20: Il sauve aussi le stock de stims ; un stim de plus pour l'équipage.
+      - action: Lire les capteurs avec LUMEN
+        stat: SAG
+        difficulty: 10
+        success: Quatre familles de signatures, des vaisseaux qui se battent au loin, et une petite signature qui fonce vers le Cure-Dent (indice cl_guerre_capteurs).
+        failure: Des échos partout ; LUMEN ne sait pas les trier.
+        natural_1: Les capteurs saturent ; LUMEN coupe le son des alarmes sans prévenir.
+        natural_20: Le Xénologue reconnaît la petite signature — une navette d'abordage organique ; l'équipage n'est pas surpris.
+      - action: Ouvrir un canal sur toutes les fréquences
+        stat: CHA
+        difficulty: 10
+        success: Des bribes de langues inconnues, des cris de combat ; LUMEN traduit un seul mot, répété partout — « intrus » (indice cl_guerre_comms).
+        failure: Du bruit, rien d'autre.
+        natural_1: Le canal reste ouvert ; tout le système entend l'équipage paniquer (une étape du marché du Cure-Dent).
+        natural_20: Une voix lente et grave répond dans une langue qui ressemble à un chant ; LUMEN l'enregistre (une Carapace Sereth).
+      - action: Forcer la porte de l'armurerie coincée par la secousse
+        stat: FOR
+        difficulty: 10
+        success: Les armes sont distribuées ; l'équipage entre dans le combat armé et en position.
+        failure: La porte cède à moitié ; deux personnages seulement récupèrent leur arme lourde avant l'abordage.
+        natural_1: La porte se bloque pour de bon ; le Mécano devra la découper.
+        natural_20: Le Canonnier traîne aussi un bouclier de pont mobile dans la coursive (couvert pour le combat).
+    npcs:
+      - npc: pnj_lumen
+        role: L'IA de bord, jouée par le MJ ; bilan, traduction et conseils tactiques, avec des trous de mémoire.
+    key_points:
+      - Six postes, six jets — chaque joueur agit avant l'abordage ; ne pas laisser un poste vide (LUMEN tient les capteurs si le Xénologue manque).
+      - LUMEN est abîmée ; elle n'a pas réponse à tout, et le dit.
+      - Combat d'apprentissage — expliquer le premier tour, puis jouer les Vorr d'un bloc.
+      - Les Vorr veulent le réacteur, pas l'équipage ; ils foncent vers la salle des machines.
+      - Après le combat, la balise dans la gaine technique explique comment ils ont trouvé le Cure-Dent.
+    encounter:
+      opponents:
+        - who: abordeur-vorr
+          count: 5
+        - who: chef-d-escouade-vorr
+      tactics:
+        - L'escouade agit d'un bloc, à une seule initiative, comme les essaims du combat de vaisseau (INVENTÉ pour le sol — à valider par Romain).
+        - Les abordeurs foncent vers la salle des machines par la coursive ; ils n'attaquent que ce qui leur barre la route.
+        - Le chef reste dans le sas bâbord et crache sur qui s'approche de lui ; ses phéromones désignent une cible, que tous les abordeurs attaquent ensuite.
+      morale:
+        - when: Le chef d'escouade tombe
+          then: Les abordeurs perdent leur coordination et refluent vers la navette, qui se décroche.
+        - when: Trois abordeurs sont tombés
+          then: Le chef sonne la retraite ; l'escouade emporte ses blessés.
+      on_victory: >-
+        La navette Vorr se décroche et s'éloigne. Dans le sas, le chef
+        d'escouade (ou ce qu'il en reste) porte une fiole de matière ambrée
+        qui pulse doucement. LUMEN signale un émetteur actif quelque part
+        dans le vaisseau.
+      on_defeat: >-
+        Les Vorr ne tuent pas : ils cocoonent l'équipage inconscient et
+        attaquent le réacteur. LUMEN purge l'air de la section ; ils
+        fuient. L'équipage se réveille, englué, le réacteur entamé — le
+        Cure-Dent produit moins d'énergie jusqu'à réparation.
+    loot:
+      - item: obj_echantillon_moelle
+        found: Sur le chef d'escouade Vorr
+      - item: obj_chitine_vorr
+        found: Sur les abordeurs tombés
+      - item: obj_balise_vorr
+        found: Dans la gaine technique, derrière la trappe de maintenance
+        hidden: true
+    xp:
+      - amount: 1
+        reason: Avoir repoussé le premier abordage (en plus de l'XP des jets, selon le système de règles)
+    transition: >-
+      Le silence revient, seulement troublé par le ronronnement du
+      réacteur. Sur l'écran des capteurs, une forme énorme et lente se
+      détache de l'étoile orange et vient vers vous.
+    exits:
+      - to: sc_carapace_sereth
+        label: La forme lente approche
+    player_hooks:
+      - character: pj_pilote
+        reason: Le vaisseau sort du Toboggan en vrille ; c'est lui qui le rattrape, et qui choisit où se cacher.
+      - character: pj_canonnier
+        reason: L'armurerie est coincée et des abordeurs arrivent ; il est le muscle de la défense dans la coursive.
+      - character: pj_mecano
+        reason: Le moteur de distorsion ne répond plus ; lui seul peut dire ce qui est brisé — et ce qu'il faudra pour rentrer.
+      - character: pj_xenologue
+        reason: Un système inconnu, quatre familles de signatures ; c'est son premier contact, avec LUMEN à moitié aveugle.
+      - character: pj_toubib
+        reason: Un incendie dans la salle des machines et des blessés dans la coursive ; l'intégrité du vaisseau est son poste.
+      - character: pj_quartier_maitre
+        reason: Il ouvre le premier canal vers ce système ; le premier mot qu'il entend est « intrus ».
+    art: >-
+      Pixel art, vue de trois quarts : coursive métallique blanc cassé
+      baignée de rouge par les gyrophares d'alarme, fumée qui sort de la
+      salle des machines, porte de sas bâbord déformée de l'extérieur. Par
+      un hublot, l'énorme étoile orange du Brasier. Dans le sas, des
+      silhouettes de chitine vert sombre aux yeux ambrés, tournées vers la
+      gauche.
+    gm_notes: >-
+      Toute la scène est INVENTÉE — à valider par Romain — à partir de la
+      piste de la source (« attaque des Vorr à l'arrivée, tutoriel de
+      combat »), de la fiche du Cure-Dent (incendie CON 10, postes) et de
+      la carte cure-dent-coursive (sas bâbord, balise, six abordeurs).
+      La balise de la carte demande son propre jet (INT, sur la carte). Les
+      fiches chiffrées des Vorr sont dans la campagne parce que le système
+      de règles n'a encore aucun adversaire au sol ; elles devront y
+      passer, avec des dégâts fixes comme ceux des joueurs.
+
+  - id: sc_carapace_sereth
+    act: acte_1
+    title: Une carapace dans le noir
+    summary: >-
+      ÉBAUCHE — à écrire. Une Carapace Sereth, lente et massive, approche
+      du Cure-Dent ; secours ou menace. Premier allié et premier ennemi
+      posés d'un coup, selon la piste de la source.
+    location: lieu_brasier
+    requires:
+      - rev_moteur
+    gm_notes: >-
+      Scène à écrire (jalon 2, acte 1 du Brasier). Elle doit confirmer le
+      besoin des quatre composants et poser la guerre ; la jauge de
+      préparation doit déclarer l'acte 1 non prêt tant qu'elle n'est pas
+      écrite.
+
+revelations:
+  - id: rev_moteur
+    statement: >-
+      Le module longue distance du moteur de distorsion est brisé ; la
+      courte portée fonctionne. Réparer demande quatre composants que
+      l'équipage n'a pas.
+    importance: critical
+  - id: rev_guerre
+    statement: Le Brasier est un système fermé où quatre peuples se font la guerre ; un vaisseau étranger y est un intrus.
+    importance: critical
+  - id: rev_traque
+    statement: Les Vorr ont posé une balise de traque sur le Cure-Dent ; tant qu'elle émet, ils le retrouveront.
+    importance: optional
+  - id: rev_moelle
+    statement: Les Vorr sécrètent la Moelle vive, exactement le refroidissement qui manque au moteur.
+    importance: optional
+
+clues:
+  - id: cl_moteur_mecano
+    revelation: rev_moteur
+    node: sc_toboggan
+    text: >-
+      Le diagnostic est formel — la courte portée répond, le module longue
+      distance est brisé net. Impossible de repartir.
+    discovery: Diagnostiquer le moteur depuis la salle des machines.
+    source: lieu_salle_machines
+    check:
+      stat: INT
+      difficulty: 10
+  - id: cl_moteur_lumen
+    revelation: rev_moteur
+    node: sc_toboggan
+    text: >-
+      LUMEN — « Distorsion courte portée, nominale. Longue distance,
+      hors service. Pièces de rechange à bord, aucune. »
+    discovery: Le bilan de LUMEN, après les avaries.
+    source: pnj_lumen
+  - id: cl_moteur_sereth
+    revelation: rev_moteur
+    node: sc_carapace_sereth
+    text: >-
+      ÉBAUCHE — les Sereth confirment que personne ici ne sait réparer la
+      longue distance, et que les pièces existent chez les quatre peuples.
+    discovery: À écrire avec la scène.
+  - id: cl_guerre_capteurs
+    revelation: rev_guerre
+    node: sc_toboggan
+    text: >-
+      Les capteurs montrent quatre familles de signatures, et au loin des
+      vaisseaux qui se tirent dessus.
+    discovery: Lire les capteurs avec LUMEN.
+    source: pnj_lumen
+    check:
+      stat: SAG
+      difficulty: 10
+  - id: cl_guerre_comms
+    revelation: rev_guerre
+    node: sc_toboggan
+    text: Sur toutes les fréquences, des cris de combat ; LUMEN traduit un seul mot, répété partout — « intrus ».
+    discovery: Ouvrir un canal sur toutes les fréquences.
+    check:
+      stat: CHA
+      difficulty: 10
+  - id: cl_guerre_sereth
+    revelation: rev_guerre
+    node: sc_carapace_sereth
+    text: ÉBAUCHE — les Sereth racontent la guerre des quatre peuples.
+    discovery: À écrire avec la scène.
+  - id: cl_balise
+    revelation: rev_traque
+    node: sc_toboggan
+    text: >-
+      Dans la gaine technique, une excroissance organique colle à la
+      cloison et pulse au rythme d'un signal ; elle n'était pas là au
+      départ.
+    discovery: Fouiller la gaine technique derrière la trappe de maintenance (jet prévu par la carte).
+    source: obj_balise_vorr
+  - id: cl_moelle
+    revelation: rev_moelle
+    node: sc_toboggan
+    text: >-
+      La fiole du chef Vorr contient une matière ambrée et froide ; LUMEN
+      l'analyse — un supraconducteur organique, exactement ce qu'il
+      faudrait pour refroidir le moteur. Bien trop peu.
+    discovery: Analyser la fiole prise sur le chef d'escouade.
+    source: obj_echantillon_moelle
+    check:
+      stat: INT
+      difficulty: 10
+
+npcs:
+  - id: pnj_lumen
+    name: LUMEN
+    title: L'IA de bord du Cure-Dent
+    appearance: >-
+      Une voix calme dans tous les haut-parleurs, et un anneau de lumière
+      cyan qui pulse sur les consoles quand elle parle. Depuis le
+      Toboggan, la lumière clignote parfois et la voix grésille.
+    portrait: >-
+      Icône en pixel art : anneau de lumière cyan sur fond noir, segments
+      dont deux sont éteints et un clignote, petits pixels parasites
+      autour.
+    roleplay: Une IA précise et bienveillante, qui dit « je ne sais pas » plus souvent qu'avant et que ça inquiète.
+    traits:
+      - précise
+      - prudente
+      - curieuse des langues
+    flaw: Abîmée par le Toboggan — elle n'a pas réponse à tout, et des pans de sa mémoire manquent.
+    motivation: Ramener l'équipage à la maison.
+    disposition: friendly
+    wants: Que l'équipage survive, et comprendre ce qu'elle a perdu.
+    hides: >-
+      Elle a perdu les coordonnées d'entrée du Toboggan (INVENTÉ — à
+      valider par Romain). Elle traduit les langues aliennes petit à petit,
+      un mot de plus à chaque contact.
+    location: lieu_cure_dent
+    gm_notes: >-
+      Jouée par le MJ ; outil de tutoriel et de narration. Nom de travail
+      LUMEN, à valider (source). Tient le poste Capteurs si le Xénologue
+      manque.
+
+adversaries:
+  - id: abordeur-vorr
+    name: Abordeur Vorr
+    description: >-
+      Insectoïde de la taille d'un homme, chitine vert sombre, mandibules
+      en cisailles. Pas un individu — un membre de la Ruche.
+    art: >-
+      Sprite en pixel art, profil tourné vers la gauche : insectoïde
+      bipède courbé, carapace vert sombre aux reflets ambrés, quatre bras
+      dont deux en faux, yeux à facettes ambre lumineux.
+    stats:
+      abilities: { FOR: 12, DEX: 12, CON: 10, INT: 6, SAG: 10, CHA: 4 }
+      armor_class: 11
+      hit_points: 4
+      attacks:
+        - name: Mandibules
+          damage: "2"
+          notes: Corps à corps.
+    gm_notes: >-
+      INVENTÉ — à valider par Romain : aucune fiche Vorr au sol dans la
+      source ni dans le système de règles. Dégâts fixes, comme les cartes
+      des joueurs ; CA = 10 + mod DEX. À porter dans le système de règles.
+  - id: chef-d-escouade-vorr
+    name: Chef d'escouade Vorr
+    description: >-
+      Plus grand, la carapace striée d'ambre ; il ne combat pas en
+      première ligne, il coordonne l'escouade par phéromones.
+    art: >-
+      Sprite en pixel art, profil tourné vers la gauche : insectoïde plus
+      massif, carapace striée de veines ambre luisantes, crête dorsale,
+      glande ventrale qui pulse, faux de chitine levée.
+    stats:
+      abilities: { FOR: 14, DEX: 12, CON: 12, INT: 8, SAG: 12, CHA: 6 }
+      armor_class: 12
+      hit_points: 10
+      attacks:
+        - name: Faux de chitine
+          damage: "3"
+          notes: Corps à corps.
+        - name: Crachat corrosif
+          damage: "2"
+          notes: À distance ; marque la cible pour toute l'escouade.
+    gm_notes: >-
+      INVENTÉ — à valider par Romain. CA 12 (carapace) au lieu de 11 par
+      la formule : à marquer comme exception quand la fiche passera dans le
+      système de règles.
+
+locations:
+  - id: lieu_brasier
+    name: Le Brasier
+    description: >-
+      Un système stellaire isolé autour d'une étoile orange, riche mais
+      limité — planètes, lunes, stations, champs de débris — devenu un
+      champ de bataille permanent.
+    art: >-
+      Carte du système en pixel art : étoile orange au centre, orbites en
+      pointillés, quatre zones colorées aux palettes des quatre peuples,
+      champ de débris en grains gris.
+  - id: lieu_toboggan
+    name: Le Toboggan
+    description: Un trou de ver non répertorié, qui happe et recrache ; personne ne sait d'où il vient.
+    parent: lieu_brasier
+    art: >-
+      Pixel art : tunnel de lumière blanche et violette qui se tord en
+      spirale, étoiles étirées en lignes, petite silhouette du Cure-Dent
+      emportée au centre.
+  - id: lieu_cure_dent
+    name: Le Cure-Dent
+    description: >-
+      HMS-230 132, explorateur de série de la Confédération — soucoupe,
+      coque d'ingénierie et deux nacelles de distorsion. En avance de
+      plusieurs générations sur tout le matériel local, mais unique,
+      irremplaçable ici, et endommagé.
+    parent: lieu_brasier
+    art: >-
+      Vaisseau en pixel art, vue de côté : soucoupe blanc cassé, coque
+      d'ingénierie allongée, deux nacelles à halo cyan, matricule
+      HMS-230 132 peint sur la coque, traces de brûlure.
+    gm_notes: >-
+      La fiche chiffrée du vaisseau (coque, boucliers, blindage, énergie,
+      armes et postes) appartiendra au système de règles avec
+      engine/support-vehicle-combat ; source dnd-save/DnD_07-06-2026/Fiche_Cure-Dent.md
+      et Combat_Vaisseau.md. Angle mort arrière — aucune tourelle ne le
+      couvre.
+  - id: lieu_passerelle
+    name: La passerelle
+    description: Le poste du Pilote et des Capteurs, sous la grande verrière.
+    parent: lieu_cure_dent
+    art: Vue de trois quarts en pixel art, verrière sur les étoiles, sièges de pilotage, consoles cyan.
+  - id: lieu_coursive
+    name: La coursive centrale
+    description: >-
+      De la passerelle à la salle des machines — accès aux tourelles,
+      poste Intégrité et avaries, les deux sas d'abordage.
+    parent: lieu_cure_dent
+    art: Vue de trois quarts en pixel art, couloir métallique blanc cassé, plafonniers froids, portes de sas de part et d'autre.
+    gm_notes: Carte de rencontre — cure-dent-coursive.
+  - id: lieu_salle_machines
+    name: La salle des machines
+    description: Le réacteur, le pupitre de l'ingénieur et le moteur de distorsion.
+    parent: lieu_cure_dent
+    art: Vue de trois quarts en pixel art, réacteur à lueur cyan, conduites de refroidissement, pupitre aux écrans.
+
+items:
+  - id: obj_moelle_vive
+    name: Moelle vive
+    description: >-
+      Bio-supraconducteur organique sécrété par la Ruche ; refroidit le
+      moteur de distorsion.
+    effect: Un des quatre composants du moteur longue distance.
+    rarity: legendary
+    art: Bocal de verre en pixel art rempli d'une matière ambrée luisante, veinée de vert, qui pulse.
+  - id: obj_lentille_echo
+    name: Lentille-écho
+    description: Cristal de calibration qui fixe le cap de la distorsion ; les Sereth en sont les gardiens.
+    effect: Un des quatre composants du moteur longue distance.
+    rarity: legendary
+    art: Lentille de cristal ronde en pixel art, sertie de bronze vert-de-gris, cercles concentriques gravés.
+  - id: obj_cristal_resonance
+    name: Cristal de résonance
+    description: Stabilisateur psionique du champ de distorsion ; il croît sous le contrôle mental des Mireth.
+    effect: Un des quatre composants du moteur longue distance.
+    rarity: legendary
+    art: Cristal effilé en pixel art, nacre et violet pâle, halo de petites ondes concentriques.
+  - id: obj_plasma_brasier
+    name: Plasma du Brasier
+    description: Carburant exotique raffiné qui alimente le moteur ; les Céphalopodes contrôlent le raffinage.
+    effect: Un des quatre composants du moteur longue distance.
+    rarity: legendary
+    art: Cartouche transparente en pixel art, plasma orange tourbillonnant, embouts magenta organiques.
+  - id: obj_echantillon_moelle
+    name: Échantillon de Moelle vive
+    description: Une fiole de matière ambrée, froide au toucher, prise sur un chef d'escouade Vorr.
+    effect: Trop peu pour le moteur ; assez pour savoir ce qu'il faut chercher.
+    rarity: rare
+    art: Petite fiole organique en pixel art, ambre luisant, bouchon de chitine.
+    gm_notes: INVENTÉ — à valider par Romain.
+  - id: obj_balise_vorr
+    name: Balise de traque Vorr
+    description: Une excroissance organique collée à une cloison, qui émet un signal régulier.
+    effect: Tant qu'elle émet, les Vorr retrouvent le Cure-Dent. La détruire, ou la retourner contre eux.
+    rarity: uncommon
+    art: Masse de chitine en pixel art, en forme de tique, veines ambrées, point lumineux qui clignote.
+    gm_notes: Objet de la carte cure-dent-coursive (balise-vorr).
+  - id: obj_chitine_vorr
+    name: Plaques de chitine Vorr
+    description: Fragments de carapace, légers et durs ; de la récup' qui intéressera un marchand.
+    value: 5
+    art: Trois plaques incurvées vert sombre en pixel art, bords ambrés.
+    gm_notes: Monnaie d'échange du Brasier encore à définir ; valeur indicative.
+
+factions:
+  - id: fac_vorr
+    name: Les Vorr
+    description: >-
+      Collectif insectoïde, esprit-ruche, chitine. Pas d'individus, la
+      Ruche et son besoin de s'étendre. Vagues de petits vaisseaux
+      organiques ; ils submergent par le nombre.
+    diplomacy: Quasi impossible à raisonner ; la race que l'on combat — menace et survie.
+    affinity: { start: -3, min: -5, max: 5 }
+    rivals:
+      - fac_sereth
+      - fac_mireth
+      - fac_cephalopodes
+    art: Emblème en pixel art, alvéole hexagonale ambrée sur chitine vert sombre.
+    gm_notes: Affinité de départ -3 et rivalités INVENTÉES — à valider par Romain.
+  - id: fac_sereth
+    name: Les Sereth
+    description: >-
+      Humanoïdes tortues à carapace, gestes lents et mesurés. Race très
+      ancienne et déclinante, mélancolique, qui se souvient d'avant la
+      guerre. Vaisseaux en forme de carapace, lourds et défensifs.
+    diplomacy: >-
+      Le respect, les rites, la mémoire ; lents à accorder leur confiance,
+      fidèles une fois acquise. Premier refuge possible.
+    rivals:
+      - fac_vorr
+      - fac_cephalopodes
+    art: Emblème en pixel art, motif d'écailles de carapace en bronze vert-de-gris.
+    gm_notes: Ils connaissent peut-être l'origine du Toboggan. Rivalités INVENTÉES — à valider par Romain.
+  - id: fac_mireth
+    name: Les Mireth
+    description: >-
+      Humanoïdes télépathes au port noble et froid ; raison avant émotion.
+      Civilisation de logique et d'honnêteté ; guerre psychique, illusions,
+      frappes au moment optimal.
+    diplomacy: >-
+      Renverse le jeu du charisme — ils sentent le mensonge ; l'honnêteté
+      et la logique paient. Justes mais méfiants.
+    rivals:
+      - fac_vorr
+      - fac_cephalopodes
+    art: Emblème en pixel art, œil stylisé nacré entouré d'ondes violet pâle.
+    gm_notes: Rivalités INVENTÉES — à valider par Romain.
+  - id: fac_cephalopodes
+    name: Les Marchands céphalopodes
+    description: >-
+      Humanoïdes pieuvres, bras multiples, peau qui change de couleur et
+      trahit ou masque l'humeur, encre pour disparaître. Marchands-
+      technocrates, frêles mais riches ; vaisseaux organiques flottants,
+      en méduse.
+    diplomacy: Le deal et la dette ; ils aident pour un prix, et trahissent pour un meilleur.
+    rivals:
+      - fac_mireth
+      - fac_sereth
+    art: Emblème en pixel art, méduse stylisée aux tentacules qui passent du magenta au turquoise.
+    gm_notes: Ils jouent toutes les factions l'une contre l'autre. Rivalités INVENTÉES — à valider par Romain.
+
+goals:
+  - id: but_moelle_vive
+    title: Obtenir la Moelle vive
+    description: Le refroidissement du moteur, sécrété par la Ruche.
+    held_by: fac_vorr
+    item: obj_moelle_vive
+  - id: but_lentille_echo
+    title: Obtenir la Lentille-écho
+    description: Le cap de la distorsion, gardé par les Sereth.
+    held_by: fac_sereth
+    item: obj_lentille_echo
+  - id: but_cristal_resonance
+    title: Obtenir le Cristal de résonance
+    description: La stabilisation du champ, cultivée par les Mireth.
+    held_by: fac_mireth
+    item: obj_cristal_resonance
+  - id: but_plasma_brasier
+    title: Obtenir le Plasma du Brasier
+    description: L'énergie du moteur, raffinée par les Céphalopodes.
+    held_by: fac_cephalopodes
+    item: obj_plasma_brasier

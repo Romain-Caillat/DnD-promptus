@@ -18,7 +18,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use promptus_shared::maps::{Map, Scale};
-use promptus_shared::rules::RuleSystem;
+use promptus_shared::rules::{BalanceParams, RuleSystem, balance_report, lint};
 use promptus_shared::story::{Campaign, Issue, Library, Severity, from_yaml, validate_with};
 
 /// Files of one world, by kind.
@@ -53,13 +53,58 @@ fn yaml_files(dir: &Path) -> BTreeMap<String, Vec<PathBuf>> {
     out
 }
 
-/// The rule system lint (`engine/lint-rule-system`), when it exists.
-///
-/// TODO(engine/lint-rule-system): that ticket adds
-/// `promptus_shared::rules::lint`; call it here and return its findings
-/// as printable lines. Until then the report says the lint is pending.
-fn lint_rules(_system: &RuleSystem) -> Option<Vec<String>> {
-    None
+/// The balance numbers of a rule system, a few lines per class.
+fn balance_lines(system: &RuleSystem, out: &mut String) {
+    let r = balance_report(system, &BalanceParams::default());
+    let targets: Vec<String> = r
+        .targets
+        .iter()
+        .map(|t| format!("{} CA {}", t.label, t.armor_class))
+        .collect();
+    let _ = writeln!(
+        out,
+        "  équilibre ({} sessions, {} combats de {} tours, {} jets par session ; contexte {}, {} actions par tour)",
+        r.params.sessions,
+        r.params.fights_per_session,
+        r.params.rounds_per_fight,
+        r.params.checks_per_session,
+        r.context,
+        r.actions_per_turn,
+    );
+    let _ = writeln!(
+        out,
+        "    cibles : {} — XP calculée contre CA {}, jets contre {} ; total de caractéristiques médian {}",
+        targets.join(", "),
+        r.xp_target,
+        r.check_difficulty,
+        r.ability_total_median,
+    );
+    for c in &r.classes {
+        let dmg: Vec<String> = c
+            .damage_per_turn
+            .iter()
+            // The levels that unlock class actions; the others repeat.
+            .filter(|l| [1, 3, 7].contains(&l.level))
+            .map(|l| {
+                let per: Vec<String> = l.per_target.iter().map(|d| format!("{d:.1}")).collect();
+                format!("niv. {} {}", l.level, per.join("/"))
+            })
+            .collect();
+        let xp = c.sessions.last().map_or(0.0, |s| s.total_xp);
+        let max = c
+            .max_level_after_session
+            .map_or_else(|| "jamais".to_string(), |n| format!("après la session {n}"));
+        let _ = writeln!(
+            out,
+            "    - {} : total {}, dégâts par tour {} ; {:.0} XP en fin de campagne, niveau {}, niveau max {}",
+            c.name,
+            c.ability_total,
+            dmg.join(" · "),
+            xp,
+            c.final_level,
+            max,
+        );
+    }
 }
 
 fn scale_name(s: Scale) -> &'static str {
@@ -78,8 +123,21 @@ fn issue_line(i: &Issue) -> String {
     let sev = match i.severity {
         Severity::Error => "erreur",
         Severity::Warning => "avertissement",
+        Severity::Info => "à confirmer",
     };
-    format!("    - [{sev}] {} {} — {}", i.code, i.path, i.detail)
+    let text = i.message.as_deref().unwrap_or(&i.detail);
+    format!("    - [{sev}] {} {} — {text}", i.code, i.path)
+}
+
+/// « 2 erreurs, 5 avertissements, 1 à confirmer ».
+fn counts(issues: &[Issue]) -> String {
+    let n = |sev| issues.iter().filter(|i| i.severity == sev).count();
+    format!(
+        "{}, {}, {} à confirmer",
+        plural(n(Severity::Error), "erreur", "erreurs"),
+        plural(n(Severity::Warning), "avertissement", "avertissements"),
+        n(Severity::Info),
+    )
 }
 
 fn main() -> ExitCode {
@@ -87,22 +145,23 @@ fn main() -> ExitCode {
         || Path::new(env!("CARGO_MANIFEST_DIR")).join("../content"),
         PathBuf::from,
     );
-    let rel = |p: &Path| {
-        p.strip_prefix(&content)
-            .unwrap_or(p)
-            .display()
-            .to_string()
-    };
+    let content = std::fs::canonicalize(&content).unwrap_or(content);
+    let rel = |p: &Path| p.strip_prefix(&content).unwrap_or(p).display().to_string();
 
     let mut worlds: BTreeMap<String, World> = BTreeMap::new();
     let mut failures = Vec::new();
 
     for (world, files) in yaml_files(&content.join("rules")) {
         for path in files {
-            match std::fs::read_to_string(&path).map_err(|e| e.to_string()).and_then(|t| {
-                RuleSystem::from_yaml(&t).map_err(|e| e.to_string())
-            }) {
-                Ok(s) => worlds.entry(world.clone()).or_default().rules.push((path, s)),
+            match std::fs::read_to_string(&path)
+                .map_err(|e| e.to_string())
+                .and_then(|t| RuleSystem::from_yaml(&t).map_err(|e| e.to_string()))
+            {
+                Ok(s) => worlds
+                    .entry(world.clone())
+                    .or_default()
+                    .rules
+                    .push((path, s)),
                 Err(e) => failures.push(format!("{} : {e}", rel(&path))),
             }
         }
@@ -113,7 +172,11 @@ fn main() -> ExitCode {
                 .map_err(|e| e.to_string())
                 .and_then(|t| Map::from_yaml(&t).map_err(|e| e.to_string()))
             {
-                Ok(m) => worlds.entry(world.clone()).or_default().maps.push((path, m)),
+                Ok(m) => worlds
+                    .entry(world.clone())
+                    .or_default()
+                    .maps
+                    .push((path, m)),
                 Err(e) => failures.push(format!("{} : {e}", rel(&path))),
             }
         }
@@ -160,23 +223,16 @@ fn main() -> ExitCode {
                 plural(s.items.len(), "objet", "objets"),
                 plural(s.adversaries.len(), "adversaire", "adversaires"),
             );
-            match lint_rules(s) {
-                Some(lines) if lines.is_empty() => {
-                    let _ = writeln!(out, "  contrôle des règles : rien à signaler");
-                }
-                Some(lines) => {
-                    let _ = writeln!(out, "  contrôle des règles :");
-                    for l in lines {
-                        let _ = writeln!(out, "    - {l}");
-                    }
-                }
-                None => {
-                    let _ = writeln!(
-                        out,
-                        "  contrôle des règles : en attente de engine/lint-rule-system"
-                    );
+            let found = lint(s);
+            if found.is_empty() {
+                let _ = writeln!(out, "  contrôle des règles : rien à signaler");
+            } else {
+                let _ = writeln!(out, "  contrôle des règles : {}", counts(&found));
+                for i in &found {
+                    let _ = writeln!(out, "{}", issue_line(i));
                 }
             }
+            balance_lines(s, &mut out);
         }
         for (path, m) in &w.maps {
             let _ = writeln!(
@@ -203,11 +259,6 @@ fn main() -> ExitCode {
                     maps: Some(&maps),
                 },
             );
-            let errors = issues
-                .iter()
-                .filter(|i| i.severity == Severity::Error)
-                .count();
-            let warnings = issues.len() - errors;
             let _ = writeln!(
                 out,
                 "Campagne   {} « {} » ({}) — règles {} v{}{}",
@@ -216,7 +267,11 @@ fn main() -> ExitCode {
                 rel(path),
                 c.rules.id,
                 c.rules.version,
-                if rules.is_some() { "" } else { " (introuvables)" },
+                if rules.is_some() {
+                    ""
+                } else {
+                    " (introuvables)"
+                },
             );
             let _ = writeln!(
                 out,
@@ -233,12 +288,7 @@ fn main() -> ExitCode {
                 plural(c.factions.len(), "faction", "factions"),
                 plural(c.goals.len(), "objectif", "objectifs"),
             );
-            let _ = writeln!(
-                out,
-                "  validateur d'histoire : {}, {}",
-                plural(errors, "erreur", "erreurs"),
-                plural(warnings, "avertissement", "avertissements"),
-            );
+            let _ = writeln!(out, "  validateur d'histoire : {}", counts(&issues));
             let mut by_code: BTreeMap<&str, usize> = BTreeMap::new();
             for i in &issues {
                 *by_code.entry(i.code).or_default() += 1;

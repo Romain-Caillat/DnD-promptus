@@ -9,6 +9,8 @@
 //! - [`action`] — resolving an action (to-hit, damage, effects, cooldown, XP)
 //! - [`conditions`] — conditions and the turn boundaries
 //! - [`progression`] — XP, upgrade points, levels
+//! - [`lint`] — whether the rules are good: coherence and balance checks
+//!   that report and never block (`lint::lint`, `lint::balance_report`)
 
 pub mod action;
 pub mod check;
@@ -16,10 +18,12 @@ pub mod conditions;
 pub mod dice;
 pub mod events;
 pub mod formula;
+pub mod lint;
 pub mod load;
 pub mod model;
 pub mod progression;
 pub mod sheet;
 
+pub use lint::{BalanceParams, BalanceReport, balance_report, lint, lint_with};
 pub use load::{ErrorCode, LoadError, RuleError};
 pub use model::RuleSystem;

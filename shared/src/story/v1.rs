@@ -34,9 +34,8 @@ use serde_json::Value;
 
 use super::model::{
     Act, Adversary, Ambience, Attack, Bible, Campaign, Clue, ClueCheck, Disposition, Encounter,
-    Exit, Faction, Front, FrontStep, Importance, Item, Location, MusicMood,
-    MusicTrack, Node, Npc, NpcPresence, Opponents, PartyMember, Rarity, Revelation, RuleSystemRef,
-    StatBlock,
+    Exit, Faction, Front, FrontStep, Importance, Item, Location, MusicMood, MusicTrack, Node, Npc,
+    NpcPresence, Opponents, PartyMember, Rarity, Revelation, RuleSystemRef, StatBlock,
 };
 
 /// The id of the single act an imported V1 campaign gets.
@@ -437,7 +436,11 @@ pub fn import_v1(
     let entities = parse_v1_entities(entities_yaml)?;
     let title = serde_yaml_ng::from_str::<Value>(entities_yaml)
         .ok()
-        .and_then(|v| v.get("campaign").and_then(Value::as_str).map(str::to_string))
+        .and_then(|v| {
+            v.get("campaign")
+                .and_then(Value::as_str)
+                .map(str::to_string)
+        })
         .unwrap_or_else(|| "Campagne importée".to_string());
     let story = serde_json::from_str::<V1StoryEnvelope>(story_json)
         .map(|e| e.story)
@@ -467,10 +470,9 @@ pub fn import_v1(
     });
 
     for (n, e) in entities.into_iter().enumerate() {
-        let id = e
-            .id
-            .clone()
-            .unwrap_or_else(|| format!("ent_{}", slug(&e.name).replace('-', "_")));
+        let id =
+            e.id.clone()
+                .unwrap_or_else(|| format!("ent_{}", slug(&e.name).replace('-', "_")));
         let description = e.description.clone().unwrap_or_default();
         if !e.effects.is_empty() && e.kind != V1EntityType::Spell {
             dropped.push(format!("{id}: {} effect(s)", e.effects.len()));

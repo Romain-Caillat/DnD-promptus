@@ -434,7 +434,7 @@ aucune fiche d'adversaire au sol (la source n'en a pas).
 **Origine** — V1 `ruleset.ts`, `ruleset-schema.ts` · planche « Règles »
 (moments 1 à 4 et 6) · `dnd-save/DnD-16-05-2026/regles_*.md`
 
-### `engine/lint-rule-system` · todo
+### `engine/lint-rule-system` · doing — reste l'affichage au MJ et la relecture des seuils par Romain
 
 **Pourquoi** — Les règles des Corsaires se contredisaient sans que
 personne le voie (`docs/lecons-des-parties.md` §2).
@@ -450,6 +450,31 @@ dégâts par tour, XP par session et niveau atteint en fin de campagne).
 signale les deux modèles de dégâts, « précision » non défini, la stat
 principale ambiguë, la CA des gardes hors table et le Canonnier à 63
 points ; sur le Brasier, le renvoi à `Combat_Sol.md` qui n'existe pas.
+
+**État** — Contrôle pur dans `shared/src/rules/lint/` :
+`rules::lint(&système)` (ou `lint_with` pour une campagne donnée) rend
+des problèmes au format commun avec le validateur de campagne
+(`promptus_shared::issue::Issue` : gravité erreur/avertissement/info,
+code stable, chemin, détail anglais, message français pour le MJ), sans
+jamais empêcher le chargement. Treize contrôles, listés dans
+`docs/rules-format.md` § Lint. Sur les Corsaires : les deux modèles de
+dégâts (PNJ et pistolet du marché noir), « précision » qui ne change
+aucun jet, la stat principale ambiguë (6 classes), les gardes à CA 14
+et Gueule-Rouge à 12 hors table, trois PNJ dont la CA ne suit pas
+10 + DEX, le Canonnier à 63 points, « épée standard » et « jets de
+soin » non définis, deux « Pistolet à silex ». Sur le Brasier : le
+renvoi à `Combat_Sol.md` (erreur), la précision, la seule attaque à bord
+contre deux au sol (info, à confirmer), le sens des recharges jamais
+écrit. Champ `exception: <raison>` ajouté aux PNJ. L'équilibre sort en
+chiffres (`rules::balance_report`, imprimable) : dégâts attendus par
+tour et par niveau contre chaque palier de CA, XP par session, niveau
+final ; avec 4 sessions de 2 combats de 4 tours, Bretteur, Vigie,
+Flibustier et Boucanier (Pilote et Mécano au Brasier) sont niveau 7
+dès la session 3, et les deux Canonniers font moins de la moitié des
+dégâts des autres. Tests sur les deux brouillons et sur leurs copies
+corrigées. Reste : montrer ces problèmes au MJ (aucune route ni écran
+ne les expose encore), et que Romain valide les seuils et les
+paramètres de campagne par défaut.
 
 **Origine** — `docs/lecons-des-parties.md` §2 et §3
 
@@ -688,7 +713,7 @@ marquant chaque champ réservé au MJ. Tests V1 portés (validateur,
 monde, concurrence). Reste à faire relire le format à Romain sur un
 vrai monde (`campaign/rewrite-two-worlds`).
 
-### `campaign/rewrite-two-worlds` · todo
+### `campaign/rewrite-two-worlds` · doing — reste la relecture des deux mondes par Romain
 
 **Pourquoi** — Les deux mondes témoins doivent exister dans Promptus
 dès la phase 1, et pas tels quels : leurs défauts sont ce qu'on veut
@@ -709,6 +734,40 @@ des règles et le validateur d'histoire tournent dessus ; test
 `import-export.test.ts` porté.
 
 **Origine** — `dnd-save/` · V1 `import-export.test.ts`
+
+**État** — Les deux mondes sont écrits dans
+`content/campaigns/<monde>/campagne.yaml` et se relisent comme du texte.
+**Corsaires** : l'acte 1 réécrit (neuf scènes, dix PNJ, la boutique de
+Dents-de-Fer, le combat du quai sur sa carte, musiques de `dnd-save/`
+par ambiance, visuels décrits en pixel art). Les quatre informations de
+l'acte 2 (route du Greyhound, escorte, réparation, courants) ont chacune
+trois indices ou plus dans des scènes différentes, dont au moins deux
+obligatoires ; six emplacements de personnage (un par classe jouée, le
+Flibustier et le Boucanier reprennent les accroches du Bretteur et de la
+Vigie) ont chacun des accroches dans au moins deux scènes ; les
+difficultés sont celles du système ; les fiches chiffrées et les objets
+renvoient au système de règles (`from_rules`) au lieu de recopier ses
+nombres. Le validateur n'y trouve rien. La version jouée reste un cas de
+test (`content/fixtures/corsaires-acte-1-joue.yaml`) : le validateur y
+retrouve l'information critique seulement dans les lieux facultatifs,
+l'absence d'accroches et les difficultés hors échelle. **Brasier** :
+bible, quatre factions (rivalités et affinité de départ inventées), quatre
+composants comme objectifs, le Cure-Dent et LUMEN, six emplacements de
+classe, et une première scène jouable, « Le Toboggan » (six postes, six
+jets, puis l'abordage Vorr sur la carte de la coursive) ; la suite de
+l'acte 1 est une ébauche et le validateur le dit. Tout ce qui est
+inventé est marqué « INVENTÉ — à valider par Romain ». Le Brasier n'a
+aucune musique dans la source : morceaux à choisir, sans lien. Nouveaux
+champs et contrôles (carte d'une scène, classe d'un emplacement,
+`from_rules`, contrôles contre le système de règles et les cartes,
+accroche par joueur et par acte) dans `docs/campaign-format.md`.
+`bun run worlds` charge tout `content/` et imprime par monde le contrôle
+des règles, l'équilibre, les cartes et le validateur d'histoire.
+Importeur V1 (entités YAML + histoire JSON) et tests
+`import-export.test.ts` portés sur la démo V1. Reste : que Romain relise
+les deux mondes et tranche ce qui est inventé ; choisir les musiques du
+Brasier ; porter les fiches Vorr dans le système de règles quand il
+accueillera des adversaires au sol.
 
 ### `campaign/list-campaigns` · todo
 

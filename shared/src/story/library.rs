@@ -37,12 +37,19 @@ pub fn validate_with(campaign: &Campaign, library: &Library<'_>) -> Vec<Issue> {
     issues
 }
 
-fn push(issues: &mut Vec<Issue>, severity: Severity, code: &'static str, path: String, detail: String) {
+fn push(
+    issues: &mut Vec<Issue>,
+    severity: Severity,
+    code: &'static str,
+    path: String,
+    detail: String,
+) {
     issues.push(Issue {
         severity,
         code,
         path,
         detail,
+        message: None,
     });
 }
 
@@ -128,16 +135,16 @@ fn check_rules(issues: &mut Vec<Issue>, c: &Campaign, rules: &RuleSystem) {
         );
     };
     let stats = |issues: &mut Vec<Issue>, s: &StatBlock, path: &str| {
-        if let Some(id) = &s.from_rules {
-            if !adversaries.contains(id.as_str()) {
-                unknown(
-                    issues,
-                    "RULES_UNKNOWN_ADVERSARY",
-                    "an adversary",
-                    id,
-                    format!("{path}.from_rules"),
-                );
-            }
+        if let Some(id) = &s.from_rules
+            && !adversaries.contains(id.as_str())
+        {
+            unknown(
+                issues,
+                "RULES_UNKNOWN_ADVERSARY",
+                "an adversary",
+                id,
+                format!("{path}.from_rules"),
+            );
         }
         for stat in s.abilities.keys() {
             ids.ability(issues, stat, format!("{path}.abilities.{stat}"));
@@ -145,16 +152,16 @@ fn check_rules(issues: &mut Vec<Issue>, c: &Campaign, rules: &RuleSystem) {
     };
 
     for (i, p) in c.party.iter().enumerate() {
-        if let Some(class) = &p.class {
-            if !classes.contains(class.as_str()) {
-                unknown(
-                    issues,
-                    "RULES_UNKNOWN_CLASS",
-                    "a class",
-                    class,
-                    format!("party[{i}].class"),
-                );
-            }
+        if let Some(class) = &p.class
+            && !classes.contains(class.as_str())
+        {
+            unknown(
+                issues,
+                "RULES_UNKNOWN_CLASS",
+                "a class",
+                class,
+                format!("party[{i}].class"),
+            );
         }
     }
     for (i, n) in c.nodes.iter().enumerate() {
@@ -176,16 +183,16 @@ fn check_rules(issues: &mut Vec<Issue>, c: &Campaign, rules: &RuleSystem) {
         stats(issues, &a.stats, &format!("adversaries[{i}].stats"));
     }
     for (i, it) in c.items.iter().enumerate() {
-        if let Some(id) = &it.from_rules {
-            if !items.contains(id.as_str()) {
-                unknown(
-                    issues,
-                    "RULES_UNKNOWN_ITEM",
-                    "an item",
-                    id,
-                    format!("items[{i}].from_rules"),
-                );
-            }
+        if let Some(id) = &it.from_rules
+            && !items.contains(id.as_str())
+        {
+            unknown(
+                issues,
+                "RULES_UNKNOWN_ITEM",
+                "an item",
+                id,
+                format!("items[{i}].from_rules"),
+            );
         }
     }
 }
