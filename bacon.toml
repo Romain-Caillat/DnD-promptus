@@ -1,0 +1,18 @@
+[jobs.run]
+command = ["cargo", "run", "--package", "promptus_back"]
+need_stdout = true
+watch = ["back/src", "back/migrations", "shared/src"]
+background = true
+allow_warnings = true
+
+[jobs.check]
+command = ["cargo", "check", "--workspace"]
+
+[jobs.test]
+command = ["cargo", "test", "--workspace"]
+
+[jobs.clippy]
+command = ["cargo", "clippy", "--workspace", "--all-targets", "--", "-W", "clippy::pedantic"]
+
+[defaults]
+job = "run"

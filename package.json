@@ -1,0 +1,26 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "bun run db:start && (bun run dev:back & bun run dev:front)",
+    "dev:back": "set -a && . ./.env && set +a && bacon --headless run",
+    "dev:front": "cd front && bun run dev",
+    "dev:tauri": "bun run db:start && (bun run dev:back & cd src-tauri && tauri dev)",
+    "dev:ios": "bun run db:start && (bun run dev:back & cd src-tauri && tauri ios dev)",
+    "build": "bun run build:back && bun run build:front",
+    "build:back": "cargo build --release --package promptus_back",
+    "build:front": "cd front && bun run build",
+    "build:tauri": "cd src-tauri && tauri build",
+    "test": "bun run test:back && bun run test:front",
+    "test:back": "set -a && { [ ! -f .env ] || . ./.env; } && set +a && cargo test --workspace",
+    "test:front": "cd front && bun run test",
+    "lint": "bun run lint:back && bun run lint:front",
+    "lint:back": "cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings",
+    "lint:front": "cd front && bun run lint && bun run typecheck && bun run knip",
+    "db:start": "docker compose -f docker-compose.dev.yml up postgres -d --wait",
+    "db:stop": "docker compose -f docker-compose.dev.yml stop postgres",
+    "db:reset": "docker compose -f docker-compose.dev.yml down -v && bun run db:start"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

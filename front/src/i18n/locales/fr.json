@@ -1,0 +1,13 @@
+{
+  "app": {
+    "name": "Promptus",
+    "tagline": "Le moteur narratif de vos parties de jeu de rôle, jouées à distance."
+  },
+  "health": {
+    "checking": "Vérification du serveur…",
+    "ok": "Le serveur et sa base de données répondent.",
+    "databaseDown": "Le serveur répond, mais sa base de données est injoignable.",
+    "unreachable": "Le serveur est injoignable.",
+    "retry": "Réessayer"
+  }
+}

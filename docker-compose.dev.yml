@@ -1,0 +1,31 @@
+# Development database only — the production compose file belongs to
+# `platform/deploy-self-hosted`. The fixed project name makes every
+# checkout (main and worktrees alike) share one container and one volume
+# instead of fighting over the port.
+name: promptus-dev
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: promptus
+      POSTGRES_USER: promptus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-promptus_dev}
+    ports:
+      # Loopback only: the dev database is never reachable from the LAN.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Runs once, on a fresh volume: creates the separate test database.
+      - ./scripts/create-test-db.sql:/docker-entrypoint-initdb.d/create-test-db.sql:ro
+    healthcheck:
+      # Over TCP on purpose: during first-start init the image runs a
+      # temporary server on the Unix socket only, which must not count
+      # as ready before the init scripts have run.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U promptus -d promptus"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  pgdata:

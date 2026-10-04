@@ -166,6 +166,18 @@ séparée (`TEST_DATABASE_URL`), `.env.example`.
 
 **Origine** — Alignement sur Devotion
 
+**État** — Squelette en place et vérifié dans PCT 105 : `bun run dev`
+lance Postgres 17, le serveur Axum (`:4333`, rechargé par bacon) et
+Vite (`:4334`) ; la page d'accueil, en français via `t()`, interroge
+`GET /api/health`, qui vérifie la base (503 `DATABASE_UNAVAILABLE`
+sinon). `bun run test` passe (3 tests Rust contre la base de test
+`promptus_test`, 2 tests Vitest) ; `bun run lint` (fmt, clippy
+`-D warnings`, ESLint avec la règle « aucun texte en dur », tsc, knip)
+passe ; l'app Tauri compile en debug et en release (`tauri build
+--no-bundle`). **Reste** : ouvrir l'app sur le simulateur iOS, ce qui
+demande macOS (`tauri ios init` puis `bun run dev:ios` sur le Mac de
+Romain). Les icônes Tauri sont provisoires.
+
 ### `platform/run-ci` · todo
 
 **Périmètre** — CI GitHub calquée sur Devotion : fmt, clippy, tests
