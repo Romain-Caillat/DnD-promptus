@@ -17,8 +17,9 @@ use serde_json::Value;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-/// Every GM route, `{invite}` standing for an invitation of the caller
-/// and `{campaign}` for one of their campaigns.
+/// Every GM route, `{invite}` standing for an invitation of the caller,
+/// `{campaign}` for one of their campaigns and `{player}` for a player
+/// at that campaign's table.
 const GM_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/me"),
     ("GET", "/api/gm-invites"),
@@ -31,6 +32,11 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/campaigns/{campaign}/export"),
     ("PUT", "/api/campaigns/{campaign}/import"),
     ("GET", "/api/campaigns/{campaign}/player-view"),
+    ("GET", "/api/campaigns/{campaign}/invite"),
+    ("POST", "/api/campaigns/{campaign}/invite"),
+    ("GET", "/api/campaigns/{campaign}/players"),
+    ("DELETE", "/api/campaigns/{campaign}/players/{player}"),
+    ("DELETE", "/api/campaigns/{campaign}/invite"),
     // Last: it ends the session the control sweep uses.
     ("POST", "/api/auth/sign-out"),
 ];
@@ -50,9 +56,26 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
     }
 }
 
-fn route_uri(path: &str, invite: &str, campaign: &str) -> String {
-    path.replace("{invite}", invite)
-        .replace("{campaign}", campaign)
+/// The ids the routes' placeholders stand for.
+struct Ids {
+    invite: String,
+    campaign: String,
+    player: String,
+}
+
+fn route_uri(path: &str, ids: &Ids) -> String {
+    path.replace("{invite}", &ids.invite)
+        .replace("{campaign}", &ids.campaign)
+        .replace("{player}", &ids.player)
+}
+
+/// A player seated at `campaign`'s table: their id and device token.
+async fn player_of(app: &Router, token: &str, campaign: &str) -> (String, String) {
+    let code = common::invite_code(app, token, campaign).await;
+    let r = common::join(app, &code, "Marc", "player").await;
+    assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
+    let id = r.body["data"]["me"]["id"].as_str().unwrap().to_string();
+    (id, r.player_token().unwrap())
 }
 
 async fn campaign_of(app: &Router, token: &str) -> String {
@@ -92,16 +115,15 @@ async fn invite_exists(pool: &PgPool, id: &str) -> bool {
 
 /// Every GM route answers 401 `UNAUTHENTICATED` with `cookie`, and
 /// touches nothing.
-async fn assert_all_refuse(
-    app: &Router,
-    pool: &PgPool,
-    cookie: Option<&str>,
-    invite: &str,
-    campaign: &str,
-) {
+async fn assert_all_refuse(app: &Router, pool: &PgPool, cookie: Option<&str>, ids: &Ids) {
+    assert_all_refuse_raw(app, pool, cookie.map(|c| format!("promptus_gm={c}")), ids).await;
+}
+
+/// [`assert_all_refuse`] with `cookie` as the whole `Cookie` header.
+async fn assert_all_refuse_raw(app: &Router, pool: &PgPool, cookie: Option<String>, ids: &Ids) {
     for (method, path) in GM_ROUTES {
-        let uri = route_uri(path, invite, campaign);
-        let r = call(app, cookie, method, &uri, body_for(method, path)).await;
+        let uri = route_uri(path, ids);
+        let r = common::send(app, cookie.as_deref(), method, &uri, body_for(method, path)).await;
         assert_eq!(
             r.status,
             StatusCode::UNAUTHORIZED,
@@ -111,9 +133,21 @@ async fn assert_all_refuse(
         assert_eq!(r.body["error"]["code"], "UNAUTHENTICATED", "{method} {uri}");
     }
     assert!(
-        invite_exists(pool, invite).await,
+        invite_exists(pool, &ids.invite).await,
         "a refused DELETE deleted"
     );
+    assert!(
+        player_exists(pool, &ids.player).await,
+        "a refused DELETE removed a player"
+    );
+}
+
+async fn player_exists(pool: &PgPool, id: &str) -> bool {
+    sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM players WHERE id = $1)")
+        .bind(Uuid::parse_str(id).unwrap())
+        .fetch_one(pool)
+        .await
+        .unwrap()
 }
 
 #[tokio::test]
@@ -123,6 +157,12 @@ async fn every_gm_route_refuses_without_a_valid_session() {
     let (gm, token) = common::signed_in_gm(&pool, "Romain").await;
     let invite = invite_of(&app, &token).await;
     let campaign = campaign_of(&app, &token).await;
+    let (player, _) = player_of(&app, &token, &campaign).await;
+    let ids = Ids {
+        invite,
+        campaign,
+        player,
+    };
     let campaigns_before = campaign_count(&pool, gm).await;
     let invites_before: i64 =
         sqlx::query_scalar("SELECT COUNT(*) FROM gm_invites WHERE created_by = $1")
@@ -132,11 +172,11 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .unwrap();
 
     // No cookie, and a cookie no session has.
-    assert_all_refuse(&app, &pool, None, &invite, &campaign).await;
-    assert_all_refuse(&app, &pool, Some("made-up-token"), &invite, &campaign).await;
+    assert_all_refuse(&app, &pool, None, &ids).await;
+    assert_all_refuse(&app, &pool, Some("made-up-token"), &ids).await;
     // The stored hash itself is not a session token either.
     let hash = promptus_back::auth::tokens::hash_token(&token);
-    assert_all_refuse(&app, &pool, Some(&hash), &invite, &campaign).await;
+    assert_all_refuse(&app, &pool, Some(&hash), &ids).await;
 
     // A refused POST minted nothing.
     let invites_after: i64 =
@@ -157,11 +197,11 @@ async fn every_gm_route_refuses_without_a_valid_session() {
     .execute(&pool)
     .await
     .unwrap();
-    assert_all_refuse(&app, &pool, Some(&expired), &invite, &campaign).await;
+    assert_all_refuse(&app, &pool, Some(&expired), &ids).await;
 
     // Control: the same routes work with the right session.
     for (method, path) in GM_ROUTES {
-        let uri = route_uri(path, &invite, &campaign);
+        let uri = route_uri(path, &ids);
         let r = call(&app, Some(&token), method, &uri, body_for(method, path)).await;
         assert!(
             r.status.is_success(),
@@ -173,11 +213,33 @@ async fn every_gm_route_refuses_without_a_valid_session() {
 
     // Signed out (the last control call): the session no longer opens
     // anything, even with the cookie kept.
-    let other_invite = {
-        let (_, t) = common::signed_in_gm(&pool, "Keeper").await;
-        invite_of(&app, &t).await
+    let (_, keeper) = common::signed_in_gm(&pool, "Keeper").await;
+    let campaign = campaign_of(&app, &keeper).await;
+    let ids = Ids {
+        invite: invite_of(&app, &keeper).await,
+        player: player_of(&app, &keeper, &campaign).await.0,
+        campaign,
     };
-    assert_all_refuse(&app, &pool, Some(&token), &other_invite, &campaign).await;
+    assert_all_refuse(&app, &pool, Some(&token), &ids).await;
+}
+
+/// A player's device token opens no GM route, whichever cookie name it
+/// is sent under; and a player cannot use a GM session either way round
+/// (`player_routes_test.rs`).
+#[tokio::test]
+async fn a_player_token_opens_no_gm_route() {
+    let pool = common::test_pool().await;
+    let app = common::app(pool.clone());
+    let (_, token) = common::signed_in_gm(&pool, "Romain").await;
+    let campaign = campaign_of(&app, &token).await;
+    let (player, device) = player_of(&app, &token, &campaign).await;
+    let ids = Ids {
+        invite: invite_of(&app, &token).await,
+        campaign,
+        player,
+    };
+    assert_all_refuse_raw(&app, &pool, Some(format!("promptus_player={device}")), &ids).await;
+    assert_all_refuse(&app, &pool, Some(&device), &ids).await;
 }
 
 #[tokio::test]

@@ -14,11 +14,21 @@
 //! or stat block. Art fields are prompts for the image generator, not
 //! player text.
 //!
-//! This is the campaign part of `session/project-player-view`, which
-//! extends it (character sheet, map, turn) and sweeps every player route.
+//! Every player and shared-screen route (`app::player_routes`,
+//! `app::invitation_routes`) builds its answer with a function of this
+//! file — [`project_invitation`], [`project_home`], [`project_for_players`]
+//! — and `back/tests/player_routes_test.rs` sweeps them all for GM-only
+//! markers. A grid map will reach players through `Map::project` with
+//! `Viewer::Player` (`promptus_shared::maps`), called from here; the
+//! character sheet is the player's own text (`players::CharacterSheet`)
+//! and is the one document sent back whole.
 
+use chrono::{DateTime, Utc};
 use promptus_shared::story::{Campaign, MusicTrack, WorldState};
 use serde::Serialize;
+use uuid::Uuid;
+
+use crate::players::{Character, CharacterSheet, CharacterStatus, Player, Role};
 
 /// The label an unrevealed opponent goes by.
 pub const UNKNOWN_OPPONENT: &str = "Adversaire";
@@ -178,5 +188,81 @@ pub fn project_for_players(campaign: &Campaign, world: &WorldState) -> PlayerCam
             .filter(|n| met(&n.id))
             .filter_map(|n| npc_view(campaign, &n.id))
             .collect(),
+    }
+}
+
+/// What an invitation link shows before joining: whose table, which
+/// campaign, and the hook players were meant to read.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InvitationView {
+    pub campaign_id: Uuid,
+    pub title: String,
+    pub world: String,
+    pub player_hook: String,
+    pub gm_name: String,
+}
+
+#[must_use]
+pub fn project_invitation(campaign_id: Uuid, campaign: &Campaign, gm_name: &str) -> InvitationView {
+    InvitationView {
+        campaign_id,
+        title: campaign.title.clone(),
+        world: campaign.world.clone(),
+        player_hook: campaign.bible.player_hook.clone(),
+        gm_name: gm_name.to_string(),
+    }
+}
+
+/// A player's home in a campaign: who they are at this table, the
+/// campaign's header and their character.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerHomeView {
+    pub me: MeView,
+    pub campaign: InvitationView,
+    pub character: Option<CharacterView>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MeView {
+    pub id: Uuid,
+    pub nickname: String,
+    pub role: Role,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CharacterView {
+    pub id: Uuid,
+    pub status: CharacterStatus,
+    pub sheet: CharacterSheet,
+    /// The GM's word when the sheet was returned; written for the player.
+    pub gm_note: Option<String>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[must_use]
+pub fn project_home(
+    campaign: &Campaign,
+    gm_name: &str,
+    player: &Player,
+    character: Option<&Character>,
+) -> PlayerHomeView {
+    PlayerHomeView {
+        me: MeView {
+            id: player.id,
+            nickname: player.nickname.clone(),
+            role: player.role,
+        },
+        campaign: project_invitation(player.campaign_id, campaign, gm_name),
+        character: character.map(|c| CharacterView {
+            id: c.id,
+            status: c.status,
+            sheet: c.sheet.clone(),
+            gm_note: c.gm_note.clone(),
+            updated_at: c.updated_at,
+        }),
     }
 }

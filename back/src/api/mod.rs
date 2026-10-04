@@ -3,3 +3,5 @@ pub mod body;
 pub mod campaigns;
 pub mod gm;
 pub mod health;
+pub mod play;
+pub mod table;
