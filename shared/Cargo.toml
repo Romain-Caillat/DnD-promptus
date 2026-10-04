@@ -6,6 +6,11 @@ edition = "2024"
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# Maintained fork of the archived serde_yaml: campaigns and maps are authored in YAML.
+# Maintained fork of the archived serde_yaml: campaigns, maps and rule
+# systems are authored in YAML.
 serde_yaml_ng = "0.10"
 thiserror = "2"
+# engine/roll-checks — dice behind an injectable source; ChaCha8 gives
+# a seeded stream that stays stable across rand releases.
+rand = "0.9"
+rand_chacha = "0.9"

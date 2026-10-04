@@ -1,0 +1,463 @@
+# Le Brasier — rule system, version 1.
+#
+# A FAITHFUL DRAFT of the rules prepared on 7 June 2026 (never played),
+# transcribed from dnd-save/DnD_07-06-2026/. Classes.md says the engine
+# is "identique aux Corsaires", and the folder's regles_combat.md and
+# regles_interactions.md are byte-for-byte copies of the Corsaires files
+# (they still name the Bretteur and the Canonnier de bord): everything
+# not in Classes.md is therefore taken from those copies. Known defects
+# kept on purpose for engine/lint-rule-system:
+#   - "précision" is never tied to the attack roll (attack.precision);
+#   - the ship context sends to `Combat_Sol.md`, which does not exist;
+#   - "1 seule attaque par tour" aboard contradicts two attacks per turn
+#     on the ground;
+#   - the rules files are copies naming another world's classes.
+# Ship combat itself (hull, shields, energy, stations, arcs) waits for
+# engine/support-vehicle-combat; only its action economy is here.
+# Where the model forced a reading, the choice is marked INTERPRETATION.
+
+id: brasier
+version: 1
+name: Le Brasier
+description: >-
+  Campagne spatiale à bord du Cure-Dent. Même moteur que les Corsaires :
+  d20 + modificateur, deux actions par tour, attaques de classe à dégâts
+  fixes avec recharge, débloquées aux niveaux 1, 3 et 7.
+sources:
+  - dnd-save/DnD_07-06-2026/Classes.md
+  - dnd-save/DnD_07-06-2026/regles_combat.md
+  - dnd-save/DnD_07-06-2026/regles_interactions.md
+  - dnd-save/DnD_07-06-2026/Combat_Vaisseau.md
+
+abilities:
+  - { id: FOR, name: Force, description: "Effort physique brut." }
+  - { id: DEX, name: Dextérité, description: "Agilité et finesse." }
+  - { id: CON, name: Constitution, description: "Endurance et résistance." }
+  - { id: INT, name: Intelligence, description: "Réflexion, science, technique." }
+  - { id: SAG, name: Sagesse, description: "Perception et intuition." }
+  - { id: CHA, name: Charisme, description: "Persuasion et personnalité." }
+
+modifier: "(score - 10) / 2"
+
+stats:
+  armor_class: { name: Classe d'armure, abbr: CA, formula: "10 + mod(DEX)" }
+  hit_points: { name: Points de vie, abbr: PV, formula: 10 }
+
+check: { dice: 1d20, advantage: false }
+
+difficulties:
+  - { id: facile, name: Facile, value: 5 }
+  - { id: moyen, name: Moyen, value: 10 }
+  - { id: difficile, name: Difficile, value: 15 }
+  - { id: tres_difficile, name: Très difficile, value: 20 }
+
+outcomes:
+  critical_failure:
+    name: Échec critique
+    natural: [1]
+    description: "Ça tourne mal. Conséquence narrative."
+  failure:
+    name: Échec
+    description: "Ça ne marche pas, mais pas de catastrophe."
+  success:
+    name: Réussite
+    description: "Ça fonctionne. En combat : touché."
+    grants: { xp: 1 }
+  critical_success:
+    name: Réussite critique
+    natural: [20]
+    description: "Réussite parfaite avec un bonus. En combat : dégâts doublés."
+    grants: { xp: 1 }
+    damage_multiplier: 2
+
+# INTERPRETATION: no group check in the source; the design board
+# "Voyager" rule (half the group suffices). Romain to confirm.
+group_check:
+  succeeds_when: at_least_half
+  note: "Absent des règles ; repris de la planche « Voyager »."
+
+attack:
+  # Unlike the Corsaires, each class has ONE primary ability here, so
+  # "stat principale" is unambiguous.
+  ability: first_primary
+  # As in the copied Corsaires rules: precision never enters the roll.
+  precision: not_applied
+  note: "d20 + modificateur de la stat principale contre la CA de la cible."
+
+initiative: { dice: 1d20, bonus: "mod(DEX)", ties: party_first }
+
+action_kinds:
+  - { id: attaque, name: Attaquer, cost: 1 }
+  - { id: deplacement, name: Se déplacer, cost: 1 }
+  - { id: objet, name: Utiliser un objet, cost: 1 }
+  - { id: soin, name: Soigner un allié, cost: 1 }
+  - { id: autre, name: Autre action, cost: 1 }
+  - { id: fuite, name: Fuir, cost: 2 }
+  # Combat_Vaisseau.md §2: "Certaines actions lourdes coûtent 2 actions".
+  - { id: action_lourde, name: Action lourde, cost: 2, description: "Tir chargé, réparation majeure, manœuvre risquée." }
+
+turn_contexts:
+  - id: sol
+    name: Combat au sol
+    actions_per_turn: 2
+    limits: []
+    note: "Repris des règles des Corsaires : deux actions libres, deux attaques possibles."
+  - id: vaisseau
+    name: Combat de vaisseau
+    actions_per_turn: 2
+    limits:
+      - { kind: attaque, max_per_turn: 1 }
+    references: [Combat_Sol.md]
+    note: "1 seule attaque par tour. À l'abordage, le combat bascule en combat au sol (voir `Combat_Sol.md`)."
+
+cooldowns:
+  # INTERPRETATION: as for the Corsaires, "CD N" = unusable during your
+  # next N turns.
+  meaning: skip_next_turns
+
+durations:
+  application_turn_counts: false
+
+progression:
+  upgrade_every_xp: 5
+  upgrade_points: 1
+  levels:
+    - { level: 1, xp: 0 }
+    - { level: 2, xp: 5 }
+    - { level: 3, xp: 10 }
+    - { level: 4, xp: 15 }
+    - { level: 5, xp: 20 }
+    - { level: 6, xp: 25 }
+    - { level: 7, xp: 30 }
+
+zero_hp:
+  rule: knocked_out
+  condition: inconscient
+  out_after_turns: 3
+  out_condition: hors_combat
+
+creation:
+  abilities: from_class
+  free_action_slots: 1
+
+movement:
+  - { scale: encounter, cells_per_move: null, note: "Aucune distance donnée." }
+
+conditions:
+  - { id: inconscient, name: Inconscient, kind: bane, description: "À 0 PV. Ne peut plus agir ; un soin le relève.", effects: [skips_turn] }
+  - { id: hors_combat, name: Hors combat, kind: bane, description: "Resté 3 tours inconscient sans soin.", effects: [skips_turn] }
+  - { id: etourdi, name: Étourdi, kind: bane, description: "Perd son tour.", effects: [skips_turn] }
+  - { id: renverse, name: Renversé, kind: bane, description: "Perd son tour.", effects: [skips_turn] }
+  - id: apeure
+    name: Apeuré
+    kind: bane
+    description: "Fuit ou passe son tour."
+    effects: [skips_turn, { narrative: "Fuit ou passe son tour." }]
+  - id: marque
+    name: Marqué
+    kind: bane
+    description: "Les alliés ont +2 précision contre la cible."
+    effects: [{ precision_against: 2 }]
+
+classes:
+  - id: pilote
+    name: Pilote
+    description: "Tient le vaisseau en vie par le mouvement. Au sol, c'est aussi la meilleure gâchette."
+    primary_abilities: [DEX]
+    secondary_abilities: [SAG, INT]
+    abilities: { FOR: 8, DEX: 14, CON: 10, INT: 12, SAG: 12, CHA: 8 }
+    items:
+      - { item: pistolet_laser_de_precision, qty: 1 }
+      - { item: propulseur_dorsal, qty: 1 }
+    notes:
+      - "Poste : Barre & tourelles (DEX)."
+      - "Au sol : mobilité, tir de précision, infiltration."
+    actions:
+      - id: tir_reflexe
+        name: Tir réflexe
+        kind: attaque
+        level: 1
+        target: enemy
+        roll: attack
+        tags: [{ damage: { amount: 3 } }, { precision: 2 }, { cooldown: 0 }]
+      - id: tir_en_mouvement
+        name: Tir en mouvement
+        kind: attaque
+        level: 3
+        target: enemy
+        roll: attack
+        tags:
+          - { damage: { amount: 3, note: "En se repositionnant." } }
+          - { buff: { effects: [{ precision_against: -2 }], kind: boon, turns: 1, to: self, note: "Ennemis -2 précision contre lui ce tour." } }
+          - { cooldown: 2 }
+      - id: tir_parfait
+        name: Tir parfait
+        kind: attaque
+        level: 7
+        target: enemy
+        roll: auto_hit
+        tags:
+          - { damage: { amount: 6, note: "Ignore couvert et armure." } }
+          # INTERPRETATION: "cible marquée" with no duration — the
+          # Xénologue's mark, 1 turn.
+          - { control: { condition: marque, turns: 1, to: targets } }
+          - { cooldown: 4 }
+
+  - id: canonnier
+    name: Canonnier
+    description: "La grosse artillerie du vaisseau et le muscle de l'abordage."
+    primary_abilities: [FOR]
+    secondary_abilities: [CON, DEX]
+    abilities: { FOR: 14, DEX: 11, CON: 13, INT: 8, SAG: 9, CHA: 9 }
+    items:
+      - { item: fusil_a_plasma_lourd, qty: 1 }
+      - { item: vibro_masse, qty: 1 }
+    notes:
+      - "Poste : Pièce lourde (FOR)."
+      - "Au sol : armes lourdes, mêlée, tank de première ligne."
+    actions:
+      - id: rafale_lourde
+        name: Rafale lourde
+        kind: attaque
+        level: 1
+        target: enemy
+        roll: attack
+        tags: [{ damage: { amount: 4 } }, { precision: 0 }, { cooldown: 1 }]
+      - id: grenade_a_plasma
+        name: Grenade à plasma
+        kind: attaque
+        level: 3
+        target: enemies
+        area: zone
+        roll: attack
+        tags:
+          - { damage: { amount: 3 } }
+          - { control: { condition: etourdi, turns: 1, to: targets, save: { ability: CON } } }
+          - { cooldown: 3 }
+      - id: tir_de_barrage
+        name: Tir de barrage
+        kind: attaque
+        level: 7
+        target: enemies
+        area: line
+        roll: attack
+        tags:
+          - { damage: { amount: 7 } }
+          - { precision: 2 }
+          - { control: { condition: renverse, turns: 1, to: targets } }
+          - { cooldown: 5 }
+
+  - id: mecano
+    name: Mécano
+    description: "Sans lui : plus de boucliers, plus d'énergie, plus de moteur."
+    primary_abilities: [INT]
+    secondary_abilities: [DEX, CON]
+    abilities: { FOR: 9, DEX: 12, CON: 12, INT: 14, SAG: 9, CHA: 8 }
+    items:
+      - { item: multi_outil_de_fortune, qty: 1 }
+      - { item: drone_boulon, qty: 1 }
+    notes:
+      - "Poste : Ingénieur (INT)."
+      - "Au sol : piratage, gadgets, explosifs, réparations."
+    actions:
+      - id: arc_electrique
+        name: Arc électrique
+        kind: attaque
+        level: 1
+        target: enemy
+        roll: attack
+        tags:
+          - { damage: { amount: 3, note: "Ignore les boucliers d'énergie." } }
+          - { precision: 1 }
+          - { cooldown: 0 }
+      - id: piratage_de_combat
+        name: Piratage de combat
+        kind: attaque
+        level: 3
+        target: enemy
+        roll: none
+        tags:
+          # "-2 à toucher ou -2 dégâts": "à toucher" is the roll itself,
+          # not "précision" — a third wording for the same idea.
+          - choice:
+              - { control: { effects: [{ roll_modifier: { rolls: attacks, value: -2 } }], kind: bane, turns: 2, to: targets, note: "Arme désactivée : -2 à toucher." } }
+              - { control: { effects: [{ damage_dealt: -2 }], kind: bane, turns: 2, to: targets, note: "Armure désactivée : -2 dégâts." } }
+          - { note: "Ou neutralise un droïde." }
+          - { cooldown: 3 }
+      - id: surcharge_a_impulsion
+        name: Surcharge à impulsion
+        kind: attaque
+        level: 7
+        target: enemies
+        area: zone
+        roll: attack
+        tags:
+          - { damage: { amount: 5 } }
+          - { note: "Coupe l'électronique ennemie : boucliers et armes à énergie hors service 2 tours." }
+          - { cooldown: 5 }
+
+  - id: xenologue
+    name: Xénologue
+    description: "Capteurs, analyse, premier contact. Déchiffre les espèces et leur techno avec LUMEN."
+    primary_abilities: [SAG]
+    secondary_abilities: [INT, CHA]
+    abilities: { FOR: 8, DEX: 10, CON: 8, INT: 13, SAG: 14, CHA: 11 }
+    items:
+      - { item: scanner_xeno, qty: 1 }
+      - { item: traducteur_portatif, qty: 1 }
+    notes:
+      - "Poste : Capteurs (SAG) ; tenu par LUMEN en session 1 si la classe est absente."
+      - "Au sol : analyse, perception, science, énigmes, premier contact."
+    actions:
+      - id: marquage_analytique
+        name: Marquage analytique
+        kind: attaque
+        level: 1
+        target: enemy
+        roll: none
+        tags:
+          - { control: { condition: marque, turns: 1, to: targets } }
+          - { cooldown: 0 }
+      - id: brouillage_neural
+        name: Brouillage neural
+        kind: attaque
+        level: 3
+        target: enemy
+        roll: { contest: { actor: SAG, target: SAG } }
+        tags:
+          - control:
+              effects:
+                - { roll_modifier: { rolls: all, value: -2 } }
+                - { narrative: "Désorientée (non défini)." }
+              kind: bane
+              turns: 2
+              to: targets
+          - { cooldown: 3 }
+      - id: onde_de_revelation
+        name: Onde de révélation
+        kind: attaque
+        level: 7
+        target: enemies
+        area: zone
+        roll: none
+        tags:
+          - control:
+              effects:
+                - { precision_against: 3 }
+                - { narrative: "Les alliés ignorent le couvert contre cette cible." }
+              kind: bane
+              turns: 2
+              to: targets
+          - { cooldown: 5 }
+
+  - id: toubib
+    name: Toubib
+    description: "Garde les gens — et le vaisseau — en vie sous le feu."
+    primary_abilities: [CON]
+    secondary_abilities: [SAG, INT]
+    abilities: { FOR: 8, DEX: 10, CON: 14, INT: 11, SAG: 13, CHA: 8 }
+    items:
+      - { item: kit_medical_de_bord, qty: 1 }
+      - { item: stim_de_combat, qty: 2 }
+    notes:
+      - "Poste : Intégrité & avaries (CON)."
+      - "Au sol : soins, damage control, protège et encaisse."
+    actions:
+      - id: stim_de_soin
+        name: Stim de soin
+        kind: soin
+        level: 1
+        target: ally_or_self
+        roll: none
+        tags: [{ heal: { amount: 3 } }, { cooldown: 0 }]
+      - id: garde_du_corps
+        name: Garde du corps
+        kind: attaque
+        level: 3
+        target: ally
+        roll: none
+        tags:
+          - { buff: { effects: [{ damage_taken: -3 }], kind: boon, turns: 2, to: targets, note: "S'interpose devant un allié adjacent." } }
+          - { cooldown: 3 }
+      - id: reanimation_d_urgence
+        name: Réanimation d'urgence
+        kind: soin
+        level: 7
+        target: ally_or_self
+        roll: none
+        tags:
+          - { heal: { amount: 7, note: "Ou relève un allié à 0 PV." } }
+          - { buff: { effects: [{ ability_bonus: { value: 1 } }], kind: boon, turns: 1, to: targets } }
+          - { cooldown: 5 }
+
+  - id: quartier_maitre
+    name: Quartier-maître
+    description: "Négocie, brise le moral, joue les quatre factions les unes contre les autres."
+    primary_abilities: [CHA]
+    secondary_abilities: [INT, SAG]
+    abilities: { FOR: 8, DEX: 10, CON: 8, INT: 12, SAG: 12, CHA: 14 }
+    items:
+      - { item: terminal_de_negoce, qty: 1 }
+      - { item: faux_papiers, qty: 1 }
+    notes:
+      - "Poste : Liaison (CHA)."
+      - "Au sol : persuasion, intimidation, commerce, commandement ; gère l'affinité avec les factions."
+    actions:
+      - id: ordre_tactique
+        name: Ordre tactique
+        kind: attaque
+        level: 1
+        target: ally
+        roll: none
+        tags:
+          - { buff: { effects: [{ damage_dealt: 1 }, { precision: 1 }], kind: boon, turns: 1, to: targets } }
+          - { cooldown: 0 }
+      - id: sommation
+        name: Sommation
+        kind: attaque
+        level: 3
+        target: enemy
+        # "jet CHA vs SAG/Moral": Moral belongs to ships; on the ground SAG.
+        roll: { contest: { actor: CHA, target: SAG } }
+        tags:
+          - { control: { condition: apeure, turns: 1, to: targets } }
+          - { cooldown: 2 }
+      - id: discours_de_ralliement
+        name: Discours de ralliement
+        kind: attaque
+        level: 7
+        target: all_allies
+        roll: none
+        tags:
+          - { buff: { effects: [{ damage_dealt: 2 }, { precision: 2 }], kind: boon, turns: 2, to: targets } }
+          - { heal: { amount: 2 } }
+          - { cooldown: 5 }
+
+items:
+  - { id: pistolet_laser_de_precision, name: Pistolet laser de précision, description: "Bonne portée, discret." }
+  - { id: propulseur_dorsal, name: Propulseur dorsal, description: "Bonds, EVA, repositionnement." }
+  - { id: fusil_a_plasma_lourd, name: Fusil à plasma lourd, description: "Dévastateur, lent à recharger." }
+  - { id: vibro_masse, name: Vibro-masse, description: "Mêlée lourde, abordage." }
+  - { id: multi_outil_de_fortune, name: Multi-outil de fortune, description: "Réparation et piratage." }
+  - { id: drone_boulon, name: Drone utilitaire « Boulon », description: "Répare ou tire un petit arc." }
+  - { id: scanner_xeno, name: Scanner xéno, description: "Analyse vie, techno et matériaux." }
+  - { id: traducteur_portatif, name: Traducteur portatif, description: "Interface avec LUMEN." }
+  - { id: kit_medical_de_bord, name: Kit médical de bord, description: "Outils, nano-bandages." }
+  - id: stim_de_combat
+    name: Stim de combat
+    description: Restaure 3 PV.
+    consumable: true
+    action:
+      id: injecter_stim
+      name: Stim de combat
+      kind: objet
+      target: ally_or_self
+      roll: none
+      tags: [{ heal: { amount: 3 } }]
+  - { id: terminal_de_negoce, name: Terminal de négoce, description: "Registre de contacts, marchés, dettes." }
+  - { id: faux_papiers, name: Faux papiers de la Confédération, description: "Bluff, fausse autorité." }
+
+# The source has no ground adversary stat block at all: its only enemy
+# references are ships (Combat_Vaisseau.md §9), which wait for
+# engine/support-vehicle-combat. Act 1's adversaries are still to write.
+adversaries: []
