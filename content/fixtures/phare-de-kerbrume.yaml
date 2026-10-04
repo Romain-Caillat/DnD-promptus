@@ -1,0 +1,441 @@
+# Test fixture for campaign/model-story-graph — a small one-act campaign
+# that exercises every part of the format (docs/campaign-format.md) and
+# validates without a single issue. Not one of the two witness worlds.
+format: 1
+id: phare-de-kerbrume
+title: Le Phare de Kerbrume
+world: Côte bretonne, 1718
+rules:
+  id: corsaires
+  version: 1
+bible:
+  pitch: >-
+    Depuis trois nuits, le phare de Kerbrume reste éteint et deux navires
+    se sont brisés sur les récifs. Le gardien a disparu. Les personnages
+    doivent rallumer la lumière avant la grande marée.
+  tone: Aventure brumeuse, humour de taverne, menace sourde.
+  themes:
+    - la lumière contre la brume
+    - la loyauté d'un village
+  art_direction: >-
+    Pixel art aux couleurs sourdes : gris-bleu de la brume, ocre des
+    lanternes, noir des récifs. Lumière chaude venue d'en haut.
+  truths:
+    - Corentin et ses contrebandiers éteignent le phare pour piller les épaves.
+    - Le gardien Loïc est vivant, enfermé dans la crique aux Morts.
+  secrets:
+    - La douane ferme les yeux contre une part du butin.
+  player_hook: >-
+    Le phare de Kerbrume s'est éteint. Le village a besoin de vous avant
+    la grande marée.
+  start_node: sc_taverne
+
+party:
+  - id: pj_maelle
+    name: Maëlle
+    concept: Ancienne pilote, connaît chaque récif de la côte
+  - id: pj_yann
+    name: Yann
+    concept: Bagarreur au grand cœur, neveu du gardien
+  - id: pj_soizic
+    name: Soizic
+    player: Romain
+    concept: Érudite, lit les cartes et les carnets de bord
+
+acts:
+  - id: acte_1
+    title: La lumière éteinte
+    summary: Enquêter au village, monter au phare, libérer le gardien dans la crique.
+    opening: La brume avale Kerbrume. Au large, aucun feu ne répond.
+    closing: Le faisceau du phare balaie de nouveau la mer.
+    music:
+      - mood: epic
+        title: Epic Sea Music
+        url: https://www.youtube.com/watch?v=LqVXs4enyG4
+
+fronts:
+  - id: front_naufrageurs
+    name: Les naufrageurs de Corentin
+    goal: Piller un navire marchand à chaque nuit sans lumière.
+    steps:
+      - label: Un feu éteint
+        description: Le phare reste noir une nuit de plus.
+      - label: Une épave
+        description: Un caboteur s'échoue, la cargaison disparaît.
+      - label: Des témoins réduits au silence
+        description: Les contrebandiers menacent les pêcheurs.
+      - label: La grande marée
+        description: Le navire de la douane sombre ; Corentin tient la côte.
+
+nodes:
+  - id: sc_taverne
+    act: acte_1
+    title: Le Goéland Ivre
+    summary: Les personnages apprennent la disparition du gardien et les premières rumeurs.
+    location: lieu_taverne
+    read_aloud: >-
+      La taverne sent le cidre et le poisson fumé. Dehors, la corne de
+      brume gémit sans réponse.
+    ambience:
+      mood: Taverne bondée et inquiète
+      sounds: Chopes, vielle, pluie sur les carreaux
+      music:
+        - mood: calm
+          title: Pirate Tavern Ambience
+          url: https://www.youtube.com/watch?v=3M24gwUlaCE
+        - mood: tension
+          title: Suspense
+          url: https://www.youtube.com/watch?v=EApZmmYg_oQ
+    flow: Gwen sert, les pêcheurs se plaignent, un mousse attend qu'on lui parle.
+    hook: Un pêcheur trempé entre en criant qu'un second navire s'est brisé.
+    checks:
+      - action: Calmer le pêcheur
+        stat: CHA
+        difficulty: 10
+        success: Il raconte avoir vu des lanternes sur la falaise.
+        failure: Il part noyer sa peur au comptoir.
+        natural_1: Il renverse sa chope sur Yann, la salle éclate de rire.
+        natural_20: Il donne aussi le nom de la barque de Corentin.
+    npcs:
+      - npc: pnj_gwen
+        role: Source de rumeurs si on la traite bien
+    key_points:
+      - Poser l'urgence de la grande marée.
+      - Le mousse ne parle qu'à quelqu'un qui le paie.
+    transition: Les personnages sortent dans la brume, vers le port ou le phare.
+    exits:
+      - to: sc_port
+        label: Aller voir l'épave au port
+      - to: sc_phare
+        label: Monter directement au phare
+    player_hooks:
+      - character: pj_yann
+        reason: Le gardien disparu est son oncle.
+      - character: pj_maelle
+        reason: Le second navire brisé était celui de son ancien équipage.
+      - character: pj_soizic
+        reason: Gwen lui doit un service et lui parle franchement.
+    art: Salle basse aux poutres noires, lanternes ocre, fenêtres battues par la pluie.
+
+  - id: sc_port
+    act: acte_1
+    title: L'épave du port
+    optional: true
+    summary: L'épave échouée porte des traces de pillage.
+    location: lieu_port
+    read_aloud: Une coque éventrée gît sur la grève, encore fumante de brume.
+    ambience:
+      mood: Grève froide et silencieuse
+      music:
+        - mood: mystery
+          title: Unveiling Secrets
+          url: https://www.youtube.com/watch?v=l-vpJVMWUvk
+    flow: Fouiller l'épave, interroger les pêcheurs.
+    checks:
+      - action: Fouiller la coque
+        stat: SAG
+        difficulty: 10
+        success: Des cordages tranchés net, pas arrachés.
+        natural_1: Une planche cède, chute dans l'eau glacée.
+    key_points:
+      - Facultative ; tout ce qu'on y trouve existe aussi ailleurs.
+    exits:
+      - to: sc_phare
+        label: Monter au phare
+    player_hooks:
+      - character: pj_maelle
+        reason: Elle reconnaît la coque de son ancien navire.
+    if_skipped: Les traces vers la crique sont aussi sur la carte du phare et chez le mousse.
+
+  - id: sc_phare
+    act: acte_1
+    title: Le phare noir
+    summary: Le phare est vide, la lanterne volée, le carnet du gardien abandonné.
+    location: lieu_phare
+    read_aloud: L'escalier en colimaçon monte dans le noir. Tout en haut, la lanterne a disparu.
+    ambience:
+      mood: Vent qui siffle dans la tour
+      music:
+        - mood: exploration
+          title: On The Shore
+          url: https://www.youtube.com/watch?v=4W2EfqdOmiI
+    flow: Monter, trouver le carnet, la carte griffonnée, les traces de lutte.
+    npcs: []
+    key_points:
+      - Le carnet est la preuve la plus nette contre Corentin.
+    exits:
+      - to: sc_crique
+        label: Descendre vers la crique aux Morts
+    player_hooks:
+      - character: pj_soizic
+        reason: Elle seule sait lire le code du carnet de bord.
+    art: Sommet de phare en pierre grise, verrière brisée, brume qui entre.
+
+  - id: sc_crique
+    act: acte_1
+    title: La crique aux Morts
+    summary: Les contrebandiers gardent Loïc et la lanterne. Combat ou ruse.
+    location: lieu_crique
+    read_aloud: Des lanternes dansent au fond de la crique, entre des caisses mouillées.
+    ambience:
+      mood: Ressac et menace
+      music:
+        - mood: tension
+          title: Dark and Mysterious Ambient Music
+          url: https://www.youtube.com/watch?v=yEYxnJB4jZs
+        - mood: combat
+          title: Pirate Attack!
+          url: https://www.youtube.com/watch?v=c4-S9N1ecOo
+    flow: Approcher sans être vus, puis affronter Corentin.
+    hook: Corentin lève sa lanterne et reconnaît Yann.
+    npcs:
+      - npc: pnj_loic
+        role: Prisonnier, ligoté près des caisses
+      - npc: pnj_corentin
+        role: Chef des naufrageurs
+    key_points:
+      - Combat court, les sbires sont faibles.
+    encounter:
+      opponents:
+        - who: pnj_corentin
+        - who: adv_contrebandier
+          count: 4
+      tactics:
+        - Les contrebandiers encerclent le plus isolé.
+        - Corentin reste près de la lanterne et la menace de la jeter à l'eau.
+      morale:
+        - when: Deux contrebandiers tombent
+          then: Les autres fuient par la mer.
+        - when: Corentin tombe
+          then: Tous se rendent.
+      on_victory: Loïc est libre, la lanterne récupérée.
+      on_defeat: Les personnages se réveillent sur la grève ; Loïc a été déplacé.
+    loot:
+      - coins: 30
+        found: Bourse de Corentin
+      - item: obj_lanterne
+        found: Près des caisses
+      - item: obj_rhum
+        found: Dans une caisse fermée
+        hidden: true
+    xp:
+      - amount: 1
+        reason: Par touche réussie pendant le combat
+    transition: La lanterne remonte au phare, le faisceau revient.
+    requires:
+      - rev_crique
+    player_hooks:
+      - character: pj_yann
+        reason: Son oncle est ligoté là.
+      - character: pj_maelle
+        reason: Elle seule peut mener la barque entre les récifs.
+      - character: pj_soizic
+        reason: Le coffre de Corentin porte un cadenas à code.
+    art: Crique noire, lanternes ocre, caisses humides, rochers en dents de scie.
+    gm_notes: Si les joueurs négocient, Corentin propose une part du butin.
+
+revelations:
+  - id: rev_naufrageurs
+    statement: Corentin éteint le phare pour faire échouer les navires.
+    importance: critical
+  - id: rev_crique
+    statement: Le gardien est retenu dans la crique aux Morts.
+    importance: critical
+  - id: rev_douane
+    statement: La douane touche une part du butin.
+    importance: optional
+
+clues:
+  - id: cl_gwen
+    revelation: rev_naufrageurs
+    node: sc_taverne
+    text: Gwen a vu les hommes de Corentin monter au phare la nuit du premier naufrage.
+    discovery: Lui parler en confiance.
+    source: pnj_gwen
+  - id: cl_cordages
+    revelation: rev_naufrageurs
+    node: sc_port
+    text: Les cordages de l'épave ont été tranchés au couteau.
+    discovery: Fouiller la coque.
+    check:
+      stat: SAG
+      difficulty: 10
+  - id: cl_carnet
+    revelation: rev_naufrageurs
+    node: sc_phare
+    text: Le carnet du gardien note la barque de Corentin trois nuits de suite.
+    discovery: Lire le carnet.
+    source: obj_carnet
+  - id: cl_mousse
+    revelation: rev_crique
+    node: sc_taverne
+    text: Le mousse a vu une barque filer vers la crique aux Morts.
+    discovery: Le payer, ou gagner sa confiance.
+  - id: cl_traces
+    revelation: rev_crique
+    node: sc_port
+    text: Des traces de traîne mènent du port vers le sentier de la crique.
+    discovery: Suivre la grève.
+  - id: cl_carte
+    revelation: rev_crique
+    node: sc_phare
+    text: Une carte griffonnée entoure la crique aux Morts.
+    discovery: Fouiller le bureau du gardien.
+    source: lieu_phare
+  - id: cl_registre
+    revelation: rev_douane
+    node: sc_crique
+    text: Le registre de Corentin note des paiements au douanier.
+    discovery: Forcer le coffre.
+    check:
+      stat: DEX
+      difficulty: 15
+
+npcs:
+  - id: pnj_gwen
+    name: Gwen Le Bihan
+    title: La tavernière
+    age: 45 ans
+    appearance: Large, tablier taché, rire qui couvre la salle.
+    portrait: Femme robuste, cheveux roux noués, tablier brun, chope à la main.
+    roleplay: Mère de tout le port, elle sait tout et le dit à qui la respecte.
+    traits:
+      - Chaleureuse
+      - Bavarde
+    flaw: Ne garde aucun secret plus d'une soirée.
+    motivation: Que les marins rentrent vivants.
+    disposition: friendly
+    wants: Que quelqu'un rallume le phare.
+    hides: Son fils travaille pour Corentin.
+    location: lieu_taverne
+    sells:
+      - item: obj_rhum
+        price: 2
+  - id: pnj_loic
+    name: Loïc Kervella
+    title: Le gardien
+    age: 60 ans
+    appearance: Barbe blanche, mains calleuses, œil vif.
+    portrait: Vieil homme barbu, ciré jaune, lanterne à la main.
+    roleplay: Taiseux et têtu, il ne parle qu'une fois en sécurité.
+    traits:
+      - Têtu
+    flaw: Méfiant envers les étrangers.
+    motivation: Rallumer son phare.
+    disposition: friendly
+    wants: Revoir la lumière là-haut.
+    hides: Il sait que la douane est complice.
+    location: lieu_crique
+    inventory:
+      - item: obj_carnet
+  - id: pnj_corentin
+    name: Corentin Le Goff
+    title: Le Naufrageur
+    age: 38 ans
+    appearance: Grand, manteau de cuir, cicatrice au menton.
+    portrait: Homme sec, manteau de cuir sombre, lanterne levée, sourire froid.
+    roleplay: Charmeur jusqu'à ce qu'on lui résiste.
+    traits:
+      - Calculateur
+      - Charmeur
+    flaw: Orgueilleux devant ses hommes.
+    motivation: Devenir le maître de la côte.
+    disposition: hostile
+    wants: Que le phare reste éteint jusqu'à la grande marée.
+    hides: Il paie le douanier.
+    stats:
+      abilities:
+        FOR: 14
+        DEX: 12
+        CON: 13
+        INT: 11
+        SAG: 9
+        CHA: 13
+      armor_class: 12
+      hit_points: 10
+      attacks:
+        - name: Sabre
+          damage: 1d6+2
+    inventory:
+      - item: obj_sabre
+    faction: fac_contrebandiers
+    location: lieu_crique
+
+adversaries:
+  - id: adv_contrebandier
+    name: Contrebandier
+    description: Un homme de main de Corentin, plus brute que soldat.
+    art: Marin trapu, bonnet rouge, coutelas, profil gauche.
+    stats:
+      abilities:
+        FOR: 11
+        DEX: 10
+        CON: 10
+        INT: 8
+        SAG: 9
+        CHA: 8
+      armor_class: 10
+      hit_points: 4
+      attacks:
+        - name: Coutelas
+          damage: 1d4+1
+
+locations:
+  - id: lieu_port
+    name: Le port de Kerbrume
+    description: Quais de granit, barques à sec, brume qui monte de la mer.
+    art: Port breton en granit, barques, brume grise.
+  - id: lieu_taverne
+    name: Le Goéland Ivre
+    description: La taverne du port.
+    parent: lieu_port
+  - id: lieu_phare
+    name: Le phare de Kerbrume
+    description: Une tour de granit sur la pointe.
+  - id: lieu_crique
+    name: La crique aux Morts
+    description: Une anse cachée entre les récifs.
+
+items:
+  - id: obj_lanterne
+    name: Lanterne du phare
+    description: La grande lanterne de cuivre du phare.
+    effect: Rallume le phare.
+    rarity: rare
+    art: Lanterne de cuivre, verre épais, flamme ocre.
+  - id: obj_carnet
+    name: Carnet du gardien
+    description: Un carnet de bord couvert d'une écriture serrée.
+    art: Carnet de cuir usé, ficelle.
+  - id: obj_sabre
+    name: Sabre de Corentin
+    effect: +1 aux dégâts.
+    value: 15
+    rarity: uncommon
+  - id: obj_rhum
+    name: Bouteille de rhum
+    value: 2
+
+factions:
+  - id: fac_douane
+    name: La douane royale
+    description: Officiers chargés de la côte.
+    diplomacy: L'ordre et la loi, en apparence.
+    rivals:
+      - fac_contrebandiers
+  - id: fac_contrebandiers
+    name: Les naufrageurs
+    description: La bande de Corentin.
+    diplomacy: L'argent d'abord.
+    affinity:
+      start: -2
+      min: -5
+      max: 5
+    rivals:
+      - fac_douane
+
+goals:
+  - id: but_lumiere
+    title: Rallumer le phare
+    description: Rapporter la lanterne au sommet du phare.
+    item: obj_lanterne

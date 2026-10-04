@@ -577,7 +577,7 @@ quitter l'écran.
 Le modèle de campagne du V1 (bible, fronts, nœuds, indices, entités,
 état vivant), et les écrans de préparation du MJ.
 
-### `campaign/model-story-graph` · todo
+### `campaign/model-story-graph` · doing — reste la relecture du format par Romain
 
 **Pourquoi** — L'histoire est un graphe, pas un script (`MEMORY.md` §1) :
 la génération, le direct et le co-MJ lisent tous ce modèle.
@@ -598,6 +598,26 @@ s'écrasent pas.
 
 **Origine** — V1 `story.ts`, `story-validator.ts`, `world.ts`, `lock.ts`,
 migrations 0001 à 0003
+
+**État** — Modèle livré dans `shared/src/story/` : une campagne est un
+seul document (bible, actes, fronts à horloge, nœuds portant toute la
+norme de scène, révélations et indices, PNJ, adversaires, lieux, objets,
+factions, objectifs) aux identifiants stables dans un espace de noms
+unique, plus l'état vivant du monde et ses opérations pures. Import et
+export YAML d'une campagne entière, format décrit dans
+`docs/campaign-format.md` ; une petite campagne de test en français
+(`content/fixtures/phare-de-kerbrume.yaml`) passe le validateur sans
+remarque et fait l'aller-retour à l'identique. Le validateur signale
+sans bloquer : règle des trois indices, références cassées ou du
+mauvais type, savoir requis donné nulle part ou seulement dans des
+scènes facultatives, contrôles de structure. Côté serveur : table
+`campaigns` (histoire et monde en JSONB typés, propriétaire `gm_id`),
+verrou par campagne (`SELECT … FOR UPDATE` puis relecture), routes MJ
+de création, liste, lecture, import, export et aperçu joueur, toutes
+balayées par `gm_routes_test.rs` ; projection joueur unique, testée en
+marquant chaque champ réservé au MJ. Tests V1 portés (validateur,
+monde, concurrence). Reste à faire relire le format à Romain sur un
+vrai monde (`campaign/rewrite-two-worlds`).
 
 ### `campaign/rewrite-two-worlds` · todo
 
