@@ -29,6 +29,10 @@ bun run lint       # fmt, clippy, ESLint, tsc, knip
 Open <http://localhost:4334>: the placeholder page says whether the
 server and its database answer.
 
+CI (`.github/workflows/ci.yml`) runs on every pull request and on
+pushes to `main`: fmt, clippy and the Rust tests against PostgreSQL 17;
+ESLint, tsc, knip and Vitest; a gitleaks scan of the whole history.
+
 Database: `bun run db:start`, `db:stop`, `db:reset` (drops the volume).
 Desktop shell: `bun run dev:tauri`; iOS simulator (macOS only):
 `cd src-tauri && bunx tauri ios init` once, then `bun run dev:ios`.

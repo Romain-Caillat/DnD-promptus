@@ -187,6 +187,20 @@ Rust contre Postgres, lint + typecheck + tests front, gitleaks.
 
 **Origine** — Alignement sur Devotion
 
+**État** — `.github/workflows/ci.yml` écrit, sur chaque PR et chaque
+push sur `main`, en trois jobs : `rust` (dépendances système de Tauri,
+création de `promptus_test` par `scripts/create-test-db.sql` dans un
+service Postgres 17, `cargo fmt --all --check`, clippy `--workspace
+--all-targets -D warnings`, `cargo test --workspace`), `front` (Bun
+1.4.2 comme dans PCT 105 : ESLint, `tsc -b`, knip, Vitest, sous Bun
+via `--bun`) et `secrets` (gitleaks 8.30.1, binaire épinglé et vérifié
+par somme SHA-256, sur tout l'historique). Le fichier passe
+`actionlint` (avec shellcheck), et chaque commande a été rejouée dans
+PCT 105 avec les mêmes variables — seule différence, le port 5433 d'un
+Postgres 17 jetable à la place du service. **Reste** : le premier
+passage sur GitHub (pousser, regarder les trois jobs passer), puis
+rendre les trois jobs obligatoires dans la protection de `main`.
+
 ### `platform/sign-in-gm` · doing
 
 **Pourquoi** — Le V1 laissait les pages MJ ouvertes à tous.
@@ -244,6 +258,31 @@ rejoint ; une sauvegarde se restaure sur une base vide.
 
 **Origine** — Alignement sur Devotion
 
+**État** — Tout ce qui ne demande pas d'exposition publique est fait et
+vérifié dans PCT 105, sur une pile de test séparée
+(`promptus-prod-test`, `127.0.0.1:4380`, démontée ensuite) : un
+`Dockerfile` en trois étages (front Bun, serveur Rust, image
+`debian:trixie-slim` de ~170 Mo) où le serveur Axum sert aussi le front
+construit (`FRONT_DIR`, routes du client → `index.html`, `/assets`
+en cache long, `/api/*` inconnu → 404 JSON) ;
+`docker-compose.prod.yml` (app + Postgres 17, base jamais publiée) ;
+migrations au démarrage ; `GET /api/health` en health check ;
+`deploy/install.sh`, `deploy/backup.sh` (dump `pg_dump` en archive tar,
+chiffrement `age` optionnel par clé publique, rotation),
+`deploy/restore.sh` (refuse une base non vide sans `--force`, et
+sauvegarde alors d'abord ce qu'il remplace) et `deploy/prod-deploy.sh`,
+la boucle cron de Devotion (sauvegarde, sinon pas de déploiement) ;
+`docs/install.md`, `docs/backup.md`. Vérifié : image construite, santé
+200, front servi, sauvegarde → volume supprimé → restauration sur base
+vide → données revenues et santé 200 (aussi en chiffré, et sur une
+machine vierge). **Reste, pour Romain** : choisir l'hôte (proposition
+dans `docs/install.md` : un conteneur dédié plutôt que PCT 101), y
+faire la première installation, ajouter la route sur le Traefik de
+PCT 100 et l'enregistrement DNS chez Ionos, installer la boucle de
+déploiement sur l'hôte Proxmox — puis le test du téléphone en 4G, qui
+attend aussi `session/invite-and-join`. `prod-deploy.sh` n'a pas pu
+tourner sans conteneur cible.
+
 ---
 
 ## Épic `ui`
@@ -270,6 +309,29 @@ composants shadcn reçoivent ces tokens.
 forte.
 
 **Origine** — Planche « Fondations » · ancien ticket `design/build-design-system`
+
+**État** — Tokens dans `front/src/styles/tokens.css` (`@theme static`),
+valeurs relevées sur `Main.dc.html`, `kit.py`, `Bouton`, `GameCard` et
+`Gemme` : gris de la table, ivoire et encre, six couleurs de stats
+(formes documentées et dessinées en petite grille), rouge des dégâts,
+polices, échelle de texte, rayons, ombres dures, durées, courbes et
+animations ; matières en `@utility` (`surface-table`, `surface-slab`,
+`button-card`, `button-card-dark`, `card-frame`, `material-common` à
+`material-divine`, `damage-number`). La palette par défaut de Tailwind
+est retirée : aucune teinte ne peut entrer dans l'interface par erreur.
+Les variables shadcn pointent sur ces tokens (ivoire = action
+principale, rouge des dégâts = destructif) ; `<html class="dark">`,
+aucun thème clair. Les trois polices sont servies par l'app via
+`@fontsource` (sous-ensemble latin, œ compris), sans CDN. Animations
+réduites : une règle globale retire animations et transitions, chaque
+élément animé a un état de repos calme (reflet hors carte, dé posé,
+chiffre lisible) ; le mouvement piloté en JS lit
+`usePrefersReducedMotion` (testé sur le dé qui roule : il affiche son
+résultat tout de suite au lieu d'une face au hasard). Page de
+référence : `/reference`. Lint, typecheck, knip, tests et build
+passent dans PCT 105. **Reste** : un coup d'œil de Romain sur
+`/reference` dans un navigateur, animations réduites activées et
+désactivées — la page n'a été vérifiée que par le build et les tests.
 
 ### `ui/build-game-components` · todo
 

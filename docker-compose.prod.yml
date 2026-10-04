@@ -1,0 +1,63 @@
+# Promptus — production stack. Install guide: docs/install.md.
+#
+# Always driven through the scripts in deploy/, which pass the env file:
+#   deploy/install.sh        first install (writes .env.production, starts)
+#   deploy/deploy.sh         backup, then rebuild and restart on new code
+#   deploy/backup.sh         dump the database (docs/backup.md)
+#   deploy/restore.sh        restore a dump (docs/backup.md)
+# By hand: docker compose -f docker-compose.prod.yml --env-file .env.production <cmd>
+#
+# Only the app's HTTP port is published, on PROMPTUS_BIND (loopback by
+# default). The database sits on the stack's private network. TLS and
+# the public name are the reverse proxy's job (PCT 100's Traefik).
+#
+# Development uses docker-compose.dev.yml instead (bun run db:start).
+
+# COMPOSE_PROJECT_NAME (environment or env file) overrides it, which is
+# how a test stack runs next to a real one.
+name: promptus
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: promptus
+      POSTGRES_USER: promptus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.production}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Over TCP: during first-start init the image runs a temporary
+      # server on the Unix socket only, which must not count as ready.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U promptus -d promptus"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    image: promptus:${PROMPTUS_VERSION:-local}
+    restart: unless-stopped
+    ports:
+      # Loopback unless PROMPTUS_BIND says otherwise: the reverse proxy
+      # on another machine needs the LAN address (docs/install.md).
+      - "${PROMPTUS_BIND:-127.0.0.1}:${PROMPTUS_PORT:-4380}:4333"
+    environment:
+      DATABASE_URL: postgres://promptus:${POSTGRES_PASSWORD}@postgres:5432/promptus
+      PORT: "4333"
+      # The front is served by the same server, so the web app needs no
+      # CORS; only the desktop and phone shells call from another origin.
+      ALLOWED_ORIGINS: https://${PROMPTUS_DOMAIN:?set PROMPTUS_DOMAIN in .env.production},${PROMPTUS_APP_ORIGINS-tauri://localhost,http://tauri.localhost}
+      # GM passkeys are bound to this origin's host; the session cookie
+      # is Secure because it is https (platform/sign-in-gm).
+      PUBLIC_ORIGIN: https://${PROMPTUS_DOMAIN}
+      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-}
+      GM_SETUP_TOKEN: ${GM_SETUP_TOKEN:-}
+      RUST_LOG: ${RUST_LOG:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

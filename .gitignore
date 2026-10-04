@@ -39,3 +39,7 @@ coverage/
 
 # Images of the hand-run games (57 MB), kept out of git
 dnd-save/**/*.png
+
+# Production secrets (deploy/install.sh writes it) and local backups
+.env.production
+/backups/

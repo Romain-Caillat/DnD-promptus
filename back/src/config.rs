@@ -1,4 +1,5 @@
 use std::env;
+use std::path::PathBuf;
 
 pub struct Config {
     pub database_url: String,
@@ -14,6 +15,9 @@ pub struct Config {
     /// `GM_SETUP_TOKEN`: pins the first-account setup code instead of a
     /// random one printed at boot.
     pub gm_setup_token: Option<String>,
+    /// The built front to serve next to the API (`FRONT_DIR`). Unset in
+    /// development, where Vite serves the front and proxies `/api`.
+    pub front_dir: Option<PathBuf>,
 }
 
 impl Config {
@@ -22,7 +26,8 @@ impl Config {
     ///
     /// # Errors
     ///
-    /// Fails when `DATABASE_URL` is missing or `PORT` is not a valid u16.
+    /// Fails when `DATABASE_URL` is missing, `PORT` is not a valid u16,
+    /// or `FRONT_DIR` is set but holds no `index.html`.
     pub fn from_env() -> Result<Self, Box<dyn std::error::Error>> {
         let database_url =
             env::var("DATABASE_URL").map_err(|_| "DATABASE_URL must be set (see .env.example)")?;
@@ -40,6 +45,17 @@ impl Config {
             .collect();
         let public_origin =
             non_empty("PUBLIC_ORIGIN").unwrap_or_else(|| "http://localhost:4334".to_string());
+        let front_dir = match env::var("FRONT_DIR") {
+            Ok(dir) if !dir.is_empty() => {
+                let dir = PathBuf::from(dir);
+                // Fail at start rather than answer every page with a 404.
+                if !dir.join("index.html").is_file() {
+                    return Err(format!("FRONT_DIR={} holds no index.html", dir.display()).into());
+                }
+                Some(dir)
+            }
+            _ => None,
+        };
         Ok(Self {
             database_url,
             port,
@@ -47,6 +63,7 @@ impl Config {
             public_origin,
             webauthn_rp_id: non_empty("WEBAUTHN_RP_ID"),
             gm_setup_token: non_empty("GM_SETUP_TOKEN"),
+            front_dir,
         })
     }
 }

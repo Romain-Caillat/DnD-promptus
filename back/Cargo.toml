@@ -13,7 +13,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-tower-http = { version = "0.6", features = ["cors", "trace"] }
+tower-http = { version = "0.6", features = ["cors", "fs", "set-header", "trace"] }
 # platform/sign-in-gm — passkeys, and the hashing of session tokens.
 webauthn-rs = { version = "0.5", features = ["conditional-ui"] }
 webauthn-rs-proto = "0.5"

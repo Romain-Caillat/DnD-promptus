@@ -55,7 +55,9 @@ session played.
 - **AI**: OpenRouter (LLM, image, video), behind swappable provider traits
 - **Music**: YouTube (chosen, not generated), synced player-side
 - **Package manager**: Bun (frontend + scripts), Cargo (Rust workspace)
-- **Deployment**: Docker Compose (Axum server + PostgreSQL) on a home server
+- **Deployment**: Docker Compose (Axum server + PostgreSQL) on a home server —
+  one image, the server also serves the built front (`FRONT_DIR`);
+  `docker-compose.prod.yml`, `docs/install.md`, `docs/backup.md`
 
 ## Project Structure
 
@@ -65,6 +67,7 @@ back/           # Rust/Axum backend (API + WebSocket), sqlx migrations
 shared/         # Shared Rust crate (rules engine, models)
 src-tauri/      # Tauri 2.x shell (desktop/mobile app)
 scripts/        # Dev helpers (test database creation)
+deploy/         # Production: install, backup, restore, continuous deploy (docs/install.md)
 docs/           # Reference docs (design brief, security, realtime…)
 archive/        # V1 zip, retired BMad artifacts, shipped tickets per epic
 ```

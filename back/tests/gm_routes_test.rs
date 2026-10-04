@@ -227,3 +227,25 @@ async fn another_gm_cannot_reach_what_a_gm_owns() {
     assert_eq!(r.status, StatusCode::NO_CONTENT);
     assert!(!invite_exists(&pool, &invite).await);
 }
+
+/// The `/api/{*rest}` catch-all (a JSON 404 for unknown API paths) must
+/// neither swallow a GM route nor answer an unknown path with 401, with
+/// or without a session; and it must not open GM routes to a visitor.
+#[tokio::test]
+async fn the_api_catch_all_neither_shadows_nor_opens_gm_routes() {
+    let pool = common::test_pool().await;
+    let app = common::app(pool.clone());
+    let (_, token) = common::signed_in_gm(&pool, "Romain").await;
+
+    for session in [None, Some(token.as_str())] {
+        for uri in ["/api/nope", "/api/me/extra", "/api/gm-invites/a/b"] {
+            let r = call(&app, session, "GET", uri, None).await;
+            assert_eq!(r.status, StatusCode::NOT_FOUND, "{uri} with {session:?}");
+            assert_eq!(r.body["error"]["code"], "ROUTE_NOT_FOUND", "{uri}");
+        }
+    }
+    let r = call(&app, None, "GET", "/api/me", None).await;
+    assert_eq!(r.status, StatusCode::UNAUTHORIZED);
+    let r = call(&app, Some(&token), "GET", "/api/me", None).await;
+    assert_eq!(r.status, StatusCode::OK);
+}
