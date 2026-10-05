@@ -18,6 +18,7 @@ use uuid::Uuid;
 
 use crate::auth::guard::{CurrentGm, OwnedByGm, owned_by};
 use crate::error::AppError;
+use crate::live::{self, Topic};
 
 /// A campaign row: its story, its world, and who owns it.
 #[derive(Debug, Clone)]
@@ -139,7 +140,8 @@ pub async fn lock(
     Ok(row.map(from_row))
 }
 
-/// Write the world of a campaign locked by [`lock`] in `tx`.
+/// Write the world of a campaign locked by [`lock`] in `tx`, and tell
+/// its live sockets when `tx` commits (`live::touch`).
 ///
 /// # Errors
 ///
@@ -154,11 +156,13 @@ pub async fn save_world(
         .bind(Json(world))
         .execute(&mut **tx)
         .await?;
+    live::touch(tx, id, &Topic::World).await?;
     Ok(())
 }
 
 /// Replace the story of a campaign locked by [`lock`] in `tx`. The world
-/// is kept: ids are stable, so what was found stays found.
+/// is kept: ids are stable, so what was found stays found. Its live
+/// sockets hear of it when `tx` commits (`live::touch`).
 ///
 /// # Errors
 ///
@@ -173,6 +177,7 @@ pub async fn save_story(
         .bind(Json(story))
         .execute(&mut **tx)
         .await?;
+    live::touch(tx, id, &Topic::Story).await?;
     Ok(())
 }
 

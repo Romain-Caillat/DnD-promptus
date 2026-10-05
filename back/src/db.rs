@@ -11,12 +11,15 @@ use sqlx::postgres::PgPoolOptions;
 /// database that went away turns into a quick 503 instead of a request
 /// hanging for the default 30 s.
 ///
+/// The live listener (`live::listener`) holds one connection for good:
+/// the eleventh, so requests keep ten.
+///
 /// # Errors
 ///
 /// Fails when the database cannot be reached at startup.
 pub async fn connect(database_url: &str) -> Result<PgPool, sqlx::Error> {
     PgPoolOptions::new()
-        .max_connections(10)
+        .max_connections(11)
         .acquire_timeout(Duration::from_secs(3))
         .after_connect(|conn, _meta| {
             Box::pin(async move {
