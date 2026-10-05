@@ -4,7 +4,7 @@ use axum::Router;
 use axum::http::header::CACHE_CONTROL;
 use axum::http::{HeaderValue, Method};
 use axum::middleware;
-use axum::routing::{any, delete, get, post, put};
+use axum::routing::{MethodRouter, any, delete, get, post, put};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::set_header::SetResponseHeader;
@@ -12,6 +12,7 @@ use tower_http::trace::TraceLayer;
 
 use crate::api;
 use crate::auth::guard::require_gm;
+use crate::auth::player::require_player;
 use crate::error::AppError;
 use crate::state::AppState;
 
@@ -51,7 +52,10 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         .route("/api/auth/sign-in", post(api::auth::sign_in))
         // Sprites: a description is drawn the same for GM, players and TV.
         .route("/api/sprites/render.png", get(api::sprites::render_png))
-        .route("/api/sprites/looks", get(api::sprites::looks))
+        .route("/api/sprites/looks", get(api::sprites::looks));
+    let public = invitation_routes()
+        .into_iter()
+        .fold(public, |r, (_, path, handler)| r.route(path, handler))
         // An unknown API path is a JSON 404, never the app shell that
         // `with_front` serves for every other path. A wildcard loses to
         // every exact route, so it never shadows a GM route, and it sits
@@ -84,14 +88,79 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/player-view",
             get(api::campaigns::player_view),
         )
+        .route(
+            "/api/campaigns/{id}/invite",
+            get(api::table::invite)
+                .post(api::table::mint_invite)
+                .delete(api::table::revoke_invite),
+        )
+        .route("/api/campaigns/{id}/players", get(api::table::seats))
+        .route(
+            "/api/campaigns/{id}/players/{player}",
+            delete(api::table::remove_player),
+        )
         .route("/api/campaigns/{id}/live", get(api::live::gm_socket))
         .route_layer(middleware::from_fn_with_state(state.clone(), require_gm));
 
+    // Every player route: `require_player` refuses a request without the
+    // device token of a player of the campaign in the path.
+    let player = player_routes()
+        .into_iter()
+        .fold(Router::new(), |r, (_, path, handler)| {
+            r.route(path, handler)
+        })
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            require_player,
+        ));
+
     public
         .merge(gm)
+        .merge(player)
         .with_state(state)
         .layer(cors)
         .layer(TraceLayer::new_for_http())
+}
+
+/// A route as the router mounts it: method (for the sweep), path,
+/// handler.
+type RouteSpec = (&'static str, &'static str, MethodRouter<AppState>);
+
+/// Every route a player or the shared screen calls once seated, mounted
+/// behind `require_player`. Each must build its answer with
+/// `campaigns::projection` (`MEMORY.md` §3): `tests/player_routes_test.rs`
+/// calls every route of this list and fails on any GM-only marker, so a
+/// route cannot be added here without being swept. Shared-screen (TV)
+/// routes belong here too.
+fn player_routes() -> Vec<RouteSpec> {
+    vec![
+        ("GET", "/api/play/{campaign}/me", get(api::play::me)),
+        ("GET", "/api/play/{campaign}/view", get(api::play::view)),
+        // A socket: it carries versions and presence, never data.
+        (
+            "GET",
+            "/api/play/{campaign}/live",
+            get(api::live::player_socket),
+        ),
+    ]
+}
+
+/// The routes an invitation code opens, before any seat is taken:
+/// public, and swept like the player routes.
+fn invitation_routes() -> Vec<RouteSpec> {
+    vec![
+        ("GET", "/api/join/{code}", get(api::play::invitation)),
+        ("POST", "/api/join/{code}", post(api::play::join)),
+    ]
+}
+
+/// Method and path of every player and invitation route, for the sweep.
+pub fn player_facing_routes() -> Vec<(&'static str, &'static str)> {
+    invitation_routes()
+        .into_iter()
+        .chain(player_routes())
+        .map(|(method, path, _)| (method, path))
+        .collect()
 }
 
 async fn api_not_found() -> AppError {

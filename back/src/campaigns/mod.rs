@@ -120,6 +120,20 @@ pub async fn find(db: impl PgExecutor<'_>, id: Uuid) -> Result<Option<CampaignRo
     Ok(row.map(from_row))
 }
 
+/// The display name of the GM who runs `row`, as players see it.
+///
+/// # Errors
+///
+/// Fails on a database error.
+pub async fn gm_name(db: impl PgExecutor<'_>, row: &CampaignRow) -> Result<String, AppError> {
+    Ok(
+        sqlx::query_scalar("SELECT display_name FROM gms WHERE id = $1")
+            .bind(row.gm_id)
+            .fetch_one(db)
+            .await?,
+    )
+}
+
 /// Lock the campaign row until `tx` ends and read it again **inside**
 /// the transaction: what a write builds on is what is committed now, not
 /// what was read before waiting for the lock.

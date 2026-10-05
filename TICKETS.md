@@ -1126,15 +1126,15 @@ client muet expulsé, client en retard → `resync`, écouteur coupé →
 `resync` puis reprise, un autre MJ refusé (404, 401 sans session) ; plus
 la reconnexion, le délai, le rattrapage et la sonde en Vitest avec une
 fausse socket, et la page qui se rattrape après une coupure. **Reste** :
-la route joueur, à brancher par `session/invite-and-join` (son
-extracteur produit un `Viewer::Player`, puis une ligne vers
-`live::socket::upgrade` ; d'ici là aucune socket joueur n'est acceptée) ;
-appeler `live::touch` avec `Topic::Character` dans les écritures de
+la route joueur `GET /api/play/{campaign}/live` est branchée par
+`session/invite-and-join` (derrière `require_player`), et la création
+d'un personnage touche `Topic::Character` ; reste à
+appeler `live::touch` dans les prochaines écritures de
 fiches ; puis l'essai réel : ouvrir `/campagnes/<id>/vue-joueurs` sur le
 téléphone, couper le Wi-Fi dix secondes pendant qu'une écriture passe
 depuis l'ordinateur, vérifier que la page revient seule à l'état exact.
 
-### `session/project-player-view` · todo
+### `session/project-player-view` · doing — reste à brancher carte, tour et journal quand ils existeront
 
 **Pourquoi** — C'est l'invariant qui protège les secrets du MJ.
 
@@ -1147,7 +1147,25 @@ qui parcourt chaque route joueur et TV.
 
 **Origine** — V1 `projection.ts` · `MEMORY.md` §3
 
-### `session/invite-and-join` · todo
+**État** — Toute réponse aux joueurs est construite dans
+`back/src/campaigns/projection.rs` (invitation, accueil du joueur, vue de
+la campagne). Les routes joueur sont déclarées dans une seule liste
+(`app::player_routes`, `app::invitation_routes`) que le routeur monte et
+que `back/tests/player_routes_test.rs` parcourt : campagne marquée
+`GMONLY<…>` sur chaque champ MJ, appel en joueur et en spectateur, aucune
+marque, aucun PV caché, aucun id d'indice ; un joueur ne voit pas la
+fiche d'un autre ; sans place à cette table (ou avec la session MJ) :
+401. Ajouter une route joueur sans qu'elle soit balayée est impossible.
+Vérifié en faisant fuiter exprès `/view` : le test casse. Des tests V1
+sont portés ceux qui ont déjà leur matière (secrets, résumé, ids
+d'indices, nom d'adversaire révélé ou non) ; la carte (cases et objets
+cachés) est couverte par `Map::project` dans `shared`, mais aucune route
+ne sert encore de carte, de tour ni de journal : leurs cas V1 (pions
+dans le brouillard, « Adversaire 1/2 », PV masqués dans le journal)
+arrivent avec ces routes, dans la même liste. Pas encore de route TV
+(`session/pair-shared-screen`).
+
+### `session/invite-and-join` · doing — reste l'essai réel sur le téléphone de Marc
 
 **Périmètre** — Lien d'invitation de la campagne avec message prêt à
 coller sur Discord ; le joueur ouvre le lien dans le navigateur de son
@@ -1158,6 +1176,31 @@ secret sur l'appareil, empreinte seule côté serveur.
 le navigateur, revient le lendemain et retrouve son personnage.
 
 **Origine** — Planche « Inviter » (moments 1 et 2)
+
+**État** — Migration `004_players.sql` (lien d'invitation, joueurs,
+personnages). Le MJ ouvre une campagne depuis son accueil (liste et
+import YAML minimal), page `/campagnes/:id` : le lien (un seul actif,
+valable 7 jours, « Nouveau lien » révoque l'ancien, « Fermer le lien »),
+le message Discord modifiable tiré de la vue joueurs (titre, accroche),
+« Copier le lien et le message », et la table qui se remplit (relue
+toutes les 5 s, en ligne / vu le…, retirer quelqu'un). Le serveur ne
+garde que l'empreinte du code : l'appareil qui l'a créé le retient pour
+le recopier, ailleurs il faut un nouveau lien (ceux qui ont rejoint
+gardent leur place). Côté joueur, `/rejoindre/:code` : pseudo, puis
+« Créer mon personnage » (place + brouillon de personnage) ou « Regarder
+seulement » (spectateur) ; un navigateur qui a déjà sa place voit
+« Reprendre ». Le jeton reste dans un cookie HttpOnly limité aux routes
+de cette campagne, 400 jours ; `/partie/:id` montre la campagne et l'état
+du personnage. Testé : rejoindre, revenir le lendemain avec le jeton,
+mauvais jeton, jeton d'une autre campagne, lien régénéré / fermé /
+expiré, spectateur, pseudo pris, aucune route MJ avec un jeton joueur.
+Le joueur a sa socket en direct (`/api/play/{campaign}/live`, testée de
+bout en bout : il reçoit `changed`, un joueur d'une autre table est
+refusé) ; créer ou retirer un personnage touche `Topic::Character`.
+**Reste** : que Romain l'essaie pour de vrai (téléphone de Marc, en
+HTTPS) ; « reprendre » sur un autre appareil (lien de reprise donné par
+le MJ) et reprendre un personnage d'une autre campagne (Hugo et Sef) ne
+sont pas faits.
 
 ### `session/validate-characters` · todo
 

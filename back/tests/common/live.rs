@@ -84,7 +84,37 @@ pub async fn open(
         .map(|(ws, _)| ws)
 }
 
+/// Open a player's live socket of `campaign` with the device `token`.
+pub async fn open_player(
+    addr: SocketAddr,
+    token: Option<&str>,
+    campaign: Uuid,
+) -> Result<Socket, tungstenite::Error> {
+    let mut req = format!("ws://{addr}/api/play/{campaign}/live")
+        .into_client_request()
+        .unwrap();
+    if let Some(token) = token {
+        req.headers_mut().insert(
+            header::COOKIE,
+            format!("promptus_player={token}").parse().unwrap(),
+        );
+    }
+    tokio_tungstenite::connect_async(req)
+        .await
+        .map(|(ws, _)| ws)
+}
+
 impl Table {
+    /// Seat `nickname` at the table; returns the player id and token.
+    pub async fn seat(&self, nickname: &str) -> (Uuid, String) {
+        let campaign = self.campaign.to_string();
+        let code = super::invite_code(&self.router, &self.token, &campaign).await;
+        let r = super::join(&self.router, &code, nickname, "player").await;
+        assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
+        let id = Uuid::parse_str(r.body["data"]["me"]["id"].as_str().unwrap()).unwrap();
+        (id, r.player_token().unwrap())
+    }
+
     pub async fn connect(&self) -> Socket {
         open(self.addr, Some(&self.token), self.campaign)
             .await

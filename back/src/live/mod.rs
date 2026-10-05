@@ -132,9 +132,8 @@ pub async fn versions(
 /// Who opens a live socket. Each kind of caller has its own route and
 /// extractor; they all end in [`socket::upgrade`] with one of these.
 ///
-/// The player route belongs to `session/invite-and-join`: its player
-/// extractor yields a `Viewer::Player`, and that is the only line it
-/// needs. Until it exists, no route accepts a player at all.
+/// The GM's is `GET /api/campaigns/{id}/live`; a player's is
+/// `GET /api/play/{campaign}/live`, behind `require_player`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Viewer {
     /// The GM who owns the campaign (checked by the route).

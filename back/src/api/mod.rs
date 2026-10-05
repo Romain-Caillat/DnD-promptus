@@ -4,4 +4,6 @@ pub mod campaigns;
 pub mod gm;
 pub mod health;
 pub mod live;
+pub mod play;
 pub mod sprites;
+pub mod table;

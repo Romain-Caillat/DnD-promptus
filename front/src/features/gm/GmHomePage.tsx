@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { fetchMe, signOut, type Gm } from '@/lib/auth'
+import { CampaignsPanel } from './CampaignsPanel'
 import { InvitesPanel } from './InvitesPanel'
 
 type MeState = { kind: 'loading' } | { kind: 'signed-out' } | { kind: 'error' } | { kind: 'ready'; gm: Gm }
 
 /**
  * `/` — the GM's home. Without a session it sends to `/connexion`;
- * campaigns will land here (`campaign/list-campaigns`).
+ * it lists the campaigns, each opening its table.
  */
 export function GmHomePage() {
   const { t } = useTranslation()
@@ -56,6 +57,7 @@ export function GmHomePage() {
               {t('gm.home.signOut')}
             </Button>
           </header>
+          <CampaignsPanel />
           <InvitesPanel />
         </>
       )}

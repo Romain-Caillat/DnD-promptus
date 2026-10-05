@@ -7,6 +7,7 @@
 #![allow(dead_code)]
 
 pub mod live;
+pub mod marked;
 
 use std::str::FromStr;
 
@@ -154,6 +155,13 @@ impl Reply {
         let value = cookie.strip_prefix("promptus_gm=")?.split(';').next()?;
         (!value.is_empty()).then(|| value.to_string())
     }
+
+    /// The player device token the response stored, if it set one.
+    pub fn player_token(&self) -> Option<String> {
+        let cookie = self.set_cookie.as_deref()?;
+        let value = cookie.strip_prefix("promptus_player=")?.split(';').next()?;
+        (!value.is_empty()).then(|| value.to_string())
+    }
 }
 
 /// Send one request; `session` is the GM session cookie to carry.
@@ -164,9 +172,33 @@ pub async fn call(
     uri: &str,
     body: Option<Value>,
 ) -> Reply {
+    let cookie = session.map(|token| format!("promptus_gm={token}"));
+    send(app, cookie.as_deref(), method, uri, body).await
+}
+
+/// Send one request as the device holding player `token`.
+pub async fn call_as_player(
+    app: &Router,
+    token: Option<&str>,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> Reply {
+    let cookie = token.map(|token| format!("promptus_player={token}"));
+    send(app, cookie.as_deref(), method, uri, body).await
+}
+
+/// Send one request with `cookie` as its whole `Cookie` header.
+pub async fn send(
+    app: &Router,
+    cookie: Option<&str>,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> Reply {
     let mut req = Request::builder().method(method).uri(uri);
-    if let Some(token) = session {
-        req = req.header(header::COOKIE, format!("promptus_gm={token}"));
+    if let Some(cookie) = cookie {
+        req = req.header(header::COOKIE, cookie);
     }
     let req = match body {
         Some(b) => req
@@ -189,6 +221,48 @@ pub async fn call(
         body: serde_json::from_slice(&bytes).unwrap_or(Value::Null),
         set_cookie,
     }
+}
+
+/// A campaign of the GM behind `session`, imported from `yaml`. Returns
+/// its id.
+pub async fn imported_campaign(app: &Router, session: &str, yaml: &str) -> String {
+    let r = call(
+        app,
+        Some(session),
+        "POST",
+        "/api/campaigns/import",
+        Some(serde_json::json!({ "yaml": yaml })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
+    r.body["data"]["id"].as_str().unwrap().to_string()
+}
+
+/// A fresh invitation code for `campaign`.
+pub async fn invite_code(app: &Router, session: &str, campaign: &str) -> String {
+    let r = call(
+        app,
+        Some(session),
+        "POST",
+        &format!("/api/campaigns/{campaign}/invite"),
+        None,
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
+    r.body["data"]["code"].as_str().unwrap().to_string()
+}
+
+/// Join with `code` as `nickname` in `role`; returns the reply, whose
+/// `player_token()` is the device token.
+pub async fn join(app: &Router, code: &str, nickname: &str, role: &str) -> Reply {
+    call(
+        app,
+        None,
+        "POST",
+        &format!("/api/join/{code}"),
+        Some(serde_json::json!({ "nickname": nickname, "role": role })),
+    )
+    .await
 }
 
 /// A GM account with an open session, created straight in the database

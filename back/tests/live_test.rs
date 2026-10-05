@@ -7,7 +7,7 @@ mod common;
 use std::time::Duration;
 
 use axum::http::StatusCode;
-use common::live::{FIXTURE, WAIT, next_of, open, ready, table};
+use common::live::{FIXTURE, WAIT, next_of, open, open_player, ready, table};
 use futures_util::SinkExt;
 use promptus_back::campaigns;
 use promptus_back::error::AppError;
@@ -173,6 +173,62 @@ async fn a_lagging_client_is_told_to_resync() {
     let msg = next_of(&mut ws, "resync").await;
     // The versions come from the database, not from the lost signals.
     assert_eq!(msg["versions"], json!({ "world": 1 }));
+}
+
+/// session/invite-and-join wires the player socket: a seated player
+/// hears what changed and shows up in the presence; a seat at another
+/// table, or none, opens nothing.
+#[tokio::test]
+async fn a_seated_player_follows_their_campaign_and_only_it() {
+    let t = table(LiveConfig::default()).await;
+    let (marc, token) = t.seat("Marc").await;
+    let mut phone = open_player(t.addr, Some(&token), t.campaign)
+        .await
+        .expect("a seated player opens the socket of their campaign");
+    // Joining wrote his character: its topic already has a version.
+    let versions = ready(&mut phone).await;
+    assert_eq!(versions.as_object().unwrap().len(), 1, "{versions}");
+    assert!(
+        versions
+            .as_object()
+            .unwrap()
+            .keys()
+            .all(|k| k.starts_with("character:"))
+    );
+    let msg = next_of(&mut phone, "presence").await;
+    assert_eq!(msg["players"], json!([marc.to_string()]));
+
+    t.bump().await;
+    let msg = next_of(&mut phone, "changed").await;
+    assert_eq!(
+        msg,
+        json!({ "type": "changed", "topic": "world", "version": 1 })
+    );
+
+    // A seat at another table of the same GM.
+    let other = campaigns::create(
+        &t.pool,
+        &t.gm,
+        &promptus_shared::story::from_yaml(FIXTURE).unwrap(),
+    )
+    .await
+    .unwrap()
+    .id;
+    for (token, campaign) in [
+        (Some(token.as_str()), other),
+        (None, t.campaign),
+        (Some("made-up"), t.campaign),
+        // The GM's session is not a seat.
+        (Some(t.token.as_str()), t.campaign),
+    ] {
+        match open_player(t.addr, token, campaign).await {
+            Err(tungstenite::Error::Http(res)) => {
+                assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+            }
+            other => panic!("{token:?} on {campaign}: {:?}", other.map(|_| "open")),
+        }
+    }
+    assert!(t.hub.presence(other).players.is_empty());
 }
 
 #[tokio::test]
