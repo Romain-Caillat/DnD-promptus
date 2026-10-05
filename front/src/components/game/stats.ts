@@ -1,8 +1,7 @@
 /**
  * The six stats, their colour token and their shape (MEMORY.md §2):
  * colour is never the only cue. Shapes are drawn as small pixel grids,
- * with the same geometry as the canvas `Gemme` board; the animated gem
- * itself belongs to `ui/build-game-components`.
+ * with the same geometry as the canvas `Gemme` board (`StatGem`).
  */
 export const STATS = ['hp', 'atk', 'ac', 'mag', 'move', 'init'] as const
 export type Stat = (typeof STATS)[number]
@@ -52,4 +51,9 @@ const INSIDE: Record<Stat, (u: number, v: number) => boolean> = {
 export function shapeMask(stat: Stat, n: number): boolean[] {
   const inside = INSIDE[stat]
   return Array.from({ length: n * n }, (_, i) => inside(((i % n) + 0.5) / n, (Math.floor(i / n) + 0.5) / n))
+}
+
+/** The stat colour as a CSS value: the token itself, never a copied hex. */
+export function statColor(stat: Stat): string {
+  return `var(--color-stat-${stat})`
 }

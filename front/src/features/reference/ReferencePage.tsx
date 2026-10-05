@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion'
+import { GameComponentsSection } from './GameComponentsSection'
 import { RollingDie } from './RollingDie'
-import { STAT_BG, STAT_TEXT, STATS, shapeMask, type Stat } from './stats'
+import { RARITIES, RARITY_MATERIAL, type Rarity } from '@/components/game/rarity'
+import { STAT_BG, STAT_TEXT, STATS, shapeMask, type Stat } from '@/components/game/stats'
 
 /**
  * The « Fondations » board of the design canvas, rebuilt from the real
@@ -33,6 +35,7 @@ export function ReferencePage() {
         <StatsSection />
         <MaterialsSection />
         <MotionSection />
+        <GameComponentsSection />
       </div>
     </main>
   )
@@ -241,22 +244,11 @@ function ButtonCardSample({
 
 const ATTACK_GEM = { stat: 'atk', value: '+5' } as const
 
-const TIERS = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'divine'] as const
-
-const MATERIAL: Record<(typeof TIERS)[number], string> = {
-  common: 'material-common',
-  uncommon: 'material-uncommon',
-  rare: 'material-rare',
-  epic: 'material-epic',
-  legendary: 'material-legendary',
-  divine: 'material-divine',
-}
-
-function RarityCard({ tier, rank }: { tier: (typeof TIERS)[number]; rank: number }) {
+function RarityCard({ tier, rank }: { tier: Rarity; rank: number }) {
   const { t } = useTranslation()
   return (
     <figure className="flex flex-col items-center gap-3">
-      <div className={cn('relative aspect-[5/7] w-full max-w-30 rounded-[9%/6.4%]', MATERIAL[tier])}>
+      <div className={cn('relative aspect-[5/7] w-full max-w-30 rounded-[9%/6.4%]', RARITY_MATERIAL[tier])}>
         <div className="card-frame absolute inset-[5.5%] flex flex-col items-center justify-between rounded-[6%/4.2%] [background:var(--frame-bg)] px-1 py-3 text-center">
           <span className="type-title text-[13px] leading-tight">{t(`reference.materials.tiers.${tier}.name`)}</span>
           <span
@@ -301,7 +293,7 @@ function MaterialsSection() {
       </Slab>
       <Slab title={t('reference.materials.rarity')} note={t('reference.materials.rarityNote')}>
         <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
-          {TIERS.map((tier, i) => (
+          {RARITIES.map((tier, i) => (
             <RarityCard key={tier} tier={tier} rank={i + 1} />
           ))}
         </div>
