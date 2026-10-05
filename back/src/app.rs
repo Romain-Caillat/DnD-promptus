@@ -96,6 +96,7 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/players/{player}",
             delete(api::table::remove_player),
         )
+        .route("/api/campaigns/{id}/live", get(api::live::gm_socket))
         .route_layer(middleware::from_fn_with_state(state.clone(), require_gm));
 
     // Every player route: `require_player` refuses a request without the
@@ -132,6 +133,12 @@ fn player_routes() -> Vec<RouteSpec> {
     vec![
         ("GET", "/api/play/{campaign}/me", get(api::play::me)),
         ("GET", "/api/play/{campaign}/view", get(api::play::view)),
+        // A socket: it carries versions and presence, never data.
+        (
+            "GET",
+            "/api/play/{campaign}/live",
+            get(api::live::player_socket),
+        ),
     ]
 }
 

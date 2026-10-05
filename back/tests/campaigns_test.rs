@@ -138,6 +138,7 @@ async fn another_gm_gets_404_on_every_campaign_route() {
             ("GET", format!("/api/campaigns/{target}"), None),
             ("GET", format!("/api/campaigns/{target}/export"), None),
             ("GET", format!("/api/campaigns/{target}/player-view"), None),
+            ("GET", format!("/api/campaigns/{target}/live"), None),
             (
                 "PUT",
                 format!("/api/campaigns/{target}/import"),

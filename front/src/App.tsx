@@ -3,6 +3,7 @@ import { RegisterPage } from '@/features/auth/RegisterPage'
 import { SignInPage } from '@/features/auth/SignInPage'
 import { GmHomePage } from '@/features/gm/GmHomePage'
 import { GmTablePage } from '@/features/gm/GmTablePage'
+import { PlayerViewPage } from '@/features/gm/PlayerViewPage'
 import { HealthPage } from '@/features/health/HealthPage'
 import { JoinPage } from '@/features/play/JoinPage'
 import { PlayerHomePage } from '@/features/play/PlayerHomePage'
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/rejoindre/:code" element={<JoinPage />} />
         <Route path="/partie/:campaignId" element={<PlayerHomePage />} />
         <Route path="/campagnes/:campaignId" element={<GmTablePage />} />
+        <Route path="/campagnes/:campaignId/vue-joueurs" element={<PlayerViewPage />} />
         <Route path="*" element={<GmHomePage />} />
       </Routes>
     </BrowserRouter>

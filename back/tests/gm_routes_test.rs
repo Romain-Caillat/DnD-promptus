@@ -37,6 +37,7 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/campaigns/{campaign}/players"),
     ("DELETE", "/api/campaigns/{campaign}/players/{player}"),
     ("DELETE", "/api/campaigns/{campaign}/invite"),
+    ("GET", "/api/campaigns/{campaign}/live"),
     // Last: it ends the session the control sweep uses.
     ("POST", "/api/auth/sign-out"),
 ];
@@ -203,6 +204,12 @@ async fn every_gm_route_refuses_without_a_valid_session() {
     for (method, path) in GM_ROUTES {
         let uri = route_uri(path, &ids);
         let r = call(&app, Some(&token), method, &uri, body_for(method, path)).await;
+        if path.ends_with("/live") {
+            // Past the guard and the ownership check, a plain request
+            // (not a WebSocket upgrade) is refused by the route itself.
+            assert_eq!(r.body["error"]["code"], "WEBSOCKET_REQUIRED", "{uri}");
+            continue;
+        }
         assert!(
             r.status.is_success(),
             "{method} {uri} with the owner's session: {} {}",

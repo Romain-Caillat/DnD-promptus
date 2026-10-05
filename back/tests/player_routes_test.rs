@@ -104,6 +104,14 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
                 continue;
             }
             let r = call_as_player(&app, Some(token), method, &uri, body.clone()).await;
+            // The live socket carries versions and presence only
+            // (`live_test.rs`); over plain HTTP, getting past the guard
+            // to the upgrade check is what this sweep can see.
+            if path.ends_with("/live") {
+                assert_eq!(r.status, StatusCode::BAD_REQUEST, "{uri} as {who}");
+                assert_eq!(r.body["error"]["code"], "WEBSOCKET_REQUIRED");
+                continue;
+            }
             assert!(
                 r.status.is_success(),
                 "{method} {uri} as {who}: {} {}",

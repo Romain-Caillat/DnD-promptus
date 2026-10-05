@@ -21,6 +21,7 @@ use uuid::Uuid;
 
 use crate::auth::tokens::{hash_token, random_token};
 use crate::error::AppError;
+use crate::live::{self, Topic};
 
 /// How long an invitation link opens the door. Players who joined keep
 /// their place after it expires.
@@ -326,12 +327,15 @@ async fn create_character(
     tx: &mut Transaction<'_, Postgres>,
     player: &Player,
 ) -> Result<(), AppError> {
-    sqlx::query("INSERT INTO characters (campaign_id, player_id, sheet) VALUES ($1, $2, $3)")
-        .bind(player.campaign_id)
-        .bind(player.id)
-        .bind(Json(CharacterSheet::default()))
-        .execute(&mut **tx)
-        .await?;
+    let id: Uuid = sqlx::query_scalar(
+        "INSERT INTO characters (campaign_id, player_id, sheet) VALUES ($1, $2, $3) RETURNING id",
+    )
+    .bind(player.campaign_id)
+    .bind(player.id)
+    .bind(Json(CharacterSheet::default()))
+    .fetch_one(&mut **tx)
+    .await?;
+    live::touch(tx, player.campaign_id, &Topic::Character(id)).await?;
     Ok(())
 }
 
@@ -456,14 +460,23 @@ pub async fn seats(pool: &PgPool, campaign_id: Uuid) -> Result<Vec<Seat>, AppErr
 ///
 /// 404 `NOT_FOUND` when no such player sits at this table.
 pub async fn remove(pool: &PgPool, campaign_id: Uuid, player_id: Uuid) -> Result<(), AppError> {
-    let done = sqlx::query("DELETE FROM players WHERE id = $1 AND campaign_id = $2")
-        .bind(player_id)
-        .bind(campaign_id)
-        .execute(pool)
-        .await?;
-    if done.rows_affected() == 0 {
+    let mut tx = pool.begin().await?;
+    let character: Option<Option<Uuid>> = sqlx::query_scalar(
+        "DELETE FROM players p WHERE p.id = $1 AND p.campaign_id = $2
+         RETURNING (SELECT c.id FROM characters c WHERE c.player_id = p.id)",
+    )
+    .bind(player_id)
+    .bind(campaign_id)
+    .fetch_optional(&mut *tx)
+    .await?;
+    let Some(character) = character else {
         return Err(AppError::NotFound("NOT_FOUND"));
+    };
+    // Whoever displays that character learns it is gone.
+    if let Some(id) = character {
+        live::touch(&mut tx, campaign_id, &Topic::Character(id)).await?;
     }
+    tx.commit().await?;
     Ok(())
 }
 

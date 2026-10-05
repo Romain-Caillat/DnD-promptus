@@ -333,7 +333,7 @@ passent dans PCT 105. **Reste** : un coup d'œil de Romain sur
 `/reference` dans un navigateur, animations réduites activées et
 désactivées — la page n'a été vérifiée que par le build et les tests.
 
-### `ui/build-game-components` · todo
+### `ui/build-game-components` · doing — reste l’essai sur un vrai téléphone
 
 **Pourquoi** — Le jeu tient dans une dizaine de pièces réutilisées
 partout ; les refaire écran par écran donnerait dix variantes.
@@ -355,6 +355,33 @@ couleur).
 **Origine** — Planches « Jauges et boutons », « Rareté des
 compétences », « Objets et butin », « États des personnages »,
 « Notifications »
+
+**État** — Douze composants dans `front/src/components/game/`, chacun
+fonction de ses props, sans appel réseau, styles portés des planches
+dans `game.css` (classes `gk-`, couleurs lues dans les tokens) :
+`StatGem` (grille 7/9/11 cases, vague de lumière propre à chaque stat),
+`Hearts`, `CellBar`, `ThreatClock`, `CardButton` (ivoire / noir, bascule
+à l’appui, reflet, enfoncé, désactivé), `ArcadeCluster`, `GameCard`
+(action, indice, scène ; six raretés ; en main, choisie, injouable, de
+dos), `ItemSlot` (les dix sprites 12 × 12 du canevas, cadre par rareté,
+quantité, case choisie), `ConditionBadge` (huit icônes, aide / gêne,
+tours, tampon), `StatusBanner` (sept tons), `Toast` + `ToastStack`
+(trois tons, glisser à droite ou bouton « Ranger »), `BottomPanel`
+(tiroir Base UI qui monte du bas, se ferme en glissant ou par Échap).
+Tout est montré avec ses états dans `/reference` (section à part,
+`GameComponentsSection.tsx`, bouton « Rejouer les effets »).
+Choix : les cœurs suivent le composant du canevas et `MEMORY.md` —
+2 PV par cœur, dix cœurs au plus, au-delà de 20 PV chaque cœur vaut
+max / 10 (la note « au-delà de 40 PV » de la planche des pistes est
+dépassée) ; `count` permet moins de cœurs quand la place manque. Les
+raretés reprennent les noms de `Rarity` (`shared/src/story/model.rs`),
+le badge prend nom et genre (`boon`/`bane`) de `ConditionDef`. Coups,
+cases dépensées, tampons et toasts jouent une fois (remonter le
+composant pour rejouer) ; sous mouvement réduit, cœurs et cases montrent
+directement l’état final. Tests : cœurs au-delà de 20 PV, cases
+dépensées, rareté lue sans couleur (losanges + nom), un essai par
+composant. Reste pour Romain : regarder `/reference` sur son téléphone,
+en mouvement réduit aussi, et dire si les rendus collent aux planches.
 
 ### `ui/roll-faceted-dice` · todo
 
@@ -1053,7 +1080,7 @@ Le direct : comment une table se réunit et ce qui circule entre les
 écrans. Invariants : projection joueur unique, temps réel sans données
 de jeu, jetons hachés (`MEMORY.md` §3).
 
-### `session/stream-live-changes` · todo
+### `session/stream-live-changes` · doing — reste l'essai sur un vrai téléphone, et la route joueur
 
 **Périmètre** — WebSocket Axum par session : « ceci a changé » (Postgres
 NOTIFY relayé) et présence ; les clients relisent par l'API ;
@@ -1063,6 +1090,49 @@ reconnexion qui rattrape l'état.
 exact de la table sans recharger la page.
 
 **Origine** — V1 `realtime/`, `notify.ts`
+
+**État** — Le canal est dans le serveur Axum (plus de serveur Node à
+part). `GET /api/campaigns/{id}/live` ouvre la socket du MJ, derrière
+`require_gm` (une campagne d'un autre MJ : 404 avant toute ouverture).
+Chaque écriture suivie incrémente un compteur par sujet (`world`,
+`story`, prêt pour `character:<id>`) dans `live_versions` (migration
+`005`) et émet `pg_notify` **dans sa propre transaction** : rien ne part
+si elle est annulée. `campaigns::save_world` et `save_story` le font,
+donc `update_world` et la réimportation YAML. Une seule tâche du serveur
+écoute Postgres (une connexion du pool, passé à 11) et relaie aux
+sockets de la campagne par un canal `broadcast`. La socket ne transporte
+que `{sujet, version}` et la présence (MJ connecté, identifiants des
+joueurs), jamais de données : le client relit par l'API, donc par la
+projection. Rattrapage : chaque (re)connexion commence par les versions
+courantes de tous les sujets, et le client relit ceux qui ont bougé ; une
+socket en retard sur son canal, ou toutes après une coupure de Postgres,
+reçoivent `resync` avec les versions. Battement : le serveur pingue
+toutes les 15 s et lâche un client muet depuis 45 s (sa présence
+s'arrête) ; le client pingue toutes les 10 s, abandonne une socket muette
+depuis 25 s, se reconnecte avec un délai doublé (0,5 s → 8 s), tout de
+suite quand l'appareil revient en ligne ou la page redevient visible
+(avec une sonde de 3 s si la socket a l'air encore ouverte). Côté
+interface : `useLiveChanges(campaignId, onChange)`, l'indicateur
+« Connexion… / En direct / Reconnexion… », et une première page qui s'en
+sert, `/campagnes/:id/vue-joueurs` (ce que voient les joueurs, tenu à
+jour en direct, avec le nombre de joueurs connectés). Le proxy Vite
+transmet déjà les WebSockets (`ws: true`) et l'image de production les
+sert à la même origine. Tests : 9 tests Rust de bout en bout (vrai
+serveur TCP, vrais clients WebSocket) — deux clients reçoivent chaque
+écriture avec une version croissante, une écriture annulée ne notifie
+rien, un client coupé pendant trois écritures retrouve l'état exact, la
+réimportation est son propre sujet, présence à l'arrivée et au départ,
+client muet expulsé, client en retard → `resync`, écouteur coupé →
+`resync` puis reprise, un autre MJ refusé (404, 401 sans session) ; plus
+la reconnexion, le délai, le rattrapage et la sonde en Vitest avec une
+fausse socket, et la page qui se rattrape après une coupure. **Reste** :
+la route joueur `GET /api/play/{campaign}/live` est branchée par
+`session/invite-and-join` (derrière `require_player`), et la création
+d'un personnage touche `Topic::Character` ; reste à
+appeler `live::touch` dans les prochaines écritures de
+fiches ; puis l'essai réel : ouvrir `/campagnes/<id>/vue-joueurs` sur le
+téléphone, couper le Wi-Fi dix secondes pendant qu'une écriture passe
+depuis l'ordinateur, vérifier que la page revient seule à l'état exact.
 
 ### `session/project-player-view` · doing — reste à brancher carte, tour et journal quand ils existeront
 
@@ -1124,6 +1194,9 @@ de cette campagne, 400 jours ; `/partie/:id` montre la campagne et l'état
 du personnage. Testé : rejoindre, revenir le lendemain avec le jeton,
 mauvais jeton, jeton d'une autre campagne, lien régénéré / fermé /
 expiré, spectateur, pseudo pris, aucune route MJ avec un jeton joueur.
+Le joueur a sa socket en direct (`/api/play/{campaign}/live`, testée de
+bout en bout : il reçoit `changed`, un joueur d'une autre table est
+refusé) ; créer ou retirer un personnage touche `Topic::Character`.
 **Reste** : que Romain l'essaie pour de vrai (téléphone de Marc, en
 HTTPS) ; « reprendre » sur un autre appareil (lien de reprise donné par
 le MJ) et reprendre un personnage d'une autre campagne (Hugo et Sef) ne
