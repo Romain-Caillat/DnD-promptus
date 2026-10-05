@@ -14,3 +14,6 @@ thiserror = "2"
 # a seeded stream that stays stable across rand releases.
 rand = "0.9"
 rand_chacha = "0.9"
+# characters/render-layered-sprite — sprites are encoded to PNG here, so
+# every caller gets the same bytes.
+png = "0.18"

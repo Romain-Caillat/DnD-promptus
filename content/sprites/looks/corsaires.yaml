@@ -1,0 +1,125 @@
+# Corsaires de la Couronne — l'allure des six personnages types et de leurs
+# adversaires (characters/render-layered-sprite).
+#
+# Une allure est une description, pas une image : pièces du pack
+# marins-1718 (content/sprites/marins-1718/pack.yaml) et couleurs. Les
+# identifiants sont ceux de la campagne (content/campaigns/corsaires) :
+# emplacements du groupe (`party`), PNJ et adversaires (`foes`). Les
+# personnages du groupe regardent à droite, les adversaires à gauche.
+# Ce sont des allures de départ : chaque joueur refait la sienne dans le
+# créateur (characters/build-character-creator).
+format: 1
+world: corsaires
+campaign: corsaires-de-la-couronne
+
+party:
+  # Lame du bord : tricorne galonné, gilet rouge, sabre au clair.
+  - id: pj_bretteur
+    look:
+      pack: marins-1718
+      body: svelte
+      skin: hale
+      hair: { style: catogan, colour: brun }
+      beard: bouc
+      headwear: { piece: tricorne, dye: noir, accent: or }
+      outfit: { piece: gilet, dye: rouge, accent: noir }
+      accessories: [{ piece: echarpe, dye: noir }]
+      weapon: sabre
+  # Artilleur : bras nus, bandana, bandoulière de poudre, pistolet.
+  - id: pj_canonnier
+    look:
+      pack: marins-1718
+      body: robuste
+      skin: brun
+      hair: { style: rase, colour: noir }
+      beard: courte
+      headwear: { piece: bandana, dye: rouge, accent: blanc }
+      outfit: { piece: debardeur, dye: gris, accent: brun }
+      accessories: [{ piece: sacoche, dye: noir }]
+      weapon: pistolet
+  # Lit les vents et les courants : redingote bleue, compas à pointes.
+  - id: pj_navigateur
+    look:
+      pack: marins-1718
+      body: svelte
+      skin: clair
+      hair: { style: longue, colour: blond }
+      headwear: { piece: chapeau, dye: bleu, accent: or }
+      outfit: { piece: redingote, dye: bleu-roi, accent: blanc }
+      weapon: compas
+  # Chirurgien de bord : tablier de cuir, sacoche de soins, scalpel.
+  - id: pj_chirurgien
+    look:
+      pack: marins-1718
+      body: svelte
+      skin: pale
+      hair: { style: court, colour: gris }
+      beard: moustache
+      outfit: { piece: tablier, dye: brun, accent: noir }
+      accessories: [{ piece: sacoche, dye: blanc }]
+      weapon: coutelas
+  # Tient les comptes et la parole : redingote verte, registre à la main.
+  - id: pj_quartier_maitre
+    look:
+      pack: marins-1718
+      body: robuste
+      skin: hale
+      hair: { style: court, colour: noir }
+      beard: longue
+      headwear: { piece: chapeau, dye: noir, accent: rouge }
+      outfit: { piece: redingote, dye: vert, accent: ocre }
+      weapon: registre
+  # Des yeux partout : foulard, tresses, grappin dans le dos, longue-vue.
+  - id: pj_vigie
+    look:
+      pack: marins-1718
+      body: svelte
+      skin: ebene
+      hair: { style: tresses, colour: noir }
+      headwear: { piece: foulard, dye: ocre, accent: rouge }
+      outfit: { piece: chemise, dye: vert, accent: brun }
+      accessories: [grappin]
+      weapon: longue-vue
+
+foes:
+  # Colosse à la cicatrice rouge, gilet de cuir sur torse nu tatoué.
+  - id: gueule-rouge
+    look:
+      pack: marins-1718
+      body: robuste
+      skin: hale
+      hair: { style: catogan, colour: noir }
+      outfit: { piece: gilet-ouvert, dye: brun, accent: rouge }
+      accessories: [cicatrice]
+      weapon: sabre
+  # Marin débraillé au bonnet rouge, ceinture de corde, coutelas.
+  - id: marin-de-gueule-rouge
+    look:
+      pack: marins-1718
+      body: svelte
+      skin: hale
+      hair: { style: court, colour: brun }
+      beard: courte
+      headwear: { piece: bonnet, dye: rouge, accent: blanc }
+      outfit: { piece: chemise, dye: blanc, accent: brun }
+      weapon: coutelas
+  # Fañch, le matelot espion : boucles noires, chemise ouverte, couteau.
+  - id: pnj_fanch
+    look:
+      pack: marins-1718
+      body: svelte
+      skin: clair
+      hair: { style: longue, colour: noir }
+      outfit: { piece: chemise, dye: blanc, accent: noir }
+      weapon: coutelas
+  # Garde royal : uniforme blanc à parements bleus, plastron, tricorne.
+  - id: adv_garde_royal
+    look:
+      pack: marins-1718
+      body: svelte
+      skin: clair
+      hair: { style: catogan, colour: blanc }
+      headwear: { piece: tricorne, dye: noir, accent: blanc }
+      outfit: { piece: uniforme, dye: blanc, accent: bleu-roi }
+      armour: { piece: plastron, dye: acier, accent: gris }
+      weapon: epee

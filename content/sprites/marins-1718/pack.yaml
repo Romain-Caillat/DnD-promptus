@@ -1,0 +1,1250 @@
+# Marins et corsaires de 1718 — pack de pièces de personnage (characters/render-layered-sprite).
+#
+# Généré une fois depuis les formes des prototypes (docs/design/sprite-prototype.py,
+# docs/design/avatar.py) : même grille 20 x 26, profil tourné vers la droite.
+# Ce fichier est maintenant la source : on l'édite à la main.
+#
+# Format (shared/src/sprite/pack.rs) : chaque pièce est une pile de calques,
+# chaque calque une petite grille de caractères posée en `at` et rangée à une
+# profondeur (`depth`). La légende traduit un caractère en couleur : une
+# couleur fixe du pack, ou un emplacement que la description recolore —
+# `skin` (peau), `hair` (cheveux et barbe), `dye` et `accent` (couleurs de la
+# pièce, palette `cloth`). Une pièce qui se pose sur le corps a une variante
+# par corps (`per_body`). Seule la direction `east` (profil droit) existe ;
+# `west` est son miroir, `north` et `south` viendront avec
+# characters/walk-in-four-directions.
+format: 1
+id: marins-1718
+name: Marins et corsaires de 1718
+grid: [20, 26]
+outline: "#1B1426"
+colours:
+  metal: "#C9CFD9"
+  wood: "#8A5A33"
+  leather: "#7A5233"
+  gold: "#F2C14E"
+  boot: "#3B2A20"
+  eye: "#1B1426"
+  eyew: "#FFFFFF"
+  linen: "#E6E0D0"
+  brass: "#C9A043"
+  gun: "#3A3F48"
+  visor: "#6FD3FF"
+  glow: "#F2D33A"
+  bone: "#EDE3C8"
+  chitin: "#2A5552"
+  amber: "#F2A03A"
+  scar: "#D0303A"
+  rope: "#C8A86A"
+  tattoo: "#3D5A8A"
+  plate: "#C9CFD9"
+  ribbon: "#2E2A33"
+unshaded: [eye, eyew, gold, visor, glow, scar, tattoo]
+palettes:
+  skin:
+    - { id: pale, name: Pâle, colour: "#F7D7BE" }
+    - { id: clair, name: Clair, colour: "#F0C09A" }
+    - { id: hale, name: Hâlé, colour: "#E8A982" }
+    - { id: brun, name: Brun, colour: "#A86B4A" }
+    - { id: ebene, name: Ébène, colour: "#6B4330" }
+  hair:
+    - { id: blond, name: Blond, colour: "#E8C46A" }
+    - { id: roux, name: Roux, colour: "#D9762B" }
+    - { id: brun, name: Brun, colour: "#7A4A2A" }
+    - { id: noir, name: Noir, colour: "#2E2A33" }
+    - { id: gris, name: Gris, colour: "#9A9AA2" }
+    - { id: blanc, name: Blanc, colour: "#E6E0D0" }
+  cloth:
+    - { id: rouge, name: Rouge, colour: "#A3362E" }
+    - { id: bleu, name: Bleu, colour: "#4F6D9A" }
+    - { id: bleu-roi, name: Bleu roi, colour: "#2F4FA8" }
+    - { id: vert, name: Vert, colour: "#3F7D4E" }
+    - { id: ocre, name: Ocre, colour: "#C08A3E" }
+    - { id: brun, name: Brun, colour: "#6E4B30" }
+    - { id: gris, name: Gris, colour: "#6B6F78" }
+    - { id: noir, name: Noir, colour: "#2E2A33" }
+    - { id: blanc, name: Blanc, colour: "#E6E0D0" }
+    - { id: or, name: Or, colour: "#F2C14E" }
+    - { id: acier, name: Acier, colour: "#C9CFD9" }
+legend:
+  s: skin
+  h: hair
+  d: dye
+  a: accent
+  m: metal
+  w: wood
+  l: leather
+  g: gold
+  b: boot
+  e: eye
+  E: eyew
+  n: linen
+  r: brass
+  u: gun
+  v: visor
+  x: glow
+  o: bone
+  c: chitin
+  k: amber
+  S: scar
+  R: rope
+  t: tattoo
+  p: plate
+  B: ribbon
+pieces:
+  body:
+    - id: svelte
+      name: Svelte
+      frames:
+        east:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "ss.ss"
+              - "ss.ss"
+              - "ss.ss"
+              - "ss.ss"
+              - "ss.ss"
+          - depth: feet
+            at: [6, 24]
+            rows:
+              - "sss.sss"
+              - "sss.sss"
+          - depth: torso
+            at: [6, 12]
+            rows:
+              - "sssssss"
+              - "sssssss"
+              - "sssssss"
+              - "sssssss"
+              - "sssssss"
+              - "sssssss"
+              - "sssssss"
+              - "sssssss"
+          - depth: head
+            at: [6, 5]
+            rows:
+              - "..ssss..."
+              - ".ssssss.."
+              - "ssssssss."
+              - "sssssEes."
+              - "sssssssss"
+              - "ssssssss."
+              - ".ssssss.."
+              - "..ssss..."
+          - depth: front_arm
+            at: [11, 13]
+            rows:
+              - "ss"
+              - "ss"
+              - "ss"
+              - "ss"
+          - depth: hand
+            at: [13, 16]
+            rows:
+              - "ss"
+              - "ss"
+    - id: robuste
+      name: Robuste
+      frames:
+        east:
+          - depth: back_arm
+            at: [3, 13]
+            rows:
+              - "ss"
+              - "ss"
+              - "ss"
+              - "ss"
+              - "ss"
+              - "ss"
+          - depth: legs
+            at: [6, 19]
+            rows:
+              - "sss.sss"
+              - "sss.sss"
+              - "sss.sss"
+              - "sss.sss"
+              - "sss.sss"
+          - depth: feet
+            at: [5, 24]
+            rows:
+              - "ssss.ssss"
+              - "ssss.ssss"
+          - depth: torso
+            at: [5, 12]
+            rows:
+              - "sssssssss"
+              - "sssssssss"
+              - "sssssssss"
+              - "sssssssss"
+              - "sssssssss"
+              - "sssssssss"
+              - "sssssssss"
+              - "sssssssss"
+          - depth: head
+            at: [6, 5]
+            rows:
+              - "..ssss..."
+              - ".ssssss.."
+              - "ssssssss."
+              - "sssssEes."
+              - "sssssssss"
+              - "ssssssss."
+              - ".ssssss.."
+              - "..ssss..."
+          - depth: front_arm
+            at: [11, 13]
+            rows:
+              - "ss"
+              - "ss"
+              - "ss"
+              - "ss"
+          - depth: hand
+            at: [13, 16]
+            rows:
+              - "ss"
+              - "ss"
+  hair:
+    - id: court
+      name: Courts
+      frames:
+        east:
+          - depth: hair
+            at: [6, 4]
+            rows:
+              - "..hhhh.."
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hh......"
+              - "hh......"
+              - "hh......"
+    - id: longue
+      name: Longs
+      frames:
+        east:
+          - depth: hair
+            at: [5, 4]
+            rows:
+              - "...hhhh.."
+              - ".hhhhhhhh"
+              - "hhhhhhhhh"
+              - "hhh......"
+              - "hhh......"
+              - "hhh......"
+              - "hhh......"
+              - "hhh......"
+              - "hhh......"
+              - "hhh......"
+              - ".h......."
+    - id: catogan
+      name: Catogan
+      frames:
+        east:
+          - depth: back
+            at: [4, 9]
+            rows:
+              - "BB"
+              - "hh"
+              - "hh"
+              - "hh"
+              - "hh"
+              - "hh"
+          - depth: hair
+            at: [6, 4]
+            rows:
+              - "..hhhh.."
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hh......"
+              - "hh......"
+              - "hh......"
+    - id: tresses
+      name: Tresses
+      frames:
+        east:
+          - depth: back
+            at: [4, 9]
+            rows:
+              - "h."
+              - "hh"
+              - "hh"
+              - "hh"
+              - "gh"
+              - "hh"
+              - ".g"
+              - ".h"
+          - depth: hair
+            at: [5, 4]
+            rows:
+              - "...hhhh.."
+              - ".hhhhhhhh"
+              - ".hhhhhhhh"
+              - "hhh......"
+              - "hhh......"
+              - "hhh......"
+    - id: rase
+      name: Rasés
+      frames:
+        east:
+          - depth: hair
+            at: [6, 4]
+            rows:
+              - "....h"
+              - "..h.."
+              - "hh..."
+              - "hh..."
+              - "hh..."
+  beard:
+    - id: courte
+      name: Courte
+      frames:
+        east:
+          - depth: beard
+            at: [7, 10]
+            rows:
+              - ".hhhhhhh"
+              - "hhhhhhhh"
+              - ".hhhhhh."
+    - id: longue
+      name: Longue
+      frames:
+        east:
+          - depth: beard
+            at: [7, 10]
+            rows:
+              - ".hhhhhhh"
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - ".hhhhhh."
+              - "...hh..."
+    - id: bouc
+      name: Bouc
+      frames:
+        east:
+          - depth: beard
+            at: [12, 10]
+            rows:
+              - "hhh"
+              - "hh."
+              - "hh."
+    - id: moustache
+      name: Moustache
+      frames:
+        east:
+          - depth: beard
+            at: [11, 10]
+            rows:
+              - "hhhh"
+              - "...h"
+  headwear:
+    - id: tricorne
+      name: Tricorne
+      dye: noir
+      accent: or
+      frames:
+        east:
+          - depth: headwear
+            at: [3, 3]
+            rows:
+              - "....dddddd...."
+              - "d..dddddddd..d"
+              - "d..dddddddd..d"
+              - ".aaaddddddaaa."
+    - id: bandana
+      name: Bandana
+      dye: rouge
+      accent: blanc
+      frames:
+        east:
+          - depth: headwear
+            at: [4, 4]
+            rows:
+              - "...dddddd."
+              - "..dddaddad"
+              - "..dadddddd"
+              - ".d........"
+              - "dd........"
+              - "d........."
+    - id: chapeau
+      name: Chapeau
+      dye: brun
+      accent: noir
+      frames:
+        east:
+          - depth: headwear
+            at: [3, 2]
+            rows:
+              - "....dddddd...."
+              - "....dddddd...."
+              - "....dddddd...."
+              - "....aaaaaa...."
+              - "dddddddddddddd"
+    - id: foulard
+      name: Foulard
+      dye: ocre
+      accent: rouge
+      frames:
+        east:
+          - depth: headwear
+            at: [4, 4]
+            rows:
+              - "...daddd.."
+              - "..ddddadd."
+              - ".ddddddddd"
+              - ".ddddddddd"
+              - ".ddd......"
+              - ".dad......"
+              - ".ddd......"
+              - "dddd......"
+              - "d........."
+    - id: bonnet
+      name: Bonnet
+      dye: rouge
+      accent: blanc
+      frames:
+        east:
+          - depth: headwear
+            at: [3, 4]
+            rows:
+              - ".dd.dddddd.."
+              - ".dddddddddd."
+              - "dddaaaaaaaaa"
+              - "d..........."
+  outfit:
+    - id: chemise
+      name: Chemise
+      dye: blanc
+      accent: brun
+      frames:
+        east:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "aa.aa"
+              - "aa.aa"
+              - "aa.aa"
+              - "aa.aa"
+              - "aa.aa"
+          - depth: feet
+            at: [6, 24]
+            rows:
+              - "bbb.bbb"
+              - "bbb.bbb"
+          - depth: torso
+            at: [6, 12]
+            rows:
+              - "dddddss"
+              - "dddddds"
+              - "ddddddd"
+              - "ddddddd"
+              - "ddddddd"
+              - "ddddddd"
+              - "ddddddd"
+              - "ddddddd"
+          - depth: belt
+            at: [6, 18]
+            rows:
+              - "RRRRRRR"
+          - depth: front_arm
+            at: [11, 13]
+            rows:
+              - "dd"
+              - "dd"
+              - "dd"
+              - "dd"
+      per_body:
+        robuste:
+          east:
+            - depth: back_arm
+              at: [3, 13]
+              rows:
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+            - depth: legs
+              at: [6, 19]
+              rows:
+                - "aaa.aaa"
+                - "aaa.aaa"
+                - "aaa.aaa"
+                - "aaa.aaa"
+                - "aaa.aaa"
+            - depth: feet
+              at: [5, 24]
+              rows:
+                - "bbbb.bbbb"
+                - "bbbb.bbbb"
+            - depth: torso
+              at: [5, 12]
+              rows:
+                - "dddddddss"
+                - "dddddddds"
+                - "ddddddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+            - depth: belt
+              at: [5, 18]
+              rows:
+                - "RRRRRRRRR"
+            - depth: front_arm
+              at: [11, 13]
+              rows:
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+    - id: gilet
+      name: Gilet
+      dye: rouge
+      accent: noir
+      frames:
+        east:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "aa.aa"
+              - "aa.aa"
+              - "aa.aa"
+              - "aa.aa"
+              - "aa.aa"
+          - depth: feet
+            at: [6, 22]
+            rows:
+              - "bbb.bbb"
+              - "bbb.bbb"
+              - "bbb.bbb"
+              - "bbb.bbb"
+          - depth: torso
+            at: [6, 12]
+            rows:
+              - "dddddnn"
+              - "dddddnn"
+              - "ddddgnn"
+              - "dddddnn"
+              - "ddddgnn"
+              - "ddddddd"
+              - "ddddddd"
+              - "ddddddd"
+          - depth: belt
+            at: [6, 18]
+            rows:
+              - "lllllgl"
+          - depth: front_arm
+            at: [11, 13]
+            rows:
+              - "nn"
+              - "nn"
+              - "nn"
+              - "nn"
+      per_body:
+        robuste:
+          east:
+            - depth: back_arm
+              at: [3, 13]
+              rows:
+                - "nn"
+                - "nn"
+                - "nn"
+                - "nn"
+                - "nn"
+            - depth: legs
+              at: [6, 19]
+              rows:
+                - "aaa.aaa"
+                - "aaa.aaa"
+                - "aaa.aaa"
+                - "aaa.aaa"
+                - "aaa.aaa"
+            - depth: feet
+              at: [5, 22]
+              rows:
+                - "bbbb.bbbb"
+                - "bbbb.bbbb"
+                - "bbbb.bbbb"
+                - "bbbb.bbbb"
+            - depth: torso
+              at: [5, 12]
+              rows:
+                - "dddddddnn"
+                - "dddddddnn"
+                - "ddddddgnn"
+                - "dddddddnn"
+                - "ddddddgnn"
+                - "ddddddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+            - depth: belt
+              at: [5, 18]
+              rows:
+                - "lllllllgl"
+            - depth: front_arm
+              at: [11, 13]
+              rows:
+                - "nn"
+                - "nn"
+                - "nn"
+                - "nn"
+    - id: redingote
+      name: Redingote
+      dye: bleu
+      accent: noir
+      frames:
+        east:
+          - depth: legs
+            at: [7, 21]
+            rows:
+              - "aa.aa"
+              - "aa.aa"
+              - "aa.aa"
+          - depth: feet
+            at: [6, 22]
+            rows:
+              - "bbb.bbb"
+              - "bbb.bbb"
+              - "bbb.bbb"
+              - "bbb.bbb"
+          - depth: torso
+            at: [5, 12]
+            rows:
+              - ".ddddddn"
+              - ".ddddddn"
+              - ".dddddgd"
+              - ".ddddddd"
+              - ".dddddgd"
+              - ".ddddddd"
+              - "ddddddgd"
+              - "dddddddd"
+              - "dddddddd"
+              - "dddddddd"
+          - depth: front_arm
+            at: [11, 13]
+            rows:
+              - "dd"
+              - "dd"
+              - "dd"
+              - "aa"
+      per_body:
+        robuste:
+          east:
+            - depth: back_arm
+              at: [3, 13]
+              rows:
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+            - depth: legs
+              at: [6, 21]
+              rows:
+                - "aaa.aaa"
+                - "aaa.aaa"
+                - "aaa.aaa"
+            - depth: feet
+              at: [5, 22]
+              rows:
+                - "bbbb.bbbb"
+                - "bbbb.bbbb"
+                - "bbbb.bbbb"
+                - "bbbb.bbbb"
+            - depth: torso
+              at: [4, 12]
+              rows:
+                - ".ddddddddn"
+                - ".ddddddddn"
+                - ".dddddddgd"
+                - ".ddddddddd"
+                - ".dddddddgd"
+                - ".ddddddddd"
+                - "ddddddddgd"
+                - "dddddddddd"
+                - "dddddddddd"
+                - "dddddddddd"
+            - depth: front_arm
+              at: [11, 13]
+              rows:
+                - "dd"
+                - "dd"
+                - "dd"
+                - "aa"
+    - id: tablier
+      name: Tablier
+      dye: brun
+      accent: gris
+      frames:
+        east:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "aa.aa"
+              - "aa.aa"
+              - "aa.aa"
+              - "aa.aa"
+              - "aa.aa"
+          - depth: feet
+            at: [6, 24]
+            rows:
+              - "bbb.bbb"
+              - "bbb.bbb"
+          - depth: torso
+            at: [6, 12]
+            rows:
+              - "nnnnndn"
+              - "nnnndnn"
+              - "nnndddd"
+              - "nnndddd"
+              - "nnndddd"
+              - "nnndddd"
+              - "nnndddd"
+              - "nnndddd"
+              - "...dddd"
+              - "...dddd"
+          - depth: belt
+            at: [6, 17]
+            rows:
+              - "ddd"
+          - depth: front_arm
+            at: [11, 13]
+            rows:
+              - "nn"
+              - "nn"
+              - "nn"
+              - "nn"
+      per_body:
+        robuste:
+          east:
+            - depth: back_arm
+              at: [3, 13]
+              rows:
+                - "nn"
+                - "nn"
+                - "nn"
+                - "nn"
+                - "nn"
+            - depth: legs
+              at: [6, 19]
+              rows:
+                - "aaa.aaa"
+                - "aaa.aaa"
+                - "aaa.aaa"
+                - "aaa.aaa"
+                - "aaa.aaa"
+            - depth: feet
+              at: [5, 24]
+              rows:
+                - "bbbb.bbbb"
+                - "bbbb.bbbb"
+            - depth: torso
+              at: [5, 12]
+              rows:
+                - "nnnnnnndn"
+                - "nnnnnndnn"
+                - "nnnnndddd"
+                - "nnnnndddd"
+                - "nnnnndddd"
+                - "nnnnndddd"
+                - "nnnnndddd"
+                - "nnnnndddd"
+                - ".....dddd"
+                - ".....dddd"
+            - depth: belt
+              at: [5, 17]
+              rows:
+                - "ddddd"
+            - depth: front_arm
+              at: [11, 13]
+              rows:
+                - "nn"
+                - "nn"
+                - "nn"
+                - "nn"
+    - id: debardeur
+      name: Débardeur
+      dye: gris
+      accent: brun
+      frames:
+        east:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "aa.aa"
+              - "aa.aa"
+              - "aa.aa"
+              - "aa.aa"
+              - "aa.aa"
+          - depth: feet
+            at: [6, 24]
+            rows:
+              - "bbb.bbb"
+              - "bbb.bbb"
+          - depth: torso
+            at: [6, 12]
+            rows:
+              - ".l....."
+              - "ddldddd"
+              - "ddldddd"
+              - "dddlddd"
+              - "ddddldd"
+              - "ddddldd"
+              - "dddddld"
+              - "ddddddd"
+          - depth: belt
+            at: [6, 18]
+            rows:
+              - "lllllgl"
+              - "lllllgl"
+      per_body:
+        robuste:
+          east:
+            - depth: legs
+              at: [6, 19]
+              rows:
+                - "aaa.aaa"
+                - "aaa.aaa"
+                - "aaa.aaa"
+                - "aaa.aaa"
+                - "aaa.aaa"
+            - depth: feet
+              at: [5, 24]
+              rows:
+                - "bbbb.bbbb"
+                - "bbbb.bbbb"
+            - depth: torso
+              at: [5, 12]
+              rows:
+                - ".l......."
+                - "ddldddddd"
+                - "dddlddddd"
+                - "ddddldddd"
+                - "dddddlddd"
+                - "ddddddldd"
+                - "dddddddld"
+                - "ddddddddd"
+            - depth: belt
+              at: [5, 18]
+              rows:
+                - "lllllllgl"
+                - "lllllllgl"
+    - id: gilet-ouvert
+      name: Gilet ouvert
+      dye: brun
+      accent: rouge
+      frames:
+        east:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "ll.ll"
+              - "ll.ll"
+              - "ll.ll"
+              - "ll.ll"
+              - "ll.ll"
+          - depth: feet
+            at: [6, 24]
+            rows:
+              - "bbb.bbb"
+              - "bbb.bbb"
+          - depth: torso
+            at: [6, 12]
+            rows:
+              - "dddddd"
+              - "dddddd"
+              - "ddddtd"
+              - "dddddt"
+              - "dddtd."
+              - "ddddd."
+              - "ddddd."
+              - "ddddd."
+          - depth: belt
+            at: [5, 17]
+            rows:
+              - ".aaaaaaa"
+              - "aaaaaaaa"
+              - "a......."
+              - "a......."
+          - depth: front_arm
+            at: [11, 14]
+            rows:
+              - "t."
+              - ".t"
+      per_body:
+        robuste:
+          east:
+            - depth: back_arm
+              at: [3, 15]
+              rows:
+                - "t."
+                - ".t"
+            - depth: legs
+              at: [6, 19]
+              rows:
+                - "lll.lll"
+                - "lll.lll"
+                - "lll.lll"
+                - "lll.lll"
+                - "lll.lll"
+            - depth: feet
+              at: [5, 24]
+              rows:
+                - "bbbb.bbbb"
+                - "bbbb.bbbb"
+            - depth: torso
+              at: [5, 12]
+              rows:
+                - "dddddd.."
+                - "dddddd.."
+                - "ddddddt."
+                - "dddddd.t"
+                - "dddddt.."
+                - "ddddd..."
+                - "ddddd..."
+                - "ddddd..."
+            - depth: belt
+              at: [4, 17]
+              rows:
+                - ".aaaaaaaaa"
+                - "aaaaaaaaaa"
+                - "a........."
+                - "a........."
+            - depth: front_arm
+              at: [11, 14]
+              rows:
+                - "t."
+                - ".t"
+    - id: uniforme
+      name: Uniforme
+      dye: blanc
+      accent: bleu-roi
+      frames:
+        east:
+          - depth: legs
+            at: [7, 20]
+            rows:
+              - "dd.dd"
+              - "dd.dd"
+              - "dd.dd"
+              - "dd.dd"
+          - depth: feet
+            at: [6, 21]
+            rows:
+              - "bbb.bbb"
+              - "bbb.bbb"
+              - "bbb.bbb"
+              - "bbb.bbb"
+              - "bbb.bbb"
+          - depth: torso
+            at: [6, 12]
+            rows:
+              - "dddddaa"
+              - "dddddaa"
+              - "ddddgaa"
+              - "dddddaa"
+              - "dddddaa"
+              - "ddddgaa"
+              - "dddddaa"
+              - "dddddaa"
+              - "ddddddd"
+          - depth: belt
+            at: [6, 19]
+            rows:
+              - "nnnnngn"
+          - depth: front_arm
+            at: [11, 13]
+            rows:
+              - "dd"
+              - "dd"
+              - "dd"
+              - "aa"
+      per_body:
+        robuste:
+          east:
+            - depth: back_arm
+              at: [3, 13]
+              rows:
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+            - depth: legs
+              at: [6, 20]
+              rows:
+                - "ddd.ddd"
+                - "ddd.ddd"
+                - "ddd.ddd"
+                - "ddd.ddd"
+            - depth: feet
+              at: [5, 21]
+              rows:
+                - "bbbb.bbbb"
+                - "bbbb.bbbb"
+                - "bbbb.bbbb"
+                - "bbbb.bbbb"
+                - "bbbb.bbbb"
+            - depth: torso
+              at: [5, 12]
+              rows:
+                - "dddddddaa"
+                - "dddddddaa"
+                - "ddddddgaa"
+                - "dddddddaa"
+                - "dddddddaa"
+                - "ddddddgaa"
+                - "dddddddaa"
+                - "dddddddaa"
+                - "ddddddddd"
+            - depth: belt
+              at: [5, 19]
+              rows:
+                - "nnnnnnngn"
+            - depth: front_arm
+              at: [11, 13]
+              rows:
+                - "dd"
+                - "dd"
+                - "dd"
+                - "aa"
+  armour:
+    - id: plastron
+      name: Plastron
+      dye: acier
+      accent: gris
+      frames:
+        east:
+          - depth: armour
+            at: [6, 12]
+            rows:
+              - "ddddddd"
+              - "ddddddd"
+              - "daaaaad"
+              - "ddddddd"
+              - "ddddddd"
+              - "ddddddd"
+      per_body:
+        robuste:
+          east:
+            - depth: armour
+              at: [5, 12]
+              rows:
+                - "ddddddddd"
+                - "ddddddddd"
+                - "daaaaaaad"
+                - "ddddddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+  weapon:
+    - id: sabre
+      name: Sabre
+      frames:
+        east:
+          - depth: weapon
+            at: [13, 7]
+            rows:
+              - ".....m"
+              - ".....m"
+              - "....m."
+              - "....m."
+              - "...m.."
+              - "...m.."
+              - "..m..."
+              - "..m..."
+              - "gggg.."
+              - ".l...."
+    - id: coutelas
+      name: Coutelas
+      frames:
+        east:
+          - depth: weapon
+            at: [14, 11]
+            rows:
+              - "...mm"
+              - "..m.."
+              - "..m.."
+              - ".m..."
+              - "ll..."
+    - id: epee
+      name: Épée
+      frames:
+        east:
+          - depth: weapon
+            at: [12, 5]
+            rows:
+              - "..m.."
+              - "..m.."
+              - "..m.."
+              - "..m.."
+              - "..m.."
+              - "..m.."
+              - "..m.."
+              - "..m.."
+              - "..m.."
+              - "..m.."
+              - "ggggg"
+              - "..l.."
+    - id: pistolet
+      name: Pistolet
+      frames:
+        east:
+          - depth: weapon
+            at: [13, 14]
+            rows:
+              - "..m..."
+              - "wwuuuu"
+              - "ww...."
+    - id: mousquet
+      name: Mousquet
+      frames:
+        east:
+          - depth: front
+            at: [8, 15]
+            rows:
+              - ".......m...."
+              - "wwwww..uuuuu"
+              - "wwwww......."
+    - id: longue-vue
+      name: Longue-vue
+      frames:
+        east:
+          - depth: front
+            at: [15, 14]
+            rows:
+              - "...rr"
+              - "rrrrv"
+              - "rrrrr"
+    - id: compas
+      name: Compas
+      frames:
+        east:
+          - depth: front
+            at: [15, 11]
+            rows:
+              - ".g.."
+              - ".m.m"
+              - ".m.m"
+              - ".mm."
+              - "mm.."
+              - "mm.."
+    - id: registre
+      name: Registre
+      frames:
+        east:
+          - depth: front
+            at: [14, 14]
+            rows:
+              - "llll"
+              - "lgln"
+              - "llln"
+              - "llll"
+  accessory:
+    - id: sacoche
+      name: Sacoche
+      dye: brun
+      frames:
+        east:
+          - depth: back
+            at: [4, 16]
+            rows:
+              - "ddd"
+              - "dgd"
+              - "ddd"
+              - "ddd"
+          - depth: belt
+            at: [7, 12]
+            rows:
+              - "l...."
+              - ".l..."
+              - "..l.."
+              - "..l.."
+              - "...l."
+              - "....l"
+      per_body:
+        robuste:
+          east:
+            - depth: back
+              at: [3, 16]
+              rows:
+                - "ddd"
+                - "dgd"
+                - "ddd"
+                - "ddd"
+            - depth: belt
+              at: [6, 12]
+              rows:
+                - "l......"
+                - ".l....."
+                - "..ll..."
+                - "....l.."
+                - ".....l."
+                - "......l"
+    - id: grappin
+      name: Grappin
+      frames:
+        east:
+          - depth: back
+            at: [3, 10]
+            rows:
+              - "m.m.."
+              - ".m..."
+              - "....."
+              - ".RRR."
+              - ".RRR."
+              - "RRbRR"
+              - ".RRR."
+              - ".RRR."
+      per_body:
+        robuste:
+          east:
+            - depth: back
+              at: [2, 10]
+              rows:
+                - "m.m.."
+                - ".m..."
+                - "....."
+                - ".RRR."
+                - ".RRR."
+                - "RRbRR"
+                - ".RRR."
+                - ".RRR."
+    - id: echarpe
+      name: Écharpe
+      dye: rouge
+      frames:
+        east:
+          - depth: belt
+            at: [5, 16]
+            rows:
+              - ".ddddddd"
+              - "dddddddd"
+              - "d......."
+              - "d......."
+              - "d......."
+      per_body:
+        robuste:
+          east:
+            - depth: belt
+              at: [4, 16]
+              rows:
+                - ".ddddddddd"
+                - "dddddddddd"
+                - "d........."
+                - "d........."
+                - "d........."
+    - id: cicatrice
+      name: Cicatrice
+      frames:
+        east:
+          - depth: face
+            at: [10, 7]
+            rows:
+              - "S.."
+              - "..."
+              - ".S."
+              - ".S."
+              - "..S"

@@ -169,26 +169,31 @@ resources:
 
 conditions:
   - id: inconscient
+    visual: ko
     name: Inconscient
     kind: bane
     description: "À 0 PV. Ne peut plus agir ; un soin le relève."
     effects: [skips_turn]
   - id: hors_combat
+    visual: ko
     name: Hors combat
     kind: bane
     description: "Resté 3 tours inconscient sans soin : absent jusqu'à la scène suivante."
     effects: [skips_turn]
   - id: etourdi
+    visual: etourdi
     name: Étourdi
     kind: bane
     description: "Perd son tour."
     effects: [skips_turn]
   - id: renverse
+    visual: etourdi
     name: Renversé
     kind: bane
     description: "Au sol, perd son tour."
     effects: [skips_turn]
   - id: apeure
+    visual: effraye
     name: Apeuré
     kind: bane
     description: "Fuit ou passe son tour."
@@ -196,16 +201,19 @@ conditions:
     # flight is narrated by the GM.
     effects: [skips_turn, { narrative: "Fuit ou passe son tour." }]
   - id: immobilise
+    visual: entrave
     name: Immobilisé
     kind: bane
     description: "Ne peut plus se déplacer. Jet de FOR pour se libérer."
     effects: [cannot_move, { narrative: "Jet de FOR pour se libérer (difficulté non précisée)." }]
   - id: empoisonne
+    visual: poison
     name: Empoisonné
     kind: bane
     description: "-1 à tous ses jets."
     effects: [{ roll_modifier: { rolls: all, value: -1 } }]
   - id: desoriente
+    visual: etourdi
     name: Désorienté
     kind: bane
     description: "-2 précision."
@@ -221,6 +229,7 @@ conditions:
     description: "3 dégâts par tour, mouvement réduit de moitié."
     effects: [{ damage_per_turn: 3 }, { movement_percent: 50 }]
   - id: point_faible
+    visual: cible
     name: Point faible repéré
     kind: bane
     description: "Le prochain allié qui attaque la cible gagne +3 précision et +2 dégâts."

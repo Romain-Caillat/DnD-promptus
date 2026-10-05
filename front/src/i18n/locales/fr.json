@@ -133,6 +133,29 @@
   "reference": {
     "kicker": "Système visuel · fondations",
     "intro": "Un plateau, des cartes, des personnages en pixel, des dés. Le décor reste noir et blanc ; les chiffres prennent la couleur.",
+    "sprites": {
+      "title": "Personnages en pixels",
+      "loading": "Chargement des personnages…",
+      "error": "Les personnages n'ont pas pu être chargés.",
+      "worlds": {
+        "corsaires": "Corsaires de la Couronne",
+        "brasier": "Le Brasier"
+      },
+      "effects": "Effets d'état sur le personnage",
+      "visuals": {
+        "poison": "Empoisonné",
+        "etourdi": "Étourdi",
+        "endormi": "Endormi",
+        "invisible": "Invisible",
+        "feu": "En feu",
+        "entrave": "Entravé",
+        "effraye": "Effrayé",
+        "beni": "Béni",
+        "ko": "Hors de combat",
+        "cible": "Ciblé"
+      },
+      "note": "Chaque personnage est une description (pièces et couleurs) que le serveur dessine : le même dessin sur le téléphone, l'écran MJ et la TV. Le groupe regarde à droite, les adversaires à gauche."
+    },
     "game": {
       "kicker": "Composants du jeu",
       "title": "Les pièces du jeu",

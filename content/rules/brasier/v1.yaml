@@ -156,16 +156,18 @@ combat:
   flee: { kind: fuite, ability: DEX }
 
 conditions:
-  - { id: inconscient, name: Inconscient, kind: bane, description: "À 0 PV. Ne peut plus agir ; un soin le relève.", effects: [skips_turn] }
-  - { id: hors_combat, name: Hors combat, kind: bane, description: "Resté 3 tours inconscient sans soin.", effects: [skips_turn] }
-  - { id: etourdi, name: Étourdi, kind: bane, description: "Perd son tour.", effects: [skips_turn] }
-  - { id: renverse, name: Renversé, kind: bane, description: "Perd son tour.", effects: [skips_turn] }
+  - { id: inconscient, name: Inconscient, kind: bane, description: "À 0 PV. Ne peut plus agir ; un soin le relève.", effects: [skips_turn], visual: ko }
+  - { id: hors_combat, name: Hors combat, kind: bane, description: "Resté 3 tours inconscient sans soin.", effects: [skips_turn], visual: ko }
+  - { id: etourdi, name: Étourdi, kind: bane, description: "Perd son tour.", effects: [skips_turn], visual: etourdi }
+  - { id: renverse, name: Renversé, kind: bane, description: "Perd son tour.", effects: [skips_turn], visual: etourdi }
   - id: apeure
+    visual: effraye
     name: Apeuré
     kind: bane
     description: "Fuit ou passe son tour."
     effects: [skips_turn, { narrative: "Fuit ou passe son tour." }]
   - id: marque
+    visual: cible
     name: Marqué
     kind: bane
     description: "Les alliés ont +2 précision contre la cible."

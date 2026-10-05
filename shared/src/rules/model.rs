@@ -492,6 +492,10 @@ pub struct ConditionDef {
     pub description: String,
     pub kind: ConditionKind,
     pub effects: Vec<ConditionEffect>,
+    /// The effect drawn on the character while the condition lasts;
+    /// none shows only the badge.
+    #[serde(default)]
+    pub visual: Option<crate::sprite::ConditionVisual>,
 }
 
 /// Which rolls a modifier touches.

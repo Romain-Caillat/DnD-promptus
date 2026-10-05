@@ -1,0 +1,85 @@
+/*
+ * Condition effects drawn over a sprite, ported from the « Personnage et
+ * état » component of the design canvas (MEMORY.md §2). Every animated
+ * element has a calm resting style: reduced motion switches the
+ * animations off and leaves the effect visible, still.
+ */
+.sprite {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  vertical-align: bottom;
+}
+.sprite-body {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  transform-origin: 50% 100%;
+  user-select: none;
+}
+.sprite-particle {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* poison: sickly tint pulse, bubbles rising */
+.sprite-fx-poison .sprite-body { filter: sepia(0.35) hue-rotate(38deg) saturate(1.4); animation: sprite-sick 1.6s ease-in-out infinite; }
+@keyframes sprite-sick { 0%, 100% { filter: none } 50% { filter: sepia(.7) hue-rotate(38deg) saturate(1.8) } }
+.sprite-particle-poison { background: #A8D14A; box-shadow: 0 0 0 1px #3E5A12; animation: sprite-bubble 1.8s ease-out infinite; }
+@keyframes sprite-bubble { 0% { opacity: 0; transform: translateY(0) scale(.5) } 20% { opacity: 1 } 100% { opacity: 0; transform: translateY(-260%) scale(1) } }
+
+/* stunned: stars circling the head, the body sways */
+.sprite-ring { position: absolute; left: 10%; right: 10%; top: -12%; height: 24%; transform: scaleY(.4); animation: sprite-orbit 1.2s linear infinite; }
+@keyframes sprite-orbit { 0% { transform: scaleY(.4) rotate(0) } 100% { transform: scaleY(.4) rotate(360deg) } }
+.sprite-particle-etourdi { background: #FFFFFF; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+.sprite-fx-etourdi .sprite-body { animation: sprite-sway 1.2s ease-in-out infinite; }
+@keyframes sprite-sway { 0%, 100% { transform: rotate(-3deg) } 50% { transform: rotate(3deg) } }
+
+/* asleep: slow breath, Z drifting up */
+.sprite-fx-endormi .sprite-body { animation: sprite-breath 2.4s ease-in-out infinite; }
+@keyframes sprite-breath { 0%, 100% { transform: scaleY(1) } 50% { transform: scaleY(.95) } }
+.sprite-particle-endormi { font-family: var(--font-ui, 'Chakra Petch', system-ui, sans-serif); font-weight: 700; line-height: 1; color: #F2F2F2; -webkit-text-stroke: 1px #000; paint-order: stroke; animation: sprite-z 2.4s ease-out infinite; }
+@keyframes sprite-z { 0% { opacity: 0; transform: translate(0, 0) scale(.6) } 20% { opacity: 1 } 100% { opacity: 0; transform: translate(120%, -180%) scale(1.1) } }
+
+/* invisible: dithered grey ghost, dashed outline */
+.sprite-fx-invisible .sprite-body { opacity: .3; filter: grayscale(1) brightness(1.4); animation: sprite-ghost 2s steps(3) infinite; }
+@keyframes sprite-ghost { 0% { opacity: .12 } 33% { opacity: .35 } 66% { opacity: .2 } }
+.sprite-fx-invisible::after { content: ''; position: absolute; inset: -6%; border: 2px dashed rgba(242, 242, 242, .35); border-radius: 40% 40% 10% 10%; pointer-events: none; }
+
+/* burning: flames licking up, the body flickers */
+.sprite-fx-feu .sprite-body { animation: sprite-burn .3s steps(2) infinite; }
+@keyframes sprite-burn { 0% { filter: brightness(1.15) } 50% { filter: brightness(.9) sepia(.3) } }
+.sprite-particle-feu { transform-origin: 50% 100%; animation: sprite-flame .6s steps(3) infinite; }
+@keyframes sprite-flame { 0% { transform: scaleY(.6) translateY(0); opacity: 1 } 50% { transform: scaleY(1.2) translateY(-20%) } 100% { transform: scaleY(.4) translateY(-60%); opacity: 0 } }
+
+/* restrained: chains across, a small struggle */
+.sprite-fx-entrave .sprite-body { animation: sprite-struggle 1.4s steps(1) infinite; }
+@keyframes sprite-struggle { 0%, 70%, 100% { transform: none } 75% { transform: translateX(-4%) } 85% { transform: translateX(4%) } }
+.sprite-particle-entrave { background: repeating-linear-gradient(90deg, #B4B4B4 0 33%, #5E5E5E 33% 50%); box-shadow: 0 0 0 1px #0A0A0A; border-radius: 2px; }
+
+/* frightened: fast tremble, sweat drop */
+.sprite-fx-effraye .sprite-body { animation: sprite-shiver .12s steps(2) infinite; }
+@keyframes sprite-shiver { 0% { transform: translateX(-2%) } 100% { transform: translateX(2%) } }
+.sprite-particle-effraye { background: #CFE6F2; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 0 1px #0A0A0A; animation: sprite-drop 1.4s ease-in infinite; }
+@keyframes sprite-drop { 0%, 20% { opacity: 0; transform: translateY(0) } 30% { opacity: 1 } 100% { opacity: 0; transform: translateY(160%) } }
+
+/* blessed: halo, soft white glow, sparkles */
+.sprite-fx-beni .sprite-body { filter: drop-shadow(0 0 4px rgba(255, 255, 255, .6)); animation: sprite-glow 2s ease-in-out infinite; }
+@keyframes sprite-glow { 0%, 100% { filter: drop-shadow(0 0 2px rgba(255, 255, 255, .4)) } 50% { filter: drop-shadow(0 0 8px rgba(255, 255, 255, .9)) } }
+.sprite-halo { position: absolute; left: 28%; right: 28%; top: -8%; height: 8%; border-radius: 50%; border: 2px solid #FFF6CF; box-shadow: 0 0 8px #FFF6CF; animation: sprite-halo 2s ease-in-out infinite; }
+@keyframes sprite-halo { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-30%) } }
+.sprite-particle-beni { background: #FFF6CF; clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%); animation: sprite-spark 1.8s ease-in-out infinite; }
+@keyframes sprite-spark { 0%, 100% { opacity: 0; transform: scale(.3) } 50% { opacity: 1; transform: scale(1) rotate(90deg) } }
+
+/* out of the fight: greyed, slumped */
+.sprite-fx-ko .sprite-body { filter: grayscale(1) brightness(.7); opacity: .7; transform: rotate(-8deg); }
+
+/* marked as a target: a reticle above the head */
+.sprite-particle-cible { border: 2px solid #FF4D5E; transform: rotate(45deg); box-shadow: 0 0 0 1px #0A0A0A; animation: sprite-mark 1s ease-in-out infinite; }
+@keyframes sprite-mark { 0%, 100% { transform: rotate(45deg) scale(1) } 50% { transform: rotate(45deg) scale(.75) } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sprite, .sprite * { animation: none !important; }
+}

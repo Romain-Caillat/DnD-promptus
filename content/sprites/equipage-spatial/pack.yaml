@@ -1,0 +1,1107 @@
+# Équipage spatial — pack de pièces de personnage (characters/render-layered-sprite).
+#
+# Généré une fois depuis les formes des prototypes (docs/design/sprite-prototype.py,
+# docs/design/avatar.py) : même grille 20 x 26, profil tourné vers la droite.
+# Ce fichier est maintenant la source : on l'édite à la main.
+#
+# Format (shared/src/sprite/pack.rs) : chaque pièce est une pile de calques,
+# chaque calque une petite grille de caractères posée en `at` et rangée à une
+# profondeur (`depth`). La légende traduit un caractère en couleur : une
+# couleur fixe du pack, ou un emplacement que la description recolore —
+# `skin` (peau), `hair` (cheveux et barbe), `dye` et `accent` (couleurs de la
+# pièce, palette `cloth`). Une pièce qui se pose sur le corps a une variante
+# par corps (`per_body`). Seule la direction `east` (profil droit) existe ;
+# `west` est son miroir, `north` et `south` viendront avec
+# characters/walk-in-four-directions.
+format: 1
+id: equipage-spatial
+name: Équipage spatial
+grid: [20, 26]
+outline: "#1B1426"
+colours:
+  metal: "#C9CFD9"
+  wood: "#8A5A33"
+  leather: "#7A5233"
+  gold: "#F2C14E"
+  boot: "#3B2A20"
+  eye: "#1B1426"
+  eyew: "#FFFFFF"
+  linen: "#E6E0D0"
+  brass: "#C9A043"
+  gun: "#3A3F48"
+  visor: "#6FD3FF"
+  glow: "#F2D33A"
+  bone: "#EDE3C8"
+  chitin: "#2A5552"
+  amber: "#F2A03A"
+  scar: "#D0303A"
+  rope: "#C8A86A"
+  tattoo: "#3D5A8A"
+  plate: "#C9CFD9"
+  ribbon: "#2E2A33"
+unshaded: [eye, eyew, gold, visor, glow, scar, tattoo]
+palettes:
+  skin:
+    - { id: pale, name: Pâle, colour: "#F7D7BE" }
+    - { id: clair, name: Clair, colour: "#F0C09A" }
+    - { id: hale, name: Hâlé, colour: "#E8A982" }
+    - { id: brun, name: Brun, colour: "#A86B4A" }
+    - { id: ebene, name: Ébène, colour: "#6B4330" }
+  hair:
+    - { id: blond, name: Blond, colour: "#E8C46A" }
+    - { id: roux, name: Roux, colour: "#D9762B" }
+    - { id: brun, name: Brun, colour: "#7A4A2A" }
+    - { id: noir, name: Noir, colour: "#2E2A33" }
+    - { id: gris, name: Gris, colour: "#9A9AA2" }
+    - { id: blanc, name: Blanc, colour: "#E6E0D0" }
+  cloth:
+    - { id: blanc-casse, name: Blanc cassé, colour: "#D8D6CC" }
+    - { id: cyan, name: Cyan, colour: "#4FC3D9" }
+    - { id: orange, name: Orange, colour: "#E07A2E" }
+    - { id: gris, name: Gris, colour: "#6B6F78" }
+    - { id: acier, name: Acier, colour: "#9AA3AE" }
+    - { id: bleu, name: Bleu, colour: "#3E5E8E" }
+    - { id: violet, name: Violet, colour: "#5A4380" }
+    - { id: rouge, name: Rouge, colour: "#B8352B" }
+    - { id: noir, name: Noir, colour: "#2A2D35" }
+    - { id: chitine, name: Chitine, colour: "#3E7F7A" }
+    - { id: chitine-sombre, name: Chitine sombre, colour: "#2A5552" }
+    - { id: ambre, name: Ambre, colour: "#F2A03A" }
+legend:
+  s: skin
+  h: hair
+  d: dye
+  a: accent
+  m: metal
+  w: wood
+  l: leather
+  g: gold
+  b: boot
+  e: eye
+  E: eyew
+  n: linen
+  r: brass
+  u: gun
+  v: visor
+  x: glow
+  o: bone
+  c: chitin
+  k: amber
+  S: scar
+  R: rope
+  t: tattoo
+  p: plate
+  B: ribbon
+pieces:
+  body:
+    - id: svelte
+      name: Svelte
+      frames:
+        east:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "ss.ss"
+              - "ss.ss"
+              - "ss.ss"
+              - "ss.ss"
+              - "ss.ss"
+          - depth: feet
+            at: [6, 24]
+            rows:
+              - "sss.sss"
+              - "sss.sss"
+          - depth: torso
+            at: [6, 12]
+            rows:
+              - "sssssss"
+              - "sssssss"
+              - "sssssss"
+              - "sssssss"
+              - "sssssss"
+              - "sssssss"
+              - "sssssss"
+              - "sssssss"
+          - depth: head
+            at: [6, 5]
+            rows:
+              - "..ssss..."
+              - ".ssssss.."
+              - "ssssssss."
+              - "sssssEes."
+              - "sssssssss"
+              - "ssssssss."
+              - ".ssssss.."
+              - "..ssss..."
+          - depth: front_arm
+            at: [11, 13]
+            rows:
+              - "ss"
+              - "ss"
+              - "ss"
+              - "ss"
+          - depth: hand
+            at: [13, 16]
+            rows:
+              - "ss"
+              - "ss"
+    - id: robuste
+      name: Robuste
+      frames:
+        east:
+          - depth: back_arm
+            at: [3, 13]
+            rows:
+              - "ss"
+              - "ss"
+              - "ss"
+              - "ss"
+              - "ss"
+              - "ss"
+          - depth: legs
+            at: [6, 19]
+            rows:
+              - "sss.sss"
+              - "sss.sss"
+              - "sss.sss"
+              - "sss.sss"
+              - "sss.sss"
+          - depth: feet
+            at: [5, 24]
+            rows:
+              - "ssss.ssss"
+              - "ssss.ssss"
+          - depth: torso
+            at: [5, 12]
+            rows:
+              - "sssssssss"
+              - "sssssssss"
+              - "sssssssss"
+              - "sssssssss"
+              - "sssssssss"
+              - "sssssssss"
+              - "sssssssss"
+              - "sssssssss"
+          - depth: head
+            at: [6, 5]
+            rows:
+              - "..ssss..."
+              - ".ssssss.."
+              - "ssssssss."
+              - "sssssEes."
+              - "sssssssss"
+              - "ssssssss."
+              - ".ssssss.."
+              - "..ssss..."
+          - depth: front_arm
+            at: [11, 13]
+            rows:
+              - "ss"
+              - "ss"
+              - "ss"
+              - "ss"
+          - depth: hand
+            at: [13, 16]
+            rows:
+              - "ss"
+              - "ss"
+  hair:
+    - id: court
+      name: Courts
+      frames:
+        east:
+          - depth: hair
+            at: [6, 4]
+            rows:
+              - "..hhhh.."
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hh......"
+              - "hh......"
+              - "hh......"
+    - id: longue
+      name: Longs
+      frames:
+        east:
+          - depth: hair
+            at: [5, 4]
+            rows:
+              - "...hhhh.."
+              - ".hhhhhhhh"
+              - "hhhhhhhhh"
+              - "hhh......"
+              - "hhh......"
+              - "hhh......"
+              - "hhh......"
+              - "hhh......"
+              - "hhh......"
+              - "hhh......"
+              - ".h......."
+    - id: catogan
+      name: Catogan
+      frames:
+        east:
+          - depth: back
+            at: [4, 9]
+            rows:
+              - "BB"
+              - "hh"
+              - "hh"
+              - "hh"
+              - "hh"
+              - "hh"
+          - depth: hair
+            at: [6, 4]
+            rows:
+              - "..hhhh.."
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hh......"
+              - "hh......"
+              - "hh......"
+    - id: tresses
+      name: Tresses
+      frames:
+        east:
+          - depth: back
+            at: [4, 9]
+            rows:
+              - "h."
+              - "hh"
+              - "hh"
+              - "hh"
+              - "gh"
+              - "hh"
+              - ".g"
+              - ".h"
+          - depth: hair
+            at: [5, 4]
+            rows:
+              - "...hhhh.."
+              - ".hhhhhhhh"
+              - ".hhhhhhhh"
+              - "hhh......"
+              - "hhh......"
+              - "hhh......"
+    - id: rase
+      name: Rasés
+      frames:
+        east:
+          - depth: hair
+            at: [6, 4]
+            rows:
+              - "....h"
+              - "..h.."
+              - "hh..."
+              - "hh..."
+              - "hh..."
+    - id: chignon
+      name: Chignon
+      frames:
+        east:
+          - depth: hair
+            at: [4, 4]
+            rows:
+              - ".hh.hhhh.."
+              - "hhhhhhhhhh"
+              - ".hhhhhhhhh"
+              - "..hh......"
+              - "..hh......"
+              - "..hh......"
+  beard:
+    - id: courte
+      name: Courte
+      frames:
+        east:
+          - depth: beard
+            at: [7, 10]
+            rows:
+              - ".hhhhhhh"
+              - "hhhhhhhh"
+              - ".hhhhhh."
+    - id: longue
+      name: Longue
+      frames:
+        east:
+          - depth: beard
+            at: [7, 10]
+            rows:
+              - ".hhhhhhh"
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - ".hhhhhh."
+              - "...hh..."
+    - id: bouc
+      name: Bouc
+      frames:
+        east:
+          - depth: beard
+            at: [12, 10]
+            rows:
+              - "hhh"
+              - "hh."
+              - "hh."
+    - id: moustache
+      name: Moustache
+      frames:
+        east:
+          - depth: beard
+            at: [11, 10]
+            rows:
+              - "hhhh"
+              - "...h"
+  headwear:
+    - id: lunettes
+      name: Lunettes
+      frames:
+        east:
+          - depth: headwear
+            at: [6, 5]
+            rows:
+              - ".....mvv"
+              - "lllllmmm"
+    - id: oreillette
+      name: Oreillette
+      frames:
+        east:
+          - depth: headwear
+            at: [7, 1]
+            rows:
+              - "v......"
+              - "m......"
+              - "m......"
+              - "m......"
+              - ".m....."
+              - ".m....."
+              - ".m....."
+              - ".uu...."
+              - ".uu...."
+              - "..uu..."
+              - "....uuv"
+    - id: bandana
+      name: Bandana
+      dye: orange
+      accent: noir
+      frames:
+        east:
+          - depth: headwear
+            at: [4, 4]
+            rows:
+              - "...dddddd."
+              - "..dddaddad"
+              - "..dadddddd"
+              - ".d........"
+              - "dd........"
+              - "d........."
+    - id: casque-vorr
+      name: Casque Vorr
+      dye: chitine
+      accent: ambre
+      frames:
+        east:
+          - depth: headwear
+            at: [4, 0]
+            rows:
+              - "c...c......."
+              - ".c..c......."
+              - "..c.c......."
+              - "..c..c......"
+              - "...cdcddd..."
+              - "..dddddddd.."
+              - "..dddddddd.."
+              - ".dddddddxxd."
+              - ".ddddddddxd."
+              - ".ddaddddddd."
+              - ".dddddddddd."
+              - "..ddaddddddo"
+              - "...dddddddoo"
+              - ".....dd...o."
+    - id: casque-vorr-chef
+      name: Casque Vorr à crête
+      dye: chitine
+      accent: ambre
+      frames:
+        east:
+          - depth: headwear
+            at: [3, 0]
+            rows:
+              - ".c...c......."
+              - "..c..c......."
+              - "...c.c......."
+              - "..aa..c......"
+              - "..a.cdcddd..."
+              - ".a.dddddddd.."
+              - "a..dddddddd.."
+              - "..dddddddxxd."
+              - "..ddddddddxd."
+              - "..ddaddddddd."
+              - "..dddddddddd."
+              - "...ddaddddddo"
+              - "....dddddddoo"
+              - "......dd...o."
+  outfit:
+    - id: combinaison
+      name: Combinaison
+      dye: orange
+      accent: gris
+      frames:
+        east:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "dd.dd"
+              - "dd.dd"
+              - "aa.aa"
+              - "dd.dd"
+              - "dd.dd"
+          - depth: feet
+            at: [6, 23]
+            rows:
+              - "uuu.uuu"
+              - "uuu.uuu"
+              - "uuu.uuu"
+          - depth: torso
+            at: [6, 12]
+            rows:
+              - "dddddaa"
+              - "ddddddd"
+              - "ddaaddd"
+              - "ddaaddd"
+              - "ddddddd"
+              - "ddddddd"
+              - "ddddddd"
+              - "ddddddd"
+          - depth: belt
+            at: [6, 18]
+            rows:
+              - "aaaaama"
+          - depth: front_arm
+            at: [11, 13]
+            rows:
+              - "dd"
+              - "dd"
+              - "dd"
+              - "aa"
+      per_body:
+        robuste:
+          east:
+            - depth: back_arm
+              at: [3, 13]
+              rows:
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+            - depth: legs
+              at: [6, 19]
+              rows:
+                - "ddd.ddd"
+                - "ddd.ddd"
+                - "aaa.aaa"
+                - "ddd.ddd"
+                - "ddd.ddd"
+            - depth: feet
+              at: [5, 23]
+              rows:
+                - "uuuu.uuuu"
+                - "uuuu.uuuu"
+                - "uuuu.uuuu"
+            - depth: torso
+              at: [5, 12]
+              rows:
+                - "dddddddaa"
+                - "ddddddddd"
+                - "ddaaddddd"
+                - "ddaaddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+            - depth: belt
+              at: [5, 18]
+              rows:
+                - "aaaaaaama"
+            - depth: front_arm
+              at: [11, 13]
+              rows:
+                - "dd"
+                - "dd"
+                - "dd"
+                - "aa"
+    - id: bleu-de-travail
+      name: Bleu de travail
+      dye: bleu
+      accent: gris
+      frames:
+        east:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "dd.dd"
+              - "dd.dd"
+              - "dd.dd"
+              - "dd.dd"
+              - "dd.dd"
+          - depth: feet
+            at: [6, 23]
+            rows:
+              - "uuu.uuu"
+              - "uuu.uuu"
+              - "uuu.uuu"
+          - depth: torso
+            at: [6, 12]
+            rows:
+              - "aadaada"
+              - "aadaada"
+              - "adaaaad"
+              - "addddmd"
+              - "adddddd"
+              - "adddddd"
+              - "adddddd"
+              - "adddddd"
+          - depth: belt
+            at: [6, 18]
+            rows:
+              - "lllllll"
+              - ".mm...."
+          - depth: front_arm
+            at: [11, 13]
+            rows:
+              - "aa"
+              - "aa"
+              - "aa"
+              - "aa"
+      per_body:
+        robuste:
+          east:
+            - depth: back_arm
+              at: [3, 13]
+              rows:
+                - "aa"
+                - "aa"
+                - "aa"
+                - "aa"
+                - "aa"
+            - depth: legs
+              at: [6, 19]
+              rows:
+                - "ddd.ddd"
+                - "ddd.ddd"
+                - "ddd.ddd"
+                - "ddd.ddd"
+                - "ddd.ddd"
+            - depth: feet
+              at: [5, 23]
+              rows:
+                - "uuuu.uuuu"
+                - "uuuu.uuuu"
+                - "uuuu.uuuu"
+            - depth: torso
+              at: [5, 12]
+              rows:
+                - "aadaaaada"
+                - "aadaaaada"
+                - "adaaaaaad"
+                - "addddddmd"
+                - "adddddddd"
+                - "adddddddd"
+                - "adddddddd"
+                - "adddddddd"
+            - depth: belt
+              at: [5, 18]
+              rows:
+                - "lllllllll"
+                - ".mm......"
+            - depth: front_arm
+              at: [11, 13]
+              rows:
+                - "aa"
+                - "aa"
+                - "aa"
+                - "aa"
+    - id: blouse
+      name: Blouse
+      dye: blanc-casse
+      accent: cyan
+      frames:
+        east:
+          - depth: legs
+            at: [7, 22]
+            rows:
+              - "uu.uu"
+              - "uu.uu"
+          - depth: feet
+            at: [6, 24]
+            rows:
+              - "uuu.uuu"
+              - "uuu.uuu"
+          - depth: torso
+            at: [6, 12]
+            rows:
+              - "dddddaa"
+              - "dddddaa"
+              - "ddddddd"
+              - "ddddadd"
+              - "ddddddd"
+              - "ddddddd"
+              - "ddddddd"
+              - "ddddddd"
+              - "ddddddd"
+              - "ddddddd"
+              - "ddddddd"
+          - depth: front_arm
+            at: [11, 13]
+            rows:
+              - "dd"
+              - "dd"
+              - "dd"
+              - "dd"
+      per_body:
+        robuste:
+          east:
+            - depth: back_arm
+              at: [3, 13]
+              rows:
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+            - depth: legs
+              at: [6, 22]
+              rows:
+                - "uuu.uuu"
+                - "uuu.uuu"
+            - depth: feet
+              at: [5, 24]
+              rows:
+                - "uuuu.uuuu"
+                - "uuuu.uuuu"
+            - depth: torso
+              at: [5, 12]
+              rows:
+                - "dddddddaa"
+                - "dddddddaa"
+                - "ddddddddd"
+                - "ddddddadd"
+                - "ddddddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+            - depth: front_arm
+              at: [11, 13]
+              rows:
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+    - id: veste-longue
+      name: Veste longue
+      dye: violet
+      accent: ambre
+      frames:
+        east:
+          - depth: legs
+            at: [7, 21]
+            rows:
+              - "uu.uu"
+              - "uu.uu"
+              - "uu.uu"
+          - depth: feet
+            at: [6, 22]
+            rows:
+              - "uuu.uuu"
+              - "uuu.uuu"
+              - "uuu.uuu"
+              - "uuu.uuu"
+          - depth: torso
+            at: [5, 12]
+            rows:
+              - ".dddddda"
+              - ".dddddda"
+              - ".dddddda"
+              - ".dddddda"
+              - ".dddddda"
+              - "ddddddda"
+              - "ddddddda"
+              - "ddddddda"
+              - "ddddddda"
+              - "ddddddda"
+          - depth: belt
+            at: [6, 17]
+            rows:
+              - "lllllgl"
+          - depth: front_arm
+            at: [11, 13]
+            rows:
+              - "dd"
+              - "dd"
+              - "dd"
+              - "aa"
+      per_body:
+        robuste:
+          east:
+            - depth: back_arm
+              at: [3, 13]
+              rows:
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+            - depth: legs
+              at: [6, 21]
+              rows:
+                - "uuu.uuu"
+                - "uuu.uuu"
+                - "uuu.uuu"
+            - depth: feet
+              at: [5, 22]
+              rows:
+                - "uuuu.uuuu"
+                - "uuuu.uuuu"
+                - "uuuu.uuuu"
+                - "uuuu.uuuu"
+            - depth: torso
+              at: [4, 12]
+              rows:
+                - ".dddddddda"
+                - ".dddddddda"
+                - ".dddddddda"
+                - ".dddddddda"
+                - ".dddddddda"
+                - "ddddddddda"
+                - "ddddddddda"
+                - "ddddddddda"
+                - "ddddddddda"
+                - "ddddddddda"
+            - depth: belt
+              at: [5, 17]
+              rows:
+                - "lllllllgl"
+            - depth: front_arm
+              at: [11, 13]
+              rows:
+                - "dd"
+                - "dd"
+                - "dd"
+                - "aa"
+  armour:
+    - id: plastron
+      name: Plastron
+      dye: acier
+      accent: cyan
+      frames:
+        east:
+          - depth: armour
+            at: [6, 12]
+            rows:
+              - "ddddddd"
+              - "ddddddd"
+              - "daaaaad"
+              - "ddddddd"
+              - "ddddddd"
+              - "ddddddd"
+      per_body:
+        robuste:
+          east:
+            - depth: armour
+              at: [5, 12]
+              rows:
+                - "ddddddddd"
+                - "ddddddddd"
+                - "daaaaaaad"
+                - "ddddddddd"
+                - "ddddddddd"
+                - "ddddddddd"
+    - id: carapace
+      name: Carapace
+      dye: chitine
+      accent: ambre
+      frames:
+        east:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "dd.dd"
+              - "dd.dd"
+              - "da.da"
+              - "dd.dd"
+              - "dd.dd"
+          - depth: feet
+            at: [6, 24]
+            rows:
+              - "ccc.ccc."
+              - "ccc.ccco"
+          - depth: armour
+            at: [5, 11]
+            rows:
+              - ".ddddddd"
+              - "dddddddd"
+              - ".ddddddd"
+              - ".dadadad"
+              - "dddddddd"
+              - ".ddddddd"
+              - ".ddadada"
+              - "dddddddd"
+              - ".ddddddd"
+              - ".ddddddd"
+          - depth: front_arm
+            at: [11, 13]
+            rows:
+              - "dd"
+              - "da"
+              - "dd"
+              - "dd"
+          - depth: hand
+            at: [13, 16]
+            rows:
+              - "cc."
+              - "cco"
+      per_body:
+        robuste:
+          east:
+            - depth: back_arm
+              at: [3, 13]
+              rows:
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+                - "dd"
+            - depth: legs
+              at: [6, 19]
+              rows:
+                - "ddd.ddd"
+                - "ddd.ddd"
+                - "dda.dda"
+                - "ddd.ddd"
+                - "ddd.ddd"
+            - depth: feet
+              at: [5, 24]
+              rows:
+                - "cccc.cccc."
+                - "cccc.cccco"
+            - depth: armour
+              at: [4, 11]
+              rows:
+                - ".ddddddddd"
+                - "dddddddddd"
+                - ".ddddddddd"
+                - ".dadadadad"
+                - "dddddddddd"
+                - ".ddddddddd"
+                - ".ddadadada"
+                - "dddddddddd"
+                - ".ddddddddd"
+                - ".ddddddddd"
+            - depth: front_arm
+              at: [11, 13]
+              rows:
+                - "dd"
+                - "da"
+                - "dd"
+                - "dd"
+            - depth: hand
+              at: [13, 16]
+              rows:
+                - "cc."
+                - "cco"
+  weapon:
+    - id: pistolet-laser
+      name: Pistolet laser
+      frames:
+        east:
+          - depth: weapon
+            at: [13, 14]
+            rows:
+              - "...v..."
+              - "uuuuuuv"
+              - "uu....."
+    - id: fusil-plasma
+      name: Fusil à plasma
+      frames:
+        east:
+          - depth: front
+            at: [9, 15]
+            rows:
+              - "......uu..v"
+              - "uuuvuuuuuuu"
+              - "uuuuuuuuuuu"
+    - id: cle
+      name: Clé
+      frames:
+        east:
+          - depth: weapon
+            at: [15, 10]
+            rows:
+              - ".m.m"
+              - "..mm"
+              - "..m."
+              - ".m.."
+              - ".m.."
+              - "m..."
+    - id: scanner
+      name: Scanner
+      frames:
+        east:
+          - depth: front
+            at: [14, 13]
+            rows:
+              - "...u"
+              - "uvvu"
+              - "uvvu"
+              - "uuuu"
+    - id: injecteur
+      name: Injecteur
+      frames:
+        east:
+          - depth: weapon
+            at: [14, 15]
+            rows:
+              - "ppxpmm"
+    - id: terminal
+      name: Terminal
+      frames:
+        east:
+          - depth: front
+            at: [14, 13]
+            rows:
+              - "uuuv"
+              - "uvvu"
+              - "uvvu"
+              - "uvvu"
+              - "uuuu"
+    - id: faux
+      name: Faux de chitine
+      frames:
+        east:
+          - depth: weapon
+            at: [15, 7]
+            rows:
+              - "..o.."
+              - "...o."
+              - "...o."
+              - "..c.o"
+              - "..c.o"
+              - ".c..."
+              - ".c..."
+              - "c...."
+              - "c...."
+  accessory:
+    - id: propulseur
+      name: Propulseur
+      dye: cyan
+      frames:
+        east:
+          - depth: back
+            at: [3, 12]
+            rows:
+              - "ppp"
+              - "ppp"
+              - "ddd"
+              - "ppp"
+              - "ppp"
+              - "ppp"
+              - "ppp"
+              - "uu."
+      per_body:
+        robuste:
+          east:
+            - depth: back
+              at: [2, 12]
+              rows:
+                - "ppp"
+                - "ppp"
+                - "ddd"
+                - "ppp"
+                - "ppp"
+                - "ppp"
+                - "ppp"
+                - "uu."
+    - id: drone
+      name: Drone
+      frames:
+        east:
+          - depth: back
+            at: [1, 2]
+            rows:
+              - "uuuuu"
+              - "..u.."
+              - ".ppv."
+              - "..p.."
+    - id: sacoche
+      name: Sacoche
+      dye: gris
+      frames:
+        east:
+          - depth: back
+            at: [4, 16]
+            rows:
+              - "ddd"
+              - "dgd"
+              - "ddd"
+              - "ddd"
+          - depth: belt
+            at: [7, 12]
+            rows:
+              - "l...."
+              - ".l..."
+              - "..l.."
+              - "..l.."
+              - "...l."
+              - "....l"
+      per_body:
+        robuste:
+          east:
+            - depth: back
+              at: [3, 16]
+              rows:
+                - "ddd"
+                - "dgd"
+                - "ddd"
+                - "ddd"
+            - depth: belt
+              at: [6, 12]
+              rows:
+                - "l......"
+                - ".l....."
+                - "..ll..."
+                - "....l.."
+                - ".....l."
+                - "......l"
+    - id: crete
+      name: Crête
+      dye: ambre
+      frames:
+        east:
+          - depth: back
+            at: [4, 11]
+            rows:
+              - ".d"
+              - "d."
+              - ".."
+              - ".d"
+              - "d."
+              - ".."
+              - ".d"
+      per_body:
+        robuste:
+          east:
+            - depth: back
+              at: [3, 11]
+              rows:
+                - ".d"
+                - "d."
+                - ".."
+                - ".d"
+                - "d."
+                - ".."
+                - ".d"

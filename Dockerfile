@@ -25,6 +25,8 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY shared/ shared/
 COPY back/ back/
+# The starter sprite packs and looks are compiled into the server.
+COPY content/sprites/ content/sprites/
 # The desktop shell is a workspace member but has no place in the server
 # image: drop it so cargo neither looks for its sources nor builds Tauri.
 # rust-toolchain.toml is not copied on purpose: the image's stable

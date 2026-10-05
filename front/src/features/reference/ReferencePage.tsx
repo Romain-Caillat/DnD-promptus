@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion'
+import { SpritesSection } from '@/features/sprites/SpritesSection'
 import { GameComponentsSection } from './GameComponentsSection'
 import { RollingDie } from './RollingDie'
 import { RARITIES, RARITY_MATERIAL, type Rarity } from '@/components/game/rarity'
@@ -33,6 +34,7 @@ export function ReferencePage() {
           <TypeSection />
         </div>
         <StatsSection />
+        <SpritesSection />
         <MaterialsSection />
         <MotionSection />
         <GameComponentsSection />
