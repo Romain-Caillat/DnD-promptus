@@ -61,6 +61,73 @@
       "expires": "Expire le {{date}}",
       "revoke": "Révoquer",
       "error": "L'action n'a pas abouti. Réessayez."
+    },
+    "playerView": {
+      "kicker": "Ce que voient les joueurs",
+      "notFound": "Cette campagne est introuvable.",
+      "scene": "Scène en cours",
+      "noScene": "Aucune scène n'est ouverte.",
+      "clues": "Indices trouvés",
+      "noClues": "Aucun indice trouvé pour l'instant.",
+      "npcs": "Personnages rencontrés",
+      "noNpcs": "Aucun personnage rencontré pour l'instant."
+    }
+  },
+  "live": {
+    "status": {
+      "connecting": "Connexion…",
+      "live": "En direct",
+      "reconnecting": "Reconnexion…"
+    },
+    "players_zero": "Aucun joueur connecté",
+    "players_one": "{{count}} joueur connecté",
+    "players_other": "{{count}} joueurs connectés"
+  },
+  "game": {
+    "stats": {
+      "hp": "Points de vie",
+      "atk": "Attaque",
+      "ac": "Classe d’armure",
+      "mag": "Magie",
+      "move": "Déplacement",
+      "init": "Initiative"
+    },
+    "gem": "{{name}} : {{value}}",
+    "hearts": "Points de vie : {{hp}} sur {{max}}",
+    "cells": "{{name}} : {{value}} sur {{max}}",
+    "clock": "{{name}} : {{filled}} sur {{parts}}",
+    "clockName": "Horloge de menace",
+    "clockCount": "{{filled}}/{{parts}}",
+    "arcade": "Commandes du combat",
+    "rarity": {
+      "label": "Rareté : {{name}}",
+      "common": "commune",
+      "uncommon": "peu commune",
+      "rare": "rare",
+      "epic": "épique",
+      "legendary": "légendaire",
+      "divine": "divine"
+    },
+    "card": {
+      "kinds": {
+        "action": "Action",
+        "clue": "Indice",
+        "scene": "Scène"
+      },
+      "back": "Carte face cachée",
+      "emblem": "P"
+    },
+    "item": {
+      "empty": "Case vide",
+      "label": "{{name}}, {{rarity}}",
+      "withQuantity": "{{name}}, {{rarity}}, quantité {{count}}"
+    },
+    "condition": {
+      "turns_one": "{{name}}, {{count}} tour",
+      "turns_other": "{{name}}, {{count}} tours"
+    },
+    "toast": {
+      "dismiss": "Ranger"
     }
   },
   "reference": {
@@ -88,6 +155,163 @@
         "cible": "Ciblé"
       },
       "note": "Chaque personnage est une description (pièces et couleurs) que le serveur dessine : le même dessin sur le téléphone, l'écran MJ et la TV. Le groupe regarde à droite, les adversaires à gauche."
+    },
+    "game": {
+      "kicker": "Composants du jeu",
+      "title": "Les pièces du jeu",
+      "replay": "Rejouer les effets",
+      "gauges": {
+        "title": "Gemmes et cœurs",
+        "note": "Une gemme par statistique, sa vague de lumière suit la stat. Les cœurs : 2 PV par cœur, dix cœurs au plus ; au-delà de 20 PV, chaque cœur vaut un dixième du maximum.",
+        "rest": "Repos",
+        "hit": "Coup",
+        "danger": "Danger",
+        "beyond": "31 PV",
+        "tight": "8 cœurs"
+      },
+      "bars": {
+        "title": "Cases et horloges",
+        "note": "Une case par point. Les cases dépensées blanchissent puis tombent ; à 30 % ou moins, les cases restantes clignotent.",
+        "slots": "Emplacements de sort",
+        "move": "Cases restantes",
+        "spent": "Dépensées",
+        "low": "Presque vide",
+        "xp": "Expérience",
+        "twoRows": "Deux rangs",
+        "front": "Le culte se réveille",
+        "clockNote": "Un anneau de cases, pas une tarte : la part suivante clignote quand le MJ s’apprête à la cocher."
+      },
+      "buttons": {
+        "title": "Boutons-cartes",
+        "note": "Ivoire pour l’action principale, noir pour le reste. Enfoncé, le bouton bascule vers l’avant.",
+        "attack": "Attaquer",
+        "attackSub": "Hache d’armes · 1d12+3",
+        "endTurn": "Fin du tour",
+        "endTurnSub": "Il te reste 2 cases",
+        "sending": "Proposer au MJ",
+        "sendingSub": "Envoi en cours",
+        "unavailable": "Indisponible",
+        "equip": "Équiper",
+        "give": "Donner"
+      },
+      "arcade": {
+        "title": "Grappe arcade",
+        "note": "Au téléphone, en combat seulement : un gros bouton sous le pouce, le sac et la fin du tour autour.",
+        "attack": "Attaquer",
+        "bag": "Sac",
+        "endTurn": "Fin du tour",
+        "busy": "Le dé roule : le gros bouton attend."
+      },
+      "cards": {
+        "title": "Cartes à jouer",
+        "note": "Action, indice ou scène. La rareté se lit à la matière et aux losanges, jamais à une couleur.",
+        "strike": "Frappe",
+        "strikeText": "Attaque au corps à corps.",
+        "page": "La page arrachée",
+        "pageText": "Coincée sous l’autel.",
+        "altar": "La salle de l’autel",
+        "altarText": "Des cendres encore tièdes.",
+        "search": "Fouiller",
+        "searchText": "Chercher, observer.",
+        "skill": "Compétence",
+        "tiers": {
+          "common": {
+            "title": "Frappe",
+            "text": "Hache d’armes, 1d12+3."
+          },
+          "uncommon": {
+            "title": "Coup puissant",
+            "text": "La cible recule d’une case."
+          },
+          "rare": {
+            "title": "Fendoir",
+            "text": "Touche deux ennemis voisins."
+          },
+          "epic": {
+            "title": "Tourbillon",
+            "text": "Frappe toutes les cases autour."
+          },
+          "legendary": {
+            "title": "Colère des monts",
+            "text": "Dégâts doublés, cible renversée."
+          },
+          "divine": {
+            "title": "Le Dernier Mot",
+            "text": "Une fois par campagne : la cible tombe."
+          }
+        },
+        "states": {
+          "normal": "En main",
+          "active": "Choisie",
+          "greyed": "Injouable",
+          "back": "Face cachée"
+        }
+      },
+      "items": {
+        "title": "Objets en case",
+        "note": "Le cadre change avec la rareté, l’objet garde ses couleurs. La quantité en bas à droite, la case choisie clignote.",
+        "names": {
+          "sword": "Épée courte",
+          "axe": "Hache des Valombre",
+          "potion": "Potion de soin",
+          "shield": "Écu de la garde",
+          "ring": "Anneau de Myrrhe",
+          "scroll": "Registre des sépultures",
+          "crown": "Couronne du roi sous la colline",
+          "orb": "Larme d’aube",
+          "purse": "Bourse du passeur",
+          "chest": "Coffre"
+        }
+      },
+      "conditions": {
+        "title": "Badges d’état",
+        "note": "Noir pour ce qui gêne, ivoire pour ce qui aide, les tours restants en bas à droite. Le nom et le genre viennent du système de règles.",
+        "fresh": "Nouvel état, en tampon",
+        "names": {
+          "poison": "Empoisonné",
+          "stun": "Étourdi",
+          "sleep": "Endormi",
+          "invisible": "Invisible",
+          "fire": "En feu",
+          "restrained": "Entravé",
+          "fear": "Effrayé",
+          "blessed": "Béni"
+        }
+      },
+      "banners": {
+        "title": "Bandeaux de statut",
+        "note": "Chaque écran ouvre sur un bandeau : ce qui se passe, et si c’est à toi.",
+        "wait": "On attend le MJ",
+        "listen": "Le MJ raconte · écoute",
+        "you": "À vous : que faites-vous ?",
+        "turn": "À ton tour, Borin !",
+        "star": "Tu as trouvé quelque chose",
+        "hurt": "Le gobelin te touche : −6 PV",
+        "warn": "Une fiche attend ta relecture"
+      },
+      "toasts": {
+        "title": "Toasts",
+        "note": "Ivoire : une bonne nouvelle. Noir : ce qui te gêne. Filet : une information. Glisse à droite pour ranger.",
+        "again": "Remettre les toasts",
+        "good": {
+          "kicker": "Butin · rare",
+          "message": "Écu de la garde rejoint ton sac."
+        },
+        "bad": {
+          "kicker": "État · 3 tours",
+          "message": "Tu es empoisonné : désavantage aux attaques."
+        },
+        "info": {
+          "kicker": "Indice",
+          "message": "Le MJ vous montre le Registre des sépultures."
+        }
+      },
+      "panel": {
+        "open": "Ouvrir le sac",
+        "title": "Ton sac",
+        "note": "Le panneau monte du bas, par-dessus l’écran. Glisse vers le bas pour le fermer.",
+        "back": "Retour au jeu"
+      }
     },
     "palette": {
       "title": "Couleurs · table noire, cartes ivoire",

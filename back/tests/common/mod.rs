@@ -6,12 +6,15 @@
 
 #![allow(dead_code)]
 
+pub mod live;
+
 use std::str::FromStr;
 
 use axum::Router;
 use axum::body::Body;
 use axum::http::{Request, StatusCode, header};
 use promptus_back::auth::setup::SetupState;
+use promptus_back::live::{LiveConfig, LiveHub};
 use promptus_back::state::{AppState, Auth};
 use serde_json::Value;
 use sqlx::PgPool;
@@ -103,11 +106,27 @@ pub fn app(pool: PgPool) -> Router {
     app_with(pool, SetupState::closed())
 }
 
+/// The real router, without the live listener: it would hold one of the
+/// test pool's two connections, and only tests opening live sockets need
+/// it ([`app_live`]).
 pub fn app_with(pool: PgPool, setup: SetupState) -> Router {
+    router_with(pool, setup, LiveHub::new(LiveConfig::default()))
+}
+
+/// The real router with its live listener running, and the hub, for
+/// tests that open live sockets. Must run inside a Tokio runtime.
+pub fn app_live(pool: PgPool, config: LiveConfig) -> (Router, LiveHub) {
+    let live = LiveHub::new(config);
+    promptus_back::live::listener::spawn(pool.clone(), live.clone());
+    (router_with(pool, SetupState::closed(), live.clone()), live)
+}
+
+fn router_with(pool: PgPool, setup: SetupState, live: LiveHub) -> Router {
     promptus_back::app::router(
         AppState {
             pool,
             auth: auth(setup),
+            live,
         },
         &[],
     )

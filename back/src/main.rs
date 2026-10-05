@@ -1,4 +1,5 @@
 use promptus_back::auth::setup::SetupState;
+use promptus_back::live::{self, LiveConfig, LiveHub};
 use promptus_back::state::{AppState, Auth};
 use promptus_back::{app, config::Config, db};
 use tracing_subscriber::EnvFilter;
@@ -35,7 +36,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         format!("passkeys: {e}. Set PUBLIC_ORIGIN (and WEBAUTHN_RP_ID if needed), see .env.example")
     })?;
 
-    let mut router = app::router(AppState { pool, auth }, &config.allowed_origins);
+    let live = LiveHub::new(LiveConfig::default());
+    live::listener::spawn(pool.clone(), live.clone());
+
+    let mut router = app::router(AppState { pool, auth, live }, &config.allowed_origins);
     if let Some(dir) = &config.front_dir {
         tracing::info!("Serving the front from {}", dir.display());
         router = app::with_front(router, dir);

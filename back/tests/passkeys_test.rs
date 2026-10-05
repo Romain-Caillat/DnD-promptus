@@ -419,7 +419,14 @@ async fn over_https_the_session_cookie_is_secure() {
     let auth =
         promptus_back::state::Auth::new(HTTPS, None, SetupState::open_with(SETUP_CODE.into()))
             .unwrap();
-    let app = promptus_back::app::router(promptus_back::state::AppState { pool, auth }, &[]);
+    let app = promptus_back::app::router(
+        promptus_back::state::AppState {
+            pool,
+            auth,
+            live: promptus_back::live::LiveHub::new(Default::default()),
+        },
+        &[],
+    );
     let mut key = Authenticator::at(HTTPS);
 
     let r = register(&app, SETUP_CODE, "Romain", &mut key).await;
