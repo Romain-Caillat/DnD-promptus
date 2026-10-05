@@ -61,7 +61,98 @@
       "expires": "Expire le {{date}}",
       "revoke": "Révoquer",
       "error": "L'action n'a pas abouti. Réessayez."
+    },
+    "campaigns": {
+      "title": "Mes campagnes",
+      "none": "Aucune campagne pour l'instant.",
+      "import": "Importer une campagne (fichier YAML)",
+      "importing": "Import…",
+      "importError": "Ce fichier n'est pas une campagne lisible.",
+      "error": "Les campagnes n'ont pas pu être chargées. Réessayez."
+    },
+    "table": {
+      "back": "Mes campagnes",
+      "players": "Joueurs",
+      "loading": "Chargement…",
+      "notFound": "Cette campagne n'existe pas ou n'est pas la vôtre.",
+      "inviteTitle": "Inviter la table",
+      "linkLabel": "Le lien",
+      "linkField": "Lien d'invitation",
+      "noLink": "Aucun lien actif : personne ne peut rejoindre.",
+      "hiddenLink": "Un lien est actif jusqu'au {{date}}, créé sur un autre appareil. Le serveur n'en garde que l'empreinte : crée un nouveau lien pour le copier ici.",
+      "validUntil": "Valable jusqu'au {{date}}. Le lien ne donne accès qu'à cette campagne ; si tu le changes, ceux qui ont déjà rejoint gardent leur place.",
+      "create": "Créer le lien",
+      "regenerate": "Nouveau lien",
+      "close": "Fermer le lien",
+      "messageLabel": "Le message à coller sur Discord · modifiable",
+      "message": "Salut ! Nouvelle campagne : {{title}}. {{hook}}\nOuvrez le lien, choisissez un pseudo et créez votre personnage, je valide. Pas besoin de compte.\n{{link}}",
+      "copy": "Copier le lien et le message",
+      "copySub": "À coller sur votre serveur Discord",
+      "copied": "Copié ! Colle-le sur Discord.",
+      "copyFailed": "La copie a échoué : sélectionne le message et copie-le à la main.",
+      "tableTitle": "La table",
+      "empty": "Personne n'a encore rejoint.",
+      "creating": "crée son personnage…",
+      "watching": "regarde la partie",
+      "online": "en ligne",
+      "seen": "vu le {{date}}",
+      "status": {
+        "draft": "en cours",
+        "submitted": "à relire",
+        "validated": "validé",
+        "returned": "renvoyé",
+        "spectator": "spectateur"
+      },
+      "remove": "Retirer",
+      "confirmRemove": "Retirer {{nickname}} et son personnage ?",
+      "footNote": "Rien n'entre en jeu sans ta validation.",
+      "error": "L'action n'a pas abouti. Réessayez."
     }
+  },
+  "join": {
+    "loading": "Ouverture de l'invitation…",
+    "dead": "Ce lien d'invitation ne marche plus : il a été changé, fermé, ou il a expiré. Demande le nouveau lien au MJ.",
+    "banner": "Tu es invité à une partie",
+    "invites": "{{gm}} t'invite",
+    "nickname": "Ton pseudo",
+    "noAccount": "Pas de compte : ce navigateur garde ta place.",
+    "create": "Créer mon personnage",
+    "createSub": "Moins de deux minutes",
+    "watch": "Regarder seulement",
+    "watchSub": "Tu vois la partie, sans personnage",
+    "pending": "Un instant…",
+    "already": "Ce navigateur a déjà sa place à cette table : {{nickname}}.",
+    "resume": "Reprendre",
+    "resumeSub": "Retrouver ma place et mon personnage",
+    "errors": {
+      "nickname": "Choisis un pseudo de 1 à 40 caractères.",
+      "taken": "Ce pseudo est déjà pris à cette table. Choisis-en un autre.",
+      "generic": "Une erreur est survenue. Réessaie."
+    }
+  },
+  "play": {
+    "loading": "Chargement…",
+    "notJoined": "Ce navigateur n'a pas de place à cette table. Ouvre le lien d'invitation envoyé par le MJ.",
+    "error": "La partie n'a pas pu être chargée. Réessaie.",
+    "banner": {
+      "draft": "Ton personnage est à créer",
+      "submitted": "Envoyé au MJ",
+      "validated": "Ton personnage est validé !",
+      "returned": "Le MJ te demande un changement",
+      "spectator": "Tu regardes la partie"
+    },
+    "hello": "{{nickname}}, à la table de {{gm}}",
+    "character": "Ton personnage",
+    "unnamed": "Sans nom pour l'instant",
+    "status": {
+      "draft": "Brouillon. Ta place est gardée : le créateur de personnage s'ouvrira ici.",
+      "submitted": "Le MJ regarde ton personnage…",
+      "validated": "Validé par le MJ.",
+      "returned": "Le MJ t'a renvoyé ton personnage avec un mot."
+    },
+    "gmNote": "Le mot du MJ",
+    "spectator": "Tu verras ce que montre l'écran partagé, pas les fiches.",
+    "keep": "Garde ce navigateur : c'est lui qui garde ta place."
   },
   "reference": {
     "kicker": "Système visuel · fondations",

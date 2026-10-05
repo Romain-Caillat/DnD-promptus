@@ -44,6 +44,7 @@ describe('GmHomePage', () => {
     let pending: (typeof INVITE)[] = []
     const api = mockApi({
       'GET /api/me': () => ME,
+      'GET /api/campaigns': () => ({ status: 200, body: { data: [] } }),
       'GET /api/gm-invites': () => ({ status: 200, body: { data: pending } }),
       'POST /api/gm-invites': () => {
         pending = [INVITE]
@@ -74,6 +75,7 @@ describe('GmHomePage', () => {
   it('signs out and returns to the sign-in page', async () => {
     const api = mockApi({
       'GET /api/me': () => ME,
+      'GET /api/campaigns': () => ({ status: 200, body: { data: [] } }),
       'GET /api/gm-invites': () => ({ status: 200, body: { data: [] } }),
       'POST /api/auth/sign-out': () => ({ status: 204 }),
     })

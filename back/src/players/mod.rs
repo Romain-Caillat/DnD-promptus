@@ -368,13 +368,14 @@ pub async fn find_by_token(
 ///
 /// Fails on a database error.
 pub async fn character_of(pool: &PgPool, player: &Player) -> Result<Option<Character>, AppError> {
-    let row: Option<(
+    type CharacterRow = (
         Uuid,
         String,
         Json<CharacterSheet>,
         Option<String>,
         DateTime<Utc>,
-    )> = sqlx::query_as(
+    );
+    let row: Option<CharacterRow> = sqlx::query_as(
         "SELECT id, status, sheet, gm_note, updated_at FROM characters WHERE player_id = $1",
     )
     .bind(player.id)
