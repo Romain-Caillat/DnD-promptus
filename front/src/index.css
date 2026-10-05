@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "./styles/tokens.css";
+@import "./components/game/game.css";
 
 /* Promptus tokens live in src/styles/tokens.css (shown in-app at
  * /reference). This file only wires shadcn's variables into Tailwind. */

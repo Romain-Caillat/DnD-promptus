@@ -333,7 +333,7 @@ passent dans PCT 105. **Reste** : un coup d'œil de Romain sur
 `/reference` dans un navigateur, animations réduites activées et
 désactivées — la page n'a été vérifiée que par le build et les tests.
 
-### `ui/build-game-components` · todo
+### `ui/build-game-components` · doing — reste l’essai sur un vrai téléphone
 
 **Pourquoi** — Le jeu tient dans une dizaine de pièces réutilisées
 partout ; les refaire écran par écran donnerait dix variantes.
@@ -355,6 +355,33 @@ couleur).
 **Origine** — Planches « Jauges et boutons », « Rareté des
 compétences », « Objets et butin », « États des personnages »,
 « Notifications »
+
+**État** — Douze composants dans `front/src/components/game/`, chacun
+fonction de ses props, sans appel réseau, styles portés des planches
+dans `game.css` (classes `gk-`, couleurs lues dans les tokens) :
+`StatGem` (grille 7/9/11 cases, vague de lumière propre à chaque stat),
+`Hearts`, `CellBar`, `ThreatClock`, `CardButton` (ivoire / noir, bascule
+à l’appui, reflet, enfoncé, désactivé), `ArcadeCluster`, `GameCard`
+(action, indice, scène ; six raretés ; en main, choisie, injouable, de
+dos), `ItemSlot` (les dix sprites 12 × 12 du canevas, cadre par rareté,
+quantité, case choisie), `ConditionBadge` (huit icônes, aide / gêne,
+tours, tampon), `StatusBanner` (sept tons), `Toast` + `ToastStack`
+(trois tons, glisser à droite ou bouton « Ranger »), `BottomPanel`
+(tiroir Base UI qui monte du bas, se ferme en glissant ou par Échap).
+Tout est montré avec ses états dans `/reference` (section à part,
+`GameComponentsSection.tsx`, bouton « Rejouer les effets »).
+Choix : les cœurs suivent le composant du canevas et `MEMORY.md` —
+2 PV par cœur, dix cœurs au plus, au-delà de 20 PV chaque cœur vaut
+max / 10 (la note « au-delà de 40 PV » de la planche des pistes est
+dépassée) ; `count` permet moins de cœurs quand la place manque. Les
+raretés reprennent les noms de `Rarity` (`shared/src/story/model.rs`),
+le badge prend nom et genre (`boon`/`bane`) de `ConditionDef`. Coups,
+cases dépensées, tampons et toasts jouent une fois (remonter le
+composant pour rejouer) ; sous mouvement réduit, cœurs et cases montrent
+directement l’état final. Tests : cœurs au-delà de 20 PV, cases
+dépensées, rareté lue sans couleur (losanges + nom), un essai par
+composant. Reste pour Romain : regarder `/reference` sur son téléphone,
+en mouvement réduit aussi, et dire si les rendus collent aux planches.
 
 ### `ui/roll-faceted-dice` · todo
 
