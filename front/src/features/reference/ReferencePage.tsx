@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion'
+import { SpritesSection } from '@/features/sprites/SpritesSection'
 import { RollingDie } from './RollingDie'
 import { STAT_BG, STAT_TEXT, STATS, shapeMask, type Stat } from './stats'
 
@@ -31,6 +32,7 @@ export function ReferencePage() {
           <TypeSection />
         </div>
         <StatsSection />
+        <SpritesSection />
         <MaterialsSection />
         <MotionSection />
       </div>

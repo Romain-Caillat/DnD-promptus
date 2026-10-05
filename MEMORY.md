@@ -71,6 +71,14 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
 - **Exception: characters are in colour.** Pixel-art sprites in the
   Terraria / Starbound style: side view, dark outline, top-light and
   back-shadow shading, heroes face right and enemies face left.
+- **A character is a description, drawn by the server only.** A
+  `CharacterLook` (pieces of a pack + colours, `shared/src/sprite/`) is
+  rendered in Rust to a PNG (`GET /api/sprites/render.png`); every
+  screen shows that image enlarged pixelated, so the phone, the GM
+  screen and the TV cannot drift apart. No second renderer in TS. The
+  outline is drawn only on empty cells around the silhouette, so it
+  never covers the face; condition effects are client-side overlays
+  chosen by the rule system (`conditions[].visual`).
 - **Every visual players see is pixel art**: sprites, items, maps, and
   also scene illustrations and NPC portraits (decided 4 October 2026;
   the ink-engraving images of the Corsaires are not reused). Each world

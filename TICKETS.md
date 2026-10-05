@@ -1453,7 +1453,7 @@ Les personnages sont des sprites pixel art en couleur, façon Terraria /
 Starbound (voir `MEMORY.md` §2). Dans le design actuel, ils sont fixes
 et vus de profil ; dans l'app, chaque joueur fabrique le sien.
 
-### `characters/render-layered-sprite` · todo
+### `characters/render-layered-sprite` · doing — reste à regarder les douze personnages sur la page de référence
 
 **Pourquoi** — Le personnage est une description (couches et couleurs),
 pas une image : la carte, la TV, la fiche et le créateur le dessinent
@@ -1471,6 +1471,29 @@ l'app à partir de leur description, identiques sur le téléphone, l'écran
 MJ et la TV.
 
 **Origine** — `docs/design/avatar.py`, `docs/design/sprite-prototype.py`
+
+**État** — Fait : le format de description (`shared/src/sprite/`,
+`CharacterLook` en YAML ou JSON), les packs `marins-1718` et
+`equipage-spatial` (`content/sprites/<pack>/pack.yaml` : calques en
+grilles de caractères, palettes peau / cheveux / tissu, une variante par
+corps svelte ou robuste), le rendu en Rust (ordre des calques, palette,
+ombrage trois tons du prototype, contour d'un pixel autour de la
+silhouette, jamais sur le visage, ombre portée) et l'allure des six
+personnages types et des adversaires de chaque monde
+(`content/sprites/looks/<monde>.yaml`, mêmes identifiants que les
+campagnes). Le serveur dessine seul : `GET /api/sprites/render.png`
+renvoie le PNG d'une description (mis en cache par empreinte), et
+`<Sprite look scale facing effects />` l'agrandit en pixels nets ; le
+téléphone, l'écran MJ et la TV chargent donc la même image. Les effets
+d'état (poison, étourdi, endormi, invisible, feu, entravé, effrayé,
+béni, KO, cible) sont posés par-dessus en CSS, et chaque état du
+système de règles dit lequel (`conditions[].visual`). Les Vorr sont des
+humanoïdes en carapace, casque fermé, recolorés chitine et ambre : le
+pack ne dessine que des humains. Images de référence :
+`shared/tests/golden/<monde>/planche.png`. Reste pour Romain : regarder
+les douze personnages et les adversaires sur `/reference` et dire ce qui
+cloche ; les directions nord et sud viennent avec
+`characters/walk-in-four-directions`.
 
 ### `characters/build-character-creator` · todo
 

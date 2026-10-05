@@ -49,6 +49,9 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             post(api::auth::sign_in_options),
         )
         .route("/api/auth/sign-in", post(api::auth::sign_in))
+        // Sprites: a description is drawn the same for GM, players and TV.
+        .route("/api/sprites/render.png", get(api::sprites::render_png))
+        .route("/api/sprites/looks", get(api::sprites::looks))
         // An unknown API path is a JSON 404, never the app shell that
         // `with_front` serves for every other path. A wildcard loses to
         // every exact route, so it never shadows a GM route, and it sits

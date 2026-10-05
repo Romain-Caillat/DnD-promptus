@@ -1,0 +1,101 @@
+# Le Brasier — l'allure des six personnages types et de leurs adversaires
+# (characters/render-layered-sprite).
+#
+# Pièces du pack equipage-spatial (content/sprites/equipage-spatial).
+# Identifiants : emplacements du groupe et adversaires de
+# content/campaigns/brasier. Le groupe regarde à droite, les Vorr à gauche.
+#
+# Les Vorr sont des insectoïdes, et le pack de départ ne dessine que des
+# humains : un Vorr est ici un humanoïde en carapace de chitine, casque
+# fermé (il cache le visage), recoloré vert sombre et ambre, avec une
+# faux de chitine. Une vraie silhouette d'insecte (quatre bras, corps
+# courbé) demandera son propre corps dans un pack.
+format: 1
+world: brasier
+campaign: le-brasier
+
+party:
+  # L'as du manche : combinaison orange, propulseur dorsal, pistolet laser.
+  - id: pj_pilote
+    look:
+      pack: equipage-spatial
+      body: svelte
+      skin: clair
+      hair: { style: court, colour: roux }
+      outfit: { piece: combinaison, dye: orange, accent: gris }
+      accessories: [{ piece: propulseur, dye: orange }]
+      weapon: pistolet-laser
+  # La puissance de feu : plastron, fusil à plasma lourd.
+  - id: pj_canonnier
+    look:
+      pack: equipage-spatial
+      body: robuste
+      skin: brun
+      hair: { style: rase, colour: noir }
+      beard: courte
+      outfit: { piece: combinaison, dye: gris, accent: noir }
+      armour: { piece: plastron, dye: acier, accent: rouge }
+      weapon: fusil-plasma
+  # Le cœur technique : bleu de travail, lunettes, drone, clé.
+  - id: pj_mecano
+    look:
+      pack: equipage-spatial
+      body: svelte
+      skin: hale
+      hair: { style: chignon, colour: brun }
+      headwear: lunettes
+      outfit: { piece: bleu-de-travail, dye: bleu, accent: gris }
+      accessories: [drone]
+      weapon: cle
+  # Les yeux du vaisseau : blouse, oreillette, scanner xéno.
+  - id: pj_xenologue
+    look:
+      pack: equipage-spatial
+      body: svelte
+      skin: ebene
+      hair: { style: longue, colour: noir }
+      headwear: oreillette
+      outfit: { piece: blouse, dye: blanc-casse, accent: cyan }
+      weapon: scanner
+  # La survie de l'équipage : blouse à parements rouges, injecteur.
+  - id: pj_toubib
+    look:
+      pack: equipage-spatial
+      body: svelte
+      skin: pale
+      hair: { style: court, colour: blond }
+      outfit: { piece: blouse, dye: blanc-casse, accent: rouge }
+      accessories: [{ piece: sacoche, dye: rouge }]
+      weapon: injecteur
+  # La voix : veste longue violette galonnée d'ambre, terminal de négoce.
+  - id: pj_quartier_maitre
+    look:
+      pack: equipage-spatial
+      body: robuste
+      skin: hale
+      hair: { style: catogan, colour: gris }
+      beard: bouc
+      outfit: { piece: veste-longue, dye: violet, accent: ambre }
+      weapon: terminal
+
+foes:
+  - id: abordeur-vorr
+    look:
+      pack: equipage-spatial
+      body: svelte
+      skin: "#2A5552"
+      hair: { colour: noir }
+      headwear: { piece: casque-vorr, dye: chitine, accent: ambre }
+      armour: { piece: carapace, dye: chitine, accent: ambre }
+      weapon: faux
+  # Plus massif, carapace striée d'ambre, crête dorsale.
+  - id: chef-d-escouade-vorr
+    look:
+      pack: equipage-spatial
+      body: robuste
+      skin: "#2A5552"
+      hair: { colour: noir }
+      headwear: { piece: casque-vorr-chef, dye: chitine-sombre, accent: ambre }
+      armour: { piece: carapace, dye: chitine-sombre, accent: ambre }
+      accessories: [{ piece: crete, dye: ambre }]
+      weapon: faux
