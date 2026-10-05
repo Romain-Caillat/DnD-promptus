@@ -1053,7 +1053,7 @@ Le direct : comment une table se réunit et ce qui circule entre les
 écrans. Invariants : projection joueur unique, temps réel sans données
 de jeu, jetons hachés (`MEMORY.md` §3).
 
-### `session/stream-live-changes` · todo
+### `session/stream-live-changes` · doing — reste l'essai sur un vrai téléphone, et la route joueur
 
 **Périmètre** — WebSocket Axum par session : « ceci a changé » (Postgres
 NOTIFY relayé) et présence ; les clients relisent par l'API ;
@@ -1063,6 +1063,49 @@ reconnexion qui rattrape l'état.
 exact de la table sans recharger la page.
 
 **Origine** — V1 `realtime/`, `notify.ts`
+
+**État** — Le canal est dans le serveur Axum (plus de serveur Node à
+part). `GET /api/campaigns/{id}/live` ouvre la socket du MJ, derrière
+`require_gm` (une campagne d'un autre MJ : 404 avant toute ouverture).
+Chaque écriture suivie incrémente un compteur par sujet (`world`,
+`story`, prêt pour `character:<id>`) dans `live_versions` (migration
+`005`) et émet `pg_notify` **dans sa propre transaction** : rien ne part
+si elle est annulée. `campaigns::save_world` et `save_story` le font,
+donc `update_world` et la réimportation YAML. Une seule tâche du serveur
+écoute Postgres (une connexion du pool, passé à 11) et relaie aux
+sockets de la campagne par un canal `broadcast`. La socket ne transporte
+que `{sujet, version}` et la présence (MJ connecté, identifiants des
+joueurs), jamais de données : le client relit par l'API, donc par la
+projection. Rattrapage : chaque (re)connexion commence par les versions
+courantes de tous les sujets, et le client relit ceux qui ont bougé ; une
+socket en retard sur son canal, ou toutes après une coupure de Postgres,
+reçoivent `resync` avec les versions. Battement : le serveur pingue
+toutes les 15 s et lâche un client muet depuis 45 s (sa présence
+s'arrête) ; le client pingue toutes les 10 s, abandonne une socket muette
+depuis 25 s, se reconnecte avec un délai doublé (0,5 s → 8 s), tout de
+suite quand l'appareil revient en ligne ou la page redevient visible
+(avec une sonde de 3 s si la socket a l'air encore ouverte). Côté
+interface : `useLiveChanges(campaignId, onChange)`, l'indicateur
+« Connexion… / En direct / Reconnexion… », et une première page qui s'en
+sert, `/campagnes/:id/vue-joueurs` (ce que voient les joueurs, tenu à
+jour en direct, avec le nombre de joueurs connectés). Le proxy Vite
+transmet déjà les WebSockets (`ws: true`) et l'image de production les
+sert à la même origine. Tests : 9 tests Rust de bout en bout (vrai
+serveur TCP, vrais clients WebSocket) — deux clients reçoivent chaque
+écriture avec une version croissante, une écriture annulée ne notifie
+rien, un client coupé pendant trois écritures retrouve l'état exact, la
+réimportation est son propre sujet, présence à l'arrivée et au départ,
+client muet expulsé, client en retard → `resync`, écouteur coupé →
+`resync` puis reprise, un autre MJ refusé (404, 401 sans session) ; plus
+la reconnexion, le délai, le rattrapage et la sonde en Vitest avec une
+fausse socket, et la page qui se rattrape après une coupure. **Reste** :
+la route joueur, à brancher par `session/invite-and-join` (son
+extracteur produit un `Viewer::Player`, puis une ligne vers
+`live::socket::upgrade` ; d'ici là aucune socket joueur n'est acceptée) ;
+appeler `live::touch` avec `Topic::Character` dans les écritures de
+fiches ; puis l'essai réel : ouvrir `/campagnes/<id>/vue-joueurs` sur le
+téléphone, couper le Wi-Fi dix secondes pendant qu'une écriture passe
+depuis l'ordinateur, vérifier que la page revient seule à l'état exact.
 
 ### `session/project-player-view` · todo
 

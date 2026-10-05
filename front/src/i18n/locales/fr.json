@@ -61,7 +61,27 @@
       "expires": "Expire le {{date}}",
       "revoke": "Révoquer",
       "error": "L'action n'a pas abouti. Réessayez."
+    },
+    "playerView": {
+      "kicker": "Ce que voient les joueurs",
+      "notFound": "Cette campagne est introuvable.",
+      "scene": "Scène en cours",
+      "noScene": "Aucune scène n'est ouverte.",
+      "clues": "Indices trouvés",
+      "noClues": "Aucun indice trouvé pour l'instant.",
+      "npcs": "Personnages rencontrés",
+      "noNpcs": "Aucun personnage rencontré pour l'instant."
     }
+  },
+  "live": {
+    "status": {
+      "connecting": "Connexion…",
+      "live": "En direct",
+      "reconnecting": "Reconnexion…"
+    },
+    "players_zero": "Aucun joueur connecté",
+    "players_one": "{{count}} joueur connecté",
+    "players_other": "{{count}} joueurs connectés"
   },
   "reference": {
     "kicker": "Système visuel · fondations",
