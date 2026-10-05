@@ -185,16 +185,17 @@ async fn a_seated_player_follows_their_campaign_and_only_it() {
     let mut phone = open_player(t.addr, Some(&token), t.campaign)
         .await
         .expect("a seated player opens the socket of their campaign");
-    // Joining wrote his character: its topic already has a version.
+    // Joining wrote his character and filled a seat: both topics
+    // already have a version.
     let versions = ready(&mut phone).await;
-    assert_eq!(versions.as_object().unwrap().len(), 1, "{versions}");
-    assert!(
-        versions
-            .as_object()
-            .unwrap()
-            .keys()
-            .all(|k| k.starts_with("character:"))
-    );
+    let mut topics: Vec<&str> = versions
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(|k| k.split(':').next().unwrap())
+        .collect();
+    topics.sort_unstable();
+    assert_eq!(topics, ["character", "table"], "{versions}");
     let msg = next_of(&mut phone, "presence").await;
     assert_eq!(msg["players"], json!([marc.to_string()]));
 

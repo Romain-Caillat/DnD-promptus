@@ -18,8 +18,9 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 /// Every GM route, `{invite}` standing for an invitation of the caller,
-/// `{campaign}` for one of their campaigns and `{player}` for a player
-/// at that campaign's table.
+/// `{campaign}` for one of their campaigns, `{player}` for a player at
+/// that campaign's table, `{character}` for that player's character and
+/// `{hook}` for a secret hook drawn from it.
 const GM_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/me"),
     ("GET", "/api/gm-invites"),
@@ -35,6 +36,21 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/campaigns/{campaign}/invite"),
     ("POST", "/api/campaigns/{campaign}/invite"),
     ("GET", "/api/campaigns/{campaign}/players"),
+    ("GET", "/api/campaigns/{campaign}/characters/{character}"),
+    // Each is called on a sheet set back to "submitted" first.
+    (
+        "POST",
+        "/api/campaigns/{campaign}/characters/{character}/return",
+    ),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/characters/{character}/validate",
+    ),
+    ("GET", "/api/campaigns/{campaign}/hooks"),
+    ("POST", "/api/campaigns/{campaign}/hooks"),
+    ("PUT", "/api/campaigns/{campaign}/hooks/{hook}"),
+    ("DELETE", "/api/campaigns/{campaign}/hooks/{hook}"),
+    // After the character routes: removing the player removes them.
     ("DELETE", "/api/campaigns/{campaign}/players/{player}"),
     ("DELETE", "/api/campaigns/{campaign}/invite"),
     ("GET", "/api/campaigns/{campaign}/live"),
@@ -53,6 +69,17 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             "rules": { "id": "corsaires", "version": 1 }
         })),
         (_, p) if p.ends_with("/import") => Some(serde_json::json!({ "yaml": FIXTURE })),
+        // Refused before any check: the decision bodies need the sheet's
+        // date, filled by the control sweep (`submitted_body`).
+        (_, p) if p.ends_with("/validate") || p.ends_with("/return") => {
+            Some(serde_json::json!({ "seen": "2026-10-05T00:00:00Z", "note": "Un mot." }))
+        }
+        ("POST", p) if p.ends_with("/hooks") => {
+            Some(serde_json::json!({ "characterId": Uuid::nil(), "title": "Sweep" }))
+        }
+        ("PUT", p) if p.ends_with("/hooks/{hook}") => {
+            Some(serde_json::json!({ "title": "Sweep", "body": "Réécrite." }))
+        }
         _ => None,
     }
 }
@@ -62,12 +89,59 @@ struct Ids {
     invite: String,
     campaign: String,
     player: String,
+    character: String,
+    hook: String,
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
     path.replace("{invite}", &ids.invite)
         .replace("{campaign}", &ids.campaign)
         .replace("{player}", &ids.player)
+        .replace("{character}", &ids.character)
+        .replace("{hook}", &ids.hook)
+}
+
+/// Every placeholder filled for `player` of `campaign`: an invitation of
+/// the GM, the player's character and a hook drawn from it.
+async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, player: String) -> Ids {
+    let character: Uuid = sqlx::query_scalar("SELECT id FROM characters WHERE player_id = $1")
+        .bind(Uuid::parse_str(&player).unwrap())
+        .fetch_one(pool)
+        .await
+        .unwrap();
+    let r = call(
+        app,
+        Some(token),
+        "POST",
+        &format!("/api/campaigns/{campaign}/hooks"),
+        Some(serde_json::json!({ "characterId": character, "title": "Le frère disparu" })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
+    Ids {
+        invite: invite_of(app, token).await,
+        hook: r.body["data"]["id"].as_str().unwrap().to_string(),
+        character: character.to_string(),
+        campaign,
+        player,
+    }
+}
+
+/// Put `character` back in "submitted" and return the `updatedAt` a
+/// review would have read, as the body of a decision.
+async fn submitted_body(pool: &PgPool, character: &str, path: &str) -> Value {
+    let seen: chrono::DateTime<chrono::Utc> = sqlx::query_scalar(
+        "UPDATE characters SET status = 'submitted' WHERE id = $1 RETURNING updated_at",
+    )
+    .bind(Uuid::parse_str(character).unwrap())
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    if path.ends_with("/return") {
+        serde_json::json!({ "seen": seen, "note": "Un mot." })
+    } else {
+        serde_json::json!({ "seen": seen })
+    }
 }
 
 /// A player seated at `campaign`'s table: their id and device token.
@@ -141,6 +215,16 @@ async fn assert_all_refuse_raw(app: &Router, pool: &PgPool, cookie: Option<Strin
         player_exists(pool, &ids.player).await,
         "a refused DELETE removed a player"
     );
+    let (status, hooks): (String, i64) = sqlx::query_as(
+        "SELECT c.status, (SELECT COUNT(*) FROM secret_hooks h WHERE h.character_id = c.id)
+         FROM characters c WHERE c.id = $1",
+    )
+    .bind(Uuid::parse_str(&ids.character).unwrap())
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    assert_eq!(status, "draft", "a refused decision changed the sheet");
+    assert_eq!(hooks, 1, "a refused hook route added or removed one");
 }
 
 async fn player_exists(pool: &PgPool, id: &str) -> bool {
@@ -156,14 +240,9 @@ async fn every_gm_route_refuses_without_a_valid_session() {
     let pool = common::test_pool().await;
     let app = common::app(pool.clone());
     let (gm, token) = common::signed_in_gm(&pool, "Romain").await;
-    let invite = invite_of(&app, &token).await;
     let campaign = campaign_of(&app, &token).await;
     let (player, _) = player_of(&app, &token, &campaign).await;
-    let ids = Ids {
-        invite,
-        campaign,
-        player,
-    };
+    let ids = ids_of(&app, &pool, &token, campaign, player).await;
     let campaigns_before = campaign_count(&pool, gm).await;
     let invites_before: i64 =
         sqlx::query_scalar("SELECT COUNT(*) FROM gm_invites WHERE created_by = $1")
@@ -203,7 +282,20 @@ async fn every_gm_route_refuses_without_a_valid_session() {
     // Control: the same routes work with the right session.
     for (method, path) in GM_ROUTES {
         let uri = route_uri(path, &ids);
-        let r = call(&app, Some(&token), method, &uri, body_for(method, path)).await;
+        let body = if path.ends_with("/validate") || path.ends_with("/return") {
+            Some(submitted_body(&pool, &ids.character, path).await)
+        } else {
+            body_for(method, path)
+        };
+        let body = match (method, body) {
+            // A hook needs a character of the table.
+            (&"POST", Some(mut b)) if path.ends_with("/hooks") => {
+                b["characterId"] = Value::String(ids.character.clone());
+                Some(b)
+            }
+            (_, b) => b,
+        };
+        let r = call(&app, Some(&token), method, &uri, body).await;
         if path.ends_with("/live") {
             // Past the guard and the ownership check, a plain request
             // (not a WebSocket upgrade) is refused by the route itself.
@@ -222,11 +314,8 @@ async fn every_gm_route_refuses_without_a_valid_session() {
     // anything, even with the cookie kept.
     let (_, keeper) = common::signed_in_gm(&pool, "Keeper").await;
     let campaign = campaign_of(&app, &keeper).await;
-    let ids = Ids {
-        invite: invite_of(&app, &keeper).await,
-        player: player_of(&app, &keeper, &campaign).await.0,
-        campaign,
-    };
+    let player = player_of(&app, &keeper, &campaign).await.0;
+    let ids = ids_of(&app, &pool, &keeper, campaign, player).await;
     assert_all_refuse(&app, &pool, Some(&token), &ids).await;
 }
 
@@ -240,11 +329,7 @@ async fn a_player_token_opens_no_gm_route() {
     let (_, token) = common::signed_in_gm(&pool, "Romain").await;
     let campaign = campaign_of(&app, &token).await;
     let (player, device) = player_of(&app, &token, &campaign).await;
-    let ids = Ids {
-        invite: invite_of(&app, &token).await,
-        campaign,
-        player,
-    };
+    let ids = ids_of(&app, &pool, &token, campaign, player).await;
     assert_all_refuse_raw(&app, &pool, Some(format!("promptus_player={device}")), &ids).await;
     assert_all_refuse(&app, &pool, Some(&device), &ids).await;
 }

@@ -15,7 +15,7 @@ mod common;
 
 use axum::Router;
 use axum::http::StatusCode;
-use common::marked::{leaks, marked, world};
+use common::marked::{leaks, mark_review, marked, world};
 use common::{call, call_as_player, imported_campaign, invite_code, join, send};
 use promptus_back::app::player_facing_routes;
 use promptus_shared::story::to_yaml;
@@ -36,7 +36,8 @@ struct Table {
 }
 
 /// Romain's marked campaign mid-scene, Marc seated as a player with a
-/// written sheet, Léa as a spectator.
+/// written sheet the GM reviewed and drew a secret hook from, Léa as a
+/// spectator.
 async fn marked_table(app: &Router, pool: &PgPool) -> Table {
     let (_, gm) = common::signed_in_gm(pool, "Romain").await;
     let story = marked();
@@ -50,12 +51,16 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
     let code = invite_code(app, &gm, &campaign).await;
     let marc = join(app, &code, "Marc", "player").await;
     let marc_id = Uuid::parse_str(marc.body["data"]["me"]["id"].as_str().unwrap()).unwrap();
-    sqlx::query("UPDATE characters SET sheet = $2, status = 'submitted' WHERE player_id = $1")
-        .bind(marc_id)
-        .bind(json!({ "name": "Borin", "appearance": MARC_SECRET }))
-        .execute(pool)
-        .await
-        .unwrap();
+    let character: Uuid = sqlx::query_scalar(
+        "UPDATE characters SET sheet = $2, status = 'submitted' WHERE player_id = $1 RETURNING id",
+    )
+    .bind(marc_id)
+    .bind(json!({ "name": "Borin", "appearance": MARC_SECRET }))
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    // What the GM keeps about Marc's sheet: the last review, a hook.
+    mark_review(pool, Uuid::parse_str(&campaign).unwrap(), character).await;
     let spectator = join(app, &code, "Léa", "spectator").await;
     Table {
         gm,

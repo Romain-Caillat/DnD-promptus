@@ -28,6 +28,9 @@ pub enum AppError {
     /// 404 — the resource does not exist **or belongs to another GM**:
     /// the two are indistinguishable on purpose (see `auth::guard`).
     NotFound(&'static str),
+    /// 409 — the resource is not in a state that allows this (a sheet
+    /// that is not waiting for review, or changed since it was read).
+    Conflict(&'static str),
     /// A dependency the request needs (today: the database) is down, or
     /// the server refuses new work for a moment.
     ServiceUnavailable(&'static str),
@@ -48,6 +51,7 @@ impl IntoResponse for AppError {
             Self::Unauthorized(code) => (StatusCode::UNAUTHORIZED, code, "not signed in".into()),
             Self::Forbidden(code) => (StatusCode::FORBIDDEN, code, "not allowed".into()),
             Self::NotFound(code) => (StatusCode::NOT_FOUND, code, "not found".into()),
+            Self::Conflict(code) => (StatusCode::CONFLICT, code, "conflict".into()),
             Self::ServiceUnavailable(code) => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 code,

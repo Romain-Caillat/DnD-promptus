@@ -7,4 +7,5 @@ pub mod db;
 pub mod error;
 pub mod live;
 pub mod players;
+pub mod rules;
 pub mod state;

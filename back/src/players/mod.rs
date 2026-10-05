@@ -10,6 +10,11 @@
 //!
 //! Nothing here is sent to a player as is: player routes build their
 //! answer in `campaigns::projection`, the single projection point.
+//!
+//! The GM's review of the sheets (validate, return with a word, the
+//! difference since the last review, secret hooks) is in [`review`].
+
+pub mod review;
 
 use std::collections::BTreeMap;
 
@@ -70,7 +75,7 @@ pub enum CharacterStatus {
 }
 
 impl CharacterStatus {
-    fn parse(s: &str) -> Result<Self, AppError> {
+    pub(crate) fn parse(s: &str) -> Result<Self, AppError> {
         match s {
             "draft" => Ok(Self::Draft),
             "submitted" => Ok(Self::Submitted),
@@ -164,6 +169,17 @@ pub struct SeatCharacter {
     pub status: CharacterStatus,
     /// Empty until the player names it.
     pub name: String,
+    /// The class id the sheet names, if any.
+    pub class_id: Option<String>,
+    /// The class's name in the campaign's rule system, filled by the
+    /// route (`api::table::seats`).
+    pub class_name: Option<String>,
+    /// The sheet's `CharacterLook`, as the player stored it, to draw
+    /// the seat's sprite.
+    pub look: Option<serde_json::Value>,
+    /// Sent again after the GM returned it: the review shows only the
+    /// difference.
+    pub resubmitted: bool,
     pub updated_at: DateTime<Utc>,
 }
 
@@ -318,6 +334,8 @@ pub async fn join(
     };
     if role == Role::Player {
         create_character(&mut tx, &player).await?;
+    } else {
+        live::touch(&mut tx, campaign_id, &Topic::Table).await?;
     }
     tx.commit().await?;
     Ok((player, token))
@@ -335,7 +353,26 @@ async fn create_character(
     .bind(Json(CharacterSheet::default()))
     .fetch_one(&mut **tx)
     .await?;
-    live::touch(tx, player.campaign_id, &Topic::Character(id)).await?;
+    touch_character(tx, player.campaign_id, id).await?;
+    Ok(())
+}
+
+/// Tell whoever displays character `id` of `campaign` that it changed:
+/// its own topic, and the table (`live::Topic::Table`), whose seats show
+/// each character's name and status. Call it from every write to a
+/// character, inside its transaction — the player's draft saves and
+/// submissions as well as the GM's review.
+///
+/// # Errors
+///
+/// Fails on a database error.
+pub async fn touch_character(
+    tx: &mut Transaction<'_, Postgres>,
+    campaign: Uuid,
+    id: Uuid,
+) -> Result<(), AppError> {
+    live::touch(tx, campaign, &Topic::Character(id)).await?;
+    live::touch(tx, campaign, &Topic::Table).await?;
     Ok(())
 }
 
@@ -415,11 +452,15 @@ pub async fn seats(pool: &PgPool, campaign_id: Uuid) -> Result<Vec<Seat>, AppErr
         Option<Uuid>,
         Option<String>,
         Option<String>,
+        Option<String>,
+        Option<serde_json::Value>,
+        Option<bool>,
         Option<DateTime<Utc>>,
     );
     let rows: Vec<SeatRow> = sqlx::query_as(
         "SELECT p.id, p.nickname, p.role, p.created_at, p.last_seen_at,
-                c.id, c.status, c.sheet->>'name', c.updated_at
+                c.id, c.status, c.sheet->>'name', c.sheet->>'classId', c.sheet->'look',
+                c.reviewed_sheet IS NOT NULL, c.updated_at
          FROM players p LEFT JOIN characters c ON c.player_id = p.id
          WHERE p.campaign_id = $1
          ORDER BY p.created_at, p.id",
@@ -429,14 +470,35 @@ pub async fn seats(pool: &PgPool, campaign_id: Uuid) -> Result<Vec<Seat>, AppErr
     .await?;
     rows.into_iter()
         .map(
-            |(id, nickname, role, joined_at, last_seen_at, cid, status, name, updated_at)| {
+            |(
+                id,
+                nickname,
+                role,
+                joined_at,
+                last_seen_at,
+                cid,
+                status,
+                name,
+                class_id,
+                look,
+                reviewed,
+                updated_at,
+            )| {
                 let character = match (cid, status, updated_at) {
-                    (Some(id), Some(status), Some(updated_at)) => Some(SeatCharacter {
-                        id,
-                        status: CharacterStatus::parse(&status)?,
-                        name: name.unwrap_or_default(),
-                        updated_at,
-                    }),
+                    (Some(id), Some(status), Some(updated_at)) => {
+                        let status = CharacterStatus::parse(&status)?;
+                        Some(SeatCharacter {
+                            id,
+                            status,
+                            name: name.unwrap_or_default(),
+                            class_id,
+                            class_name: None,
+                            look,
+                            resubmitted: status == CharacterStatus::Submitted
+                                && reviewed.unwrap_or(false),
+                            updated_at,
+                        })
+                    }
                     _ => None,
                 };
                 Ok(Seat {
@@ -474,7 +536,9 @@ pub async fn remove(pool: &PgPool, campaign_id: Uuid, player_id: Uuid) -> Result
     };
     // Whoever displays that character learns it is gone.
     if let Some(id) = character {
-        live::touch(&mut tx, campaign_id, &Topic::Character(id)).await?;
+        touch_character(&mut tx, campaign_id, id).await?;
+    } else {
+        live::touch(&mut tx, campaign_id, &Topic::Table).await?;
     }
     tx.commit().await?;
     Ok(())
