@@ -32,6 +32,9 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/campaigns/{campaign}/export"),
     ("PUT", "/api/campaigns/{campaign}/import"),
     ("GET", "/api/campaigns/{campaign}/player-view"),
+    ("PUT", "/api/campaigns/{campaign}/settings"),
+    ("PUT", "/api/campaigns/{campaign}/archive"),
+    ("GET", "/api/rule-systems"),
     ("GET", "/api/campaigns/{campaign}/invite"),
     ("POST", "/api/campaigns/{campaign}/invite"),
     ("GET", "/api/campaigns/{campaign}/players"),
@@ -53,6 +56,15 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             "rules": { "id": "corsaires", "version": 1 }
         })),
         (_, p) if p.ends_with("/import") => Some(serde_json::json!({ "yaml": FIXTURE })),
+        (_, p) if p.ends_with("/settings") => Some(serde_json::json!({
+            "title": "Sweep",
+            "world": "",
+            "pitch": "",
+            "playerHook": "",
+            "playerCount": 6,
+            "aiBudgetCents": 0
+        })),
+        (_, p) if p.ends_with("/archive") => Some(serde_json::json!({ "archived": false })),
         _ => None,
     }
 }

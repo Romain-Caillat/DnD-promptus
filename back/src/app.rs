@@ -89,6 +89,12 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             get(api::campaigns::player_view),
         )
         .route(
+            "/api/campaigns/{id}/settings",
+            put(api::campaigns::update_settings),
+        )
+        .route("/api/campaigns/{id}/archive", put(api::campaigns::archive))
+        .route("/api/rule-systems", get(api::campaigns::rule_systems))
+        .route(
             "/api/campaigns/{id}/invite",
             get(api::table::invite)
                 .post(api::table::mint_invite)
