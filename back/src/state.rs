@@ -3,12 +3,15 @@ use sqlx::PgPool;
 
 use crate::auth::passkeys::Passkeys;
 use crate::auth::setup::SetupState;
+use crate::live::LiveHub;
 
 /// Everything a handler can reach.
 #[derive(Clone)]
 pub struct AppState {
     pub pool: PgPool,
     pub auth: Auth,
+    /// The live channel: campaign rooms and presence.
+    pub live: LiveHub,
 }
 
 /// GM authentication: the relying party, the setup code, and how the
