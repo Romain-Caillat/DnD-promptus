@@ -1463,12 +1463,38 @@ cible, cœurs et gemmes, main de cartes en éventail, grappe arcade
 
 **Origine** — Planche « Jouer » (combat)
 
-### `player/read-sheet-and-journal` · todo
+### `player/read-sheet-and-journal` · doing — reste l'essai sur un vrai téléphone
 
 **Périmètre** — Onglet Perso (fiche, cartes, sac, équiper) et onglet
 Journal (ce que le groupe sait).
 
 **Origine** — Planche « Jouer » (onglets) · planches Joueur
+
+**État** — Livré et vérifié dans PCT 105 (`bun run lint`, `bun run
+test`). La page du joueur (`/partie/:id`) a deux onglets en bas,
+**Personnage** et **Journal** ; les onglets Jeu et Carte de la planche
+viendront avec la soirée (phase 3), sans bouton d'ici là. Un spectateur
+n'a que le Journal. Personnage : tant que la fiche n'est pas validée,
+la carte d'avant (statut, mot du MJ, créateur) ; une fois en jeu, la
+fiche du même état que le MJ ajuste (`gm/adjust-sheets-fast`) — sprite,
+niveau et barre d'XP, cœurs et PV, armure, attaque, initiative,
+caractéristiques et modificateurs, cartes de la classe (celles d'un
+niveau à venir grisées, « au niveau 3 »), bourse, « Sur toi » et « Ton
+sac ». Tout vient de la projection joueur ; la page suit le canal live
+(sujet de son personnage, puis `world`/`story` pour le Journal). Le seul
+geste du joueur est **équiper / ranger** (`POST
+/api/play/{id}/character/equip`, verrou de campagne, journalisé « par
+le joueur » dans l'historique du MJ) ; les règles des deux mondes ne
+donnent aucun effet à l'équipement, et l'écran le dit au lieu de le
+laisser croire. Les objets s'affichent en liste nommée : les règles
+n'ont pas encore d'art d'objet (`media/draw-pixel-art-assets`).
+Journal : ce que la projection joueur contient déjà — ce qu'on a dit
+aux joueurs, la scène en cours, les indices trouvés, les PNJ rencontrés
+— et « Le groupe n'a encore rien découvert » sinon. Aujourd'hui aucun
+écran ne révèle d'indice ni ne change de scène : le Journal se remplira
+avec `session/drive-scenes` et `session/track-table-knowledge`
+(promesses, dettes, décisions de règle, « ce soir »), rien n'y est
+simulé. Pas encore essayé sur un vrai téléphone ni en vraie session.
 
 ### `player/receive-rewards` · todo
 
@@ -1546,13 +1572,43 @@ qu'un des six joueurs reste vingt minutes sans moment à lui.
 
 **Origine** — Romain, 4 octobre 2026 · `MEMORY.md` §6
 
-### `gm/adjust-sheets-fast` · todo
+### `gm/adjust-sheets-fast` · doing — reste une vraie table
 
 **Périmètre** — Depuis l'écran MJ, en un geste : +1 XP, retirer ou
 rendre des PV, donner un objet, de l'or ; la fiche du joueur change en
 direct, et chaque modification va dans l'historique de la session.
 
 **Origine** — `dnd-save/DnD-16-05-2026/prompt_plateforme_fiches.md`
+
+**État** — Livré et vérifié dans PCT 105 (`bun run lint`, `bun run
+test`), sur les deux mondes. La fiche écrite et relue (`sheet`,
+`reviewed_sheet`) ne bouge pas : l'état en jeu est à part, tenu par le
+serveur (migration 008, `character_play`) — XP totale, **PV perdus**
+(pas restants : si le maximum monte, les blessures restent), ressources
+des règles, sac. Une fiche validée sans ligne joue depuis son état de
+départ (les PV pleins, l'or de départ des règles, les objets de sa
+classe). PV max, niveau, barre d'XP, points d'amélioration, CA et
+cartes débloquées sont **calculés par le moteur de règles**, jamais
+saisis ni stockés. Sur la page de table, « Fiches en jeu » (dès qu'un
+personnage est validé) montre une carte par personnage — cœurs, XP,
+bourse, sac — avec −1 PV, +1 PV, +1 XP en un geste, et « Plus… » pour
+un montant, l'or, donner un objet des règles ou un objet nommé par le
+MJ, reprendre un objet. Chaque geste prend le verrou de la campagne,
+écrit, journalise et appelle `touch_character` dans la même transaction
+: la fiche du joueur (`me` → `play`) et la page du MJ suivent en direct.
+L'historique (`play_adjustments`, append-only : qui, quoi, avant,
+après, quand) est **celui de la campagne** : il n'existe pas encore
+d'entité session (`session/end-session`), une session en sera une
+tranche de temps. Il reste côté MJ : la note MJ d'un objet des règles
+n'est jamais montrée, le balayage joueur le prouve avec un marqueur
+dans l'historique. Limites : l'« or » est la ressource que les règles
+déclarent — les Corsaires ont leurs pièces d'or, **le Brasier n'en
+déclare aucune**, donc pas de bouton d'or sur une table Brasier tant
+que Romain n'en ajoute pas une à ses règles ; PV à 0 n'applique pas
+encore l'état « Inconscient » (avec `gm/run-combat`) ; dépenser un
+point d'amélioration reste à `player/play-between-sessions` ; l'écran
+MJ en direct complet est `gm/run-live-screen`. Jamais essayé à une
+vraie table.
 
 ### `gm/launch-session` · todo
 

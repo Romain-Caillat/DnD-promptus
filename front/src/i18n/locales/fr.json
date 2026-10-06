@@ -277,6 +277,55 @@
       "cancel": "Annuler",
       "titleRequired": "Donne un titre à l'accroche."
     },
+    "sheets": {
+      "title": "Fiches en jeu",
+      "lead": "Un geste par changement : la fiche du joueur suit en direct, et l'historique garde tout.",
+      "rulesUnknown": "Les règles de cette campagne sont inconnues du serveur : rien ne peut être ajusté.",
+      "empty": "Aucun personnage validé pour l'instant.",
+      "noClass": "Sa fiche ne nomme aucune classe des règles : rien à ajuster.",
+      "level": "niveau {{level}}",
+      "hp": "{{hp}} / {{max}} PV",
+      "xpBar": "Expérience",
+      "xp": "{{xp}} XP",
+      "upgrade_one": "{{count}} point à placer",
+      "upgrade_other": "{{count}} points à placer",
+      "hpDelta": "{{delta}} PV",
+      "xpDelta": "{{delta}} XP",
+      "resourceDelta": "{{delta}} {{abbr}}",
+      "more": "Plus…",
+      "less": "Moins",
+      "amount": "Combien",
+      "giveLabel": "Donner un objet",
+      "pick": "Choisir…",
+      "other": "Autre objet…",
+      "itemName": "Nom de l'objet",
+      "itemText": "Ce que le joueur en lit (facultatif)",
+      "give": "Donner à {{name}}",
+      "bag": "Sac",
+      "emptyBag": "Sac vide.",
+      "equipped": "sur lui",
+      "take": "Reprendre",
+      "history": "Historique",
+      "noHistory": "Aucun changement pour l'instant.",
+      "gone": "Personnage retiré",
+      "byPlayer": "par le joueur",
+      "log": {
+        "xp": "{{delta}} XP ({{after}} au total)",
+        "hp": "{{delta}} PV ({{after}} restants)",
+        "resource": "{{delta}} {{label}} ({{after}})",
+        "itemGiven_one": "reçoit {{label}}",
+        "itemGiven_other": "reçoit {{label}} ×{{count}}",
+        "itemTaken_one": "rend {{label}}",
+        "itemTaken_other": "rend {{label}} ×{{count}}",
+        "equipped": "s'équipe : {{label}}",
+        "unequipped": "range {{label}} dans son sac"
+      },
+      "errors": {
+        "notEnough": "Il n'en a pas assez.",
+        "itemName": "Donne un nom à l'objet.",
+        "notValidated": "Ce personnage n'est pas encore validé."
+      }
+    },
     "playerView": {
       "kicker": "Ce que voient les joueurs",
       "notFound": "Cette campagne est introuvable.",
@@ -375,7 +424,8 @@
       "submitted": "Envoyé au MJ",
       "validated": "Ton personnage est validé !",
       "returned": "Le MJ te demande un changement",
-      "spectator": "Tu regardes la partie"
+      "spectator": "Tu regardes la partie",
+      "inPlay": "En jeu : ta fiche suit la partie"
     },
     "hello": "{{nickname}}, à la table de {{gm}}",
     "character": "Ton personnage",
@@ -393,7 +443,45 @@
     "resume": "Reprendre mon personnage",
     "fix": "Corriger mon personnage",
     "createHint": "Son allure, sa classe, son histoire",
-    "fixHint": "Lis le mot du MJ, change, renvoie"
+    "fixHint": "Lis le mot du MJ, change, renvoie",
+    "tabs": {
+      "label": "Onglets",
+      "perso": "Personnage",
+      "journal": "Journal"
+    },
+    "sheet": {
+      "level": "niveau {{level}}",
+      "xpBar": "Expérience",
+      "xp_one": "Encore {{count}} XP avant un point d'amélioration",
+      "xp_other": "Encore {{count}} XP avant un point d'amélioration",
+      "nextLevel": "niveau {{level}} à {{xp}} XP (tu en as {{total}})",
+      "upgrade_one": "{{count}} point d'amélioration gagné",
+      "upgrade_other": "{{count}} points d'amélioration gagnés",
+      "life": "Ta vie",
+      "hp": "{{hp}} / {{max}} PV",
+      "what": "Ce que tu es",
+      "ac": "Armure",
+      "atk": "Attaque",
+      "init": "Initiative",
+      "cards": "Ce que tu sais faire",
+      "locked": "au niveau {{level}}",
+      "purse": "Ta bourse",
+      "worn": "Sur toi",
+      "nothingWorn": "Tu n'as rien en main.",
+      "wornNote": "Ces règles ne donnent pas d'effet à l'équipement : « sur toi » dit seulement ce que tu tiens prêt.",
+      "bag": "Ton sac",
+      "emptyBag": "Ton sac est vide.",
+      "equip": "L'équiper",
+      "unequip": "Le ranger",
+      "consumable": "S'utilise une fois par unité."
+    },
+    "journal": {
+      "hook": "Ce qu'on vous a dit",
+      "scene": "Où vous êtes",
+      "clues": "Les indices du groupe",
+      "npcs": "Les gens rencontrés",
+      "empty": "Le groupe n'a encore rien découvert."
+    }
   },
   "creator": {
     "banner": {

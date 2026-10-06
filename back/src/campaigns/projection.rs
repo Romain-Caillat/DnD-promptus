@@ -25,8 +25,13 @@
 //!
 //! The rule system reaches players the same way: names, descriptions,
 //! scores and action cards, never the GM's notes on a class, the
-//! creation rule or an action tag ([`project_creation`]). The rules page
-//! is [`rules::project_rules`].
+//! creation rule, an item or an action tag ([`project_creation`],
+//! [`project_play`]). The rules page is [`rules::project_rules`].
+//!
+//! A validated character's play state (`players::play`) reaches its
+//! player through [`project_play`]: hit points, XP and level, resources
+//! and the bag, all derived through the rules engine. The history of
+//! adjustments stays GM-side.
 
 pub mod rules;
 
@@ -42,6 +47,7 @@ use promptus_shared::story::{Campaign, MusicTrack, WorldState};
 use serde::Serialize;
 use uuid::Uuid;
 
+use crate::players::play::{PlayState, combatant};
 use crate::players::{Character, CharacterSheet, CharacterStatus, Player, Role};
 
 /// The label an unrevealed opponent goes by.
@@ -261,6 +267,150 @@ pub struct CharacterView {
     pub class_name: Option<String>,
     /// What the rules make of the sheet, once it has a class.
     pub stats: Option<SheetStatsView>,
+    /// The character in play, once validated and with a class of the
+    /// rules.
+    pub play: Option<PlayView>,
+}
+
+/// A character in play, as its player and the GM read it: what the
+/// server holds (`players::play::PlayState`) and what the rules derive
+/// from it and the sheet. Nothing GM-only.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayView {
+    pub level: u32,
+    pub total_xp: u32,
+    /// The bar that turns into an upgrade point when full.
+    pub xp_bar: u32,
+    pub xp_bar_max: u32,
+    /// Upgrade points earned and not spent yet.
+    pub upgrade_points: u32,
+    /// Total XP the next level asks for; `None` at the last one.
+    pub next_level_xp: Option<u32>,
+    pub hit_points: i32,
+    pub max_hit_points: i32,
+    pub armor_class: i32,
+    pub initiative: i32,
+    pub abilities: Vec<AbilityScoreView>,
+    /// Every card of the class at this level; `level` above the
+    /// character's says it is still locked.
+    pub cards: Vec<ActionCardView>,
+    pub resources: Vec<ResourceView>,
+    pub inventory: Vec<ItemView>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AbilityScoreView {
+    pub id: String,
+    pub name: String,
+    pub score: i32,
+    pub modifier: i32,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResourceView {
+    pub id: String,
+    pub name: String,
+    pub abbr: String,
+    pub amount: i32,
+}
+
+/// A bag line: the rule system's name and description for its items
+/// (never its GM note), the GM's words for an item they named.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ItemView {
+    pub key: String,
+    pub item_id: Option<String>,
+    pub name: String,
+    pub description: String,
+    pub qty: u32,
+    pub consumable: bool,
+    pub equipped: bool,
+}
+
+/// `sheet` in play with `state` (its starting state when `None`), under
+/// `rules`. `None` when the sheet names no class of the rules.
+#[must_use]
+pub fn project_play(
+    rules: &RuleSystem,
+    sheet: &CharacterSheet,
+    state: Option<&PlayState>,
+) -> Option<PlayView> {
+    let start;
+    let state = match state {
+        Some(s) => s,
+        None => {
+            start = PlayState::start(rules, sheet);
+            &start
+        }
+    };
+    let c = combatant(rules, sheet, state)?;
+    let progress = c.progress.unwrap_or_default();
+    let level = c.level(rules).unwrap_or(1);
+    Some(PlayView {
+        level,
+        total_xp: progress.total_xp,
+        xp_bar: progress.bar,
+        xp_bar_max: rules.progression.upgrade_every_xp,
+        upgrade_points: progress.upgrade_points,
+        next_level_xp: rules
+            .progression
+            .levels
+            .iter()
+            .filter(|l| l.level > level)
+            .map(|l| l.xp)
+            .min(),
+        hit_points: c.hit_points,
+        max_hit_points: c.max_hit_points(rules).ok()?,
+        armor_class: c.armor_class(rules).ok()?,
+        initiative: c.initiative_bonus(rules).ok()?,
+        abilities: rules
+            .abilities
+            .iter()
+            .filter_map(|a| {
+                Some(AbilityScoreView {
+                    id: a.id.clone(),
+                    name: a.name.clone(),
+                    score: c.score(&a.id)?,
+                    modifier: c.modifier(rules, &a.id).ok()?,
+                })
+            })
+            .collect(),
+        cards: action_cards(rules, &c)
+            .iter()
+            .map(|card| card_view(rules, card))
+            .collect(),
+        resources: rules
+            .resources
+            .iter()
+            .map(|r| ResourceView {
+                id: r.id.clone(),
+                name: r.name.clone(),
+                abbr: r.abbr.clone(),
+                amount: state.resource(rules, &r.id),
+            })
+            .collect(),
+        inventory: state
+            .inventory
+            .iter()
+            .map(|e| {
+                let def = e.item.as_deref().and_then(|id| rules.item(id));
+                ItemView {
+                    key: e.key.clone(),
+                    item_id: e.item.clone(),
+                    name: e.display_name(rules),
+                    description: def
+                        .map_or_else(|| e.description.clone(), |d| d.description.clone()),
+                    qty: e.qty,
+                    consumable: def.is_some_and(|d| d.consumable),
+                    equipped: e.equipped,
+                }
+            })
+            .collect(),
+    })
 }
 
 /// A sheet as the rules read it at level 1: the numbers the summary
@@ -391,6 +541,12 @@ pub fn project_character(rules: Option<&RuleSystem>, c: &Character) -> Character
         }),
         class_name: rules.and_then(|r| Some(r.class(c.sheet.class_id.as_deref()?)?.name.clone())),
         stats: sheet_stats(rules, &c.sheet),
+        play: match (rules, c.status) {
+            (Some(rules), CharacterStatus::Validated) => {
+                project_play(rules, &c.sheet, c.play.as_ref())
+            }
+            _ => None,
+        },
     }
 }
 

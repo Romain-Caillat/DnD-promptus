@@ -6,5 +6,6 @@ pub mod health;
 pub mod live;
 pub mod play;
 pub mod rules;
+pub mod sheets;
 pub mod sprites;
 pub mod table;
