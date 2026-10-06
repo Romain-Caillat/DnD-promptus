@@ -288,7 +288,7 @@ function Creator({
         />
       )}
       {step === 'abilities' && !cls && <p className="text-body text-chalk-soft">{t('creator.abilities.noClass')}</p>}
-      {step === 'story' && <StoryStep backstory={sheet.backstory ?? {}} onChange={(backstory) => update({ backstory })} />}
+      {step === 'story' && <StoryStep campaignId={campaignId} backstory={sheet.backstory ?? {}} onChange={(backstory) => update({ backstory })} />}
       {step === 'review' && (
         <>
           <CharacterSummary sheet={sheet} look={look} subtitle={subtitle} stats={character.stats} over={over} gmName={gm} />

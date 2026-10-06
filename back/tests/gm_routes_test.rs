@@ -71,6 +71,15 @@ const GM_ROUTES: &[(&str, &str)] = &[
     // Each is called on a sheet set back to "submitted" first.
     (
         "POST",
+        "/api/campaigns/{campaign}/characters/{character}/note-draft",
+    ),
+    // On a sheet given a backstory first.
+    (
+        "POST",
+        "/api/campaigns/{campaign}/characters/{character}/hooks/propose",
+    ),
+    (
+        "POST",
         "/api/campaigns/{campaign}/characters/{character}/return",
     ),
     (
@@ -595,7 +604,20 @@ async fn every_gm_route_refuses_without_a_valid_session() {
         }
         let uri = route_uri(path, &ids);
         let decision = path.contains("/characters/")
-            && (path.ends_with("/validate") || path.ends_with("/return"));
+            && (path.ends_with("/validate")
+                || path.ends_with("/return")
+                || path.ends_with("/note-draft"));
+        if path.ends_with("/hooks/propose") {
+            sqlx::query(
+                r#"UPDATE characters
+                   SET sheet = sheet || '{"backstory":{"origin":"Le port."}}'::jsonb
+                   WHERE id = $1"#,
+            )
+            .bind(Uuid::parse_str(&ids.character).unwrap())
+            .execute(&pool)
+            .await
+            .unwrap();
+        }
         let body = if decision {
             Some(submitted_body(&pool, &ids.character, path).await)
         } else {

@@ -44,7 +44,8 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
     let (_, gm) = common::signed_in_gm(pool, "Romain").await;
     let story = marked();
     let campaign = imported_campaign(app, &gm, &to_yaml(&story).unwrap()).await;
-    sqlx::query("UPDATE campaigns SET world = $2 WHERE id = $1")
+    // A budget, so the co-GM writing a backstory may run.
+    sqlx::query("UPDATE campaigns SET world = $2, ai_budget_cents = 500 WHERE id = $1")
         .bind(Uuid::parse_str(&campaign).unwrap())
         .bind(Json(world(&story)))
         .execute(pool)
@@ -256,6 +257,9 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
         }
         // A complete sheet, so the submit route that follows succeeds.
         // The line of Marc's bag `mark_review` stored.
+        ("POST", p) if p.ends_with("/character/backstory") => {
+            Some(json!({ "origin": "Du port.", "loss": "", "quest": "La mer." }))
+        }
         ("POST", p) if p.ends_with("/equip") => Some(json!({ "entry": "k1", "equipped": true })),
         ("POST", p) if p.ends_with("/walk") => Some(json!({ "path": [[1, 5]] })),
         ("POST", p) if p.ends_with("/fight") => Some(json!({ "kind": "endTurn" })),

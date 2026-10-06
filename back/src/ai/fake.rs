@@ -231,6 +231,65 @@ fn map_answer(prompt: &str) -> serde_json::Value {
     })
 }
 
+/// A word to the player: it names what the checks found, or welcomes.
+fn sheet_note_answer(request: &str) -> String {
+    let note = if !request.contains("Rien à redire.") {
+        "Merci pour ta fiche ! Un point dépasse les règles : change-le, \
+         ou garde-le et le MJ décidera."
+    } else {
+        "Bienvenue à la table ! Ta fiche est en règle."
+    };
+    serde_json::json!({ "note": note }).to_string()
+}
+
+/// The player's answers strung together after the character's name:
+/// nothing more than what they wrote.
+fn backstory_answer(request: &str) -> String {
+    let name = request
+        .lines()
+        .find_map(|l| l.strip_prefix("Nom : "))
+        .unwrap_or("Le personnage");
+    let mut text = format!("{name}.");
+    for line in request.lines() {
+        let Some(rest) = line.strip_prefix("- ") else {
+            continue;
+        };
+        let Some((_, answer)) = rest.split_once("? ") else {
+            continue;
+        };
+        if answer != "(sans réponse)" {
+            text.push(' ');
+            text.push_str(answer.trim_end_matches('.'));
+            text.push('.');
+        }
+    }
+    serde_json::json!({ "text": text }).to_string()
+}
+
+/// One hook on the first scene listed, plus a link to a scene that does
+/// not exist (to be dropped).
+fn hooks_answer(request: &str) -> String {
+    let first = request
+        .lines()
+        .find_map(|l| {
+            l.strip_prefix("- `")
+                .and_then(|r| r.split_once('`'))
+                .map(|(id, _)| id)
+        })
+        .unwrap_or("sc_inconnue");
+    serde_json::json!({
+        "hooks": [
+            {
+                "title": "Ce qu’il cherche",
+                "body": "Sa quête le mène tout droit à cette scène.",
+                "links": [first, "sc_inventee"]
+            },
+            { "title": "", "body": "sans titre" }
+        ]
+    })
+    .to_string()
+}
+
 fn workshop_answer(prompt: &str) -> serde_json::Value {
     use promptus_shared::story::{Importance, from_yaml};
     let yaml = prompt
@@ -688,6 +747,12 @@ impl Provider for FakeProvider {
                 .to_string()
             } else if system.contains("cartographe") {
                 map_answer(first).to_string()
+            } else if system.contains("fiches de personnage") {
+                sheet_note_answer(first)
+            } else if system.contains("biographe") {
+                backstory_answer(first)
+            } else if system.contains("accroches secrètes") {
+                hooks_answer(first)
             } else if system.contains("atelier") {
                 workshop_answer(prompt).to_string()
             } else if system.contains("co-MJ") {

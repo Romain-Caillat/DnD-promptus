@@ -183,6 +183,20 @@ export function addHook(campaignId: string, characterId: string, hook: HookInput
   return apiRequest<SecretHook>('POST', `${campaignPath(campaignId)}/hooks`, { characterId, ...hook })
 }
 
+/** The co-GM's word to the player about their sent sheet, for the GM to edit (nothing is sent). */
+export async function draftNote(campaignId: string, characterId: string): Promise<string> {
+  const r = await apiRequest<{ note: string }>(
+    'POST',
+    `${campaignPath(campaignId)}/characters/${encodeURIComponent(characterId)}/note-draft`,
+  )
+  return r.note
+}
+
+/** Hooks the co-GM draws from a backstory: nothing is kept until the GM adds one. */
+export function proposeHooks(campaignId: string, characterId: string): Promise<{ hooks: HookInput[]; dropped: number }> {
+  return apiRequest('POST', `${campaignPath(campaignId)}/characters/${encodeURIComponent(characterId)}/hooks/propose`)
+}
+
 export function editHook(campaignId: string, hookId: string, hook: HookInput): Promise<SecretHook> {
   return apiRequest<SecretHook>('PUT', `${campaignPath(campaignId)}/hooks/${encodeURIComponent(hookId)}`, hook)
 }

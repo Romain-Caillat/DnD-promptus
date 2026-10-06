@@ -6,6 +6,7 @@ import { StatusBanner, type BannerTone } from '@/components/game/StatusBanner'
 import { Sprite } from '@/features/sprites/Sprite'
 import { ApiError } from '@/lib/api'
 import {
+  draftNote,
   fetchReview,
   returnCharacter,
   validateCharacter,
@@ -20,7 +21,7 @@ type State =
   | { kind: 'error' }
   | { kind: 'ready'; review: Review }
 
-type Problem = 'changed' | 'notSubmitted' | 'error' | 'noteRequired'
+type Problem = 'changed' | 'notSubmitted' | 'error' | 'noteRequired' | 'aiBudget' | 'aiFailed'
 
 /** Glyphs, not words. */
 const OK_MARK = '✓'
@@ -56,6 +57,7 @@ export function CharacterReview({
   const [note, setNote] = useState('')
   const [problem, setProblem] = useState<Problem | null>(null)
   const [busy, setBusy] = useState(false)
+  const [drafting, setDrafting] = useState(false)
   // The note is drafted once per version of the sheet; a GM's edits
   // survive refetches of the same version.
   const draftedFor = useRef<string | null>(null)
@@ -96,6 +98,24 @@ export function CharacterReview({
   const moved = new Set(review.changes.map((c) => c.path))
   const resubmitted = review.status === 'submitted' && review.reviewedSheet !== null
   const abilityName = (id: string) => review.abilities.find((a) => a.id === id)?.name ?? id
+
+  /** copilot/check-character-sheets: the co-GM drafts the word; the GM edits it and decides. */
+  async function askNote() {
+    setBusy(true)
+    setDrafting(true)
+    setProblem(null)
+    try {
+      setNote(await draftNote(campaignId, characterId))
+    } catch (err) {
+      const code = err instanceof ApiError ? err.code : ''
+      if (code === 'AI_BUDGET_EXCEEDED') setProblem('aiBudget')
+      else if (code === 'CHARACTER_NOT_SUBMITTED') setProblem('notSubmitted')
+      else setProblem('aiFailed')
+    } finally {
+      setBusy(false)
+      setDrafting(false)
+    }
+  }
 
   async function decide(kind: 'validate' | 'return') {
     setProblem(null)
@@ -217,6 +237,14 @@ export function CharacterReview({
                 onChange={(e) => setNote(e.target.value)}
                 placeholder={t('gm.review.notePlaceholder')}
               />
+              <button
+                type="button"
+                className="self-start text-caption font-bold text-ink-soft underline underline-offset-4 disabled:opacity-40"
+                disabled={busy}
+                onClick={() => void askNote()}
+              >
+                {drafting ? t('gm.review.drafting') : t('gm.review.draftNote')}
+              </button>
             </label>
           )}
           {review.status === 'returned' && review.gmNote && (

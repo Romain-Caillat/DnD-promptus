@@ -1792,18 +1792,38 @@ co-MJ n'atteint un joueur sans geste du MJ.
 
 **Origine** — Planches « Mener » et « Tablette » (moment 4)
 
-### `copilot/check-character-sheets` · todo
+### `copilot/check-character-sheets` · doing — reste un vrai mot proposé avec la clé OpenRouter sur une vraie fiche
 
 **Périmètre** — Le co-MJ vérifie une fiche envoyée contre les limites
 de création et propose un mot au joueur ; le MJ décide.
 
+**État** — Les vérifications restent celles du système de règles
+(`session/validate-characters`, rien n'est bloqué). Sur une fiche
+envoyée, « Le co-MJ propose un mot » remplit le mot au joueur à partir
+de ces vérifications et de la fiche (gabarit `sheet-note.v1`, appel
+compté `sheet.note`) : tutoiement, ce qui dépasse et quoi changer, le
+rappel que le MJ a le dernier mot. Rien ne part : le MJ modifie le mot,
+puis renvoie ou valide quand même.
+
 **Origine** — Planches « Inviter » (moments 3 et 4) et « Créer » (moment 6)
 
-### `copilot/co-write-backstory` · todo
+### `copilot/co-write-backstory` · doing — reste une vraie histoire et de vraies accroches avec la clé OpenRouter
 
 **Périmètre** — Le co-MJ pose des questions au joueur pour écrire son
 histoire, sans rien inventer à sa place ; il en tire des accroches
 secrètes pour le MJ.
+
+**État** — Côté joueur, à l'étape « Son histoire », « Écrire avec le
+co-MJ » fait un paragraphe des trois réponses (gabarit `backstory.v1`,
+appel compté `backstory.write` sur le budget de la campagne), que le
+joueur garde ou modifie avant l'envoi. Un nom propre absent de ses
+réponses fait refaire le paragraphe une fois, puis il est refusé. Côté
+MJ, dans « Accroches secrètes », le co-MJ propose une à trois accroches
+tirées de l'histoire (gabarit `hooks.v1`, appel `hooks.propose`), liées
+seulement à des scènes et fronts qui existent (les liens inventés sont
+retirés et comptés) ; le MJ garde, retouche ou écarte chacune, rien
+n'est enregistré sans lui. Écart : les trois questions sont fixes (pas
+encore adaptées à la campagne).
 
 **Origine** — Planche « Créer » (moment 7)
 

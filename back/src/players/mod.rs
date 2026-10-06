@@ -16,6 +16,7 @@
 //! a validated character's live play state (hit points, XP, purse, bag)
 //! and the history of what changed it are in [`play`].
 
+pub mod assist;
 pub mod play;
 pub mod review;
 

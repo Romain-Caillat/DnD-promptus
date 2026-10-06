@@ -227,6 +227,8 @@
       "allGood": "Conforme aux règles.",
       "noteLabel": "Mot pour {{nickname}} · modifiable",
       "notePlaceholder": "Un mot pour expliquer ce qui ne passe pas.",
+      "draftNote": "Le co-MJ propose un mot",
+      "drafting": "Le co-MJ écrit…",
       "sentTo": "Envoyé à {{nickname}}",
       "validate": "Valider {{name}}",
       "validateSub": "{{nickname}} le voit validé sur son téléphone",
@@ -257,6 +259,8 @@
         "changed": "La fiche a changé pendant ta lecture : relis-la avant de décider.",
         "notSubmitted": "Cette fiche n'attend plus ta décision.",
         "noteRequired": "Écris un mot pour expliquer le renvoi.",
+      "aiBudget": "Le budget IA de la campagne ne suffit pas pour ce mot.",
+      "aiFailed": "Le co-MJ n'a pas pu proposer de mot. Écris-le toi-même.",
         "error": "L'action n'a pas abouti. Réessayez."
       }
     },
@@ -286,7 +290,18 @@
       "save": "Enregistrer l'accroche",
       "addSub": "Secrète, dans ton histoire",
       "cancel": "Annuler",
-      "titleRequired": "Donne un titre à l'accroche."
+      "titleRequired": "Donne un titre à l'accroche.",
+      "propose": "Le co-MJ propose des accroches tirées de cette histoire",
+      "proposing": "Le co-MJ lit l'histoire…",
+      "proposals": "Proposées par le co-MJ",
+      "proposalsDone": "Toutes les propositions sont traitées.",
+      "keep": "Garder",
+      "rework": "Retoucher",
+      "discard": "Écarter",
+      "dropped_one": "Le co-MJ visait une scène qui n'existe pas : ce lien a été retiré.",
+      "dropped_other": "{{count}} éléments inventés par le co-MJ ont été retirés.",
+      "proposeBudget": "Le budget IA de la campagne ne suffit pas pour proposer des accroches.",
+      "proposeFailed": "Le co-MJ n'a pas pu proposer d'accroches. Écris-les toi-même."
     },
     "sheets": {
       "title": "Fiches en jeu",
@@ -570,7 +585,16 @@
       "loss": "Qui a-t-il perdu ?",
       "quest": "Que cherche-t-il ?",
       "text": "Son histoire en quelques lignes (facultatif)",
-      "hint": "Trois réponses courtes suffisent. Le MJ s'en servira pour ses accroches."
+      "hint": "Trois réponses courtes suffisent. Le co-MJ peut en faire un paragraphe, que tu modifies ; le MJ s'en servira pour ses accroches.",
+      "write": "Écrire avec le co-MJ",
+      "rewrite": "Réécrire avec le co-MJ",
+      "writing": "Le co-MJ écrit…",
+      "writeSub": "À partir de tes trois réponses, sans rien inventer",
+      "errors": {
+        "budget": "Le co-MJ n'a plus de budget pour cette campagne : écris-la toi-même, ou demande au MJ.",
+        "unavailable": "Le co-MJ n'est pas disponible pour le moment : écris-la toi-même.",
+        "failed": "Le co-MJ n'a pas réussi à l'écrire. Réessaie, ou écris-la toi-même."
+      }
     },
     "review": {
       "level": "niveau 1",

@@ -85,8 +85,30 @@ pub const MAP_GENERATION: Template = Template {
     text: include_str!("../../prompts/map-generation.v1.md"),
 };
 
+/// A word to a player about their sheet (`copilot/check-character-sheets`).
+pub const SHEET_NOTE: Template = Template {
+    id: "sheet-note",
+    version: 1,
+    text: include_str!("../../prompts/sheet-note.v1.md"),
+};
+
+/// A backstory paragraph from the player's answers
+/// (`copilot/co-write-backstory`).
+pub const BACKSTORY: Template = Template {
+    id: "backstory",
+    version: 1,
+    text: include_str!("../../prompts/backstory.v1.md"),
+};
+
+/// Secret hooks drawn from a backstory (`copilot/co-write-backstory`).
+pub const HOOKS: Template = Template {
+    id: "hooks",
+    version: 1,
+    text: include_str!("../../prompts/hooks.v1.md"),
+};
+
 /// Every template, for the tests that check each one renders.
-pub const ALL: [Template; 9] = [
+pub const ALL: [Template; 12] = [
     COPILOT,
     RECAP,
     PIXEL_ART,
@@ -96,6 +118,9 @@ pub const ALL: [Template; 9] = [
     GENERATION_REPAIR,
     INTRO_VIDEO,
     MAP_GENERATION,
+    SHEET_NOTE,
+    BACKSTORY,
+    HOOKS,
 ];
 
 const USER_MARK: &str = "---user---";

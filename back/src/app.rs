@@ -162,6 +162,14 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             post(api::table::return_character),
         )
         .route(
+            "/api/campaigns/{id}/characters/{character}/note-draft",
+            post(api::table::draft_note),
+        )
+        .route(
+            "/api/campaigns/{id}/characters/{character}/hooks/propose",
+            post(api::table::propose_hooks),
+        )
+        .route(
             "/api/campaigns/{id}/hooks",
             get(api::table::hooks).post(api::table::add_hook),
         )
@@ -353,6 +361,12 @@ fn player_routes() -> Vec<RouteSpec> {
             "PUT",
             "/api/play/{campaign}/character",
             put(api::play::save_character),
+        ),
+        // copilot/co-write-backstory: the three answers made a paragraph.
+        (
+            "POST",
+            "/api/play/{campaign}/character/backstory",
+            post(api::play::write_backstory),
         ),
         (
             "POST",

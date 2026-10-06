@@ -14,6 +14,8 @@
 //! - `GET /api/play/{campaign}/creation` → what the character creator
 //!   offers: the sprite pack, a starting look, what the rules ask;
 //! - `PUT /api/play/{campaign}/character` → save my draft sheet;
+//! - `POST /api/play/{campaign}/character/backstory` → `{ origin, loss,
+//!   quest }`: the co-GM's paragraph from my three answers;
 //! - `POST /api/play/{campaign}/character/submit` → send it to the GM;
 //! - `POST /api/play/{campaign}/character/equip` → `{ entry, equipped }`:
 //!   carry a bag line on the character, or put it back in the bag, once
@@ -173,6 +175,24 @@ pub async fn save_character(
     let character = players::save_sheet(&state.pool, &p.0, &sheet).await?;
     let view = projection::project_character(rules, &character);
     Ok(Json(json!({ "data": view })).into_response())
+}
+
+/// `POST /api/play/{campaign}/character/backstory` — the co-GM writes
+/// the player's three answers up as a paragraph (`{ text }`), which the
+/// player keeps, edits and saves in their draft.
+///
+/// # Errors
+///
+/// See [`players::assist::write_backstory`].
+pub async fn write_backstory(
+    State(state): State<AppState>,
+    p: CurrentPlayer,
+    Body(answers): Body<players::assist::Answers>,
+) -> Result<Response, AppError> {
+    let row = campaign_of(&state, &p).await?;
+    let text =
+        players::assist::write_backstory(&state.pool, &state.ai, &row, &p.0, &answers).await?;
+    Ok(Json(json!({ "data": { "text": text } })).into_response())
 }
 
 /// `POST /api/play/{campaign}/character/submit` — send the character to

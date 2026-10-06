@@ -24,6 +24,13 @@
 //!   links }` (201);
 //! - `PUT  /api/campaigns/{id}/hooks/{hook}` → `{ title, body, links }`;
 //! - `DELETE /api/campaigns/{id}/hooks/{hook}` (204).
+//!
+//! The co-GM beside the review (`players::assist`, counted, nothing
+//! stored):
+//! - `POST /api/campaigns/{id}/characters/{character}/note-draft` → a
+//!   word to the player drawn from the checks, for the GM to edit;
+//! - `POST /api/campaigns/{id}/characters/{character}/hooks/propose` →
+//!   hooks drawn from the backstory, for the GM to keep or not.
 
 use axum::Json;
 use axum::extract::{Path, State};
@@ -38,7 +45,7 @@ use super::body::Body;
 use crate::auth::guard::{CurrentGm, owned_by};
 use crate::campaigns::{self, CampaignRow};
 use crate::error::AppError;
-use crate::players::{self, review};
+use crate::players::{self, assist, review};
 use crate::state::AppState;
 
 fn parse_id(raw: &str) -> Result<Uuid, AppError> {
@@ -296,4 +303,35 @@ pub async fn delete_hook(
     let id = owned_campaign(&state, &gm, &id).await?;
     review::delete_hook(&state.pool, id, parse_id(&hook)?).await?;
     Ok(StatusCode::NO_CONTENT.into_response())
+}
+
+/// `POST /api/campaigns/{id}/characters/{character}/note-draft`
+///
+/// # Errors
+///
+/// See [`assist::draft_note`].
+pub async fn draft_note(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path((id, character)): Path<(String, String)>,
+) -> Result<Response, AppError> {
+    let row = owned_row(&state, &gm, &id).await?;
+    let note = assist::draft_note(&state.pool, &state.ai, &row, parse_id(&character)?).await?;
+    Ok(Json(json!({ "data": { "note": note } })).into_response())
+}
+
+/// `POST /api/campaigns/{id}/characters/{character}/hooks/propose`
+///
+/// # Errors
+///
+/// See [`assist::propose_hooks`].
+pub async fn propose_hooks(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path((id, character)): Path<(String, String)>,
+) -> Result<Response, AppError> {
+    let row = owned_row(&state, &gm, &id).await?;
+    let proposals =
+        assist::propose_hooks(&state.pool, &state.ai, &row, parse_id(&character)?).await?;
+    Ok(Json(json!({ "data": proposals })).into_response())
 }
