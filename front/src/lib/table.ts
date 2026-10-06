@@ -1,3 +1,4 @@
+import type { CharacterLook } from '@/features/sprites/look'
 import { apiRequest } from './api'
 import type { CharacterStatus, Role } from './play'
 
@@ -26,6 +27,22 @@ export interface InviteStatus {
   expiresAt: string
 }
 
+/** A seat's character, as the GM's table lists it. */
+interface SeatCharacter {
+  id: string
+  status: CharacterStatus
+  /** Empty until the player names it. */
+  name: string
+  classId: string | null
+  /** The class's name in the campaign's rules. */
+  className: string | null
+  /** What the sprite draws, once the player chose it. */
+  look: CharacterLook | null
+  /** Sent again after the GM returned it. */
+  resubmitted: boolean
+  updatedAt: string
+}
+
 /** One seat at the table, as the GM sees it. */
 export interface Seat {
   id: string
@@ -33,7 +50,75 @@ export interface Seat {
   role: Role
   joinedAt: string
   lastSeenAt: string
-  character: { id: string; status: CharacterStatus; name: string; updatedAt: string } | null
+  character: SeatCharacter | null
+}
+
+/** What a rule check reports (`promptus_shared::issue::Issue`). Never blocking. */
+interface Issue {
+  severity: 'error' | 'warning' | 'info'
+  code: string
+  /** Where in the sheet: `abilities.FOR`, `classId`. */
+  path: string
+  /** For the GM, in French. */
+  message?: string
+}
+
+/** One field that moved since the GM's last decision. */
+export interface Change {
+  path: string
+  before: unknown
+  after: unknown
+}
+
+/** A sheet as the player stored it; the creator may add fields. */
+interface ReviewSheet {
+  name?: string
+  classId?: string
+  abilities?: Record<string, number>
+  appearance?: string
+  backstory?: string
+  look?: CharacterLook
+}
+
+/** What the GM reads to decide on one character (`players::review::Review`). */
+export interface CharacterReview {
+  id: string
+  playerId: string
+  nickname: string
+  status: CharacterStatus
+  sheet: ReviewSheet
+  gmNote: string | null
+  updatedAt: string
+  reviewedSheet: ReviewSheet | null
+  reviewedAt: string | null
+  changes: Change[]
+  checks: Issue[]
+  rulesName: string | null
+  className: string | null
+  abilities: { id: string; name: string }[]
+}
+
+/** A hook the GM draws from a backstory. Never shown to players. */
+export interface SecretHook {
+  id: string
+  characterId: string
+  title: string
+  body: string
+  /** Ids of the story's nodes and fronts it ties into. */
+  links: string[]
+}
+
+/** A node or front of the story a hook can tie into. */
+export interface HookTarget {
+  id: string
+  kind: 'node' | 'front'
+  title: string
+}
+
+export interface HookInput {
+  title: string
+  body: string
+  links: string[]
 }
 
 export function listCampaigns(): Promise<CampaignSummary[]> {
@@ -72,6 +157,54 @@ export function removeSeat(campaignId: string, playerId: string): Promise<void> 
     'DELETE',
     `/campaigns/${encodeURIComponent(campaignId)}/players/${encodeURIComponent(playerId)}`,
   )
+}
+
+const campaignPath = (campaignId: string) => `/campaigns/${encodeURIComponent(campaignId)}`
+
+export function fetchReview(campaignId: string, characterId: string): Promise<CharacterReview> {
+  return apiRequest<CharacterReview>(
+    'GET',
+    `${campaignPath(campaignId)}/characters/${encodeURIComponent(characterId)}`,
+  )
+}
+
+/** Validate the sheet the GM read (`seen` is its `updatedAt`). */
+export function validateCharacter(campaignId: string, characterId: string, seen: string): Promise<void> {
+  return apiRequest<void>(
+    'POST',
+    `${campaignPath(campaignId)}/characters/${encodeURIComponent(characterId)}/validate`,
+    { seen },
+  )
+}
+
+/** Return the sheet the GM read to its player, with a word. */
+export function returnCharacter(
+  campaignId: string,
+  characterId: string,
+  seen: string,
+  note: string,
+): Promise<void> {
+  return apiRequest<void>(
+    'POST',
+    `${campaignPath(campaignId)}/characters/${encodeURIComponent(characterId)}/return`,
+    { seen, note },
+  )
+}
+
+export function fetchHooks(campaignId: string): Promise<{ hooks: SecretHook[]; targets: HookTarget[] }> {
+  return apiRequest('GET', `${campaignPath(campaignId)}/hooks`)
+}
+
+export function addHook(campaignId: string, characterId: string, hook: HookInput): Promise<SecretHook> {
+  return apiRequest<SecretHook>('POST', `${campaignPath(campaignId)}/hooks`, { characterId, ...hook })
+}
+
+export function editHook(campaignId: string, hookId: string, hook: HookInput): Promise<SecretHook> {
+  return apiRequest<SecretHook>('PUT', `${campaignPath(campaignId)}/hooks/${encodeURIComponent(hookId)}`, hook)
+}
+
+export function deleteHook(campaignId: string, hookId: string): Promise<void> {
+  return apiRequest<void>('DELETE', `${campaignPath(campaignId)}/hooks/${encodeURIComponent(hookId)}`)
 }
 
 /** The link a player opens to join. */
