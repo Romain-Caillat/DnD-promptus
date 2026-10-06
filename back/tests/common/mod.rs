@@ -14,6 +14,7 @@ use std::str::FromStr;
 use axum::Router;
 use axum::body::Body;
 use axum::http::{Request, StatusCode, header};
+use promptus_back::ai::Ai;
 use promptus_back::auth::setup::SetupState;
 use promptus_back::live::{LiveConfig, LiveHub};
 use promptus_back::state::{AppState, Auth};
@@ -123,11 +124,19 @@ pub fn app_live(pool: PgPool, config: LiveConfig) -> (Router, LiveHub) {
 }
 
 fn router_with(pool: PgPool, setup: SetupState, live: LiveHub) -> Router {
+    app_with_ai(pool, setup, live, Ai::fake())
+}
+
+/// The real router with a chosen AI (the fake provider by default
+/// elsewhere): tests of the co-GM and of the budget pass their own to
+/// count its calls.
+pub fn app_with_ai(pool: PgPool, setup: SetupState, live: LiveHub, ai: Ai) -> Router {
     promptus_back::app::router(
         AppState {
             pool,
             auth: auth(setup),
             live,
+            ai,
         },
         &[],
     )

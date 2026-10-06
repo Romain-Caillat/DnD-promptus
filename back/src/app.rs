@@ -132,6 +132,62 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/characters/{character}/adjust",
             post(api::sheets::adjust),
         )
+        // The evening (phase 3): lobby, scenes, requests, journal, end.
+        .route(
+            "/api/campaigns/{id}/session",
+            get(api::evening::live_screen).post(api::evening::open),
+        )
+        .route(
+            "/api/campaigns/{id}/session/start",
+            post(api::evening::start),
+        )
+        .route("/api/campaigns/{id}/session/end", post(api::evening::end))
+        .route(
+            "/api/campaigns/{id}/session/reveal",
+            post(api::evening::reveal),
+        )
+        .route(
+            "/api/campaigns/{id}/session/music",
+            put(api::evening::music),
+        )
+        .route(
+            "/api/campaigns/{id}/session/journal",
+            post(api::evening::note),
+        )
+        .route(
+            "/api/campaigns/{id}/session/requests/{request}",
+            post(api::evening::decide),
+        )
+        .route(
+            "/api/campaigns/{id}/session/spotlight/{player}",
+            post(api::evening::give_spotlight),
+        )
+        .route(
+            "/api/campaigns/{id}/hooks/{hook}/played",
+            put(api::evening::hook_played),
+        )
+        .route(
+            "/api/campaigns/{id}/knowledge",
+            get(api::evening::knowledge),
+        )
+        .route("/api/campaigns/{id}/sessions", get(api::evening::chronicle))
+        .route(
+            "/api/campaigns/{id}/sessions/{session}/recap",
+            put(api::evening::edit_recap),
+        )
+        .route(
+            "/api/campaigns/{id}/sessions/{session}/recap-draft",
+            post(api::evening::recap_draft),
+        )
+        .route(
+            "/api/campaigns/{id}/sessions/{session}/feedback",
+            get(api::evening::feedback_report),
+        )
+        .route(
+            "/api/campaigns/{id}/sessions/{session}/changes",
+            put(api::evening::note_changes),
+        )
+        .route("/api/campaigns/{id}/ai", get(api::evening::ai_usage))
         .route("/api/campaigns/{id}/live", get(api::live::gm_socket))
         .route_layer(middleware::from_fn_with_state(state.clone(), require_gm));
 
@@ -198,6 +254,43 @@ fn player_routes() -> Vec<RouteSpec> {
             "POST",
             "/api/play/{campaign}/character/equip",
             post(api::play::equip),
+        ),
+        // The evening: the scene, the music, my requests and their rolls,
+        // the journal; the lobby; the feedback at the end.
+        (
+            "GET",
+            "/api/play/{campaign}/evening",
+            get(api::play_evening::evening),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/lobby",
+            post(api::play_evening::arrive),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/requests",
+            post(api::play_evening::ask),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/requests/{request}/roll",
+            post(api::play_evening::roll),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/requests/{request}/withdraw",
+            post(api::play_evening::withdraw),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/requests/{request}/contest",
+            post(api::play_evening::contest),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/feedback",
+            post(api::play_evening::answer_feedback),
         ),
         // A socket: it carries versions and presence, never data.
         (

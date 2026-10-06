@@ -58,6 +58,42 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/campaigns/{campaign}/hooks"),
     ("POST", "/api/campaigns/{campaign}/hooks"),
     ("PUT", "/api/campaigns/{campaign}/hooks/{hook}"),
+    // The evening, in the order the GM plays it: open, start, play, end,
+    // then read and write what follows.
+    ("GET", "/api/campaigns/{campaign}/session"),
+    ("POST", "/api/campaigns/{campaign}/session"),
+    ("POST", "/api/campaigns/{campaign}/session/start"),
+    ("POST", "/api/campaigns/{campaign}/session/reveal"),
+    ("PUT", "/api/campaigns/{campaign}/session/music"),
+    ("POST", "/api/campaigns/{campaign}/session/journal"),
+    // On a request of the player's, sent just before.
+    (
+        "POST",
+        "/api/campaigns/{campaign}/session/requests/{request}",
+    ),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/session/spotlight/{player}",
+    ),
+    ("PUT", "/api/campaigns/{campaign}/hooks/{hook}/played"),
+    ("GET", "/api/campaigns/{campaign}/knowledge"),
+    ("POST", "/api/campaigns/{campaign}/session/end"),
+    // `{session}` is the session just ended.
+    ("GET", "/api/campaigns/{campaign}/sessions"),
+    ("PUT", "/api/campaigns/{campaign}/sessions/{session}/recap"),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/sessions/{session}/recap-draft",
+    ),
+    (
+        "GET",
+        "/api/campaigns/{campaign}/sessions/{session}/feedback",
+    ),
+    (
+        "PUT",
+        "/api/campaigns/{campaign}/sessions/{session}/changes",
+    ),
+    ("GET", "/api/campaigns/{campaign}/ai"),
     ("DELETE", "/api/campaigns/{campaign}/hooks/{hook}"),
     // After the character routes: removing the player removes them.
     ("DELETE", "/api/campaigns/{campaign}/players/{player}"),
@@ -84,7 +120,7 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             "pitch": "",
             "playerHook": "",
             "playerCount": 6,
-            "aiBudgetCents": 0
+            "aiBudgetCents": 100
         })),
         (_, p) if p.ends_with("/archive") => Some(serde_json::json!({ "archived": false })),
         // Refused before any check: the decision bodies need the sheet's
@@ -99,6 +135,24 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         ("PUT", p) if p.ends_with("/hooks/{hook}") => {
             Some(serde_json::json!({ "title": "Sweep", "body": "Réécrite." }))
         }
+        (_, p) if p.ends_with("/played") => Some(serde_json::json!({ "played": true })),
+        (_, p) if p.ends_with("/reveal") => {
+            Some(serde_json::json!({ "kind": "scene", "node": "sc_taverne" }))
+        }
+        (_, p) if p.ends_with("/music") => Some(serde_json::json!({ "track": null })),
+        (_, p) if p.ends_with("/journal") => {
+            Some(serde_json::json!({ "kind": "note", "text": "Le phare clignote." }))
+        }
+        (_, p) if p.ends_with("/requests/{request}") => {
+            Some(serde_json::json!({ "kind": "accept", "reason": "" }))
+        }
+        (_, p) if p.ends_with("/end") || p.ends_with("/recap") => Some(serde_json::json!({
+            "recap": "Ils ont trouvé la lanterne.",
+            "previously": "La tempête approche."
+        })),
+        (_, p) if p.ends_with("/changes") => {
+            Some(serde_json::json!({ "text": "Plus de scènes pour Marc." }))
+        }
         _ => None,
     }
 }
@@ -110,6 +164,9 @@ struct Ids {
     player: String,
     character: String,
     hook: String,
+    /// Filled once the control sweep has them; any id before.
+    request: String,
+    session: String,
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
@@ -118,6 +175,8 @@ fn route_uri(path: &str, ids: &Ids) -> String {
         .replace("{player}", &ids.player)
         .replace("{character}", &ids.character)
         .replace("{hook}", &ids.hook)
+        .replace("{request}", &ids.request)
+        .replace("{session}", &ids.session)
 }
 
 /// Every placeholder filled for `player` of `campaign`: an invitation of
@@ -147,7 +206,26 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         character: character.to_string(),
         campaign,
         player,
+        request: Uuid::new_v4().to_string(),
+        session: Uuid::new_v4().to_string(),
     }
+}
+
+/// A pending request of the player in the live session.
+async fn request_of(pool: &PgPool, ids: &Ids) -> String {
+    sqlx::query_scalar::<_, Uuid>(
+        "INSERT INTO player_requests (campaign_id, session_id, player_id, character_id, text)
+         SELECT s.campaign_id, s.id, $2, $3, 'Je monte au phare.'
+         FROM game_sessions s WHERE s.campaign_id = $1 AND s.status = 'live'
+         RETURNING id",
+    )
+    .bind(Uuid::parse_str(&ids.campaign).unwrap())
+    .bind(Uuid::parse_str(&ids.player).unwrap())
+    .bind(Uuid::parse_str(&ids.character).unwrap())
+    .fetch_one(pool)
+    .await
+    .unwrap()
+    .to_string()
 }
 
 /// Put `character` back in "submitted" and return the `updatedAt` a
@@ -303,7 +381,21 @@ async fn every_gm_route_refuses_without_a_valid_session() {
     assert_all_refuse(&app, &pool, Some(&expired), &ids).await;
 
     // Control: the same routes work with the right session.
+    let mut ids = ids;
     for (method, path) in GM_ROUTES {
+        if path.contains("{request}") {
+            ids.request = request_of(&pool, &ids).await;
+        }
+        if path.contains("{session}") {
+            ids.session = sqlx::query_scalar::<_, Uuid>(
+                "SELECT id FROM game_sessions WHERE campaign_id = $1 ORDER BY number DESC LIMIT 1",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
+        }
         let uri = route_uri(path, &ids);
         let body = if path.ends_with("/validate") || path.ends_with("/return") {
             Some(submitted_body(&pool, &ids.character, path).await)

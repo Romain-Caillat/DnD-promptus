@@ -1,0 +1,1 @@
+Pixel art, 16-bit era, crisp square pixels, no anti-aliasing, limited palette, dark outline, top light; style of Terraria and Stardew Valley. {{kind}} of a tabletop role-playing campaign. Art direction of the world: {{direction}}. Subject: {{subject}}. No text, no letters, no frame, no watermark.

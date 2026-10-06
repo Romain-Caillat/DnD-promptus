@@ -424,6 +424,7 @@ async fn over_https_the_session_cookie_is_secure() {
             pool,
             auth,
             live: promptus_back::live::LiveHub::new(Default::default()),
+            ai: promptus_back::ai::Ai::none(),
         },
         &[],
     );

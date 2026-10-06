@@ -4,19 +4,19 @@
 
 use std::collections::BTreeMap;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::formula::{Formula, FormulaEnv};
 use super::model::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Side {
     Party,
     Opposition,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Origin {
     Class(String),
@@ -24,7 +24,7 @@ pub enum Origin {
 }
 
 /// XP state of a player character.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Progress {
     pub total_xp: u32,
     /// The bar that empties every `upgrade_every_xp`.
@@ -34,7 +34,7 @@ pub struct Progress {
 
 /// A condition on a combatant, with its effects resolved so the badge
 /// and the engine read the same thing.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ActiveCondition {
     /// The system's condition id, or `None` for an action's inline effect.
     pub id: Option<String>,
@@ -58,13 +58,13 @@ impl ActiveCondition {
 }
 
 /// What the current turn has spent.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TurnBudget {
     pub actions_left: u32,
     pub spent_by_kind: BTreeMap<String, u32>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Combatant {
     pub id: String,
     pub name: String,
@@ -354,7 +354,7 @@ impl FormulaEnv for SheetEnv<'_> {
 
 /// Everyone in play, plus whose turn it is and which action economy
 /// applies.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Scene {
     pub context: String,
     pub combatants: BTreeMap<String, Combatant>,

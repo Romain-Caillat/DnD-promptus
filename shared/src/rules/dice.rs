@@ -229,7 +229,7 @@ impl<'de> Deserialize<'de> for DiceExpr {
 }
 
 /// One rolled expression: every face, and the total with the modifier.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DiceRoll {
     pub expr: DiceExpr,
     pub faces: Vec<u32>,

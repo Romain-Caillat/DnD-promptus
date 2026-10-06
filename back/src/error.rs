@@ -35,6 +35,12 @@ pub enum AppError {
     /// A dependency the request needs (today: the database) is down, or
     /// the server refuses new work for a moment.
     ServiceUnavailable(&'static str),
+    /// 502 — a service the server called (an AI provider) failed or
+    /// answered out of format; `detail` says what, for the GM to read.
+    Upstream {
+        code: &'static str,
+        detail: String,
+    },
     Internal(String),
 }
 
@@ -58,6 +64,7 @@ impl IntoResponse for AppError {
                 code,
                 "a dependency is unavailable".into(),
             ),
+            Self::Upstream { code, detail } => (StatusCode::BAD_GATEWAY, code, detail),
             Self::Internal(detail) => {
                 tracing::error!(%detail, "internal error");
                 (

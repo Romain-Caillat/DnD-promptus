@@ -15,7 +15,7 @@ mod common;
 
 use axum::Router;
 use axum::http::StatusCode;
-use common::marked::{ITEM_NOTE, leaks, mark_review, marked, world};
+use common::marked::{ITEM_NOTE, leaks, m, mark_review, marked, world};
 use common::{call, call_as_player, imported_campaign, invite_code, join, send};
 use promptus_back::app::player_facing_routes;
 use promptus_shared::story::to_yaml;
@@ -65,6 +65,7 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
     .unwrap();
     mark_review(pool, Uuid::parse_str(&campaign).unwrap(), character).await;
     let spectator = join(app, &code, "Léa", "spectator").await;
+    evening(pool, Uuid::parse_str(&campaign).unwrap()).await;
     Table {
         gm,
         campaign,
@@ -72,6 +73,81 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
         marc: marc.player_token().unwrap(),
         spectator: spectator.player_token().unwrap(),
     }
+}
+
+/// Session 1 ended with a GM recap and a GM-only journal line, session
+/// 2 live: what the evening routes need to succeed, and what they must
+/// keep from the players.
+async fn evening(pool: &PgPool, campaign: Uuid) {
+    let first: Uuid = sqlx::query_scalar(
+        "INSERT INTO game_sessions (campaign_id, number, status, started_at, ended_at, recap, previously)
+         VALUES ($1, 1, 'ended', now() - interval '1 week', now() - interval '6 days', $2,
+                 'Les corsaires ont accosté.')
+         RETURNING id",
+    )
+    .bind(campaign)
+    .bind(m("sessions.recap"))
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO game_sessions (campaign_id, number, status, started_at) VALUES ($1, 2, 'live', now())",
+    )
+    .bind(campaign)
+    .execute(pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO table_journal (campaign_id, session_id, kind, ref, text, shared)
+         VALUES ($1, $2, 'note', 'cl_gwen', $3, false), ($1, $2, 'scene', 'n_crique', 'La crique.', true)",
+    )
+    .bind(campaign)
+    .bind(first)
+    .bind(m("journal.gm_line"))
+    .execute(pool)
+    .await
+    .unwrap();
+}
+
+/// A request of Marc's in the live session, at the state `path` acts on.
+async fn marc_request(pool: &PgPool, campaign: &str, path: &str) -> Uuid {
+    let status = if path.ends_with("/roll") {
+        "check"
+    } else if path.ends_with("/contest") {
+        "refused"
+    } else {
+        "pending"
+    };
+    sqlx::query_scalar(
+        "INSERT INTO player_requests (campaign_id, session_id, player_id, character_id, text, status,
+                                      check_ability, check_difficulty, gm_reason)
+         SELECT s.campaign_id, s.id, p.id, c.id, 'Je grimpe au mât.', $2,
+                CASE WHEN $2 = 'check' THEN 'DEX' END, CASE WHEN $2 = 'check' THEN 10 END,
+                CASE WHEN $2 = 'refused' THEN 'Pas maintenant.' END
+         FROM game_sessions s JOIN players p ON p.campaign_id = s.campaign_id
+              JOIN characters c ON c.player_id = p.id
+         WHERE s.campaign_id = $1 AND s.status = 'live' AND p.nickname = 'Marc'
+         RETURNING id",
+    )
+    .bind(Uuid::parse_str(campaign).unwrap())
+    .bind(status)
+    .fetch_one(pool)
+    .await
+    .unwrap()
+}
+
+/// The evening routes a spectator has no part in: they ask nothing,
+/// roll nothing and answer no feedback.
+fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
+    if method != "POST" {
+        return None;
+    }
+    if path.contains("{request}") {
+        // Marc's request: not theirs.
+        return Some((StatusCode::NOT_FOUND, "NO_SUCH_REQUEST"));
+    }
+    (path.ends_with("/requests") || path.ends_with("/feedback"))
+        .then_some((StatusCode::FORBIDDEN, "SPECTATOR"))
 }
 
 fn uri(path: &str, t: &Table) -> String {
@@ -98,6 +174,15 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
         // A complete sheet, so the submit route that follows succeeds.
         // The line of Marc's bag `mark_review` stored.
         ("POST", p) if p.ends_with("/equip") => Some(json!({ "entry": "k1", "equipped": true })),
+        ("POST", p) if p.ends_with("/lobby") => Some(json!({ "soundOk": true, "remote": true })),
+        ("POST", p) if p.ends_with("/requests") => Some(json!({
+            "card": { "kind": "ability", "ability": "SAG" },
+            "text": "Je scrute la crique.",
+        })),
+        ("POST", p) if p.ends_with("/feedback") => Some(json!({
+            "rulesClear": "yes", "hadMoment": "partly", "knowsNext": "no",
+            "comment": "Belle soirée.",
+        })),
         ("PUT", p) if p.ends_with("/character") => Some(json!({
             "name": "Borin",
             "classId": "bretteur",
@@ -128,7 +213,11 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
     assert!(routes.len() >= 4, "{routes:?}");
 
     for (n, (method, path)) in routes.iter().enumerate() {
-        let uri = uri(path, &t);
+        let mut uri = uri(path, &t);
+        if path.contains("{request}") {
+            let id = marc_request(&pool, &t.campaign, path).await;
+            uri = uri.replace("{request}", &id.to_string());
+        }
         let body = sweep_body(n, method, path);
         for (who, token) in [("Marc", &t.marc), ("Léa", &t.spectator)] {
             // Joining twice under one nickname is refused: one join is
@@ -156,6 +245,11 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
             if path.ends_with("/live") {
                 assert_eq!(r.status, StatusCode::BAD_REQUEST, "{uri} as {who}");
                 assert_eq!(r.body["error"]["code"], "WEBSOCKET_REQUIRED");
+                continue;
+            }
+            if let (true, Some((status, code))) = (who == "Léa", players_only(method, path)) {
+                assert_eq!(r.status, status, "{method} {uri} as Léa: {}", r.body);
+                assert_eq!(r.body["error"]["code"], code);
                 continue;
             }
             if who == "Léa" && writes_character(method, path) {
@@ -237,7 +331,7 @@ async fn seated_routes_refuse_whoever_has_no_seat_at_that_table() {
         if !seated(path) {
             continue;
         }
-        let uri = uri(path, &t);
+        let uri = uri(path, &t).replace("{request}", &Uuid::new_v4().to_string());
         for cookie in &cookies {
             let r = send(&app, cookie.as_deref(), method, &uri, None).await;
             assert_eq!(

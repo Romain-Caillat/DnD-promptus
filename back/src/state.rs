@@ -1,6 +1,7 @@
 use axum::extract::FromRef;
 use sqlx::PgPool;
 
+use crate::ai::Ai;
 use crate::auth::passkeys::Passkeys;
 use crate::auth::setup::SetupState;
 use crate::live::LiveHub;
@@ -12,6 +13,8 @@ pub struct AppState {
     pub auth: Auth,
     /// The live channel: campaign rooms and presence.
     pub live: LiveHub,
+    /// The model provider and its prices (`ai`).
+    pub ai: Ai,
 }
 
 /// GM authentication: the relying party, the setup code, and how the

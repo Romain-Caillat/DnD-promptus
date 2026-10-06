@@ -1,13 +1,13 @@
 //! What the engine reports happened, in order — the source of the GM
 //! journal line, the player toast and the TV moment.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::check::RollBreakdown;
 use super::model::ConditionKind;
 use super::progression::ProgressEvent;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RollPurpose {
     Attack,
@@ -17,7 +17,7 @@ pub enum RollPurpose {
 }
 
 /// Damage, term by term.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DamageBreakdown {
     /// The amount as written (`3`, `1d6+2`).
     pub amount: String,
@@ -32,7 +32,7 @@ pub struct DamageBreakdown {
     pub total: i32,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "event", rename_all = "snake_case")]
 pub enum Event {
     Roll {

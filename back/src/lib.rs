@@ -1,3 +1,4 @@
+pub mod ai;
 pub mod api;
 pub mod app;
 pub mod auth;
@@ -6,6 +7,7 @@ pub mod config;
 pub mod content;
 pub mod db;
 pub mod error;
+pub mod evening;
 pub mod live;
 pub mod players;
 pub mod rule_systems;
