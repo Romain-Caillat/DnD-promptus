@@ -101,7 +101,7 @@ async fn gm_json(state: &AppState, row: &CampaignRow) -> Result<serde_json::Valu
         .collect();
     Ok(json!({
         "board": b,
-        "maps": board::choices(row),
+        "maps": board::choices(&state.pool, row).await?,
         "encounters": encounters,
         "encounter": fight_json,
         "conditions": rules.map(|r| r.conditions.iter().map(|c| json!({ "id": c.id, "name": c.name })).collect::<Vec<_>>()),

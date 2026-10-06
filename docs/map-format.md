@@ -22,7 +22,7 @@ lights are data on the grid. A generated or imported image is only a
 | `cell_meters` | no | overrides the scale's cell size |
 | `theme` | yes | tileset / theme pack id (rendering) |
 | `ambience` | no | see below; defaults to day, clear |
-| `backdrop` | no | `{ prompt, image }` — decor only; `prompt` is never sent to players |
+| `backdrop` | no | `{ prompt, image, cell_px, offset }` — decor only; `prompt` is never sent to players |
 | `gm_notes` | no | never sent to players |
 | `layers` | no | defaults to one layer `base`, visible to all |
 | `grid` | yes | legend and rows |
@@ -31,6 +31,14 @@ lights are data on the grid. A generated or imported image is only a
 Coordinates are `[x, y]`: column then row, `[0, 0]` top-left, north up.
 World maps store hexes as rows too: pointy-top hexes, odd rows shifted
 half a hex right ("odd-r").
+
+### Backdrop
+
+`image` names the picture drawn behind the grid (`import` for a
+campaign map's own image, stored with the map). `cell_px` is the size
+of one cell in the image's pixels and `offset` (`[x, y]`, pixels) where
+cell `[0, 0]` starts; both must be positive when present. With a
+backdrop the renderer draws the image instead of the floor and walls.
 
 ## Grid
 
@@ -164,6 +172,18 @@ Parameters come from the campaign's rule system (`MovementRules`:
 - **Players' projection** (`Map::project(Viewer::Player)`): drops `gm`
   layers and all they hold, `gm_notes`, object checks and notes, and the
   backdrop prompt. Fog of war is cut on top of it.
+
+## Universal VTT import
+
+`maps::from_uvtt` reads a Universal VTT export (`.dd2vtt`, `.uvtt`,
+`.df2vtt`): `resolution.map_size` gives the grid,
+`pixels_per_grid` the backdrop's `cell_px`. Walls (`line_of_sight`,
+`objects_line_of_sight`) are segments there and cells here: each
+segment is sampled every 0.1 cell and a sample on a cell edge walls the
+cell left of or above it. Portals become closed doors on cells made
+walls. Lights become lights: `range` → `dim` (rounded up), `bright` half
+of it, `ffRRGGBB` → `#rrggbb`. The base64 `image` is kept as the
+backdrop.
 
 ## V1 maps
 

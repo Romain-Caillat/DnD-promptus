@@ -222,6 +222,12 @@ export function CampaignPage() {
               onClick={() => navigate(`${base}/medias`)}
             />
             <CardButton
+              icon="map"
+              title={t('gm.campaign.maps')}
+              subtitle={t('gm.campaign.mapsSub')}
+              onClick={() => navigate(`${base}/cartes`)}
+            />
+            <CardButton
               icon="arrow"
               title={t('gm.campaign.evening')}
               subtitle={t('gm.campaign.eveningSub')}

@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use axum::Router;
+use axum::extract::DefaultBodyLimit;
 use axum::http::header::CACHE_CONTROL;
 use axum::http::{HeaderValue, Method};
 use axum::middleware;
@@ -245,6 +246,39 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/fight/loot",
             post(api::board::give_loot),
         )
+        // The campaign's own maps (maps/edit-map-gm, maps/import-image-map,
+        // maps/generate-map-llm).
+        .route(
+            "/api/campaigns/{id}/maps",
+            get(api::maps::list).post(api::maps::create),
+        )
+        .route(
+            "/api/campaigns/{id}/maps/import",
+            // An imported image travels as base64 in the JSON body.
+            post(api::maps::import).layer(DefaultBodyLimit::max(
+                crate::campaign_maps::MAX_BACKDROP_BYTES * 4 / 3 + 1024 * 1024,
+            )),
+        )
+        .route(
+            "/api/campaigns/{id}/maps/generate",
+            post(api::maps::generate),
+        )
+        .route(
+            "/api/campaigns/{id}/maps/{map}",
+            get(api::maps::get)
+                .put(api::maps::save)
+                .delete(api::maps::delete)
+                // The editor sends the whole map.
+                .layer(DefaultBodyLimit::max(4 * 1024 * 1024)),
+        )
+        .route(
+            "/api/campaigns/{id}/maps/{map}/validate",
+            post(api::maps::validate),
+        )
+        .route(
+            "/api/campaigns/{id}/maps/{map}/backdrop",
+            get(api::maps::gm_backdrop),
+        )
         // Pixel-art images, reviewed by the GM.
         .route(
             "/api/campaigns/{id}/media",
@@ -380,6 +414,11 @@ fn player_routes() -> Vec<RouteSpec> {
             "GET",
             "/api/play/{campaign}/board",
             get(api::board::player_board),
+        ),
+        (
+            "GET",
+            "/api/play/{campaign}/board/backdrop",
+            get(api::maps::player_backdrop),
         ),
         (
             "POST",

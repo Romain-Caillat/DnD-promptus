@@ -17,6 +17,9 @@ pub enum MapError {
     Json(#[from] serde_json::Error),
     #[error("map grid: {0}")]
     Grid(#[from] super::model::GridError),
+    /// A Universal VTT file the importer cannot use (French, for the GM).
+    #[error("{0}")]
+    Uvtt(String),
     #[error("invalid map: {}", .0.iter().map(ToString::to_string).collect::<Vec<_>>().join("; "))]
     Invalid(Vec<Issue>),
 }
@@ -49,6 +52,8 @@ pub enum Issue {
     EmptyProp(String),
     #[error("doors only exist on square grids ({0:?})")]
     DoorOnHex(String),
+    #[error("the backdrop's cell size must be a positive number of pixels")]
+    BadBackdrop,
 }
 
 impl Map {
@@ -93,6 +98,12 @@ impl Map {
             .is_some_and(|m| !(m.is_finite() && m > 0.0))
         {
             issues.push(Issue::BadCellSize);
+        }
+        if let Some(b) = &self.backdrop {
+            let finite = b.offset.is_none_or(|o| o.iter().all(|v| v.is_finite()));
+            if b.cell_px.is_some_and(|px| !(px.is_finite() && px > 0.0)) || !finite {
+                issues.push(Issue::BadBackdrop);
+            }
         }
 
         let mut layers = BTreeSet::new();

@@ -5,6 +5,8 @@ import { CampaignPage } from '@/features/gm/CampaignPage'
 import { GmHomePage } from '@/features/gm/GmHomePage'
 import { GmTablePage } from '@/features/gm/GmTablePage'
 import { GmLivePage } from '@/features/gm/live/GmLivePage'
+import { MapEditorPage } from '@/features/gm/maps/MapEditorPage'
+import { MapsPage } from '@/features/gm/maps/MapsPage'
 import { NewCampaignPage } from '@/features/gm/NewCampaignPage'
 import { PlayerViewPage } from '@/features/gm/PlayerViewPage'
 import { GenerationPage } from '@/features/gm/prep/GenerationPage'
@@ -39,6 +41,8 @@ export default function App() {
         <Route path="/campagnes/:campaignId/preparer" element={<ReviewPage />} />
         <Route path="/campagnes/:campaignId/generer" element={<GenerationPage />} />
         <Route path="/campagnes/:campaignId/medias" element={<MediaPage />} />
+        <Route path="/campagnes/:campaignId/cartes" element={<MapsPage />} />
+        <Route path="/campagnes/:campaignId/cartes/:mapId" element={<MapEditorPage />} />
         <Route path="*" element={<GmHomePage />} />
       </Routes>
     </BrowserRouter>

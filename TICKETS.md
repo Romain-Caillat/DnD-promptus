@@ -1953,7 +1953,7 @@ dessin n'est qu'une projection. Le serveur reste seul juge du
 déplacement, de la portée et de la ligne de vue ; un joueur ne reçoit
 jamais ce qu'il n'a pas le droit de voir (projection joueur, `MEMORY.md` §3).
 
-### `maps/model-grid-maps` · doing — reste le stockage en base (avec la campagne)
+### `maps/model-grid-maps` · doing — reste le branchement du déplacement sur le système de règles
 
 **Pourquoi** — Tout le reste (rendu, règles, brouillard, génération)
 lit la même description de carte.
@@ -1991,9 +1991,9 @@ déplacement d'un pas par hexagone pour le monde. Les deux cartes témoins
 sont écrites (`content/maps/corsaires/quai-port-louis.yaml`,
 `content/maps/brasier/cure-dent-coursive.yaml`, six contre six) et les
 quatre cartes de la démo V1 se chargent (`content/maps/v1-demo/`,
-chargeur `load_v1_story_maps`). 34 tests dans `shared/`. Reste : le
-stockage en base (table et migration, avec `campaign/model-story-graph`)
-et le branchement des paramètres de déplacement (`MovementRules`) sur le
+chargeur `load_v1_story_maps`). 34 tests dans `shared/`. Les cartes
+propres à une campagne sont stockées en base (`campaign_maps`, migration
+019, avec `maps/edit-map-gm`). Reste : le branchement des paramètres de déplacement (`MovementRules`) sur le
 système de règles (`engine/model-rule-system`). Le rendu, le brouillard,
 les véhicules (orientation, arcs) et le voyage en hexagones lisent ce
 modèle sans le changer.
@@ -2074,7 +2074,7 @@ badges).
 
 **Origine** — Romain, session de design du 3 octobre 2026
 
-### `maps/edit-map-gm` · todo
+### `maps/edit-map-gm` · doing — reste une carte de rencontre complète faite par le MJ sur l'app, et le pinceau de brouillard
 
 **Pourquoi** — Le MJ garde le dernier mot sur chaque carte.
 
@@ -2086,9 +2086,24 @@ pinceau de brouillard, révéler un calque ou un objet en direct.
 de dix minutes et révèle un passage secret pendant la session ; les sept
 moments de la planche « Cartes · l'éditeur » sont faisables dans l'app.
 
+**État** — Page « Cartes » de la campagne (`/campagnes/:id/cartes`) :
+liste des cartes de la campagne, nouvelle carte vide (16 × 16, murée)
+ou copie d'une carte du monde. Éditeur (`/campagnes/:id/cartes/:carte`) :
+pinceaux sol, mur, eau, vide (glisser), portes (fermée → ouverte →
+verrouillée → retirée ; la case devient un mur), décors du jeu de tuiles,
+objets cachés, lumières, départs héros et adversaires, gomme ; tout peut
+aller sur le calque secret ; heure, météo, lumière de base et notes du
+MJ. Enregistrer repasse la carte en brouillon ; seule une carte validée
+est proposée au plateau (avant les cartes du monde) et peut être montrée.
+Le serveur valide chaque enregistrement et répond en français. Une carte
+affichée à la table ne peut pas être supprimée. Révéler un calque ou un
+objet en direct existait déjà (`maps/reveal-fog-and-hidden`). Écart : pas
+encore de pinceau de brouillard. Pas encore essayé sur une vraie
+préparation.
+
 **Origine** — Planches « Cartes · trois échelles » et « Cartes · l'éditeur »
 
-### `maps/generate-map-llm` · todo
+### `maps/generate-map-llm` · doing — reste une vraie carte générée avec la clé OpenRouter puis validée
 
 **Pourquoi** — Préparer une carte doit être aussi rapide que décrire
 la scène.
@@ -2102,9 +2117,22 @@ compté.
 **Fini quand** — Une scène de la démo produit une carte jouable,
 validée par le MJ, en une génération et quelques retouches.
 
+**État** — Sur la page « Cartes », le MJ choisit une scène (les
+combats d'abord) et le co-MJ propose une carte (gabarit
+`map-generation.v1`, appel compté `map.generate`) : il reçoit la scène,
+ses adversaires, les matériaux et décors du jeu de tuiles, les
+caractéristiques du système de règles et la taille du groupe. Le serveur
+impose version, identifiant, décor, échelle et calques, retire image de
+fond et sorties, écarte un adversaire ou une caractéristique inventés
+(décomptés dans `dropped`) ; si la carte reste invalide, une seconde
+chance avec les raisons en français, puis une erreur. La proposition
+arrive en brouillon dans l'éditeur et n'atteint la table qu'une fois
+validée. Écart : la carte n'est pas encore rattachée automatiquement au
+nœud (le MJ la choisit au plateau).
+
 **Origine** — Règles de design 1 et 2 (`CLAUDE.md`)
 
-### `maps/import-image-map` · todo
+### `maps/import-image-map` · doing — reste un vrai `.dd2vtt` et une vraie image importés et joués
 
 **Pourquoi** — Beaucoup de MJ ont déjà des cartes (achetées, faites
 dans Dungeondraft ou Dungeon Alchemist, générées).
@@ -2117,6 +2145,17 @@ tout ce qui est caché ou change d'état est un objet posé par-dessus.
 
 **Fini quand** — Une carte `.dd2vtt` et une image brute deviennent
 jouables, avec ligne de vue correcte, en moins de cinq minutes.
+
+**État** — Import sur la page « Cartes ». Un fichier Universal VTT
+(`.dd2vtt`, `.uvtt`, `.df2vtt`) devient une carte : murs, portes et
+lumières lus du fichier, image gardée en fond. Une image (PNG, JPEG,
+WEBP, 25 Mo au plus) se cale sur la grille (taille de case, décalage,
+aperçu de la grille) et devient un sol ouvert à tracer dans l'éditeur,
+où l'image reste sous la grille. Le fond est servi au MJ et, une fois la
+carte montrée, aux joueurs. Écarts : les murs Universal VTT sont des
+segments, Promptus les pose sur des cases (une case traversée devient un
+mur, une porte rend sa case mur) ; l'IA ne propose pas encore les murs
+d'une image brute ; pas de case témoin.
 
 **Origine** — Recherche sur Foundry VTT et Owlbear Rodeo, session du 3 octobre 2026
 

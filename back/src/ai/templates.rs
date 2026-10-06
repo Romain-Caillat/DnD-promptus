@@ -78,8 +78,15 @@ pub const INTRO_VIDEO: Template = Template {
     text: include_str!("../../prompts/intro-video.v1.md"),
 };
 
+/// A scene's encounter map (`maps/generate-map-llm`).
+pub const MAP_GENERATION: Template = Template {
+    id: "map-generation",
+    version: 1,
+    text: include_str!("../../prompts/map-generation.v1.md"),
+};
+
 /// Every template, for the tests that check each one renders.
-pub const ALL: [Template; 8] = [
+pub const ALL: [Template; 9] = [
     COPILOT,
     RECAP,
     PIXEL_ART,
@@ -88,6 +95,7 @@ pub const ALL: [Template; 8] = [
     GENERATION_SCENES,
     GENERATION_REPAIR,
     INTRO_VIDEO,
+    MAP_GENERATION,
 ];
 
 const USER_MARK: &str = "---user---";

@@ -101,6 +101,17 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/fight"),
     ("POST", "/api/campaigns/{campaign}/fight/command"),
     ("POST", "/api/campaigns/{campaign}/fight/loot"),
+    // The campaign's maps: list, create, import, generate, then on the
+    // map stored just before.
+    ("GET", "/api/campaigns/{campaign}/maps"),
+    ("POST", "/api/campaigns/{campaign}/maps"),
+    ("POST", "/api/campaigns/{campaign}/maps/import"),
+    ("POST", "/api/campaigns/{campaign}/maps/generate"),
+    ("GET", "/api/campaigns/{campaign}/maps/{map}"),
+    ("PUT", "/api/campaigns/{campaign}/maps/{map}"),
+    ("POST", "/api/campaigns/{campaign}/maps/{map}/validate"),
+    ("GET", "/api/campaigns/{campaign}/maps/{map}/backdrop"),
+    ("DELETE", "/api/campaigns/{campaign}/maps/{map}"),
     // Images: list, draw one, then on an image stored just before.
     ("GET", "/api/campaigns/{campaign}/media"),
     ("POST", "/api/campaigns/{campaign}/media"),
@@ -165,7 +176,9 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             "title": "Sweep",
             "rules": { "id": "corsaires", "version": 1 }
         })),
-        (_, p) if p.ends_with("/import") => Some(serde_json::json!({ "yaml": FIXTURE })),
+        (_, p) if p.ends_with("/import") && !p.ends_with("/maps/import") => {
+            Some(serde_json::json!({ "yaml": FIXTURE }))
+        }
         (_, p) if p.ends_with("/settings") => Some(serde_json::json!({
             "title": "Sweep",
             "world": "",
@@ -222,6 +235,14 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         ("POST", p) if p.ends_with("/media") => {
             Some(serde_json::json!({ "kind": "scene", "subject": "sc_crique" }))
         }
+        ("POST", p) if p.ends_with("/maps") => {
+            Some(serde_json::json!({ "name": "Une salle", "width": 6, "height": 5 }))
+        }
+        (_, p) if p.ends_with("/maps/import") => Some(serde_json::json!({
+            "kind": "image", "name": "Un plan", "image": "iVBORw0KGgpub3QgYW4gaW1hZ2U=",
+            "cellPx": 64, "offsetX": 0, "offsetY": 0, "columns": 6, "rows": 5
+        })),
+        (_, p) if p.ends_with("/maps/generate") => Some(serde_json::json!({ "node": "sc_crique" })),
         (_, p) if p.ends_with("/media/batch") => Some(serde_json::json!({ "videos": false })),
         (_, p) if p.ends_with("/decision") => Some(serde_json::json!({ "approve": true })),
         (_, p) if p.ends_with("/copilot") => {
@@ -258,6 +279,7 @@ struct Ids {
     asset: String,
     proposal: String,
     job: String,
+    map: String,
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
@@ -272,6 +294,7 @@ fn route_uri(path: &str, ids: &Ids) -> String {
         .replace("{asset}", &ids.asset)
         .replace("{proposal}", &ids.proposal)
         .replace("{job}", &ids.job)
+        .replace("{map}", &ids.map)
 }
 
 /// Every placeholder filled for `player` of `campaign`: an invitation of
@@ -307,6 +330,7 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         asset: Uuid::new_v4().to_string(),
         proposal: Uuid::new_v4().to_string(),
         job: Uuid::new_v4().to_string(),
+        map: "carte-inconnue".to_string(),
     }
 }
 
@@ -527,6 +551,27 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .unwrap()
             .to_string();
         }
+        if path.contains("{map}") && ids.map == "carte-inconnue" {
+            // A copy of the world's quay, with an image behind it.
+            let r = call(
+                &app,
+                Some(&token),
+                "POST",
+                &format!("/api/campaigns/{}/maps", ids.campaign),
+                Some(serde_json::json!({ "name": "Carte du balayage", "copy": "quai-port-louis" })),
+            )
+            .await;
+            ids.map = r.body["data"]["map"]["id"].as_str().unwrap().to_string();
+            sqlx::query(
+                "UPDATE campaign_maps SET backdrop = '\\x89504e47', backdrop_mime = 'image/png'
+                 WHERE campaign_id = $1 AND id = $2",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .bind(&ids.map)
+            .execute(&pool)
+            .await
+            .unwrap();
+        }
         if path.contains("{asset}") {
             ids.asset = sqlx::query_scalar::<_, Uuid>(
                 "INSERT INTO media_assets (campaign_id, kind, subject, mime, image)
@@ -557,6 +602,11 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             body_for(method, path)
         };
         let body = match (method, body) {
+            // The editor sends the whole map back.
+            (&"PUT", _) if path.ends_with("/maps/{map}") => {
+                let uri = format!("/api/campaigns/{}/maps/{}", ids.campaign, ids.map);
+                Some(call(&app, Some(&token), "GET", &uri, None).await.body["data"]["map"].clone())
+            }
             // A hook needs a character of the table.
             (&"POST", Some(mut b)) if path.ends_with("/hooks") => {
                 b["characterId"] = Value::String(ids.character.clone());

@@ -35,7 +35,6 @@ use uuid::Uuid;
 use super::{Board, Token, TokenKind, character_token};
 use crate::auth::guard::CurrentGm;
 use crate::campaigns::CampaignRow;
-use crate::content;
 use crate::error::AppError;
 use crate::evening::knowledge::{self, JournalKind};
 use crate::evening::session::{self, Status};
@@ -591,9 +590,9 @@ pub async fn start(
     let map_id = map_id.as_str();
     let map = match before.as_ref().filter(|b| b.map_id == map_id) {
         Some(b) => b.map.clone(),
-        None => content::map(&row.story, map_id)
-            .ok_or(AppError::BadRequest("NO_MAP"))?
-            .clone(),
+        None => crate::campaign_maps::playable(&mut *tx, campaign, &row.story, map_id)
+            .await?
+            .ok_or(AppError::BadRequest("NO_MAP"))?,
     };
     let kept: Vec<Token> = before
         .as_ref()

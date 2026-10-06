@@ -3,6 +3,7 @@ pub mod api;
 pub mod app;
 pub mod auth;
 pub mod board;
+pub mod campaign_maps;
 pub mod campaigns;
 pub mod config;
 pub mod content;

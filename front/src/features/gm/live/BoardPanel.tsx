@@ -4,8 +4,10 @@ import { eventLine } from '@/features/map/events'
 import { MapCanvas } from '@/features/map/MapCanvas'
 import { cellKey } from '@/features/map/render'
 import { readGrid } from '@/features/map/render'
+import { useImage } from '@/features/map/useImage'
 import { useTileset } from '@/features/map/useTileset'
 import type { Cell, Edit, GmBoard, GmCommand, TokenView, Weather, TimeOfDay } from '@/lib/board'
+import { gmBackdropUrl } from '@/lib/maps'
 import { gmImageUrl, type MediaList } from '@/lib/media'
 import { cn } from '@/lib/utils'
 import { Btn, Panel, field } from './ui'
@@ -51,6 +53,7 @@ export function BoardPanel({
   const [selected, setSelected] = useState<string | null>(null)
   const board = data.board
   const { tileset, atlases } = useTileset(board?.map ?? null, media, (id) => gmImageUrl(campaignId, id))
+  const backdrop = useImage(board?.map.backdrop?.image ? gmBackdropUrl(campaignId, board.mapId) : null)
   const enc = data.encounter
   const fighting = Boolean(enc?.live)
 
@@ -136,6 +139,7 @@ export function BoardPanel({
           map: board.map,
           tileset,
           atlases,
+          backdrop,
           tokens,
           veiled,
           selected,

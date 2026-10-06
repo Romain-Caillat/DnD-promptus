@@ -83,7 +83,7 @@ fn range(headers: &HeaderMap, len: usize) -> Result<Option<(usize, usize)>, ()> 
     Ok(Some((start, end)))
 }
 
-fn image_response(headers: &HeaderMap, bytes: Vec<u8>, mime: String) -> Response {
+pub(crate) fn image_response(headers: &HeaderMap, bytes: Vec<u8>, mime: String) -> Response {
     let len = bytes.len();
     let mut response = match range(headers, len) {
         Ok(None) => (StatusCode::OK, bytes).into_response(),

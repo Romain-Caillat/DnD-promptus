@@ -13,10 +13,12 @@ import {
   type Command,
   type FightView,
 } from '@/lib/board'
+import { playerBackdropUrl } from '@/lib/maps'
 import { fetchPlayerMedia, playerImageUrl, type MediaList } from '@/lib/media'
 import { cn } from '@/lib/utils'
 import { eventLine } from './events'
 import { MapCanvas } from './MapCanvas'
+import { useImage } from './useImage'
 import { useTileset } from './useTileset'
 
 type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; board: BoardView | null }
@@ -62,6 +64,8 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
 
   const board = state.kind === 'ready' ? state.board : null
   const { tileset, atlases } = useTileset(board?.map ?? null, media, (id) => playerImageUrl(campaignId, id))
+  // The board's map id is not the players'; its image is the one shown.
+  const backdrop = useImage(board?.map.backdrop?.image ? playerBackdropUrl(campaignId, board.map.id) : null)
 
   async function send(call: () => Promise<BoardView | null>) {
     setError(null)
@@ -131,6 +135,7 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
           map: board.map,
           tileset,
           atlases,
+          backdrop,
           tokens: board.tokens,
           reachable: canMove ? board.reachable : [],
           selected: targets[0] ?? null,

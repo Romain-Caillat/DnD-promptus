@@ -162,6 +162,75 @@ fn recap_answer(prompt: &str) -> serde_json::Value {
 /// selected scene or a free request, a sharper motivation for the first
 /// NPC and a clue in that scene — plus one edit on an invented id that
 /// the server must drop.
+/// The first id of each item of a `Label : id (Nom), id (Nom)` line.
+fn listed<'a>(prompt: &'a str, label: &str) -> Vec<&'a str> {
+    prompt
+        .lines()
+        .find_map(|l| l.strip_prefix(label))
+        .map(|rest| {
+            rest.split(", ")
+                .filter_map(|item| item.split_whitespace().next())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// A walled room cut in two by a wall with a door, in the tileset of
+/// the prompt: the party's starts above, one start per adversary of the
+/// scene below (and one for an adversary it invents), a crate, a hidden
+/// trapdoor with a check, a lantern.
+fn map_answer(prompt: &str) -> serde_json::Value {
+    let materials = listed(prompt, "Matériaux (terrain) : ");
+    let floor = materials.first().copied().unwrap_or("sol");
+    let wall = materials.get(1).copied().unwrap_or(floor);
+    let prop = listed(prompt, "Décors (kind) : ")
+        .first()
+        .copied()
+        .unwrap_or("caisse")
+        .to_string();
+    let stat = listed(prompt, "Caractéristiques (check.stat) : ")
+        .first()
+        .copied()
+        .unwrap_or("SAG")
+        .to_string();
+    let foes: Vec<&str> = prompt
+        .lines()
+        .filter_map(|l| l.strip_prefix("- `"))
+        .filter_map(|l| l.split('`').next())
+        .chain(["adv_fantome_invente"])
+        .collect();
+    let mut starts: Vec<serde_json::Value> = (0..4)
+        .map(|i| json!({ "id": format!("pj-{}", i + 1), "side": "party", "at": [2 + i, 2] }))
+        .collect();
+    starts.extend(foes.iter().enumerate().map(|(i, f)| {
+        json!({ "id": format!("adv-{}", i + 1), "side": "foes", "at": [2 + i, 6], "entity": f })
+    }));
+    json!({
+        "name": "La salle coupée",
+        "ambience": { "time": "night", "weather": "clear" },
+        "grid": {
+            "legend": { "#": { "terrain": wall, "wall": true }, ".": { "terrain": floor } },
+            "rows": [
+                "##############",
+                "#............#",
+                "#............#",
+                "#............#",
+                "##############",
+                "#............#",
+                "#............#",
+                "#............#",
+                "##############"
+            ]
+        },
+        "doors": [{ "id": "porte-milieu", "at": [6, 4], "state": "closed", "label": "Porte de la réserve" }],
+        "props": [{ "id": "caisses", "kind": prop, "label": "Caisses", "at": [9, 6], "size": [2, 1], "cover": "half", "blocks_movement": true }],
+        "objects": [{ "id": "trappe", "kind": "trappe", "label": "Trappe", "at": [11, 2], "layer": "secrets", "check": { "stat": stat, "dc": 13 }, "notes": "Un passage vers la cave." }],
+        "lights": [{ "id": "lanterne", "at": [6, 6], "bright": 1, "dim": 4, "color": "#ffb35c" }],
+        "starts": starts,
+        "gm_notes": "Les adversaires attendent derrière la porte."
+    })
+}
+
 fn workshop_answer(prompt: &str) -> serde_json::Value {
     use promptus_shared::story::{Importance, from_yaml};
     let yaml = prompt
@@ -617,6 +686,8 @@ impl Provider for FakeProvider {
                     _ => generation_repair(first),
                 }
                 .to_string()
+            } else if system.contains("cartographe") {
+                map_answer(first).to_string()
             } else if system.contains("atelier") {
                 workshop_answer(prompt).to_string()
             } else if system.contains("co-MJ") {

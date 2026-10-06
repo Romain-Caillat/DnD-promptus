@@ -95,6 +95,10 @@ export interface Scene {
   /** Milliseconds, for water and weather; 0 draws them still. */
   time: number
   tile?: number
+  /** The imported image behind the grid, once loaded: it replaces the drawn floor and walls. */
+  backdrop?: HTMLImageElement | null
+  /** Editor: walls shown over the backdrop, to trace them. */
+  showWalls?: boolean
 }
 
 export const cellKey = ([x, y]: Cell) => `${x},${y}`
@@ -429,6 +433,30 @@ function drawToken(ctx: CanvasRenderingContext2D, tk: TokenView, t: number, sele
   ctx.globalAlpha = 1
 }
 
+/**
+ * An imported image behind the grid, scaled so one of its cells covers
+ * one tile; with `walls`, the grid's walls veiled over it (the editor,
+ * to trace them).
+ */
+function drawBackdrop(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  b: NonNullable<MapData['backdrop']>,
+  t: number,
+  walls: Grid | null,
+) {
+  const scale = t / (b.cell_px ?? t)
+  const [ox, oy] = b.offset ?? [0, 0]
+  ctx.drawImage(img, -ox * scale, -oy * scale, img.naturalWidth * scale, img.naturalHeight * scale)
+  if (!walls) return
+  ctx.fillStyle = 'rgba(224,80,60,0.45)'
+  for (let y = 0; y < walls.height; y++) {
+    for (let x = 0; x < walls.width; x++) {
+      if (walls.kind(x, y)?.wall) ctx.fillRect(x * t, y * t, t, t)
+    }
+  }
+}
+
 /** Draw `scene` on `ctx`, whose canvas is already sized to the map. */
 export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene) {
   const t = scene.tile ?? TILE
@@ -438,30 +466,35 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene) {
   ctx.fillStyle = ts.void
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
-  for (let y = 0; y < grid.height; y++) {
-    for (let x = 0; x < grid.width; x++) {
-      const k = grid.kind(x, y)
-      if (!k || k.void || k.wall) continue
-      const m = ts.materials[k.terrain] ?? FALLBACK_MATERIAL
-      const mask = edgeMask(grid, x, y)
-      const atlas = scene.atlases?.[k.terrain]
-      if (atlas) {
-        const size = ('width' in atlas ? Number(atlas.width) : 4 * t) / 4
-        ctx.drawImage(atlas, (mask % 4) * size, Math.floor(mask / 4) * size, size, size, x * t, y * t, t, t)
-      } else {
-        drawPattern(ctx, m, x, y, t, scene.time)
-        if (m.blend) drawBlend(ctx, grid, ts, mask, x, y, t)
-        else drawEdges(ctx, m, mask, x, y, t)
-      }
-      if ((k.elevation ?? 0) > 0 && grid.kind(x, y + 1)?.elevation !== k.elevation) {
-        ctx.fillStyle = m.dark
-        ctx.fillRect(x * t, y * t + t - t / 4, t, t / 4)
+  const backdrop = scene.map.backdrop && scene.backdrop ? scene.backdrop : null
+  if (backdrop) {
+    drawBackdrop(ctx, backdrop, scene.map.backdrop ?? {}, t, scene.showWalls ? grid : null)
+  } else {
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        const k = grid.kind(x, y)
+        if (!k || k.void || k.wall) continue
+        const m = ts.materials[k.terrain] ?? FALLBACK_MATERIAL
+        const mask = edgeMask(grid, x, y)
+        const atlas = scene.atlases?.[k.terrain]
+        if (atlas) {
+          const size = ('width' in atlas ? Number(atlas.width) : 4 * t) / 4
+          ctx.drawImage(atlas, (mask % 4) * size, Math.floor(mask / 4) * size, size, size, x * t, y * t, t, t)
+        } else {
+          drawPattern(ctx, m, x, y, t, scene.time)
+          if (m.blend) drawBlend(ctx, grid, ts, mask, x, y, t)
+          else drawEdges(ctx, m, mask, x, y, t)
+        }
+        if ((k.elevation ?? 0) > 0 && grid.kind(x, y + 1)?.elevation !== k.elevation) {
+          ctx.fillStyle = m.dark
+          ctx.fillRect(x * t, y * t + t - t / 4, t, t / 4)
+        }
       }
     }
-  }
-  for (let y = 0; y < grid.height; y++) {
-    for (let x = 0; x < grid.width; x++) {
-      if (grid.kind(x, y)?.wall) drawWall(ctx, grid, ts, x, y, t)
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        if (grid.kind(x, y)?.wall) drawWall(ctx, grid, ts, x, y, t)
+      }
     }
   }
   for (const d of scene.map.doors ?? []) {
@@ -474,7 +507,10 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene) {
       ctx.fillRect(px + t / 2 - 2, py + t / 2, 4, 4)
     }
   }
-  for (const p of scene.map.props ?? []) drawProp(ctx, ts.props[p.kind], p.at, p.size ?? { w: 1, h: 1 }, t)
+  for (const p of scene.map.props ?? []) {
+    const [w, h] = p.size ?? [1, 1]
+    drawProp(ctx, ts.props[p.kind], p.at, { w, h }, t)
+  }
   for (const o of scene.map.objects ?? []) drawProp(ctx, ts.props[o.kind], o.at, { w: 1, h: 1 }, t)
 
   for (const r of scene.reachable ?? []) {
