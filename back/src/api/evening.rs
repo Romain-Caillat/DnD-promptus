@@ -26,7 +26,10 @@
 //! - `GET  /api/campaigns/{id}/sessions/{session}/feedback` → answers and
 //!   measures on one screen;
 //! - `PUT  /api/campaigns/{id}/sessions/{session}/changes` → `{ text }`;
-//! - `GET  /api/campaigns/{id}/ai` → the AI budget, spending and calls.
+//! - `GET  /api/campaigns/{id}/ai` → the AI budget, spending and calls;
+//! - `POST /api/campaigns/{id}/session/copilot` → a co-GM draft (counted
+//!   AI call), then `…/copilot/{draft}/show` (the GM's edited text to the
+//!   table) or `…/copilot/{draft}/dismiss`.
 
 use std::collections::BTreeMap;
 
@@ -45,6 +48,7 @@ use crate::ai::{self, LlmRequest, ledger, templates};
 use crate::auth::guard::{CurrentGm, owned_by};
 use crate::campaigns::{self, CampaignRow};
 use crate::content;
+use crate::copilot::{self, drafts};
 use crate::error::AppError;
 use crate::evening::knowledge::{self, JournalKind};
 use crate::evening::requests::{self, Decision, Request};
@@ -303,6 +307,10 @@ pub async fn live_screen(
         "journal": knowledge::journal(pool, row.id, false).await?,
         "gaps": knowledge::gaps(story, world),
         "spotlight": spots,
+        "drafts": match &current {
+            Some(s) => drafts::of_session(pool, s.id).await?,
+            None => Vec::new(),
+        },
         "alertAfterMinutes": spotlight::ALERT_AFTER_MINUTES,
         "rules": rules.map(|r| RulesBrief {
             abilities: r.abilities.iter().map(|a| (a.id.clone(), a.name.clone())).collect(),
@@ -667,4 +675,51 @@ pub async fn ai_usage(
         "calls": calls,
     });
     Ok(Json(json!({ "data": data })).into_response())
+}
+
+/// `POST /api/campaigns/{id}/session/copilot` → `{ kind, npc?, prompt }`:
+/// a draft of the co-GM (201), for the GM only.
+///
+/// # Errors
+///
+/// The codes of `copilot::drafts::ask`.
+pub async fn copilot_ask(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path(id): Path<String>,
+    Body(ask): Body<copilot::Ask>,
+) -> Result<Response, AppError> {
+    let d = drafts::ask(&state.pool, &state.ai, &gm, parse_id(&id)?, &ask).await?;
+    Ok((StatusCode::CREATED, Json(json!({ "data": d }))).into_response())
+}
+
+/// `POST /api/campaigns/{id}/session/copilot/{draft}/show` →
+/// `{ narration, npcLines: [{ speaker, text }] }`: the GM's edited text
+/// reaches the table.
+///
+/// # Errors
+///
+/// The codes of `copilot::drafts::show`.
+pub async fn copilot_show(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path((id, draft)): Path<(String, String)>,
+    Body(show): Body<drafts::Show>,
+) -> Result<Response, AppError> {
+    drafts::show(&state.pool, &gm, parse_id(&id)?, parse_id(&draft)?, &show).await?;
+    Ok(StatusCode::NO_CONTENT.into_response())
+}
+
+/// `POST /api/campaigns/{id}/session/copilot/{draft}/dismiss`
+///
+/// # Errors
+///
+/// The codes of `copilot::drafts::dismiss`.
+pub async fn copilot_dismiss(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path((id, draft)): Path<(String, String)>,
+) -> Result<Response, AppError> {
+    drafts::dismiss(&state.pool, &gm, parse_id(&id)?, parse_id(&draft)?).await?;
+    Ok(StatusCode::NO_CONTENT.into_response())
 }

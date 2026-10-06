@@ -41,6 +41,13 @@ pub enum AppError {
         code: &'static str,
         detail: String,
     },
+    /// 409 — the rules refuse a command (an action out of reach, not
+    /// one's turn…): `refusal` is the engine's reason, which the screen
+    /// translates by its `kind`.
+    Refused {
+        code: &'static str,
+        refusal: serde_json::Value,
+    },
     Internal(String),
 }
 
@@ -52,6 +59,13 @@ impl AppError {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
+        if let Self::Refused { code, refusal } = self {
+            return (
+                StatusCode::CONFLICT,
+                Json(json!({ "error": { "code": code, "message": "refused by the rules", "refusal": refusal } })),
+            )
+                .into_response();
+        }
         let (status, code, message) = match self {
             Self::BadRequest(code) => (StatusCode::BAD_REQUEST, code, "invalid request".into()),
             Self::Invalid { code, detail } => (StatusCode::BAD_REQUEST, code, detail),
@@ -65,6 +79,7 @@ impl IntoResponse for AppError {
                 "a dependency is unavailable".into(),
             ),
             Self::Upstream { code, detail } => (StatusCode::BAD_GATEWAY, code, detail),
+            Self::Refused { code, .. } => (StatusCode::CONFLICT, code, String::new()),
             Self::Internal(detail) => {
                 tracing::error!(%detail, "internal error");
                 (

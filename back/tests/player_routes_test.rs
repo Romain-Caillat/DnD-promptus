@@ -66,6 +66,7 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
     mark_review(pool, Uuid::parse_str(&campaign).unwrap(), character).await;
     let spectator = join(app, &code, "Léa", "spectator").await;
     evening(pool, Uuid::parse_str(&campaign).unwrap()).await;
+    board(pool, Uuid::parse_str(&campaign).unwrap(), character).await;
     Table {
         gm,
         campaign,
@@ -109,6 +110,39 @@ async fn evening(pool: &PgPool, campaign: Uuid) {
     .unwrap();
 }
 
+/// The quay shown at the table, marked where only the GM may look: the
+/// map's notes, the hidden trapdoor's notes, a label under the fog, an
+/// ambusher hidden by the GM and a sailor standing in the fog.
+async fn board(pool: &PgPool, campaign: Uuid, character: Uuid) {
+    let mut map = promptus_shared::maps::Map::from_yaml(include_str!(
+        "../../content/maps/corsaires/quai-port-louis.yaml"
+    ))
+    .unwrap();
+    map.gm_notes = Some(m("map.gm_notes"));
+    map.objects[0].notes = Some(m("map.objects.notes"));
+    let deck = map.labels.iter_mut().find(|l| l.at.x > 12).unwrap();
+    deck.text = m("map.labels (fogged)");
+    let revealed: Vec<[i32; 2]> = (0..6).flat_map(|x| (4..10).map(move |y| [x, y])).collect();
+    let tokens = json!([
+        { "id": format!("pc-{character}"), "kind": "character", "ref": character.to_string(),
+          "name": "Borin", "at": [0, 5] },
+        { "id": "gueule-rouge-1", "kind": "npc", "ref": "gueule-rouge", "name": m("tokens (hidden)"),
+          "at": [2, 6], "hidden": true },
+        { "id": "marin-1", "kind": "npc", "ref": "marin", "name": m("tokens (fogged)"), "at": [14, 6] },
+    ]);
+    sqlx::query(
+        "INSERT INTO map_states (campaign_id, map_id, map, fog, revealed, tokens)
+         VALUES ($1, 'quai-port-louis', $2, true, $3, $4)",
+    )
+    .bind(campaign)
+    .bind(Json(&map))
+    .bind(Json(&revealed))
+    .bind(Json(&tokens))
+    .execute(pool)
+    .await
+    .unwrap();
+}
+
 /// A request of Marc's in the live session, at the state `path` acts on.
 async fn marc_request(pool: &PgPool, campaign: &str, path: &str) -> Uuid {
     let status = if path.ends_with("/roll") {
@@ -146,8 +180,18 @@ fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> 
         // Marc's request: not theirs.
         return Some((StatusCode::NOT_FOUND, "NO_SUCH_REQUEST"));
     }
-    (path.ends_with("/requests") || path.ends_with("/feedback"))
-        .then_some((StatusCode::FORBIDDEN, "SPECTATOR"))
+    (path.ends_with("/requests")
+        || path.ends_with("/feedback")
+        || path.ends_with("/walk")
+        || path.ends_with("/fight"))
+    .then_some((StatusCode::FORBIDDEN, "SPECTATOR"))
+}
+
+/// A route the sweep's table cannot make succeed for Marc, and the
+/// answer it gives instead. Fighting needs a fight; the leaks of a fight
+/// are swept in `board_test.rs`.
+fn refused_to_marc(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
+    (method == "POST" && path.ends_with("/fight")).then_some((StatusCode::CONFLICT, "NO_FIGHT"))
 }
 
 fn uri(path: &str, t: &Table) -> String {
@@ -174,6 +218,8 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
         // A complete sheet, so the submit route that follows succeeds.
         // The line of Marc's bag `mark_review` stored.
         ("POST", p) if p.ends_with("/equip") => Some(json!({ "entry": "k1", "equipped": true })),
+        ("POST", p) if p.ends_with("/walk") => Some(json!({ "path": [[1, 5]] })),
+        ("POST", p) if p.ends_with("/fight") => Some(json!({ "kind": "endTurn" })),
         ("POST", p) if p.ends_with("/lobby") => Some(json!({ "soundOk": true, "remote": true })),
         ("POST", p) if p.ends_with("/requests") => Some(json!({
             "card": { "kind": "ability", "ability": "SAG" },
@@ -245,6 +291,11 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
             if path.ends_with("/live") {
                 assert_eq!(r.status, StatusCode::BAD_REQUEST, "{uri} as {who}");
                 assert_eq!(r.body["error"]["code"], "WEBSOCKET_REQUIRED");
+                continue;
+            }
+            if let (true, Some((status, code))) = (who == "Marc", refused_to_marc(method, path)) {
+                assert_eq!(r.status, status, "{method} {uri} as Marc: {}", r.body);
+                assert_eq!(r.body["error"]["code"], code);
                 continue;
             }
             if let (true, Some((status, code))) = (who == "Léa", players_only(method, path)) {

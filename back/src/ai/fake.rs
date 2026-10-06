@@ -30,6 +30,15 @@ pub struct FakeProvider {
 }
 
 impl FakeProvider {
+    /// A provider whose answers are prose, not the JSON asked for.
+    #[must_use]
+    pub fn broken() -> Self {
+        Self {
+            broken: true,
+            ..Self::default()
+        }
+    }
+
     #[must_use]
     pub fn calls(&self) -> Vec<String> {
         self.calls

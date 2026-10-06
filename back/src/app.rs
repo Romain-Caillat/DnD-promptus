@@ -188,6 +188,33 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             put(api::evening::note_changes),
         )
         .route("/api/campaigns/{id}/ai", get(api::evening::ai_usage))
+        // The grid and the fights.
+        .route(
+            "/api/campaigns/{id}/board",
+            get(api::board::gm_board).post(api::board::show),
+        )
+        .route("/api/campaigns/{id}/board/edit", post(api::board::edit))
+        .route("/api/campaigns/{id}/fight", post(api::board::start_fight))
+        .route(
+            "/api/campaigns/{id}/fight/command",
+            post(api::board::gm_command),
+        )
+        .route(
+            "/api/campaigns/{id}/fight/loot",
+            post(api::board::give_loot),
+        )
+        .route(
+            "/api/campaigns/{id}/session/copilot",
+            post(api::evening::copilot_ask),
+        )
+        .route(
+            "/api/campaigns/{id}/session/copilot/{draft}/show",
+            post(api::evening::copilot_show),
+        )
+        .route(
+            "/api/campaigns/{id}/session/copilot/{draft}/dismiss",
+            post(api::evening::copilot_dismiss),
+        )
         .route("/api/campaigns/{id}/live", get(api::live::gm_socket))
         .route_layer(middleware::from_fn_with_state(state.clone(), require_gm));
 
@@ -291,6 +318,22 @@ fn player_routes() -> Vec<RouteSpec> {
             "POST",
             "/api/play/{campaign}/feedback",
             post(api::play_evening::answer_feedback),
+        ),
+        // The grid: the map as I may see it, my walk, my fight turn.
+        (
+            "GET",
+            "/api/play/{campaign}/board",
+            get(api::board::player_board),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/board/walk",
+            post(api::board::walk),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/fight",
+            post(api::board::command),
         ),
         // A socket: it carries versions and presence, never data.
         (

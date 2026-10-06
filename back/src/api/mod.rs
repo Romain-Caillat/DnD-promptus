@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod board;
 pub mod body;
 pub mod campaigns;
 pub mod evening;

@@ -66,6 +66,23 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/session/reveal"),
     ("PUT", "/api/campaigns/{campaign}/session/music"),
     ("POST", "/api/campaigns/{campaign}/session/journal"),
+    // The grid: show the quay, edit it, fight on it, hand out the loot.
+    ("GET", "/api/campaigns/{campaign}/board"),
+    ("POST", "/api/campaigns/{campaign}/board"),
+    ("POST", "/api/campaigns/{campaign}/board/edit"),
+    ("POST", "/api/campaigns/{campaign}/fight"),
+    ("POST", "/api/campaigns/{campaign}/fight/command"),
+    ("POST", "/api/campaigns/{campaign}/fight/loot"),
+    // Each on a draft of the co-GM written just before.
+    ("POST", "/api/campaigns/{campaign}/session/copilot"),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/session/copilot/{draft}/show",
+    ),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/session/copilot/{draft}/dismiss",
+    ),
     // On a request of the player's, sent just before.
     (
         "POST",
@@ -143,6 +160,23 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         (_, p) if p.ends_with("/journal") => {
             Some(serde_json::json!({ "kind": "note", "text": "Le phare clignote." }))
         }
+        ("POST", p) if p.ends_with("/board") => {
+            Some(serde_json::json!({ "map": "quai-port-louis" }))
+        }
+        (_, p) if p.ends_with("/board/edit") => {
+            Some(serde_json::json!({ "kind": "fog", "enabled": true }))
+        }
+        (_, p) if p.ends_with("/fight") => Some(serde_json::json!({ "node": "sc_crique" })),
+        (_, p) if p.ends_with("/fight/command") => Some(serde_json::json!({ "kind": "stop" })),
+        (_, p) if p.ends_with("/fight/loot") => Some(serde_json::json!({
+            "gives": [{ "index": 0, "character": Uuid::nil() }]
+        })),
+        (_, p) if p.ends_with("/copilot") => {
+            Some(serde_json::json!({ "kind": "describe", "prompt": "Ils entrent." }))
+        }
+        (_, p) if p.ends_with("/show") => {
+            Some(serde_json::json!({ "narration": "La pluie bat les carreaux." }))
+        }
         (_, p) if p.ends_with("/requests/{request}") => {
             Some(serde_json::json!({ "kind": "accept", "reason": "" }))
         }
@@ -167,6 +201,7 @@ struct Ids {
     /// Filled once the control sweep has them; any id before.
     request: String,
     session: String,
+    draft: String,
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
@@ -177,6 +212,7 @@ fn route_uri(path: &str, ids: &Ids) -> String {
         .replace("{hook}", &ids.hook)
         .replace("{request}", &ids.request)
         .replace("{session}", &ids.session)
+        .replace("{draft}", &ids.draft)
 }
 
 /// Every placeholder filled for `player` of `campaign`: an invitation of
@@ -208,6 +244,7 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         player,
         request: Uuid::new_v4().to_string(),
         session: Uuid::new_v4().to_string(),
+        draft: Uuid::new_v4().to_string(),
     }
 }
 
@@ -386,6 +423,18 @@ async fn every_gm_route_refuses_without_a_valid_session() {
         if path.contains("{request}") {
             ids.request = request_of(&pool, &ids).await;
         }
+        if path.contains("{draft}") {
+            ids.draft = sqlx::query_scalar::<_, Uuid>(
+                "INSERT INTO copilot_drafts (campaign_id, session_id, kind, answer)
+                 SELECT campaign_id, id, 'describe', '{\"narration\":\"\",\"npcLines\":[],\"suggestions\":[],\"gmNote\":null}'
+                 FROM game_sessions WHERE campaign_id = $1 AND status = 'live' RETURNING id",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
+        }
         if path.contains("{session}") {
             ids.session = sqlx::query_scalar::<_, Uuid>(
                 "SELECT id FROM game_sessions WHERE campaign_id = $1 ORDER BY number DESC LIMIT 1",
@@ -406,6 +455,10 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             // A hook needs a character of the table.
             (&"POST", Some(mut b)) if path.ends_with("/hooks") => {
                 b["characterId"] = Value::String(ids.character.clone());
+                Some(b)
+            }
+            (&"POST", Some(mut b)) if path.ends_with("/fight/loot") => {
+                b["gives"][0]["character"] = Value::String(ids.character.clone());
                 Some(b)
             }
             (_, b) => b,
