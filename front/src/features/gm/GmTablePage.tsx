@@ -35,7 +35,7 @@ type PageState =
   | { kind: 'ready'; preview: PlayerPreview; invite: InviteStatus | null }
 
 /**
- * `/campagnes/:campaignId` — the GM invites their table (board
+ * `/campagnes/:campaignId/table` — the GM invites their table (board
  * « Inviter », moments 1 and 2): the campaign's link, a message ready to
  * paste on Discord, and the table filling up as players arrive.
  */
@@ -171,7 +171,7 @@ export function GmTablePage() {
   return (
     <main className="surface-table flex min-h-dvh flex-col text-chalk">
       <header className="flex flex-wrap items-center gap-4 border-b border-line px-5 py-3 text-caption text-mute-soft">
-        <Link className="underline underline-offset-4" to="/">
+        <Link className="underline underline-offset-4" to={`/campagnes/${encodeURIComponent(campaignId)}`}>
           {t('gm.table.back')}
         </Link>
         <span className="type-title text-[15px] text-chalk">{preview.title}</span>

@@ -10,7 +10,7 @@ type MeState = { kind: 'loading' } | { kind: 'signed-out' } | { kind: 'error' } 
 
 /**
  * `/` — the GM's home. Without a session it sends to `/connexion`;
- * it lists the campaigns, each opening its table.
+ * it lists the campaigns, each reopening its campaign page.
  */
 export function GmHomePage() {
   const { t } = useTranslation()
@@ -44,21 +44,32 @@ export function GmHomePage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-8 p-6">
-      {me.kind === 'loading' && <p role="status">{t('gm.home.loading')}</p>}
-      {me.kind === 'error' && <p role="alert">{t('auth.errors.generic')}</p>}
+    <main className="surface-table flex min-h-dvh flex-col text-chalk">
+      {me.kind === 'loading' && (
+        <p role="status" className="p-6">
+          {t('gm.home.loading')}
+        </p>
+      )}
+      {me.kind === 'error' && (
+        <p role="alert" className="p-6">
+          {t('auth.errors.generic')}
+        </p>
+      )}
       {me.kind === 'ready' && (
         <>
-          <header className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {t('gm.home.greeting', { name: me.gm.displayName })}
-            </h1>
-            <Button variant="outline" onClick={() => void leave()}>
+          <header className="flex flex-wrap items-center gap-4 border-b border-line px-5 py-3 text-caption text-mute-soft">
+            <span className="type-title text-[13px] tracking-[0.3em] text-chalk uppercase">{t('app.name')}</span>
+            <p>{t('gm.home.greeting', { name: me.gm.displayName })}</p>
+            <Button className="ml-auto" variant="outline" size="sm" onClick={() => void leave()}>
               {t('gm.home.signOut')}
             </Button>
           </header>
-          <CampaignsPanel />
-          <InvitesPanel />
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 p-5">
+            <CampaignsPanel gmName={me.gm.displayName} />
+            <div className="surface-slab max-w-2xl p-4">
+              <InvitesPanel />
+            </div>
+          </div>
         </>
       )}
     </main>

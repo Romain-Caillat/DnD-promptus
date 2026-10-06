@@ -45,6 +45,7 @@ describe('GmHomePage', () => {
     const api = mockApi({
       'GET /api/me': () => ME,
       'GET /api/campaigns': () => ({ status: 200, body: { data: [] } }),
+      'GET /api/rule-systems': () => ({ status: 200, body: { data: [] } }),
       'GET /api/gm-invites': () => ({ status: 200, body: { data: pending } }),
       'POST /api/gm-invites': () => {
         pending = [INVITE]
@@ -57,7 +58,7 @@ describe('GmHomePage', () => {
     })
     renderHome()
 
-    expect(await screen.findByRole('heading', { name: 'Bonjour, Romain' })).toBeInTheDocument()
+    expect(await screen.findByText('Bonjour, Romain')).toBeInTheDocument()
     expect(await screen.findByText('Aucune invitation en attente.')).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Créer une invitation' }))
@@ -72,10 +73,75 @@ describe('GmHomePage', () => {
     expect(sentTo(api, 'DELETE /api/gm-invites/i1')).toHaveLength(1)
   })
 
+  it('shows each campaign as a card that reopens it, archived ones apart', async () => {
+    mockApi({
+      'GET /api/me': () => ME,
+      'GET /api/gm-invites': () => ({ status: 200, body: { data: [] } }),
+      'GET /api/rule-systems': () => ({
+        status: 200,
+        body: {
+          data: [
+            {
+              id: 'corsaires',
+              version: 1,
+              name: 'Corsaires de la Couronne',
+              description: '',
+              abilities: [],
+              hitPoints: { abbr: 'PV', name: 'Points de vie' },
+              armorClass: { abbr: 'CA', name: "Classe d'armure" },
+            },
+          ],
+        },
+      }),
+      'GET /api/campaigns': () => ({
+        status: 200,
+        body: {
+          data: [
+            {
+              id: 'c1',
+              title: 'Les Cendres de Valombre',
+              world: 'Fantasy',
+              rules: { id: 'corsaires', version: 1 },
+              playerCount: 6,
+              playersSeated: 2,
+              archivedAt: null,
+              lastActivityAt: '2026-10-04T10:00:00Z',
+            },
+            {
+              id: 'c2',
+              title: 'Le Brasier',
+              world: '',
+              rules: { id: 'brasier', version: 1 },
+              playerCount: 4,
+              playersSeated: 0,
+              archivedAt: '2026-09-01T10:00:00Z',
+              lastActivityAt: '2026-09-01T10:00:00Z',
+            },
+          ],
+        },
+      }),
+    })
+    renderHome()
+
+    const valombre = await screen.findByRole('link', { name: /Les Cendres de Valombre/ })
+    expect(valombre).toHaveAttribute('href', '/campagnes/c1')
+    expect(valombre).toHaveTextContent('Fantasy · en préparation')
+    expect(valombre).toHaveTextContent('Corsaires de la Couronne')
+    expect(valombre).toHaveTextContent('2 joueurs installés sur 6')
+    expect(valombre).toHaveTextContent('Dernière activité : 4 octobre 2026')
+
+    const shelf = screen.getByRole('heading', { name: 'Archivées' }).closest('section')!
+    const brasier = within(shelf).getByRole('link', { name: /Le Brasier/ })
+    expect(brasier).toHaveAttribute('href', '/campagnes/c2')
+    expect(brasier).toHaveTextContent('Aucun joueur installé · 4 prévus')
+    expect(screen.getByRole('link', { name: /Nouvelle campagne/ })).toHaveAttribute('href', '/campagnes/nouvelle')
+  })
+
   it('signs out and returns to the sign-in page', async () => {
     const api = mockApi({
       'GET /api/me': () => ME,
       'GET /api/campaigns': () => ({ status: 200, body: { data: [] } }),
+      'GET /api/rule-systems': () => ({ status: 200, body: { data: [] } }),
       'GET /api/gm-invites': () => ({ status: 200, body: { data: [] } }),
       'POST /api/auth/sign-out': () => ({ status: 204 }),
     })
