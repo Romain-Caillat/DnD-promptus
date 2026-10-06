@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { CardButton } from '@/components/game/CardButton'
+import { useLiveChanges } from '@/features/live/useLiveChanges'
 import { creatorPath } from '@/lib/creator'
 import { cn } from '@/lib/utils'
 import { fetchPlayerHome, type CharacterView, type PlayerHome } from '@/lib/play'
+import { CharacterTab } from './CharacterTab'
 import { CharacterSummary } from './creator/ReviewStep'
+import { JournalTab } from './JournalTab'
 
 type HomeState =
   | { kind: 'loading' }
@@ -13,33 +16,58 @@ type HomeState =
   | { kind: 'error' }
   | { kind: 'ready'; home: PlayerHome }
 
+type Tab = 'perso' | 'journal'
+
 /**
- * `/partie/:campaignId` — a player's home in one campaign, phone first:
- * the campaign, their seat and their character — drawn, with its
- * numbers, once made — and the way into the creator while the sheet is
- * theirs to edit. Everything comes from the server's player projection
- * (`GET /api/play/…/me`).
+ * `/partie/:campaignId` — a player's home in one campaign, phone first,
+ * in tabs (planche « Jouer »): **Personnage** — the character being made
+ * and the way into the creator, then, once validated, the sheet in play
+ * that the GM adjusts live — and **Journal**, what the group knows. A
+ * spectator has the Journal only. The tabs of the evening itself (game,
+ * map) come with the session. Everything comes from the server's player
+ * projection; the live channel says when to fetch it again.
  */
 export function PlayerHomePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { campaignId = '' } = useParams()
+  const [params, setParams] = useSearchParams()
   const [state, setState] = useState<HomeState>({ kind: 'loading' })
+  const [viewVersion, setViewVersion] = useState(0)
+  const latest = useRef(0)
+  const characterId = useRef<string | null>(null)
+
+  const load = useCallback(async () => {
+    const request = ++latest.current
+    let next: HomeState
+    try {
+      const home = await fetchPlayerHome(campaignId)
+      next = home ? { kind: 'ready', home } : { kind: 'not-joined' }
+    } catch {
+      next = { kind: 'error' }
+    }
+    if (request !== latest.current) return
+    // A failed refetch keeps what is on screen; the next change retries.
+    setState((s) => (next.kind === 'error' && s.kind === 'ready' ? s : next))
+  }, [campaignId])
 
   useEffect(() => {
-    let live = true
-    fetchPlayerHome(campaignId).then(
-      (home) => {
-        if (live) setState(home ? { kind: 'ready', home } : { kind: 'not-joined' })
-      },
-      () => {
-        if (live) setState({ kind: 'error' })
-      },
-    )
-    return () => {
-      live = false
-    }
-  }, [campaignId])
+    void load()
+  }, [load])
+
+  useEffect(() => {
+    characterId.current = state.kind === 'ready' ? (state.home.character?.id ?? null) : null
+  }, [state])
+
+  useLiveChanges(
+    campaignId,
+    (topics) => {
+      const mine = characterId.current
+      if (mine && topics.includes(`character:${mine}`)) void load()
+      if (topics.includes('world') || topics.includes('story')) setViewVersion((v) => v + 1)
+    },
+    'player',
+  )
 
   if (state.kind !== 'ready') {
     return (
@@ -52,8 +80,17 @@ export function PlayerHomePage() {
   }
 
   const { me, campaign, character } = state.home
-  const bannerKey = me.role === 'spectator' || !character ? 'spectator' : character.status
-  const good = bannerKey === 'validated' || bannerKey === 'draft'
+  const seated = me.role === 'player' && character !== null
+  const tabs: Tab[] = seated ? ['perso', 'journal'] : ['journal']
+  const asked = params.get('onglet')
+  const tab: Tab = tabs.find((x) => x === asked) ?? tabs[0]
+  const play = character?.play ?? null
+  const bannerKey = !seated ? 'spectator' : play ? 'inPlay' : character.status
+  const good = bannerKey === 'validated' || bannerKey === 'draft' || bannerKey === 'inPlay'
+
+  function replaceCharacter(next: CharacterView) {
+    setState((s) => (s.kind === 'ready' ? { ...s, home: { ...s.home, character: next } } : s))
+  }
 
   return (
     <main className="surface-table mx-auto flex min-h-dvh max-w-md flex-col text-chalk">
@@ -69,44 +106,93 @@ export function PlayerHomePage() {
       >
         {t(`play.banner.${bannerKey}`)}
       </p>
-      <section className="flex flex-1 flex-col gap-3 p-4">
+      <header className="flex flex-col gap-1 px-4 pt-4">
         <span className="type-label">{t('play.hello', { nickname: me.nickname, gm: campaign.gmName })}</span>
         <h1 className="type-title text-heading">{campaign.title}</h1>
-        {campaign.playerHook && (
-          <p className="type-narration text-[18px] leading-snug text-chalk-soft">{campaign.playerHook}</p>
+      </header>
+      <section className="flex flex-1 flex-col gap-3 p-4" aria-label={t(`play.tabs.${tab}`)}>
+        {tab === 'journal' && (
+          <>
+            {!seated && <p className="text-body text-chalk-soft">{t('play.spectator')}</p>}
+            <JournalTab campaignId={campaignId} refreshKey={viewVersion} />
+          </>
         )}
-        {character ? (
-          <div className="surface-slab flex flex-col gap-2 p-3.5">
-            <span className="type-label">{t('play.character')}</span>
-            {character.sheet.look ? (
-              <CharacterSummary
-                sheet={character.sheet}
-                look={character.sheet.look}
-                subtitle={[character.peopleName, character.className, t('creator.review.level')]
-                  .filter(Boolean)
-                  .join(' · ')}
-                stats={character.stats}
-                over={0}
-                gmName={campaign.gmName}
-              />
-            ) : (
-              <span className="type-title text-[22px]">{character.sheet.name || t('play.unnamed')}</span>
-            )}
-            <p className="text-body text-chalk-soft">{t(`play.status.${character.status}`)}</p>
-            {character.gmNote && (
-              <div className="rounded-button bg-ivory px-3.5 py-3 text-body text-ink shadow-ivory-flat">
-                <span className="type-label block text-ink-soft">{t('play.gmNote')}</span>
-                {character.gmNote}
-              </div>
-            )}
-            <CreatorButton character={character} onOpen={() => navigate(creatorPath(campaignId))} />
-          </div>
-        ) : (
-          <p className="text-body text-chalk-soft">{t('play.spectator')}</p>
+        {tab === 'perso' && character && play && (
+          <CharacterTab campaignId={campaignId} character={character} play={play} onChanged={replaceCharacter} />
+        )}
+        {tab === 'perso' && character && !play && (
+          <CharacterCard
+            character={character}
+            gmName={campaign.gmName}
+            onOpen={() => navigate(creatorPath(campaignId))}
+          />
         )}
       </section>
-      <p className="px-4 pb-8 text-caption text-mute">{t('play.keep')}</p>
+      {tabs.length > 1 ? (
+        <nav
+          aria-label={t('play.tabs.label')}
+          className="sticky bottom-0 grid grid-cols-2 gap-1 border-t border-line bg-table px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        >
+          {tabs.map((id) => (
+            <button
+              key={id}
+              type="button"
+              aria-current={tab === id ? 'page' : undefined}
+              className={cn(
+                'rounded-button py-2.5 text-caption font-bold tracking-[0.12em] uppercase',
+                tab === id ? 'bg-ivory text-ink shadow-ivory-flat' : 'text-mute-soft',
+              )}
+              onClick={() => setParams(id === tabs[0] ? {} : { onglet: id }, { replace: true })}
+            >
+              {t(`play.tabs.${id}`)}
+            </button>
+          ))}
+        </nav>
+      ) : (
+        <p className="px-4 pb-8 text-caption text-mute">{t('play.keep')}</p>
+      )}
     </main>
+  )
+}
+
+/** The character before it is in play: drawn once made, the GM's word, the way into the creator. */
+function CharacterCard({
+  character,
+  gmName,
+  onOpen,
+}: {
+  character: CharacterView
+  gmName: string
+  onOpen: () => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <div className="surface-slab flex flex-col gap-2 p-3.5">
+        <span className="type-label">{t('play.character')}</span>
+        {character.sheet.look ? (
+          <CharacterSummary
+            sheet={character.sheet}
+            look={character.sheet.look}
+            subtitle={[character.peopleName, character.className, t('creator.review.level')].filter(Boolean).join(' · ')}
+            stats={character.stats}
+            over={0}
+            gmName={gmName}
+          />
+        ) : (
+          <span className="type-title text-[22px]">{character.sheet.name || t('play.unnamed')}</span>
+        )}
+        <p className="text-body text-chalk-soft">{t(`play.status.${character.status}`)}</p>
+        {character.gmNote && (
+          <div className="rounded-button bg-ivory px-3.5 py-3 text-body text-ink shadow-ivory-flat">
+            <span className="type-label block text-ink-soft">{t('play.gmNote')}</span>
+            {character.gmNote}
+          </div>
+        )}
+        <CreatorButton character={character} onOpen={onOpen} />
+      </div>
+      <p className="text-caption text-mute">{t('play.keep')}</p>
+    </>
   )
 }
 

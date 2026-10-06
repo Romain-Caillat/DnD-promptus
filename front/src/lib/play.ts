@@ -1,5 +1,6 @@
 import type { CharacterLook } from '@/features/sprites/look'
 import { ApiError, apiRequest } from './api'
+import type { PlayerView } from './campaigns'
 
 /** What an invitation link opens, as the server's projection gives it. */
 export interface Invitation {
@@ -75,7 +76,7 @@ interface ResourceAmount {
 }
 
 /** A bag line (`projection::ItemView`). */
-interface BagItem {
+export interface BagItem {
   /** Stable within the bag: what `equipItem` names. */
   key: string
   itemId: string | null
@@ -166,3 +167,15 @@ export function playPath(campaignId: string): string {
   return `/partie/${encodeURIComponent(campaignId)}`
 }
 
+/** Carry bag line `entry` on the character, or put it back in the bag. */
+export function equipItem(campaignId: string, entry: string, equipped: boolean): Promise<CharacterView> {
+  return apiRequest<CharacterView>('POST', `/play/${encodeURIComponent(campaignId)}/character/equip`, {
+    entry,
+    equipped,
+  })
+}
+
+/** The campaign as players see it now (`GET /api/play/…/view`). */
+export function fetchCampaignView(campaignId: string): Promise<PlayerView> {
+  return apiRequest<PlayerView>('GET', `/play/${encodeURIComponent(campaignId)}/view`)
+}

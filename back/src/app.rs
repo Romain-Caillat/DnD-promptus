@@ -186,6 +186,12 @@ fn player_routes() -> Vec<RouteSpec> {
             "/api/play/{campaign}/character/submit",
             post(api::play::submit_character),
         ),
+        // In play: what the character carries is the player's choice.
+        (
+            "POST",
+            "/api/play/{campaign}/character/equip",
+            post(api::play::equip),
+        ),
         // A socket: it carries versions and presence, never data.
         (
             "GET",

@@ -35,8 +35,11 @@ export function OptionGrid({
   )
 }
 
-/** One action card as the rules deal it, with its attack bonus or heal on the gem. */
-function ActionCard({ card, width = 104 }: { card: ActionCardView; width?: number }) {
+/**
+ * One action card as the rules deal it, with its attack bonus or heal on
+ * the gem; greyed while above the character's `level`.
+ */
+export function ActionCard({ card, width = 104, level = 1 }: { card: ActionCardView; width?: number; level?: number }) {
   const { t } = useTranslation()
   const gem =
     card.attackBonus !== null
@@ -55,7 +58,7 @@ function ActionCard({ card, width = 104 }: { card: ActionCardView; width?: numbe
       stat={gem?.stat}
       icon={card.heal ? 'spell' : 'sword'}
       width={width}
-      state={card.level > 1 ? 'greyed' : 'normal'}
+      state={card.level > level ? 'greyed' : 'normal'}
     />
   )
 }

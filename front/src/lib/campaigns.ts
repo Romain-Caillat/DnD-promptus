@@ -126,7 +126,7 @@ interface PlayerNpc {
 }
 
 /** What players see of a campaign now: the server's single projection. */
-interface PlayerView {
+export interface PlayerView {
   title: string
   world: string
   playerHook: string

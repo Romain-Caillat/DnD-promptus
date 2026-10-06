@@ -1,7 +1,8 @@
 //! gm/adjust-sheets-fast — done when, from the GM's screen, one gesture
 //! gives XP, takes or gives back hit points, gives an item or gold; the
 //! player's sheet follows live, and every change lands in the history.
-//! The player reads the same state on their side (`me`).
+//! player/read-sheet-and-journal reads the same state on the player's
+//! side (`me`), and lets the player carry an item.
 
 mod common;
 
@@ -418,6 +419,54 @@ async fn two_gestures_at_once_both_count() {
     assert_eq!(
         (play["totalXp"].as_i64(), play["hitPoints"].as_i64()),
         (Some(2), Some(8))
+    );
+}
+
+#[tokio::test]
+async fn the_player_chooses_what_she_carries_and_the_gm_sees_it() {
+    let pool = common::test_pool().await;
+    let app = common::app(pool.clone());
+    let (_, gm) = common::signed_in_gm(&pool, "Romain").await;
+    let campaign = imported_campaign(&app, &gm, FIXTURE).await;
+    let code = invite_code(&app, &gm, &campaign).await;
+    let lyra = validated(&app, &pool, &gm, &campaign, &code, "Camille", lyra()).await;
+    let uri = format!("/api/play/{campaign}/character/equip");
+    let equip = |entry: &str, equipped: bool| {
+        call_as_player(
+            &app,
+            Some(&lyra.token),
+            "POST",
+            &uri,
+            Some(json!({ "entry": entry, "equipped": equipped })),
+        )
+    };
+    let r = equip("sabre_d_abordage", true).await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    assert_eq!(r.body["data"]["play"]["inventory"][0]["equipped"], true);
+    let r = equip("nowhere", true).await;
+    assert_eq!(r.status, StatusCode::NOT_FOUND);
+    assert_eq!(r.body["error"]["code"], "NO_SUCH_ENTRY");
+
+    let b = board(&app, &gm, &campaign).await;
+    assert_eq!(b["sheets"][0]["play"]["inventory"][0]["equipped"], true);
+    let line = &b["history"][0];
+    assert_eq!(
+        (line["actor"].as_str(), line["kind"].as_str()),
+        (Some("player"), Some("equip"))
+    );
+    assert_eq!(line["label"], "Sabre d'abordage");
+    // The GM's gestures keep what she carries.
+    adjust(
+        &app,
+        &gm,
+        &campaign,
+        &lyra,
+        json!({ "kind": "xp", "delta": 1 }),
+    )
+    .await;
+    assert_eq!(
+        my_play(&app, &campaign, &lyra).await["inventory"][0]["equipped"],
+        true
     );
 }
 

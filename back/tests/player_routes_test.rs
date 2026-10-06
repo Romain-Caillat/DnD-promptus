@@ -15,7 +15,7 @@ mod common;
 
 use axum::Router;
 use axum::http::StatusCode;
-use common::marked::{leaks, mark_review, marked, world};
+use common::marked::{ITEM_NOTE, leaks, mark_review, marked, world};
 use common::{call, call_as_player, imported_campaign, invite_code, join, send};
 use promptus_back::app::player_facing_routes;
 use promptus_shared::story::to_yaml;
@@ -96,6 +96,8 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
             Some(json!({ "nickname": format!("Sweep {n}"), "role": "player" }))
         }
         // A complete sheet, so the submit route that follows succeeds.
+        // The line of Marc's bag `mark_review` stored.
+        ("POST", p) if p.ends_with("/equip") => Some(json!({ "entry": "k1", "equipped": true })),
         ("PUT", p) if p.ends_with("/character") => Some(json!({
             "name": "Borin",
             "classId": "bretteur",
@@ -133,6 +135,19 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
             // enough to sweep.
             if *method == "POST" && !seated(path) && who == "Léa" {
                 continue;
+            }
+            // Carrying an item is for a character in play: the GM
+            // validates the sheet the sweep just sent.
+            if path.ends_with("/equip") && who == "Marc" {
+                sqlx::query(
+                    "UPDATE characters SET status = 'validated'
+                     WHERE player_id = (SELECT id FROM players WHERE nickname = 'Marc'
+                                        AND campaign_id = $1)",
+                )
+                .bind(Uuid::parse_str(&t.campaign).unwrap())
+                .execute(&pool)
+                .await
+                .unwrap();
             }
             let r = call_as_player(&app, Some(token), method, &uri, body.clone()).await;
             // The live socket carries versions and presence only
@@ -175,7 +190,17 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
     )
     .await;
     assert_eq!(r.body["data"]["character"]["sheet"]["name"], "Borin");
-    assert_eq!(r.body["data"]["character"]["status"], "submitted");
+    // Validated for the equip route: in play, his bag reaches him, the
+    // GM's note on an item and the history of adjustments do not.
+    assert_eq!(r.body["data"]["character"]["status"], "validated");
+    assert_clean("Marc's character in play", &r.body);
+    let play = &r.body["data"]["character"]["play"];
+    assert_eq!(
+        play["inventory"][0]["name"], "Épée de bonne facture",
+        "{play}"
+    );
+    assert_eq!(play["inventory"][0]["equipped"], true, "{play}");
+    assert!(!r.body.to_string().contains(ITEM_NOTE), "{play}");
     let r = call_as_player(
         &app,
         Some(&t.marc),

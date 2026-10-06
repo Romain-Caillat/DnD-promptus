@@ -1431,12 +1431,38 @@ cible, cœurs et gemmes, main de cartes en éventail, grappe arcade
 
 **Origine** — Planche « Jouer » (combat)
 
-### `player/read-sheet-and-journal` · todo
+### `player/read-sheet-and-journal` · doing — reste l'essai sur un vrai téléphone
 
 **Périmètre** — Onglet Perso (fiche, cartes, sac, équiper) et onglet
 Journal (ce que le groupe sait).
 
 **Origine** — Planche « Jouer » (onglets) · planches Joueur
+
+**État** — Livré et vérifié dans PCT 105 (`bun run lint`, `bun run
+test`). La page du joueur (`/partie/:id`) a deux onglets en bas,
+**Personnage** et **Journal** ; les onglets Jeu et Carte de la planche
+viendront avec la soirée (phase 3), sans bouton d'ici là. Un spectateur
+n'a que le Journal. Personnage : tant que la fiche n'est pas validée,
+la carte d'avant (statut, mot du MJ, créateur) ; une fois en jeu, la
+fiche du même état que le MJ ajuste (`gm/adjust-sheets-fast`) — sprite,
+niveau et barre d'XP, cœurs et PV, armure, attaque, initiative,
+caractéristiques et modificateurs, cartes de la classe (celles d'un
+niveau à venir grisées, « au niveau 3 »), bourse, « Sur toi » et « Ton
+sac ». Tout vient de la projection joueur ; la page suit le canal live
+(sujet de son personnage, puis `world`/`story` pour le Journal). Le seul
+geste du joueur est **équiper / ranger** (`POST
+/api/play/{id}/character/equip`, verrou de campagne, journalisé « par
+le joueur » dans l'historique du MJ) ; les règles des deux mondes ne
+donnent aucun effet à l'équipement, et l'écran le dit au lieu de le
+laisser croire. Les objets s'affichent en liste nommée : les règles
+n'ont pas encore d'art d'objet (`media/draw-pixel-art-assets`).
+Journal : ce que la projection joueur contient déjà — ce qu'on a dit
+aux joueurs, la scène en cours, les indices trouvés, les PNJ rencontrés
+— et « Le groupe n'a encore rien découvert » sinon. Aujourd'hui aucun
+écran ne révèle d'indice ni ne change de scène : le Journal se remplira
+avec `session/drive-scenes` et `session/track-table-knowledge`
+(promesses, dettes, décisions de règle, « ce soir »), rien n'y est
+simulé. Pas encore essayé sur un vrai téléphone ni en vraie session.
 
 ### `player/receive-rewards` · todo
 

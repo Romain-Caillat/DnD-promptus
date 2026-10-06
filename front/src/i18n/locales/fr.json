@@ -424,7 +424,8 @@
       "submitted": "Envoyé au MJ",
       "validated": "Ton personnage est validé !",
       "returned": "Le MJ te demande un changement",
-      "spectator": "Tu regardes la partie"
+      "spectator": "Tu regardes la partie",
+      "inPlay": "En jeu : ta fiche suit la partie"
     },
     "hello": "{{nickname}}, à la table de {{gm}}",
     "character": "Ton personnage",
@@ -442,7 +443,45 @@
     "resume": "Reprendre mon personnage",
     "fix": "Corriger mon personnage",
     "createHint": "Son allure, sa classe, son histoire",
-    "fixHint": "Lis le mot du MJ, change, renvoie"
+    "fixHint": "Lis le mot du MJ, change, renvoie",
+    "tabs": {
+      "label": "Onglets",
+      "perso": "Personnage",
+      "journal": "Journal"
+    },
+    "sheet": {
+      "level": "niveau {{level}}",
+      "xpBar": "Expérience",
+      "xp_one": "Encore {{count}} XP avant un point d'amélioration",
+      "xp_other": "Encore {{count}} XP avant un point d'amélioration",
+      "nextLevel": "niveau {{level}} à {{xp}} XP (tu en as {{total}})",
+      "upgrade_one": "{{count}} point d'amélioration gagné",
+      "upgrade_other": "{{count}} points d'amélioration gagnés",
+      "life": "Ta vie",
+      "hp": "{{hp}} / {{max}} PV",
+      "what": "Ce que tu es",
+      "ac": "Armure",
+      "atk": "Attaque",
+      "init": "Initiative",
+      "cards": "Ce que tu sais faire",
+      "locked": "au niveau {{level}}",
+      "purse": "Ta bourse",
+      "worn": "Sur toi",
+      "nothingWorn": "Tu n'as rien en main.",
+      "wornNote": "Ces règles ne donnent pas d'effet à l'équipement : « sur toi » dit seulement ce que tu tiens prêt.",
+      "bag": "Ton sac",
+      "emptyBag": "Ton sac est vide.",
+      "equip": "L'équiper",
+      "unequip": "Le ranger",
+      "consumable": "S'utilise une fois par unité."
+    },
+    "journal": {
+      "hook": "Ce qu'on vous a dit",
+      "scene": "Où vous êtes",
+      "clues": "Les indices du groupe",
+      "npcs": "Les gens rencontrés",
+      "empty": "Le groupe n'a encore rien découvert."
+    }
   },
   "creator": {
     "banner": {

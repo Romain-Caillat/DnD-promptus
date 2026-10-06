@@ -14,7 +14,10 @@
 //! - `GET /api/play/{campaign}/creation` → what the character creator
 //!   offers: the sprite pack, a starting look, what the rules ask;
 //! - `PUT /api/play/{campaign}/character` → save my draft sheet;
-//! - `POST /api/play/{campaign}/character/submit` → send it to the GM.
+//! - `POST /api/play/{campaign}/character/submit` → send it to the GM;
+//! - `POST /api/play/{campaign}/character/equip` → `{ entry, equipped }`:
+//!   carry a bag line on the character, or put it back in the bag, once
+//!   in play (`players::play::equip`).
 
 use axum::Json;
 use axum::extract::{Path, State};
@@ -191,6 +194,44 @@ pub async fn submit_character(
     let row = campaign_of(&state, &p).await?;
     let rules = content::rule_system(&row.story.rules);
     let character = players::submit_character(&state.pool, &p.0, rules).await?;
+    let view = projection::project_character(rules, &character);
+    Ok(Json(json!({ "data": view })).into_response())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct EquipBody {
+    /// The bag line's `key`.
+    entry: String,
+    equipped: bool,
+}
+
+/// `POST /api/play/{campaign}/character/equip` — answers the character
+/// as `me` shows it.
+///
+/// # Errors
+///
+/// 401 `NOT_JOINED`; 404 `NO_CHARACTER`, `NO_SUCH_ENTRY`; 409
+/// `CHARACTER_NOT_VALIDATED`, `RULES_UNKNOWN`; 400 `INVALID_BODY`.
+pub async fn equip(
+    State(state): State<AppState>,
+    p: CurrentPlayer,
+    Body(body): Body<EquipBody>,
+) -> Result<Response, AppError> {
+    let row = campaign_of(&state, &p).await?;
+    let rules = content::rule_system(&row.story.rules);
+    let Some(system) = rules else {
+        // Without the rules nothing is in play; a spectator still learns
+        // they have no character.
+        players::character_of(&state.pool, &p.0)
+            .await?
+            .ok_or(AppError::NotFound("NO_CHARACTER"))?;
+        return Err(AppError::Conflict("RULES_UNKNOWN"));
+    };
+    players::play::equip(&state.pool, &p.0, system, &body.entry, body.equipped).await?;
+    let character = players::character_of(&state.pool, &p.0)
+        .await?
+        .ok_or(AppError::NotFound("NO_CHARACTER"))?;
     let view = projection::project_character(rules, &character);
     Ok(Json(json!({ "data": view })).into_response())
 }
