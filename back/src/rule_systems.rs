@@ -1,40 +1,16 @@
-//! The rule systems a new campaign can start from (`content/rules/`).
-//!
-//! Rule systems are data (`MEMORY.md` §1). Until the GM can store and
-//! edit their own (`engine/edit-rule-system`), the presets are the files
-//! of the two witness worlds, compiled into the binary and checked by the
-//! rules engine at first use — the same loader the `worlds` report runs,
-//! so a file that does not load never reaches a build that passes tests.
-
-use std::sync::LazyLock;
+//! The rule systems a new campaign can start from, as the GM's campaign
+//! screens list them. The presets themselves are the files of the two
+//! witness worlds (`content`); a campaign's own versions are
+//! `crate::rules`.
 
 use promptus_shared::rules::RuleSystem;
-use promptus_shared::story::RuleSystemRef;
 use serde::Serialize;
 
-const FILES: [&str; 2] = [
-    include_str!("../../content/rules/corsaires/v1.yaml"),
-    include_str!("../../content/rules/brasier/v1.yaml"),
-];
-
-static PRESETS: LazyLock<Vec<RuleSystem>> = LazyLock::new(|| {
-    FILES
-        .iter()
-        .map(|text| RuleSystem::from_yaml(text).expect("an embedded rule system loads"))
-        .collect()
-});
+use crate::content;
 
 /// Every preset, in the order a GM is offered them.
-pub fn presets() -> &'static [RuleSystem] {
-    &PRESETS
-}
-
-/// The preset `rules` points at, if there is one.
-#[must_use]
-pub fn find(rules: &RuleSystemRef) -> Option<&'static RuleSystem> {
-    presets()
-        .iter()
-        .find(|s| s.id == rules.id && s.version == rules.version)
+pub fn summaries() -> Vec<PresetSummary> {
+    content::presets().map(|s| PresetSummary::of(s)).collect()
 }
 
 /// A preset as the GM's campaign screens show it: what it is called and
@@ -92,21 +68,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn both_witness_systems_load_and_are_found_by_their_ref() {
-        let ids: Vec<_> = presets()
+    fn both_witness_systems_are_offered_with_their_stat_names() {
+        let ids: Vec<_> = summaries()
             .iter()
-            .map(|s| (s.id.as_str(), s.version))
+            .map(|s| (s.id.clone(), s.version, s.abilities.len()))
             .collect();
-        assert_eq!(ids, [("corsaires", 1), ("brasier", 1)]);
-        let corsaires = RuleSystemRef {
-            id: "corsaires".into(),
-            version: 1,
-        };
-        assert_eq!(find(&corsaires).map(|s| s.abilities.len()), Some(6));
-        let unknown = RuleSystemRef {
-            id: "corsaires".into(),
-            version: 9,
-        };
-        assert!(find(&unknown).is_none());
+        assert_eq!(
+            ids,
+            [
+                ("corsaires".to_string(), 1, 6),
+                ("brasier".to_string(), 1, 6)
+            ]
+        );
     }
 }

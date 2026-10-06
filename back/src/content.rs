@@ -1,18 +1,19 @@
 //! Content compiled into the binary: the rule systems, the maps and the
 //! sprite packs of the two witness worlds (`content/`).
 //!
-//! A campaign names its rule system by `(id, version)` and finds it
-//! here until rule systems are stored per campaign
-//! (`campaign/edit-rule-system`). Its sprite pack is the one its world's
-//! looks are drawn from (`content/sprites/looks/<world>.yaml`, matched
-//! on the rule system's id), the first pack otherwise.
+//! The rule systems here are the presets a campaign starts from; a
+//! campaign's own versions are stored in the database and resolved by
+//! [`crate::rules`]. Its sprite pack is the one its world's looks are
+//! drawn from (`content/sprites/looks/<world>.yaml`, matched on the rule
+//! system's id), the first pack otherwise.
 //!
 //! Every file is checked by the tests of `shared` and by
 //! `tests/sprites_test.rs` / `tests/creator_test.rs`: a broken one never
 //! reaches a build, so loading them here may panic.
 
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
 
+use promptus_shared::combat::scenario::Scenario;
 use promptus_shared::maps::Map;
 use promptus_shared::rules::RuleSystem;
 use promptus_shared::sprite::{CharacterLook, LookBook, Pack, Packs};
@@ -96,12 +97,41 @@ static LOOKS: LazyLock<Vec<LookBook>> = LazyLock::new(|| {
         .collect()
 });
 
-static RULES: LazyLock<Vec<RuleSystem>> = LazyLock::new(|| {
+static RULES: LazyLock<Vec<(&'static str, Arc<RuleSystem>)>> = LazyLock::new(|| {
     RULE_FILES
         .iter()
-        .map(|t| RuleSystem::from_yaml(t).expect("the embedded rule systems load"))
+        .map(|t| {
+            let system = RuleSystem::from_yaml(t).expect("the embedded rule systems load");
+            (*t, Arc::new(system))
+        })
         .collect()
 });
+
+/// The fight scenarios of the two worlds (`content/scenarios/`): the
+/// rule system editor plays them on every saved draft.
+const SCENARIO_FILES: [&str; 2] = [
+    include_str!("../../content/scenarios/corsaires/bagarre-du-quai.yaml"),
+    include_str!("../../content/scenarios/brasier/abordage-coursive.yaml"),
+];
+
+static SCENARIOS: LazyLock<Vec<Scenario>> = LazyLock::new(|| {
+    SCENARIO_FILES
+        .iter()
+        .map(|t| Scenario::from_yaml(t).expect("the embedded scenarios load"))
+        .collect()
+});
+
+/// The scenarios written for rule system `rules` (its id).
+pub fn scenarios(rules: &str) -> impl Iterator<Item = &'static Scenario> {
+    SCENARIOS.iter().filter(move |s| s.rules == rules)
+}
+
+/// An embedded map of the world `rules` (a rule system id).
+pub fn world_map(rules: &str, id: &str) -> Option<&'static Map> {
+    MAPS.iter()
+        .find(|(r, m)| *r == rules && m.id == id)
+        .map(|(_, m)| m)
+}
 
 pub fn packs() -> &'static Packs {
     &PACKS
@@ -111,11 +141,26 @@ pub fn look_books() -> &'static [LookBook] {
     &LOOKS
 }
 
-/// The rule system a campaign plays, if this server has it.
-pub fn rule_system(r: &RuleSystemRef) -> Option<&'static RuleSystem> {
+/// Every preset, in the order a GM is offered them.
+pub fn presets() -> impl Iterator<Item = &'static Arc<RuleSystem>> {
+    RULES.iter().map(|(_, s)| s)
+}
+
+/// The preset `r` points at, if this server has it.
+pub fn preset(r: &RuleSystemRef) -> Option<&'static Arc<RuleSystem>> {
     RULES
         .iter()
-        .find(|s| s.id == r.id && s.version == r.version)
+        .find(|(_, s)| s.id == r.id && s.version == r.version)
+        .map(|(_, s)| s)
+}
+
+/// The YAML the preset `r` was written in: where a campaign's first
+/// edited version starts from.
+pub fn preset_yaml(r: &RuleSystemRef) -> Option<&'static str> {
+    RULES
+        .iter()
+        .find(|(_, s)| s.id == r.id && s.version == r.version)
+        .map(|(t, _)| *t)
 }
 
 fn look_book(campaign: &Campaign) -> Option<&'static LookBook> {

@@ -13,6 +13,7 @@ mod model;
 mod movement;
 mod projection;
 mod sight;
+mod uvtt;
 mod v1;
 
 pub use board::Obstacle;
@@ -25,4 +26,5 @@ pub use movement::{
 };
 pub use projection::FOG_TERRAIN;
 pub use sight::{Sight, illumination, line_of_sight, visible_cells};
+pub use uvtt::{UvttImport, from_uvtt};
 pub use v1::{V1Map, load_v1_story_maps};

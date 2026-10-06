@@ -909,7 +909,7 @@ personnages) ; le préréglage n'est pas modifiable ici
 (`campaign/edit-rule-system`). **Reste** : que Romain crée, retrouve et
 rouvre une campagne pour de vrai, sur ordinateur et sur tablette.
 
-### `campaign/review-story-graph` · todo
+### `campaign/review-story-graph` · doing — reste une campagne générée relue pour de vrai
 
 **Pourquoi** — Le MJ relit et corrige tout ce que l'IA propose avant que
 ça existe.
@@ -924,7 +924,27 @@ co-MJ, résout une alerte et la valide.
 
 **Origine** — Planche « Préparer » (moments 6 à 8 et 10)
 
-### `campaign/check-player-knowledge` · todo
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). L'écran `/campagnes/:id/preparer` (bouton « Relire et
+valider la campagne ») a cinq onglets : le **graphe** (scènes par acte,
+une scène sélectionnée se corrige à droite avec ses indices, on en
+ajoute), la **bible**, les **fiches** (PNJ, adversaires, objets), la
+**cohérence** (les alertes du validateur en français, chacune avec
+« Proposer une correction ») et **valider** (le bilan, puis
+l'invitation). L'**atelier** du co-MJ reste à gauche : une demande
+libre, sur la scène sélectionnée, ou une alerte ; le co-MJ lit toute la
+campagne et ce que dit le validateur, propose des changements par
+identifiant (`story::edit`), affichés en diff (« + Indice « … » →
+Le quai ») ; les identifiants inventés sont écartés et comptés ; rien
+ne change avant « Accepter », qui réapplique sur la campagne du moment
+(une proposition dépassée est refusée). Chaque appel est compté dans le
+budget IA. Une campagne n'ouvre une soirée qu'une fois **validée**, ce
+qui demande zéro erreur ; un import est validé d'office (le MJ l'a
+écrit), une campagne créée depuis un pitch ou générée attend le MJ.
+Vérifié sur l'acte 1 joué des Corsaires : le co-MJ place les indices
+manquants de la route du Greyhound et l'alerte disparaît.
+
+### `campaign/check-player-knowledge` · doing — reste une fin de soirée jouée pour de vrai
 
 **Pourquoi** — Aux Corsaires, il manquait aux joueurs des informations
 nécessaires pour l'acte 2.
@@ -940,7 +960,20 @@ Romain l'a jouée, l'outil signale ce qui manquait pour l'acte 2.
 
 **Origine** — Romain, 4 octobre 2026 · `MEMORY.md` §6
 
-### `campaign/check-act-readiness` · todo
+**État** — Livré et vérifié (`cargo test`, `bun run test`). À la
+relecture, le validateur signale une information demandée par une scène
+et donnée nulle part, ou seulement dans des scènes facultatives
+(`KNOWLEDGE_NEVER_GIVEN`, `KNOWLEDGE_ONLY_OPTIONAL`, onglet Cohérence).
+En fin de soirée, le panneau « Fin de soirée » liste ce que les scènes
+suivantes demandent et que la table ne sait pas, avec où l'apprendre
+encore, et « Ajouter au « Précédemment… » » glisse la ligne dans le
+texte publié aux joueurs. Les retours de la séance le gardent. Vérifié
+sur l'acte 1 des Corsaires tel que joué (`player_knowledge_test`) : la
+soirée taverne → proposition → marché noir → quai laisse sans la route
+du Greyhound, l'escorte et la réparation pour la transition vers
+l'acte 2.
+
+### `campaign/check-act-readiness` · doing — reste un acte préparé pour de vrai avec la jauge
 
 **Pourquoi** — L'acte 1 du Brasier n'était pas prêt et rien ne le
 disait ; aux Corsaires, aucune scène n'était pensée pour un joueur en
@@ -958,6 +991,20 @@ signale que la route du Greyhound n'est que dans une scène facultative.
 
 **Origine** — `docs/lecons-des-parties.md` §3 (chaîne 2)
 
+**État** — Livré et vérifié (`cargo test`, `bun run test`). Une jauge
+par acte (`story::readiness`, `GET /api/campaigns/{id}/readiness`), sur
+l'écran de relecture (sous chaque acte du graphe, et en détail dans
+« Valider ») : scènes complètes (résumé, lieu, ambiance, texte à lire,
+déroulé, transition), informations à trois chemins et pas seulement
+facultatives, une accroche par joueur, rencontres chiffrées avec
+tactique, combats simulés (12 combats par rencontre, avec les règles et
+les cartes de la campagne). Elle dit ce qui manque, le MJ décide.
+Vérifié : l'acte 1 du Brasier n'est pas prêt (une scène à moitié
+écrite, le secret du moteur donné une seule fois, l'abordage contre un
+adversaire absent des règles) ; l'acte 1 des Corsaires tel que joué
+signale la route du Greyhound seulement dans une scène facultative ;
+l'acte 1 réécrit des Corsaires est prêt.
+
 ### `campaign/track-factions-and-goals` · todo · à spécifier
 
 **Périmètre** — Jauges d'affinité par faction, où gagner la faveur des
@@ -967,7 +1014,7 @@ uns fait baisser celle de leurs rivaux ; objectifs de campagne à cocher
 
 **Origine** — `dnd-save/DnD_07-06-2026/Univers.md`
 
-### `campaign/edit-rule-system` · todo
+### `campaign/edit-rule-system` · doing — reste une vraie modification jouée à la soirée suivante
 
 **Pourquoi** — Les règles des deux mondes vont changer souvent : les
 éditer doit être aussi simple que les écrire sur une feuille.
@@ -983,6 +1030,26 @@ dans l'app, la règle maison et la simulation comprises (via
 `engine/formalise-house-rules` et `engine/simulate-fights`).
 
 **Origine** — Planche « Règles »
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). Chaque campagne a ses versions de règles
+(`rule_versions`, migration 015) : la première modification fait un
+brouillon de la version jouée, numéro suivant, texte YAML commentaires
+compris. L'écran `/campagnes/:id/regles` l'édite par onglets
+(caractéristiques, jets et difficultés, actions et cartes, règles
+maison, création) ou en texte ; chaque enregistrement recalcule ce que
+ça touche : ce que les joueurs liront, les scènes de la campagne que ça
+casse (adversaire disparu, difficulté hors échelle…), le contrôle des
+règles, et les combats rejoués sur les deux versions avec les mêmes dés
+— les scénarios du monde et les rencontres de la campagne
+(`story::encounter_scenario`). Verrouillée, une version attend
+l'ouverture de la prochaine soirée, jamais en cours de partie ; les
+joueurs lisent alors ce qui change sur leur page des règles. Les règles
+maison (`house_rules`) s'y affichent et le co-MJ les connaît.
+L'historique compare deux versions (changements lus par les joueurs, et
+le texte ligne à ligne). Pas encore : le co-MJ qui propose une
+modification de règle (l'atelier arrive avec
+`campaign/review-story-graph`).
 
 ---
 
@@ -1003,7 +1070,7 @@ erreur lisible.
 
 **Origine** — V1 `llm.ts`, `prompt-template.ts`, `scripts/fake-llm.ts`
 
-### `ai/evaluate-on-real-campaigns` · todo
+### `ai/evaluate-on-real-campaigns` · doing — reste une première évaluation avec un vrai modèle, puis un changement de modèle comparé
 
 **Pourquoi** — Un prompt ou un modèle qui change ne doit pas dégrader
 en silence ce qui marchait.
@@ -1021,6 +1088,19 @@ cas, ce qui s'est amélioré ou dégradé.
 
 **Origine** — `docs/lecons-des-parties.md` §4
 
+**État** — Livré et vérifié (`cargo test`). `bun run eval` rejoue
+quatre cas (`content/evals/`) au modèle configuré : refuser l'offre de
+Vaubernier, l'incident de Jacquot, le combat du quai à six contre six,
+et une campagne générée depuis un pitch corsaire. Chaque cas a ses
+critères écrits, en français, vérifiés par la machine : le bon PNJ
+parle, ce que la table ignore n'est pas dit, la fiche est respectée,
+aucun identifiant inventé, aucune formule de dés, du français ; pour la
+génération, validateur sans erreur, règle des trois indices et standard
+de scène (la jauge). Le passage est enregistré dans `evals/runs/` et le
+rapport dit, cas par cas et critère par critère, ce qui est en progrès,
+en recul, corrigé ou cassé depuis le précédent (`docs/evaluation.md`).
+Pas encore de passage avec un vrai modèle : il faut la clé OpenRouter.
+
 ### `ai/count-ai-calls` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — Chaque appel IA coûte (`MEMORY.md` §3).
@@ -1034,7 +1114,7 @@ appel.
 
 **Origine** — `MEMORY.md` §3 · planche « Préparer » (coût estimé)
 
-### `ai/generate-campaign` · todo
+### `ai/generate-campaign` · doing — reste une génération réelle avec OpenRouter, relue par Romain
 
 **Périmètre** — Pitch → bible, fronts, nœuds, indices, entités, en
 tâches de fond suivies en direct ; rien n'est appliqué avant la
@@ -1046,6 +1126,28 @@ que le MJ relit et applique ; tests `generation.test.ts` du V1 portés.
 
 **Origine** — V1 `generation/pipeline.ts` · planche « Préparer »
 (moments 4 et 5)
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). Sur une campagne pas encore validée, le bouton
+« Générer à partir d'une idée » mène à `/campagnes/:id/generer` : le MJ
+écrit l'idée, le ton, les thèmes, les contraintes et le format, voit le
+coût au plus et ce qui reste du budget, lance. La tâche de fond suit le
+pipeline du V1 : bible, actes, menaces et fiches (adversaires repris du
+système de règles), puis scènes, révélations et indices, puis
+vérification ; tant que le validateur trouve une erreur ou un défaut de
+structure (trois indices, scène inaccessible…), le modèle propose des
+corrections par identifiant, deux tours au plus, gardées seulement si
+elles n'aggravent rien. Une réponse hors format est renvoyée une fois
+avec ce qui n'allait pas. Les identifiants inventés sont écartés
+(`story::prune`) et listés ; chaque appel est compté, la tâche est
+refusée avant le premier appel si son estimation dépasse le budget, et
+s'arrête si un appel le dépasserait. L'écran suit les étapes en direct ;
+le brouillon dit ce qu'il contient et ce qu'en dit le validateur, et
+n'arrive dans la campagne que sur « Appliquer », qui mène à la
+relecture. Les tests du V1 sont portés (`generation_test.rs` : étapes
+dans l'ordre, correction gardée, seconde chance sur un JSON invalide,
+budget, brouillon appliqué une fois). Les cartes ne sont pas générées
+ici : c'est `maps/generate-map-llm`.
 
 ---
 
@@ -1085,7 +1187,7 @@ les sprites et les cartes.
 
 **Origine** — Romain, 4 octobre 2026
 
-### `media/generate-images-and-video` · todo
+### `media/generate-images-and-video` · doing — reste un vrai lot d'images et une vraie vidéo avec la clé OpenRouter, vus sur un téléphone
 
 **Périmètre** — Les médias des actes écrits ou générés dans Promptus :
 images pixel art par scène (`media/draw-pixel-art-assets`) et vidéo
@@ -1098,6 +1200,34 @@ vidéo d'OpenRouter (`MEMORY.md` §4).
 affichées sur les téléphones et la TV.
 
 **Origine** — V1 `media/` · planche « Préparer » (moment 9)
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`), sans clé réelle. Le format vidéo d'OpenRouter est
+vérifié sur sa documentation (pas d'accès réseau à l'API depuis ici) :
+`POST /api/v1/videos` rend une tâche, interrogée toutes les 10 s jusqu'à
+`completed` (vingt minutes au plus), puis le fichier est téléchargé
+depuis `unsigned_urls[0]` ; le coût vient de `usage.cost`. Modèle par
+défaut `google/veo-3.1`, 8 s en 16:9, estimé 4 $ avant de partir
+(`AI_PRICE_PER_VIDEO`). Le bouton « Images et vidéos » de la campagne
+mène à `/campagnes/:id/medias` : chaque acte (sa vidéo d'introduction),
+scène, PNJ, adversaire et lieu, avec ce qui est gardé, ce qui attend le
+MJ (Garder / Refaire), ce qui se dessine, et pourquoi un essai a
+échoué ; un mot de direction relance un sujet. « Dessiner les N
+médias » lance en tâche de fond tout ce qui n'a rien en attente ni de
+gardé, vidéos comprises si le MJ coche la case, avec le coût au plus
+affiché et refusé d'un bloc s'il dépasse le budget. Un dessin coupé par
+un redémarrage est marqué interrompu, jamais en attente sans fin. Les
+fichiers sont servis par morceaux (`Range`), ce que le lecteur vidéo
+d'un iPhone exige. Côté joueur, la vidéo gardée d'un acte passe au-dessus
+de la scène dès qu'une scène de l'acte est ouverte. **Écart assumé** :
+images et vidéos restent dans la base (`media_assets`), pas sur disque,
+pour être sauvegardées avec elle par `deploy/backup.sh` sans second
+chemin de sauvegarde ; à revoir si la base grossit trop. **Trouvé en
+route** : la stack de production ne transmettait aucun réglage d'IA au
+serveur (aucune fonction d'IA n'aurait marché) ; `OPENROUTER_*` et
+`AI_PRICE_*` passent maintenant par `.env.production` (`docs/install.md`).
+La TV n'existe pas encore : elle reprendra ces médias avec
+`tv/show-evening`.
 
 ---
 
@@ -1662,18 +1792,38 @@ co-MJ n'atteint un joueur sans geste du MJ.
 
 **Origine** — Planches « Mener » et « Tablette » (moment 4)
 
-### `copilot/check-character-sheets` · todo
+### `copilot/check-character-sheets` · doing — reste un vrai mot proposé avec la clé OpenRouter sur une vraie fiche
 
 **Périmètre** — Le co-MJ vérifie une fiche envoyée contre les limites
 de création et propose un mot au joueur ; le MJ décide.
 
+**État** — Les vérifications restent celles du système de règles
+(`session/validate-characters`, rien n'est bloqué). Sur une fiche
+envoyée, « Le co-MJ propose un mot » remplit le mot au joueur à partir
+de ces vérifications et de la fiche (gabarit `sheet-note.v1`, appel
+compté `sheet.note`) : tutoiement, ce qui dépasse et quoi changer, le
+rappel que le MJ a le dernier mot. Rien ne part : le MJ modifie le mot,
+puis renvoie ou valide quand même.
+
 **Origine** — Planches « Inviter » (moments 3 et 4) et « Créer » (moment 6)
 
-### `copilot/co-write-backstory` · todo
+### `copilot/co-write-backstory` · doing — reste une vraie histoire et de vraies accroches avec la clé OpenRouter
 
 **Périmètre** — Le co-MJ pose des questions au joueur pour écrire son
 histoire, sans rien inventer à sa place ; il en tire des accroches
 secrètes pour le MJ.
+
+**État** — Côté joueur, à l'étape « Son histoire », « Écrire avec le
+co-MJ » fait un paragraphe des trois réponses (gabarit `backstory.v1`,
+appel compté `backstory.write` sur le budget de la campagne), que le
+joueur garde ou modifie avant l'envoi. Un nom propre absent de ses
+réponses fait refaire le paragraphe une fois, puis il est refusé. Côté
+MJ, dans « Accroches secrètes », le co-MJ propose une à trois accroches
+tirées de l'histoire (gabarit `hooks.v1`, appel `hooks.propose`), liées
+seulement à des scènes et fronts qui existent (les liens inventés sont
+retirés et comptés) ; le MJ garde, retouche ou écarte chacune, rien
+n'est enregistré sans lui. Écart : les trois questions sont fixes (pas
+encore adaptées à la campagne).
 
 **Origine** — Planche « Créer » (moment 7)
 
@@ -1823,7 +1973,7 @@ dessin n'est qu'une projection. Le serveur reste seul juge du
 déplacement, de la portée et de la ligne de vue ; un joueur ne reçoit
 jamais ce qu'il n'a pas le droit de voir (projection joueur, `MEMORY.md` §3).
 
-### `maps/model-grid-maps` · doing — reste le stockage en base (avec la campagne)
+### `maps/model-grid-maps` · doing — reste le branchement du déplacement sur le système de règles
 
 **Pourquoi** — Tout le reste (rendu, règles, brouillard, génération)
 lit la même description de carte.
@@ -1861,9 +2011,9 @@ déplacement d'un pas par hexagone pour le monde. Les deux cartes témoins
 sont écrites (`content/maps/corsaires/quai-port-louis.yaml`,
 `content/maps/brasier/cure-dent-coursive.yaml`, six contre six) et les
 quatre cartes de la démo V1 se chargent (`content/maps/v1-demo/`,
-chargeur `load_v1_story_maps`). 34 tests dans `shared/`. Reste : le
-stockage en base (table et migration, avec `campaign/model-story-graph`)
-et le branchement des paramètres de déplacement (`MovementRules`) sur le
+chargeur `load_v1_story_maps`). 34 tests dans `shared/`. Les cartes
+propres à une campagne sont stockées en base (`campaign_maps`, migration
+019, avec `maps/edit-map-gm`). Reste : le branchement des paramètres de déplacement (`MovementRules`) sur le
 système de règles (`engine/model-rule-system`). Le rendu, le brouillard,
 les véhicules (orientation, arcs) et le voyage en hexagones lisent ce
 modèle sans le changer.
@@ -1944,7 +2094,7 @@ badges).
 
 **Origine** — Romain, session de design du 3 octobre 2026
 
-### `maps/edit-map-gm` · todo
+### `maps/edit-map-gm` · doing — reste une carte de rencontre complète faite par le MJ sur l'app, et le pinceau de brouillard
 
 **Pourquoi** — Le MJ garde le dernier mot sur chaque carte.
 
@@ -1956,9 +2106,24 @@ pinceau de brouillard, révéler un calque ou un objet en direct.
 de dix minutes et révèle un passage secret pendant la session ; les sept
 moments de la planche « Cartes · l'éditeur » sont faisables dans l'app.
 
+**État** — Page « Cartes » de la campagne (`/campagnes/:id/cartes`) :
+liste des cartes de la campagne, nouvelle carte vide (16 × 16, murée)
+ou copie d'une carte du monde. Éditeur (`/campagnes/:id/cartes/:carte`) :
+pinceaux sol, mur, eau, vide (glisser), portes (fermée → ouverte →
+verrouillée → retirée ; la case devient un mur), décors du jeu de tuiles,
+objets cachés, lumières, départs héros et adversaires, gomme ; tout peut
+aller sur le calque secret ; heure, météo, lumière de base et notes du
+MJ. Enregistrer repasse la carte en brouillon ; seule une carte validée
+est proposée au plateau (avant les cartes du monde) et peut être montrée.
+Le serveur valide chaque enregistrement et répond en français. Une carte
+affichée à la table ne peut pas être supprimée. Révéler un calque ou un
+objet en direct existait déjà (`maps/reveal-fog-and-hidden`). Écart : pas
+encore de pinceau de brouillard. Pas encore essayé sur une vraie
+préparation.
+
 **Origine** — Planches « Cartes · trois échelles » et « Cartes · l'éditeur »
 
-### `maps/generate-map-llm` · todo
+### `maps/generate-map-llm` · doing — reste une vraie carte générée avec la clé OpenRouter puis validée
 
 **Pourquoi** — Préparer une carte doit être aussi rapide que décrire
 la scène.
@@ -1972,9 +2137,22 @@ compté.
 **Fini quand** — Une scène de la démo produit une carte jouable,
 validée par le MJ, en une génération et quelques retouches.
 
+**État** — Sur la page « Cartes », le MJ choisit une scène (les
+combats d'abord) et le co-MJ propose une carte (gabarit
+`map-generation.v1`, appel compté `map.generate`) : il reçoit la scène,
+ses adversaires, les matériaux et décors du jeu de tuiles, les
+caractéristiques du système de règles et la taille du groupe. Le serveur
+impose version, identifiant, décor, échelle et calques, retire image de
+fond et sorties, écarte un adversaire ou une caractéristique inventés
+(décomptés dans `dropped`) ; si la carte reste invalide, une seconde
+chance avec les raisons en français, puis une erreur. La proposition
+arrive en brouillon dans l'éditeur et n'atteint la table qu'une fois
+validée. Écart : la carte n'est pas encore rattachée automatiquement au
+nœud (le MJ la choisit au plateau).
+
 **Origine** — Règles de design 1 et 2 (`CLAUDE.md`)
 
-### `maps/import-image-map` · todo
+### `maps/import-image-map` · doing — reste un vrai `.dd2vtt` et une vraie image importés et joués
 
 **Pourquoi** — Beaucoup de MJ ont déjà des cartes (achetées, faites
 dans Dungeondraft ou Dungeon Alchemist, générées).
@@ -1987,6 +2165,17 @@ tout ce qui est caché ou change d'état est un objet posé par-dessus.
 
 **Fini quand** — Une carte `.dd2vtt` et une image brute deviennent
 jouables, avec ligne de vue correcte, en moins de cinq minutes.
+
+**État** — Import sur la page « Cartes ». Un fichier Universal VTT
+(`.dd2vtt`, `.uvtt`, `.df2vtt`) devient une carte : murs, portes et
+lumières lus du fichier, image gardée en fond. Une image (PNG, JPEG,
+WEBP, 25 Mo au plus) se cale sur la grille (taille de case, décalage,
+aperçu de la grille) et devient un sol ouvert à tracer dans l'éditeur,
+où l'image reste sous la grille. Le fond est servi au MJ et, une fois la
+carte montrée, aux joueurs. Écarts : les murs Universal VTT sont des
+segments, Promptus les pose sur des cases (une case traversée devient un
+mur, une porte rend sa case mur) ; l'IA ne propose pas encore les murs
+d'une image brute ; pas de case témoin.
 
 **Origine** — Recherche sur Foundry VTT et Owlbear Rodeo, session du 3 octobre 2026
 

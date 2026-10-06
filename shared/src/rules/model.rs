@@ -62,6 +62,23 @@ pub struct RuleSystem {
     pub adversary_tiers: Vec<AdversaryTier>,
     #[serde(default)]
     pub adversaries: Vec<AdversaryDef>,
+    /// The GM's own rules, written in French (`campaign/edit-rule-system`).
+    /// Players read them on the rules page and the co-GM reads them; the
+    /// server does not apply them — the GM does, at the table — until
+    /// `engine/formalise-house-rules` turns one into data.
+    #[serde(default)]
+    pub house_rules: Vec<HouseRule>,
+}
+
+/// A house rule as the GM wrote it.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HouseRule {
+    pub id: String,
+    /// A short title (« Les morts-vivants craignent le feu »).
+    pub name: String,
+    /// The rule, as the GM would say it at the table.
+    pub text: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]

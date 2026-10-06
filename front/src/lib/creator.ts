@@ -73,6 +73,15 @@ export function saveCharacter(campaignId: string, sheet: CharacterSheet): Promis
   return apiRequest<CharacterView>('PUT', `${play(campaignId)}/character`, sheet)
 }
 
+/** The co-GM writes the three answers up as a paragraph, for the player to keep or edit. */
+export async function writeBackstory(
+  campaignId: string,
+  answers: { origin: string; loss: string; quest: string },
+): Promise<string> {
+  const r = await apiRequest<{ text: string }>('POST', `${play(campaignId)}/character/backstory`, answers)
+  return r.text
+}
+
 /** Send the character to the GM. */
 export function submitCharacter(campaignId: string): Promise<CharacterView> {
   return apiRequest<CharacterView>('POST', `${play(campaignId)}/character/submit`)

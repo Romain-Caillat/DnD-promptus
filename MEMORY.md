@@ -279,8 +279,12 @@ against the campaign budget; a batch that would exceed it is refused.
 - **YouTube player must stay visible** (YouTube terms) and starts muted:
   each player taps "activate sound". Ads can desync a player; playback
   re-syncs on its own.
-- **OpenRouter video output format was never verified** (no network
-  during V1 development). Check it before designing around it.
+- **OpenRouter video is asynchronous** (`media/generate-images-and-video`):
+  `POST /api/v1/videos` returns a job, polled at `/videos/{id}` until
+  `completed`, the file at `unsigned_urls[0]`. Built from OpenRouter's
+  docs; no live call has run yet — check the first real one.
+- **A phone's video player needs `Range`**: iOS Safari plays nothing
+  served whole. Media bytes are served with 206 partial answers.
 - **V1 GM pages had no authentication.** The rewrite has a GM account
   from day one (passkeys, `platform/sign-in-gm`, see §3 "GM routes");
   `/play/*` stays accountless.

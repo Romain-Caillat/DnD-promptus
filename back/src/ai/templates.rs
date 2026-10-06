@@ -42,8 +42,86 @@ pub const PIXEL_ART: Template = Template {
     text: include_str!("../../prompts/pixel-art.v1.md"),
 };
 
+/// The co-GM's workshop in prep (`campaign/review-story-graph`).
+pub const WORKSHOP: Template = Template {
+    id: "workshop",
+    version: 1,
+    text: include_str!("../../prompts/workshop.v1.md"),
+};
+
+/// Campaign generation, step 1: bible, acts, fronts and the cast
+/// (`ai/generate-campaign`).
+pub const GENERATION_CAST: Template = Template {
+    id: "generation-cast",
+    version: 1,
+    text: include_str!("../../prompts/generation-cast.v1.md"),
+};
+
+/// Campaign generation, step 2: scenes, revelations and clues.
+pub const GENERATION_SCENES: Template = Template {
+    id: "generation-scenes",
+    version: 1,
+    text: include_str!("../../prompts/generation-scenes.v1.md"),
+};
+
+/// Campaign generation, repair: edits for what the validator found.
+pub const GENERATION_REPAIR: Template = Template {
+    id: "generation-repair",
+    version: 1,
+    text: include_str!("../../prompts/generation-repair.v1.md"),
+};
+
+/// An act's introduction video (`media/generate-images-and-video`).
+pub const INTRO_VIDEO: Template = Template {
+    id: "intro-video",
+    version: 1,
+    text: include_str!("../../prompts/intro-video.v1.md"),
+};
+
+/// A scene's encounter map (`maps/generate-map-llm`).
+pub const MAP_GENERATION: Template = Template {
+    id: "map-generation",
+    version: 1,
+    text: include_str!("../../prompts/map-generation.v1.md"),
+};
+
+/// A word to a player about their sheet (`copilot/check-character-sheets`).
+pub const SHEET_NOTE: Template = Template {
+    id: "sheet-note",
+    version: 1,
+    text: include_str!("../../prompts/sheet-note.v1.md"),
+};
+
+/// A backstory paragraph from the player's answers
+/// (`copilot/co-write-backstory`).
+pub const BACKSTORY: Template = Template {
+    id: "backstory",
+    version: 1,
+    text: include_str!("../../prompts/backstory.v1.md"),
+};
+
+/// Secret hooks drawn from a backstory (`copilot/co-write-backstory`).
+pub const HOOKS: Template = Template {
+    id: "hooks",
+    version: 1,
+    text: include_str!("../../prompts/hooks.v1.md"),
+};
+
 /// Every template, for the tests that check each one renders.
-pub const ALL: [Template; 3] = [COPILOT, RECAP, PIXEL_ART];
+pub const ALL: [Template; 12] = [
+    COPILOT,
+    RECAP,
+    PIXEL_ART,
+    WORKSHOP,
+    GENERATION_CAST,
+    GENERATION_SCENES,
+    GENERATION_REPAIR,
+    INTRO_VIDEO,
+    MAP_GENERATION,
+    SHEET_NOTE,
+    BACKSTORY,
+    HOOKS,
+];
 
 const USER_MARK: &str = "---user---";
 

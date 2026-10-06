@@ -44,7 +44,8 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
     let (_, gm) = common::signed_in_gm(pool, "Romain").await;
     let story = marked();
     let campaign = imported_campaign(app, &gm, &to_yaml(&story).unwrap()).await;
-    sqlx::query("UPDATE campaigns SET world = $2 WHERE id = $1")
+    // A budget, so the co-GM writing a backstory may run.
+    sqlx::query("UPDATE campaigns SET world = $2, ai_budget_cents = 500 WHERE id = $1")
         .bind(Uuid::parse_str(&campaign).unwrap())
         .bind(Json(world(&story)))
         .execute(pool)
@@ -225,6 +226,13 @@ fn refused_to_marc(method: &str, path: &str) -> Option<(StatusCode, &'static str
     (method == "POST" && path.ends_with("/fight")).then_some((StatusCode::CONFLICT, "NO_FIGHT"))
 }
 
+/// A route the sweep's table cannot make succeed for anyone: the quay
+/// shown has no imported image behind it (`maps_test.rs` serves one).
+fn refused_to_all(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
+    (method == "GET" && path.ends_with("/board/backdrop"))
+        .then_some((StatusCode::NOT_FOUND, "NO_SUCH_MAP"))
+}
+
 fn uri(path: &str, t: &Table) -> String {
     path.replace("{campaign}", &t.campaign)
         .replace("{code}", &t.code)
@@ -249,6 +257,9 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
         }
         // A complete sheet, so the submit route that follows succeeds.
         // The line of Marc's bag `mark_review` stored.
+        ("POST", p) if p.ends_with("/character/backstory") => {
+            Some(json!({ "origin": "Du port.", "loss": "", "quest": "La mer." }))
+        }
         ("POST", p) if p.ends_with("/equip") => Some(json!({ "entry": "k1", "equipped": true })),
         ("POST", p) if p.ends_with("/walk") => Some(json!({ "path": [[1, 5]] })),
         ("POST", p) if p.ends_with("/fight") => Some(json!({ "kind": "endTurn" })),
@@ -323,6 +334,11 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
             if path.ends_with("/live") {
                 assert_eq!(r.status, StatusCode::BAD_REQUEST, "{uri} as {who}");
                 assert_eq!(r.body["error"]["code"], "WEBSOCKET_REQUIRED");
+                continue;
+            }
+            if let Some((status, code)) = refused_to_all(method, path) {
+                assert_eq!(r.status, status, "{method} {uri} as {who}: {}", r.body);
+                assert_eq!(r.body["error"]["code"], code);
                 continue;
             }
             if let (true, Some((status, code))) = (who == "Marc", refused_to_marc(method, path)) {

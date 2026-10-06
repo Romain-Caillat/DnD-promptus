@@ -200,6 +200,34 @@ export function CampaignPage() {
 
           <aside className="flex flex-col gap-4">
             <CardButton
+              icon="eye"
+              title={t('gm.campaign.review')}
+              subtitle={t('gm.campaign.reviewSub')}
+              onClick={() => navigate(`${base}/preparer`)}
+            />
+            {!campaign.validatedAt && (
+              <CardButton
+                variant="dark"
+                icon="flask"
+                title={t('gm.campaign.generate')}
+                subtitle={t('gm.campaign.generateSub')}
+                onClick={() => navigate(`${base}/generer`)}
+              />
+            )}
+            <CardButton
+              variant="dark"
+              icon="image"
+              title={t('gm.campaign.media')}
+              subtitle={t('gm.campaign.mediaSub')}
+              onClick={() => navigate(`${base}/medias`)}
+            />
+            <CardButton
+              icon="map"
+              title={t('gm.campaign.maps')}
+              subtitle={t('gm.campaign.mapsSub')}
+              onClick={() => navigate(`${base}/cartes`)}
+            />
+            <CardButton
               icon="arrow"
               title={t('gm.campaign.evening')}
               subtitle={t('gm.campaign.eveningSub')}
@@ -230,6 +258,12 @@ export function CampaignPage() {
               ) : (
                 <span className="text-body text-mute-soft">{t('gm.campaigns.rulesRef', { ...campaign.story.rules })}</span>
               )}
+              <CardButton
+                variant="dark"
+                size="small"
+                title={t('gm.campaign.editRules')}
+                onClick={() => navigate(`${base}/regles`)}
+              />
             </section>
 
             {campaign.archivedAt ? (

@@ -1,6 +1,7 @@
 import { apiRequest } from './api'
 
-export type MediaKind = 'scene' | 'npc' | 'adversary' | 'location' | 'item' | 'tileset'
+/** `intro` is an act's introduction: a video. */
+export type MediaKind = 'scene' | 'npc' | 'adversary' | 'location' | 'item' | 'tileset' | 'intro'
 
 type Pattern =
   | 'plain'
@@ -57,7 +58,7 @@ export interface Asset {
   kind: MediaKind
   subject: string
   direction?: string
-  status?: 'pending' | 'approved' | 'rejected'
+  status?: 'drawing' | 'pending' | 'approved' | 'rejected'
   error?: string | null
   createdAt?: string
 }
@@ -65,6 +66,26 @@ export interface Asset {
 export interface MediaList {
   assets: Asset[]
   theme: Theme | null
+}
+
+interface Subject {
+  kind: MediaKind
+  subject: string
+}
+
+/** What a batch would draw, and at what price (`media::Plan`). */
+interface MediaPlan {
+  images: Subject[]
+  videos: Subject[]
+  imageMicros: number
+  videoMicros: number
+  spending: { budgetMicros: number; spentMicros: number }
+  running: boolean
+  configured: boolean
+}
+
+export interface GmMediaList extends MediaList {
+  plan: MediaPlan
 }
 
 export function fetchPlayerMedia(campaignId: string): Promise<MediaList> {
@@ -75,8 +96,13 @@ export function playerImageUrl(campaignId: string, asset: string): string {
   return `/api/play/${encodeURIComponent(campaignId)}/media/${encodeURIComponent(asset)}/image`
 }
 
-export function fetchGmMedia(campaignId: string): Promise<MediaList> {
-  return apiRequest<MediaList>('GET', `/campaigns/${encodeURIComponent(campaignId)}/media`)
+export function fetchGmMedia(campaignId: string): Promise<GmMediaList> {
+  return apiRequest<GmMediaList>('GET', `/campaigns/${encodeURIComponent(campaignId)}/media`)
+}
+
+/** Draw every missing image (and the acts' videos) in the background. */
+export function drawMissing(campaignId: string, videos: boolean): Promise<{ queued: Asset[] }> {
+  return apiRequest('POST', `/campaigns/${encodeURIComponent(campaignId)}/media/batch`, { videos })
 }
 
 export function gmImageUrl(campaignId: string, asset: string): string {

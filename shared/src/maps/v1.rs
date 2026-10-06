@@ -221,6 +221,8 @@ impl V1Map {
             .then_some(Backdrop {
                 prompt: self.background_prompt,
                 image: self.background_url,
+                cell_px: None,
+                offset: None,
             });
 
         let map = Map {

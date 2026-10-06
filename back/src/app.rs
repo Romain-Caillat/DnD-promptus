@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use axum::Router;
+use axum::extract::DefaultBodyLimit;
 use axum::http::header::CACHE_CONTROL;
 use axum::http::{HeaderValue, Method};
 use axum::middleware;
@@ -95,6 +96,48 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         )
         .route("/api/campaigns/{id}/archive", put(api::campaigns::archive))
         .route("/api/rule-systems", get(api::campaigns::rule_systems))
+        // campaign/edit-rule-system: the campaign's own rule versions.
+        .route("/api/campaigns/{id}/rules", get(api::rule_versions::editor))
+        .route(
+            "/api/campaigns/{id}/rules/draft",
+            post(api::rule_versions::start_draft)
+                .put(api::rule_versions::save_draft)
+                .delete(api::rule_versions::discard_draft),
+        )
+        .route(
+            "/api/campaigns/{id}/rules/draft/lock",
+            post(api::rule_versions::lock_draft),
+        )
+        .route(
+            "/api/campaigns/{id}/rules/compare",
+            get(api::rule_versions::compare),
+        )
+        .route("/api/campaigns/{id}/story/edits", post(api::prep::edits))
+        .route("/api/campaigns/{id}/readiness", get(api::prep::readiness))
+        .route(
+            "/api/campaigns/{id}/generation",
+            get(api::prep::generations).post(api::prep::generate),
+        )
+        .route(
+            "/api/campaigns/{id}/generation/{job}/apply",
+            post(api::prep::apply_generation),
+        )
+        .route(
+            "/api/campaigns/{id}/story/validate",
+            post(api::prep::validate),
+        )
+        .route(
+            "/api/campaigns/{id}/workshop",
+            get(api::prep::proposals).post(api::prep::ask),
+        )
+        .route(
+            "/api/campaigns/{id}/workshop/{proposal}/accept",
+            post(api::prep::accept),
+        )
+        .route(
+            "/api/campaigns/{id}/workshop/{proposal}/reject",
+            post(api::prep::reject),
+        )
         .route(
             "/api/campaigns/{id}/invite",
             get(api::table::invite)
@@ -117,6 +160,14 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         .route(
             "/api/campaigns/{id}/characters/{character}/return",
             post(api::table::return_character),
+        )
+        .route(
+            "/api/campaigns/{id}/characters/{character}/note-draft",
+            post(api::table::draft_note),
+        )
+        .route(
+            "/api/campaigns/{id}/characters/{character}/hooks/propose",
+            post(api::table::propose_hooks),
         )
         .route(
             "/api/campaigns/{id}/hooks",
@@ -203,11 +254,45 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/fight/loot",
             post(api::board::give_loot),
         )
+        // The campaign's own maps (maps/edit-map-gm, maps/import-image-map,
+        // maps/generate-map-llm).
+        .route(
+            "/api/campaigns/{id}/maps",
+            get(api::maps::list).post(api::maps::create),
+        )
+        .route(
+            "/api/campaigns/{id}/maps/import",
+            // An imported image travels as base64 in the JSON body.
+            post(api::maps::import).layer(DefaultBodyLimit::max(
+                crate::campaign_maps::MAX_BACKDROP_BYTES * 4 / 3 + 1024 * 1024,
+            )),
+        )
+        .route(
+            "/api/campaigns/{id}/maps/generate",
+            post(api::maps::generate),
+        )
+        .route(
+            "/api/campaigns/{id}/maps/{map}",
+            get(api::maps::get)
+                .put(api::maps::save)
+                .delete(api::maps::delete)
+                // The editor sends the whole map.
+                .layer(DefaultBodyLimit::max(4 * 1024 * 1024)),
+        )
+        .route(
+            "/api/campaigns/{id}/maps/{map}/validate",
+            post(api::maps::validate),
+        )
+        .route(
+            "/api/campaigns/{id}/maps/{map}/backdrop",
+            get(api::maps::gm_backdrop),
+        )
         // Pixel-art images, reviewed by the GM.
         .route(
             "/api/campaigns/{id}/media",
             get(api::media::gm_list).post(api::media::ask),
         )
+        .route("/api/campaigns/{id}/media/batch", post(api::media::batch))
         .route(
             "/api/campaigns/{id}/media/{asset}/image",
             get(api::media::gm_image),
@@ -277,6 +362,12 @@ fn player_routes() -> Vec<RouteSpec> {
             "/api/play/{campaign}/character",
             put(api::play::save_character),
         ),
+        // copilot/co-write-backstory: the three answers made a paragraph.
+        (
+            "POST",
+            "/api/play/{campaign}/character/backstory",
+            post(api::play::write_backstory),
+        ),
         (
             "POST",
             "/api/play/{campaign}/character/submit",
@@ -337,6 +428,11 @@ fn player_routes() -> Vec<RouteSpec> {
             "GET",
             "/api/play/{campaign}/board",
             get(api::board::player_board),
+        ),
+        (
+            "GET",
+            "/api/play/{campaign}/board/backdrop",
+            get(api::maps::player_backdrop),
         ),
         (
             "POST",

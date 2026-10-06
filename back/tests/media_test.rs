@@ -179,3 +179,166 @@ async fn an_image_reaches_the_table_only_approved_and_once_its_scene_is_entered(
     assert_eq!(list.body["data"]["assets"].as_array().unwrap().len(), 3);
     assert_eq!(list.body["data"]["theme"]["tilesets"][0]["id"], "port-1718");
 }
+
+/// Wait until no row of `campaign` is still being drawn.
+async fn drawn(pool: &sqlx::PgPool, campaign: Uuid) {
+    for _ in 0..200 {
+        let drawing: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM media_assets WHERE campaign_id = $1 AND status = 'drawing'",
+        )
+        .bind(campaign)
+        .fetch_one(pool)
+        .await
+        .unwrap();
+        if drawing == 0 {
+            return;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    }
+    panic!("still drawing");
+}
+
+#[tokio::test]
+async fn a_batch_draws_what_is_missing_and_an_act_gets_its_video_in_the_background() {
+    let pool = common::test_pool().await;
+    let app = common::app_with_ai(
+        pool.clone(),
+        SetupState::closed(),
+        LiveHub::new(LiveConfig::default()),
+        Ai::fake(),
+    );
+    let (_, gm) = common::signed_in_gm(&pool, "Romain").await;
+    let campaign = imported_campaign(&app, &gm, FIXTURE).await;
+    let code = invite_code(&app, &gm, &campaign).await;
+    let marc = join(&app, &code, "Marc", "player")
+        .await
+        .player_token()
+        .unwrap();
+    let id = Uuid::parse_str(&campaign).unwrap();
+    let gm_call = |method: &'static str, path: &'static str, body: Option<Value>| {
+        let (app, gm, campaign) = (app.clone(), gm.clone(), campaign.clone());
+        async move {
+            call(
+                &app,
+                Some(&gm),
+                method,
+                &format!("/api/campaigns/{campaign}{path}"),
+                body,
+            )
+            .await
+        }
+    };
+    // 1 $: every image fits (0.04 $ each), not the act's video (4 $).
+    sqlx::query("UPDATE campaigns SET ai_budget_cents = 100 WHERE id = $1")
+        .bind(id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    let plan = gm_call("GET", "/media", None).await.body["data"]["plan"].clone();
+    let images = plan["images"].as_array().unwrap().len();
+    assert!(images >= 8, "{plan}");
+    assert_eq!(
+        plan["videos"],
+        json!([{ "kind": "intro", "subject": "acte_1" }])
+    );
+    assert_eq!(plan["running"], false);
+
+    let r = gm_call("POST", "/media/batch", Some(json!({ "videos": true }))).await;
+    assert_eq!(r.status, StatusCode::CONFLICT, "{}", r.body);
+    assert_eq!(r.body["error"]["code"], "AI_BUDGET_EXCEEDED");
+    let r = gm_call("POST", "/media/batch", Some(json!({ "videos": false }))).await;
+    assert_eq!(r.status, StatusCode::ACCEPTED, "{}", r.body);
+    assert_eq!(r.body["data"]["queued"].as_array().unwrap().len(), images);
+    assert_eq!(r.body["data"]["queued"][0]["status"], "drawing");
+    drawn(&pool, id).await;
+
+    let list = gm_call("GET", "/media", None).await.body["data"].clone();
+    let assets = list["assets"].as_array().unwrap();
+    assert_eq!(assets.len(), images);
+    assert!(assets.iter().all(|a| a["status"] == "pending"), "{list}");
+    assert_eq!(list["plan"]["images"], json!([]));
+    let r = gm_call("POST", "/media/batch", Some(json!({ "videos": false }))).await;
+    assert_eq!(r.body["error"]["code"], "NOTHING_TO_DRAW");
+
+    // The act's introduction, drawn in the background.
+    sqlx::query("UPDATE campaigns SET ai_budget_cents = 1000 WHERE id = $1")
+        .bind(id)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let r = gm_call(
+        "POST",
+        "/media",
+        Some(json!({ "kind": "intro", "subject": "acte_1", "direction": "à l'aube" })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
+    assert_eq!(r.body["data"]["status"], "drawing");
+    let video = r.body["data"]["id"].as_str().unwrap().to_string();
+    drawn(&pool, id).await;
+    let (status, mime): (String, String) =
+        sqlx::query_as("SELECT status, mime FROM media_assets WHERE id = $1")
+            .bind(Uuid::parse_str(&video).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!((status.as_str(), mime.as_str()), ("pending", "video/mp4"));
+    let videos: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM ai_calls WHERE campaign_id = $1 AND kind = 'video' AND purpose = 'media.intro'",
+    )
+    .bind(id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(videos, 1);
+
+    // Approved, the table sees it once a scene of the act is entered.
+    let r = call(
+        &app,
+        Some(&gm),
+        "POST",
+        &format!("/api/campaigns/{campaign}/media/{video}/decision"),
+        Some(json!({ "approve": true })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::NO_CONTENT, "{}", r.body);
+    let seen = || async {
+        call_as_player(
+            &app,
+            Some(&marc),
+            "GET",
+            &format!("/api/play/{campaign}/media"),
+            None,
+        )
+        .await
+        .body["data"]["assets"]
+            .clone()
+    };
+    assert_eq!(seen().await, json!([]));
+    gm_call("POST", "/session", None).await;
+    gm_call("POST", "/session/start", None).await;
+    gm_call(
+        "POST",
+        "/session/reveal",
+        Some(json!({ "kind": "scene", "node": "sc_taverne" })),
+    )
+    .await;
+    assert_eq!(
+        seen().await,
+        json!([{ "id": video, "kind": "intro", "subject": "acte_1" }])
+    );
+
+    // A drawing cut off by a restart says so instead of spinning forever.
+    sqlx::query(
+        "INSERT INTO media_assets (campaign_id, kind, subject, status) VALUES ($1, 'npc', 'pnj_gwen', 'drawing')",
+    )
+    .bind(id)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let list = gm_call("GET", "/media", None).await.body["data"].clone();
+    let lost = &list["assets"][0];
+    assert_eq!(lost["status"], "rejected", "{list}");
+    assert!(lost["error"].as_str().unwrap().contains("Interrompu"));
+}

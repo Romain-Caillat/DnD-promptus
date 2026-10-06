@@ -3,8 +3,19 @@
 A rule system is one YAML file, `content/rules/<id>/v<version>.yaml`. It
 is the only copy of a campaign's rules: the engine (`shared/src/rules/`),
 the player's rules page, the action cards and the co-GM prompt all read
-it. Changing a rule means editing this file and saving it as a new
-version; a campaign points at one `(id, version)`.
+it. Changing a rule means saving it as a new version; a campaign points
+at one `(id, version)`.
+
+The files in `content/rules/` are the **presets**. A campaign starts on
+a preset; the GM's rules editor (`/campagnes/:id/regles`) makes a draft
+of the version the campaign plays, one number up, and stores its text in
+`rule_versions` (`back/src/rules/versions.rs`). Every save re-checks
+what the draft touches (`rules::report`: what players will read, the
+campaign's references it breaks, the lint, the fights replayed on both
+versions). A locked version is never edited again, and it becomes the
+campaign's version when the next session opens — never mid-game; the
+players' rules page then lists what changed. A campaign's version
+resolves to its own locked text first, then to the preset.
 
 Loading (`RuleSystem::from_yaml`) refuses what the engine cannot run —
 an unknown field (typos included), a reference to an ability, condition,
@@ -51,6 +62,7 @@ model forced where the source was ambiguous.
 | `resources` | `{ id, name, abbr, start }` (gold…) |
 | `conditions`, `classes`, `items`, `adversary_tiers`, `adversaries` | Below |
 | `peoples` | Playable peoples (empty in both drafts) |
+| `house_rules` | Optional: `{ id, name, text }` — the GM's own rulings, in French, shown on the players' rules page and given to the co-GM |
 
 ## Formulas
 

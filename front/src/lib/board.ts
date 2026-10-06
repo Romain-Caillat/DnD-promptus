@@ -37,12 +37,32 @@ export interface MapData {
   layers?: { id: string; name: string; visibility: string }[]
   grid: { legend: Record<string, CellKind>; rows: string[] }
   doors?: { id: string; at: Cell; state: DoorState; label?: string | null; layer?: string }[]
-  props?: { id: string; kind: string; label?: string | null; at: Cell; size?: { w: number; h: number } }[]
-  objects?: { id: string; kind: string; label?: string | null; at: Cell; layer?: string }[]
-  lights?: { id: string; at: Cell; bright: number; dim: number; color?: string | null; flicker?: boolean }[]
+  /** `size` is `[w, h]` from `at`, the top-left cell. */
+  props?: {
+    id: string
+    kind: string
+    label?: string | null
+    at: Cell
+    size?: [number, number]
+    cover?: 'none' | 'half' | 'three_quarters' | 'total'
+    blocks_movement?: boolean
+    layer?: string
+  }[]
+  objects?: {
+    id: string
+    kind: string
+    label?: string | null
+    at: Cell
+    layer?: string
+    check?: { stat: string; dc: number } | null
+    notes?: string | null
+  }[]
+  lights?: { id: string; at: Cell; bright: number; dim: number; color?: string | null; flicker?: boolean; layer?: string }[]
   exits?: { id: string; cells: Cell[]; to: string; label?: string | null }[]
   labels?: { text: string; at: Cell }[]
-  starts?: { id: string; at: Cell; side?: string | null; entity?: string | null }[]
+  starts?: { id: string; at: Cell; side?: string | null; entity?: string | null; layer?: string }[]
+  /** An imported image behind the grid: decor only. */
+  backdrop?: { image?: string | null; cell_px?: number | null; offset?: [number, number] | null } | null
 }
 
 export interface ReachCell {

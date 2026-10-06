@@ -46,6 +46,7 @@ const SCREEN = {
   },
   nodes: [],
   startNode: 'sc_taverne',
+  gaps: [],
   fronts: [],
   requests: [
     {

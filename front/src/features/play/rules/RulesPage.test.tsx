@@ -68,6 +68,7 @@ function corsaires(over: Partial<RulesView> = {}): RulesView {
       longRangeModifier: -2,
     },
     groupCheck: 'at_least_half',
+    houseRules: [],
     mine: {
       className: 'Bretteur',
       cards: [

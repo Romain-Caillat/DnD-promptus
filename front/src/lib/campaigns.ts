@@ -52,6 +52,8 @@ export interface CampaignDetail {
   }
   settings: CampaignPlan
   archivedAt: string | null
+  /** When the GM declared it playable; `null` while it is being prepared. */
+  validatedAt?: string | null
 }
 
 /** What the GM edits on the campaign page. */
@@ -132,6 +134,8 @@ export interface PlayerView {
   playerHook: string
   scene: {
     id: string
+    /** Its act: the act's introduction video plays above the scene. */
+    act: string
     title: string
     readAloud: string
     place: { name: string; description: string } | null

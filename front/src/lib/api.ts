@@ -36,12 +36,15 @@ export async function fetchHealth(signal?: AbortSignal): Promise<HealthStatus> {
 export class ApiError extends Error {
   readonly status: number
   readonly code: string
+  /** The server's own words, for the codes whose screen shows them (a map's `MAP_INVALID` says, in French, what is wrong). */
+  readonly detail: string | null
 
-  constructor(status: number, code: string) {
+  constructor(status: number, code: string, detail: string | null = null) {
     super(`API error ${status} ${code}`)
     this.name = 'ApiError'
     this.status = status
     this.code = code
+    this.detail = detail
   }
 }
 
@@ -66,7 +69,12 @@ export async function apiRequest<T>(method: string, path: string, body?: unknown
   const json: unknown = await response.json().catch(() => null)
   if (!response.ok) {
     const code = readPath(json, 'error', 'code')
-    throw new ApiError(response.status, typeof code === 'string' ? code : 'UNEXPECTED')
+    const detail = readPath(json, 'error', 'message')
+    throw new ApiError(
+      response.status,
+      typeof code === 'string' ? code : 'UNEXPECTED',
+      typeof detail === 'string' ? detail : null,
+    )
   }
   if (typeof json !== 'object' || json === null || !('data' in json)) {
     throw new ApiError(response.status, 'UNEXPECTED')

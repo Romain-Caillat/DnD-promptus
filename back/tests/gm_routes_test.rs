@@ -36,11 +36,48 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("PUT", "/api/campaigns/{campaign}/settings"),
     ("PUT", "/api/campaigns/{campaign}/archive"),
     ("GET", "/api/rule-systems"),
+    // The rule editor: a draft, saved, compared, locked, then nothing
+    // left to drop.
+    ("GET", "/api/campaigns/{campaign}/rules"),
+    ("POST", "/api/campaigns/{campaign}/rules/draft"),
+    ("PUT", "/api/campaigns/{campaign}/rules/draft"),
+    ("GET", "/api/campaigns/{campaign}/rules/compare?from=1&to=2"),
+    ("POST", "/api/campaigns/{campaign}/rules/draft/lock"),
+    ("DELETE", "/api/campaigns/{campaign}/rules/draft"),
+    // Preparing: an edit, the campaign declared playable, then the
+    // co-GM's workshop — each decision on a proposal stored just before.
+    ("POST", "/api/campaigns/{campaign}/story/edits"),
+    ("GET", "/api/campaigns/{campaign}/readiness"),
+    ("POST", "/api/campaigns/{campaign}/story/validate"),
+    ("GET", "/api/campaigns/{campaign}/workshop"),
+    ("POST", "/api/campaigns/{campaign}/workshop"),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/workshop/{proposal}/accept",
+    ),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/workshop/{proposal}/reject",
+    ),
+    // A generation, on the campaign made unvalidated again, and a draft
+    // applied (validated again after).
+    ("GET", "/api/campaigns/{campaign}/generation"),
+    ("POST", "/api/campaigns/{campaign}/generation"),
+    ("POST", "/api/campaigns/{campaign}/generation/{job}/apply"),
     ("GET", "/api/campaigns/{campaign}/invite"),
     ("POST", "/api/campaigns/{campaign}/invite"),
     ("GET", "/api/campaigns/{campaign}/players"),
     ("GET", "/api/campaigns/{campaign}/characters/{character}"),
     // Each is called on a sheet set back to "submitted" first.
+    (
+        "POST",
+        "/api/campaigns/{campaign}/characters/{character}/note-draft",
+    ),
+    // On a sheet given a backstory first.
+    (
+        "POST",
+        "/api/campaigns/{campaign}/characters/{character}/hooks/propose",
+    ),
     (
         "POST",
         "/api/campaigns/{campaign}/characters/{character}/return",
@@ -73,9 +110,21 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/fight"),
     ("POST", "/api/campaigns/{campaign}/fight/command"),
     ("POST", "/api/campaigns/{campaign}/fight/loot"),
+    // The campaign's maps: list, create, import, generate, then on the
+    // map stored just before.
+    ("GET", "/api/campaigns/{campaign}/maps"),
+    ("POST", "/api/campaigns/{campaign}/maps"),
+    ("POST", "/api/campaigns/{campaign}/maps/import"),
+    ("POST", "/api/campaigns/{campaign}/maps/generate"),
+    ("GET", "/api/campaigns/{campaign}/maps/{map}"),
+    ("PUT", "/api/campaigns/{campaign}/maps/{map}"),
+    ("POST", "/api/campaigns/{campaign}/maps/{map}/validate"),
+    ("GET", "/api/campaigns/{campaign}/maps/{map}/backdrop"),
+    ("DELETE", "/api/campaigns/{campaign}/maps/{map}"),
     // Images: list, draw one, then on an image stored just before.
     ("GET", "/api/campaigns/{campaign}/media"),
     ("POST", "/api/campaigns/{campaign}/media"),
+    ("POST", "/api/campaigns/{campaign}/media/batch"),
     ("GET", "/api/campaigns/{campaign}/media/{asset}/image"),
     ("POST", "/api/campaigns/{campaign}/media/{asset}/decision"),
     // Each on a draft of the co-GM written just before.
@@ -126,6 +175,7 @@ const GM_ROUTES: &[(&str, &str)] = &[
 ];
 
 const FIXTURE: &str = include_str!("../../content/fixtures/phare-de-kerbrume.yaml");
+const CORSAIRES_RULES: &str = include_str!("../../content/rules/corsaires/v1.yaml");
 
 /// The body a route needs to succeed, so the control sweep proves the
 /// route works and the refusals come from the guard.
@@ -135,7 +185,9 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             "title": "Sweep",
             "rules": { "id": "corsaires", "version": 1 }
         })),
-        (_, p) if p.ends_with("/import") => Some(serde_json::json!({ "yaml": FIXTURE })),
+        (_, p) if p.ends_with("/import") && !p.ends_with("/maps/import") => {
+            Some(serde_json::json!({ "yaml": FIXTURE }))
+        }
         (_, p) if p.ends_with("/settings") => Some(serde_json::json!({
             "title": "Sweep",
             "world": "",
@@ -145,6 +197,19 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             "aiBudgetCents": 100
         })),
         (_, p) if p.ends_with("/archive") => Some(serde_json::json!({ "archived": false })),
+        (_, p) if p.ends_with("/story/edits") => Some(serde_json::json!({
+            "edits": [{ "op": "set", "target": "bible", "field": "tone", "value": "Sombre." }]
+        })),
+        ("POST", p) if p.ends_with("/generation") => Some(serde_json::json!({
+            "pitch": "Une ville tenue par une société secrète."
+        })),
+        ("POST", p) if p.ends_with("/workshop") => {
+            Some(serde_json::json!({ "prompt": "Rends le gardien plus ambigu." }))
+        }
+        ("PUT", p) if p.ends_with("/rules/draft") => Some(serde_json::json!({
+            "yaml": CORSAIRES_RULES.replacen("\nversion: 1\n", "\nversion: 2\n", 1),
+            "note": "Facile à 12."
+        })),
         // Refused before any check: the decision bodies need the sheet's
         // date, filled by the control sweep (`submitted_body`).
         (_, p) if p.ends_with("/validate") || p.ends_with("/return") => {
@@ -179,6 +244,15 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         ("POST", p) if p.ends_with("/media") => {
             Some(serde_json::json!({ "kind": "scene", "subject": "sc_crique" }))
         }
+        ("POST", p) if p.ends_with("/maps") => {
+            Some(serde_json::json!({ "name": "Une salle", "width": 6, "height": 5 }))
+        }
+        (_, p) if p.ends_with("/maps/import") => Some(serde_json::json!({
+            "kind": "image", "name": "Un plan", "image": "iVBORw0KGgpub3QgYW4gaW1hZ2U=",
+            "cellPx": 64, "offsetX": 0, "offsetY": 0, "columns": 6, "rows": 5
+        })),
+        (_, p) if p.ends_with("/maps/generate") => Some(serde_json::json!({ "node": "sc_crique" })),
+        (_, p) if p.ends_with("/media/batch") => Some(serde_json::json!({ "videos": false })),
         (_, p) if p.ends_with("/decision") => Some(serde_json::json!({ "approve": true })),
         (_, p) if p.ends_with("/copilot") => {
             Some(serde_json::json!({ "kind": "describe", "prompt": "Ils entrent." }))
@@ -212,6 +286,9 @@ struct Ids {
     session: String,
     draft: String,
     asset: String,
+    proposal: String,
+    job: String,
+    map: String,
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
@@ -224,6 +301,9 @@ fn route_uri(path: &str, ids: &Ids) -> String {
         .replace("{session}", &ids.session)
         .replace("{draft}", &ids.draft)
         .replace("{asset}", &ids.asset)
+        .replace("{proposal}", &ids.proposal)
+        .replace("{job}", &ids.job)
+        .replace("{map}", &ids.map)
 }
 
 /// Every placeholder filled for `player` of `campaign`: an invitation of
@@ -257,6 +337,9 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         session: Uuid::new_v4().to_string(),
         draft: Uuid::new_v4().to_string(),
         asset: Uuid::new_v4().to_string(),
+        proposal: Uuid::new_v4().to_string(),
+        job: Uuid::new_v4().to_string(),
+        map: "carte-inconnue".to_string(),
     }
 }
 
@@ -447,6 +530,57 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .unwrap()
             .to_string();
         }
+        if path.contains("{proposal}") {
+            ids.proposal = sqlx::query_scalar::<_, Uuid>(
+                "INSERT INTO story_proposals (campaign_id, prompt, edits)
+                 VALUES ($1, 'Rien.', '[]') RETURNING id",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
+        }
+        if path.contains("/generation") {
+            sqlx::query("UPDATE campaigns SET validated_at = NULL WHERE id = $1")
+                .bind(Uuid::parse_str(&ids.campaign).unwrap())
+                .execute(&pool)
+                .await
+                .unwrap();
+        }
+        if path.contains("{job}") {
+            ids.job = sqlx::query_scalar::<_, Uuid>(
+                "INSERT INTO generation_jobs (campaign_id, status, input, steps, draft)
+                 SELECT id, 'succeeded', '{\"pitch\":\"Rien de neuf.\"}', '[]', story
+                 FROM campaigns WHERE id = $1 RETURNING id",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
+        }
+        if path.contains("{map}") && ids.map == "carte-inconnue" {
+            // A copy of the world's quay, with an image behind it.
+            let r = call(
+                &app,
+                Some(&token),
+                "POST",
+                &format!("/api/campaigns/{}/maps", ids.campaign),
+                Some(serde_json::json!({ "name": "Carte du balayage", "copy": "quai-port-louis" })),
+            )
+            .await;
+            ids.map = r.body["data"]["map"]["id"].as_str().unwrap().to_string();
+            sqlx::query(
+                "UPDATE campaign_maps SET backdrop = '\\x89504e47', backdrop_mime = 'image/png'
+                 WHERE campaign_id = $1 AND id = $2",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .bind(&ids.map)
+            .execute(&pool)
+            .await
+            .unwrap();
+        }
         if path.contains("{asset}") {
             ids.asset = sqlx::query_scalar::<_, Uuid>(
                 "INSERT INTO media_assets (campaign_id, kind, subject, mime, image)
@@ -469,12 +603,32 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .to_string();
         }
         let uri = route_uri(path, &ids);
-        let body = if path.ends_with("/validate") || path.ends_with("/return") {
+        let decision = path.contains("/characters/")
+            && (path.ends_with("/validate")
+                || path.ends_with("/return")
+                || path.ends_with("/note-draft"));
+        if path.ends_with("/hooks/propose") {
+            sqlx::query(
+                r#"UPDATE characters
+                   SET sheet = sheet || '{"backstory":{"origin":"Le port."}}'::jsonb
+                   WHERE id = $1"#,
+            )
+            .bind(Uuid::parse_str(&ids.character).unwrap())
+            .execute(&pool)
+            .await
+            .unwrap();
+        }
+        let body = if decision {
             Some(submitted_body(&pool, &ids.character, path).await)
         } else {
             body_for(method, path)
         };
         let body = match (method, body) {
+            // The editor sends the whole map back.
+            (&"PUT", _) if path.ends_with("/maps/{map}") => {
+                let uri = format!("/api/campaigns/{}/maps/{}", ids.campaign, ids.map);
+                Some(call(&app, Some(&token), "GET", &uri, None).await.body["data"]["map"].clone())
+            }
             // A hook needs a character of the table.
             (&"POST", Some(mut b)) if path.ends_with("/hooks") => {
                 b["characterId"] = Value::String(ids.character.clone());
@@ -487,6 +641,13 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             (_, b) => b,
         };
         let r = call(&app, Some(&token), method, &uri, body).await;
+        if path.ends_with("/apply") {
+            sqlx::query("UPDATE campaigns SET validated_at = now() WHERE id = $1")
+                .bind(Uuid::parse_str(&ids.campaign).unwrap())
+                .execute(&pool)
+                .await
+                .unwrap();
+        }
         if path.ends_with("/live") {
             // Past the guard and the ownership check, a plain request
             // (not a WebSocket upgrade) is refused by the route itself.

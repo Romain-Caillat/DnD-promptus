@@ -16,9 +16,9 @@
 //!   checked against the campaign's budget before it leaves, recorded
 //!   with its real cost when it comes back (`MEMORY.md` §3).
 //!
-//! Video is not part of the trait yet: OpenRouter's video output format
-//! was never verified (`MEMORY.md` §4), so it arrives with
-//! `media/generate-images-and-video`.
+//! Video (`media/generate-images-and-video`) follows OpenRouter's
+//! asynchronous video API: a job is submitted, polled until done, and
+//! its file downloaded ([`openrouter`]).
 
 pub mod fake;
 pub mod ledger;
@@ -136,6 +136,24 @@ pub struct ImageResponse {
     pub usage: Usage,
 }
 
+/// A short video to generate (an act's introduction).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VideoRequest {
+    pub prompt: String,
+    pub model: Option<String>,
+    /// Length asked for, in seconds.
+    pub seconds: u32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct VideoResponse {
+    pub bytes: Vec<u8>,
+    /// `video/mp4`…
+    pub mime: String,
+    pub model: String,
+    pub usage: Usage,
+}
+
 /// Why a call failed. `Display` is written for the GM's eyes (French):
 /// it is what the screen shows next to the failed draft.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -177,6 +195,7 @@ pub trait Provider: Send + Sync {
     fn name(&self) -> &'static str;
     fn complete<'a>(&'a self, req: &'a LlmRequest) -> BoxFuture<'a, Result<LlmResponse, AiError>>;
     fn image<'a>(&'a self, req: &'a ImageRequest) -> BoxFuture<'a, Result<ImageResponse, AiError>>;
+    fn video<'a>(&'a self, req: &'a VideoRequest) -> BoxFuture<'a, Result<VideoResponse, AiError>>;
 }
 
 /// What a call is estimated to cost before it leaves (`ledger`). Prices
@@ -188,6 +207,7 @@ pub struct Pricing {
     pub input_per_mtok_micros: i64,
     pub output_per_mtok_micros: i64,
     pub per_image_micros: i64,
+    pub per_video_micros: i64,
 }
 
 impl Default for Pricing {
@@ -196,6 +216,8 @@ impl Default for Pricing {
             input_per_mtok_micros: 3_000_000,
             output_per_mtok_micros: 15_000_000,
             per_image_micros: 40_000,
+            // An 8-second clip at about 0.50 $ a second.
+            per_video_micros: 4_000_000,
         }
     }
 }
@@ -216,6 +238,11 @@ impl Pricing {
     #[must_use]
     pub fn image(&self) -> i64 {
         self.per_image_micros
+    }
+
+    #[must_use]
+    pub fn video(&self) -> i64 {
+        self.per_video_micros
     }
 }
 
@@ -254,7 +281,8 @@ impl Ai {
     /// From the environment (`.env.example`): `AI_PROVIDER=fake` for the
     /// fake provider, otherwise OpenRouter when `OPENROUTER_API_KEY` is
     /// set, otherwise none. Prices from `AI_PRICE_INPUT_PER_MTOK`,
-    /// `AI_PRICE_OUTPUT_PER_MTOK` and `AI_PRICE_PER_IMAGE`, in dollars.
+    /// `AI_PRICE_OUTPUT_PER_MTOK`, `AI_PRICE_PER_IMAGE` and
+    /// `AI_PRICE_PER_VIDEO`, in dollars.
     #[must_use]
     pub fn from_env() -> Self {
         let dollars = |name: &str, default: i64| {
@@ -272,6 +300,7 @@ impl Ai {
                 base.output_per_mtok_micros,
             ),
             per_image_micros: dollars("AI_PRICE_PER_IMAGE", base.per_image_micros),
+            per_video_micros: dollars("AI_PRICE_PER_VIDEO", base.per_video_micros),
         };
         let env = |name: &str| {
             std::env::var(name)
@@ -292,6 +321,8 @@ impl Ai {
                             .unwrap_or_else(|| openrouter::DEFAULT_MODEL.to_string()),
                         image_model: env("OPENROUTER_IMAGE_MODEL")
                             .unwrap_or_else(|| openrouter::DEFAULT_IMAGE_MODEL.to_string()),
+                        video_model: env("OPENROUTER_VIDEO_MODEL")
+                            .unwrap_or_else(|| openrouter::DEFAULT_VIDEO_MODEL.to_string()),
                         app_url: env("PUBLIC_ORIGIN"),
                     },
                 )) as Arc<dyn Provider>
@@ -382,6 +413,7 @@ mod tests {
             input_per_mtok_micros: 1_000_000,
             output_per_mtok_micros: 2_000_000,
             per_image_micros: 5,
+            per_video_micros: 7,
         };
         let mut req = LlmRequest::json(vec![Message::user("x".repeat(4_000))]);
         req.max_tokens = 500;

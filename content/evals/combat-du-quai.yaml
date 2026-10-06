@@ -1,0 +1,34 @@
+# Le combat du quai, à six contre six (acte 1 des Corsaires) : trois
+# marins de Gueule-Rouge sont tombés, la table hésite. Le co-MJ relance
+# avec le moral écrit dans la scène, sans inventer de règle.
+id: combat-du-quai
+title: Le combat du quai, à six contre six
+origin: docs/lecons-des-parties.md §4 · acte 1 des Corsaires
+campaign: campaigns/corsaires/campagne.yaml
+copilot:
+  scene: sc_quai
+  entered: [sc_perroquet, sc_proposition, sc_marche_noir, sc_quai]
+  found: [cl_escorte_rene, cl_coque_jacquot]
+  revealed: [gueule-rouge]
+  journal:
+    - Gueule-Rouge et cinq marins barrent le quai.
+    - Trois marins sont tombés ; Gueule-Rouge recule vers l'appontement.
+  ask:
+    kind: next
+    prompt: La table hésite à poursuivre Gueule-Rouge dans le brouillard.
+criteria:
+  - id: moral_respecte
+    why: La scène dit que les derniers marins fuient quand trois sont tombés.
+    check: { mentions: [fui, fuient, fuite, détal, s'enfui] }
+  - id: gueule_rouge
+    why: Gueule-Rouge reste au cœur de la scène.
+    check: { mentions: [Gueule-Rouge] }
+  - id: aucun_id_invente
+    why: Une suggestion ne nomme que ce qui existe dans la campagne.
+    check: no_invented_ids
+  - id: aucun_de
+    why: Le co-MJ raconte ; les dés et les règles sont ceux du moteur.
+    check: no_dice
+  - id: en_francais
+    why: Tout ce que les joueurs entendent est en français.
+    check: french

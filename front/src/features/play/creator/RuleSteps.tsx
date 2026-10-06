@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { CardButton } from '@/components/game/CardButton'
 import { GameCard } from '@/components/game/GameCard'
-import type { ClassOption, Named } from '@/lib/creator'
+import { ApiError } from '@/lib/api'
+import { writeBackstory, type ClassOption, type Named } from '@/lib/creator'
 import type { ActionCardView, Backstory } from '@/lib/play'
 
 /** Glyphs, not words. */
@@ -184,15 +187,50 @@ export function AbilitiesStep({
 
 const QUESTIONS = ['origin', 'loss', 'quest'] as const
 
-/** The backstory step (moment 7): three short answers, then a paragraph if they like. */
+/** Why the co-GM could not write, by the server's code. */
+const WRITE_ERRORS = {
+  AI_BUDGET_EXCEEDED: 'creator.story.errors.budget',
+  AI_NOT_CONFIGURED: 'creator.story.errors.unavailable',
+  AI_UNAVAILABLE: 'creator.story.errors.unavailable',
+} as const
+
+/**
+ * The backstory step (moment 7): three short answers, then a paragraph
+ * the co-GM writes from them (`copilot/co-write-backstory`) — nothing
+ * they did not write — which the player keeps or edits.
+ */
 export function StoryStep({
+  campaignId,
   backstory,
   onChange,
 }: {
+  campaignId: string
   backstory: Backstory
   onChange: (backstory: Backstory) => void
 }) {
   const { t } = useTranslation()
+  const [writing, setWriting] = useState(false)
+  const [failed, setFailed] = useState<(typeof WRITE_ERRORS)[keyof typeof WRITE_ERRORS] | 'creator.story.errors.failed' | null>(null)
+  const answered = QUESTIONS.some((q) => backstory[q]?.trim())
+
+  async function write() {
+    setWriting(true)
+    setFailed(null)
+    try {
+      const text = await writeBackstory(campaignId, {
+        origin: backstory.origin ?? '',
+        loss: backstory.loss ?? '',
+        quest: backstory.quest ?? '',
+      })
+      onChange({ ...backstory, text })
+    } catch (err) {
+      const code = err instanceof ApiError ? err.code : ''
+      setFailed(code in WRITE_ERRORS ? WRITE_ERRORS[code as keyof typeof WRITE_ERRORS] : 'creator.story.errors.failed')
+    } finally {
+      setWriting(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-3">
       {QUESTIONS.map((q) => (
@@ -206,6 +244,19 @@ export function StoryStep({
           />
         </label>
       ))}
+      <CardButton
+        variant="dark"
+        size="small"
+        title={writing ? t('creator.story.writing') : backstory.text ? t('creator.story.rewrite') : t('creator.story.write')}
+        subtitle={t('creator.story.writeSub')}
+        disabled={writing || !answered}
+        onClick={() => void write()}
+      />
+      {failed && (
+        <p role="alert" className="text-caption text-stat-atk">
+          {t(failed)}
+        </p>
+      )}
       <label className="flex flex-col gap-1.5">
         <span className="type-label">{t('creator.story.text')}</span>
         <textarea

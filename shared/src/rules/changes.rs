@@ -36,6 +36,7 @@ pub enum Section {
     ZeroHp,
     Progression,
     Combat,
+    HouseRules,
 }
 
 /// What about the subject changed.
@@ -603,6 +604,25 @@ pub fn rule_changes(old: &RuleSystem, new: &RuleSystem) -> Vec<RuleChange> {
         )
     };
     d.cmp(s, "", Field::Flee, flee(old), flee(new));
+
+    d.lists(
+        Section::HouseRules,
+        &old.house_rules,
+        &new.house_rules,
+        |x| &x.id,
+        |x| x.name.clone(),
+        |d, o, n| {
+            if o.text != n.text || o.name != n.name {
+                d.push(
+                    Section::HouseRules,
+                    &n.name,
+                    Field::Description,
+                    Some(text(&o.text)),
+                    Some(text(&n.text)),
+                );
+            }
+        },
+    );
 
     d.0
 }

@@ -101,6 +101,7 @@ export function GameTab({
   const session = view.session
   const scene = view.campaign.scene
   const sceneImage = scene ? imageOf(media, 'scene', scene.id) : undefined
+  const intro = scene ? imageOf(media, 'intro', scene.act) : undefined
 
   return (
     <div className="flex flex-col gap-4">
@@ -130,6 +131,16 @@ export function GameTab({
           {view.music && <MusicPlayer music={view.music} />}
           {scene ? (
             <section className="flex flex-col gap-2">
+              {intro && (
+                <video
+                  src={playerImageUrl(campaignId, intro.id)}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  aria-label={t('evening.intro')}
+                  className="w-full rounded-xl border border-line"
+                />
+              )}
               {sceneImage && (
                 <img
                   src={playerImageUrl(campaignId, sceneImage.id)}

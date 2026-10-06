@@ -82,6 +82,8 @@ pub struct PartyMemberView {
 #[serde(rename_all = "camelCase")]
 pub struct SceneView {
     pub id: String,
+    /// The act's id: its introduction video, once approved, plays here.
+    pub act: String,
     pub title: String,
     pub read_aloud: String,
     pub place: Option<PlaceView>,
@@ -135,6 +137,7 @@ pub fn project_for_players(campaign: &Campaign, world: &WorldState) -> PlayerCam
         .and_then(|id| campaign.node(id))
         .map(|node| SceneView {
             id: node.id.clone(),
+            act: node.act.clone(),
             title: node.title.clone(),
             read_aloud: node.read_aloud.clone(),
             place: node

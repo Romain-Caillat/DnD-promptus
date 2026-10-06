@@ -18,6 +18,7 @@
     "lint:front": "cd front && bun run lint && bun run typecheck && bun run knip",
     "worlds": "cargo run -q -p promptus_shared --bin worlds",
     "rules-report": "cargo run -q --release -p promptus_shared --bin rules_report --",
+    "eval": "set -a && . ./.env && set +a && cargo run -q -p promptus_back --bin eval --",
     "db:start": "docker compose -f docker-compose.dev.yml up postgres -d --wait",
     "db:stop": "docker compose -f docker-compose.dev.yml stop postgres",
     "db:reset": "docker compose -f docker-compose.dev.yml down -v && bun run db:start"

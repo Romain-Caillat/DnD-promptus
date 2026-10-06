@@ -82,6 +82,10 @@ function server(start: ReturnType<typeof home>) {
       sheet = body as CharacterSheet
       return { status: 200, body: { data: character(start.character.status, sheet) } }
     },
+    'POST /api/play/c1/character/backstory': (body) => {
+      const { origin } = body as { origin: string }
+      return { status: 200, body: { data: { text: `Borin vient de ${origin.toLowerCase()}.` } } }
+    },
     'POST /api/play/c1/character/submit': () => ({ status: 200, body: { data: character('submitted', sheet) } }),
   })
 }
@@ -118,7 +122,16 @@ describe('CharacterCreatorPage', () => {
     expect(screen.getByRole('button', { name: /^Continuer/ })).toBeEnabled()
     await next()
     expect(await screen.findByRole('heading', { name: 'Son histoire' })).toBeInTheDocument()
+    const write = screen.getByRole('button', { name: /Écrire avec le co-MJ/ })
+    expect(write).toBeDisabled()
     await userEvent.type(screen.getByLabelText("D'où vient-il ?"), 'La mine de Valombre')
+    await userEvent.click(write)
+    // The co-GM's paragraph is the player's to keep or edit.
+    const text = screen.getByLabelText('Son histoire en quelques lignes (facultatif)')
+    expect(text).toHaveValue('Borin vient de la mine de valombre.')
+    expect(sentTo(api, 'POST /api/play/c1/character/backstory')).toEqual([
+      { origin: 'La mine de Valombre', loss: '', quest: '' },
+    ])
     await next()
     expect(await screen.findByRole('heading', { name: 'Relire et envoyer' })).toBeInTheDocument()
     expect(screen.getByText('Nain · Guerrier · niveau 1')).toBeInTheDocument()
@@ -126,7 +139,7 @@ describe('CharacterCreatorPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /Envoyer au MJ/ }))
     expect(await screen.findByText('Romain regarde ton personnage…')).toBeInTheDocument()
     const saved = sentTo(api, 'PUT /api/play/c1/character').at(-1) as CharacterSheet
-    expect(saved).toMatchObject({ name: 'Borin', peopleId: 'nain', classId: 'guerrier', abilities: { FOR: 18, DEX: 10 }, backstory: { origin: 'La mine de Valombre' } })
+    expect(saved).toMatchObject({ name: 'Borin', peopleId: 'nain', classId: 'guerrier', abilities: { FOR: 18, DEX: 10 }, backstory: { origin: 'La mine de Valombre', text: 'Borin vient de la mine de valombre.' } })
     expect(saved.look?.pack).toBe('marins-1718')
   })
 

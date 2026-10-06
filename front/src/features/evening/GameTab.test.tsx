@@ -7,6 +7,7 @@ import { GameTab } from './GameTab'
 const CAMPAIGN = { title: 'C', world: 'W', playerHook: '', clues: [], npcs: [] }
 const SCENE = {
   id: 'sc_taverne',
+  act: 'acte_1',
   title: 'Le Goéland Ivre',
   readAloud: 'La pluie bat les carreaux.',
   place: { name: 'La taverne', description: '' },
@@ -81,6 +82,26 @@ describe('GameTab', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Tester le son' }))
     await userEvent.click(screen.getByRole('button', { name: /Je suis là/ }))
     expect(sentTo(fetchMock, 'POST /api/play/c1/lobby')).toEqual([{ soundOk: true, remote: true }])
+  })
+
+  it('plays the act’s introduction above the scene once the GM kept it', async () => {
+    mockApi({
+      'GET /api/play/c1/media': () => ({
+        status: 200,
+        body: {
+          data: {
+            assets: [
+              { id: 'v1', kind: 'intro', subject: 'acte_1' },
+              { id: 'v0', kind: 'intro', subject: 'acte_2' },
+            ],
+            theme: null,
+          },
+        },
+      }),
+      'GET /api/play/c1/evening': () => evening({}),
+    })
+    render(<GameTab campaignId="c1" refreshKey={0} seated />)
+    expect(await screen.findByLabelText("Introduction de l'acte")).toHaveAttribute('src', '/api/play/c1/media/v1/image')
   })
 
   it('asks with a card, then rolls the check: the die lands on the server’s face', async () => {

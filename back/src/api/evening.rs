@@ -47,7 +47,6 @@ use super::body::Body;
 use crate::ai::{self, LlmRequest, ledger, templates};
 use crate::auth::guard::{CurrentGm, owned_by};
 use crate::campaigns::{self, CampaignRow};
-use crate::content;
 use crate::copilot::{self, drafts};
 use crate::error::AppError;
 use crate::evening::knowledge::{self, JournalKind};
@@ -223,7 +222,7 @@ pub async fn live_screen(
 ) -> Result<Response, AppError> {
     let row = owned_row(&state, &gm, &id).await?;
     let pool = &state.pool;
-    let rules = content::rule_system(&row.story.rules);
+    let rules = row.rules();
     let current = session::current(pool, row.id).await?;
     let last = session::last_ended(pool, row.id).await?;
     let presence = state.live.presence(row.id);
@@ -434,7 +433,7 @@ pub async fn decide(
         &state.pool,
         &gm,
         row.id,
-        content::rule_system(&row.story.rules),
+        row.rules(),
         parse_id(&request)?,
         &decision,
     )

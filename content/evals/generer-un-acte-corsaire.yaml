@@ -1,0 +1,27 @@
+# Une campagne générée depuis un pitch dans l'univers des Corsaires,
+# comparée au standard de scène (la jauge d'un acte prêt) et au
+# validateur.
+id: generer-un-acte-corsaire
+title: Générer un acte corsaire
+origin: TICKETS.md ai/evaluate-on-real-campaigns · campaign/check-act-readiness
+campaign: campaigns/corsaires/campagne.yaml
+generation:
+  pitch: >-
+    Un équipage de pirates graciés doit escorter une dame de la Couronne
+    de Port-Louis à Belle-Île, mais quelqu'un à bord veut la livrer aux
+    Anglais.
+  tone: Salé, nerveux, des trahisons à chaque quart.
+  length: one_shot
+criteria:
+  - id: aucune_erreur
+    why: Le validateur ne trouve aucune erreur (références, identifiants).
+    check: no_errors
+  - id: trois_indices
+    why: Chaque révélation critique a des indices dans trois scènes.
+    check: three_clue_rule
+  - id: standard_de_scene
+    why: Chaque scène a résumé, lieu, ambiance, texte à lire, déroulé, transition.
+    check: scene_standard
+  - id: aucun_id_invente
+    why: Rien d'inventé à écarter.
+    check: no_invented_ids

@@ -373,7 +373,7 @@ pub struct Wind {
 }
 
 /// An image or prompt behind the grid. Decor only, never rules.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Backdrop {
     /// Generation prompt; may describe secrets, so never sent to players.
@@ -381,6 +381,13 @@ pub struct Backdrop {
     pub prompt: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub image: Option<String>,
+    /// Pixels of the image per grid cell (an imported image): the image
+    /// is drawn scaled so one cell of it covers one cell of the grid.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cell_px: Option<f64>,
+    /// Pixels of the image left and above cell `[0, 0]`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offset: Option<[f64; 2]>,
 }
 
 /// A named group of placed things and who receives it.

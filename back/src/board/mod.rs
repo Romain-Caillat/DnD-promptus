@@ -242,7 +242,8 @@ async fn party_tokens(
     Ok(tokens)
 }
 
-/// What the GM can show: the maps of the campaign's world.
+/// What the GM can show: the campaign's validated maps, then its
+/// world's.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MapChoice {
@@ -252,9 +253,20 @@ pub struct MapChoice {
     pub nodes: Vec<String>,
 }
 
-#[must_use]
-pub fn choices(row: &CampaignRow) -> Vec<MapChoice> {
-    content::maps(&row.story)
+/// # Errors
+///
+/// A database error.
+pub async fn choices(
+    db: impl PgExecutor<'_>,
+    row: &CampaignRow,
+) -> Result<Vec<MapChoice>, AppError> {
+    let own = crate::campaign_maps::validated(db, row.id).await?;
+    let world: Vec<&Map> = content::maps(&row.story)
+        .filter(|m| !own.iter().any(|o| o.id == m.id))
+        .collect();
+    let choices = own
+        .iter()
+        .chain(world)
         .map(|m| MapChoice {
             id: m.id.clone(),
             name: m.name.clone(),
@@ -266,7 +278,8 @@ pub fn choices(row: &CampaignRow) -> Vec<MapChoice> {
                 .map(|n| n.id.clone())
                 .collect(),
         })
-        .collect()
+        .collect();
+    Ok(choices)
 }
 
 /// Show map `map_id` at the table: the party on its starts, the fog
@@ -293,9 +306,9 @@ pub async fn show(
         tx.commit().await?;
         return Ok(b.clone());
     }
-    let map = content::map(&row.story, map_id)
-        .ok_or(AppError::BadRequest("UNKNOWN_MAP"))?
-        .clone();
+    let map = crate::campaign_maps::playable(&mut *tx, campaign, &row.story, map_id)
+        .await?
+        .ok_or(AppError::BadRequest("UNKNOWN_MAP"))?;
     let tokens = party_tokens(&mut tx, campaign, &map, &[]).await?;
     let mut b = Board {
         map_id: map_id.to_string(),
@@ -483,7 +496,7 @@ pub async fn edit(
         }
         Edit::MoveToken { token, at } => {
             inside(&b, at)?;
-            let rules = movement(content::rule_system(&row.story.rules), &b.map);
+            let rules = movement(row.rules(), &b.map);
             promptus_shared::maps::standable(&b.map, &rules, *at)
                 .map_err(|_| AppError::BadRequest("CANNOT_STAND"))?;
             let t = b
@@ -576,7 +589,7 @@ pub async fn walk(pool: &PgPool, player: &Player, path: &[Cell]) -> Result<Board
         .find(|t| t.id == tid)
         .map(|t| t.at)
         .ok_or(AppError::Conflict("NOT_ON_MAP"))?;
-    let rules = movement(content::rule_system(&row.story.rules), &b.map);
+    let rules = movement(row.rules(), &b.map);
     check_path(
         &b.map,
         &rules,

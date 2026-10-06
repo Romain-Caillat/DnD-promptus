@@ -179,6 +179,81 @@ Two more checks of the campaign alone came with the witness worlds:
 of an act that has scenes) and `MUSIC_NO_URL` (warning: a track still
 to choose).
 
+## Is an act ready?
+
+`story::readiness(campaign, &Library)` gives one gauge per act
+(`docs/lecons-des-parties.md` §3, chain 2). It reports, never blocks.
+
+| Check | Passes when | Gap codes |
+| --- | --- | --- |
+| `scene_fields` | Each scene has `summary`, `location`, `ambience.mood`, `read_aloud`, `flow`, and `transition` when it has exits | `MISSING_FIELDS` (with `fields`) |
+| `knowledge_paths` | Each revelation a scene of the act `requires`, and each critical one the act gives clues to, is given in at least 3 scenes other than the one requiring it, not all optional | `FEW_PATHS` (with `paths`), `ONLY_OPTIONAL` |
+| `player_hooks` | Each party member has a hook in a scene of the act | `NO_HOOK` |
+| `encounters` | Each planned fight's opponents have numbers (`from_rules`, or hit points and armour class) and the fight has a tactic | `NO_STATS`, `NO_TACTICS` |
+| `fights` | Each planned fight can be staged (`encounter_scenario`) and simulated on its map | `NOT_STAGED`, `SIMULATION_FAILED`, `NO_RULES` |
+
+An act with no scene is not ready.
+
+## Editing by id
+
+The review screen (`/campagnes/:id/preparer`) and the co-GM's workshop
+change a stored campaign with **edits by id** (`story::edit`,
+`POST /api/campaigns/{id}/story/edits`), applied whole or not at all:
+
+```json
+{ "op": "set", "target": "sc_quai", "field": "summary", "value": "…" }
+{ "op": "set", "target": "bible", "field": "truths", "value": ["…"] }
+{ "op": "set", "target": "pnj_morel", "field": "stats.hit_points", "value": 12 }
+{ "op": "add", "kind": "clue", "value": { "id": "cl_…", "revelation": "…", "node": "…", "text": "…" } }
+{ "op": "remove", "target": "cl_…" }
+```
+
+`target` is an id, `bible` or `campaign` (title, universe); a dotted
+`field` reaches inside an object, and `null` clears it. `id` and
+`format` are never set. The result is read back through the model, so
+an unknown field or a wrong type is refused like an import
+(`EDIT_INVALID`, with the edit's index). What the result breaks is the
+validator's to report.
+
+The co-GM's proposals are the same edits. Before the GM sees one, each
+edit that does not apply or adds an error (an id it invented, a
+reference to nothing) is dropped and counted. Accepting re-applies the
+edits to the campaign as it is then; one the campaign has outgrown is
+refused (`PROPOSAL_STALE`).
+
+A campaign is **validated** (`validated_at`) when the GM declares it
+playable, which needs no error left; only a validated campaign opens a
+session. An import is validated as it arrives (the GM wrote it); a
+campaign created from a pitch, or generated, waits for the GM.
+
+## Generated from a pitch
+
+`/campagnes/:id/generer` (`ai/generate-campaign`,
+`back/src/prep/generation.rs`) turns the GM's idea into a whole
+campaign, in a background job the screen follows live:
+
+| Step | The model writes | Template |
+|------|------------------|----------|
+| `cast` | bible, acts, fronts, NPCs, adversaries (`from_rules` from the rule system), places, items, factions | `generation-cast` |
+| `scenes` | nodes, revelations, clues, opening node | `generation-scenes` |
+| `check` | repair edits for what the validator finds (errors, three-clue rule, unreachable scenes, knowledge never given) — at most 2 rounds, a round kept only when it makes nothing worse | `generation-repair` |
+
+Each answer is read straight into the model types; one out of format
+goes back once with serde's complaint. Ids the model invented —
+references to nothing, ids declared twice, rule-system ids the rule
+system lacks — are removed (`story::prune`): an optional reference is
+emptied, an element that cannot stand without it (a clue in no scene,
+an exit to nowhere) is dropped, and the job lists what went. Repair
+edits go through `edit::sanitize` like the co-GM's.
+
+Every call is counted (`purpose = generation`): the job is refused
+before its first call when its estimate (each step's prompt and whole
+answer, one repair) passes what is left of the budget, and stops when
+a later call would. The result is a draft (`generation_jobs.draft`):
+**applying** it replaces the campaign's story, keeping its id, title,
+universe, rule system and party, and the campaign is still to review
+and validate. A validated campaign is not generated over.
+
 ## The witness worlds and `bun run worlds`
 
 The two worlds live in `content/campaigns/<world>/campagne.yaml`, next

@@ -14,6 +14,8 @@
 //! - `GET /api/play/{campaign}/creation` → what the character creator
 //!   offers: the sprite pack, a starting look, what the rules ask;
 //! - `PUT /api/play/{campaign}/character` → save my draft sheet;
+//! - `POST /api/play/{campaign}/character/backstory` → `{ origin, loss,
+//!   quest }`: the co-GM's paragraph from my three answers;
 //! - `POST /api/play/{campaign}/character/submit` → send it to the GM;
 //! - `POST /api/play/{campaign}/character/equip` → `{ entry, equipped }`:
 //!   carry a bag line on the character, or put it back in the bag, once
@@ -98,7 +100,7 @@ pub async fn join(
         &gm_name,
         &joined,
         character.as_ref(),
-        content::rule_system(&row.story.rules),
+        row.rules(),
     );
     Ok((
         StatusCode::CREATED,
@@ -120,13 +122,8 @@ pub async fn me(State(state): State<AppState>, p: CurrentPlayer) -> Result<Respo
     let row = campaign_of(&state, &p).await?;
     let gm_name = campaigns::gm_name(&state.pool, &row).await?;
     let character = players::character_of(&state.pool, &p.0).await?;
-    let view = projection::project_home(
-        &row.story,
-        &gm_name,
-        &p.0,
-        character.as_ref(),
-        content::rule_system(&row.story.rules),
-    );
+    let view =
+        projection::project_home(&row.story, &gm_name, &p.0, character.as_ref(), row.rules());
     Ok(Json(json!({ "data": view })).into_response())
 }
 
@@ -154,7 +151,7 @@ pub async fn creation(
     let view = projection::project_creation(
         &content::pack_for(&row.story).id,
         content::start_look(&row.story),
-        content::rule_system(&row.story.rules),
+        row.rules(),
     );
     Ok(Json(json!({ "data": view })).into_response())
 }
@@ -173,11 +170,29 @@ pub async fn save_character(
     Body(sheet): Body<CharacterSheet>,
 ) -> Result<Response, AppError> {
     let row = campaign_of(&state, &p).await?;
-    let rules = content::rule_system(&row.story.rules);
+    let rules = row.rules();
     let sheet = sheet.cleaned(rules, content::packs(), &content::pack_for(&row.story).id)?;
     let character = players::save_sheet(&state.pool, &p.0, &sheet).await?;
     let view = projection::project_character(rules, &character);
     Ok(Json(json!({ "data": view })).into_response())
+}
+
+/// `POST /api/play/{campaign}/character/backstory` — the co-GM writes
+/// the player's three answers up as a paragraph (`{ text }`), which the
+/// player keeps, edits and saves in their draft.
+///
+/// # Errors
+///
+/// See [`players::assist::write_backstory`].
+pub async fn write_backstory(
+    State(state): State<AppState>,
+    p: CurrentPlayer,
+    Body(answers): Body<players::assist::Answers>,
+) -> Result<Response, AppError> {
+    let row = campaign_of(&state, &p).await?;
+    let text =
+        players::assist::write_backstory(&state.pool, &state.ai, &row, &p.0, &answers).await?;
+    Ok(Json(json!({ "data": { "text": text } })).into_response())
 }
 
 /// `POST /api/play/{campaign}/character/submit` — send the character to
@@ -192,7 +207,7 @@ pub async fn submit_character(
     p: CurrentPlayer,
 ) -> Result<Response, AppError> {
     let row = campaign_of(&state, &p).await?;
-    let rules = content::rule_system(&row.story.rules);
+    let rules = row.rules();
     let character = players::submit_character(&state.pool, &p.0, rules).await?;
     let view = projection::project_character(rules, &character);
     Ok(Json(json!({ "data": view })).into_response())
@@ -219,7 +234,7 @@ pub async fn equip(
     Body(body): Body<EquipBody>,
 ) -> Result<Response, AppError> {
     let row = campaign_of(&state, &p).await?;
-    let rules = content::rule_system(&row.story.rules);
+    let rules = row.rules();
     let Some(system) = rules else {
         // Without the rules nothing is in play; a spectator still learns
         // they have no character.

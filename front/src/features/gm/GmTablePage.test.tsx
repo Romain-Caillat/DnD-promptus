@@ -147,6 +147,32 @@ describe('GmTablePage', () => {
     ])
   })
 
+  it('lets the co-GM draft the word to the player, which the GM edits before sending', async () => {
+    const flag = { severity: 'warning', code: 'ABILITY_ABOVE_MAX', path: 'abilities.FOR', message: 'La Force dépasse 17.' }
+    const api = mockApi({
+      ...tableRoutes(borinSeat('submitted')),
+      'GET /api/campaigns/c1/characters/k1': () => ({ status: 200, body: { data: borinReview({ checks: [flag] }) } }),
+      'POST /api/campaigns/c1/characters/k1/note-draft': () => ({
+        status: 200,
+        body: { data: { note: 'Super Borin ! La Force s’arrête à 17 : mets le point ailleurs, ou garde-le.' } },
+      }),
+      'POST /api/campaigns/c1/characters/k1/return': () => ({ status: 204 }),
+    })
+    renderTable()
+
+    await userEvent.click(await screen.findByRole('button', { name: /Marc/ }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Le co-MJ propose un mot' }))
+    const note = screen.getByRole('textbox', { name: /Mot pour Marc/ })
+    expect(note).toHaveValue('Super Borin ! La Force s’arrête à 17 : mets le point ailleurs, ou garde-le.')
+    // Nothing went to Marc: the GM still decides.
+    expect(sentTo(api, 'POST /api/campaigns/c1/characters/k1/return')).toEqual([])
+    await userEvent.type(note, ' À jeudi !')
+    await userEvent.click(screen.getByRole('button', { name: /Renvoyer à Marc avec ce mot/ }))
+    expect(sentTo(api, 'POST /api/campaigns/c1/characters/k1/return')).toEqual([
+      { seen: SEEN, note: 'Super Borin ! La Force s’arrête à 17 : mets le point ailleurs, ou garde-le. À jeudi !' },
+    ])
+  })
+
   it('lets the GM validate a flagged sheet anyway: the rules never block', async () => {
     const flag = { severity: 'warning', code: 'ABILITY_ABOVE_MAX', path: 'abilities.FOR', message: 'La Force dépasse 17.' }
     const api = mockApi({
@@ -244,5 +270,51 @@ describe('GmTablePage', () => {
       { characterId: 'k1', title: 'Dorn est le mort qui marche', body: '', links: ['f-mine'] },
     ])
     expect(await screen.findByText(/tirée de Borin/)).toBeInTheDocument()
+  })
+
+  it('keeps one hook the co-GM proposes and sets the other aside', async () => {
+    const api = mockApi({
+      ...tableRoutes(borinSeat('validated')),
+      'GET /api/campaigns/c1/characters/k1': () => ({
+        status: 200,
+        body: { data: borinReview({ status: 'validated' }) },
+      }),
+      'GET /api/campaigns/c1/hooks': () => ({
+        status: 200,
+        body: { data: { hooks: [], targets: [{ id: 'f-mine', kind: 'front', title: 'Le mort qui marche' }] } },
+      }),
+      'POST /api/campaigns/c1/characters/k1/hooks/propose': () => ({
+        status: 200,
+        body: {
+          data: {
+            hooks: [
+              { title: 'Dorn remonte', body: 'Le mort qui marche, c’est lui.', links: ['f-mine'] },
+              { title: 'La paie de la mine', body: 'Quelqu’un paie encore.', links: [] },
+            ],
+            dropped: 1,
+          },
+        },
+      }),
+      'POST /api/campaigns/c1/hooks': (body) => ({
+        status: 201,
+        body: { data: { id: 'h1', ...(body as object) } },
+      }),
+    })
+    renderTable()
+
+    await screen.findByText('Marc')
+    await userEvent.click(screen.getByRole('button', { name: /Accroches secrètes/ }))
+    await userEvent.click(await screen.findByRole('button', { name: /Le co-MJ propose des accroches/ }))
+    const proposed = await screen.findByLabelText('Proposées par le co-MJ')
+    expect(within(proposed).getByText(/ce lien a été retiré/)).toBeInTheDocument()
+    expect(sentTo(api, 'POST /api/campaigns/c1/hooks')).toEqual([])
+
+    await userEvent.click(within(proposed).getAllByRole('button', { name: 'Garder' })[0])
+    expect(sentTo(api, 'POST /api/campaigns/c1/hooks')).toEqual([
+      { characterId: 'k1', title: 'Dorn remonte', body: 'Le mort qui marche, c’est lui.', links: ['f-mine'] },
+    ])
+    await userEvent.click(within(proposed).getByRole('button', { name: 'Écarter' }))
+    expect(await screen.findByText('Toutes les propositions sont traitées.')).toBeInTheDocument()
+    expect(sentTo(api, 'POST /api/campaigns/c1/hooks')).toHaveLength(1)
   })
 })

@@ -12,6 +12,8 @@ import {
   editHook,
   fetchHooks,
   fetchReview,
+  proposeHooks,
+  type HookInput,
   type HookTarget,
   type SecretHook,
   type Seat,
@@ -36,8 +38,10 @@ const emptyDraft = (characterId: string): Draft => ({ id: null, characterId, tit
 /**
  * The secret hooks (board « Inviter », moment 6): what the GM draws from
  * the players' backstories and ties into nodes and fronts of the story.
- * GM-only — no player route reads them. Written by hand until the co-GM
- * proposes them (`copilot/co-write-backstory`).
+ * GM-only — no player route reads them. Written by hand, or proposed
+ * by the co-GM from the backstory (`copilot/co-write-backstory`): a
+ * proposal is kept, reworked in the form, or set aside — nothing is
+ * stored until the GM keeps it.
  */
 export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: Seat[] }) {
   const { t } = useTranslation()
@@ -45,7 +49,13 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
   const [state, setState] = useState<State>({ kind: 'loading' })
   const [draft, setDraft] = useState<Draft>(() => emptyDraft(characters[0]?.character.id ?? ''))
   const [backstory, setBackstory] = useState<{ id: string; story: Backstory | undefined } | null>(null)
-  const [failed, setFailed] = useState<'gm.hooks.titleRequired' | 'gm.table.error' | null>(null)
+  const [failed, setFailed] = useState<
+    'gm.hooks.titleRequired' | 'gm.table.error' | 'gm.hooks.proposeBudget' | 'gm.hooks.proposeFailed' | null
+  >(null)
+  const [proposals, setProposals] = useState<{ characterId: string; hooks: HookInput[]; dropped: number } | null>(
+    null,
+  )
+  const [proposing, setProposing] = useState(false)
   const [confirming, setConfirming] = useState<string | null>(null)
 
   useEffect(() => {
@@ -117,6 +127,35 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
       setFailed('gm.table.error')
     } finally {
       setConfirming(null)
+    }
+  }
+
+  async function propose() {
+    setFailed(null)
+    setProposing(true)
+    try {
+      setProposals({ characterId, ...(await proposeHooks(campaignId, characterId)) })
+    } catch (err) {
+      const code = err instanceof ApiError ? err.code : ''
+      setFailed(code === 'AI_BUDGET_EXCEEDED' ? 'gm.hooks.proposeBudget' : 'gm.hooks.proposeFailed')
+    } finally {
+      setProposing(false)
+    }
+  }
+
+  /** Take one proposal out of the list. */
+  const settle = (hook: HookInput) =>
+    setProposals((p) => (p ? { ...p, hooks: p.hooks.filter((h) => h !== hook) } : p))
+
+  async function keep(hook: HookInput) {
+    if (state.kind !== 'ready' || !proposals) return
+    setFailed(null)
+    try {
+      const saved = await addHook(campaignId, proposals.characterId, hook)
+      setState({ ...state, hooks: [...state.hooks, saved] })
+      settle(hook)
+    } catch {
+      setFailed('gm.table.error')
     }
   }
 
@@ -210,6 +249,57 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
             <div className="rounded-xl border border-line-strong bg-well px-4 py-3 text-body leading-relaxed text-chalk-soft">
               <span className="type-label mb-1.5 block">{t('gm.review.backstory')}</span>
               <BackstoryText backstory={backstory.story} />
+            </div>
+          )}
+          {backstory?.id === characterId && backstory.story && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="self-start"
+              disabled={proposing}
+              onClick={() => void propose()}
+            >
+              {proposing ? t('gm.hooks.proposing') : t('gm.hooks.propose')}
+            </Button>
+          )}
+          {proposals?.characterId === characterId && (
+            <div className="flex flex-col gap-2" aria-label={t('gm.hooks.proposals')}>
+              <span className="type-label">{t('gm.hooks.proposals')}</span>
+              {proposals.hooks.length === 0 && <p className="text-caption text-mute">{t('gm.hooks.proposalsDone')}</p>}
+              {proposals.hooks.map((h, i) => (
+                <article
+                  key={`${i}-${h.title}`}
+                  className="flex flex-col gap-1 rounded-[10px] border border-dashed border-line-strong bg-well px-3 py-2.5 text-[13px] leading-snug"
+                >
+                  <b>{h.title}</b>
+                  {h.body && <span>{h.body}</span>}
+                  {h.links.length > 0 && (
+                    <small className="text-[11px] text-mute">→ {h.links.map(targetTitle).join(', ')}</small>
+                  )}
+                  <span className="flex flex-wrap gap-2">
+                    <Button type="button" size="sm" onClick={() => void keep(h)}>
+                      {t('gm.hooks.keep')}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setDraft({ id: null, characterId, ...h })
+                        settle(h)
+                      }}
+                    >
+                      {t('gm.hooks.rework')}
+                    </Button>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => settle(h)}>
+                      {t('gm.hooks.discard')}
+                    </Button>
+                  </span>
+                </article>
+              ))}
+              {proposals.dropped > 0 && (
+                <p className="text-caption text-mute">{t('gm.hooks.dropped', { count: proposals.dropped })}</p>
+              )}
             </div>
           )}
           <label className="flex flex-col gap-1.5">
