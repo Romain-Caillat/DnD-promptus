@@ -39,7 +39,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let live = LiveHub::new(LiveConfig::default());
     live::listener::spawn(pool.clone(), live.clone());
 
-    let mut router = app::router(AppState { pool, auth, live }, &config.allowed_origins);
+    let mut router = app::router(
+        AppState {
+            pool,
+            auth,
+            live,
+            ai: promptus_back::ai::Ai::from_env(),
+        },
+        &config.allowed_origins,
+    );
     if let Some(dir) = &config.front_dir {
         tracing::info!("Serving the front from {}", dir.display());
         router = app::with_front(router, dir);

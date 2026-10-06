@@ -22,7 +22,7 @@
 
 use std::collections::{BTreeMap, HashSet};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::maps::{
     Cell, Diagonal, Map, MovementRules, Obstacle, Occupancy, PathError, Scale, check_path,
@@ -54,7 +54,7 @@ pub const DEFAULT_CELLS_PER_MOVE: u32 = 6;
 /// off as a stalemate (only reachable with conditions that never end).
 const MAX_SKIPPED_TURNS_PER_COMBATANT: usize = 100;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Standing {
     InFight,
@@ -67,7 +67,7 @@ pub enum Standing {
 
 /// One initiative roll: the die faces, the bonus, the total, and the
 /// tie-breaking rerolls when the system rerolls ties.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct InitiativeRoll {
     pub who: String,
     pub faces: Vec<u32>,
@@ -76,7 +76,7 @@ pub struct InitiativeRoll {
     pub rerolls: Vec<i32>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FightEnd {
     /// `None` when the GM stopped it or it stalled.
     pub winner: Option<Side>,
@@ -90,7 +90,7 @@ pub struct FightEnd {
     pub xp: BTreeMap<String, u32>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EndReason {
     /// One side has nobody standing.
@@ -101,7 +101,7 @@ pub enum EndReason {
 
 /// What a fight reports, in order: its own moments around the rules'
 /// events.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum FightEvent {
     InitiativeRolled {
@@ -295,7 +295,7 @@ pub struct Step {
 }
 
 /// The whole state of a fight. Pure data: the server stores it.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Fight {
     /// Everyone who took part, including those now out of it.
     pub scene: Scene,

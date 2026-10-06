@@ -466,10 +466,14 @@ async fn save(
     Ok(())
 }
 
-#[derive(Clone, Copy)]
-enum Actor {
+/// Who made a change: the GM's gesture, the player's own choice, or the
+/// rules applying a result the server resolved (XP of a check, damage
+/// in a fight, loot the GM validated).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Actor {
     Gm,
     Player,
+    Rules,
 }
 
 async fn log(
@@ -489,6 +493,7 @@ async fn log(
     .bind(match actor {
         Actor::Gm => "gm",
         Actor::Player => "player",
+        Actor::Rules => "rules",
     })
     .bind(record.kind.as_str())
     .bind(&record.label)
@@ -553,17 +558,51 @@ pub async fn adjust(
     adjustment: Adjustment,
 ) -> Result<(CharacterSheet, PlayState), AppError> {
     let mut tx = pool.begin().await?;
-    let (sheet, mut state) = lock_in_play(&mut tx, campaign, id, rules).await?;
+    let out = adjust_in(&mut tx, campaign, rules, id, adjustment, Actor::Gm).await?;
+    tx.commit().await?;
+    Ok(out)
+}
+
+/// [`adjust`] inside the caller's transaction, for changes the server
+/// applies as part of a larger write (a check's XP, a fight's wounds,
+/// validated loot). Takes the campaign lock if the caller has not yet.
+///
+/// # Errors
+///
+/// As [`adjust`].
+pub async fn adjust_in(
+    tx: &mut Transaction<'_, Postgres>,
+    campaign: Uuid,
+    rules: &RuleSystem,
+    id: Uuid,
+    adjustment: Adjustment,
+    actor: Actor,
+) -> Result<(CharacterSheet, PlayState), AppError> {
+    let (sheet, mut state) = lock_in_play(tx, campaign, id, rules).await?;
     if combatant(rules, &sheet, &state).is_none() {
         return Err(AppError::Conflict("NO_PLAY_SHEET"));
     }
     if let Some(record) = apply(rules, &sheet, &mut state, adjustment)? {
-        save(&mut tx, campaign, id, &state).await?;
-        log(&mut tx, campaign, id, Actor::Gm, &record).await?;
-        touch_character(&mut tx, campaign, id).await?;
-        tx.commit().await?;
+        save(tx, campaign, id, &state).await?;
+        log(tx, campaign, id, actor, &record).await?;
+        touch_character(tx, campaign, id).await?;
     }
     Ok((sheet, state))
+}
+
+/// The validated character `id` of `campaign` and its play state, read
+/// under the campaign lock the caller holds.
+///
+/// # Errors
+///
+/// 404 `NOT_FOUND`; 409 `CHARACTER_NOT_VALIDATED`.
+pub async fn in_play_locked(
+    tx: &mut Transaction<'_, Postgres>,
+    campaign: Uuid,
+    id: Uuid,
+    rules: &RuleSystem,
+) -> Result<(CharacterSheet, PlayState), AppError> {
+    lock_in_play(tx, campaign, id, rules).await
 }
 
 /// The player puts bag line `entry` on their character, or back in the
@@ -615,7 +654,7 @@ pub async fn equip(
 pub struct HistoryEntry {
     pub id: Uuid,
     pub character_id: Uuid,
-    /// `gm` or `player`.
+    /// `gm`, `player` or `rules`.
     pub actor: String,
     pub kind: Kind,
     pub label: Option<String>,

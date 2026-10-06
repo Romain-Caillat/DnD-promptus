@@ -3,13 +3,13 @@
 //! die faces, each modifier and where it comes from, total, target, band
 //! — which is exactly what the player screen shows.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::dice::DiceSource;
 use super::model::{ConditionEffect, GroupThreshold, RollScope, RuleSystem};
 use super::sheet::{Combatant, SheetError};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum OutcomeBand {
     CriticalFailure,
@@ -45,7 +45,7 @@ impl OutcomeBand {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Advantage {
     #[default]
@@ -65,7 +65,7 @@ impl Advantage {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "from", content = "id", rename_all = "snake_case")]
 pub enum ModifierSource {
     Ability(String),
@@ -80,13 +80,13 @@ pub enum ModifierSource {
     LongRange,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Modifier {
     pub source: ModifierSource,
     pub value: i32,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "against", rename_all = "snake_case")]
 pub enum RollTarget {
     /// A difficulty: a named one (`id`) or a number the GM gave.
@@ -114,7 +114,7 @@ impl RollTarget {
 }
 
 /// One roll, everything the table needs to see it.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RollBreakdown {
     /// The die as written (`1d20`).
     pub die: String,
@@ -281,7 +281,7 @@ pub fn ability_check(
     roll(system, mods, advantage, target, dice)
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GroupCheck {
     /// (combatant id, its roll)
     pub rolls: Vec<(String, RollBreakdown)>,

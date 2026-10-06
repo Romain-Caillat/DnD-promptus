@@ -15,7 +15,7 @@ mod common;
 
 use axum::Router;
 use axum::http::StatusCode;
-use common::marked::{ITEM_NOTE, leaks, mark_review, marked, world};
+use common::marked::{ITEM_NOTE, leaks, m, mark_review, marked, world};
 use common::{call, call_as_player, imported_campaign, invite_code, join, send};
 use promptus_back::app::player_facing_routes;
 use promptus_shared::story::to_yaml;
@@ -33,6 +33,8 @@ struct Table {
     code: String,
     marc: String,
     spectator: String,
+    /// An approved image the table may see.
+    asset: String,
 }
 
 /// Romain's marked campaign mid-scene, Marc seated as a player with a
@@ -65,18 +67,168 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
     .unwrap();
     mark_review(pool, Uuid::parse_str(&campaign).unwrap(), character).await;
     let spectator = join(app, &code, "Léa", "spectator").await;
+    evening(pool, Uuid::parse_str(&campaign).unwrap()).await;
+    board(pool, Uuid::parse_str(&campaign).unwrap(), character).await;
+    let asset = media(pool, Uuid::parse_str(&campaign).unwrap()).await;
     Table {
         gm,
         campaign,
         code,
         marc: marc.player_token().unwrap(),
         spectator: spectator.player_token().unwrap(),
+        asset: asset.to_string(),
     }
+}
+
+/// An approved tileset image (any player may see it), and images the
+/// table may not see: one still pending, one of an NPC nobody has met.
+/// Their subjects and the GM's words are marked.
+async fn media(pool: &PgPool, campaign: Uuid) -> Uuid {
+    let shown: Uuid = sqlx::query_scalar(
+        "INSERT INTO media_assets (campaign_id, kind, subject, direction, status, mime, image)
+         VALUES ($1, 'tileset', 'pavés', $2, 'approved', 'image/png', '\\x89504e47') RETURNING id",
+    )
+    .bind(campaign)
+    .bind(m("media.direction"))
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO media_assets (campaign_id, kind, subject, status, mime, image)
+         VALUES ($1, 'scene', $2, 'pending', 'image/png', '\\x89504e47'),
+                ($1, 'npc', $3, 'approved', 'image/png', '\\x89504e47')",
+    )
+    .bind(campaign)
+    .bind(m("media.subject (pending)"))
+    .bind(m("media.subject (unmet npc)"))
+    .execute(pool)
+    .await
+    .unwrap();
+    shown
+}
+
+/// Session 1 ended with a GM recap and a GM-only journal line, session
+/// 2 live: what the evening routes need to succeed, and what they must
+/// keep from the players.
+async fn evening(pool: &PgPool, campaign: Uuid) {
+    let first: Uuid = sqlx::query_scalar(
+        "INSERT INTO game_sessions (campaign_id, number, status, started_at, ended_at, recap, previously)
+         VALUES ($1, 1, 'ended', now() - interval '1 week', now() - interval '6 days', $2,
+                 'Les corsaires ont accosté.')
+         RETURNING id",
+    )
+    .bind(campaign)
+    .bind(m("sessions.recap"))
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO game_sessions (campaign_id, number, status, started_at) VALUES ($1, 2, 'live', now())",
+    )
+    .bind(campaign)
+    .execute(pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO table_journal (campaign_id, session_id, kind, ref, text, shared)
+         VALUES ($1, $2, 'note', 'cl_gwen', $3, false), ($1, $2, 'scene', 'n_crique', 'La crique.', true)",
+    )
+    .bind(campaign)
+    .bind(first)
+    .bind(m("journal.gm_line"))
+    .execute(pool)
+    .await
+    .unwrap();
+}
+
+/// The quay shown at the table, marked where only the GM may look: the
+/// map's notes, the hidden trapdoor's notes, a label under the fog, an
+/// ambusher hidden by the GM and a sailor standing in the fog.
+async fn board(pool: &PgPool, campaign: Uuid, character: Uuid) {
+    let mut map = promptus_shared::maps::Map::from_yaml(include_str!(
+        "../../content/maps/corsaires/quai-port-louis.yaml"
+    ))
+    .unwrap();
+    map.gm_notes = Some(m("map.gm_notes"));
+    map.objects[0].notes = Some(m("map.objects.notes"));
+    let deck = map.labels.iter_mut().find(|l| l.at.x > 12).unwrap();
+    deck.text = m("map.labels (fogged)");
+    let revealed: Vec<[i32; 2]> = (0..6).flat_map(|x| (4..10).map(move |y| [x, y])).collect();
+    let tokens = json!([
+        { "id": format!("pc-{character}"), "kind": "character", "ref": character.to_string(),
+          "name": "Borin", "at": [0, 5] },
+        { "id": "gueule-rouge-1", "kind": "npc", "ref": "gueule-rouge", "name": m("tokens (hidden)"),
+          "at": [2, 6], "hidden": true },
+        { "id": "marin-1", "kind": "npc", "ref": "marin", "name": m("tokens (fogged)"), "at": [14, 6] },
+    ]);
+    sqlx::query(
+        "INSERT INTO map_states (campaign_id, map_id, map, fog, revealed, tokens)
+         VALUES ($1, 'quai-port-louis', $2, true, $3, $4)",
+    )
+    .bind(campaign)
+    .bind(Json(&map))
+    .bind(Json(&revealed))
+    .bind(Json(&tokens))
+    .execute(pool)
+    .await
+    .unwrap();
+}
+
+/// A request of Marc's in the live session, at the state `path` acts on.
+async fn marc_request(pool: &PgPool, campaign: &str, path: &str) -> Uuid {
+    let status = if path.ends_with("/roll") {
+        "check"
+    } else if path.ends_with("/contest") {
+        "refused"
+    } else {
+        "pending"
+    };
+    sqlx::query_scalar(
+        "INSERT INTO player_requests (campaign_id, session_id, player_id, character_id, text, status,
+                                      check_ability, check_difficulty, gm_reason)
+         SELECT s.campaign_id, s.id, p.id, c.id, 'Je grimpe au mât.', $2,
+                CASE WHEN $2 = 'check' THEN 'DEX' END, CASE WHEN $2 = 'check' THEN 10 END,
+                CASE WHEN $2 = 'refused' THEN 'Pas maintenant.' END
+         FROM game_sessions s JOIN players p ON p.campaign_id = s.campaign_id
+              JOIN characters c ON c.player_id = p.id
+         WHERE s.campaign_id = $1 AND s.status = 'live' AND p.nickname = 'Marc'
+         RETURNING id",
+    )
+    .bind(Uuid::parse_str(campaign).unwrap())
+    .bind(status)
+    .fetch_one(pool)
+    .await
+    .unwrap()
+}
+
+/// The evening routes a spectator has no part in: they ask nothing,
+/// roll nothing and answer no feedback.
+fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
+    if method != "POST" {
+        return None;
+    }
+    if path.contains("{request}") {
+        // Marc's request: not theirs.
+        return Some((StatusCode::NOT_FOUND, "NO_SUCH_REQUEST"));
+    }
+    (path.ends_with("/requests")
+        || path.ends_with("/feedback")
+        || path.ends_with("/walk")
+        || path.ends_with("/fight"))
+    .then_some((StatusCode::FORBIDDEN, "SPECTATOR"))
+}
+
+/// A route the sweep's table cannot make succeed for Marc, and the
+/// answer it gives instead. Fighting needs a fight; the leaks of a fight
+/// are swept in `board_test.rs`.
+fn refused_to_marc(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
+    (method == "POST" && path.ends_with("/fight")).then_some((StatusCode::CONFLICT, "NO_FIGHT"))
 }
 
 fn uri(path: &str, t: &Table) -> String {
     path.replace("{campaign}", &t.campaign)
         .replace("{code}", &t.code)
+        .replace("{asset}", &t.asset)
 }
 
 fn seated(path: &str) -> bool {
@@ -98,6 +250,17 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
         // A complete sheet, so the submit route that follows succeeds.
         // The line of Marc's bag `mark_review` stored.
         ("POST", p) if p.ends_with("/equip") => Some(json!({ "entry": "k1", "equipped": true })),
+        ("POST", p) if p.ends_with("/walk") => Some(json!({ "path": [[1, 5]] })),
+        ("POST", p) if p.ends_with("/fight") => Some(json!({ "kind": "endTurn" })),
+        ("POST", p) if p.ends_with("/lobby") => Some(json!({ "soundOk": true, "remote": true })),
+        ("POST", p) if p.ends_with("/requests") => Some(json!({
+            "card": { "kind": "ability", "ability": "SAG" },
+            "text": "Je scrute la crique.",
+        })),
+        ("POST", p) if p.ends_with("/feedback") => Some(json!({
+            "rulesClear": "yes", "hadMoment": "partly", "knowsNext": "no",
+            "comment": "Belle soirée.",
+        })),
         ("PUT", p) if p.ends_with("/character") => Some(json!({
             "name": "Borin",
             "classId": "bretteur",
@@ -128,7 +291,11 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
     assert!(routes.len() >= 4, "{routes:?}");
 
     for (n, (method, path)) in routes.iter().enumerate() {
-        let uri = uri(path, &t);
+        let mut uri = uri(path, &t);
+        if path.contains("{request}") {
+            let id = marc_request(&pool, &t.campaign, path).await;
+            uri = uri.replace("{request}", &id.to_string());
+        }
         let body = sweep_body(n, method, path);
         for (who, token) in [("Marc", &t.marc), ("Léa", &t.spectator)] {
             // Joining twice under one nickname is refused: one join is
@@ -158,6 +325,16 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
                 assert_eq!(r.body["error"]["code"], "WEBSOCKET_REQUIRED");
                 continue;
             }
+            if let (true, Some((status, code))) = (who == "Marc", refused_to_marc(method, path)) {
+                assert_eq!(r.status, status, "{method} {uri} as Marc: {}", r.body);
+                assert_eq!(r.body["error"]["code"], code);
+                continue;
+            }
+            if let (true, Some((status, code))) = (who == "Léa", players_only(method, path)) {
+                assert_eq!(r.status, status, "{method} {uri} as Léa: {}", r.body);
+                assert_eq!(r.body["error"]["code"], code);
+                continue;
+            }
             if who == "Léa" && writes_character(method, path) {
                 assert_eq!(r.status, StatusCode::NOT_FOUND, "{method} {uri} as Léa");
                 assert_eq!(r.body["error"]["code"], "NO_CHARACTER");
@@ -178,6 +355,37 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
             }
         }
     }
+
+    // The table sees the approved tileset only; the other images do not
+    // leave, even by id.
+    let r = call_as_player(
+        &app,
+        Some(&t.marc),
+        "GET",
+        &uri("/api/play/{campaign}/media", &t),
+        None,
+    )
+    .await;
+    let assets = r.body["data"]["assets"].as_array().unwrap();
+    assert_eq!(assets.len(), 1, "{}", r.body);
+    assert_eq!(assets[0]["id"], t.asset.as_str());
+    assert_eq!(r.body["data"]["theme"]["id"], "corsaires");
+    let pending: Uuid = sqlx::query_scalar(
+        "SELECT id FROM media_assets WHERE status = 'pending' AND campaign_id = $1",
+    )
+    .bind(Uuid::parse_str(&t.campaign).unwrap())
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let r = call_as_player(
+        &app,
+        Some(&t.marc),
+        "GET",
+        &format!("/api/play/{}/media/{pending}/image", t.campaign),
+        None,
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::NOT_FOUND);
 
     // What the routes are for is there: Marc reads his own sheet, the
     // view names the scene.
@@ -237,7 +445,7 @@ async fn seated_routes_refuse_whoever_has_no_seat_at_that_table() {
         if !seated(path) {
             continue;
         }
-        let uri = uri(path, &t);
+        let uri = uri(path, &t).replace("{request}", &Uuid::new_v4().to_string());
         for cookie in &cookies {
             let r = send(&app, cookie.as_deref(), method, &uri, None).await;
             assert_eq!(

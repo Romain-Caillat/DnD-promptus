@@ -146,6 +146,8 @@
       "bannerArchived": "Archivée le {{date}} · elle garde sa table et ses personnages.",
       "table": "Inviter la table",
       "tableSub": "Le lien, le message Discord, les joueurs installés",
+      "evening": "Mener la soirée",
+      "eveningSub": "La scène, la carte, les demandes, le co-MJ",
       "playerView": "Ce que voient les joueurs",
       "playerViewSub": "La vue des joueurs, en direct",
       "settings": "Réglages",
@@ -446,6 +448,8 @@
     "fixHint": "Lis le mot du MJ, change, renvoie",
     "tabs": {
       "label": "Onglets",
+      "jeu": "Jeu",
+      "carte": "Carte",
       "perso": "Personnage",
       "journal": "Journal"
     },
@@ -1082,6 +1086,377 @@
       "upgrade_one": "Chaque réussite rapporte de l'XP. Tous les {{xp}} XP, tu gagnes {{count}} point à ajouter à une caractéristique.",
       "upgrade_other": "Chaque réussite rapporte de l'XP. Tous les {{xp}} XP, tu gagnes {{count}} points à ajouter à tes caractéristiques.",
       "level": "Niveau {{level}} · {{xp}} XP"
+    }
+  },
+  "dice": {
+    "die": "Dé à {{faces}} faces : {{value}}"
+  },
+  "evening": {
+    "scene": "La scène",
+    "here": "Ici : {{names}}",
+    "waitingScene": "Le MJ prépare la scène…",
+    "clues": "Indices",
+    "noSession": "Pas de soirée en cours. Le MJ ouvrira la salle d'attente le jour venu.",
+    "previously": "Précédemment…",
+    "music": {
+      "label": "Musique",
+      "unmute": "Activer le son",
+      "mute": "Couper le son",
+      "mood": {
+        "calm": "Calme",
+        "exploration": "Exploration",
+        "tension": "Tension",
+        "mystery": "Mystère",
+        "combat": "Combat",
+        "epic": "Épique"
+      }
+    },
+    "lobby": {
+      "title": "Séance {{number}} : salle d'attente",
+      "here": "Déjà là",
+      "soundMark": "♪",
+      "testSound": "Tester le son",
+      "arrive": "Je suis là",
+      "soundOk": "J'ai entendu le son",
+      "soundUnknown": "Teste le son d'abord, si tu peux",
+      "wait": "La partie commence quand le MJ la lance."
+    },
+    "hand": {
+      "title": "Que fais-tu ?",
+      "other": "Autre…",
+      "modifier": "{{value}} au dé",
+      "placeholder": "Dis au MJ ce que tu tentes",
+      "what": "Ce que tu tentes avec {{card}}",
+      "send": "Proposer au MJ : {{card}}"
+    },
+    "requests": {
+      "title": "Mes demandes",
+      "roll": "Lancer le dé",
+      "against": "{{ability}}, difficulté {{difficulty}}",
+      "withdraw": "Retirer",
+      "contest": "Contester",
+      "contested": "Le MJ a vu ta contestation.",
+      "longRange": "Longue portée",
+      "status": {
+        "pending": "Le MJ lit…",
+        "accepted": "Accepté",
+        "refused": "Refusé",
+        "check": "Test demandé",
+        "rolled": "Lancé",
+        "withdrawn": "Retiré"
+      }
+    },
+    "band": {
+      "critical_failure": "Échec critique",
+      "failure": "Échec",
+      "success": "Réussite",
+      "critical_success": "Réussite critique"
+    },
+    "journalKind": {
+      "scene": "Scène",
+      "clue": "Indice",
+      "npc": "Rencontre",
+      "promise": "Promesse",
+      "debt": "Dette",
+      "item": "Objet",
+      "note": "Note",
+      "roll": "Jet",
+      "narration": "Le MJ raconte",
+      "fight": "Combat",
+      "loot": "Butin"
+    },
+    "feedback": {
+      "title": "Ton avis sur la séance {{number}}",
+      "rulesClear": "Les règles étaient-elles claires ?",
+      "hadMoment": "As-tu eu ton moment ?",
+      "knowsNext": "Sais-tu quoi faire la prochaine fois ?",
+      "answer": {
+        "yes": "Oui",
+        "partly": "Un peu",
+        "no": "Non"
+      },
+      "comment": "Un mot pour le MJ (facultatif)",
+      "send": "Envoyer",
+      "thanks": "Merci, le MJ a ta réponse."
+    },
+    "errors": {
+      "UNEXPECTED": "Ça n'a pas marché. Réessaie.",
+      "UNREACHABLE": "Le serveur ne répond pas. Vérifie ta connexion.",
+      "NO_SESSION": "Pas de soirée en cours.",
+      "SESSION_NOT_LIVE": "Le MJ n'a pas encore lancé la partie.",
+      "ALREADY_DECIDED": "Le MJ a déjà répondu.",
+      "NOT_CONTESTABLE": "Cette réponse ne se conteste pas.",
+      "TEXT_TOO_LONG": "Trop long : fais plus court.",
+      "SPECTATOR": "Tu regardes la partie : tu ne joues pas de carte.",
+      "NO_PLAY_SHEET": "Ton personnage n'est pas encore en jeu.",
+      "ALREADY_ANSWERED": "Tu as déjà répondu."
+    }
+  },
+  "map": {
+    "canvas": "Carte : {{name}}",
+    "none": "Le MJ n'a pas encore montré de carte.",
+    "walkHint": "Touche une case éclairée pour y aller.",
+    "ghost": "Tu es invisible : les autres ne te voient pas.",
+    "weather": {
+      "clear": "Temps clair",
+      "cloudy": "Nuageux",
+      "rain": "Pluie",
+      "storm": "Orage",
+      "fog": "Brouillard",
+      "snow": "Neige",
+      "sandstorm": "Tempête de sable"
+    }
+  },
+  "fight": {
+    "yourTurn": "À toi, {{name}} !",
+    "theirTurn": "Tour {{round}} : {{name}} joue",
+    "order": "Ordre du tour",
+    "hand": "Tes cartes",
+    "range": "portée {{range}}",
+    "bonus": "{{value}} au dé",
+    "pickTarget_zero": "Touche une cible sur la carte, ou joue sans cible.",
+    "pickTarget_one": "1 cible choisie.",
+    "pickTarget_other": "{{count}} cibles choisies.",
+    "play": "Jouer",
+    "flee": "Fuir",
+    "endTurn": "Fin du tour",
+    "loot": "Butin",
+    "lootMine": "Pour toi : {{name}}",
+    "log": {
+      "title": "Ce qui vient de se passer",
+      "round": "Tour {{round}}",
+      "turn": "Au tour de {{who}}",
+      "moved": "{{who}} se déplace de {{cells}} cases",
+      "acted": "{{who}} : {{action}}",
+      "actedOn": "{{who}} : {{action}} sur {{targets}}",
+      "fleeFailed": "{{who}} tente de fuir et échoue",
+      "fled": "{{who}} prend la fuite",
+      "defeated": "{{who}} est vaincu",
+      "won": "Victoire !",
+      "lost": "Défaite…",
+      "stopped": "Le MJ arrête le combat.",
+      "roll": "{{who}} lance : {{natural}} au dé, {{total}} au total",
+      "missed": "Raté sur {{target}}",
+      "damaged": "{{target}} perd {{amount}} PV",
+      "healed": "{{target}} regagne {{amount}} PV",
+      "condition": "{{target}} : {{name}}",
+      "conditionEnded": "{{target}} n'est plus {{name}}",
+      "knockedOut": "{{target}} tombe à terre",
+      "item": "{{who}} utilise {{item}}"
+    },
+    "errors": {
+      "UNEXPECTED": "Ce coup n'a pas marché. Réessaie.",
+      "UNREACHABLE": "Le serveur ne répond pas. Vérifie ta connexion.",
+      "NOT_YOUR_TURN": "Ce n'est pas ton tour.",
+      "NO_FIGHT": "Pas de combat en cours.",
+      "REFUSED": "Les règles refusent ce coup.",
+      "PATH_BLOCKED": "Ce chemin est bloqué.",
+      "TOO_FAR": "C'est trop loin pour ce tour.",
+      "SPECTATOR": "Tu regardes la partie : tu ne joues pas.",
+      "FIGHT_IN_PROGRESS": "Un combat est en cours : joue ton tour."
+    }
+  },
+  "gmLive": {
+    "loading": "Chargement de la soirée…",
+    "notFound": "Cette campagne n'existe pas, ou elle n'est pas à vous.",
+    "error": "La soirée n'a pas pu être chargée. Réessayez.",
+    "back": "Retour à la campagne",
+    "noSession": "Pas de soirée ouverte",
+    "session": "Séance {{number}} · {{status}}",
+    "status": {
+      "lobby": "salle d'attente",
+      "live": "en jeu",
+      "ended": "terminée"
+    },
+    "open": "Ouvrir la salle d'attente",
+    "start": "Lancer la partie",
+    "errors": {
+      "UNEXPECTED": "Le serveur a refusé ({{code}}).",
+      "UNREACHABLE": "Le serveur ne répond pas.",
+      "NO_SESSION": "Pas de soirée ouverte.",
+      "SESSION_NOT_LIVE": "Lancez d'abord la partie.",
+      "ALREADY_DECIDED": "Déjà décidé.",
+      "REASON_REQUIRED": "Un refus se dit avec un mot.",
+      "AI_BUDGET_EXCEEDED": "Le budget IA de la campagne est épuisé : augmentez-le dans les réglages.",
+      "AI_NOT_CONFIGURED": "Aucun fournisseur d'IA n'est configuré sur ce serveur.",
+      "FIGHT_IN_PROGRESS": "Un combat est en cours.",
+      "NO_FIGHT": "Pas de combat en cours.",
+      "NOT_AN_ADVERSARY_TURN": "Ce n'est pas le tour d'un adversaire.",
+      "NO_PROPOSAL": "Demandez d'abord une proposition au co-MJ.",
+      "PROPOSAL_STALE": "Le combat a changé depuis la proposition : redemandez-la.",
+      "UNKNOWN_TRACK": "Cette musique n'a pas encore de lien YouTube.",
+      "UNKNOWN_SUBJECT": "Ce sujet n'existe pas dans la campagne.",
+      "ALREADY_GIVEN": "Déjà donné.",
+      "NO_CURRENCY": "Les règles n'ont pas de monnaie.",
+      "TEXT_TOO_LONG": "Texte trop long.",
+      "EMPTY_TEXT": "Le texte est vide.",
+      "CELL_BLOCKED": "Personne ne peut se tenir là."
+    },
+    "table": {
+      "title": "La table",
+      "online": "connecté",
+      "offline": "hors ligne",
+      "here": "présent",
+      "sound": "son ok",
+      "spectator": "spectateur",
+      "idle_one": "rien depuis {{count}} min",
+      "idle_other": "rien depuis {{count}} min",
+      "pending_one": "{{count}} demande",
+      "pending_other": "{{count}} demandes",
+      "give": "Donner la main",
+      "hooks": "Accroches : {{hooks}}"
+    },
+    "requests": {
+      "title": "Demandes ({{count}})",
+      "none": "Aucune demande en attente.",
+      "done": "{{who}} · {{card}} · {{status}}",
+      "rolled": "{{natural}} au dé, {{total}} au total",
+      "contested": "contesté",
+      "ruling": "Déjà jugé : « {{situation}} » → {{ability}} {{difficulty}}",
+      "reason": "Un mot pour le joueur",
+      "accept": "Oui",
+      "refuse": "Non",
+      "ability": "Caractéristique",
+      "difficulty": "Difficulté",
+      "difficultyOption": "{{name}} ({{value}})",
+      "check": "Demander un test"
+    },
+    "scene": {
+      "choose": "Première scène",
+      "enter": "Entrer",
+      "notLive": "Lancez la partie pour montrer une scène.",
+      "title": "La scène",
+      "resolve": "Scène résolue",
+      "music": "Musique",
+      "noLink": "Pas encore de lien : cherchez « {{search}} » sur YouTube.",
+      "stop": "Couper",
+      "clues": "Indices",
+      "reveal": "Révéler",
+      "npcs": "PNJ",
+      "meet": "Rencontré",
+      "wants": "Veut : {{wants}}",
+      "hides": "Cache : {{hides}}",
+      "exits": "Sorties",
+      "go": "Y aller",
+      "other": "Toutes les scènes",
+      "fronts": "Fronts",
+      "advance": "+1",
+      "back": "−1"
+    },
+    "board": {
+      "title": "La carte",
+      "none": "Aucune carte montrée.",
+      "noMaps": "Pas de carte pour ce monde.",
+      "show": "Montrer : {{name}}",
+      "tool": {
+        "move": "Pions",
+        "reveal": "Lever le brouillard",
+        "hide": "Remettre le brouillard"
+      },
+      "fog": "Brouillard",
+      "weather": "Météo",
+      "time": "Moment",
+      "times": {
+        "dawn": "Aube",
+        "day": "Jour",
+        "dusk": "Crépuscule",
+        "night": "Nuit"
+      },
+      "moveHint": "touchez une case pour l'y déplacer",
+      "hideToken": "Cacher aux joueurs",
+      "showToken": "Montrer aux joueurs",
+      "invisible": "Rendre invisible",
+      "visible": "Rendre visible",
+      "remove": "Retirer",
+      "openDoor": "Ouvrir {{door}}",
+      "closeDoor": "Fermer {{door}}",
+      "revealLayer": "Révéler : {{layer}}"
+    },
+    "fight": {
+      "title": "Combat",
+      "start": "Lancer : {{title}}",
+      "loot": "Butin",
+      "hiddenLoot": "caché",
+      "giveTo": "Donner {{name}} à…",
+      "round": "Tour {{round}} · {{who}} joue",
+      "stop": "Arrêter le combat",
+      "hp": "{{hp}}/{{max}} PV",
+      "propose": "Proposer le tour (co-MJ)",
+      "accept": "Valider la proposition",
+      "endTurn": "Finir le tour adverse",
+      "proposal": "Proposition du co-MJ, pas encore jouée :",
+      "who": "Qui",
+      "condition": "État",
+      "addCondition": "Poser",
+      "removeCondition": "Retirer"
+    },
+    "copilot": {
+      "title": "Co-MJ",
+      "budget": "IA : {{spent}} $ sur {{budget}} $",
+      "notConfigured": "Aucun fournisseur d'IA configuré : le co-MJ est muet.",
+      "kind": {
+        "describe": "Décrire",
+        "npc": "Faire parler",
+        "consequence": "Conséquence",
+        "next": "Et ensuite ?",
+        "free": "Libre"
+      },
+      "npc": "PNJ",
+      "anyNpc": "Le PNJ de la scène",
+      "prompt": "Ce que disent les joueurs, votre question…",
+      "ask": "Demander",
+      "thinking": "Le co-MJ écrit…",
+      "narration": "Narration",
+      "apply": "Faire",
+      "show": "Montrer à la table",
+      "dismiss": "Écarter"
+    },
+    "journal": {
+      "title": "Journal",
+      "kind": "Type",
+      "placeholder": "Une promesse, une dette, un objet, une note",
+      "shared": "Visible des joueurs",
+      "add": "Ajouter",
+      "hidden": "caché"
+    },
+    "media": {
+      "title": "Images",
+      "kind": "Quoi",
+      "kinds": {
+        "scene": "Scène",
+        "npc": "PNJ",
+        "adversary": "Adversaire",
+        "location": "Lieu",
+        "item": "Objet",
+        "tileset": "Matière de carte"
+      },
+      "subject": "Sujet",
+      "direction": "Un mot de direction (plus sombre, de face…)",
+      "ask": "Dessiner",
+      "drawing": "Dessin en cours…",
+      "failed": "{{subject}} : {{error}}",
+      "approve": "Garder",
+      "reject": "Refaire",
+      "approved_one": "{{count}} image validée",
+      "approved_other": "{{count}} images validées"
+    },
+    "end": {
+      "title": "Fin de soirée",
+      "recap": "Votre récap (pour vous)",
+      "previously": "« Précédemment… » (pour les joueurs)",
+      "draft": "Brouillon du co-MJ",
+      "end": "Terminer la séance"
+    },
+    "feedback": {
+      "title": "Retours de la séance {{number}}",
+      "player": "Joueur",
+      "measured": "Mesuré",
+      "noAnswer": "—",
+      "measures": "attente max {{idle}} min · {{requests}} demandes · {{refused}} refus · {{contested}} contestations",
+      "gap": "{{scene}} : {{statement}}",
+      "changes": "Ce que je change la prochaine fois",
+      "save": "Enregistrer",
+      "saved": "Enregistré"
     }
   }
 }

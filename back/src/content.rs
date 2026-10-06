@@ -1,5 +1,5 @@
-//! Content compiled into the binary: the rule systems and the sprite
-//! packs of the two witness worlds (`content/`).
+//! Content compiled into the binary: the rule systems, the maps and the
+//! sprite packs of the two witness worlds (`content/`).
 //!
 //! A campaign names its rule system by `(id, version)` and finds it
 //! here until rule systems are stored per campaign
@@ -13,9 +13,11 @@
 
 use std::sync::LazyLock;
 
+use promptus_shared::maps::Map;
 use promptus_shared::rules::RuleSystem;
 use promptus_shared::sprite::{CharacterLook, LookBook, Pack, Packs};
 use promptus_shared::story::{Campaign, RuleSystemRef};
+use promptus_shared::theme::Theme;
 
 /// The pack files, in a fixed order: their hash versions the renders.
 pub const PACK_FILES: [&str; 2] = [
@@ -30,6 +32,59 @@ const RULE_FILES: [&str; 2] = [
     include_str!("../../content/rules/corsaires/v1.yaml"),
     include_str!("../../content/rules/brasier/v1.yaml"),
 ];
+
+/// The maps of the two worlds, by rule system id
+/// (`content/maps/<rules>/<map>.yaml`).
+const MAP_FILES: [(&str, &str); 2] = [
+    (
+        "corsaires",
+        include_str!("../../content/maps/corsaires/quai-port-louis.yaml"),
+    ),
+    (
+        "brasier",
+        include_str!("../../content/maps/brasier/cure-dent-coursive.yaml"),
+    ),
+];
+
+static MAPS: LazyLock<Vec<(&'static str, Map)>> = LazyLock::new(|| {
+    MAP_FILES
+        .iter()
+        .map(|(rules, t)| (*rules, Map::from_yaml(t).expect("the embedded maps load")))
+        .collect()
+});
+
+/// Map `id` of the world `campaign` plays in, if this server has it.
+pub fn map(campaign: &Campaign, id: &str) -> Option<&'static Map> {
+    MAPS.iter()
+        .find(|(rules, m)| *rules == campaign.rules.id && m.id == id)
+        .map(|(_, m)| m)
+}
+
+/// Every map of the world `campaign` plays in.
+pub fn maps(campaign: &Campaign) -> impl Iterator<Item = &'static Map> {
+    MAPS.iter()
+        .filter(move |(rules, _)| *rules == campaign.rules.id)
+        .map(|(_, m)| m)
+}
+
+/// The theme packs of the two worlds (`content/themes/<world>.yaml`),
+/// matched on the rule system's id.
+const THEME_FILES: [&str; 2] = [
+    include_str!("../../content/themes/corsaires.yaml"),
+    include_str!("../../content/themes/brasier.yaml"),
+];
+
+static THEMES: LazyLock<Vec<Theme>> = LazyLock::new(|| {
+    THEME_FILES
+        .iter()
+        .map(|t| Theme::from_yaml(t).expect("the embedded themes load"))
+        .collect()
+});
+
+/// The theme of the world `campaign` plays in, if this server has it.
+pub fn theme(campaign: &Campaign) -> Option<&'static Theme> {
+    THEMES.iter().find(|t| t.rules == campaign.rules.id)
+}
 
 static PACKS: LazyLock<Packs> =
     LazyLock::new(|| Packs::from_yaml(PACK_FILES).expect("the embedded sprite packs load"));

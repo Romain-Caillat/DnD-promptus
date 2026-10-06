@@ -1,11 +1,11 @@
 //! XP, upgrade points and levels, as the system's progression says.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::model::RuleSystem;
 use super::sheet::{Combatant, Progress, SheetError};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "event", rename_all = "snake_case")]
 pub enum ProgressEvent {
     XpGained { amount: u32, total: u32 },

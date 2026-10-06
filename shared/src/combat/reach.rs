@@ -13,14 +13,14 @@
 
 use std::collections::HashSet;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::maps::{Cell, Cover, Diagonal, Map, line_of_sight};
 use crate::rules::check::{Modifier, ModifierSource};
 use crate::rules::model::{ActionDef, LongRangeRule, RuleSystem};
 
 /// Why the grid refuses an action on a target.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "refusal", rename_all = "snake_case")]
 pub enum ReachRefusal {
     OutOfRange { distance: u32, range: u32 },
@@ -28,7 +28,7 @@ pub enum ReachRefusal {
 }
 
 /// Where a target stands relative to the one acting on it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Reach {
     pub distance: u32,
     /// Beyond `range`, within `long_range`.

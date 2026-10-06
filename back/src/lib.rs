@@ -1,12 +1,17 @@
+pub mod ai;
 pub mod api;
 pub mod app;
 pub mod auth;
+pub mod board;
 pub mod campaigns;
 pub mod config;
 pub mod content;
+pub mod copilot;
 pub mod db;
 pub mod error;
+pub mod evening;
 pub mod live;
+pub mod media;
 pub mod players;
 pub mod rule_systems;
 pub mod rules;

@@ -23,5 +23,6 @@ pub use model::*;
 pub use movement::{
     MovementRules, Occupancy, PathError, check_path, reachable, shortest_path, standable,
 };
+pub use projection::FOG_TERRAIN;
 pub use sight::{Sight, illumination, line_of_sight, visible_cells};
 pub use v1::{V1Map, load_v1_story_maps};

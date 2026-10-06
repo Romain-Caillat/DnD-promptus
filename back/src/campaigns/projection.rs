@@ -33,6 +33,8 @@
 //! and the bag, all derived through the rules engine. The history of
 //! adjustments stays GM-side.
 
+pub mod board;
+pub mod evening;
 pub mod rules;
 
 use std::collections::BTreeMap;

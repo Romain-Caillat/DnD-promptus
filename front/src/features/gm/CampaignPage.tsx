@@ -200,6 +200,13 @@ export function CampaignPage() {
 
           <aside className="flex flex-col gap-4">
             <CardButton
+              icon="arrow"
+              title={t('gm.campaign.evening')}
+              subtitle={t('gm.campaign.eveningSub')}
+              onClick={() => navigate(`${base}/soiree`)}
+            />
+            <CardButton
+              variant="dark"
               icon="link"
               title={t('gm.campaign.table')}
               subtitle={t('gm.campaign.tableSub')}

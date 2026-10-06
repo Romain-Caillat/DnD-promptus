@@ -1,0 +1,26 @@
+# Le Brasier — un vaisseau de la Confédération, coursives de métal.
+# Thème : tuiles du vaisseau (coursive, passerelle, salle des machines),
+# pièces de personnage `equipage-spatial`, titres en Chakra Petch.
+id: brasier
+name: Vaisseau de la Confédération
+rules: brasier
+sprite_pack: equipage-spatial
+title_font: chakra-petch
+colors:
+  accent: "#5cc8e0"
+  accent_soft: "#2f6f80"
+tilesets:
+  - id: vaisseau-confederation
+    name: Le vaisseau de la Confédération
+    void: "#04060a"
+    walls: { cap: "#7d8794", face: "#4a535e", joint: "#22282f", pattern: plates }
+    materials:
+      métal: { name: Métal, base: "#4c535b", dark: "#30363c", light: "#6b747e", pattern: plates }
+      grille: { name: Grille, base: "#3a4047", dark: "#1f2328", light: "#5a636d", pattern: grating }
+    props:
+      echelle: { name: Échelle, shape: ladder, color: "#9aa3ad", accent: "#555d66" }
+      console: { name: Console, shape: console, color: "#2c3440", accent: "#5cc8e0" }
+      casiers: { name: Casiers, shape: lockers, color: "#56606b", accent: "#2b3138" }
+      reacteur: { name: Réacteur, shape: reactor, color: "#3b4450", accent: "#ff8a3c" }
+      conduites: { name: Conduites, shape: pipes, color: "#6f7a86", accent: "#c0582c" }
+      balise: { name: Balise, shape: beacon, color: "#3a4047", accent: "#ff4d5e" }

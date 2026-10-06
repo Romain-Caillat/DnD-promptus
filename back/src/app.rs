@@ -132,6 +132,102 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/characters/{character}/adjust",
             post(api::sheets::adjust),
         )
+        // The evening (phase 3): lobby, scenes, requests, journal, end.
+        .route(
+            "/api/campaigns/{id}/session",
+            get(api::evening::live_screen).post(api::evening::open),
+        )
+        .route(
+            "/api/campaigns/{id}/session/start",
+            post(api::evening::start),
+        )
+        .route("/api/campaigns/{id}/session/end", post(api::evening::end))
+        .route(
+            "/api/campaigns/{id}/session/reveal",
+            post(api::evening::reveal),
+        )
+        .route(
+            "/api/campaigns/{id}/session/music",
+            put(api::evening::music),
+        )
+        .route(
+            "/api/campaigns/{id}/session/journal",
+            post(api::evening::note),
+        )
+        .route(
+            "/api/campaigns/{id}/session/requests/{request}",
+            post(api::evening::decide),
+        )
+        .route(
+            "/api/campaigns/{id}/session/spotlight/{player}",
+            post(api::evening::give_spotlight),
+        )
+        .route(
+            "/api/campaigns/{id}/hooks/{hook}/played",
+            put(api::evening::hook_played),
+        )
+        .route(
+            "/api/campaigns/{id}/knowledge",
+            get(api::evening::knowledge),
+        )
+        .route("/api/campaigns/{id}/sessions", get(api::evening::chronicle))
+        .route(
+            "/api/campaigns/{id}/sessions/{session}/recap",
+            put(api::evening::edit_recap),
+        )
+        .route(
+            "/api/campaigns/{id}/sessions/{session}/recap-draft",
+            post(api::evening::recap_draft),
+        )
+        .route(
+            "/api/campaigns/{id}/sessions/{session}/feedback",
+            get(api::evening::feedback_report),
+        )
+        .route(
+            "/api/campaigns/{id}/sessions/{session}/changes",
+            put(api::evening::note_changes),
+        )
+        .route("/api/campaigns/{id}/ai", get(api::evening::ai_usage))
+        // The grid and the fights.
+        .route(
+            "/api/campaigns/{id}/board",
+            get(api::board::gm_board).post(api::board::show),
+        )
+        .route("/api/campaigns/{id}/board/edit", post(api::board::edit))
+        .route("/api/campaigns/{id}/fight", post(api::board::start_fight))
+        .route(
+            "/api/campaigns/{id}/fight/command",
+            post(api::board::gm_command),
+        )
+        .route(
+            "/api/campaigns/{id}/fight/loot",
+            post(api::board::give_loot),
+        )
+        // Pixel-art images, reviewed by the GM.
+        .route(
+            "/api/campaigns/{id}/media",
+            get(api::media::gm_list).post(api::media::ask),
+        )
+        .route(
+            "/api/campaigns/{id}/media/{asset}/image",
+            get(api::media::gm_image),
+        )
+        .route(
+            "/api/campaigns/{id}/media/{asset}/decision",
+            post(api::media::decide),
+        )
+        .route(
+            "/api/campaigns/{id}/session/copilot",
+            post(api::evening::copilot_ask),
+        )
+        .route(
+            "/api/campaigns/{id}/session/copilot/{draft}/show",
+            post(api::evening::copilot_show),
+        )
+        .route(
+            "/api/campaigns/{id}/session/copilot/{draft}/dismiss",
+            post(api::evening::copilot_dismiss),
+        )
         .route("/api/campaigns/{id}/live", get(api::live::gm_socket))
         .route_layer(middleware::from_fn_with_state(state.clone(), require_gm));
 
@@ -198,6 +294,70 @@ fn player_routes() -> Vec<RouteSpec> {
             "POST",
             "/api/play/{campaign}/character/equip",
             post(api::play::equip),
+        ),
+        // The evening: the scene, the music, my requests and their rolls,
+        // the journal; the lobby; the feedback at the end.
+        (
+            "GET",
+            "/api/play/{campaign}/evening",
+            get(api::play_evening::evening),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/lobby",
+            post(api::play_evening::arrive),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/requests",
+            post(api::play_evening::ask),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/requests/{request}/roll",
+            post(api::play_evening::roll),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/requests/{request}/withdraw",
+            post(api::play_evening::withdraw),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/requests/{request}/contest",
+            post(api::play_evening::contest),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/feedback",
+            post(api::play_evening::answer_feedback),
+        ),
+        // The grid: the map as I may see it, my walk, my fight turn.
+        (
+            "GET",
+            "/api/play/{campaign}/board",
+            get(api::board::player_board),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/board/walk",
+            post(api::board::walk),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/fight",
+            post(api::board::command),
+        ),
+        // The images the table may see, and the world's theme.
+        (
+            "GET",
+            "/api/play/{campaign}/media",
+            get(api::media::player_list),
+        ),
+        (
+            "GET",
+            "/api/play/{campaign}/media/{asset}/image",
+            get(api::media::player_image),
         ),
         // A socket: it carries versions and presence, never data.
         (

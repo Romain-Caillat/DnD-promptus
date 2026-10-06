@@ -53,11 +53,22 @@ pub enum Topic {
     /// seat list): touched on join, removal and every character write
     /// (`players::touch_character`).
     Table,
+    /// The evening (`evening`): the session and its lobby, the requests,
+    /// the journal, the music.
+    Session,
+    /// The grid: the map shown, its fog, the tokens out of a fight.
+    Map,
+    /// The fight in progress (`encounters`).
+    Fight,
+    /// The GM's desk: co-GM drafts, images to review. Only the GM
+    /// screen refetches on it, and nothing a player route reads moves
+    /// with it.
+    Desk,
 }
 
 impl Topic {
     /// The topic as stored and sent: `world`, `story`, `character:<id>`,
-    /// `table`.
+    /// `table`, `session`, `map`, `fight`, `desk`.
     #[must_use]
     pub fn key(&self) -> String {
         match self {
@@ -65,6 +76,10 @@ impl Topic {
             Self::Story => "story".to_string(),
             Self::Character(id) => format!("character:{id}"),
             Self::Table => "table".to_string(),
+            Self::Session => "session".to_string(),
+            Self::Map => "map".to_string(),
+            Self::Fight => "fight".to_string(),
+            Self::Desk => "desk".to_string(),
         }
     }
 }

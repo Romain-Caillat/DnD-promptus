@@ -1,10 +1,14 @@
 pub mod auth;
+pub mod board;
 pub mod body;
 pub mod campaigns;
+pub mod evening;
 pub mod gm;
 pub mod health;
 pub mod live;
+pub mod media;
 pub mod play;
+pub mod play_evening;
 pub mod rules;
 pub mod sheets;
 pub mod sprites;
