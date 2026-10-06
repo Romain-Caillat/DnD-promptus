@@ -2,7 +2,8 @@
 //! allow-list, like the rest of the projection (`MEMORY.md` §3).
 //!
 //! Reaches players: the session's number and state, « Précédemment… » of
-//! the last session whose recap the GM published, the music playing and when it started, who
+//! the last session whose recap the GM published (and, while the GM
+//! reads it aloud at the launch, how far they are), the music playing and when it started, who
 //! is in the lobby (nicknames), the campaign view of the current scene
 //! (`project_for_players`), the shared lines of the journal (no story
 //! ids, no GM line), the player's **own** requests with the GM's answer
@@ -23,7 +24,7 @@ use uuid::Uuid;
 use super::{PlayView, PlayerCampaignView, project_for_players};
 use crate::evening::knowledge::{JournalKind, JournalLine};
 use crate::evening::requests::{Card, Request, RequestStatus};
-use crate::evening::session::{Attendance, Music, Session, Status};
+use crate::evening::session::{Attendance, Music, Session, Status, reading_lines};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -31,6 +32,9 @@ pub struct EveningView {
     pub session: Option<SessionView>,
     /// « Précédemment… » of the last session the GM published.
     pub previously: Option<String>,
+    /// At the launch, the GM reading « Précédemment… » aloud: its lines
+    /// and how many the table sees now.
+    pub reading: Option<ReadingView>,
     pub music: Option<Music>,
     pub lobby: Vec<LobbySeatView>,
     pub campaign: PlayerCampaignView,
@@ -42,6 +46,13 @@ pub struct EveningView {
     pub cards: Vec<SceneCardView>,
     /// The last ended session asks for this player's answers.
     pub feedback: Option<FeedbackAskView>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingView {
+    pub lines: Vec<String>,
+    pub shown: usize,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -237,9 +248,18 @@ pub fn project_evening(input: &EveningInput<'_>) -> EveningView {
         .filter(|s| s.published)
         .map(|s| s.previously.clone())
         .filter(|p| !p.trim().is_empty());
+    let reading = match (input.current.and_then(|s| s.reading_line), &previously) {
+        (Some(n), Some(text)) => {
+            let lines = reading_lines(text);
+            let shown = usize::try_from(n).unwrap_or(0).min(lines.len());
+            Some(ReadingView { lines, shown })
+        }
+        _ => None,
+    };
     EveningView {
         session,
         previously,
+        reading,
         music: input.current.and_then(|s| s.music.clone()),
         lobby: input
             .lobby

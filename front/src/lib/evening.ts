@@ -60,6 +60,8 @@ export interface SceneCard {
 export interface EveningView {
   session: { number: number; status: SessionStatus; startedAt: string | null } | null
   previously: string | null
+  /** At the launch, the GM reading « Précédemment… » aloud: how many lines are up. */
+  reading: { lines: string[]; shown: number } | null
   music: Music | null
   lobby: { playerId: string; nickname: string; soundOk: boolean; remote: boolean }[]
   campaign: PlayerView
@@ -131,6 +133,8 @@ export interface SessionInfo {
   chronicle: string
   /** Players read « Précédemment… » and the entry once published. */
   published: boolean
+  /** At the launch, how many lines of « Précédemment… » the table sees. */
+  readingLine: number | null
 }
 
 interface MusicTrack {
@@ -231,6 +235,8 @@ interface KnowledgeGap {
 
 export interface LiveScreen {
   session: SessionInfo | null
+  /** The published « Précédemment… », cut into the lines the GM reads. */
+  readingLines: string[]
   lastEnded: SessionInfo | null
   lobby: {
     playerId: string

@@ -233,6 +233,50 @@ pub async fn music(
     Ok(music)
 }
 
+/// At the launch, the GM reads « Précédemment… » aloud and the shared
+/// screen follows: `line` lines are shown (`None` ends the reading).
+///
+/// # Errors
+///
+/// 404; 409 `NO_SESSION`, `SESSION_NOT_LIVE`, `NO_PREVIOUSLY`; 400
+/// `INVALID_LINE`.
+pub async fn reading(
+    pool: &PgPool,
+    gm: &CurrentGm,
+    campaign: Uuid,
+    line: Option<u32>,
+) -> Result<Option<u32>, AppError> {
+    let mut tx = pool.begin().await?;
+    let (_, live) =
+        session::lock_for_gm(&mut tx, gm, campaign, &[Status::Live, Status::Lobby]).await?;
+    let line = match line {
+        None => None,
+        Some(n) => {
+            let text = session::last_published(&mut *tx, campaign)
+                .await?
+                .map(|s| s.previously)
+                .unwrap_or_default();
+            let lines = session::reading_lines(&text);
+            if lines.is_empty() {
+                return Err(AppError::Conflict("NO_PREVIOUSLY"));
+            }
+            if n as usize > lines.len() {
+                return Err(AppError::BadRequest("INVALID_LINE"));
+            }
+            Some(n)
+        }
+    };
+    session::set_reading(
+        &mut tx,
+        live.id,
+        line.map(|n| i32::try_from(n).unwrap_or(i32::MAX)),
+    )
+    .await?;
+    super::touch(&mut tx, campaign).await?;
+    tx.commit().await?;
+    Ok(line)
+}
+
 /// A line the GM writes in the journal: a promise, a debt, a key item,
 /// a note; shared with the players or kept.
 #[derive(Debug, Clone, Deserialize)]

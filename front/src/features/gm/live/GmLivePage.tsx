@@ -35,11 +35,13 @@ import {
 } from '@/lib/evening'
 import { chooseDate, fetchPlan, proposeDates, type Plan } from '@/lib/between'
 import { askImage, decideImage, fetchGmMedia, type MediaList } from '@/lib/media'
+import { fetchScreens, forgetScreen, openWindow, pairScreen, setReading, type Screen } from '@/lib/tv'
 import { PlanPanel, RecapPanel } from './BetweenPanels'
 import { BoardPanel } from './BoardPanel'
 import { CopilotPanel } from './CopilotPanel'
 import { EndPanel, FeedbackPanel } from './EndPanel'
 import { JournalPanel } from './JournalPanel'
+import { LaunchPanel } from './LaunchPanel'
 import { MediaPanel } from './MediaPanel'
 import { RequestsPanel } from './RequestsPanel'
 import { ScenePanel } from './ScenePanel'
@@ -68,11 +70,13 @@ export function GmLivePage() {
   const [board, setBoard] = useState<GmBoard | null>(null)
   const [media, setMedia] = useState<MediaList | null>(null)
   const [plan, setPlan] = useState<Plan | null>(null)
+  const [screens, setScreens] = useState<Screen[]>([])
   const [error, setError] = useState<string | null>(null)
   const latest = useRef(0)
   const latestBoard = useRef(0)
   const latestMedia = useRef(0)
   const latestPlan = useRef(0)
+  const latestScreens = useRef(0)
 
   const loadScreen = useCallback(async () => {
     const request = ++latest.current
@@ -130,18 +134,32 @@ export function GmLivePage() {
     setPlan((p) => (next ? next.plan : p))
   }, [campaignId])
 
+  const loadScreens = useCallback(async () => {
+    const request = ++latestScreens.current
+    let next: Screen[] | null
+    try {
+      next = await fetchScreens(campaignId)
+    } catch {
+      next = null
+    }
+    if (request !== latestScreens.current) return
+    setScreens((s) => next ?? s)
+  }, [campaignId])
+
   useEffect(() => {
     void loadScreen()
     void loadBoard()
     void loadMedia()
     void loadPlan()
-  }, [loadScreen, loadBoard, loadMedia, loadPlan])
+    void loadScreens()
+  }, [loadScreen, loadBoard, loadMedia, loadPlan, loadScreens])
 
   const live = useLiveChanges(campaignId, (topics) => {
     if (topics.some((x) => ['session', 'world', 'story', 'table', 'desk'].includes(x) || x.startsWith('character:'))) {
       void loadScreen()
     }
     if (topics.includes('session')) void loadPlan()
+    if (topics.includes('table')) void loadScreens()
     if (topics.some((x) => ['map', 'fight', 'world'].includes(x))) void loadBoard()
     if (topics.includes('desk')) void loadMedia()
   })
@@ -215,6 +233,26 @@ export function GmLivePage() {
           )}
         </div>
         <div className="flex flex-col gap-3">
+          {(!session || session.status === 'lobby' || session.readingLine !== null) && (
+            <LaunchPanel
+              screen={screen}
+              screens={screens}
+              onPair={async (code) => (await act(() => pairScreen(campaignId, code), setScreens)) !== null}
+              onWindow={() => {
+                // Opened in the click, or the browser blocks it; its address follows.
+                const tab = window.open('', '_blank')
+                void act(
+                  () => openWindow(campaignId),
+                  (secret) => {
+                    if (tab) tab.location.href = `/tv?cle=${encodeURIComponent(secret)}`
+                    void loadScreens()
+                  },
+                )
+              }}
+              onForget={(id) => void act(() => forgetScreen(campaignId, id), () => void loadScreens())}
+              onReading={(line) => void act(() => setReading(campaignId, line))}
+            />
+          )}
           {session && (
             <ScenePanel
               screen={screen}

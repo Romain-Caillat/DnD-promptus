@@ -54,7 +54,12 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         // Sprites: a description is drawn the same for GM, players and TV.
         .route("/api/sprites/render.png", get(api::sprites::render_png))
         .route("/api/sprites/looks", get(api::sprites::looks))
-        .route("/api/sprites/packs/{pack}", get(api::sprites::pack));
+        .route("/api/sprites/packs/{pack}", get(api::sprites::pack))
+        // A TV asks for a code, then whether the GM typed it. Its secret
+        // is the only key; once paired it is a spectator seat.
+        .route("/api/tv/pairings", post(api::tv::start))
+        .route("/api/tv/pairings/{secret}", get(api::tv::poll))
+        .route("/api/tv/pairings/{secret}/qr.svg", get(api::tv::qr));
     let public = invitation_routes()
         .into_iter()
         .fold(public, |r, (_, path, handler)| r.route(path, handler))
@@ -243,6 +248,17 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             put(api::evening::note_changes),
         )
         .route("/api/campaigns/{id}/ai", get(api::evening::ai_usage))
+        // gm/launch-session: the shared screens, the reading aloud.
+        .route(
+            "/api/campaigns/{id}/tv",
+            get(api::tv::list).post(api::tv::pair),
+        )
+        .route("/api/campaigns/{id}/tv/window", post(api::tv::window))
+        .route("/api/campaigns/{id}/tv/{screen}", delete(api::tv::forget))
+        .route(
+            "/api/campaigns/{id}/session/reading",
+            post(api::tv::reading),
+        )
         // session/schedule-sessions: the next date.
         .route(
             "/api/campaigns/{id}/plan",

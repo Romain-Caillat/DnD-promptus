@@ -1420,7 +1420,10 @@
       "INVALID_LOBBY_MINUTES": "Le salon ouvre entre 0 et 180 minutes avant.",
       "NOT_PROPOSED": "Cette date n'a pas été proposée.",
       "NO_PLAN": "Aucune date n'est proposée.",
-      "NO_DEATH_SAVE_DUE": "Aucun jet contre la mort n'est attendu."
+      "NO_DEATH_SAVE_DUE": "Aucun jet contre la mort n'est attendu.",
+      "TV_CODE_UNKNOWN": "Aucune TV n’affiche ce code. Vérifie les quatre caractères, ou recharge la page de la TV.",
+      "NO_PREVIOUSLY": "Aucun « Précédemment… » publié à lire.",
+      "INVALID_LINE": "Cette ligne n’existe pas."
     },
     "table": {
       "title": "La table",
@@ -1625,6 +1628,52 @@
       "add": "Une autre date",
       "lobby": "Salon ouvert (min avant)",
       "send": "Envoyer aux joueurs"
+    },
+    "launch": {
+      "title": "Lancer la session",
+      "shared": "L’écran partagé · facultatif",
+      "tv": "Une TV dans la pièce",
+      "tvHint": "Ouvre /tv sur la TV ou un vieil ordinateur branché dessus, puis saisis son code ici.",
+      "code": "Code de la TV",
+      "pair": "Jumeler",
+      "window": "Partager une fenêtre",
+      "windowHint": "Tout le monde est à distance : ouvre la fenêtre TV et partage-la dans Discord. Même contenu, sans code.",
+      "openWindow": "Ouvrir la fenêtre TV",
+      "screens": "Écrans jumelés",
+      "pairedAt": "jumelée à {{time}}",
+      "forget": "Oublier cet écran",
+      "optional": "Sans écran partagé, chaque téléphone joue les grands moments lui-même. La TV n’est qu’un bonus.",
+      "sees": {
+        "title": "Ce que la TV peut montrer",
+        "content": "Contenu",
+        "tv": "TV",
+        "players": "Joueurs",
+        "rows": {
+          "map": "La carte, sans le brouillard levé",
+          "party": "Le groupe, l’ordre du tour, les menaces visibles",
+          "moments": "Les grands moments : dés, coups, butin, niveaux",
+          "sheet": "La fiche complète d’un joueur",
+          "notes": "Tes notes, les PV des monstres, les zones cachées",
+          "copilot": "Les propositions du co-MJ"
+        },
+        "note": "La TV ne montre que ce que tous les joueurs ont le droit de voir. Rien de secret ne quitte ton écran."
+      },
+      "yes": "oui",
+      "no": "non",
+      "before": "Avant de lancer",
+      "done": "✓",
+      "pending": "·",
+      "checks": {
+        "previously": "Le « Précédemment… » est publié",
+        "screen": "Écran partagé : {{name}}",
+        "noScreen": "Écran partagé : pas encore (facultatif)",
+        "allHere_one": "Le joueur est là",
+        "allHere_other": "Les {{count}} joueurs sont là",
+        "missing": "Pas encore là : {{names}}"
+      },
+      "read": "Lire « Précédemment… » à l’écran",
+      "nextLine": "Ligne suivante",
+      "stopReading": "Terminer la lecture"
     }
   },
   "prep": {
@@ -2158,6 +2207,36 @@
       "AI_NOT_CONFIGURED": "Aucun fournisseur d’IA n’est configuré sur ce serveur.",
       "AI_UNAVAILABLE": "Le fournisseur d’IA n’a pas répondu.",
       "AI_OUTPUT_INVALID": "Le modèle n’a pas produit une carte valide, même après une seconde chance."
+    }
+  },
+  "tv": {
+    "brand": "Promptus · TV",
+    "pair": {
+      "starting": "Préparation du code…",
+      "error": "Impossible d’obtenir un code. Recharge la page.",
+      "qr": "QR à scanner avec le téléphone du MJ",
+      "codeLabel": "Code de la TV",
+      "code": "Code {{code}}",
+      "hint": "Le MJ saisit ce code, ou scanne le QR."
+    },
+    "show": {
+      "session": "Session {{number}}",
+      "idle": "Pas de session en cours. La TV attend la prochaine.",
+      "tonight": "Ce soir",
+      "here": "Dans le salon",
+      "waitingGm": "En attente du MJ…",
+      "feed": "Dernier moment"
+    },
+    "gmPair": {
+      "title": "Jumeler une TV",
+      "signIn": "Connecte-toi pour jumeler la TV.",
+      "which": "À quelle table ?",
+      "done": "La TV a rejoint « {{title}} ». Elle suit la partie."
+    },
+    "errors": {
+      "UNEXPECTED": "Le jumelage a échoué. Réessaie.",
+      "UNREACHABLE": "Serveur injoignable. Réessaie dans un instant.",
+      "TV_CODE_UNKNOWN": "Aucune TV n’affiche ce code. Vérifie les quatre caractères."
     }
   }
 }

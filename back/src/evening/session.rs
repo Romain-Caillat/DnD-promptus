@@ -88,6 +88,9 @@ pub struct Session {
     /// Players read « Précédemment… » and the entry once published.
     pub published: bool,
     pub published_at: Option<DateTime<Utc>>,
+    /// At the launch, « Précédemment… » read line by line: how many
+    /// lines the table sees now (`gm/launch-session`).
+    pub reading_line: Option<i32>,
 }
 
 #[derive(sqlx::FromRow)]
@@ -109,11 +112,12 @@ struct Row {
     chronicle: String,
     recap_status: String,
     published_at: Option<DateTime<Utc>>,
+    reading_line: Option<i32>,
 }
 
 const COLUMNS: &str = "id, campaign_id, number, status, opened_at, started_at, ended_at, \
                        recap, previously, gm_changes, music, gaps_at_end, facts, title, \
-                       chronicle, recap_status, published_at";
+                       chronicle, recap_status, published_at, reading_line";
 
 fn from_row(r: Row) -> Result<Session, AppError> {
     Ok(Session {
@@ -134,6 +138,7 @@ fn from_row(r: Row) -> Result<Session, AppError> {
         chronicle: r.chronicle,
         published: r.recap_status == "published",
         published_at: r.published_at,
+        reading_line: r.reading_line,
     })
 }
 
@@ -519,6 +524,50 @@ pub(super) async fn set_music(
     Ok(())
 }
 
+pub(super) async fn set_reading(
+    tx: &mut Transaction<'_, Postgres>,
+    session: Uuid,
+    line: Option<i32>,
+) -> Result<(), AppError> {
+    sqlx::query("UPDATE game_sessions SET reading_line = $2 WHERE id = $1")
+        .bind(session)
+        .bind(line)
+        .execute(&mut **tx)
+        .await?;
+    Ok(())
+}
+
+/// « Précédemment… » cut into the lines the GM reads one by one: its
+/// own lines, or its sentences when it is one paragraph.
+#[must_use]
+pub fn reading_lines(text: &str) -> Vec<String> {
+    let lines: Vec<String> = text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(str::to_string)
+        .collect();
+    if lines.len() != 1 {
+        return lines;
+    }
+    let mut sentences = Vec::new();
+    let mut current = String::new();
+    let chars: Vec<char> = lines[0].chars().collect();
+    for (i, c) in chars.iter().enumerate() {
+        current.push(*c);
+        let ends = matches!(c, '.' | '!' | '?' | '…')
+            && chars.get(i + 1).is_none_or(|n| n.is_whitespace());
+        if ends && !current.trim().is_empty() {
+            sentences.push(current.trim().to_string());
+            current.clear();
+        }
+    }
+    if !current.trim().is_empty() {
+        sentences.push(current.trim().to_string());
+    }
+    sentences
+}
+
 /// One seat in the lobby.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -618,5 +667,32 @@ impl Status {
     #[must_use]
     pub fn key(self) -> &'static str {
         self.as_str()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::reading_lines;
+
+    #[test]
+    fn a_recap_is_read_line_by_line() {
+        assert_eq!(
+            reading_lines("Les corsaires ont accosté.\n\n  Dorn a menti.  \n"),
+            ["Les corsaires ont accosté.", "Dorn a menti."]
+        );
+    }
+
+    #[test]
+    fn one_paragraph_is_read_sentence_by_sentence() {
+        assert_eq!(
+            reading_lines("Ils ont fui… Le port brûle ! Qui a parlé ? 3.5 lieues plus loin, rien"),
+            [
+                "Ils ont fui…",
+                "Le port brûle !",
+                "Qui a parlé ?",
+                "3.5 lieues plus loin, rien"
+            ]
+        );
+        assert!(reading_lines("   ").is_empty());
     }
 }

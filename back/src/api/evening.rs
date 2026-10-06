@@ -285,8 +285,15 @@ pub async fn live_screen(
     }
     let story = &row.story;
     let world = &row.world;
+    // gm/launch-session: « Précédemment… » as the GM reads it, line by
+    // line, to the shared screen.
+    let reading_lines = session::last_published(pool, row.id)
+        .await?
+        .map(|s| session::reading_lines(&s.previously))
+        .unwrap_or_default();
     let data = json!({
         "session": current,
+        "readingLines": reading_lines,
         "lastEnded": last,
         "presence": presence,
         "lobby": lobby,

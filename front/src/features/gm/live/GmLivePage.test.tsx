@@ -16,9 +16,11 @@ const SESSION = {
   previously: '',
   gmChanges: '',
   music: null,
+  readingLine: null,
 }
 const SCREEN = {
   session: SESSION,
+  readingLines: [],
   lastEnded: null,
   lobby: [
     {

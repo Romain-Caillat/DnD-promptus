@@ -20,6 +20,7 @@ pub mod assist;
 pub mod death;
 pub mod play;
 pub mod review;
+pub mod screens;
 
 use std::collections::BTreeMap;
 
@@ -470,9 +471,9 @@ pub fn clean_nickname(raw: &str) -> Result<String, AppError> {
     Ok(nick.to_string())
 }
 
-type PlayerRow = (Uuid, Uuid, String, String, DateTime<Utc>, DateTime<Utc>);
+pub(super) type PlayerRow = (Uuid, Uuid, String, String, DateTime<Utc>, DateTime<Utc>);
 
-fn player_from_row(
+pub(super) fn player_from_row(
     (id, campaign_id, nickname, role, created_at, last_seen_at): PlayerRow,
 ) -> Result<Player, AppError> {
     Ok(Player {
@@ -485,7 +486,7 @@ fn player_from_row(
     })
 }
 
-const PLAYER_COLUMNS: &str = "id, campaign_id, nickname, role, created_at, last_seen_at";
+pub(super) const PLAYER_COLUMNS: &str = "id, campaign_id, nickname, role, created_at, last_seen_at";
 
 /// Seat `nickname` at `campaign_id`'s table as `role`; a player gets an
 /// empty draft character in the same transaction. Returns the player
