@@ -944,7 +944,7 @@ qui demande zéro erreur ; un import est validé d'office (le MJ l'a
 Vérifié sur l'acte 1 joué des Corsaires : le co-MJ place les indices
 manquants de la route du Greyhound et l'alerte disparaît.
 
-### `campaign/check-player-knowledge` · todo
+### `campaign/check-player-knowledge` · doing — reste une fin de soirée jouée pour de vrai
 
 **Pourquoi** — Aux Corsaires, il manquait aux joueurs des informations
 nécessaires pour l'acte 2.
@@ -960,7 +960,20 @@ Romain l'a jouée, l'outil signale ce qui manquait pour l'acte 2.
 
 **Origine** — Romain, 4 octobre 2026 · `MEMORY.md` §6
 
-### `campaign/check-act-readiness` · todo
+**État** — Livré et vérifié (`cargo test`, `bun run test`). À la
+relecture, le validateur signale une information demandée par une scène
+et donnée nulle part, ou seulement dans des scènes facultatives
+(`KNOWLEDGE_NEVER_GIVEN`, `KNOWLEDGE_ONLY_OPTIONAL`, onglet Cohérence).
+En fin de soirée, le panneau « Fin de soirée » liste ce que les scènes
+suivantes demandent et que la table ne sait pas, avec où l'apprendre
+encore, et « Ajouter au « Précédemment… » » glisse la ligne dans le
+texte publié aux joueurs. Les retours de la séance le gardent. Vérifié
+sur l'acte 1 des Corsaires tel que joué (`player_knowledge_test`) : la
+soirée taverne → proposition → marché noir → quai laisse sans la route
+du Greyhound, l'escorte et la réparation pour la transition vers
+l'acte 2.
+
+### `campaign/check-act-readiness` · doing — reste un acte préparé pour de vrai avec la jauge
 
 **Pourquoi** — L'acte 1 du Brasier n'était pas prêt et rien ne le
 disait ; aux Corsaires, aucune scène n'était pensée pour un joueur en
@@ -977,6 +990,20 @@ pourquoi ; sur l'acte 1 des Corsaires tel qu'il a été joué, elle
 signale que la route du Greyhound n'est que dans une scène facultative.
 
 **Origine** — `docs/lecons-des-parties.md` §3 (chaîne 2)
+
+**État** — Livré et vérifié (`cargo test`, `bun run test`). Une jauge
+par acte (`story::readiness`, `GET /api/campaigns/{id}/readiness`), sur
+l'écran de relecture (sous chaque acte du graphe, et en détail dans
+« Valider ») : scènes complètes (résumé, lieu, ambiance, texte à lire,
+déroulé, transition), informations à trois chemins et pas seulement
+facultatives, une accroche par joueur, rencontres chiffrées avec
+tactique, combats simulés (12 combats par rencontre, avec les règles et
+les cartes de la campagne). Elle dit ce qui manque, le MJ décide.
+Vérifié : l'acte 1 du Brasier n'est pas prêt (une scène à moitié
+écrite, le secret du moteur donné une seule fois, l'abordage contre un
+adversaire absent des règles) ; l'acte 1 des Corsaires tel que joué
+signale la route du Greyhound seulement dans une scène facultative ;
+l'acte 1 réécrit des Corsaires est prêt.
 
 ### `campaign/track-factions-and-goals` · todo · à spécifier
 

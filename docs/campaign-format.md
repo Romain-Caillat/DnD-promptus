@@ -179,6 +179,21 @@ Two more checks of the campaign alone came with the witness worlds:
 of an act that has scenes) and `MUSIC_NO_URL` (warning: a track still
 to choose).
 
+## Is an act ready?
+
+`story::readiness(campaign, &Library)` gives one gauge per act
+(`docs/lecons-des-parties.md` §3, chain 2). It reports, never blocks.
+
+| Check | Passes when | Gap codes |
+| --- | --- | --- |
+| `scene_fields` | Each scene has `summary`, `location`, `ambience.mood`, `read_aloud`, `flow`, and `transition` when it has exits | `MISSING_FIELDS` (with `fields`) |
+| `knowledge_paths` | Each revelation a scene of the act `requires`, and each critical one the act gives clues to, is given in at least 3 scenes other than the one requiring it, not all optional | `FEW_PATHS` (with `paths`), `ONLY_OPTIONAL` |
+| `player_hooks` | Each party member has a hook in a scene of the act | `NO_HOOK` |
+| `encounters` | Each planned fight's opponents have numbers (`from_rules`, or hit points and armour class) and the fight has a tactic | `NO_STATS`, `NO_TACTICS` |
+| `fights` | Each planned fight can be staged (`encounter_scenario`) and simulated on its map | `NOT_STAGED`, `SIMULATION_FAILED`, `NO_RULES` |
+
+An act with no scene is not ready.
+
 ## Editing by id
 
 The review screen (`/campagnes/:id/preparer`) and the co-GM's workshop
