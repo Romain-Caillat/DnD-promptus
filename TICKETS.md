@@ -967,7 +967,7 @@ uns fait baisser celle de leurs rivaux ; objectifs de campagne à cocher
 
 **Origine** — `dnd-save/DnD_07-06-2026/Univers.md`
 
-### `campaign/edit-rule-system` · todo
+### `campaign/edit-rule-system` · doing — reste une vraie modification jouée à la soirée suivante
 
 **Pourquoi** — Les règles des deux mondes vont changer souvent : les
 éditer doit être aussi simple que les écrire sur une feuille.
@@ -983,6 +983,26 @@ dans l'app, la règle maison et la simulation comprises (via
 `engine/formalise-house-rules` et `engine/simulate-fights`).
 
 **Origine** — Planche « Règles »
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). Chaque campagne a ses versions de règles
+(`rule_versions`, migration 015) : la première modification fait un
+brouillon de la version jouée, numéro suivant, texte YAML commentaires
+compris. L'écran `/campagnes/:id/regles` l'édite par onglets
+(caractéristiques, jets et difficultés, actions et cartes, règles
+maison, création) ou en texte ; chaque enregistrement recalcule ce que
+ça touche : ce que les joueurs liront, les scènes de la campagne que ça
+casse (adversaire disparu, difficulté hors échelle…), le contrôle des
+règles, et les combats rejoués sur les deux versions avec les mêmes dés
+— les scénarios du monde et les rencontres de la campagne
+(`story::encounter_scenario`). Verrouillée, une version attend
+l'ouverture de la prochaine soirée, jamais en cours de partie ; les
+joueurs lisent alors ce qui change sur leur page des règles. Les règles
+maison (`house_rules`) s'y affichent et le co-MJ les connaît.
+L'historique compare deux versions (changements lus par les joueurs, et
+le texte ligne à ligne). Pas encore : le co-MJ qui propose une
+modification de règle (l'atelier arrive avec
+`campaign/review-story-graph`).
 
 ---
 

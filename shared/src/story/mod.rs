@@ -6,8 +6,10 @@
 //! - [`world`] — what changed in play, and the pure operations on it;
 //! - [`yaml`] — import and export of a whole campaign;
 //! - [`library`] — checks against the rule system and the maps;
+//! - [`encounter`] — a scene's planned fight, staged for the simulator;
 //! - [`v1`] — importer for V1 campaigns (entities YAML + story JSON).
 
+pub mod encounter;
 pub mod library;
 pub mod model;
 pub mod v1;
@@ -15,6 +17,7 @@ pub mod validate;
 pub mod world;
 pub mod yaml;
 
+pub use encounter::{StagingError, encounter_scenario};
 pub use library::{Library, validate_with};
 pub use model::*;
 pub use validate::{Issue, Severity, validate};

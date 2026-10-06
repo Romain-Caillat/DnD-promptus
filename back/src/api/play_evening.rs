@@ -23,7 +23,6 @@ use crate::auth::player::CurrentPlayer;
 use crate::campaigns::projection::evening::{EveningInput, project_evening};
 use crate::campaigns::projection::project_play;
 use crate::campaigns::{self, CampaignRow};
-use crate::content;
 use crate::error::AppError;
 use crate::evening::feedback::{self, Answers};
 use crate::evening::knowledge;
@@ -46,7 +45,7 @@ fn parse_id(raw: &str) -> Result<Uuid, AppError> {
 async fn evening_json(state: &AppState, p: &CurrentPlayer) -> Result<serde_json::Value, AppError> {
     let pool = &state.pool;
     let row = campaign_of(state, p).await?;
-    let rules = content::rule_system(&row.story.rules);
+    let rules = row.rules();
     let current = session::current(pool, row.id).await?;
     let last = session::last_ended(pool, row.id).await?;
     let seats = players::seats(pool, row.id).await?;
@@ -135,13 +134,7 @@ pub async fn ask(
     Body(ask): Body<Ask>,
 ) -> Result<Response, AppError> {
     let row = campaign_of(&state, &p).await?;
-    requests::ask(
-        &state.pool,
-        &p.0,
-        content::rule_system(&row.story.rules),
-        &ask,
-    )
-    .await?;
+    requests::ask(&state.pool, &p.0, row.rules(), &ask).await?;
     let view = evening_json(&state, &p).await?;
     Ok((StatusCode::CREATED, Json(json!({ "data": view }))).into_response())
 }
@@ -158,13 +151,7 @@ pub async fn roll(
     Path((_, request)): Path<(String, String)>,
 ) -> Result<Response, AppError> {
     let row = campaign_of(&state, &p).await?;
-    requests::roll(
-        &state.pool,
-        &p.0,
-        content::rule_system(&row.story.rules),
-        parse_id(&request)?,
-    )
-    .await?;
+    requests::roll(&state.pool, &p.0, row.rules(), parse_id(&request)?).await?;
     let view = evening_json(&state, &p).await?;
     Ok(Json(json!({ "data": view })).into_response())
 }

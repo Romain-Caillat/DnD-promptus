@@ -113,7 +113,7 @@ pub async fn seats(
     let row = owned_row(&state, &gm, &id).await?;
     let mut seats = players::seats(&state.pool, row.id).await?;
     for c in seats.iter_mut().filter_map(|s| s.character.as_mut()) {
-        c.class_name = review::class_name(&row.story, c.class_id.as_deref());
+        c.class_name = review::class_name(row.rules(), c.class_id.as_deref());
     }
     Ok(Json(json!({ "data": seats })).into_response())
 }

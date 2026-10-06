@@ -10,7 +10,10 @@
 pub mod projection;
 pub mod rules_seen;
 
+use std::sync::Arc;
+
 use chrono::{DateTime, Utc};
+use promptus_shared::rules::RuleSystem;
 use promptus_shared::story::{Campaign, RuleSystemRef, WorldState};
 use serde::Serialize;
 use sqlx::types::Json;
@@ -33,6 +36,18 @@ pub struct CampaignRow {
     /// When the GM shelved it; `None` while it is in use.
     pub archived_at: Option<DateTime<Utc>>,
     pub updated_at: DateTime<Utc>,
+    /// The rule system `story.rules` names: the campaign's own locked
+    /// version, or the preset (`crate::rules`). `None` when the server
+    /// has neither.
+    pub rules: Option<Arc<RuleSystem>>,
+}
+
+impl CampaignRow {
+    /// The campaign's rule system, if the server has it.
+    #[must_use]
+    pub fn rules(&self) -> Option<&RuleSystem> {
+        self.rules.as_deref()
+    }
 }
 
 /// The GM's planning of a campaign: never sent to a player, never in
@@ -111,11 +126,13 @@ type Row = (
     i32,
     Option<DateTime<Utc>>,
     DateTime<Utc>,
+    Option<String>,
 );
 
 fn from_row(
-    (id, gm_id, story, world, player_count, ai_budget_cents, archived_at, updated_at): Row,
+    (id, gm_id, story, world, player_count, ai_budget_cents, archived_at, updated_at, stored_rules): Row,
 ) -> CampaignRow {
+    let rules = crate::rules::resolve(id, &story.0.rules, stored_rules.as_deref());
     CampaignRow {
         id,
         gm_id,
@@ -127,11 +144,18 @@ fn from_row(
         },
         archived_at,
         updated_at,
+        rules,
     }
 }
 
+/// Every column of a campaign row, and the text of the locked rule
+/// version its story names, when the campaign has its own.
 const COLUMNS: &str =
-    "id, gm_id, story, world, player_count, ai_budget_cents, archived_at, updated_at";
+    "id, gm_id, story, world, player_count, ai_budget_cents, archived_at, updated_at,
+     (SELECT rv.system FROM rule_versions rv
+       WHERE rv.campaign_id = campaigns.id
+         AND rv.version = (campaigns.story->'rules'->>'version')::int
+         AND rv.locked_at IS NOT NULL)";
 
 /// Store a new campaign for `gm`, with an empty world and the default
 /// [`Settings`].

@@ -235,16 +235,20 @@ fn check_status(session: &Session, allowed: &[Status]) -> Result<(), AppError> {
 }
 
 /// Open the lobby of the next session — or answer the one already open.
+/// The campaign moves to its newest locked rule version first.
 ///
 /// # Errors
 ///
 /// 404 when the campaign is missing or another GM's; a database error.
 pub async fn open(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Session, AppError> {
     let mut tx = pool.begin().await?;
-    owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
+    let campaign_row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
     if let Some(open) = current(&mut *tx, campaign).await? {
         return Ok(open);
     }
+    // A rule change ships between sessions: the newest locked version
+    // applies from this one (`campaign/edit-rule-system`).
+    crate::rules::versions::adopt_newest(&mut tx, &campaign_row).await?;
     let row: Row = sqlx::query_as(&format!(
         "INSERT INTO game_sessions (campaign_id, number)
          VALUES ($1, COALESCE((SELECT MAX(number) FROM game_sessions WHERE campaign_id = $1), 0) + 1)

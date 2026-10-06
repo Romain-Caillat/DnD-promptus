@@ -55,11 +55,19 @@ pub struct RulesView {
     pub combat: CombatView,
     /// How a group check succeeds, when the system has one.
     pub group_check: Option<&'static str>,
+    /// The GM's house rules, as written.
+    pub house_rules: Vec<HouseRuleView>,
     /// The player's own numbers; `None` for a spectator or a sheet
     /// with no class yet.
     pub mine: Option<MineView>,
     /// What changed since the version the player last read.
     pub changes: Option<ChangesView>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct HouseRuleView {
+    pub name: String,
+    pub text: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -561,6 +569,14 @@ pub fn project_rules(
             .group_check
             .as_ref()
             .map(|g| group_code(g.succeeds_when)),
+        house_rules: system
+            .house_rules
+            .iter()
+            .map(|h| HouseRuleView {
+                name: h.name.clone(),
+                text: h.text.clone(),
+            })
+            .collect(),
         mine: me.as_ref().and_then(|c| mine(system, c)),
         changes,
     }
@@ -576,7 +592,7 @@ mod tests {
     use super::*;
 
     fn corsaires() -> &'static RuleSystem {
-        crate::content::rule_system(&RuleSystemRef {
+        crate::content::preset(&RuleSystemRef {
             id: "corsaires".into(),
             version: 1,
         })

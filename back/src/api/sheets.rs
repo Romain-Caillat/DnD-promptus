@@ -21,7 +21,6 @@ use super::body::Body;
 use crate::auth::guard::{CurrentGm, owned_by};
 use crate::campaigns::projection::{PlayView, project_play};
 use crate::campaigns::{self, CampaignRow};
-use crate::content;
 use crate::error::AppError;
 use crate::players::play::{self, Adjustment, InPlay};
 use crate::players::review;
@@ -56,7 +55,7 @@ fn board_sheet(row: &CampaignRow, rules: Option<&RuleSystem>, c: &InPlay) -> Boa
         player_id: c.player_id,
         nickname: c.nickname.clone(),
         name: c.sheet.name.clone(),
-        class_name: review::class_name(&row.story, c.sheet.class_id.as_deref()),
+        class_name: review::class_name(row.rules(), c.sheet.class_id.as_deref()),
         look: c
             .sheet
             .look
@@ -94,7 +93,7 @@ pub async fn board(
     Path(id): Path<String>,
 ) -> Result<Response, AppError> {
     let row = owned_row(&state, &gm, &id).await?;
-    let rules = content::rule_system(&row.story.rules);
+    let rules = row.rules();
     let sheets: Vec<BoardSheet> = play::in_play(&state.pool, row.id)
         .await?
         .iter()
@@ -154,8 +153,7 @@ pub async fn adjust(
 ) -> Result<Response, AppError> {
     let row = owned_row(&state, &gm, &id).await?;
     let character = parse_id(&character)?;
-    let rules =
-        content::rule_system(&row.story.rules).ok_or(AppError::Conflict("RULES_UNKNOWN"))?;
+    let rules = row.rules().ok_or(AppError::Conflict("RULES_UNKNOWN"))?;
     play::adjust(&state.pool, row.id, rules, character, adjustment).await?;
     let sheet = play::in_play(&state.pool, row.id)
         .await?

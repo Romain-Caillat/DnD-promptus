@@ -16,7 +16,6 @@ use super::{Answer, Ask, ContextInput, Kind, RawAnswer, context, instruction, sa
 use crate::ai::{self, Ai, LlmRequest, ledger, templates};
 use crate::auth::guard::{CurrentGm, owned_by};
 use crate::campaigns;
-use crate::content;
 use crate::error::AppError;
 use crate::evening::knowledge::{self, JournalKind};
 use crate::evening::requests::{self, RequestStatus};
@@ -115,7 +114,7 @@ pub async fn ask(
     {
         return Err(AppError::BadRequest("UNKNOWN_NPC"));
     }
-    let rules = content::rule_system(&row.story.rules);
+    let rules = row.rules();
     let journal = knowledge::journal(pool, campaign, false).await?;
     let recaps: Vec<String> = session::all(pool, campaign)
         .await?
@@ -149,10 +148,16 @@ pub async fn ask(
     let rules_line = rules.map_or_else(
         || "Système de règles inconnu.".to_string(),
         |r| {
-            format!(
+            let mut line = format!(
                 "Système de règles : « {} » (test {}).",
                 r.name, r.check.dice
-            )
+            );
+            // The GM applies house rules at the table; the co-GM must
+            // know them to stay within the rules.
+            for h in &r.house_rules {
+                line.push_str(&format!("\nRègle maison « {} » : {}", h.name, h.text));
+            }
+            line
         },
     );
     let ask_with_prompt = Ask {

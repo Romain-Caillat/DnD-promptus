@@ -215,7 +215,7 @@ fn stand_in_id(who: &str) -> String {
 ///
 /// 409 `RULES_UNKNOWN`.
 pub fn rules_of(row: &CampaignRow) -> Result<RuleSystem, AppError> {
-    let base = content::rule_system(&row.story.rules).ok_or(AppError::Conflict("RULES_UNKNOWN"))?;
+    let base = row.rules().ok_or(AppError::Conflict("RULES_UNKNOWN"))?;
     let mut rules = base.clone();
     let attack_kind = base
         .adversaries

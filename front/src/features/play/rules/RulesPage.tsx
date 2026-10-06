@@ -1,5 +1,4 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
 import { CardButton } from '@/components/game/CardButton'
@@ -11,15 +10,14 @@ import { playPath } from '@/lib/play'
 import {
   fetchRules,
   markRulesSeen,
-  type ChangeValue,
   type ModifierSource,
   type OutcomeBand,
   type RuleCardView,
-  type RuleChange,
   type RulesView,
 } from '@/lib/rules'
 import { cn } from '@/lib/utils'
 import { signed } from '../creator/RuleSteps'
+import { RuleChangeLine } from '@/components/game/RuleChangeLine'
 
 type PageState =
   | { kind: 'loading' }
@@ -28,8 +26,6 @@ type PageState =
   | { kind: 'ready'; rules: RulesView }
 
 /** Glyphs, not words. */
-const ARROW = '→'
-const DOT = '·'
 
 /**
  * `/partie/:campaignId/regles` — the campaign's rules on one page, phone
@@ -172,7 +168,7 @@ function Changes({ rules, saving, onRead }: { rules: RulesView; saving: boolean;
         <ul className="flex flex-col gap-1.5">
           {c.items.map((item, i) => (
             <li key={i} className="text-body">
-              <ChangeLine item={item} />
+              <RuleChangeLine item={item} />
             </li>
           ))}
         </ul>
@@ -186,39 +182,6 @@ function Changes({ rules, saving, onRead }: { rules: RulesView; saving: boolean;
       />
     </section>
   )
-}
-
-function ChangeLine({ item }: { item: RuleChange }) {
-  const { t } = useTranslation()
-  const section = t(`rules.changes.sections.${item.section}` as 'rules.changes.sections.check')
-  const field = t(`rules.changes.fields.${item.field}` as 'rules.changes.fields.value')
-  const head = [section, item.subject].filter(Boolean).join(` ${DOT} `)
-  if (item.field === 'added' || item.field === 'removed') {
-    return (
-      <>
-        <b>{head}</b> {field}
-      </>
-    )
-  }
-  return (
-    <>
-      <b>{head}</b> {field} <span>{value(item.from, t)}</span> {ARROW} <b>{value(item.to, t)}</b>
-    </>
-  )
-}
-
-function value(v: ChangeValue | null, t: TFunction): string {
-  if (!v) return ''
-  switch (v.kind) {
-    case 'number':
-      return String(v.value)
-    case 'text':
-      return v.value || t('rules.changes.none')
-    case 'flag':
-      return t(v.value ? 'rules.changes.yes' : 'rules.changes.no')
-    case 'code':
-      return t(`rules.codes.${v.value}` as 'rules.codes.not_applied')
-  }
 }
 
 /** The roll: the die, the modifier, and the four outcomes. */
@@ -513,6 +476,17 @@ function Between({ rules }: { rules: RulesView }) {
           ))}
         </div>
       </Section>
+      {rules.houseRules.length > 0 && (
+        <Section title={t('rules.houseRules.title')}>
+          <p className="text-caption text-mute-soft">{t('rules.houseRules.hint')}</p>
+          {rules.houseRules.map((h) => (
+            <div key={h.name} className="flex flex-col gap-1">
+              <b className="type-label text-chalk">{h.name}</b>
+              <p className="text-body text-chalk-soft">{h.text}</p>
+            </div>
+          ))}
+        </Section>
+      )}
     </>
   )
 }

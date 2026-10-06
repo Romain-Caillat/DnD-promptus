@@ -483,7 +483,7 @@ pub async fn edit(
         }
         Edit::MoveToken { token, at } => {
             inside(&b, at)?;
-            let rules = movement(content::rule_system(&row.story.rules), &b.map);
+            let rules = movement(row.rules(), &b.map);
             promptus_shared::maps::standable(&b.map, &rules, *at)
                 .map_err(|_| AppError::BadRequest("CANNOT_STAND"))?;
             let t = b
@@ -576,7 +576,7 @@ pub async fn walk(pool: &PgPool, player: &Player, path: &[Cell]) -> Result<Board
         .find(|t| t.id == tid)
         .map(|t| t.at)
         .ok_or(AppError::Conflict("NOT_ON_MAP"))?;
-    let rules = movement(content::rule_system(&row.story.rules), &b.map);
+    let rules = movement(row.rules(), &b.map);
     check_path(
         &b.map,
         &rules,

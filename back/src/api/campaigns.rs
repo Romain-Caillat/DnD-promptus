@@ -32,8 +32,9 @@ use uuid::Uuid;
 use super::body::Body;
 use crate::auth::guard::{CurrentGm, owned_by};
 use crate::campaigns::{self, CampaignRow, Settings, projection};
+use crate::content;
 use crate::error::AppError;
-use crate::rule_systems::{self, PresetSummary};
+use crate::rule_systems;
 use crate::state::AppState;
 
 /// A campaign as the GM's prep screens read it.
@@ -113,11 +114,7 @@ pub async fn list(State(state): State<AppState>, gm: CurrentGm) -> Result<Respon
 
 /// `GET /api/rule-systems`
 pub async fn rule_systems(_gm: CurrentGm) -> Response {
-    let presets: Vec<PresetSummary> = rule_systems::presets()
-        .iter()
-        .map(PresetSummary::of)
-        .collect();
-    Json(json!({ "data": presets })).into_response()
+    Json(json!({ "data": rule_systems::summaries() })).into_response()
 }
 
 #[derive(Debug, Deserialize)]
@@ -148,7 +145,7 @@ pub async fn create(
     Body(input): Body<NewCampaign>,
 ) -> Result<Response, AppError> {
     let title = title_of(&input.title)?;
-    if rule_systems::find(&input.rules).is_none() {
+    if content::preset(&input.rules).is_none() {
         return Err(AppError::BadRequest("UNKNOWN_RULE_SYSTEM"));
     }
     let defaults = Settings::default();

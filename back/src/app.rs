@@ -95,6 +95,22 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         )
         .route("/api/campaigns/{id}/archive", put(api::campaigns::archive))
         .route("/api/rule-systems", get(api::campaigns::rule_systems))
+        // campaign/edit-rule-system: the campaign's own rule versions.
+        .route("/api/campaigns/{id}/rules", get(api::rule_versions::editor))
+        .route(
+            "/api/campaigns/{id}/rules/draft",
+            post(api::rule_versions::start_draft)
+                .put(api::rule_versions::save_draft)
+                .delete(api::rule_versions::discard_draft),
+        )
+        .route(
+            "/api/campaigns/{id}/rules/draft/lock",
+            post(api::rule_versions::lock_draft),
+        )
+        .route(
+            "/api/campaigns/{id}/rules/compare",
+            get(api::rule_versions::compare),
+        )
         .route(
             "/api/campaigns/{id}/invite",
             get(api::table::invite)

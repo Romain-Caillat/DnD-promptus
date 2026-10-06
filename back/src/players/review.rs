@@ -32,7 +32,6 @@ use uuid::Uuid;
 use super::{CharacterSheet, CharacterStatus, touch_character};
 use crate::campaigns::CampaignRow;
 use crate::error::AppError;
-use crate::rules;
 
 /// Longest word to a player, in characters.
 pub const NOTE_MAX: usize = 2000;
@@ -161,9 +160,8 @@ pub fn checks(campaign: &Campaign, system: Option<&RuleSystem>, sheet: &Value) -
 
 /// The name of class `id` in the campaign's rules, if both are known.
 #[must_use]
-pub fn class_name(campaign: &Campaign, id: Option<&str>) -> Option<String> {
-    let system = rules::system(&campaign.rules)?;
-    system.class(id?).map(|c| c.name.clone())
+pub fn class_name(system: Option<&RuleSystem>, id: Option<&str>) -> Option<String> {
+    system?.class(id?).map(|c| c.name.clone())
 }
 
 type ReviewRow = (
@@ -201,7 +199,7 @@ pub async fn review(pool: &PgPool, campaign: &CampaignRow, id: Uuid) -> Result<R
         return Err(AppError::NotFound("NOT_FOUND"));
     };
     let story = &campaign.story;
-    let system = rules::system(&story.rules);
+    let system = campaign.rules();
     let class_id = sheet.get("classId").and_then(Value::as_str);
     Ok(Review {
         id,
@@ -214,7 +212,7 @@ pub async fn review(pool: &PgPool, campaign: &CampaignRow, id: Uuid) -> Result<R
             .unwrap_or_default(),
         checks: checks(story, system, &sheet),
         rules_name: system.map(|s| s.name.clone()),
-        class_name: class_name(story, class_id),
+        class_name: class_name(system, class_id),
         abilities: system
             .map(|s| {
                 s.abilities

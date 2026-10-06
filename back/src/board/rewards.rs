@@ -13,7 +13,6 @@ use uuid::Uuid;
 use super::fight::LootLine;
 use crate::auth::guard::CurrentGm;
 use crate::campaigns;
-use crate::content;
 use crate::error::AppError;
 use crate::evening::knowledge::{self, JournalKind};
 use crate::live::{self, Topic};
@@ -86,8 +85,7 @@ pub async fn give(
 ) -> Result<Vec<LootLine>, AppError> {
     let mut tx = pool.begin().await?;
     let row = crate::auth::guard::owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
-    let rules =
-        content::rule_system(&row.story.rules).ok_or(AppError::Conflict("RULES_UNKNOWN"))?;
+    let rules = row.rules().ok_or(AppError::Conflict("RULES_UNKNOWN"))?;
     let found: Option<(Uuid, Option<Uuid>, Json<Vec<LootLine>>)> = sqlx::query_as(
         "SELECT id, session_id, loot FROM encounters WHERE campaign_id = $1
          ORDER BY (status = 'live') DESC, started_at DESC LIMIT 1 FOR UPDATE",

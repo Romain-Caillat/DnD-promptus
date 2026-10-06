@@ -126,6 +126,7 @@ export interface RulesView {
     longRangeModifier: number | null
   }
   groupCheck: 'at_least_half' | 'majority' | 'all' | 'any' | null
+  houseRules: { name: string; text: string }[]
   mine: {
     className: string
     cards: RuleCardView[]

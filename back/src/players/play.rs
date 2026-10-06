@@ -770,11 +770,10 @@ pub async fn in_play(pool: &PgPool, campaign: Uuid) -> Result<Vec<InPlay>, AppEr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rules;
     use promptus_shared::story::RuleSystemRef;
 
     fn corsaires() -> &'static RuleSystem {
-        rules::system(&RuleSystemRef {
+        crate::content::preset(&RuleSystemRef {
             id: "corsaires".into(),
             version: 1,
         })

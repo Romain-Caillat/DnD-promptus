@@ -230,8 +230,11 @@ async fn an_evening_from_the_lobby_to_the_feedback() {
         .await;
     assert_eq!(r.body["error"]["code"], "NOT_A_CHECK");
     let actor: Option<String> =
-        sqlx::query_scalar("SELECT actor FROM play_adjustments ORDER BY created_at DESC LIMIT 1")
-            .fetch_optional(&t.pool)
+        sqlx::query_scalar(
+            "SELECT actor FROM play_adjustments WHERE campaign_id = $1 ORDER BY created_at DESC LIMIT 1",
+        )
+        .bind(uuid::Uuid::parse_str(&t.campaign).unwrap())
+        .fetch_optional(&t.pool)
             .await
             .unwrap();
     if let Some(actor) = actor {

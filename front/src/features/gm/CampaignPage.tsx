@@ -230,6 +230,12 @@ export function CampaignPage() {
               ) : (
                 <span className="text-body text-mute-soft">{t('gm.campaigns.rulesRef', { ...campaign.story.rules })}</span>
               )}
+              <CardButton
+                variant="dark"
+                size="small"
+                title={t('gm.campaign.editRules')}
+                onClick={() => navigate(`${base}/regles`)}
+              />
             </section>
 
             {campaign.archivedAt ? (

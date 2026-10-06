@@ -36,6 +36,14 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("PUT", "/api/campaigns/{campaign}/settings"),
     ("PUT", "/api/campaigns/{campaign}/archive"),
     ("GET", "/api/rule-systems"),
+    // The rule editor: a draft, saved, compared, locked, then nothing
+    // left to drop.
+    ("GET", "/api/campaigns/{campaign}/rules"),
+    ("POST", "/api/campaigns/{campaign}/rules/draft"),
+    ("PUT", "/api/campaigns/{campaign}/rules/draft"),
+    ("GET", "/api/campaigns/{campaign}/rules/compare?from=1&to=2"),
+    ("POST", "/api/campaigns/{campaign}/rules/draft/lock"),
+    ("DELETE", "/api/campaigns/{campaign}/rules/draft"),
     ("GET", "/api/campaigns/{campaign}/invite"),
     ("POST", "/api/campaigns/{campaign}/invite"),
     ("GET", "/api/campaigns/{campaign}/players"),
@@ -126,6 +134,7 @@ const GM_ROUTES: &[(&str, &str)] = &[
 ];
 
 const FIXTURE: &str = include_str!("../../content/fixtures/phare-de-kerbrume.yaml");
+const CORSAIRES_RULES: &str = include_str!("../../content/rules/corsaires/v1.yaml");
 
 /// The body a route needs to succeed, so the control sweep proves the
 /// route works and the refusals come from the guard.
@@ -145,6 +154,10 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             "aiBudgetCents": 100
         })),
         (_, p) if p.ends_with("/archive") => Some(serde_json::json!({ "archived": false })),
+        ("PUT", p) if p.ends_with("/rules/draft") => Some(serde_json::json!({
+            "yaml": CORSAIRES_RULES.replacen("\nversion: 1\n", "\nversion: 2\n", 1),
+            "note": "Facile à 12."
+        })),
         // Refused before any check: the decision bodies need the sheet's
         // date, filled by the control sweep (`submitted_body`).
         (_, p) if p.ends_with("/validate") || p.ends_with("/return") => {

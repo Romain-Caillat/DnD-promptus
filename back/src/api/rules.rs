@@ -16,7 +16,6 @@ use serde_json::json;
 use crate::auth::player::CurrentPlayer;
 use crate::campaigns::projection::rules::project_rules;
 use crate::campaigns::{self, CampaignRow, rules_seen};
-use crate::content;
 use crate::error::AppError;
 use crate::players;
 use crate::state::AppState;
@@ -27,14 +26,11 @@ async fn page(
     row: &CampaignRow,
 ) -> Result<Response, AppError> {
     let current = &row.story.rules;
-    let system = content::rule_system(current).ok_or(AppError::NotFound("RULES_NOT_FOUND"))?;
+    let system = row.rules().ok_or(AppError::NotFound("RULES_NOT_FOUND"))?;
     let character = players::character_of(&state.pool, &p.0).await?;
     let seen = rules_seen::seen(&state.pool, p.0.id).await?;
-    let view = project_rules(
-        system,
-        character.as_ref().map(|c| &c.sheet),
-        rules_seen::changes(seen.as_ref(), current, system),
-    );
+    let changes = rules_seen::changes(&state.pool, row.id, seen.as_ref(), current, system).await?;
+    let view = project_rules(system, character.as_ref().map(|c| &c.sheet), changes);
     Ok(Json(json!({ "data": view })).into_response())
 }
 
@@ -65,7 +61,7 @@ pub async fn mark_seen(
     p: CurrentPlayer,
 ) -> Result<Response, AppError> {
     let row = campaign_of(&state, &p).await?;
-    if content::rule_system(&row.story.rules).is_none() {
+    if row.rules().is_none() {
         return Err(AppError::NotFound("RULES_NOT_FOUND"));
     }
     rules_seen::mark_seen(&state.pool, p.0.id, &row.story.rules).await?;

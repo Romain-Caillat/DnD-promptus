@@ -689,6 +689,11 @@ fn validate(s: &RuleSystem) -> Vec<RuleError> {
     }
 
     v.unique(s.situations.iter().map(|x| x.id.as_str()), "situations");
+    v.unique(s.house_rules.iter().map(|x| x.id.as_str()), "house_rules");
+    for (i, h) in s.house_rules.iter().enumerate() {
+        v.non_empty(&h.name, &format!("house_rules[{i}].name"));
+        v.non_empty(&h.text, &format!("house_rules[{i}].text"));
+    }
     v.unique(s.resources.iter().map(|x| x.id.as_str()), "resources");
     v.unique(s.peoples.iter().map(|x| x.id.as_str()), "peoples");
     v.unique(s.items.iter().map(|x| x.id.as_str()), "items");

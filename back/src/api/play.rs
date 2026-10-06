@@ -98,7 +98,7 @@ pub async fn join(
         &gm_name,
         &joined,
         character.as_ref(),
-        content::rule_system(&row.story.rules),
+        row.rules(),
     );
     Ok((
         StatusCode::CREATED,
@@ -120,13 +120,8 @@ pub async fn me(State(state): State<AppState>, p: CurrentPlayer) -> Result<Respo
     let row = campaign_of(&state, &p).await?;
     let gm_name = campaigns::gm_name(&state.pool, &row).await?;
     let character = players::character_of(&state.pool, &p.0).await?;
-    let view = projection::project_home(
-        &row.story,
-        &gm_name,
-        &p.0,
-        character.as_ref(),
-        content::rule_system(&row.story.rules),
-    );
+    let view =
+        projection::project_home(&row.story, &gm_name, &p.0, character.as_ref(), row.rules());
     Ok(Json(json!({ "data": view })).into_response())
 }
 
@@ -154,7 +149,7 @@ pub async fn creation(
     let view = projection::project_creation(
         &content::pack_for(&row.story).id,
         content::start_look(&row.story),
-        content::rule_system(&row.story.rules),
+        row.rules(),
     );
     Ok(Json(json!({ "data": view })).into_response())
 }
@@ -173,7 +168,7 @@ pub async fn save_character(
     Body(sheet): Body<CharacterSheet>,
 ) -> Result<Response, AppError> {
     let row = campaign_of(&state, &p).await?;
-    let rules = content::rule_system(&row.story.rules);
+    let rules = row.rules();
     let sheet = sheet.cleaned(rules, content::packs(), &content::pack_for(&row.story).id)?;
     let character = players::save_sheet(&state.pool, &p.0, &sheet).await?;
     let view = projection::project_character(rules, &character);
@@ -192,7 +187,7 @@ pub async fn submit_character(
     p: CurrentPlayer,
 ) -> Result<Response, AppError> {
     let row = campaign_of(&state, &p).await?;
-    let rules = content::rule_system(&row.story.rules);
+    let rules = row.rules();
     let character = players::submit_character(&state.pool, &p.0, rules).await?;
     let view = projection::project_character(rules, &character);
     Ok(Json(json!({ "data": view })).into_response())
@@ -219,7 +214,7 @@ pub async fn equip(
     Body(body): Body<EquipBody>,
 ) -> Result<Response, AppError> {
     let row = campaign_of(&state, &p).await?;
-    let rules = content::rule_system(&row.story.rules);
+    let rules = row.rules();
     let Some(system) = rules else {
         // Without the rules nothing is in play; a spectator still learns
         // they have no character.

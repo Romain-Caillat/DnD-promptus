@@ -33,7 +33,6 @@ use crate::board::rewards::{self, Give};
 use crate::board::{self, Edit};
 use crate::campaigns::projection::board::{Looker, project_board};
 use crate::campaigns::{self, CampaignRow};
-use crate::content;
 use crate::error::AppError;
 use crate::players::{self, CharacterStatus};
 use crate::state::AppState;
@@ -249,7 +248,7 @@ async fn player_json(state: &AppState, p: &CurrentPlayer) -> Result<serde_json::
         enc.as_ref().map(|e| (e, events.as_slice())),
         &Looker {
             character,
-            rules: content::rule_system(&row.story.rules),
+            rules: row.rules(),
         },
     );
     serde_json::to_value(view).map_err(|e| AppError::internal("board view", e))

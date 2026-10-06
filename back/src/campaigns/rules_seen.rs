@@ -3,9 +3,10 @@
 //!
 //! A seat starts with the version of the moment it was taken (a trigger
 //! records it); the player moves it forward by saying they read the
-//! changes. Sessions do not exist yet: until they do, the changes show
-//! as soon as the campaign's rules move, and the player reads them on
-//! their own time — never pushed into a scene.
+//! changes. The campaign's rules move only when a session opens on a
+//! newer locked version (`campaign/edit-rule-system`), so the changes
+//! show before play, and the player reads them on their own time —
+//! never pushed into a scene.
 
 use promptus_shared::rules::RuleSystem;
 use promptus_shared::rules::changes::rule_changes;
@@ -14,7 +15,6 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::projection::rules::ChangesView;
-use crate::content;
 use crate::error::AppError;
 
 /// The version `player` last read; `None` only for a seat the trigger
@@ -55,24 +55,35 @@ pub async fn mark_seen(pool: &PgPool, player: Uuid, rules: &RuleSystemRef) -> Re
 }
 
 /// What changed from `seen` to `current` (the campaign's `rules`), or
-/// `None` when the player read this very version.
-#[must_use]
-pub fn changes(
+/// `None` when the player read this very version. The version read is
+/// looked up among the campaign's own locked versions and the presets;
+/// one of another system is « replaced », not compared.
+///
+/// # Errors
+///
+/// A database error.
+pub async fn changes(
+    pool: &PgPool,
+    campaign: Uuid,
     seen: Option<&RuleSystemRef>,
     current_ref: &RuleSystemRef,
     current: &RuleSystem,
-) -> Option<ChangesView> {
-    let seen = seen?;
+) -> Result<Option<ChangesView>, AppError> {
+    let Some(seen) = seen else {
+        return Ok(None);
+    };
     if seen == current_ref {
-        return None;
+        return Ok(None);
     }
-    let old = (seen.id == current_ref.id)
-        .then(|| content::rule_system(seen))
-        .flatten();
-    Some(ChangesView {
+    let old = if seen.id == current_ref.id {
+        crate::rules::locked(pool, campaign, seen).await?
+    } else {
+        None
+    };
+    Ok(Some(ChangesView {
         from_version: seen.version,
         to_version: current_ref.version,
         replaced: old.is_none(),
-        items: old.map(|o| rule_changes(o, current)).unwrap_or_default(),
-    })
+        items: old.map(|o| rule_changes(&o, current)).unwrap_or_default(),
+    }))
 }
