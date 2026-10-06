@@ -6,6 +6,7 @@ pub mod evening;
 pub mod gm;
 pub mod health;
 pub mod live;
+pub mod media;
 pub mod play;
 pub mod play_evening;
 pub mod rules;

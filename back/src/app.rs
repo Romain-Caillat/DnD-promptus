@@ -203,6 +203,19 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/fight/loot",
             post(api::board::give_loot),
         )
+        // Pixel-art images, reviewed by the GM.
+        .route(
+            "/api/campaigns/{id}/media",
+            get(api::media::gm_list).post(api::media::ask),
+        )
+        .route(
+            "/api/campaigns/{id}/media/{asset}/image",
+            get(api::media::gm_image),
+        )
+        .route(
+            "/api/campaigns/{id}/media/{asset}/decision",
+            post(api::media::decide),
+        )
         .route(
             "/api/campaigns/{id}/session/copilot",
             post(api::evening::copilot_ask),
@@ -334,6 +347,17 @@ fn player_routes() -> Vec<RouteSpec> {
             "POST",
             "/api/play/{campaign}/fight",
             post(api::board::command),
+        ),
+        // The images the table may see, and the world's theme.
+        (
+            "GET",
+            "/api/play/{campaign}/media",
+            get(api::media::player_list),
+        ),
+        (
+            "GET",
+            "/api/play/{campaign}/media/{asset}/image",
+            get(api::media::player_image),
         ),
         // A socket: it carries versions and presence, never data.
         (

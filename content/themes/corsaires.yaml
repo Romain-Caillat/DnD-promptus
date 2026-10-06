@@ -1,0 +1,35 @@
+# Corsaires de la Couronne — Bretagne, 1718, la nuit sur le port.
+# Thème : tuiles du port (quai, taverne, pont de navire), pièces de
+# personnage `marins-1718`, titres en Cinzel. Les noms des six
+# caractéristiques et les pièces d'or viennent du système de règles.
+id: corsaires
+name: Port de 1718
+rules: corsaires
+sprite_pack: marins-1718
+title_font: cinzel
+colors:
+  accent: "#e0a650"
+  accent_soft: "#8a6a3a"
+tilesets:
+  - id: port-1718
+    name: Le port de 1718
+    void: "#07090c"
+    walls: { cap: "#8c8577", face: "#5b5448", joint: "#2f2b25", pattern: stones }
+    materials:
+      pavés: { name: Pavés, base: "#5d5850", dark: "#3c3934", light: "#7a746a", pattern: cobbles }
+      plancher: { name: Plancher, base: "#6b4a2e", dark: "#47301c", light: "#86603c", pattern: planks }
+      planches: { name: Planches, base: "#5e4329", dark: "#3d2b19", light: "#7a5836", pattern: planks }
+      passerelle: { name: Passerelle, base: "#755234", dark: "#4b341f", light: "#93693f", pattern: planks }
+      pont: { name: Pont de navire, base: "#7d5a37", dark: "#533b23", light: "#9c7246", pattern: planks }
+      flaque: { name: Flaque, base: "#3d4a52", dark: "#2a343a", light: "#5d707a", pattern: water }
+      eau: { name: Eau du port, base: "#173040", dark: "#0d1e2a", light: "#2c5268", pattern: water }
+      pierre: { name: Pierre, base: "#6f6a60", dark: "#4a463f", light: "#8e887c", pattern: flagstones }
+    props:
+      caisses: { name: Caisses empilées, shape: crates, color: "#8a6239", accent: "#4f3720" }
+      caisse: { name: Caisse, shape: crate, color: "#8a6239", accent: "#4f3720" }
+      tonneaux: { name: Tonneaux, shape: barrel, color: "#7b5230", accent: "#3a3a3a" }
+      cordages: { name: Cordages, shape: rope, color: "#b59a62", accent: "#7a6438" }
+      bitte: { name: Bitte d'amarrage, shape: post, color: "#3f3f42", accent: "#6a6a70" }
+      bastingage: { name: Bastingage, shape: rail, color: "#6b4a2e", accent: "#3d2a18" }
+      mat: { name: Mât, shape: mast, color: "#5c3f24", accent: "#d8cfb8" }
+      trappe: { name: Trappe, shape: hatch, color: "#4f3720", accent: "#2b1d10" }

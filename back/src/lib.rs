@@ -11,6 +11,7 @@ pub mod db;
 pub mod error;
 pub mod evening;
 pub mod live;
+pub mod media;
 pub mod players;
 pub mod rule_systems;
 pub mod rules;

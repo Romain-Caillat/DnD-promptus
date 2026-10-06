@@ -14,3 +14,4 @@ pub mod maps;
 pub mod rules;
 pub mod sprite;
 pub mod story;
+pub mod theme;

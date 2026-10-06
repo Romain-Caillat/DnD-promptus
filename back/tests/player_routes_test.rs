@@ -33,6 +33,8 @@ struct Table {
     code: String,
     marc: String,
     spectator: String,
+    /// An approved image the table may see.
+    asset: String,
 }
 
 /// Romain's marked campaign mid-scene, Marc seated as a player with a
@@ -67,13 +69,42 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
     let spectator = join(app, &code, "Léa", "spectator").await;
     evening(pool, Uuid::parse_str(&campaign).unwrap()).await;
     board(pool, Uuid::parse_str(&campaign).unwrap(), character).await;
+    let asset = media(pool, Uuid::parse_str(&campaign).unwrap()).await;
     Table {
         gm,
         campaign,
         code,
         marc: marc.player_token().unwrap(),
         spectator: spectator.player_token().unwrap(),
+        asset: asset.to_string(),
     }
+}
+
+/// An approved tileset image (any player may see it), and images the
+/// table may not see: one still pending, one of an NPC nobody has met.
+/// Their subjects and the GM's words are marked.
+async fn media(pool: &PgPool, campaign: Uuid) -> Uuid {
+    let shown: Uuid = sqlx::query_scalar(
+        "INSERT INTO media_assets (campaign_id, kind, subject, direction, status, mime, image)
+         VALUES ($1, 'tileset', 'pavés', $2, 'approved', 'image/png', '\\x89504e47') RETURNING id",
+    )
+    .bind(campaign)
+    .bind(m("media.direction"))
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO media_assets (campaign_id, kind, subject, status, mime, image)
+         VALUES ($1, 'scene', $2, 'pending', 'image/png', '\\x89504e47'),
+                ($1, 'npc', $3, 'approved', 'image/png', '\\x89504e47')",
+    )
+    .bind(campaign)
+    .bind(m("media.subject (pending)"))
+    .bind(m("media.subject (unmet npc)"))
+    .execute(pool)
+    .await
+    .unwrap();
+    shown
 }
 
 /// Session 1 ended with a GM recap and a GM-only journal line, session
@@ -197,6 +228,7 @@ fn refused_to_marc(method: &str, path: &str) -> Option<(StatusCode, &'static str
 fn uri(path: &str, t: &Table) -> String {
     path.replace("{campaign}", &t.campaign)
         .replace("{code}", &t.code)
+        .replace("{asset}", &t.asset)
 }
 
 fn seated(path: &str) -> bool {
@@ -323,6 +355,37 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
             }
         }
     }
+
+    // The table sees the approved tileset only; the other images do not
+    // leave, even by id.
+    let r = call_as_player(
+        &app,
+        Some(&t.marc),
+        "GET",
+        &uri("/api/play/{campaign}/media", &t),
+        None,
+    )
+    .await;
+    let assets = r.body["data"]["assets"].as_array().unwrap();
+    assert_eq!(assets.len(), 1, "{}", r.body);
+    assert_eq!(assets[0]["id"], t.asset.as_str());
+    assert_eq!(r.body["data"]["theme"]["id"], "corsaires");
+    let pending: Uuid = sqlx::query_scalar(
+        "SELECT id FROM media_assets WHERE status = 'pending' AND campaign_id = $1",
+    )
+    .bind(Uuid::parse_str(&t.campaign).unwrap())
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let r = call_as_player(
+        &app,
+        Some(&t.marc),
+        "GET",
+        &format!("/api/play/{}/media/{pending}/image", t.campaign),
+        None,
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::NOT_FOUND);
 
     // What the routes are for is there: Marc reads his own sheet, the
     // view names the scene.

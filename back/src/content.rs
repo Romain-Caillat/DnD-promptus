@@ -17,6 +17,7 @@ use promptus_shared::maps::Map;
 use promptus_shared::rules::RuleSystem;
 use promptus_shared::sprite::{CharacterLook, LookBook, Pack, Packs};
 use promptus_shared::story::{Campaign, RuleSystemRef};
+use promptus_shared::theme::Theme;
 
 /// The pack files, in a fixed order: their hash versions the renders.
 pub const PACK_FILES: [&str; 2] = [
@@ -64,6 +65,25 @@ pub fn maps(campaign: &Campaign) -> impl Iterator<Item = &'static Map> {
     MAPS.iter()
         .filter(move |(rules, _)| *rules == campaign.rules.id)
         .map(|(_, m)| m)
+}
+
+/// The theme packs of the two worlds (`content/themes/<world>.yaml`),
+/// matched on the rule system's id.
+const THEME_FILES: [&str; 2] = [
+    include_str!("../../content/themes/corsaires.yaml"),
+    include_str!("../../content/themes/brasier.yaml"),
+];
+
+static THEMES: LazyLock<Vec<Theme>> = LazyLock::new(|| {
+    THEME_FILES
+        .iter()
+        .map(|t| Theme::from_yaml(t).expect("the embedded themes load"))
+        .collect()
+});
+
+/// The theme of the world `campaign` plays in, if this server has it.
+pub fn theme(campaign: &Campaign) -> Option<&'static Theme> {
+    THEMES.iter().find(|t| t.rules == campaign.rules.id)
 }
 
 static PACKS: LazyLock<Packs> =

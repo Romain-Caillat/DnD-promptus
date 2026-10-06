@@ -73,6 +73,11 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/fight"),
     ("POST", "/api/campaigns/{campaign}/fight/command"),
     ("POST", "/api/campaigns/{campaign}/fight/loot"),
+    // Images: list, draw one, then on an image stored just before.
+    ("GET", "/api/campaigns/{campaign}/media"),
+    ("POST", "/api/campaigns/{campaign}/media"),
+    ("GET", "/api/campaigns/{campaign}/media/{asset}/image"),
+    ("POST", "/api/campaigns/{campaign}/media/{asset}/decision"),
     // Each on a draft of the co-GM written just before.
     ("POST", "/api/campaigns/{campaign}/session/copilot"),
     (
@@ -171,6 +176,10 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         (_, p) if p.ends_with("/fight/loot") => Some(serde_json::json!({
             "gives": [{ "index": 0, "character": Uuid::nil() }]
         })),
+        ("POST", p) if p.ends_with("/media") => {
+            Some(serde_json::json!({ "kind": "scene", "subject": "sc_crique" }))
+        }
+        (_, p) if p.ends_with("/decision") => Some(serde_json::json!({ "approve": true })),
         (_, p) if p.ends_with("/copilot") => {
             Some(serde_json::json!({ "kind": "describe", "prompt": "Ils entrent." }))
         }
@@ -202,6 +211,7 @@ struct Ids {
     request: String,
     session: String,
     draft: String,
+    asset: String,
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
@@ -213,6 +223,7 @@ fn route_uri(path: &str, ids: &Ids) -> String {
         .replace("{request}", &ids.request)
         .replace("{session}", &ids.session)
         .replace("{draft}", &ids.draft)
+        .replace("{asset}", &ids.asset)
 }
 
 /// Every placeholder filled for `player` of `campaign`: an invitation of
@@ -245,6 +256,7 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         request: Uuid::new_v4().to_string(),
         session: Uuid::new_v4().to_string(),
         draft: Uuid::new_v4().to_string(),
+        asset: Uuid::new_v4().to_string(),
     }
 }
 
@@ -428,6 +440,17 @@ async fn every_gm_route_refuses_without_a_valid_session() {
                 "INSERT INTO copilot_drafts (campaign_id, session_id, kind, answer)
                  SELECT campaign_id, id, 'describe', '{\"narration\":\"\",\"npcLines\":[],\"suggestions\":[],\"gmNote\":null}'
                  FROM game_sessions WHERE campaign_id = $1 AND status = 'live' RETURNING id",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
+        }
+        if path.contains("{asset}") {
+            ids.asset = sqlx::query_scalar::<_, Uuid>(
+                "INSERT INTO media_assets (campaign_id, kind, subject, mime, image)
+                 VALUES ($1, 'scene', 'sc_crique', 'image/png', '\\x89504e47') RETURNING id",
             )
             .bind(Uuid::parse_str(&ids.campaign).unwrap())
             .fetch_one(&pool)
