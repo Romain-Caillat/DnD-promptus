@@ -795,5 +795,205 @@
         "roll": "Lancer : ralentit jusqu’à l’arrêt"
       }
     }
+  },
+  "roll": {
+    "face": "{{die}} : {{face}}",
+    "against": "contre {{target}}",
+    "difficulty": "{{name}} ({{value}})",
+    "armorClass": "CA {{value}}",
+    "opposed": "son jet ({{value}})",
+    "normal": "Dé : {{faces}}",
+    "advantage": "Avantage : {{faces}}, tu gardes le meilleur ({{kept}})",
+    "disadvantage": "Désavantage : {{faces}}, tu gardes le pire ({{kept}})",
+    "why": {
+      "critical_failure": "Un {{face}} sur le dé : raté, quel que soit le total.",
+      "critical_success": "Un {{face}} sur le dé : réussi, quel que soit le total.",
+      "failure": "{{total}} contre {{target}} : il manquait {{missing}}.",
+      "success": "{{total}} contre {{target}} : au moins autant, c'est réussi.",
+      "unknown": "Le MJ compare ce total à une valeur qu'il est seul à connaître."
+    }
+  },
+  "rules": {
+    "error": "Les règles n'ont pas pu être chargées. Réessaie.",
+    "version": "Les règles · version {{version}}",
+    "back": "Retour à la partie",
+    "banner": {
+      "changed": "Les règles ont changé : lis ce qui change avant la prochaine session",
+      "read": "Tout ce que les règles disent, en une page"
+    },
+    "entry": {
+      "title": "Les règles",
+      "hint": "Jets, cartes, tours : tout ce qui compte",
+      "changed": "Les règles ont changé",
+      "changedHint": "Lis ce qui change avant la prochaine session"
+    },
+    "source": {
+      "precision": "précision de {{card}}",
+      "cover": "couvert",
+      "longRange": "longue portée"
+    },
+    "changes": {
+      "title": "Ce qui change · version {{from}} → {{to}}",
+      "when": "Le MJ a changé les règles depuis ta dernière lecture. Rien ne change en pleine partie : ces règles s'appliquent dès la prochaine session.",
+      "replaced": "La campagne joue avec d'autres règles qu'à ta dernière lecture : relis toute la page.",
+      "read": "J'ai lu ce qui change",
+      "readHint": "Ce message disparaît jusqu'au prochain changement",
+      "none": "rien",
+      "yes": "oui",
+      "no": "non",
+      "sections": {
+        "check": "Le jet",
+        "stats": "Caractéristiques",
+        "difficulties": "Difficulté",
+        "outcomes": "Résultat",
+        "attack": "Attaque",
+        "turn": "Tour",
+        "action_kinds": "Action",
+        "cooldowns": "Recharge",
+        "durations": "Durées",
+        "conditions": "État",
+        "cards": "Carte",
+        "zero_hp": "À 0 PV",
+        "progression": "Progression",
+        "combat": "Sur la grille"
+      },
+      "fields": {
+        "added": "apparaît.",
+        "removed": "disparaît.",
+        "die": "dé :",
+        "advantage": "avantage :",
+        "modifier": "modificateur :",
+        "formula": "calcul :",
+        "value": "valeur :",
+        "natural": "faces sur le dé :",
+        "xp": "XP gagnée :",
+        "damage_multiplier": "dégâts multipliés par",
+        "description": "texte :",
+        "ability": "caractéristique d'attaque :",
+        "precision": "précision :",
+        "cost": "coût en actions :",
+        "actions_per_turn": "actions par tour :",
+        "limit": "maximum par tour :",
+        "meaning": "règle :",
+        "application_turn_counts": "le tour où l'état est posé compte :",
+        "effects": "effets :",
+        "damage": "dégâts :",
+        "heal": "soins :",
+        "cooldown": "recharge (tours) :",
+        "level": "niveau requis :",
+        "range": "portée (cases) :",
+        "kind": "type d'action :",
+        "rule": "règle :",
+        "out_after_turns": "tours avant d'être hors combat :",
+        "upgrade_every_xp": "XP par amélioration :",
+        "upgrade_points": "points par amélioration :",
+        "level_xp": "XP pour ce niveau :",
+        "cover_half": "demi-couvert :",
+        "cover_three_quarters": "couvert aux trois quarts :",
+        "long_range": "longue portée :",
+        "flee": "fuir coûte :"
+      }
+    },
+    "codes": {
+      "first_primary": "la première caractéristique principale de ta classe",
+      "best_primary": "la meilleure caractéristique principale de ta classe",
+      "added_to_attack_roll": "s'ajoute au jet d'attaque",
+      "not_applied": "ne change pas le jet d'attaque",
+      "skip_next_turns": "Une carte avec une recharge de N tours ne se rejoue pas pendant tes N tours suivants.",
+      "turn_of_use_counts": "Une carte avec une recharge de N tours se rejoue N tours après, le tour où tu la joues compris.",
+      "knocked_out": "inconscient, puis hors combat",
+      "death_saves": "jets contre la mort",
+      "disadvantage": "désavantage"
+    },
+    "roll": {
+      "title": "Un jet de dé",
+      "how": "Pour tenter quelque chose d'incertain, tu lances {{die}} et tu ajoutes le modificateur de la caractéristique qui sert. Le MJ compare le total à une difficulté : au moins autant, c'est réussi.",
+      "modifier": "Modificateur d'une caractéristique",
+      "advantage": "Avec l'avantage, tu lances deux dés et tu gardes le meilleur ; avec le désavantage, le pire.",
+      "natural": "Sur le dé : {{faces}}",
+      "reach": "Total au moins égal à la difficulté",
+      "miss": "Total sous la difficulté",
+      "xp_one": "+{{count}} XP",
+      "xp_other": "+{{count}} XP",
+      "difficulties": "Les difficultés"
+    },
+    "group": {
+      "at_least_half": "Jet de groupe : chacun lance, le groupe réussit si au moins la moitié réussit.",
+      "majority": "Jet de groupe : chacun lance, le groupe réussit si plus de la moitié réussit.",
+      "all": "Jet de groupe : chacun lance, le groupe réussit seulement si tout le monde réussit.",
+      "any": "Jet de groupe : chacun lance, une seule réussite suffit."
+    },
+    "mine": {
+      "title": "Tes jets",
+      "how": "Ce qu'il te faut sur le {{die}}, avec tes caractéristiques, pour réussir à chaque difficulté.",
+      "ability": "Caractéristique",
+      "never": "jamais",
+      "from": "{{face}}+",
+      "examples": "Un jet de {{ability}} contre « {{difficulty}} », pas à pas"
+    },
+    "attack": {
+      "title": "Attaquer",
+      "how": "Une attaque, c'est {{die}} plus ton bonus d'attaque, contre la {{ac}} de la cible : au moins autant, tu touches et les dégâts de la carte s'appliquent. La {{ac}} de la cible, seul le MJ la connaît avant ton jet.",
+      "ability": "Ton bonus d'attaque vient de",
+      "precision": "La précision d'une carte",
+      "armorClass": "{{name}} ({{abbr}})",
+      "hitPoints": "{{name}} ({{abbr}})",
+      "fumble": "Sur le dé {{faces}} : raté, même si le total dépasse la classe d'armure.",
+      "crit": "Sur le dé {{faces}} : touché, même si le total n'y est pas.",
+      "critMultiplier": "Sur le dé {{faces}} : touché quoi qu'il arrive, et dégâts ×{{times}}."
+    },
+    "cards": {
+      "title": "Tes cartes · {{name}}",
+      "cost_one": "Coûte {{count}} action",
+      "cost_other": "Coûte {{count}} actions",
+      "cooldown_one": "Recharge : {{count}} tour",
+      "cooldown_other": "Recharge : {{count}} tours",
+      "noCooldown": "Sans recharge : jouable à chaque tour",
+      "attack": "Jet d'attaque : {{die}} {{mods}} contre la {{ac}} de la cible.",
+      "heal": "Soigne {{amount}} PV.",
+      "range_one": "Portée : {{count}} case",
+      "range_other": "Portée : {{count}} cases",
+      "level": "Se débloque au niveau {{level}}"
+    },
+    "turn": {
+      "title": "Ton tour",
+      "actions_one": "{{count}} action par tour",
+      "actions_other": "{{count}} actions par tour",
+      "limit_one": "{{kind}} : au plus {{count}} fois par tour.",
+      "limit_other": "{{kind}} : au plus {{count}} fois par tour.",
+      "kinds": "Ce que coûte chaque action",
+      "durationCounts": "Un état qui dure N tours compte le tour où il est posé.",
+      "durationNext": "Un état que tu te poses pendant ton tour dure jusqu'à la fin de ton tour suivant : le tour où il est posé ne compte pas."
+    },
+    "grid": {
+      "title": "Sur la grille",
+      "move": "Se déplacer",
+      "moveKind_one": "{{kind}} : {{count}} action",
+      "moveKind_other": "{{kind}} : {{count}} actions",
+      "moveFree": "Un déplacement gratuit par tour",
+      "flee": "Fuir",
+      "fleeAbility_one": "{{count}} action, jet de {{ability}} si c'est difficile",
+      "fleeAbility_other": "{{count}} actions, jet de {{ability}} si c'est difficile",
+      "coverHalf": "Cible à demi couverte",
+      "coverThreeQuarters": "Cible couverte aux trois quarts",
+      "longRange": "Au-delà de la portée d'une carte"
+    },
+    "conditions": {
+      "title": "Les états",
+      "boon": "bonus",
+      "bane": "malus"
+    },
+    "zeroHp": {
+      "title": "À 0 {{abbr}}",
+      "knockedOut_one": "Tu tombes : {{condition}}. Un soin te relève. Sans soin pendant {{count}} tour, tu es {{out}} jusqu'à la scène suivante.",
+      "knockedOut_other": "Tu tombes : {{condition}}. Un soin te relève. Sans soin pendant {{count}} tours, tu es {{out}} jusqu'à la scène suivante.",
+      "deathSaves": "Tu tombes et tu lances des jets contre la mort (difficulté {{difficulty}}) : {{successes}} réussites te stabilisent, {{failures}} échecs t'emportent."
+    },
+    "progression": {
+      "title": "Progresser",
+      "upgrade_one": "Chaque réussite rapporte de l'XP. Tous les {{xp}} XP, tu gagnes {{count}} point à ajouter à une caractéristique.",
+      "upgrade_other": "Chaque réussite rapporte de l'XP. Tous les {{xp}} XP, tu gagnes {{count}} points à ajouter à tes caractéristiques.",
+      "level": "Niveau {{level}} · {{xp}} XP"
+    }
   }
 }

@@ -1384,7 +1384,7 @@ faisables dans l'app sur un iPhone et un Android.
 
 **Origine** — Planche « Jouer » · V1 écran joueur
 
-### `player/read-the-rules` · todo
+### `player/read-the-rules` · doing — reste le premier combat joué (phase 3)
 
 **Pourquoi** — Aux Corsaires, les joueurs ont trouvé les règles peu
 claires et pas toujours appliquées pareil.
@@ -1401,6 +1401,38 @@ avant la session suivante, jamais en pleine partie.
 son premier combat, pourquoi son attaque a raté.
 
 **Origine** — Règle de design 3 · Romain, 4 octobre 2026
+
+**État** — La page `/partie/:id/regles` (bouton « Les règles » sur
+l'accueil du joueur) est entièrement tirée du système de règles par la
+projection (`campaigns/projection/rules.rs`, `GET /api/play/{id}/rules`) :
+le dé et le modificateur, les difficultés, les quatre résultats (faces
+naturelles, XP, dégâts ×2), l'attaque et la CA, le tour et le coût de
+chaque action, la recharge et les durées, les états, 0 PV, la
+progression, la grille. Rien n'y est écrit à la main hors des phrases de
+liaison ; ni adversaires, ni paliers, ni notes du MJ (test). Avec une
+fiche qui a une classe : ce qu'il faut au dé pour chaque caractéristique
+contre chaque difficulté, chaque carte avec son coût en actions, sa
+recharge et son jet d'attaque détaillé (`action::attack_modifiers`,
+extrait du moteur), et quatre jets d'exemple, un par résultat, faits par
+le moteur lui-même avec la face imposée. Le composant `RollDetail`
+affiche un `RollBreakdown` (le type d'un vrai jet) : face, chaque bonus
+et sa source, total, cible, résultat et pourquoi (« 9 contre Moyen
+(10) : il manquait 1 »). « Ce qui change » : diff entre deux versions
+(`rules::changes`, testé sur des variantes des Corsaires) ; la version
+lue par chaque joueur est dans `rules_seen` (migration 009, posée à
+l'arrivée à la table), le joueur la fait avancer avec « J'ai lu ce qui
+change ». Vérifié sur les deux mondes (`back/tests/rules_test.rs`),
+balayage des routes joueur vert.
+Limites honnêtes : il n'existe encore qu'une version (v1) de chaque
+système, donc personne ne verra de liste de changements avant
+`campaign/edit-rule-system` ; les sessions n'existent pas encore, donc
+« jamais en pleine partie » se réduit à : la liste s'affiche dès que les
+règles changent et reste jusqu'à lecture — à masquer pendant une session
+ouverte quand `session/open-lobby` existera. Les nombres du joueur sont
+ceux du niveau 1 de sa fiche (pas encore son état vivant). Attend la
+phase 3 : un vrai jet en séance affiché par `RollDetail`
+(`ui/roll-faceted-dice`, `player/fight-turn`) — c'est là que le « fini
+quand » se vérifiera.
 
 ### `player/buy-and-trade` · todo
 
