@@ -8,6 +8,7 @@
 //! other (`MEMORY.md` §3). [`update_world`] wraps that for world writes.
 
 pub mod projection;
+pub mod rules_seen;
 
 use chrono::{DateTime, Utc};
 use promptus_shared::story::{Campaign, RuleSystemRef, WorldState};

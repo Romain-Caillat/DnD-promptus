@@ -13,9 +13,11 @@
 //!   that report and never block (`lint::lint`, `lint::balance_report`)
 //! - [`character`] — whether a player's character follows the rules
 //!   (reports, never blocks)
+//! - [`changes`] — what changed between two versions, as players read it
 //! - [`variant`] — "what if" edits applied to a draft before it loads
 
 pub mod action;
+pub mod changes;
 pub mod character;
 pub mod check;
 pub mod conditions;

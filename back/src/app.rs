@@ -180,6 +180,13 @@ fn player_routes() -> Vec<RouteSpec> {
             "/api/play/{campaign}/character/submit",
             post(api::play::submit_character),
         ),
+        // The campaign's rules, and « I read what changed ».
+        ("GET", "/api/play/{campaign}/rules", get(api::rules::rules)),
+        (
+            "POST",
+            "/api/play/{campaign}/rules/seen",
+            post(api::rules::mark_seen),
+        ),
         // A socket: it carries versions and presence, never data.
         (
             "GET",

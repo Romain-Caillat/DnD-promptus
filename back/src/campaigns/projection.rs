@@ -25,7 +25,10 @@
 //!
 //! The rule system reaches players the same way: names, descriptions,
 //! scores and action cards, never the GM's notes on a class, the
-//! creation rule or an action tag ([`project_creation`]).
+//! creation rule or an action tag ([`project_creation`]). The rules page
+//! is [`rules::project_rules`].
+
+pub mod rules;
 
 use std::collections::BTreeMap;
 

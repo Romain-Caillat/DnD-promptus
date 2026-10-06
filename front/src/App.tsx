@@ -10,6 +10,7 @@ import { HealthPage } from '@/features/health/HealthPage'
 import { CharacterCreatorPage } from '@/features/play/creator/CharacterCreatorPage'
 import { JoinPage } from '@/features/play/JoinPage'
 import { PlayerHomePage } from '@/features/play/PlayerHomePage'
+import { RulesPage } from '@/features/play/rules/RulesPage'
 import { ReferencePage } from '@/features/reference/ReferencePage'
 
 export default function App() {
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/rejoindre/:code" element={<JoinPage />} />
         <Route path="/partie/:campaignId" element={<PlayerHomePage />} />
         <Route path="/partie/:campaignId/personnage" element={<CharacterCreatorPage />} />
+        <Route path="/partie/:campaignId/regles" element={<RulesPage />} />
         <Route path="/campagnes/nouvelle" element={<NewCampaignPage />} />
         <Route path="/campagnes/:campaignId" element={<CampaignPage />} />
         <Route path="/campagnes/:campaignId/table" element={<GmTablePage />} />

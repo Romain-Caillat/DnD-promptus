@@ -6,6 +6,7 @@ import { creatorPath } from '@/lib/creator'
 import { cn } from '@/lib/utils'
 import { fetchPlayerHome, type CharacterView, type PlayerHome } from '@/lib/play'
 import { CharacterSummary } from './creator/ReviewStep'
+import { RulesEntry } from './rules/RulesEntry'
 
 type HomeState =
   | { kind: 'loading' }
@@ -104,6 +105,7 @@ export function PlayerHomePage() {
         ) : (
           <p className="text-body text-chalk-soft">{t('play.spectator')}</p>
         )}
+        <RulesEntry campaignId={campaignId} />
       </section>
       <p className="px-4 pb-8 text-caption text-mute">{t('play.keep')}</p>
     </main>

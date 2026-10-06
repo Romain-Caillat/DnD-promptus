@@ -491,6 +491,30 @@ fn deliver(
     Ok(())
 }
 
+/// What the attacker alone adds to an attack roll with `action`: the
+/// attack ability (with its conditions' roll modifiers) and, when the
+/// system adds it, the action's own precision — plus the advantage and
+/// disadvantage the attacker's conditions bring. The situation, the
+/// conditions' precision, the target and the grid come on top, when the
+/// attack is played (`resolve_action`). The rules page shows exactly
+/// this to the player.
+pub fn attack_modifiers(
+    system: &RuleSystem,
+    actor: &Combatant,
+    action: &ActionDef,
+) -> Result<(Vec<Modifier>, bool, bool), Refusal> {
+    let ability = attack_ability(system, actor, action)?;
+    let (mut mods, adv, dis) =
+        check::ability_modifiers(system, actor, &ability, RollScope::Attacks)?;
+    if system.attack.precision == PrecisionRule::AddedToAttackRoll && action.precision() != 0 {
+        mods.push(Modifier {
+            source: ModifierSource::Precision(action.id.clone()),
+            value: action.precision(),
+        });
+    }
+    Ok((mods, adv, dis))
+}
+
 fn attack_roll(
     system: &RuleSystem,
     actor: &Combatant,
@@ -500,16 +524,8 @@ fn attack_roll(
     positional: Option<&Positional>,
     dice: &mut dyn DiceSource,
 ) -> Result<RollBreakdown, Refusal> {
-    let ability = attack_ability(system, actor, action)?;
-    let (mut mods, mut adv, mut dis) =
-        check::ability_modifiers(system, actor, &ability, RollScope::Attacks)?;
+    let (mut mods, mut adv, mut dis) = attack_modifiers(system, actor, action)?;
     if system.attack.precision == PrecisionRule::AddedToAttackRoll {
-        if action.precision() != 0 {
-            mods.push(Modifier {
-                source: ModifierSource::Precision(action.id.clone()),
-                value: action.precision(),
-            });
-        }
         for s in situations.iter().filter(|s| s.precision != 0) {
             mods.push(Modifier {
                 source: ModifierSource::Situation(s.situation.clone()),
