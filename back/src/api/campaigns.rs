@@ -40,7 +40,7 @@ use crate::state::AppState;
 /// A campaign as the GM's prep screens read it.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct CampaignDetail {
+pub(crate) struct CampaignDetail {
     id: Uuid,
     story: Campaign,
     world: WorldState,
@@ -48,9 +48,11 @@ struct CampaignDetail {
     settings: Settings,
     archived_at: Option<DateTime<Utc>>,
     updated_at: DateTime<Utc>,
+    /// When the GM declared it playable; `None` until then.
+    validated_at: Option<DateTime<Utc>>,
 }
 
-fn detail(row: CampaignRow) -> CampaignDetail {
+pub(crate) fn detail(row: CampaignRow) -> CampaignDetail {
     CampaignDetail {
         id: row.id,
         issues: validate(&row.story),
@@ -59,6 +61,7 @@ fn detail(row: CampaignRow) -> CampaignDetail {
         settings: row.settings,
         archived_at: row.archived_at,
         updated_at: row.updated_at,
+        validated_at: row.validated_at,
     }
 }
 

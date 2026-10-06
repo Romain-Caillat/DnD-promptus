@@ -239,12 +239,18 @@ fn check_status(session: &Session, allowed: &[Status]) -> Result<(), AppError> {
 ///
 /// # Errors
 ///
-/// 404 when the campaign is missing or another GM's; a database error.
+/// 404 when the campaign is missing or another GM's; 409
+/// `CAMPAIGN_NOT_VALIDATED`; a database error.
 pub async fn open(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Session, AppError> {
     let mut tx = pool.begin().await?;
     let campaign_row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
     if let Some(open) = current(&mut *tx, campaign).await? {
         return Ok(open);
+    }
+    // Only a campaign the GM declared playable is played
+    // (`campaign/review-story-graph`).
+    if campaign_row.validated_at.is_none() {
+        return Err(AppError::Conflict("CAMPAIGN_NOT_VALIDATED"));
     }
     // A rule change ships between sessions: the newest locked version
     // applies from this one (`campaign/edit-rule-system`).

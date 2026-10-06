@@ -42,8 +42,15 @@ pub const PIXEL_ART: Template = Template {
     text: include_str!("../../prompts/pixel-art.v1.md"),
 };
 
+/// The co-GM's workshop in prep (`campaign/review-story-graph`).
+pub const WORKSHOP: Template = Template {
+    id: "workshop",
+    version: 1,
+    text: include_str!("../../prompts/workshop.v1.md"),
+};
+
 /// Every template, for the tests that check each one renders.
-pub const ALL: [Template; 3] = [COPILOT, RECAP, PIXEL_ART];
+pub const ALL: [Template; 4] = [COPILOT, RECAP, PIXEL_ART, WORKSHOP];
 
 const USER_MARK: &str = "---user---";
 

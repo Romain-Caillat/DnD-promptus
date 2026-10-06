@@ -7,6 +7,7 @@ import { GmTablePage } from '@/features/gm/GmTablePage'
 import { GmLivePage } from '@/features/gm/live/GmLivePage'
 import { NewCampaignPage } from '@/features/gm/NewCampaignPage'
 import { PlayerViewPage } from '@/features/gm/PlayerViewPage'
+import { ReviewPage } from '@/features/gm/prep/ReviewPage'
 import { RulesEditorPage } from '@/features/gm/rules/RulesEditorPage'
 import { HealthPage } from '@/features/health/HealthPage'
 import { CharacterCreatorPage } from '@/features/play/creator/CharacterCreatorPage'
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/campagnes/:campaignId/soiree" element={<GmLivePage />} />
         <Route path="/campagnes/:campaignId/vue-joueurs" element={<PlayerViewPage />} />
         <Route path="/campagnes/:campaignId/regles" element={<RulesEditorPage />} />
+        <Route path="/campagnes/:campaignId/preparer" element={<ReviewPage />} />
         <Route path="*" element={<GmHomePage />} />
       </Routes>
     </BrowserRouter>

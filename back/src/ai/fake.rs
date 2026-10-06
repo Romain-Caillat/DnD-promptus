@@ -148,6 +148,100 @@ fn recap_answer(prompt: &str) -> serde_json::Value {
     })
 }
 
+/// The workshop: reads the campaign back from the prompt's YAML and
+/// proposes what a careful co-GM would — for a three-clue alert, a
+/// clue of that revelation in a required scene that has none; for a
+/// selected scene or a free request, a sharper motivation for the first
+/// NPC and a clue in that scene — plus one edit on an invented id that
+/// the server must drop.
+fn workshop_answer(prompt: &str) -> serde_json::Value {
+    use promptus_shared::story::{Importance, from_yaml};
+    let yaml = prompt
+        .split("```yaml\n")
+        .nth(1)
+        .and_then(|s| s.split("\n```").next())
+        .unwrap_or("");
+    let Ok(c) = from_yaml(yaml) else {
+        return json!({ "reply": "Je n’ai pas pu lire la campagne.", "edits": [] });
+    };
+    let mut edits = Vec::new();
+    let line = |head: &str| {
+        prompt
+            .lines()
+            .find_map(|l| l.strip_prefix(head))
+            .map(str::trim)
+    };
+    let alert_rev = line("Alerte à résoudre : THREE_CLUE_RULE revelations[")
+        .and_then(|rest| rest.split(']').next())
+        .and_then(|i| i.parse::<usize>().ok())
+        .and_then(|i| c.revelations.get(i));
+    let scene = line("Scène sélectionnée : ")
+        .and_then(|rest| rest.split_whitespace().next())
+        .and_then(|id| c.node(id));
+    let fresh = |stem: &str| {
+        let mut id = stem.to_string();
+        let mut n = 2;
+        while c.node(&id).is_some() || c.clue(&id).is_some() {
+            id = format!("{stem}_{n}");
+            n += 1;
+        }
+        id
+    };
+    let reply;
+    if let Some(rev) = alert_rev {
+        // Enough clues, in scenes that do not hold one yet (required
+        // scenes first), to reach three scenes.
+        let holding: Vec<&str> = c.clues_for(&rev.id).map(|cl| cl.node.as_str()).collect();
+        let mut free: Vec<_> = c
+            .nodes
+            .iter()
+            .filter(|n| !holding.contains(&n.id.as_str()))
+            .collect();
+        free.sort_by_key(|n| n.optional);
+        let missing = 3usize.saturating_sub(holding.len());
+        let mut places = Vec::new();
+        for (k, n) in free.into_iter().take(missing).enumerate() {
+            edits.push(json!({ "op": "add", "kind": "clue", "value": {
+                "id": fresh(&format!("cl_{}_atelier_{}", rev.id, k + 1)),
+                "revelation": rev.id,
+                "node": n.id,
+                "text": format!("Un détail de plus mène à la même conclusion : {}", rev.statement),
+                "discovery": "En fouillant avec soin.",
+            }}));
+            places.push(format!("« {} »", n.title));
+        }
+        reply = format!(
+            "J’ajoute des indices vers « {} » dans {}.",
+            rev.statement,
+            places.join(" et ")
+        );
+    } else {
+        if let Some(npc) = c.npcs.first() {
+            edits.push(json!({ "op": "set", "target": npc.id, "field": "motivation",
+                "value": format!("{} Mais il garde ses vraies raisons pour lui.", npc.motivation).trim().to_string() }));
+        }
+        let node = scene.or_else(|| c.nodes.first());
+        let rev = c
+            .revelations
+            .iter()
+            .find(|r| r.importance == Importance::Critical)
+            .or_else(|| c.revelations.first());
+        if let (Some(n), Some(r)) = (node, rev) {
+            edits.push(json!({ "op": "add", "kind": "clue", "value": {
+                "id": fresh("cl_atelier"),
+                "revelation": r.id,
+                "node": n.id,
+                "text": "Un registre annoté, dont une page manque.",
+            }}));
+        }
+        reply = "Je rends le premier PNJ plus ambigu et j’ajoute un indice qui pointe vers lui sans l’accuser.".to_string();
+    }
+    edits.push(
+        json!({ "op": "set", "target": "pnj_invente", "field": "name", "value": "Personne" }),
+    );
+    json!({ "reply": reply, "edits": edits })
+}
+
 /// A 32 × 32 pixel pattern, mirrored like a crest, from the prompt's
 /// FNV-1a hash.
 fn pattern(prompt: &str) -> Vec<u8> {
@@ -207,6 +301,8 @@ impl Provider for FakeProvider {
             self.record(format!("complete:{words}"));
             let text = if self.broken {
                 "Voici ma réponse : { pas du json".to_string()
+            } else if system.contains("atelier") {
+                workshop_answer(prompt).to_string()
             } else if system.contains("co-MJ") {
                 copilot_answer(prompt).to_string()
             } else if system.contains("récapitulatifs") {

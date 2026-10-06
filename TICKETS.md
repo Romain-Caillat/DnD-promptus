@@ -909,7 +909,7 @@ personnages) ; le préréglage n'est pas modifiable ici
 (`campaign/edit-rule-system`). **Reste** : que Romain crée, retrouve et
 rouvre une campagne pour de vrai, sur ordinateur et sur tablette.
 
-### `campaign/review-story-graph` · todo
+### `campaign/review-story-graph` · doing — reste une campagne générée relue pour de vrai
 
 **Pourquoi** — Le MJ relit et corrige tout ce que l'IA propose avant que
 ça existe.
@@ -923,6 +923,26 @@ campagne qui la rend jouable.
 co-MJ, résout une alerte et la valide.
 
 **Origine** — Planche « Préparer » (moments 6 à 8 et 10)
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). L'écran `/campagnes/:id/preparer` (bouton « Relire et
+valider la campagne ») a cinq onglets : le **graphe** (scènes par acte,
+une scène sélectionnée se corrige à droite avec ses indices, on en
+ajoute), la **bible**, les **fiches** (PNJ, adversaires, objets), la
+**cohérence** (les alertes du validateur en français, chacune avec
+« Proposer une correction ») et **valider** (le bilan, puis
+l'invitation). L'**atelier** du co-MJ reste à gauche : une demande
+libre, sur la scène sélectionnée, ou une alerte ; le co-MJ lit toute la
+campagne et ce que dit le validateur, propose des changements par
+identifiant (`story::edit`), affichés en diff (« + Indice « … » →
+Le quai ») ; les identifiants inventés sont écartés et comptés ; rien
+ne change avant « Accepter », qui réapplique sur la campagne du moment
+(une proposition dépassée est refusée). Chaque appel est compté dans le
+budget IA. Une campagne n'ouvre une soirée qu'une fois **validée**, ce
+qui demande zéro erreur ; un import est validé d'office (le MJ l'a
+écrit), une campagne créée depuis un pitch ou générée attend le MJ.
+Vérifié sur l'acte 1 joué des Corsaires : le co-MJ place les indices
+manquants de la route du Greyhound et l'alerte disparaît.
 
 ### `campaign/check-player-knowledge` · todo
 

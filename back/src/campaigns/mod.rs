@@ -36,6 +36,9 @@ pub struct CampaignRow {
     /// When the GM shelved it; `None` while it is in use.
     pub archived_at: Option<DateTime<Utc>>,
     pub updated_at: DateTime<Utc>,
+    /// When the GM last declared it playable (`campaign/review-story-graph`);
+    /// `None` until then, and a session does not open.
+    pub validated_at: Option<DateTime<Utc>>,
     /// The rule system `story.rules` names: the campaign's own locked
     /// version, or the preset (`crate::rules`). `None` when the server
     /// has neither.
@@ -126,11 +129,23 @@ type Row = (
     i32,
     Option<DateTime<Utc>>,
     DateTime<Utc>,
+    Option<DateTime<Utc>>,
     Option<String>,
 );
 
 fn from_row(
-    (id, gm_id, story, world, player_count, ai_budget_cents, archived_at, updated_at, stored_rules): Row,
+    (
+        id,
+        gm_id,
+        story,
+        world,
+        player_count,
+        ai_budget_cents,
+        archived_at,
+        updated_at,
+        validated_at,
+        stored_rules,
+    ): Row,
 ) -> CampaignRow {
     let rules = crate::rules::resolve(id, &story.0.rules, stored_rules.as_deref());
     CampaignRow {
@@ -144,6 +159,7 @@ fn from_row(
         },
         archived_at,
         updated_at,
+        validated_at,
         rules,
     }
 }
@@ -152,13 +168,15 @@ fn from_row(
 /// version its story names, when the campaign has its own.
 const COLUMNS: &str =
     "id, gm_id, story, world, player_count, ai_budget_cents, archived_at, updated_at,
+     validated_at,
      (SELECT rv.system FROM rule_versions rv
        WHERE rv.campaign_id = campaigns.id
          AND rv.version = (campaigns.story->'rules'->>'version')::int
          AND rv.locked_at IS NOT NULL)";
 
-/// Store a new campaign for `gm`, with an empty world and the default
-/// [`Settings`].
+/// Store a campaign the GM brought whole (an import) for `gm`, with an
+/// empty world and the default [`Settings`]. The GM wrote it: it is
+/// validated as it arrives, issues and all (they report, never block).
 ///
 /// # Errors
 ///
@@ -168,10 +186,11 @@ pub async fn create(
     gm: &CurrentGm,
     story: &Campaign,
 ) -> Result<CampaignRow, AppError> {
-    create_planned(pool, gm, story, Settings::default()).await
+    insert(pool, gm, story, Settings::default(), true).await
 }
 
-/// [`create`], with the GM's [`Settings`] (already [`Settings::checked`]).
+/// A campaign to prepare, with the GM's [`Settings`] (already
+/// [`Settings::checked`]): not validated until the GM says so.
 ///
 /// # Errors
 ///
@@ -182,15 +201,26 @@ pub async fn create_planned(
     story: &Campaign,
     settings: Settings,
 ) -> Result<CampaignRow, AppError> {
+    insert(pool, gm, story, settings, false).await
+}
+
+async fn insert(
+    pool: &PgPool,
+    gm: &CurrentGm,
+    story: &Campaign,
+    settings: Settings,
+    validated: bool,
+) -> Result<CampaignRow, AppError> {
     let row: Row = sqlx::query_as(&format!(
-        "INSERT INTO campaigns (gm_id, story, world, player_count, ai_budget_cents)
-         VALUES ($1, $2, $3, $4, $5) RETURNING {COLUMNS}"
+        "INSERT INTO campaigns (gm_id, story, world, player_count, ai_budget_cents, validated_at)
+         VALUES ($1, $2, $3, $4, $5, CASE WHEN $6 THEN now() END) RETURNING {COLUMNS}"
     ))
     .bind(gm.id)
     .bind(Json(story))
     .bind(Json(WorldState::default()))
     .bind(settings.player_count)
     .bind(settings.ai_budget_cents)
+    .bind(validated)
     .fetch_one(pool)
     .await?;
     Ok(from_row(row))

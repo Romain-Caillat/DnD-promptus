@@ -44,6 +44,20 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/campaigns/{campaign}/rules/compare?from=1&to=2"),
     ("POST", "/api/campaigns/{campaign}/rules/draft/lock"),
     ("DELETE", "/api/campaigns/{campaign}/rules/draft"),
+    // Preparing: an edit, the campaign declared playable, then the
+    // co-GM's workshop — each decision on a proposal stored just before.
+    ("POST", "/api/campaigns/{campaign}/story/edits"),
+    ("POST", "/api/campaigns/{campaign}/story/validate"),
+    ("GET", "/api/campaigns/{campaign}/workshop"),
+    ("POST", "/api/campaigns/{campaign}/workshop"),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/workshop/{proposal}/accept",
+    ),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/workshop/{proposal}/reject",
+    ),
     ("GET", "/api/campaigns/{campaign}/invite"),
     ("POST", "/api/campaigns/{campaign}/invite"),
     ("GET", "/api/campaigns/{campaign}/players"),
@@ -154,6 +168,12 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             "aiBudgetCents": 100
         })),
         (_, p) if p.ends_with("/archive") => Some(serde_json::json!({ "archived": false })),
+        (_, p) if p.ends_with("/story/edits") => Some(serde_json::json!({
+            "edits": [{ "op": "set", "target": "bible", "field": "tone", "value": "Sombre." }]
+        })),
+        ("POST", p) if p.ends_with("/workshop") => {
+            Some(serde_json::json!({ "prompt": "Rends le gardien plus ambigu." }))
+        }
         ("PUT", p) if p.ends_with("/rules/draft") => Some(serde_json::json!({
             "yaml": CORSAIRES_RULES.replacen("\nversion: 1\n", "\nversion: 2\n", 1),
             "note": "Facile à 12."
@@ -225,6 +245,7 @@ struct Ids {
     session: String,
     draft: String,
     asset: String,
+    proposal: String,
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
@@ -237,6 +258,7 @@ fn route_uri(path: &str, ids: &Ids) -> String {
         .replace("{session}", &ids.session)
         .replace("{draft}", &ids.draft)
         .replace("{asset}", &ids.asset)
+        .replace("{proposal}", &ids.proposal)
 }
 
 /// Every placeholder filled for `player` of `campaign`: an invitation of
@@ -270,6 +292,7 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         session: Uuid::new_v4().to_string(),
         draft: Uuid::new_v4().to_string(),
         asset: Uuid::new_v4().to_string(),
+        proposal: Uuid::new_v4().to_string(),
     }
 }
 
@@ -460,6 +483,17 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .unwrap()
             .to_string();
         }
+        if path.contains("{proposal}") {
+            ids.proposal = sqlx::query_scalar::<_, Uuid>(
+                "INSERT INTO story_proposals (campaign_id, prompt, edits)
+                 VALUES ($1, 'Rien.', '[]') RETURNING id",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
+        }
         if path.contains("{asset}") {
             ids.asset = sqlx::query_scalar::<_, Uuid>(
                 "INSERT INTO media_assets (campaign_id, kind, subject, mime, image)
@@ -482,7 +516,9 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .to_string();
         }
         let uri = route_uri(path, &ids);
-        let body = if path.ends_with("/validate") || path.ends_with("/return") {
+        let decision = path.contains("/characters/")
+            && (path.ends_with("/validate") || path.ends_with("/return"));
+        let body = if decision {
             Some(submitted_body(&pool, &ids.character, path).await)
         } else {
             body_for(method, path)

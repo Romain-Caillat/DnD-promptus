@@ -9,6 +9,7 @@ pub mod live;
 pub mod media;
 pub mod play;
 pub mod play_evening;
+pub mod prep;
 pub mod rule_versions;
 pub mod rules;
 pub mod sheets;

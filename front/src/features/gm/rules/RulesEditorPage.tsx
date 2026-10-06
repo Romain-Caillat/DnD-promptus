@@ -22,6 +22,7 @@ import {
   type RuleReport,
 } from '@/lib/ruleEditor'
 import { cn } from '@/lib/utils'
+import { NumberField, TextField } from '../fields'
 import { RuleChangeLine } from '@/components/game/RuleChangeLine'
 
 const TABS = ['preset', 'stats', 'rolls', 'actions', 'house', 'creation', 'test', 'text', 'history'] as const
@@ -289,45 +290,6 @@ function PresetTab({ editor, busy, onStart }: { editor: RuleEditor; busy: boolea
         />
       )}
     </Panel>
-  )
-}
-
-function TextField({
-  label,
-  value,
-  onChange,
-  wide = false,
-  multiline = false,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  wide?: boolean
-  multiline?: boolean
-}) {
-  return (
-    <label className={cn('flex flex-col gap-1 text-caption text-mute-soft', wide && 'col-span-full')}>
-      {label}
-      {multiline ? (
-        <textarea className={cn(field, 'min-h-16')} value={value} onChange={(e) => onChange(e.target.value)} />
-      ) : (
-        <input className={field} value={value} onChange={(e) => onChange(e.target.value)} />
-      )}
-    </label>
-  )
-}
-
-function NumberField({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
-  return (
-    <label className="flex flex-col gap-1 text-caption text-mute-soft">
-      {label}
-      <input
-        className={cn(field, 'w-24')}
-        type="number"
-        value={Number.isFinite(value) ? value : 0}
-        onChange={(e) => onChange(Number(e.target.value))}
-      />
-    </label>
   )
 }
 

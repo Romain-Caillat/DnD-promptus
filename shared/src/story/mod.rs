@@ -7,8 +7,10 @@
 //! - [`yaml`] — import and export of a whole campaign;
 //! - [`library`] — checks against the rule system and the maps;
 //! - [`encounter`] — a scene's planned fight, staged for the simulator;
+//! - [`edit`] — changes by id, from the review screen and the co-GM;
 //! - [`v1`] — importer for V1 campaigns (entities YAML + story JSON).
 
+pub mod edit;
 pub mod encounter;
 pub mod library;
 pub mod model;

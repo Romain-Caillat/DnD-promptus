@@ -179,6 +179,38 @@ Two more checks of the campaign alone came with the witness worlds:
 of an act that has scenes) and `MUSIC_NO_URL` (warning: a track still
 to choose).
 
+## Editing by id
+
+The review screen (`/campagnes/:id/preparer`) and the co-GM's workshop
+change a stored campaign with **edits by id** (`story::edit`,
+`POST /api/campaigns/{id}/story/edits`), applied whole or not at all:
+
+```json
+{ "op": "set", "target": "sc_quai", "field": "summary", "value": "…" }
+{ "op": "set", "target": "bible", "field": "truths", "value": ["…"] }
+{ "op": "set", "target": "pnj_morel", "field": "stats.hit_points", "value": 12 }
+{ "op": "add", "kind": "clue", "value": { "id": "cl_…", "revelation": "…", "node": "…", "text": "…" } }
+{ "op": "remove", "target": "cl_…" }
+```
+
+`target` is an id, `bible` or `campaign` (title, universe); a dotted
+`field` reaches inside an object, and `null` clears it. `id` and
+`format` are never set. The result is read back through the model, so
+an unknown field or a wrong type is refused like an import
+(`EDIT_INVALID`, with the edit's index). What the result breaks is the
+validator's to report.
+
+The co-GM's proposals are the same edits. Before the GM sees one, each
+edit that does not apply or adds an error (an id it invented, a
+reference to nothing) is dropped and counted. Accepting re-applies the
+edits to the campaign as it is then; one the campaign has outgrown is
+refused (`PROPOSAL_STALE`).
+
+A campaign is **validated** (`validated_at`) when the GM declares it
+playable, which needs no error left; only a validated campaign opens a
+session. An import is validated as it arrives (the GM wrote it); a
+campaign created from a pitch, or generated, waits for the GM.
+
 ## The witness worlds and `bun run worlds`
 
 The two worlds live in `content/campaigns/<world>/campagne.yaml`, next
