@@ -344,7 +344,8 @@ pub enum ZeroHpRule {
         #[serde(default)]
         note: String,
     },
-    /// Death saves (engine/save-against-death plays them; modelled here).
+    /// Death saves, played by `combat::death`: a roll a turn, enough
+    /// failures propose the death to the GM.
     DeathSaves {
         condition: String,
         difficulty: i32,

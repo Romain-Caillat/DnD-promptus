@@ -29,7 +29,7 @@ use sqlx::PgPool;
 use sqlx::types::Json;
 use uuid::Uuid;
 
-use super::{CharacterSheet, CharacterStatus, touch_character};
+use super::{CharacterSheet, CharacterStatus, play, touch_character};
 use crate::campaigns::CampaignRow;
 use crate::error::AppError;
 
@@ -275,15 +275,15 @@ pub async fn decide(
     decision: Decision,
 ) -> Result<(), AppError> {
     let mut tx = pool.begin().await?;
-    let row: Option<(String, DateTime<Utc>)> = sqlx::query_as(
-        "SELECT status, updated_at FROM characters
+    let row: Option<(String, DateTime<Utc>, i32)> = sqlx::query_as(
+        "SELECT status, updated_at, start_xp FROM characters
          WHERE id = $1 AND campaign_id = $2 FOR UPDATE",
     )
     .bind(id)
     .bind(campaign_id)
     .fetch_optional(&mut *tx)
     .await?;
-    let Some((status, updated_at)) = row else {
+    let Some((status, updated_at, start_xp)) = row else {
         return Err(AppError::NotFound("NOT_FOUND"));
     };
     if CharacterStatus::parse(&status)? != CharacterStatus::Submitted {
@@ -306,6 +306,16 @@ pub async fn decide(
     .bind(note)
     .execute(&mut *tx)
     .await?;
+    // A replacement after a death enters play at the group's level.
+    if status == "validated" && start_xp > 0 {
+        play::enter_with_xp(
+            &mut tx,
+            campaign_id,
+            id,
+            u32::try_from(start_xp).unwrap_or(0),
+        )
+        .await?;
+    }
     touch_character(&mut tx, campaign_id, id).await?;
     tx.commit().await?;
     Ok(())

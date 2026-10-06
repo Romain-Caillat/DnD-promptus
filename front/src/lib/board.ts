@@ -81,7 +81,7 @@ export interface TokenView {
   ghost: boolean
 }
 
-type Standing = 'in_fight' | 'defeated' | 'out_of_scene' | 'fled'
+type Standing = 'in_fight' | 'defeated' | 'out_of_scene' | 'fled' | 'dead'
 
 interface FighterView {
   id: string
@@ -94,6 +94,8 @@ interface FighterView {
   down: boolean
   conditions: string[]
   mine: boolean
+  /** Party members dying at 0 HP: their boxes (engine/save-against-death). */
+  deathSaves: { successes: number; failures: number; stable: boolean; ofSuccesses: number; ofFailures: number } | null
 }
 
 interface FightCardView {
@@ -120,6 +122,9 @@ export type FightEvent =
   | { kind: 'flee_roll'; who: string; roll: RollBreakdown }
   | { kind: 'flee_failed' | 'fled' | 'defeated' | 'left_the_scene' | 'turn_ended'; who: string }
   | { kind: 'ended'; end: { winner: 'party' | 'opposition' | null; rounds: number } }
+  | { kind: 'death_save'; who: string; die: string; natural: number; difficulty: number; successes: number; failures: number }
+  | { kind: 'death_failure'; who: string; failures: number }
+  | { kind: 'stabilised' | 'death_proposed' | 'died' | 'spared'; who: string }
 
 type RulesEvent =
   | { event: 'roll'; roller: string; against: string | null; purpose: unknown; breakdown: RollBreakdown }
@@ -144,6 +149,8 @@ export interface FightView {
   events: FightEvent[]
   loot: { name: string; toMe: boolean }[]
   won: boolean | null
+  /** My turn while I am dying: the save to roll, and only that. */
+  deathSave: { die: string; difficulty: number } | null
 }
 
 /** The grid as a player may see it (`projection::board::BoardView`). */
@@ -161,6 +168,7 @@ export type Command =
   | { kind: 'item'; item: string; targets: string[] }
   | { kind: 'flee' }
   | { kind: 'endTurn' }
+  | { kind: 'deathSave' }
 
 export function fetchBoard(campaignId: string): Promise<BoardView | null> {
   return apiRequest<BoardView | null>('GET', `${play(campaignId)}/board`)
@@ -210,6 +218,16 @@ interface Fight {
   round: number
   turn: number
   end: unknown
+  /** Death-save boxes of the party's dying (absent on old fights). */
+  dying?: Record<string, DeathTrack>
+}
+
+interface DeathTrack {
+  successes: number
+  failures: number
+  stable: boolean
+  /** The engine proposes the death: the GM's word is awaited. */
+  proposed: boolean
 }
 
 type ProposedStep =
@@ -239,6 +257,8 @@ interface GmEncounter {
   loot: LootLine[]
   events: FightEvent[]
   reachable: ReachCell[]
+  /** The active character's turn waits for their death save. */
+  deathSaveDue: boolean
 }
 
 /** The GM's grid screen (`GET /api/campaigns/{id}/board`). */
@@ -269,6 +289,8 @@ export type GmCommand =
   | { kind: 'accept' }
   | { kind: 'condition'; who: string; condition: string; turns?: number; remove: boolean }
   | { kind: 'stop' }
+  | { kind: 'deathSave' }
+  | { kind: 'death'; who: string; call: 'die' | 'spare' }
 
 export function fetchGmBoard(campaignId: string): Promise<GmBoard> {
   return apiRequest<GmBoard>('GET', `${gm(campaignId)}/board`)

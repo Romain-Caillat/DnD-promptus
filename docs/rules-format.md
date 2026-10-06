@@ -112,7 +112,14 @@ zero_hp: { rule: death_saves, condition: mourant, difficulty: 10, successes: 3, 
 
 `knocked_out`: a heal lifts `condition`; after `out_after_turns` of the
 bearer's turns without one, `out_condition` replaces it.
-`death_saves` is modelled, played by `engine/save-against-death`.
+`death_saves` (`shared/src/combat/death.rs`): a character at 0 HP rolls
+the check die on each of their turns — at least `difficulty` marks a
+success, under it a failure, a natural 1 two failures, the die's top face
+brings them back at 1 HP. A hit while down marks a failure, two on a
+critical. `successes` successes make them stable; `failures` failures
+**propose** the death, which the GM confirms or turns into another
+outcome (stable). When the fight ends, those still dying are stabilised
+if the party won, else their death is proposed. Adversaries never roll.
 
 ## Fighting on a grid
 

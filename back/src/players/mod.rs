@@ -17,6 +17,7 @@
 //! and the history of what changed it are in [`play`].
 
 pub mod assist;
+pub mod death;
 pub mod play;
 pub mod review;
 
@@ -78,6 +79,9 @@ pub enum CharacterStatus {
     Validated,
     /// Sent back by the GM with a note (`Character::gm_note`).
     Returned,
+    /// Fallen; the GM confirmed it (`player/face-death`). Kept for the
+    /// chronicle, never in play again.
+    Dead,
 }
 
 impl CharacterStatus {
@@ -87,6 +91,7 @@ impl CharacterStatus {
             "submitted" => Ok(Self::Submitted),
             "validated" => Ok(Self::Validated),
             "returned" => Ok(Self::Returned),
+            "dead" => Ok(Self::Dead),
             other => Err(AppError::Internal(format!(
                 "unknown character status {other}"
             ))),
@@ -529,12 +534,24 @@ async fn create_character(
     tx: &mut Transaction<'_, Postgres>,
     player: &Player,
 ) -> Result<(), AppError> {
+    create_character_at(tx, player, 0).await
+}
+
+/// A fresh draft for `player`, entering play with `start_xp` once the
+/// GM validates it (a replacement after a death, [`death`]).
+async fn create_character_at(
+    tx: &mut Transaction<'_, Postgres>,
+    player: &Player,
+    start_xp: u32,
+) -> Result<(), AppError> {
     let id: Uuid = sqlx::query_scalar(
-        "INSERT INTO characters (campaign_id, player_id, sheet) VALUES ($1, $2, $3) RETURNING id",
+        "INSERT INTO characters (campaign_id, player_id, sheet, start_xp)
+         VALUES ($1, $2, $3, $4) RETURNING id",
     )
     .bind(player.campaign_id)
     .bind(player.id)
     .bind(Json(CharacterSheet::default()))
+    .bind(i32::try_from(start_xp).unwrap_or(i32::MAX))
     .fetch_one(&mut **tx)
     .await?;
     touch_character(tx, player.campaign_id, id).await?;
@@ -594,7 +611,7 @@ pub async fn find_by_token(
 /// Fails on a database error.
 pub async fn character_of(pool: &PgPool, player: &Player) -> Result<Option<Character>, AppError> {
     let row: Option<CharacterRow> = sqlx::query_as(&format!(
-        "SELECT {CHARACTER_COLUMNS} FROM characters WHERE player_id = $1"
+        "SELECT {CHARACTER_COLUMNS} FROM characters WHERE player_id = $1 AND status <> 'dead'"
     ))
     .bind(player.id)
     .fetch_optional(pool)
@@ -645,7 +662,7 @@ async fn lock_character(
     player: &Player,
 ) -> Result<Character, AppError> {
     let row: Option<CharacterRow> = sqlx::query_as(&format!(
-        "SELECT {CHARACTER_COLUMNS} FROM characters WHERE player_id = $1 FOR UPDATE"
+        "SELECT {CHARACTER_COLUMNS} FROM characters WHERE player_id = $1 AND status <> 'dead' FOR UPDATE"
     ))
     .bind(player.id)
     .fetch_optional(&mut **tx)
@@ -753,7 +770,7 @@ pub async fn seats(pool: &PgPool, campaign_id: Uuid) -> Result<Vec<Seat>, AppErr
         "SELECT p.id, p.nickname, p.role, p.created_at, p.last_seen_at,
                 c.id, c.status, c.sheet->>'name', c.sheet->>'classId', c.sheet->'look',
                 c.reviewed_sheet IS NOT NULL, c.updated_at
-         FROM players p LEFT JOIN characters c ON c.player_id = p.id
+         FROM players p LEFT JOIN characters c ON c.player_id = p.id AND c.status <> 'dead'
          WHERE p.campaign_id = $1
          ORDER BY p.created_at, p.id",
     )
@@ -817,7 +834,7 @@ pub async fn remove(pool: &PgPool, campaign_id: Uuid, player_id: Uuid) -> Result
     let mut tx = pool.begin().await?;
     let character: Option<Option<Uuid>> = sqlx::query_scalar(
         "DELETE FROM players p WHERE p.id = $1 AND p.campaign_id = $2
-         RETURNING (SELECT c.id FROM characters c WHERE c.player_id = p.id)",
+         RETURNING (SELECT c.id FROM characters c WHERE c.player_id = p.id AND c.status <> 'dead')",
     )
     .bind(player_id)
     .bind(campaign_id)

@@ -118,4 +118,43 @@ describe('MapTab', () => {
       { kind: 'act', action: 'estocade', targets: ['marin-1'] },
     ])
   })
+
+  it('down at 0, my turn is the death save and nothing else', async () => {
+    const down = {
+      ...fighter('pc-1', 'Borin', true, true),
+      hitPoints: 0,
+      down: true,
+      conditions: ['Inconscient'],
+      deathSaves: { successes: 0, failures: 1, stable: false, ofSuccesses: 3, ofFailures: 3 },
+    }
+    const fight = {
+      live: true,
+      round: 2,
+      active: 'pc-1',
+      myTurn: true,
+      order: [down, fighter('marin-1', 'Marin', false)],
+      actionsLeft: 0,
+      cards: [],
+      events: [
+        { kind: 'death_save', who: 'pc-1', die: '1d20', natural: 7, difficulty: 10, successes: 0, failures: 1 },
+      ],
+      loot: [],
+      won: null,
+      deathSave: { die: '1d20', difficulty: 10 },
+    }
+    const fetchMock = mockApi({
+      ...MEDIA,
+      'GET /api/play/c1/board': () => board(fight),
+      'POST /api/play/c1/fight': () => board({ ...fight, myTurn: false, active: 'marin-1', deathSave: null }),
+    })
+    render(<MapTab campaignId="c1" refreshKey={0} />)
+    expect(await screen.findByText('Il te faut 10 ou plus')).toBeInTheDocument()
+    expect(screen.getAllByText('À toi : jet contre la mort').length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText('0 réussite(s), 1 échec(s)').length).toBeGreaterThan(0)
+    expect(screen.getByText('Borin : jet contre la mort, 7 (0 réussite(s), 1 échec(s))')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Fin du tour/ })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Lancer le jet/ }))
+    expect(sentTo(fetchMock, 'POST /api/play/c1/fight')).toEqual([{ kind: 'deathSave' }])
+    expect(await screen.findByText('Pas mort. À ton tour, tu lanceras le jet contre la mort.')).toBeInTheDocument()
+  })
 })

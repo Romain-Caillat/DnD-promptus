@@ -228,11 +228,12 @@ const TEXT_MAX: usize = 500;
 
 /// The validated character of `player`, if any.
 async fn character_of(db: impl PgExecutor<'_>, player: &Player) -> Result<Option<Uuid>, AppError> {
-    let row: Option<(Uuid, String)> =
-        sqlx::query_as("SELECT id, status FROM characters WHERE player_id = $1")
-            .bind(player.id)
-            .fetch_optional(db)
-            .await?;
+    let row: Option<(Uuid, String)> = sqlx::query_as(
+        "SELECT id, status FROM characters WHERE player_id = $1 AND status <> 'dead'",
+    )
+    .bind(player.id)
+    .fetch_optional(db)
+    .await?;
     Ok(match row {
         Some((id, status)) if CharacterStatus::parse(&status)? == CharacterStatus::Validated => {
             Some(id)

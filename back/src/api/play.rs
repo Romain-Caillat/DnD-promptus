@@ -23,7 +23,11 @@
 //! - `POST /api/play/{campaign}/character/level-up` → `{ level, choice }`:
 //!   take a reached level's hit points, rolled or at the average;
 //! - `POST /api/play/{campaign}/character/upgrade` → `{ ability }`: spend
-//!   an upgrade point (`engine/level-up`).
+//!   an upgrade point (`engine/level-up`);
+//! - `PUT /api/play/{campaign}/last-words` → `{ text }`: my fallen
+//!   character's last words; `POST /api/play/{campaign}/new-character`:
+//!   after a death, another character at the group's level
+//!   (`player/face-death`).
 
 use axum::Json;
 use axum::extract::{Path, State};
@@ -127,9 +131,51 @@ pub async fn me(State(state): State<AppState>, p: CurrentPlayer) -> Result<Respo
     let row = campaign_of(&state, &p).await?;
     let gm_name = campaigns::gm_name(&state.pool, &row).await?;
     let character = players::character_of(&state.pool, &p.0).await?;
-    let view =
+    let mut view =
         projection::project_home(&row.story, &gm_name, &p.0, character.as_ref(), row.rules());
+    view.fallen = players::death::fallen_of(&state.pool, &p.0)
+        .await?
+        .as_ref()
+        .map(projection::project_fallen);
     Ok(Json(json!({ "data": view })).into_response())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LastWordsBody {
+    text: String,
+}
+
+/// `PUT /api/play/{campaign}/last-words` → `{ text }`: what my fallen
+/// character says, once. Answers `me`.
+///
+/// # Errors
+///
+/// 403 `SPECTATOR`; 404 `NO_FALLEN`; 400 `INVALID_LAST_WORDS`; 409
+/// `LAST_WORDS_SAID`.
+pub async fn last_words(
+    State(state): State<AppState>,
+    p: CurrentPlayer,
+    Body(body): Body<LastWordsBody>,
+) -> Result<Response, AppError> {
+    players::death::say_last_words(&state.pool, &p.0, &body.text).await?;
+    me(State(state), p).await
+}
+
+/// `POST /api/play/{campaign}/new-character` — after a death, a fresh
+/// draft that enters play at the group's level. Answers `me`.
+///
+/// # Errors
+///
+/// 403 `SPECTATOR`; 409 `NO_FALLEN`, `CHARACTER_EXISTS`, `RULES_UNKNOWN`.
+pub async fn new_character(
+    State(state): State<AppState>,
+    p: CurrentPlayer,
+) -> Result<Response, AppError> {
+    let row = campaign_of(&state, &p).await?;
+    let rules = row.rules().ok_or(AppError::Conflict("RULES_UNKNOWN"))?;
+    players::death::new_character(&state.pool, &p.0, rules).await?;
+    me(State(state), p).await
 }
 
 /// `GET /api/play/{campaign}/view`

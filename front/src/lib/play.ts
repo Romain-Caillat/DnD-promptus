@@ -157,6 +157,8 @@ export interface PlayerHome {
   me: { id: string; nickname: string; role: Role }
   campaign: Invitation
   character: CharacterView | null
+  /** My last character whose death the GM confirmed (player/face-death). */
+  fallen: { name: string; lastWords: string; diedAt: string } | null
 }
 
 /** The campaign an invitation code opens, or `null` for a dead link. */
@@ -185,6 +187,16 @@ export async function fetchPlayerHome(campaignId: string): Promise<PlayerHome | 
     if (err instanceof ApiError && err.status === 401) return null
     throw err
   }
+}
+
+/** My fallen character's last words, said once; answers my home. */
+export function sayLastWords(campaignId: string, text: string): Promise<PlayerHome> {
+  return apiRequest<PlayerHome>('PUT', `/play/${encodeURIComponent(campaignId)}/last-words`, { text })
+}
+
+/** After a death, another character to write, at the group's level. */
+export function newCharacter(campaignId: string): Promise<PlayerHome> {
+  return apiRequest<PlayerHome>('POST', `/play/${encodeURIComponent(campaignId)}/new-character`)
 }
 
 /** Where a player's home in `campaignId` lives in the app. */

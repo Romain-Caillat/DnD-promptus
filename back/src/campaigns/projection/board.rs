@@ -9,11 +9,14 @@
 //! the order, whose turn, each combatant's standing, the party's hit
 //! points (an opponent's never: only whether it is down), the caller's
 //! cards and reachable cells on their turn, the events with opponents'
-//! hit points and the GM's notes removed, and the loot already given.
+//! hit points and the GM's notes removed, and the loot already given;
+//! the death-save boxes of the party's dying, and the caller's own save
+//! to roll on their turn.
 //!
 //! Never: GM layers, GM notes, object checks, the backdrop prompt,
 //! fogged cells, hidden tokens, opponents' hit points, the co-GM's
-//! proposal, loot not handed out yet.
+//! proposal, loot not handed out yet, a death the engine proposed and
+//! the GM has not confirmed.
 
 use std::collections::BTreeSet;
 
@@ -22,7 +25,7 @@ use promptus_shared::maps::{Cell, Map, Viewer};
 use promptus_shared::rules::RuleSystem;
 use promptus_shared::rules::action::action_cards;
 use promptus_shared::rules::events::Event;
-use promptus_shared::rules::model::{AreaShape, Targeting};
+use promptus_shared::rules::model::{AreaShape, Targeting, ZeroHpRule};
 use promptus_shared::rules::sheet::Side;
 use serde::Serialize;
 use uuid::Uuid;
@@ -75,6 +78,30 @@ pub struct FightView {
     /// What the party received, line by line.
     pub loot: Vec<GivenLoot>,
     pub won: Option<bool>,
+    /// On the caller's turn while they are dying: the death save to
+    /// roll, and only that.
+    pub death_save: Option<DeathSaveView>,
+}
+
+/// The death save the caller rolls (engine/save-against-death).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeathSaveView {
+    pub die: String,
+    pub difficulty: i32,
+}
+
+/// A party member's death-save boxes. A death the engine proposes
+/// stays the GM's until confirmed: only the boxes show.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeathSavesView {
+    pub successes: u32,
+    pub failures: u32,
+    pub stable: bool,
+    /// How many boxes of each the rules draw.
+    pub of_successes: u32,
+    pub of_failures: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -91,6 +118,8 @@ pub struct FighterView {
     pub down: bool,
     pub conditions: Vec<String>,
     pub mine: bool,
+    /// Party members dying at 0 hit points.
+    pub death_saves: Option<DeathSavesView>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -138,6 +167,8 @@ fn event_for_players(
             .is_some_and(|c| c.side == Side::Opposition)
     };
     match e {
+        // A proposed death is the GM's until confirmed (rule 1).
+        FightEvent::DeathProposed { .. } => None,
         // An opponent's walk shows only where the party sees it.
         FightEvent::Moved {
             who,
@@ -211,6 +242,25 @@ fn fight_view(
                 down: c.hit_points <= 0,
                 conditions: c.conditions.iter().map(|x| x.name.clone()).collect(),
                 mine: mine.as_deref() == Some(id.as_str()),
+                death_saves: f
+                    .dying
+                    .get(id)
+                    .filter(|_| party && c.hit_points <= 0)
+                    .zip(looker.rules.and_then(|r| match &r.zero_hp {
+                        ZeroHpRule::DeathSaves {
+                            successes,
+                            failures,
+                            ..
+                        } => Some((*successes, *failures)),
+                        ZeroHpRule::KnockedOut { .. } => None,
+                    }))
+                    .map(|(t, (of_successes, of_failures))| DeathSavesView {
+                        successes: t.successes,
+                        failures: t.failures,
+                        stable: t.stable,
+                        of_successes,
+                        of_failures,
+                    }),
             })
         })
         .collect();
@@ -261,6 +311,16 @@ fn fight_view(
             })
             .collect(),
         won: f.end.as_ref().map(|e| e.winner == Some(Side::Party)),
+        death_save: match (my_turn, looker.rules, mine.as_deref()) {
+            (true, Some(r), Some(m)) if f.save_due(r, m) => match &r.zero_hp {
+                ZeroHpRule::DeathSaves { difficulty, .. } => Some(DeathSaveView {
+                    die: r.check.dice.to_string(),
+                    difficulty: *difficulty,
+                }),
+                ZeroHpRule::KnockedOut { .. } => None,
+            },
+            _ => None,
+        },
     }
 }
 

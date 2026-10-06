@@ -9,6 +9,7 @@ import { fetchPlayerHome, type CharacterView, type PlayerHome } from '@/lib/play
 import { GameTab } from '@/features/evening/GameTab'
 import { MapTab } from '@/features/map/MapTab'
 import { CharacterTab } from './CharacterTab'
+import { FallenPanel } from './FallenPanel'
 import { CharacterSummary } from './creator/ReviewStep'
 import { JournalTab } from './JournalTab'
 import { RulesEntry } from './rules/RulesEntry'
@@ -90,18 +91,22 @@ export function PlayerHomePage() {
     )
   }
 
-  const { me, campaign, character } = state.home
+  const { me, campaign, character, fallen } = state.home
   const seated = me.role === 'player' && character !== null
+  // A player whose character died, before making another one.
+  const bereft = me.role === 'player' && character === null && fallen !== null
   const play = character?.play ?? null
   // The character comes first while it is being made; once in play, the game.
-  const tabs: Tab[] = !seated
-    ? ['jeu', 'carte', 'journal']
-    : play
-      ? ['jeu', 'carte', 'perso', 'journal']
-      : ['perso', 'jeu', 'carte', 'journal']
+  const tabs: Tab[] = bereft
+    ? ['perso', 'jeu', 'carte', 'journal']
+    : !seated
+      ? ['jeu', 'carte', 'journal']
+      : play
+        ? ['jeu', 'carte', 'perso', 'journal']
+        : ['perso', 'jeu', 'carte', 'journal']
   const asked = params.get('onglet')
   const tab: Tab = tabs.find((x) => x === asked) ?? tabs[0]
-  const bannerKey = !seated ? 'spectator' : play ? 'inPlay' : character.status
+  const bannerKey = bereft ? 'fallen' : !seated ? 'spectator' : play ? 'inPlay' : character.status
   const good = bannerKey === 'validated' || bannerKey === 'draft' || bannerKey === 'inPlay'
 
   function replaceCharacter(next: CharacterView) {
@@ -117,10 +122,10 @@ export function PlayerHomePage() {
           good && 'bg-ivory text-ink shadow-ivory-flat',
           bannerKey === 'submitted' && 'border-[1.5px] border-dashed border-line-dashed bg-table text-chalk-soft',
           bannerKey === 'returned' && 'border-[1.5px] border-stat-atk bg-table text-chalk',
-          bannerKey === 'spectator' && 'border border-line bg-surface text-chalk-soft',
+          (bannerKey === 'spectator' || bannerKey === 'fallen') && 'border border-line bg-surface text-chalk-soft',
         )}
       >
-        {t(`play.banner.${bannerKey}`)}
+        {t(`play.banner.${bannerKey}`, { name: fallen?.name })}
       </p>
       <header className="flex flex-col gap-1 px-4 pt-4">
         <span className="type-label">{t('play.hello', { nickname: me.nickname, gm: campaign.gmName })}</span>
@@ -134,6 +139,16 @@ export function PlayerHomePage() {
             {!seated && <p className="text-body text-chalk-soft">{t('play.spectator')}</p>}
             <JournalTab campaignId={campaignId} refreshKey={viewVersion} />
           </>
+        )}
+        {tab === 'perso' && bereft && (
+          <FallenPanel
+            campaignId={campaignId}
+            fallen={fallen}
+            onHome={(home) => {
+              setState({ kind: 'ready', home })
+              if (home.character) navigate(creatorPath(campaignId))
+            }}
+          />
         )}
         {tab === 'perso' && character && play && (
           <CharacterTab campaignId={campaignId} character={character} play={play} onChanged={replaceCharacter} />

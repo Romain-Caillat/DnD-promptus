@@ -451,7 +451,8 @@
       "validated": "Ton personnage est validé !",
       "returned": "Le MJ te demande un changement",
       "spectator": "Tu regardes la partie",
-      "inPlay": "En jeu : ta fiche suit la partie"
+      "inPlay": "En jeu : ta fiche suit la partie",
+      "fallen": "{{name}} est tombé"
     },
     "hello": "{{nickname}}, à la table de {{gm}}",
     "character": "Ton personnage",
@@ -524,6 +525,25 @@
       "upgrade_one": "{{count}} point d'amélioration à placer",
       "upgrade_other": "{{count}} points d'amélioration à placer",
       "raise": "+1 en {{ability}}"
+    },
+    "fallen": {
+      "title": "{{name}} est tombé.",
+      "ask": "Ce que {{name}} dit en tombant",
+      "say": "Dire ses derniers mots",
+      "sayHint": "Lus à toute la table, gardés dans le journal",
+      "said": "Les derniers mots de {{name}}",
+      "kept": "Lus à la table et gardés dans le journal.",
+      "next": "Et maintenant ? Tu restes à la table",
+      "watch": "Regarder ce soir",
+      "watchHint": "Tu suis la fin de la soirée : le jeu, la carte et le journal.",
+      "create": "Créer un nouveau personnage",
+      "createHint": "Au niveau du groupe. Le MJ le fera entrer une fois validé.",
+      "errors": {
+        "LAST_WORDS_SAID": "Ses derniers mots sont déjà dits.",
+        "INVALID_LAST_WORDS": "Écris ses derniers mots (280 signes au plus).",
+        "CHARACTER_EXISTS": "Tu as déjà un personnage à la table.",
+        "UNEXPECTED": "Ça n'a pas marché. Réessaie."
+      }
     }
   },
   "creator": {
@@ -1327,7 +1347,14 @@
       "condition": "{{target}} : {{name}}",
       "conditionEnded": "{{target}} n'est plus {{name}}",
       "knockedOut": "{{target}} tombe à terre",
-      "item": "{{who}} utilise {{item}}"
+      "item": "{{who}} utilise {{item}}",
+      "deathSave": "{{who}} : jet contre la mort, {{natural}} ({{successes}} réussite(s), {{failures}} échec(s))",
+      "deathFailure": "{{who}} est frappé à terre ({{failures}} échec(s))",
+      "stabilised": "{{who}} est stable",
+      "spared": "{{who}} survit, à terre",
+      "died": "{{who}} est mort",
+      "deathProposed": "Trois échecs pour {{who}} : à toi de décider",
+      "revived": "{{target}} se relève"
     },
     "errors": {
       "UNEXPECTED": "Ce coup n'a pas marché. Réessaie.",
@@ -1339,6 +1366,16 @@
       "TOO_FAR": "C'est trop loin pour ce tour.",
       "SPECTATOR": "Tu regardes la partie : tu ne joues pas.",
       "FIGHT_IN_PROGRESS": "Un combat est en cours : joue ton tour."
+    },
+    "death": {
+      "down": "Tu es à terre",
+      "wait": "Pas mort. À ton tour, tu lanceras le jet contre la mort.",
+      "stable": "Tu es stable : à terre, mais hors de danger",
+      "yourSave": "À toi : jet contre la mort",
+      "need": "Il te faut {{difficulty}} ou plus",
+      "rolled": "{{natural}} au dé",
+      "roll": "Lancer le jet",
+      "boxes": "{{successes}} réussite(s), {{failures}} échec(s)"
     }
   },
   "gmLive": {
@@ -1382,7 +1419,8 @@
       "INVALID_OPTIONS": "Proposez entre une et six dates.",
       "INVALID_LOBBY_MINUTES": "Le salon ouvre entre 0 et 180 minutes avant.",
       "NOT_PROPOSED": "Cette date n'a pas été proposée.",
-      "NO_PLAN": "Aucune date n'est proposée."
+      "NO_PLAN": "Aucune date n'est proposée.",
+      "NO_DEATH_SAVE_DUE": "Aucun jet contre la mort n'est attendu."
     },
     "table": {
       "title": "La table",
@@ -1480,7 +1518,14 @@
       "who": "Qui",
       "condition": "État",
       "addCondition": "Poser",
-      "removeCondition": "Retirer"
+      "removeCondition": "Retirer",
+      "dead": "mort",
+      "saves": "{{successes}} réussite(s), {{failures}} échec(s)",
+      "saveDue": "{{who}} est à terre : à son tour, son jet contre la mort.",
+      "rollForThem": "Lancer pour le joueur absent",
+      "deathProposed": "Trois échecs pour {{who}}. Rien n'est envoyé aux joueurs avant ton choix.",
+      "confirmDeath": "Confirmer : {{who}} meurt",
+      "spare": "Une autre issue : stable, à terre"
     },
     "copilot": {
       "title": "Co-MJ",

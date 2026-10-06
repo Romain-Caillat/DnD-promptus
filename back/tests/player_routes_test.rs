@@ -214,8 +214,12 @@ async fn marc_request(pool: &PgPool, campaign: &str, path: &str) -> Uuid {
 /// The evening routes a spectator has no part in: they ask nothing,
 /// roll nothing and answer no feedback.
 fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
-    // Dates are the players' to answer.
-    if method == "PUT" && path.ends_with("/availability") {
+    // Dates are the players' to answer; a spectator has no character
+    // to lose.
+    if method == "PUT" && (path.ends_with("/availability") || path.ends_with("/last-words")) {
+        return Some((StatusCode::FORBIDDEN, "SPECTATOR"));
+    }
+    if method == "POST" && path.ends_with("/new-character") {
         return Some((StatusCode::FORBIDDEN, "SPECTATOR"));
     }
     if method != "POST" {
@@ -235,8 +239,15 @@ fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> 
 /// A route the sweep's table cannot make succeed for Marc, and the
 /// answer it gives instead. Fighting needs a fight; the leaks of a fight
 /// are swept in `board_test.rs`. Levelling needs XP and rules whose
-/// levels add hit points (`level_up_test.rs`).
+/// levels add hit points (`level_up_test.rs`). Last words and a new
+/// character need a death (`play_test.rs`).
 fn refused_to_marc(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
+    if path.ends_with("/last-words") {
+        return Some((StatusCode::NOT_FOUND, "NO_FALLEN"));
+    }
+    if path.ends_with("/new-character") {
+        return Some((StatusCode::CONFLICT, "CHARACTER_EXISTS"));
+    }
     if method != "POST" {
         return None;
     }
@@ -287,6 +298,7 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
         ("POST", p) if p.ends_with("/equip") => Some(json!({ "entry": "k1", "equipped": true })),
         ("POST", p) if p.ends_with("/level-up") => Some(json!({ "level": 2, "choice": "average" })),
         ("POST", p) if p.ends_with("/upgrade") => Some(json!({ "ability": "FOR" })),
+        ("PUT", p) if p.ends_with("/last-words") => Some(json!({ "text": "Dis à Dorn…" })),
         ("PUT", p) if p.ends_with("/availability") => {
             Some(json!({ "available": ["2099-10-10T18:30:00Z"] }))
         }

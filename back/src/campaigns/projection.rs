@@ -249,6 +249,28 @@ pub struct PlayerHomeView {
     pub me: MeView,
     pub campaign: InvitationView,
     pub character: Option<CharacterView>,
+    /// The caller's last fallen character (player/face-death).
+    pub fallen: Option<FallenView>,
+}
+
+/// A character of the caller whose death the GM confirmed: its name,
+/// its last words once said, when it fell.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FallenView {
+    pub name: String,
+    pub last_words: String,
+    pub died_at: DateTime<Utc>,
+}
+
+/// The caller's own fallen character.
+#[must_use]
+pub fn project_fallen(f: &crate::players::death::Fallen) -> FallenView {
+    FallenView {
+        name: f.name.clone(),
+        last_words: f.last_words.clone(),
+        died_at: f.died_at,
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -609,6 +631,7 @@ pub fn project_home(
         },
         campaign: project_invitation(player.campaign_id, campaign, gm_name),
         character: character.map(|c| project_character(rules, c)),
+        fallen: None,
     }
 }
 

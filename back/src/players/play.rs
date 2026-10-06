@@ -508,6 +508,32 @@ async fn save(
     Ok(())
 }
 
+/// A character the GM just validated enters play with `xp` already
+/// earned (a replacement after a death): its starting state, stored.
+///
+/// # Errors
+///
+/// A database error; 409 `RULES_UNKNOWN`.
+pub(crate) async fn enter_with_xp(
+    tx: &mut Transaction<'_, Postgres>,
+    campaign: Uuid,
+    id: Uuid,
+    xp: u32,
+) -> Result<(), AppError> {
+    let row = campaigns::find(&mut **tx, campaign)
+        .await?
+        .ok_or(AppError::NotFound("NOT_FOUND"))?;
+    let rules = row.rules().ok_or(AppError::Conflict("RULES_UNKNOWN"))?;
+    let sheet: Json<CharacterSheet> =
+        sqlx::query_scalar("SELECT sheet FROM characters WHERE id = $1")
+            .bind(id)
+            .fetch_one(&mut **tx)
+            .await?;
+    let mut state = PlayState::start(rules, &sheet.0);
+    state.total_xp = xp;
+    save(tx, campaign, id, &state).await
+}
+
 /// Who made a change: the GM's gesture, the player's own choice, or the
 /// rules applying a result the server resolved (XP of a check, damage
 /// in a fight, loot the GM validated).
@@ -687,10 +713,11 @@ pub async fn equip(
 
 /// The character a player plays, by their player row.
 async fn own_character(pool: &PgPool, player: &Player) -> Result<Uuid, AppError> {
-    let id: Option<Uuid> = sqlx::query_scalar("SELECT id FROM characters WHERE player_id = $1")
-        .bind(player.id)
-        .fetch_optional(pool)
-        .await?;
+    let id: Option<Uuid> =
+        sqlx::query_scalar("SELECT id FROM characters WHERE player_id = $1 AND status <> 'dead'")
+            .bind(player.id)
+            .fetch_optional(pool)
+            .await?;
     id.ok_or(AppError::NotFound("NO_CHARACTER"))
 }
 

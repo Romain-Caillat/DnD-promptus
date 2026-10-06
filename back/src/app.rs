@@ -407,6 +407,17 @@ fn player_routes() -> Vec<RouteSpec> {
             "/api/play/{campaign}/character/upgrade",
             post(api::play::upgrade),
         ),
+        // player/face-death: last words, then another character.
+        (
+            "PUT",
+            "/api/play/{campaign}/last-words",
+            put(api::play::last_words),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/new-character",
+            post(api::play::new_character),
+        ),
         // The evening: the scene, the music, my requests and their rolls,
         // the journal; the lobby; the feedback at the end.
         (
