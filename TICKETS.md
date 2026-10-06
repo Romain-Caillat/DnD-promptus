@@ -1070,7 +1070,7 @@ erreur lisible.
 
 **Origine** — V1 `llm.ts`, `prompt-template.ts`, `scripts/fake-llm.ts`
 
-### `ai/evaluate-on-real-campaigns` · todo
+### `ai/evaluate-on-real-campaigns` · doing — reste une première évaluation avec un vrai modèle, puis un changement de modèle comparé
 
 **Pourquoi** — Un prompt ou un modèle qui change ne doit pas dégrader
 en silence ce qui marchait.
@@ -1087,6 +1087,19 @@ de modèle, résultat comparé au précédent.
 cas, ce qui s'est amélioré ou dégradé.
 
 **Origine** — `docs/lecons-des-parties.md` §4
+
+**État** — Livré et vérifié (`cargo test`). `bun run eval` rejoue
+quatre cas (`content/evals/`) au modèle configuré : refuser l'offre de
+Vaubernier, l'incident de Jacquot, le combat du quai à six contre six,
+et une campagne générée depuis un pitch corsaire. Chaque cas a ses
+critères écrits, en français, vérifiés par la machine : le bon PNJ
+parle, ce que la table ignore n'est pas dit, la fiche est respectée,
+aucun identifiant inventé, aucune formule de dés, du français ; pour la
+génération, validateur sans erreur, règle des trois indices et standard
+de scène (la jauge). Le passage est enregistré dans `evals/runs/` et le
+rapport dit, cas par cas et critère par critère, ce qui est en progrès,
+en recul, corrigé ou cassé depuis le précédent (`docs/evaluation.md`).
+Pas encore de passage avec un vrai modèle : il faut la clé OpenRouter.
 
 ### `ai/count-ai-calls` · doing — reste la soirée du jalon jouée pour de vrai
 

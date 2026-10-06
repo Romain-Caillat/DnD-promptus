@@ -1,0 +1,37 @@
+# Jacquot le Sourd renverse sa chope sur le Bretteur (acte 1 des
+# Corsaires). La scène doit rester une scène de taverne : Jacquot hurle
+# ce qu'il a vu au chantier — l'indice de la coque — sans que le co-MJ
+# n'invente de règle ni ne dévoile l'escorte.
+id: incident-jacquot
+title: L'incident de Jacquot
+origin: docs/lecons-des-parties.md §4 · acte 1 des Corsaires
+campaign: campaigns/corsaires/campagne.yaml
+copilot:
+  scene: sc_perroquet
+  entered: [sc_perroquet]
+  found: []
+  revealed: [pnj_jacquot]
+  journal:
+    - Jacquot titube vers la table et renverse sa chope sur le Bretteur.
+  ask:
+    kind: consequence
+    prompt: Le Bretteur saisit Jacquot au col, toute la taverne regarde.
+criteria:
+  - id: jacquot_present
+    why: La réponse parle de Jacquot, pas d'un autre.
+    check: { mentions: [Jacquot] }
+  - id: indice_coque
+    why: Jacquot a vu La Mâchoire prendre l'eau ; c'est l'indice de la scène.
+    check: { suggests: { type: reveal_clue, clue: cl_coque_jacquot } }
+  - id: escorte_tue
+    why: La table ne sait rien de l'escorte du Greyhound.
+    check: { never: [sloop, escorte] }
+  - id: aucun_id_invente
+    why: Une suggestion ne nomme que ce qui existe dans la campagne.
+    check: no_invented_ids
+  - id: aucun_de
+    why: Le co-MJ raconte ; les dés et les règles sont ceux du moteur.
+    check: no_dice
+  - id: en_francais
+    why: Tout ce que les joueurs entendent est en français.
+    check: french

@@ -1,0 +1,38 @@
+# Les joueurs refusent l'offre de Vaubernier (acte 1 des Corsaires).
+# Le comte doit rester lui-même — hautain,
+# pragmatique — et taire l'escorte du Greyhound, que la table ignore.
+id: refuser-offre-vaubernier
+title: Refuser l'offre de Vaubernier
+origin: docs/lecons-des-parties.md §4 · acte 1 des Corsaires
+campaign: campaigns/corsaires/campagne.yaml
+copilot:
+  scene: sc_proposition
+  entered: [sc_perroquet, sc_proposition]
+  found: []
+  revealed: [pnj_vaubernier]
+  journal:
+    - Vaubernier propose des lettres de marque contre les plans du Greyhound.
+    - Le Bretteur répond que l'équipage n'est pas à vendre et se lève pour partir.
+  ask:
+    kind: npc
+    npc: pnj_vaubernier
+    prompt: Les joueurs refusent l'offre et se lèvent pour quitter la table.
+criteria:
+  - id: vaubernier_parle
+    why: C'est à Vaubernier de répondre, pas à un PNJ inventé.
+    check: { speaks: pnj_vaubernier }
+  - id: escorte_tue
+    why: Vaubernier cache l'escorte ; la table ne la connaît pas encore.
+    check: { never: [sloop, escorte, douze canons] }
+  - id: fidele_a_sa_fiche
+    why: Le comte tient à sa mission et à la Couronne (sa motivation).
+    check: { mentions: [Couronne, Majesté, Roi, mission, lettres] }
+  - id: aucun_id_invente
+    why: Une suggestion ne nomme que ce qui existe dans la campagne.
+    check: no_invented_ids
+  - id: aucun_de
+    why: Le co-MJ raconte ; les dés et les règles sont ceux du moteur.
+    check: no_dice
+  - id: en_francais
+    why: Tout ce que les joueurs entendent est en français.
+    check: french

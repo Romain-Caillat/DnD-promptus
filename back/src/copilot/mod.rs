@@ -13,9 +13,13 @@
 
 pub mod drafts;
 
+use std::collections::BTreeMap;
+
+use promptus_shared::rules::RuleSystem;
 use promptus_shared::story::{Campaign, WorldState};
 use serde::{Deserialize, Serialize};
 
+use crate::ai::{Message, templates};
 use crate::evening::knowledge::{JournalKind, JournalLine, Ruling};
 
 /// What the GM asks the co-GM for.
@@ -339,6 +343,41 @@ pub fn instruction(ask: &Ask, campaign: &Campaign) -> String {
             }
         }
     }
+}
+
+/// The co-GM's messages for `ask`: the compact context, the rule system
+/// (house rules included: the GM applies them at the table and the
+/// co-GM must stay within them), the instruction.
+///
+/// # Errors
+///
+/// A template hole left unfilled.
+pub fn messages(
+    input: &ContextInput<'_>,
+    rules: Option<&RuleSystem>,
+    ask: &Ask,
+) -> Result<Vec<Message>, String> {
+    let rules_line = rules.map_or_else(
+        || "Système de règles inconnu.".to_string(),
+        |r| {
+            let mut line = format!(
+                "Système de règles : « {} » (test {}).",
+                r.name, r.check.dice
+            );
+            for h in &r.house_rules {
+                line.push_str(&format!("\nRègle maison « {} » : {}", h.name, h.text));
+            }
+            line
+        },
+    );
+    let vars: BTreeMap<&str, String> = [
+        ("context", context(input)),
+        ("rules", rules_line),
+        ("request", instruction(ask, input.campaign)),
+    ]
+    .into_iter()
+    .collect();
+    templates::COPILOT.render(&vars)
 }
 
 /// A suggestion's gesture, applied by the GM in one tap.

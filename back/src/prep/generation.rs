@@ -43,7 +43,7 @@ use sqlx::types::Json;
 use uuid::Uuid;
 
 use crate::ai::templates::{self, Template};
-use crate::ai::{self, Ai, LlmRequest, Message, Pricing, Role, ledger};
+use crate::ai::{self, Ai, BoxFuture, LlmRequest, LlmResponse, Message, Pricing, Role, ledger};
 use crate::auth::guard::{CurrentGm, owned_by};
 use crate::campaigns::{self, CampaignRow};
 use crate::error::AppError;
@@ -349,15 +349,15 @@ fn or(text: &str, default: &str) -> String {
 }
 
 /// The GM's request, as every step reads it.
-fn brief(row: &CampaignRow, input: &Input) -> String {
+fn brief(story: &Campaign, players: i16, input: &Input) -> String {
     format!(
         "# Demande du MJ\n- Titre : {}\n- Univers : {}\n- Idée : {}\n- Ton : {}\n- Thèmes : {}\n- Joueurs : {}\n- Format : {}\n- Contraintes : {}",
-        row.story.title,
-        or(&row.story.world, "libre"),
+        story.title,
+        or(&story.world, "libre"),
         input.pitch,
         or(&input.tone, "libre"),
         or(&input.themes, "libres"),
-        row.settings.player_count,
+        players,
         input.length.label(),
         or(&input.constraints, "aucune"),
     )
@@ -429,7 +429,7 @@ fn request(messages: Vec<Message>, max_tokens: u32) -> LlmRequest {
 /// scenes and repair prompts counted with everything the steps before
 /// them may have written, one repair, no retry.
 fn estimate(pricing: &Pricing, row: &CampaignRow, input: &Input) -> Result<i64, AppError> {
-    let brief = brief(row, input);
+    let brief = brief(&row.story, row.settings.player_count, input);
     let rules = rules_text(row.rules());
     let cast = render(
         &templates::GENERATION_CAST,
@@ -509,14 +509,7 @@ pub async fn start(
     if estimate(&ai.pricing, &row, &input)? > spending.left_micros() {
         return Err(AppError::Conflict("AI_BUDGET_EXCEEDED"));
     }
-    let steps: Vec<Step> = [StepId::Cast, StepId::Scenes, StepId::Check]
-        .into_iter()
-        .map(|id| Step {
-            id,
-            status: StepStatus::Pending,
-            counts: BTreeMap::new(),
-        })
-        .collect();
+    let steps = new_steps();
     let stored: Row = sqlx::query_as(&format!(
         "INSERT INTO generation_jobs (campaign_id, input, steps) VALUES ($1, $2, $3)
          RETURNING {COLUMNS}"
@@ -539,9 +532,9 @@ pub async fn start(
 
 /// Why a job stopped: a code for the screen, a detail for the GM.
 #[derive(Debug)]
-struct Failure {
-    code: String,
-    detail: Option<String>,
+pub struct Failure {
+    pub code: String,
+    pub detail: Option<String>,
 }
 
 impl From<AppError> for Failure {
@@ -608,28 +601,38 @@ struct Repair {
     edits: Vec<serde_json::Value>,
 }
 
-/// One running job.
-struct Runner {
-    pool: PgPool,
-    ai: Ai,
-    campaign: Uuid,
-    id: Uuid,
-    steps: Vec<Step>,
+/// Where a generation's calls go and its progress is told: the
+/// campaign's counted calls and its job row ([`run`]), or the provider
+/// alone (`crate::eval`).
+pub trait Calls: Send + Sync {
+    /// One completion.
+    fn complete<'a>(
+        &'a self,
+        template: &'a Template,
+        req: &'a LlmRequest,
+    ) -> BoxFuture<'a, Result<LlmResponse, AppError>>;
+
+    /// The steps as they stand now.
+    fn progress<'a>(&'a self, steps: &'a [Step]) -> BoxFuture<'a, Result<(), AppError>>;
 }
 
-impl Runner {
-    async fn save(&self) -> Result<(), Failure> {
-        let mut tx = self.pool.begin().await?;
-        sqlx::query("UPDATE generation_jobs SET steps = $2 WHERE id = $1")
-            .bind(self.id)
-            .bind(Json(&self.steps))
-            .execute(&mut *tx)
-            .await?;
-        live::touch(&mut tx, self.campaign, &Topic::Desk).await?;
-        tx.commit().await?;
-        Ok(())
-    }
+/// What a generation produced.
+#[derive(Debug, Clone)]
+pub struct Outcome {
+    pub story: Campaign,
+    pub removed: Vec<Removed>,
+    pub repairs: usize,
+    pub dropped: usize,
+    pub issues: Vec<Issue>,
+}
 
+/// A generation in progress: its calls, and its steps.
+struct Pipeline<'a> {
+    calls: &'a dyn Calls,
+    steps: &'a mut Vec<Step>,
+}
+
+impl Pipeline<'_> {
     async fn step(
         &mut self,
         id: StepId,
@@ -640,11 +643,11 @@ impl Runner {
             s.status = status;
             s.counts = counts.iter().map(|(k, v)| ((*k).to_string(), *v)).collect();
         }
-        self.save().await
+        Ok(self.calls.progress(self.steps).await?)
     }
 
-    /// One answer of type `T`, counted; an answer out of format is sent
-    /// back once with what was wrong.
+    /// One answer of type `T`; an answer out of format is sent back once
+    /// with what was wrong.
     async fn ask<T: DeserializeOwned>(
         &self,
         template: &Template,
@@ -654,15 +657,7 @@ impl Runner {
         let mut problem = String::new();
         for _ in 0..2 {
             let req = request(messages.clone(), max_tokens);
-            let answer = self
-                .ai
-                .complete(&self.pool, self.campaign, "generation", template, &req)
-                .await?;
-            sqlx::query("UPDATE generation_jobs SET cost_micros = cost_micros + $2 WHERE id = $1")
-                .bind(self.id)
-                .bind(answer.usage.cost_micros.max(0))
-                .execute(&self.pool)
-                .await?;
+            let answer = self.calls.complete(template, &req).await?;
             match ai::parse_json::<T>(&answer.text) {
                 Ok(v) => return Ok(v),
                 Err(e) => {
@@ -681,37 +676,6 @@ impl Runner {
             code: "AI_OUTPUT_INVALID".into(),
             detail: Some(problem),
         })
-    }
-
-    async fn fail(&mut self, failure: Failure) {
-        for s in &mut self.steps {
-            if s.status == StepStatus::Running {
-                s.status = StepStatus::Failed;
-            }
-        }
-        let saved = sqlx::query(
-            "UPDATE generation_jobs SET status = 'failed', steps = $2, error = $3, detail = $4
-             WHERE id = $1",
-        )
-        .bind(self.id)
-        .bind(Json(&self.steps))
-        .bind(&failure.code)
-        .bind(&failure.detail)
-        .execute(&self.pool)
-        .await;
-        let touched = async {
-            let mut tx = self.pool.begin().await?;
-            live::touch(&mut tx, self.campaign, &Topic::Desk).await?;
-            tx.commit().await?;
-            Ok::<_, AppError>(())
-        }
-        .await;
-        if let Err(e) = saved {
-            tracing::error!(error = %e, job = %self.id, "generation: could not record the failure");
-        }
-        if let Err(e) = touched {
-            tracing::error!(error = ?e, job = %self.id, "generation: could not signal the failure");
-        }
     }
 }
 
@@ -743,40 +707,48 @@ fn issue_lines(issues: &[Issue]) -> String {
         .join("\n")
 }
 
-/// Run job `id` to its end, recording each step; a failure is recorded
-/// on the job, never lost.
-pub async fn run(pool: PgPool, ai: Ai, campaign: Uuid, id: Uuid) {
-    let mut runner = Runner {
-        pool,
-        ai,
-        campaign,
-        id,
-        steps: Vec::new(),
-    };
-    if let Err(failure) = drive(&mut runner).await {
-        runner.fail(failure).await;
-    }
+fn removed(pruned: Vec<promptus_shared::story::prune::Pruned>) -> impl Iterator<Item = Removed> {
+    pruned.into_iter().map(|p| Removed {
+        code: p.code.into(),
+        path: p.path,
+        detail: p.detail,
+    })
 }
 
-async fn drive(r: &mut Runner) -> Result<(), Failure> {
-    let (Json(input), Json(steps)): (Json<Input>, Json<Vec<Step>>) =
-        sqlx::query_as("SELECT input, steps FROM generation_jobs WHERE id = $1")
-            .bind(r.id)
-            .fetch_one(&r.pool)
-            .await?;
-    r.steps = steps;
-    let row = campaigns::find(&r.pool, r.campaign)
-        .await?
-        .ok_or(AppError::NotFound("NOT_FOUND"))?;
-    let library = Library {
-        rules: row.rules(),
-        maps: None,
-    };
-    let brief = brief(&row, &input);
-    let rules = rules_text(row.rules());
+/// The three pending steps of a new generation.
+#[must_use]
+pub fn new_steps() -> Vec<Step> {
+    [StepId::Cast, StepId::Scenes, StepId::Check]
+        .into_iter()
+        .map(|id| Step {
+            id,
+            status: StepStatus::Pending,
+            counts: BTreeMap::new(),
+        })
+        .collect()
+}
+
+/// Generate a campaign on top of `base` (its id, title, universe, rule
+/// system and party are kept), telling `calls` each step.
+///
+/// # Errors
+///
+/// The [`Failure`] that stopped it; `steps` then says where.
+pub async fn generate(
+    calls: &dyn Calls,
+    base: &Campaign,
+    rules: Option<&RuleSystem>,
+    players: i16,
+    input: &Input,
+    steps: &mut Vec<Step>,
+) -> Result<Outcome, Failure> {
+    let mut p = Pipeline { calls, steps };
+    let library = Library { rules, maps: None };
+    let brief = brief(base, players, input);
+    let rules = rules_text(rules);
 
     // 1. Bible, acts, fronts, cast.
-    r.step(StepId::Cast, StepStatus::Running, &[]).await?;
+    p.step(StepId::Cast, StepStatus::Running, &[]).await?;
     let messages = render(
         &templates::GENERATION_CAST,
         &[
@@ -785,10 +757,10 @@ async fn drive(r: &mut Runner) -> Result<(), Failure> {
             ("sizes", input.length.cast_sizes().into()),
         ],
     )?;
-    let cast: Cast = r
+    let cast: Cast = p
         .ask(&templates::GENERATION_CAST, messages, CAST_TOKENS)
         .await?;
-    r.step(
+    p.step(
         StepId::Cast,
         StepStatus::Done,
         &[
@@ -803,8 +775,8 @@ async fn drive(r: &mut Runner) -> Result<(), Failure> {
     .await?;
 
     // 2. Scenes, revelations, clues.
-    r.step(StepId::Scenes, StepStatus::Running, &[]).await?;
-    let mut story = row.story.clone();
+    p.step(StepId::Scenes, StepStatus::Running, &[]).await?;
+    let mut story = base.clone();
     story.bible = cast.bible;
     story.acts = cast.acts;
     if story.acts.is_empty() {
@@ -845,14 +817,14 @@ async fn drive(r: &mut Runner) -> Result<(), Failure> {
             ("sizes", input.length.scene_sizes().into()),
         ],
     )?;
-    let plot: Plot = r
+    let plot: Plot = p
         .ask(&templates::GENERATION_SCENES, messages, SCENES_TOKENS)
         .await?;
     story.bible.start_node = Some(plot.start_node);
     story.nodes = plot.nodes;
     story.revelations = plot.revelations;
     story.clues = plot.clues;
-    r.step(
+    p.step(
         StepId::Scenes,
         StepStatus::Done,
         &[
@@ -864,17 +836,10 @@ async fn drive(r: &mut Runner) -> Result<(), Failure> {
     .await?;
 
     // 3. Check, and repair what the validator finds.
-    r.step(StepId::Check, StepStatus::Running, &[]).await?;
+    p.step(StepId::Check, StepStatus::Running, &[]).await?;
     let (pruned_story, pruned) = prune(&story, &library);
     let mut story = pruned_story;
-    let mut removed: Vec<Removed> = pruned
-        .into_iter()
-        .map(|p| Removed {
-            code: p.code.into(),
-            path: p.path,
-            detail: p.detail,
-        })
-        .collect();
+    let mut gone: Vec<Removed> = removed(pruned).collect();
     let mut issues = validate_with(&story, &library);
     let mut repairs = 0usize;
     let mut dropped = 0usize;
@@ -888,7 +853,7 @@ async fn drive(r: &mut Runner) -> Result<(), Failure> {
                 ("issues", issue_lines(&issues)),
             ],
         )?;
-        let answer: Repair = r
+        let answer: Repair = p
             .ask(&templates::GENERATION_REPAIR, messages, REPAIR_TOKENS)
             .await?;
         let total = answer.edits.len();
@@ -909,39 +874,163 @@ async fn drive(r: &mut Runner) -> Result<(), Failure> {
         if errors(&fixed_issues) <= errors(&issues) && fixed_issues.len() <= issues.len() {
             story = fixed;
             issues = fixed_issues;
-            removed.extend(pruned.into_iter().map(|p| Removed {
-                code: p.code.into(),
-                path: p.path,
-                detail: p.detail,
-            }));
+            gone.extend(removed(pruned));
         }
     }
     let errors = errors(&issues);
-    if let Some(s) = r.steps.iter_mut().find(|s| s.id == StepId::Check) {
-        s.status = StepStatus::Done;
-        s.counts = [
-            ("errors".to_string(), errors),
-            ("warnings".to_string(), issues.len() - errors),
-            ("repairs".to_string(), repairs),
-        ]
-        .into_iter()
-        .collect();
+    p.step(
+        StepId::Check,
+        StepStatus::Done,
+        &[
+            ("errors", errors),
+            ("warnings", issues.len() - errors),
+            ("repairs", repairs),
+        ],
+    )
+    .await?;
+    Ok(Outcome {
+        story,
+        removed: gone,
+        repairs,
+        dropped,
+        issues,
+    })
+}
+
+/// A job's calls: counted against the campaign's budget, its cost and
+/// steps recorded on its row.
+struct JobCalls {
+    pool: PgPool,
+    ai: Ai,
+    campaign: Uuid,
+    id: Uuid,
+}
+
+impl JobCalls {
+    async fn counted(
+        &self,
+        template: &Template,
+        req: &LlmRequest,
+    ) -> Result<LlmResponse, AppError> {
+        let answer = self
+            .ai
+            .complete(&self.pool, self.campaign, "generation", template, req)
+            .await?;
+        sqlx::query("UPDATE generation_jobs SET cost_micros = cost_micros + $2 WHERE id = $1")
+            .bind(self.id)
+            .bind(answer.usage.cost_micros.max(0))
+            .execute(&self.pool)
+            .await?;
+        Ok(answer)
     }
-    let mut tx = r.pool.begin().await?;
+
+    async fn save(&self, steps: &[Step]) -> Result<(), AppError> {
+        let mut tx = self.pool.begin().await?;
+        sqlx::query("UPDATE generation_jobs SET steps = $2 WHERE id = $1")
+            .bind(self.id)
+            .bind(Json(steps))
+            .execute(&mut *tx)
+            .await?;
+        live::touch(&mut tx, self.campaign, &Topic::Desk).await?;
+        tx.commit().await?;
+        Ok(())
+    }
+
+    async fn fail(&self, steps: &mut [Step], failure: Failure) {
+        for s in steps.iter_mut() {
+            if s.status == StepStatus::Running {
+                s.status = StepStatus::Failed;
+            }
+        }
+        let saved = sqlx::query(
+            "UPDATE generation_jobs SET status = 'failed', steps = $2, error = $3, detail = $4
+             WHERE id = $1",
+        )
+        .bind(self.id)
+        .bind(Json(&*steps))
+        .bind(&failure.code)
+        .bind(&failure.detail)
+        .execute(&self.pool)
+        .await;
+        let touched = async {
+            let mut tx = self.pool.begin().await?;
+            live::touch(&mut tx, self.campaign, &Topic::Desk).await?;
+            tx.commit().await?;
+            Ok::<_, AppError>(())
+        }
+        .await;
+        if let Err(e) = saved {
+            tracing::error!(error = %e, job = %self.id, "generation: could not record the failure");
+        }
+        if let Err(e) = touched {
+            tracing::error!(error = ?e, job = %self.id, "generation: could not signal the failure");
+        }
+    }
+}
+
+impl Calls for JobCalls {
+    fn complete<'a>(
+        &'a self,
+        template: &'a Template,
+        req: &'a LlmRequest,
+    ) -> BoxFuture<'a, Result<LlmResponse, AppError>> {
+        Box::pin(self.counted(template, req))
+    }
+
+    fn progress<'a>(&'a self, steps: &'a [Step]) -> BoxFuture<'a, Result<(), AppError>> {
+        Box::pin(self.save(steps))
+    }
+}
+
+/// Run job `id` to its end, recording each step; a failure is recorded
+/// on the job, never lost.
+pub async fn run(pool: PgPool, ai: Ai, campaign: Uuid, id: Uuid) {
+    let calls = JobCalls {
+        pool,
+        ai,
+        campaign,
+        id,
+    };
+    let mut steps = new_steps();
+    if let Err(failure) = drive(&calls, &mut steps).await {
+        calls.fail(&mut steps, failure).await;
+    }
+}
+
+async fn drive(calls: &JobCalls, steps: &mut Vec<Step>) -> Result<(), Failure> {
+    let (Json(input), Json(stored)): (Json<Input>, Json<Vec<Step>>) =
+        sqlx::query_as("SELECT input, steps FROM generation_jobs WHERE id = $1")
+            .bind(calls.id)
+            .fetch_one(&calls.pool)
+            .await?;
+    *steps = stored;
+    let row = campaigns::find(&calls.pool, calls.campaign)
+        .await?
+        .ok_or(AppError::NotFound("NOT_FOUND"))?;
+    let out = generate(
+        calls,
+        &row.story,
+        row.rules(),
+        row.settings.player_count,
+        &input,
+        steps,
+    )
+    .await?;
+    let mut tx = calls.pool.begin().await?;
     sqlx::query(
         "UPDATE generation_jobs SET status = 'succeeded', steps = $2, draft = $3, pruned = $4,
                 repairs = $5, dropped = $6
          WHERE id = $1",
     )
-    .bind(r.id)
-    .bind(Json(&r.steps))
-    .bind(Json(&story))
-    .bind(Json(&removed))
-    .bind(i32::try_from(repairs).unwrap_or(i32::MAX))
-    .bind(i32::try_from(dropped).unwrap_or(i32::MAX))
+    .bind(calls.id)
+    .bind(Json(&*steps))
+    .bind(Json(&out.story))
+    .bind(Json(&out.removed))
+    .bind(i32::try_from(out.repairs).unwrap_or(i32::MAX))
+    .bind(i32::try_from(out.dropped).unwrap_or(i32::MAX))
     .execute(&mut *tx)
     .await?;
-    live::touch(&mut tx, r.campaign, &Topic::Desk).await?;
+    live::touch(&mut tx, calls.campaign, &Topic::Desk).await?;
     tx.commit().await?;
     Ok(())
 }

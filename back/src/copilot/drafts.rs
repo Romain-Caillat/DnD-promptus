@@ -4,15 +4,13 @@
 //! one write under the campaign lock that puts the GM's text, not the
 //! draft, in the shared journal.
 
-use std::collections::BTreeMap;
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use sqlx::types::Json;
 use uuid::Uuid;
 
-use super::{Answer, Ask, ContextInput, Kind, RawAnswer, context, instruction, sanitize};
+use super::{Answer, Ask, ContextInput, Kind, RawAnswer, sanitize};
 use crate::ai::{self, Ai, LlmRequest, ledger, templates};
 use crate::auth::guard::{CurrentGm, owned_by};
 use crate::campaigns;
@@ -137,43 +135,23 @@ pub async fn ask(
         })
         .collect();
     let rulings = knowledge::rulings(pool, campaign).await?;
-    let ctx = context(&ContextInput {
-        campaign: &row.story,
-        world: &row.world,
-        journal: &journal,
-        recaps: &recaps,
-        pending: &pending,
-        rulings: &rulings,
-    });
-    let rules_line = rules.map_or_else(
-        || "Système de règles inconnu.".to_string(),
-        |r| {
-            let mut line = format!(
-                "Système de règles : « {} » (test {}).",
-                r.name, r.check.dice
-            );
-            // The GM applies house rules at the table; the co-GM must
-            // know them to stay within the rules.
-            for h in &r.house_rules {
-                line.push_str(&format!("\nRègle maison « {} » : {}", h.name, h.text));
-            }
-            line
-        },
-    );
     let ask_with_prompt = Ask {
         prompt: prompt.clone(),
         ..ask.clone()
     };
-    let vars: BTreeMap<&str, String> = [
-        ("context", ctx),
-        ("rules", rules_line),
-        ("request", instruction(&ask_with_prompt, &row.story)),
-    ]
-    .into_iter()
-    .collect();
-    let messages = templates::COPILOT
-        .render(&vars)
-        .map_err(|e| AppError::internal("copilot template", e))?;
+    let messages = super::messages(
+        &ContextInput {
+            campaign: &row.story,
+            world: &row.world,
+            journal: &journal,
+            recaps: &recaps,
+            pending: &pending,
+            rulings: &rulings,
+        },
+        rules,
+        &ask_with_prompt,
+    )
+    .map_err(|e| AppError::internal("copilot template", e))?;
     let reply = ai
         .complete(
             pool,

@@ -9,6 +9,7 @@ pub mod content;
 pub mod copilot;
 pub mod db;
 pub mod error;
+pub mod eval;
 pub mod evening;
 pub mod live;
 pub mod media;
