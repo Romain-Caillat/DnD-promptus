@@ -19,6 +19,8 @@ pub mod review;
 use std::collections::BTreeMap;
 
 use chrono::{DateTime, Duration, Utc};
+use promptus_shared::rules::RuleSystem;
+use promptus_shared::sprite::{CharacterLook, Direction, Packs, render};
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
 use sqlx::{PgPool, Postgres, Transaction};
@@ -92,14 +94,18 @@ impl CharacterStatus {
 /// `characters.sheet` and sent back whole to that player, so it holds
 /// nothing GM-only. Every field has a default: a fresh draft is `{}`.
 ///
-/// Built on by `characters/build-character-creator` (layers, class
-/// choices) and `session/validate-characters` (rule checks).
+/// Written by the player in the character creator
+/// (`characters/build-character-creator`, [`save_sheet`]) and checked
+/// against the rules by `session/validate-characters`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct CharacterSheet {
     /// The character's name (« Borin »).
     #[serde(skip_serializing_if = "String::is_empty")]
     pub name: String,
+    /// A people id of the campaign's rule system, when it has peoples.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub people_id: Option<String>,
     /// A class id of the campaign's rule system.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub class_id: Option<String>,
@@ -109,6 +115,176 @@ pub struct CharacterSheet {
     /// What the character looks like, in the player's words.
     #[serde(skip_serializing_if = "String::is_empty")]
     pub appearance: String,
+    /// What the character looks like, as pieces of the campaign's
+    /// sprite pack: a description the server draws, never an image.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub look: Option<CharacterLook>,
+    #[serde(skip_serializing_if = "Backstory::is_empty")]
+    pub backstory: Backstory,
+}
+
+/// Three short answers instead of a blank page (board « Créer », moment
+/// 7), and the paragraph the player makes of them. A sheet written
+/// before the questions, with the story as plain text, reads it as the
+/// paragraph rather than failing — a sheet that fails to read is
+/// checked as empty.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", from = "BackstoryForm")]
+pub struct Backstory {
+    /// « D'où vient-il ? »
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub origin: String,
+    /// « Qui a-t-il perdu ? »
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub loss: String,
+    /// « Que cherche-t-il ? »
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub quest: String,
+    /// The story in a paragraph.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub text: String,
+}
+
+/// The two shapes a stored backstory may have.
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum BackstoryForm {
+    Text(String),
+    Answers {
+        #[serde(default)]
+        origin: String,
+        #[serde(default)]
+        loss: String,
+        #[serde(default)]
+        quest: String,
+        #[serde(default)]
+        text: String,
+    },
+}
+
+impl From<BackstoryForm> for Backstory {
+    fn from(form: BackstoryForm) -> Self {
+        match form {
+            BackstoryForm::Text(text) => Self {
+                text,
+                ..Self::default()
+            },
+            BackstoryForm::Answers {
+                origin,
+                loss,
+                quest,
+                text,
+            } => Self {
+                origin,
+                loss,
+                quest,
+                text,
+            },
+        }
+    }
+}
+
+impl Backstory {
+    pub fn is_empty(&self) -> bool {
+        self.origin.is_empty()
+            && self.loss.is_empty()
+            && self.quest.is_empty()
+            && self.text.is_empty()
+    }
+}
+
+/// Longest character name, in characters.
+pub const CHARACTER_NAME_MAX: usize = 60;
+/// Longest answer to one backstory question, in characters.
+pub const ANSWER_MAX: usize = 300;
+/// Longest backstory paragraph or appearance text, in characters.
+pub const TEXT_MAX: usize = 4000;
+/// Ability scores a sheet may hold. The rule system's budget is a
+/// warning the GM settles, never a refusal; this only keeps out what no
+/// system means.
+pub const ABILITY_RANGE: std::ops::RangeInclusive<i32> = 1..=30;
+
+impl CharacterSheet {
+    /// The sheet as stored: trimmed name, every id known to `rules`,
+    /// a look `packs` can draw from `pack`, texts within their bounds.
+    /// What the rules only advise (the ability budget) is not checked
+    /// here: it is flagged to the player and settled by the GM.
+    ///
+    /// # Errors
+    ///
+    /// 400 with the first problem's code: `INVALID_NAME`,
+    /// `UNKNOWN_PEOPLE`, `UNKNOWN_CLASS`, `UNKNOWN_ABILITY`,
+    /// `ABILITY_OUT_OF_RANGE`, `TEXT_TOO_LONG`, `SPRITE_WRONG_PACK`, or
+    /// the renderer's code for a look it cannot draw.
+    pub fn cleaned(
+        mut self,
+        rules: Option<&RuleSystem>,
+        packs: &Packs,
+        pack: &str,
+    ) -> Result<Self, AppError> {
+        let invalid = |code: &'static str, detail: String| AppError::Invalid { code, detail };
+        self.name = self.name.trim().to_string();
+        if self.name.chars().count() > CHARACTER_NAME_MAX || self.name.chars().any(char::is_control)
+        {
+            return Err(invalid("INVALID_NAME", self.name));
+        }
+        if let Some(id) = &self.people_id
+            && !rules.is_some_and(|r| r.peoples.iter().any(|p| &p.id == id))
+        {
+            return Err(invalid("UNKNOWN_PEOPLE", id.clone()));
+        }
+        if let Some(id) = &self.class_id
+            && rules.and_then(|r| r.class(id)).is_none()
+        {
+            return Err(invalid("UNKNOWN_CLASS", id.clone()));
+        }
+        for (id, score) in &self.abilities {
+            if rules.and_then(|r| r.ability(id)).is_none() {
+                return Err(invalid("UNKNOWN_ABILITY", id.clone()));
+            }
+            if !ABILITY_RANGE.contains(score) {
+                return Err(invalid("ABILITY_OUT_OF_RANGE", format!("{id} {score}")));
+            }
+        }
+        let b = &self.backstory;
+        let too_long = [&b.origin, &b.loss, &b.quest]
+            .into_iter()
+            .any(|a| a.chars().count() > ANSWER_MAX)
+            || [&b.text, &self.appearance]
+                .into_iter()
+                .any(|t| t.chars().count() > TEXT_MAX);
+        if too_long {
+            return Err(AppError::BadRequest("TEXT_TOO_LONG"));
+        }
+        if let Some(look) = &self.look {
+            if look.pack != pack {
+                return Err(invalid("SPRITE_WRONG_PACK", look.pack.clone()));
+            }
+            render(packs, look, Direction::East).map_err(|e| invalid(e.code(), e.to_string()))?;
+        }
+        Ok(self)
+    }
+
+    /// What the sheet still lacks before it can go to the GM: the
+    /// fields' names, empty when it is complete.
+    pub fn missing(&self, rules: Option<&RuleSystem>) -> Vec<&'static str> {
+        let mut missing = Vec::new();
+        if self.name.is_empty() {
+            missing.push("name");
+        }
+        if self.look.is_none() {
+            missing.push("look");
+        }
+        if let Some(rules) = rules {
+            if !rules.peoples.is_empty() && self.people_id.is_none() {
+                missing.push("peopleId");
+            }
+            if !rules.classes.is_empty() && self.class_id.is_none() {
+                missing.push("classId");
+            }
+        }
+        missing
+    }
 }
 
 /// Someone who joined a campaign.
@@ -409,29 +585,130 @@ pub async fn find_by_token(
 ///
 /// Fails on a database error.
 pub async fn character_of(pool: &PgPool, player: &Player) -> Result<Option<Character>, AppError> {
-    type CharacterRow = (
-        Uuid,
-        String,
-        Json<CharacterSheet>,
-        Option<String>,
-        DateTime<Utc>,
-    );
-    let row: Option<CharacterRow> = sqlx::query_as(
-        "SELECT id, status, sheet, gm_note, updated_at FROM characters WHERE player_id = $1",
-    )
+    let row: Option<CharacterRow> = sqlx::query_as(&format!(
+        "SELECT {CHARACTER_COLUMNS} FROM characters WHERE player_id = $1"
+    ))
     .bind(player.id)
     .fetch_optional(pool)
     .await?;
-    row.map(|(id, status, sheet, gm_note, updated_at)| {
-        Ok(Character {
-            id,
-            status: CharacterStatus::parse(&status)?,
-            sheet: sheet.0,
-            gm_note,
-            updated_at,
-        })
+    row.map(character_from_row).transpose()
+}
+
+type CharacterRow = (
+    Uuid,
+    String,
+    Json<CharacterSheet>,
+    Option<String>,
+    DateTime<Utc>,
+);
+
+const CHARACTER_COLUMNS: &str = "id, status, sheet, gm_note, updated_at";
+
+fn character_from_row(
+    (id, status, sheet, gm_note, updated_at): CharacterRow,
+) -> Result<Character, AppError> {
+    Ok(Character {
+        id,
+        status: CharacterStatus::parse(&status)?,
+        sheet: sheet.0,
+        gm_note,
+        updated_at,
     })
-    .transpose()
+}
+
+impl CharacterStatus {
+    /// Whether the player may still change the sheet: while writing it,
+    /// and when the GM sent it back. Once sent, it is the GM's turn.
+    pub fn editable(self) -> bool {
+        matches!(self, Self::Draft | Self::Returned)
+    }
+}
+
+/// `player`'s character row, locked until the transaction ends.
+async fn lock_character(
+    tx: &mut Transaction<'_, Postgres>,
+    player: &Player,
+) -> Result<Character, AppError> {
+    let row: Option<CharacterRow> = sqlx::query_as(&format!(
+        "SELECT {CHARACTER_COLUMNS} FROM characters WHERE player_id = $1 FOR UPDATE"
+    ))
+    .bind(player.id)
+    .fetch_optional(&mut **tx)
+    .await?;
+    row.map(character_from_row)
+        .transpose()?
+        .ok_or(AppError::NotFound("NO_CHARACTER"))
+}
+
+// --- The player's writes -----------------------------------------------------
+
+/// Save the player's draft: the whole sheet, already
+/// [`CharacterSheet::cleaned`]. Only while the sheet is theirs to edit
+/// (draft, or returned by the GM); the status does not change.
+///
+/// # Errors
+///
+/// 404 `NO_CHARACTER` (a spectator); 409 `CHARACTER_LOCKED` once sent
+/// to the GM or validated; a database error.
+pub async fn save_sheet(
+    pool: &PgPool,
+    player: &Player,
+    sheet: &CharacterSheet,
+) -> Result<Character, AppError> {
+    let mut tx = pool.begin().await?;
+    let current = lock_character(&mut tx, player).await?;
+    if !current.status.editable() {
+        return Err(AppError::Conflict("CHARACTER_LOCKED"));
+    }
+    let row: CharacterRow = sqlx::query_as(&format!(
+        "UPDATE characters SET sheet = $2 WHERE id = $1 RETURNING {CHARACTER_COLUMNS}"
+    ))
+    .bind(current.id)
+    .bind(Json(sheet))
+    .fetch_one(&mut *tx)
+    .await?;
+    touch_character(&mut tx, player.campaign_id, current.id).await?;
+    tx.commit().await?;
+    character_from_row(row)
+}
+
+/// Send the character to the GM: draft or returned → submitted. The one
+/// place a sheet goes to the GM, so `session/validate-characters` hooks
+/// what it keeps of each submission here. A sheet over the rules'
+/// budget goes all the same: the GM decides.
+///
+/// # Errors
+///
+/// 404 `NO_CHARACTER`; 409 `CHARACTER_LOCKED` when already sent or
+/// validated; 400 `CHARACTER_INCOMPLETE` (the missing fields in the
+/// detail) without a name, a look, or the people and class the rules
+/// ask for; a database error.
+pub async fn submit_character(
+    pool: &PgPool,
+    player: &Player,
+    rules: Option<&RuleSystem>,
+) -> Result<Character, AppError> {
+    let mut tx = pool.begin().await?;
+    let current = lock_character(&mut tx, player).await?;
+    if !current.status.editable() {
+        return Err(AppError::Conflict("CHARACTER_LOCKED"));
+    }
+    let missing = current.sheet.missing(rules);
+    if !missing.is_empty() {
+        return Err(AppError::Invalid {
+            code: "CHARACTER_INCOMPLETE",
+            detail: missing.join(","),
+        });
+    }
+    let row: CharacterRow = sqlx::query_as(&format!(
+        "UPDATE characters SET status = 'submitted' WHERE id = $1 RETURNING {CHARACTER_COLUMNS}"
+    ))
+    .bind(current.id)
+    .fetch_one(&mut *tx)
+    .await?;
+    touch_character(&mut tx, player.campaign_id, current.id).await?;
+    tx.commit().await?;
+    character_from_row(row)
 }
 
 // --- The GM's view of the table ----------------------------------------------
@@ -562,5 +839,24 @@ mod tests {
         let sheet: CharacterSheet = serde_json::from_str("{}").unwrap();
         assert_eq!(sheet, CharacterSheet::default());
         assert_eq!(serde_json::to_string(&sheet).unwrap(), "{}");
+    }
+
+    #[test]
+    fn a_backstory_reads_from_answers_or_from_plain_text() {
+        let answers: CharacterSheet = serde_json::from_str(
+            r#"{"name":"Borin","backstory":{"origin":"La mine.","text":"Nain."}}"#,
+        )
+        .unwrap();
+        assert_eq!(answers.backstory.origin, "La mine.");
+        assert_eq!(answers.backstory.text, "Nain.");
+        // Written before the questions: the rest of the sheet survives.
+        let text: CharacterSheet =
+            serde_json::from_str(r#"{"name":"Borin","backstory":"La mine."}"#).unwrap();
+        assert_eq!(text.name, "Borin");
+        assert_eq!(text.backstory.text, "La mine.");
+        assert_eq!(
+            serde_json::to_value(&text).unwrap()["backstory"],
+            serde_json::json!({ "text": "La mine." })
+        );
     }
 }

@@ -52,7 +52,8 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         .route("/api/auth/sign-in", post(api::auth::sign_in))
         // Sprites: a description is drawn the same for GM, players and TV.
         .route("/api/sprites/render.png", get(api::sprites::render_png))
-        .route("/api/sprites/looks", get(api::sprites::looks));
+        .route("/api/sprites/looks", get(api::sprites::looks))
+        .route("/api/sprites/packs/{pack}", get(api::sprites::pack));
     let public = invitation_routes()
         .into_iter()
         .fold(public, |r, (_, path, handler)| r.route(path, handler))
@@ -162,6 +163,23 @@ fn player_routes() -> Vec<RouteSpec> {
     vec![
         ("GET", "/api/play/{campaign}/me", get(api::play::me)),
         ("GET", "/api/play/{campaign}/view", get(api::play::view)),
+        // The character creator: what it offers, then the player's own
+        // sheet — saved as a draft, then sent to the GM.
+        (
+            "GET",
+            "/api/play/{campaign}/creation",
+            get(api::play::creation),
+        ),
+        (
+            "PUT",
+            "/api/play/{campaign}/character",
+            put(api::play::save_character),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/character/submit",
+            post(api::play::submit_character),
+        ),
         // A socket: it carries versions and presence, never data.
         (
             "GET",

@@ -381,14 +381,126 @@
     "character": "Ton personnage",
     "unnamed": "Sans nom pour l'instant",
     "status": {
-      "draft": "Brouillon. Ta place est gardée : le créateur de personnage s'ouvrira ici.",
+      "draft": "Brouillon. Ta place est gardée : crée-le quand tu veux, en deux minutes.",
       "submitted": "Le MJ regarde ton personnage…",
       "validated": "Validé par le MJ.",
       "returned": "Le MJ t'a renvoyé ton personnage avec un mot."
     },
     "gmNote": "Le mot du MJ",
     "spectator": "Tu verras ce que montre l'écran partagé, pas les fiches.",
-    "keep": "Garde ce navigateur : c'est lui qui garde ta place."
+    "keep": "Garde ce navigateur : c'est lui qui garde ta place.",
+    "create": "Créer mon personnage",
+    "resume": "Reprendre mon personnage",
+    "fix": "Corriger mon personnage",
+    "createHint": "Son allure, sa classe, son histoire",
+    "fixHint": "Lis le mot du MJ, change, renvoie"
+  },
+  "creator": {
+    "banner": {
+      "step": "Ton personnage · {{part}} sur {{total}}",
+      "ready": "Prêt à partir"
+    },
+    "back": "‹ Retour",
+    "next": "Continuer",
+    "send": "Envoyer au MJ",
+    "sendTime": "Créé en {{time}}",
+    "titles": {
+      "people": "Ton peuple",
+      "body": "Ton allure",
+      "outfit": "Tenue et arme",
+      "colours": "Couleurs et nom",
+      "class": "Ce que tu sais faire",
+      "abilities": "Tes caractéristiques",
+      "story": "Son histoire",
+      "review": "Relire et envoyer"
+    },
+    "look": {
+      "yours": "Ton personnage",
+      "tabs": {
+        "body": "Corps",
+        "outfit": "Tenue",
+        "colours": "Couleurs"
+      },
+      "body": "Silhouette",
+      "skin": "Peau",
+      "hair": "Cheveux",
+      "noHair": "Crâne nu",
+      "beard": "Barbe",
+      "none": "Aucun",
+      "headwear": "Sur la tête",
+      "outfit": "Tenue",
+      "armour": "Armure",
+      "weapon": "Dans la main",
+      "accessories": "Accessoires",
+      "hairColour": "Cheveux et barbe",
+      "dye": {
+        "outfit": "{{piece}} · couleur",
+        "headwear": "{{piece}} · couleur",
+        "armour": "{{piece}} · couleur"
+      },
+      "accent": "{{piece}} · détails",
+      "name": "Son nom",
+      "namePlaceholder": "Borin, Lyra, Mara…",
+      "random": "🎲 Au hasard"
+    },
+    "class": {
+      "hand": "Tes cartes de départ · {{name}}",
+      "damage": "{{amount}} dégâts.",
+      "later_one": "Une autre carte se débloque plus tard (niveau {{levels}}).",
+      "later_other": "{{count}} autres cartes se débloquent plus tard (niveaux {{levels}})."
+    },
+    "abilities": {
+      "spread": "Répartition conseillée pour un {{name}}",
+      "left_one": "{{count}} point restant",
+      "left_other": "{{count}} points restants",
+      "over_one": "{{count}} point de trop",
+      "over_other": "{{count}} points de trop",
+      "less": "Baisser {{name}}",
+      "more": "Monter {{name}}",
+      "score": "{{name}} : {{score}}",
+      "warnTitle_one": "{{count}} point au-delà de la répartition",
+      "warnTitle_other": "{{count}} points au-delà de la répartition",
+      "warn": "La classe en donne {{budget}} au total. Tu peux l'envoyer quand même : {{gm}} décidera.",
+      "reset": "Revenir à la répartition de la classe",
+      "noClass": "Choisis d'abord une classe : elle donne la répartition de départ."
+    },
+    "story": {
+      "origin": "D'où vient-il ?",
+      "loss": "Qui a-t-il perdu ?",
+      "quest": "Que cherche-t-il ?",
+      "text": "Son histoire en quelques lignes (facultatif)",
+      "hint": "Trois réponses courtes suffisent. Le MJ s'en servira pour ses accroches."
+    },
+    "review": {
+      "level": "niveau 1",
+      "hp": "Vie",
+      "ac": "Armure",
+      "atk": "Attaque",
+      "init": "Init.",
+      "overTitle_one": "{{count}} point à voir avec le MJ",
+      "overTitle_other": "{{count}} points à voir avec le MJ",
+      "over_one": "{{count}} point de plus que la répartition de la classe. {{gm}} peut l'accepter ou te demander de changer.",
+      "over_other": "{{count}} points de plus que la répartition de la classe. {{gm}} peut l'accepter ou te demander de changer.",
+      "missingTitle": "Il manque encore",
+      "missing": {
+        "name": "son nom (onglet Couleurs)",
+        "people": "son peuple",
+        "class": "sa classe"
+      }
+    },
+    "sent": {
+      "banner": "Envoyé à {{gm}}",
+      "waiting": "{{gm}} regarde ton personnage…",
+      "notify": "Tu verras sa réponse ici, dès qu'il aura répondu.",
+      "home": "Retour à la partie"
+    },
+    "errors": {
+      "locked": "Ton personnage est déjà chez le MJ : attends sa réponse.",
+      "name": "Ce nom ne va pas : 60 caractères au plus.",
+      "tooLong": "Un texte est trop long.",
+      "incomplete": "Il manque encore quelque chose avant l'envoi.",
+      "generic": "L'enregistrement n'a pas marché. Réessaie."
+    }
   },
   "reference": {
     "kicker": "Système visuel · fondations",

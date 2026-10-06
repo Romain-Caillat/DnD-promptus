@@ -196,4 +196,10 @@ describe('liveUrl', () => {
       'ws://localhost:4334/api/campaigns/c1/live',
     )
   })
+
+  it('opens a player socket where the seat cookie is sent', () => {
+    expect(liveUrl('c1', { protocol: 'https:', host: 'promptus.example' } as Location, 'player')).toBe(
+      'wss://promptus.example/api/play/c1/live',
+    )
+  })
 })

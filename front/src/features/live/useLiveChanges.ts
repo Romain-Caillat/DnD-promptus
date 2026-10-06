@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { LiveConnection, liveUrl, type LiveStatus, type Presence } from '@/lib/live'
+import { LiveConnection, liveUrl, type LiveStatus, type LiveViewer, type Presence } from '@/lib/live'
 
 export interface LiveState {
   status: LiveStatus
@@ -17,6 +17,7 @@ const NOBODY: Presence = { gmOnline: false, players: [] }
 export function useLiveChanges(
   campaignId: string,
   onChange: (topics: string[]) => void,
+  viewer: LiveViewer = 'gm',
 ): LiveState {
   const [status, setStatus] = useState<LiveStatus>('connecting')
   const [presence, setPresence] = useState<Presence>(NOBODY)
@@ -27,14 +28,14 @@ export function useLiveChanges(
 
   useEffect(() => {
     const connection = new LiveConnection({
-      url: liveUrl(campaignId),
+      url: liveUrl(campaignId, window.location, viewer),
       onChange: (topics) => onChangeRef.current(topics),
       onPresence: setPresence,
       onStatus: setStatus,
     })
     connection.start()
     return () => connection.stop()
-  }, [campaignId])
+  }, [campaignId, viewer])
 
   return { status, presence }
 }

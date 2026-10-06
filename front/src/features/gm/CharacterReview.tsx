@@ -12,6 +12,7 @@ import {
   type CharacterReview as Review,
 } from '@/lib/table'
 import { cn } from '@/lib/utils'
+import { BackstoryText } from './BackstoryText'
 
 type State =
   | { kind: 'loading' }
@@ -167,7 +168,7 @@ export function CharacterReview({
             </div>
           </div>
           <Writing label={t('gm.review.backstory')}>
-            {review.sheet.backstory || <span className="text-mute">{t('gm.review.noBackstory')}</span>}
+            <BackstoryText backstory={review.sheet.backstory} />
           </Writing>
           {review.sheet.appearance && <Writing label={t('gm.review.appearance')}>{review.sheet.appearance}</Writing>}
         </article>
@@ -350,6 +351,10 @@ function describeChange(c: Change, abilityName: (id: string) => string, t: T): s
     classId: t('gm.review.field.classId'),
     appearance: t('gm.review.field.appearance'),
     backstory: t('gm.review.field.backstory'),
+    'backstory.origin': t('creator.story.origin'),
+    'backstory.loss': t('creator.story.loss'),
+    'backstory.quest': t('creator.story.quest'),
+    'backstory.text': t('gm.review.field.backstory'),
   }
   const label = c.path.startsWith('abilities.')
     ? abilityName(c.path.slice('abilities.'.length))

@@ -5,7 +5,7 @@
 //! the same pixels. The starter packs and the looks of the two witness
 //! worlds are compiled into the binary (`content/sprites/`).
 //!
-//! Both routes are public: a description is not a secret (the caller
+//! Every route is public: a description is not a secret (the caller
 //! sends it), and drawing a 22 x 28 sprite costs next to nothing; the
 //! renders are cached by hash all the same.
 
@@ -13,52 +13,33 @@ use std::collections::HashMap;
 use std::sync::{Arc, LazyLock, Mutex};
 
 use axum::Json;
-use axum::extract::Query;
+use axum::extract::{Path, Query};
 use axum::http::header::{CACHE_CONTROL, CONTENT_TYPE, ETAG, IF_NONE_MATCH};
 use axum::http::{HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
-use promptus_shared::sprite::{CharacterLook, Direction, LookBook, Packs, render};
+use promptus_shared::sprite::{CharacterLook, Direction, render};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
+use crate::content;
 use crate::error::AppError;
-
-const PACKS: [&str; 2] = [
-    include_str!("../../../content/sprites/marins-1718/pack.yaml"),
-    include_str!("../../../content/sprites/equipage-spatial/pack.yaml"),
-];
-const LOOKS: [&str; 2] = [
-    include_str!("../../../content/sprites/looks/corsaires.yaml"),
-    include_str!("../../../content/sprites/looks/brasier.yaml"),
-];
 
 /// Renders kept in memory; past this many the cache starts over.
 const CACHE_ENTRIES: usize = 1024;
 
 struct Sprites {
-    packs: Packs,
-    looks: Vec<LookBook>,
     /// Hash of the pack files: a pack edit changes every ETag.
     version: String,
     cache: Mutex<HashMap<String, Arc<Vec<u8>>>>,
 }
 
 static SPRITES: LazyLock<Sprites> = LazyLock::new(|| {
-    // Both are checked by `tests/sprites_test.rs` and by the golden
-    // tests of `shared`: a broken pack never reaches a build.
-    let packs = Packs::from_yaml(PACKS).expect("the embedded sprite packs load");
-    let looks = LOOKS
-        .iter()
-        .map(|t| LookBook::from_yaml(t).expect("the embedded looks parse"))
-        .collect();
     let mut hash = Sha256::new();
-    for p in PACKS {
+    for p in content::PACK_FILES {
         hash.update(p.as_bytes());
     }
     Sprites {
-        packs,
-        looks,
         version: hex(&hash.finalize()[..8]),
         cache: Mutex::new(HashMap::new()),
     }
@@ -116,7 +97,7 @@ pub async fn render_png(
     let png = if let Some(png) = cached {
         png
     } else {
-        let image = render(&sprites.packs, &look, q.facing).map_err(|e| AppError::Invalid {
+        let image = render(content::packs(), &look, q.facing).map_err(|e| AppError::Invalid {
             code: e.code(),
             detail: e.to_string(),
         })?;
@@ -153,5 +134,20 @@ fn cache_headers(etag: &str) -> [(axum::http::HeaderName, HeaderValue); 2] {
 /// `GET /api/sprites/looks` — the looks of the two witness worlds: their
 /// party slots (drawn facing east) and their foes (facing west).
 pub async fn looks() -> Json<Value> {
-    Json(json!({ "data": { "worlds": SPRITES.looks } }))
+    Json(json!({ "data": { "worlds": content::look_books() } }))
+}
+
+/// `GET /api/sprites/packs/{pack}` — what the character creator offers
+/// from a pack: each slot's pieces (id, French name, whether they take
+/// colours) and the palettes. No pixels: previews go through
+/// `render.png`.
+///
+/// # Errors
+///
+/// 404 `SPRITE_UNKNOWN_PACK` for a pack this server does not have.
+pub async fn pack(Path(id): Path<String>) -> Result<Json<Value>, AppError> {
+    let pack = content::packs()
+        .get(&id)
+        .ok_or(AppError::NotFound("SPRITE_UNKNOWN_PACK"))?;
+    Ok(Json(json!({ "data": pack.catalogue() })))
 }

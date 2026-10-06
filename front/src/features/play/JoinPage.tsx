@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
 import { ApiError } from '@/lib/api'
+import { creatorPath } from '@/lib/creator'
 import { cn } from '@/lib/utils'
 import {
   fetchInvitation,
@@ -76,7 +77,9 @@ export function JoinPage() {
     setError(null)
     try {
       await joinCampaign(code, nickname, role)
-      navigate(playPath(state.invitation.campaignId), { replace: true })
+      // « Create my character » opens the creator straight away.
+      const id = state.invitation.campaignId
+      navigate(role === 'player' ? creatorPath(id) : playPath(id), { replace: true })
     } catch (err) {
       setError(joinErrorKey(err))
       setPending(false)

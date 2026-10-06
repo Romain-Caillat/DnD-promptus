@@ -64,10 +64,21 @@ function retryDelay(attempt: number): number {
   return Math.min(RETRY_BASE_MS * 2 ** attempt, RETRY_MAX_MS)
 }
 
-/** `ws(s)://<this origin>/api/campaigns/<id>/live`. */
-export function liveUrl(campaignId: string, location: Location = window.location): string {
+/** Who follows a campaign: its GM, or a player seated at it. */
+export type LiveViewer = 'gm' | 'player'
+
+/**
+ * `ws(s)://<this origin>/api/campaigns/<id>/live` for the GM,
+ * `…/api/play/<id>/live` for a player (where their seat cookie goes).
+ */
+export function liveUrl(
+  campaignId: string,
+  location: Location = window.location,
+  viewer: LiveViewer = 'gm',
+): string {
   const scheme = location.protocol === 'https:' ? 'wss' : 'ws'
-  return `${scheme}://${location.host}/api/campaigns/${encodeURIComponent(campaignId)}/live`
+  const base = viewer === 'gm' ? 'campaigns' : 'play'
+  return `${scheme}://${location.host}/api/${base}/${encodeURIComponent(campaignId)}/live`
 }
 
 /**

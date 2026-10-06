@@ -29,7 +29,8 @@ pub enum AppError {
     /// the two are indistinguishable on purpose (see `auth::guard`).
     NotFound(&'static str),
     /// 409 — the resource is not in a state that allows this (a sheet
-    /// that is not waiting for review, or changed since it was read).
+    /// already sent to the GM, not waiting for review, or changed since
+    /// it was read).
     Conflict(&'static str),
     /// A dependency the request needs (today: the database) is down, or
     /// the server refuses new work for a moment.

@@ -1225,7 +1225,7 @@ HTTPS) ; « reprendre » sur un autre appareil (lien de reprise donné par
 le MJ) et reprendre un personnage d'une autre campagne (Hugo et Sef) ne
 sont pas faits.
 
-### `session/validate-characters` · doing — reste l'envoi joueur (créateur) et une vraie table
+### `session/validate-characters` · doing — reste une vraie table
 
 **Périmètre** — Le MJ voit sa table se remplir, relit chaque fiche,
 valide ou renvoie avec un mot ; le joueur corrige et renvoie, le MJ ne
@@ -1240,7 +1240,7 @@ faisables dans l'app.
 `bun run test`). Les règles vérifient chaque fiche
 (`rules::check_character` : classe absente ou inconnue, caractéristique
 inconnue, score hors classe, budget dépassé) et **signalent sans
-bloquer**. La page de table (`/campagnes/:id`) suit le sujet live
+bloquer**. La page de table (`/campagnes/:id/table`) suit le sujet live
 `table` : chaque siège montre sprite, classe, présence et statut (« à
 relire », « corrigé · à relire »…). La relecture d'une fiche affiche la
 fiche, l'histoire, les points signalés et un mot proposé que le MJ
@@ -1254,13 +1254,12 @@ par une route joueur, prouvé par le balayage marqué) sont **écrites à
 la main par le MJ**, l'histoire du joueur sous les yeux, et nouées à des
 scènes ou des fronts ; les proposer par l'IA reste à
 `copilot/co-write-backstory`, la vérification des fiches par le co-MJ à
-`copilot/check-character-sheets`. **Reste** : le joueur ne peut pas
-encore enregistrer ni envoyer sa fiche — c'est
-`characters/build-character-creator`. Contrat pour la fusion : l'écriture
-joueur met `sheet` à jour, passe `draft`/`returned` → `submitted`,
-laisse `reviewed_sheet` intact (c'est lui qui donne la différence) et
-appelle `players::touch_character` dans sa transaction ; le mot du MJ
-(`gm_note`) arrive déjà au joueur par la projection. Ensuite, jouer les
+`copilot/check-character-sheets`. Depuis la fusion avec
+`characters/build-character-creator`, le joueur enregistre et envoie sa
+fiche : ses écritures laissent `reviewed_sheet` intact et appellent
+`players::touch_character`, la table du MJ suit donc en direct ;
+l'histoire s'affiche en trois réponses plus un paragraphe (une histoire
+en texte simple est lue comme le paragraphe). **Reste** : jouer les
 moments 3 à 6 avec de vrais joueurs sur téléphone.
 
 ### `session/schedule-sessions` · todo
@@ -1658,7 +1657,7 @@ les douze personnages et les adversaires sur `/reference` et dire ce qui
 cloche ; les directions nord et sud viennent avec
 `characters/walk-in-four-directions`.
 
-### `characters/build-character-creator` · todo
+### `characters/build-character-creator` · doing — reste l'essai sur un vrai téléphone
 
 **Pourquoi** — Le personnage est la pièce du joueur sur le plateau :
 le créer soi-même, c'est s'y attacher dès la première session.
@@ -1681,6 +1680,28 @@ les huit moments de la planche « Créer » sont faisables dans l'app.
 **Origine** — Romain, session de design du 3 octobre 2026 · planche
 « Créer » · prototypes : `docs/design/avatar.py`,
 `docs/design/sprite-prototype.py`
+
+**État** — Vérifié dans PCT 105 (`bun run lint`, `bun run test`). Le
+joueur arrive par son lien et ouvre le créateur
+(`/partie/:id/personnage`) : peuple (quand les règles en ont), corps,
+tenue, couleurs et nom, classe, caractéristiques (budget dépassé
+signalé, jamais bloquant), histoire en trois questions plus un
+paragraphe, relecture et envoi au MJ. L'aperçu est le sprite dessiné par
+le serveur depuis la description en couches (`look`, jamais une image),
+avec un bouton « Au hasard ». Le serveur tient le brouillon
+(`PUT /api/play/:c/character`, nettoyé par `CharacterSheet::cleaned`)
+et l'envoi (`POST …/character/submit` : 400 `CHARACTER_INCOMPLETE`,
+409 `CHARACTER_LOCKED` une fois envoyé) ; chaque écriture prévient la
+table du MJ (`touch_character`), qui relit avec
+`session/validate-characters`. L'accueil joueur montre le personnage
+dessiné et propose « Créer / Reprendre / Corriger » tant que la fiche
+est en brouillon ou renvoyée. Un test suit Marc sur les huit moments.
+**Limites** : aucun des deux mondes témoins ne définit encore de
+peuples, l'étape « peuple » n'apparaît donc qu'avec un système qui en a ;
+le personnage sur la carte et la TV attend ces écrans ; le même
+créateur côté MJ pour les PNJ et monstres reste à faire. **Reste** : un
+joueur crée son personnage sur un vrai téléphone en moins de deux
+minutes.
 
 ### `characters/walk-in-four-directions` · todo
 

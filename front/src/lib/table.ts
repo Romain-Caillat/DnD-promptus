@@ -1,6 +1,6 @@
 import type { CharacterLook } from '@/features/sprites/look'
 import { apiRequest } from './api'
-import type { CharacterStatus, Role } from './play'
+import type { Backstory, CharacterStatus, Role } from './play'
 
 /**
  * The part of the players' view the invite panel quotes: read from the
@@ -68,7 +68,7 @@ interface ReviewSheet {
   classId?: string
   abilities?: Record<string, number>
   appearance?: string
-  backstory?: string
+  backstory?: Backstory
   look?: CharacterLook
 }
 

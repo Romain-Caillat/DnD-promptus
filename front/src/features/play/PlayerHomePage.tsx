@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
+import { CardButton } from '@/components/game/CardButton'
+import { creatorPath } from '@/lib/creator'
 import { cn } from '@/lib/utils'
-import { fetchPlayerHome, type PlayerHome } from '@/lib/play'
+import { fetchPlayerHome, type CharacterView, type PlayerHome } from '@/lib/play'
+import { CharacterSummary } from './creator/ReviewStep'
 
 type HomeState =
   | { kind: 'loading' }
@@ -12,11 +15,14 @@ type HomeState =
 
 /**
  * `/partie/:campaignId` — a player's home in one campaign, phone first:
- * the campaign, their seat and where their character stands. Everything
- * comes from the server's player projection (`GET /api/play/…/me`).
+ * the campaign, their seat and their character — drawn, with its
+ * numbers, once made — and the way into the creator while the sheet is
+ * theirs to edit. Everything comes from the server's player projection
+ * (`GET /api/play/…/me`).
  */
 export function PlayerHomePage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { campaignId = '' } = useParams()
   const [state, setState] = useState<HomeState>({ kind: 'loading' })
 
@@ -72,7 +78,20 @@ export function PlayerHomePage() {
         {character ? (
           <div className="surface-slab flex flex-col gap-2 p-3.5">
             <span className="type-label">{t('play.character')}</span>
-            <span className="type-title text-[22px]">{character.sheet.name || t('play.unnamed')}</span>
+            {character.sheet.look ? (
+              <CharacterSummary
+                sheet={character.sheet}
+                look={character.sheet.look}
+                subtitle={[character.peopleName, character.className, t('creator.review.level')]
+                  .filter(Boolean)
+                  .join(' · ')}
+                stats={character.stats}
+                over={0}
+                gmName={campaign.gmName}
+              />
+            ) : (
+              <span className="type-title text-[22px]">{character.sheet.name || t('play.unnamed')}</span>
+            )}
             <p className="text-body text-chalk-soft">{t(`play.status.${character.status}`)}</p>
             {character.gmNote && (
               <div className="rounded-button bg-ivory px-3.5 py-3 text-body text-ink shadow-ivory-flat">
@@ -80,6 +99,7 @@ export function PlayerHomePage() {
                 {character.gmNote}
               </div>
             )}
+            <CreatorButton character={character} onOpen={() => navigate(creatorPath(campaignId))} />
           </div>
         ) : (
           <p className="text-body text-chalk-soft">{t('play.spectator')}</p>
@@ -87,5 +107,22 @@ export function PlayerHomePage() {
       </section>
       <p className="px-4 pb-8 text-caption text-mute">{t('play.keep')}</p>
     </main>
+  )
+}
+
+/** The way into the creator, while the sheet is the player's to edit. */
+function CreatorButton({ character, onOpen }: { character: CharacterView; onOpen: () => void }) {
+  const { t } = useTranslation()
+  if (character.status === 'returned') {
+    return <CardButton title={t('play.fix')} subtitle={t('play.fixHint')} onClick={onOpen} />
+  }
+  if (character.status !== 'draft') return null
+  const started = Boolean(character.sheet.look || character.sheet.name)
+  return (
+    <CardButton
+      title={t(started ? 'play.resume' : 'play.create')}
+      subtitle={t('play.createHint')}
+      onClick={onOpen}
+    />
   )
 }

@@ -51,15 +51,18 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
     let code = invite_code(app, &gm, &campaign).await;
     let marc = join(app, &code, "Marc", "player").await;
     let marc_id = Uuid::parse_str(marc.body["data"]["me"]["id"].as_str().unwrap()).unwrap();
+    // Returned by the GM with a word, the sweep's character writes may
+    // edit and resend it; what the GM keeps about it (the last review, a
+    // hook) must not reach the player.
     let character: Uuid = sqlx::query_scalar(
-        "UPDATE characters SET sheet = $2, status = 'submitted' WHERE player_id = $1 RETURNING id",
+        "UPDATE characters SET sheet = $2, status = 'returned', gm_note = 'Retouche.'
+         WHERE player_id = $1 RETURNING id",
     )
     .bind(marc_id)
     .bind(json!({ "name": "Borin", "appearance": MARC_SECRET }))
     .fetch_one(pool)
     .await
     .unwrap();
-    // What the GM keeps about Marc's sheet: the last review, a hook.
     mark_review(pool, Uuid::parse_str(&campaign).unwrap(), character).await;
     let spectator = join(app, &code, "Léa", "spectator").await;
     Table {
@@ -78,6 +81,30 @@ fn uri(path: &str, t: &Table) -> String {
 
 fn seated(path: &str) -> bool {
     path.contains("{campaign}")
+}
+
+/// The routes that write the caller's own character: a spectator has
+/// none (404 `NO_CHARACTER`).
+fn writes_character(method: &str, path: &str) -> bool {
+    method != "GET" && path.contains("/character")
+}
+
+/// What the sweep sends to a route that takes a body.
+fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
+    match (method, path) {
+        ("POST", p) if p.starts_with("/api/join/") => {
+            Some(json!({ "nickname": format!("Sweep {n}"), "role": "player" }))
+        }
+        // A complete sheet, so the submit route that follows succeeds.
+        ("PUT", p) if p.ends_with("/character") => Some(json!({
+            "name": "Borin",
+            "classId": "bretteur",
+            "appearance": MARC_SECRET,
+            "look": { "pack": "marins-1718", "body": "robuste", "skin": "hale",
+                      "hair": { "style": "court", "colour": "roux" } },
+        })),
+        _ => None,
+    }
 }
 
 fn assert_clean(what: &str, body: &Value) {
@@ -100,12 +127,11 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
 
     for (n, (method, path)) in routes.iter().enumerate() {
         let uri = uri(path, &t);
-        let body = (*method == "POST")
-            .then(|| json!({ "nickname": format!("Sweep {n}"), "role": "player" }));
+        let body = sweep_body(n, method, path);
         for (who, token) in [("Marc", &t.marc), ("Léa", &t.spectator)] {
             // Joining twice under one nickname is refused: one join is
             // enough to sweep.
-            if *method == "POST" && who == "Léa" {
+            if *method == "POST" && !seated(path) && who == "Léa" {
                 continue;
             }
             let r = call_as_player(&app, Some(token), method, &uri, body.clone()).await;
@@ -115,6 +141,11 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
             if path.ends_with("/live") {
                 assert_eq!(r.status, StatusCode::BAD_REQUEST, "{uri} as {who}");
                 assert_eq!(r.body["error"]["code"], "WEBSOCKET_REQUIRED");
+                continue;
+            }
+            if who == "Léa" && writes_character(method, path) {
+                assert_eq!(r.status, StatusCode::NOT_FOUND, "{method} {uri} as Léa");
+                assert_eq!(r.body["error"]["code"], "NO_CHARACTER");
                 continue;
             }
             assert!(

@@ -1,3 +1,4 @@
+import type { CharacterLook } from '@/features/sprites/look'
 import { ApiError, apiRequest } from './api'
 
 /** What an invitation link opens, as the server's projection gives it. */
@@ -12,25 +13,70 @@ export interface Invitation {
 export type Role = 'player' | 'spectator'
 export type CharacterStatus = 'draft' | 'submitted' | 'validated' | 'returned'
 
+/** Three short answers and the paragraph made of them (`players::Backstory`). */
+export interface Backstory {
+  origin?: string
+  loss?: string
+  quest?: string
+  text?: string
+}
+
 /** What the player wrote about their character (`players::CharacterSheet`). */
-interface CharacterSheet {
+export interface CharacterSheet {
   name?: string
+  peopleId?: string
   classId?: string
   abilities?: Record<string, number>
   appearance?: string
+  /** The description the server draws, never an image. */
+  look?: CharacterLook
+  backstory?: Backstory
+}
+
+/** An action card as the rules deal it (`projection::ActionCardView`). */
+export interface ActionCardView {
+  id: string
+  name: string
+  description: string
+  /** The action kind it spends (« Attaque »). */
+  kind: string
+  /** Unlocks at this level; 1 for a starting card. */
+  level: number
+  attackBonus: number | null
+  damage: string | null
+  heal: string | null
+  cooldown: number
+  range: number
+}
+
+/** A sheet's numbers at level 1, computed by the server. */
+export interface SheetStats {
+  hitPoints: number
+  armorClass: number
+  initiative: number
+  modifiers: Record<string, number>
+  cards: ActionCardView[]
+}
+
+/** A player's own character (`projection::CharacterView`). */
+export interface CharacterView {
+  id: string
+  status: CharacterStatus
+  sheet: CharacterSheet
+  gmNote: string | null
+  updatedAt: string
+  /** The sheet's people and class as the rules name them. */
+  peopleName: string | null
+  className: string | null
+  /** `null` until the sheet names a class of the rules. */
+  stats: SheetStats | null
 }
 
 /** A player's home in one campaign (`projection::PlayerHomeView`). */
 export interface PlayerHome {
   me: { id: string; nickname: string; role: Role }
   campaign: Invitation
-  character: {
-    id: string
-    status: CharacterStatus
-    sheet: CharacterSheet
-    gmNote: string | null
-    updatedAt: string
-  } | null
+  character: CharacterView | null
 }
 
 /** The campaign an invitation code opens, or `null` for a dead link. */

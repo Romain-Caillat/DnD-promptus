@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { CardButton } from '@/components/game/CardButton'
 import { Sprite } from '@/features/sprites/Sprite'
+import { BackstoryText } from './BackstoryText'
 import { ApiError } from '@/lib/api'
+import type { Backstory } from '@/lib/play'
 import {
   addHook,
   deleteHook,
@@ -42,7 +44,7 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
   const characters = seats.flatMap((s) => (s.character ? [{ seat: s, character: s.character }] : []))
   const [state, setState] = useState<State>({ kind: 'loading' })
   const [draft, setDraft] = useState<Draft>(() => emptyDraft(characters[0]?.character.id ?? ''))
-  const [backstory, setBackstory] = useState<{ id: string; text: string } | null>(null)
+  const [backstory, setBackstory] = useState<{ id: string; story: Backstory | undefined } | null>(null)
   const [failed, setFailed] = useState<'gm.hooks.titleRequired' | 'gm.table.error' | null>(null)
   const [confirming, setConfirming] = useState<string | null>(null)
 
@@ -64,8 +66,8 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
     if (!characterId) return
     let live = true
     fetchReview(campaignId, characterId).then(
-      (r) => live && setBackstory({ id: characterId, text: r.sheet.backstory ?? '' }),
-      () => live && setBackstory({ id: characterId, text: '' }),
+      (r) => live && setBackstory({ id: characterId, story: r.sheet.backstory }),
+      () => live && setBackstory({ id: characterId, story: undefined }),
     )
     return () => {
       live = false
@@ -207,7 +209,7 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
           {backstory?.id === characterId && (
             <div className="rounded-xl border border-line-strong bg-well px-4 py-3 text-body leading-relaxed text-chalk-soft">
               <span className="type-label mb-1.5 block">{t('gm.review.backstory')}</span>
-              {backstory.text || <span className="text-mute">{t('gm.review.noBackstory')}</span>}
+              <BackstoryText backstory={backstory.story} />
             </div>
           )}
           <label className="flex flex-col gap-1.5">

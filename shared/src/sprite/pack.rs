@@ -211,6 +211,29 @@ impl PaletteName {
     }
 }
 
+/// A pack as the character creator lists it ([`Pack::catalogue`]).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Catalogue {
+    pub id: String,
+    pub name: String,
+    /// Every slot, in paint order, with its pieces in the pack's order.
+    pub slots: BTreeMap<Slot, Vec<CataloguePiece>>,
+    pub palettes: Palettes,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CataloguePiece {
+    pub id: String,
+    /// In French, as the creator shows it.
+    pub name: String,
+    /// Takes a `dye` from the `cloth` palette.
+    pub dyed: bool,
+    /// Takes an `accent` from the `cloth` palette.
+    pub accented: bool,
+}
+
 /// A pack, checked and ready to draw from.
 #[derive(Debug, Clone)]
 pub struct Pack {
@@ -244,6 +267,33 @@ impl Pack {
 
     pub fn piece(&self, slot: Slot, id: &str) -> Option<&Piece> {
         self.pieces(slot).iter().find(|p| p.id == id)
+    }
+
+    /// What the character creator offers from this pack: each slot's
+    /// pieces, whether they take colours, and the palettes. No pixels:
+    /// the creator previews through the server's renderer.
+    pub fn catalogue(&self) -> Catalogue {
+        Catalogue {
+            id: self.id.clone(),
+            name: self.name.clone(),
+            slots: Slot::ALL
+                .into_iter()
+                .map(|slot| {
+                    let pieces = self
+                        .pieces(slot)
+                        .iter()
+                        .map(|p| CataloguePiece {
+                            id: p.id.clone(),
+                            name: p.name.clone(),
+                            dyed: p.uses_dye,
+                            accented: p.uses_accent,
+                        })
+                        .collect();
+                    (slot, pieces)
+                })
+                .collect(),
+            palettes: self.palettes.clone(),
+        }
     }
 
     /// A colour of a description: a swatch id of `palette`, or `#RRGGBB`.

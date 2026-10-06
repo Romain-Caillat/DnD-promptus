@@ -11,6 +11,7 @@ function renderJoin(code = 'abc') {
       <Routes>
         <Route path="/rejoindre/:code" element={<JoinPage />} />
         <Route path="/partie/:campaignId" element={<p>accueil joueur</p>} />
+        <Route path="/partie/:campaignId/personnage" element={<p>créateur de personnage</p>} />
       </Routes>
     </MemoryRouter>,
   )
@@ -53,7 +54,7 @@ describe('JoinPage', () => {
     await userEvent.type(screen.getByLabelText('Ton pseudo'), 'Marc')
     await userEvent.click(screen.getByRole('button', { name: /Créer mon personnage/ }))
 
-    expect(await screen.findByText('accueil joueur')).toBeInTheDocument()
+    expect(await screen.findByText('créateur de personnage')).toBeInTheDocument()
     expect(sentTo(api, 'POST /api/join/abc')).toEqual([{ nickname: 'Marc', role: 'player' }])
   })
 

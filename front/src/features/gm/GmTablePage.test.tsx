@@ -53,7 +53,7 @@ const borinReview = (over: Record<string, unknown>) => ({
   playerId: 'p1',
   nickname: 'Marc',
   status: 'submitted',
-  sheet: { name: 'Borin', classId: 'guerrier', abilities: { FOR: 18, SAG: 12 }, backstory: 'Son frère Dorn a disparu dans la mine.' },
+  sheet: { name: 'Borin', classId: 'guerrier', abilities: { FOR: 18, SAG: 12 }, backstory: { loss: 'Son frère Dorn.', text: 'Son frère Dorn a disparu dans la mine.' } },
   gmNote: null,
   updatedAt: SEEN,
   reviewedSheet: null,
@@ -235,6 +235,7 @@ describe('GmTablePage', () => {
     await screen.findByText('Marc')
     await userEvent.click(screen.getByRole('button', { name: /Accroches secrètes/ }))
     expect(await screen.findByText('Son frère Dorn a disparu dans la mine.')).toBeInTheDocument()
+    expect(screen.getByText('Qui a-t-il perdu ?')).toBeInTheDocument()
     await userEvent.type(screen.getByRole('textbox', { name: "L'accroche" }), 'Dorn est le mort qui marche')
     await userEvent.click(screen.getByRole('checkbox', { name: /Le mort qui marche/ }))
     await userEvent.click(screen.getByRole('button', { name: /Ajouter l'accroche/ }))

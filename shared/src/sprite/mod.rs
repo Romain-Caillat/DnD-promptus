@@ -26,7 +26,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
 pub use look::{CharacterLook, Hair, LookBook, NamedLook, Worn};
-pub use pack::{Direction, Pack, Slot};
+pub use pack::{Catalogue, CataloguePiece, Direction, Pack, Slot};
 pub use render::{Composite, Image, compose, render};
 
 /// The packs a server knows, by id.
