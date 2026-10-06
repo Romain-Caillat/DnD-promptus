@@ -6,6 +6,8 @@ import { useLiveChanges } from '@/features/live/useLiveChanges'
 import { creatorPath } from '@/lib/creator'
 import { cn } from '@/lib/utils'
 import { fetchPlayerHome, type CharacterView, type PlayerHome } from '@/lib/play'
+import { GameTab } from '@/features/evening/GameTab'
+import { MapTab } from '@/features/map/MapTab'
 import { CharacterTab } from './CharacterTab'
 import { CharacterSummary } from './creator/ReviewStep'
 import { JournalTab } from './JournalTab'
@@ -17,16 +19,17 @@ type HomeState =
   | { kind: 'error' }
   | { kind: 'ready'; home: PlayerHome }
 
-type Tab = 'perso' | 'journal'
+type Tab = 'jeu' | 'carte' | 'perso' | 'journal'
 
 /**
  * `/partie/:campaignId` — a player's home in one campaign, phone first,
- * in tabs (planche « Jouer »): **Personnage** — the character being made
- * and the way into the creator, then, once validated, the sheet in play
- * that the GM adjusts live — and **Journal**, what the group knows. A
- * spectator has the Journal only. The tabs of the evening itself (game,
- * map) come with the session. Everything comes from the server's player
- * projection; the live channel says when to fetch it again.
+ * in tabs (planche « Jouer »): **Jeu** — the evening: lobby, scene,
+ * music, cards, dice — **Carte** — the grid and the fights —
+ * **Personnage** — the character being made and the way into the
+ * creator, then, once validated, the sheet in play that the GM adjusts
+ * live — and **Journal**, what the group knows. A spectator watches the
+ * game, the map and the journal. Everything comes from the server's
+ * player projection; the live channel says when to fetch it again.
  */
 export function PlayerHomePage() {
   const { t } = useTranslation()
@@ -35,6 +38,8 @@ export function PlayerHomePage() {
   const [params, setParams] = useSearchParams()
   const [state, setState] = useState<HomeState>({ kind: 'loading' })
   const [viewVersion, setViewVersion] = useState(0)
+  const [eveningVersion, setEveningVersion] = useState(0)
+  const [mapVersion, setMapVersion] = useState(0)
   const latest = useRef(0)
   const characterId = useRef<string | null>(null)
 
@@ -65,7 +70,12 @@ export function PlayerHomePage() {
     (topics) => {
       const mine = characterId.current
       if (mine && topics.includes(`character:${mine}`)) void load()
-      if (topics.includes('world') || topics.includes('story')) setViewVersion((v) => v + 1)
+      const world = topics.includes('world') || topics.includes('story')
+      if (world) setViewVersion((v) => v + 1)
+      if (world || topics.includes('session') || (mine && topics.includes(`character:${mine}`))) {
+        setEveningVersion((v) => v + 1)
+      }
+      if (world || topics.includes('map') || topics.includes('fight')) setMapVersion((v) => v + 1)
     },
     'player',
   )
@@ -82,10 +92,15 @@ export function PlayerHomePage() {
 
   const { me, campaign, character } = state.home
   const seated = me.role === 'player' && character !== null
-  const tabs: Tab[] = seated ? ['perso', 'journal'] : ['journal']
+  const play = character?.play ?? null
+  // The character comes first while it is being made; once in play, the game.
+  const tabs: Tab[] = !seated
+    ? ['jeu', 'carte', 'journal']
+    : play
+      ? ['jeu', 'carte', 'perso', 'journal']
+      : ['perso', 'jeu', 'carte', 'journal']
   const asked = params.get('onglet')
   const tab: Tab = tabs.find((x) => x === asked) ?? tabs[0]
-  const play = character?.play ?? null
   const bannerKey = !seated ? 'spectator' : play ? 'inPlay' : character.status
   const good = bannerKey === 'validated' || bannerKey === 'draft' || bannerKey === 'inPlay'
 
@@ -112,6 +127,8 @@ export function PlayerHomePage() {
         <h1 className="type-title text-heading">{campaign.title}</h1>
       </header>
       <section className="flex flex-1 flex-col gap-3 p-4" aria-label={t(`play.tabs.${tab}`)}>
+        {tab === 'jeu' && <GameTab campaignId={campaignId} refreshKey={eveningVersion} seated={Boolean(play)} />}
+        {tab === 'carte' && <MapTab campaignId={campaignId} refreshKey={mapVersion} />}
         {tab === 'journal' && (
           <>
             {!seated && <p className="text-body text-chalk-soft">{t('play.spectator')}</p>}
@@ -128,12 +145,12 @@ export function PlayerHomePage() {
             onOpen={() => navigate(creatorPath(campaignId))}
           />
         )}
-        <RulesEntry campaignId={campaignId} />
+        {(tab === 'perso' || tab === 'journal') && <RulesEntry campaignId={campaignId} />}
       </section>
       {tabs.length > 1 ? (
         <nav
           aria-label={t('play.tabs.label')}
-          className="sticky bottom-0 grid grid-cols-2 gap-1 border-t border-line bg-table px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+          className="sticky bottom-0 grid auto-cols-fr grid-flow-col gap-1 border-t border-line bg-table px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
         >
           {tabs.map((id) => (
             <button

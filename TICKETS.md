@@ -114,6 +114,10 @@ joueurs. Démo : la soirée du jalon. `ui/roll-faceted-dice` ·
 `maps/reveal-fog-and-hidden` · `maps/blend-outdoor-terrain` ·
 `maps/build-tileset-packs` · `maps/package-theme-packs`
 
+*État* : tout est codé et testé (API, sweeps de fuite, écrans MJ et
+joueur) ; reste la soirée du jalon jouée pour de vrai, sur de vrais
+téléphones, avec un fournisseur d'IA configuré.
+
 ### Jalon 2 · Préparer, et les vaisseaux
 
 **Fini quand** — Romain a écrit dans Promptus l'acte 2 des Corsaires et
@@ -383,7 +387,7 @@ dépensées, rareté lue sans couleur (losanges + nom), un essai par
 composant. Reste pour Romain : regarder `/reference` sur son téléphone,
 en mouvement réduit aussi, et dire si les rendus collent aux planches.
 
-### `ui/roll-faceted-dice` · todo
+### `ui/roll-faceted-dice` · doing — reste les 60 images/s sur un vrai téléphone
 
 **Pourquoi** — Le dé est le moment de tension de chaque tour : il doit
 rouler, pas afficher un nombre.
@@ -984,7 +988,7 @@ dans l'app, la règle maison et la simulation comprises (via
 
 ## Épic `ai`
 
-### `ai/route-llm-provider` · todo
+### `ai/route-llm-provider` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — Changer de modèle ou de fournisseur sans toucher au jeu.
 
@@ -1017,7 +1021,7 @@ cas, ce qui s'est amélioré ou dégradé.
 
 **Origine** — `docs/lecons-des-parties.md` §4
 
-### `ai/count-ai-calls` · todo
+### `ai/count-ai-calls` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — Chaque appel IA coûte (`MEMORY.md` §3).
 
@@ -1047,7 +1051,7 @@ que le MJ relit et applique ; tests `generation.test.ts` du V1 portés.
 
 ## Épic `media`
 
-### `media/play-youtube-music` · todo
+### `media/play-youtube-music` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — La musique fait l'ambiance, et YouTube impose un lecteur
 visible (`MEMORY.md` §4).
@@ -1063,7 +1067,7 @@ minute, et le changement de scène change la musique chez tous.
 
 **Origine** — V1 `youtube.ts` · planche « Jouer » (scène)
 
-### `media/draw-pixel-art-assets` · todo
+### `media/draw-pixel-art-assets` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — Tout ce que voient les joueurs est en pixel art
 (`MEMORY.md` §2) ; les illustrations des deux mondes sont à refaire dans
@@ -1272,7 +1276,7 @@ au salon d'un toucher.
 
 **Origine** — Planches « Inviter » (moment 7) et « Entre deux » (moment 6)
 
-### `session/open-lobby` · todo
+### `session/open-lobby` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Périmètre** — Le salon d'avant-session : présence en direct, test du
 son, qui joue à distance ; le MJ lance quand la table est là.
@@ -1282,7 +1286,7 @@ session.
 
 **Origine** — Planches « Mener » et « Lancer »
 
-### `session/drive-scenes` · todo
+### `session/drive-scenes` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — La boucle principale d'une soirée.
 
@@ -1297,7 +1301,7 @@ résultat d'un test, chez le MJ et trois joueurs.
 
 **Origine** — Planches « Jouer » et « Mener » · V1 `session/run-action.ts`
 
-### `session/track-table-knowledge` · todo
+### `session/track-table-knowledge` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — Aux Corsaires, tenir la continuité de l'histoire et
 appliquer les règles pareil d'un bout à l'autre a été le plus dur.
@@ -1315,7 +1319,7 @@ pour la même action.
 
 **Origine** — Romain, 4 octobre 2026 · `MEMORY.md` §6
 
-### `session/collect-player-feedback` · todo
+### `session/collect-player-feedback` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — Les leçons des Corsaires sont arrivées par des reproches
 oraux, après coup. Elles doivent arriver à chaque session, par écrit.
@@ -1332,7 +1336,7 @@ réponses et les mesures sur un seul écran.
 
 **Origine** — `docs/lecons-des-parties.md` §3 (chaîne 4)
 
-### `session/end-session` · todo
+### `session/end-session` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Périmètre** — « Terminer la session » enregistre l'état ; le MJ écrit
 ou colle le récapitulatif ; la chronique s'allonge d'une entrée.
@@ -1372,7 +1376,7 @@ L'écran du joueur, d'après la planche « Jouer · la soirée de Marc » :
 un bandeau de statut, un sujet, une action principale ; quatre onglets
 Jeu, Carte, Perso, Journal.
 
-### `player/play-scene` · todo
+### `player/play-scene` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Périmètre** — Onglet Jeu : la scène (lieu, texte lu, image), le
 mini-lecteur de musique, les indices reçus en cartes, la main de cartes
@@ -1442,7 +1446,7 @@ marchander par un jet ; partager le butin.
 
 **Origine** — Marché noir de Kerjean, Corsaires acte 1
 
-### `player/explore-map` · todo
+### `player/explore-map` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Périmètre** — Onglet Carte : carte révélée, pion glissé au doigt, cases
 atteignables surlignées, trajet validé par le serveur, brouillard,
@@ -1453,7 +1457,7 @@ zoomer.
 
 **Origine** — Planche « Jouer » (carte)
 
-### `player/fight-turn` · todo
+### `player/fight-turn` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Périmètre** — « À toi, Borin ! » ; ordre du tour, carte centrée sur la
 cible, cœurs et gemmes, main de cartes en éventail, grappe arcade
@@ -1496,7 +1500,7 @@ avec `session/drive-scenes` et `session/track-table-knowledge`
 (promesses, dettes, décisions de règle, « ce soir »), rien n'y est
 simulé. Pas encore essayé sur un vrai téléphone ni en vraie session.
 
-### `player/receive-rewards` · todo
+### `player/receive-rewards` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Périmètre** — Toasts qui tombent et s'empilent, butin, compétence
 débloquée, niveau.
@@ -1533,7 +1537,7 @@ cartes, espace pour le dé).
 
 ## Épic `gm`
 
-### `gm/run-live-screen` · todo
+### `gm/run-live-screen` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — Le MJ mène toute la soirée d'un seul écran.
 
@@ -1547,7 +1551,7 @@ caché, la table et ses présences, musique.
 
 **Origine** — Planche « Mener · la soirée de Marc côté MJ »
 
-### `gm/run-combat` · todo
+### `gm/run-combat` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Périmètre** — Lancer une rencontre (la carte de combat s'ouvre
 partout), initiative, jouer les adversaires, poser et retirer des
@@ -1558,7 +1562,7 @@ bagarre du quai) se mène côté MJ jusqu'au butin.
 
 **Origine** — Planche « Mener » (combat)
 
-### `gm/balance-spotlight` · todo
+### `gm/balance-spotlight` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — Divertir six joueurs à la fois est ce qui épuise le MJ.
 
@@ -1635,7 +1639,7 @@ trois grosses touches.
 Tout ce que le co-MJ produit est un brouillon que le MJ modifie ou
 valide (`MEMORY.md` §3). Spécification : V1 `copilot/` et ses tests.
 
-### `copilot/draft-narration` · todo
+### `copilot/draft-narration` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — Improviser quand les joueurs sortent du prévu est l'autre
 difficulté de Romain aux Corsaires.
@@ -1651,7 +1655,7 @@ co-MJ n'atteint un joueur sans geste du MJ.
 
 **Origine** — V1 `copilot.ts` · planche « Mener »
 
-### `copilot/propose-adversary-turns` · todo
+### `copilot/propose-adversary-turns` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Périmètre** — En combat, le co-MJ propose le tour de chaque adversaire
 (cible, action, jet déjà résolu) ; le MJ valide, change ou fait fuir.
@@ -1866,7 +1870,7 @@ modèle sans le changer.
 
 **Origine** — Session de design du 3 octobre 2026 · V1 (format YAML des cartes)
 
-### `maps/render-three-quarter-tiles` · todo
+### `maps/render-three-quarter-tiles` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — Le MJ ou le LLM ne pose que des cases ; la carte doit
 se dessiner seule, belle, dans le style des personnages.
@@ -1885,7 +1889,7 @@ préparée, à 60 images/s sur un téléphone milieu de gamme.
 
 **Origine** — Planches « Cartes » du canevas · `docs/design/walls-prototype.py`
 
-### `maps/blend-outdoor-terrain` · todo
+### `maps/blend-outdoor-terrain` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — Sans extérieurs crédibles, on ne joue ni une rue
 post-apo ni une bataille sur une planète.
@@ -1903,7 +1907,7 @@ jet d'attaque calculé par le serveur.
 
 **Origine** — Planche « Cartes · extérieurs » · `docs/design/outdoor/`
 
-### `maps/build-tileset-packs` · todo
+### `maps/build-tileset-packs` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — Chaque décor (crypte, forêt, rue, désert, coursive…)
 a besoin de son jeu de tuiles et de ses décors, sans dessiner à la main
@@ -1921,7 +1925,7 @@ l'utilise sur une carte sans retouche manuelle.
 
 **Origine** — Session de design du 3 octobre 2026
 
-### `maps/package-theme-packs` · todo
+### `maps/package-theme-packs` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — Les deux mondes témoins sont un monde pirate de 1718 et
 un monde spatial : le thème est là dès le jalon 1.
@@ -1986,7 +1990,7 @@ jouables, avec ligne de vue correcte, en moins de cinq minutes.
 
 **Origine** — Recherche sur Foundry VTT et Owlbear Rodeo, session du 3 octobre 2026
 
-### `maps/reveal-fog-and-hidden` · todo
+### `maps/reveal-fog-and-hidden` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — Explorer, c'est découvrir : ce qui n'est pas vu ne doit
 pas fuiter.

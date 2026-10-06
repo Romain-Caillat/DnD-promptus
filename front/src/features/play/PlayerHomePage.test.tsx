@@ -65,6 +65,27 @@ const inPlay = (equipped: boolean) => ({
     inventory: bag(equipped),
   },
 })
+/** The evening before any session: what the Game tab reads first. */
+const EVENING = {
+  'GET /api/play/c1/evening': () => ({
+    status: 200,
+    body: {
+      data: {
+        session: null,
+        previously: 'Les corsaires ont accosté.',
+        music: null,
+        lobby: [],
+        campaign: { ...CAMPAIGN, scene: null, clues: [], npcs: [] },
+        journal: [],
+        requests: [],
+        cards: [],
+        feedback: null,
+      },
+    },
+  }),
+  'GET /api/play/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
+}
+
 const home = (character: unknown, role = 'player') => ({
   status: 200,
   body: { data: { me: { id: 'p1', nickname: 'Camille', role }, campaign: CAMPAIGN, character } },
@@ -116,11 +137,15 @@ describe('PlayerHomePage', () => {
 
   it('shows the character in play, the GM\'s numbers, and lets her carry an item', async () => {
     const fetchMock = mockApi({
+      ...EVENING,
       'GET /api/play/c1/me': () => home(inPlay(false)),
       'POST /api/play/c1/character/equip': () => ({ status: 200, body: { data: inPlay(true) } }),
     })
     renderHome()
 
+    // In play, the game comes first: « Précédemment… » until the GM opens the evening.
+    expect(await screen.findByText('Les corsaires ont accosté.')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Personnage' }))
     expect(await screen.findByText('7 / 10 PV')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Points de vie : 7 sur 10' })).toBeInTheDocument()
     expect(screen.getByText('Encore 2 XP avant un point d\'amélioration · niveau 2 à 5 XP (tu en as 3)', { exact: false })).toBeInTheDocument()
@@ -136,6 +161,7 @@ describe('PlayerHomePage', () => {
 
   it('reads in the Journal what the group knows', async () => {
     mockApi({
+      ...EVENING,
       'GET /api/play/c1/me': () => home(inPlay(false)),
       'GET /api/play/c1/view': () => ({
         status: 200,
@@ -158,8 +184,9 @@ describe('PlayerHomePage', () => {
     expect(screen.getByText('Une ville minière.')).toBeInTheDocument()
   })
 
-  it('gives a spectator the Journal only', async () => {
+  it('gives a spectator the game, the map and the journal, no sheet', async () => {
     mockApi({
+      ...EVENING,
       'GET /api/play/c1/me': () => home(null, 'spectator'),
       'GET /api/play/c1/view': () => ({
         status: 200,
@@ -168,6 +195,9 @@ describe('PlayerHomePage', () => {
     })
     renderHome()
 
+    expect(await screen.findByText('Les corsaires ont accosté.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Carte' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Journal' }))
     expect(await screen.findByText("Le groupe n'a encore rien découvert.")).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Personnage' })).not.toBeInTheDocument()
   })

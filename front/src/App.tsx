@@ -4,6 +4,7 @@ import { SignInPage } from '@/features/auth/SignInPage'
 import { CampaignPage } from '@/features/gm/CampaignPage'
 import { GmHomePage } from '@/features/gm/GmHomePage'
 import { GmTablePage } from '@/features/gm/GmTablePage'
+import { GmLivePage } from '@/features/gm/live/GmLivePage'
 import { NewCampaignPage } from '@/features/gm/NewCampaignPage'
 import { PlayerViewPage } from '@/features/gm/PlayerViewPage'
 import { HealthPage } from '@/features/health/HealthPage'
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/campagnes/nouvelle" element={<NewCampaignPage />} />
         <Route path="/campagnes/:campaignId" element={<CampaignPage />} />
         <Route path="/campagnes/:campaignId/table" element={<GmTablePage />} />
+        <Route path="/campagnes/:campaignId/soiree" element={<GmLivePage />} />
         <Route path="/campagnes/:campaignId/vue-joueurs" element={<PlayerViewPage />} />
         <Route path="*" element={<GmHomePage />} />
       </Routes>
