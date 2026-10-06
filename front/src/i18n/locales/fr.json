@@ -64,14 +64,103 @@
     },
     "campaigns": {
       "title": "Mes campagnes",
-      "none": "Aucune campagne pour l'instant.",
-      "import": "Importer une campagne (fichier YAML)",
+      "kicker": "{{name}} · MJ",
+      "none": "Aucune campagne pour l’instant : commence la première.",
+      "new": "Nouvelle campagne",
+      "newHint": "Un titre, un univers, des règles, un pitch. Tu relis tout avant que tes joueurs ne voient quoi que ce soit.",
+      "import": "Importer un fichier YAML",
+      "importHint": "Une campagne déjà écrite (export de Promptus).",
       "importing": "Import…",
-      "importError": "Ce fichier n'est pas une campagne lisible.",
-      "error": "Les campagnes n'ont pas pu être chargées. Réessayez."
+      "importError": "Ce fichier n’est pas une campagne lisible.",
+      "error": "Les campagnes n’ont pas pu être chargées. Réessayez.",
+      "archived": "Archivées",
+      "archivedHint": "Une campagne archivée garde sa table et ses personnages ; rouvre-la pour la reprendre.",
+      "status": {
+        "prep": "en préparation",
+        "archived": "archivée"
+      },
+      "seated_zero": "Aucun joueur installé · {{planned}} prévus",
+      "seated_one": "{{count}} joueur installé sur {{planned}}",
+      "seated_other": "{{count}} joueurs installés sur {{planned}}",
+      "lastActivity": "Dernière activité : {{date}}",
+      "rulesRef": "{{id}} v{{version}}"
+    },
+    "newCampaign": {
+      "title": "Nouvelle campagne",
+      "back": "Mes campagnes",
+      "steps": {
+        "world": "L’univers",
+        "rules": "Les règles",
+        "pitch": "Le pitch"
+      },
+      "world": {
+        "title": "L’univers",
+        "kicker": "le nom de la campagne et le monde où elle se joue",
+        "titleLabel": "Titre",
+        "titlePlaceholder": "Les Cendres de Valombre",
+        "worldLabel": "Univers",
+        "worldPlaceholder": "Fantasy, une ville minière au pied d’une colline",
+        "note": "Tes joueurs lisent le titre et l’univers en rejoignant la campagne."
+      },
+      "rules": {
+        "title": "Les règles",
+        "kicker": "les actions des joueurs en découlent",
+        "pick": "Partir de",
+        "abilities": "Les six caractéristiques",
+        "derived": "{{hp}} et {{ac}}",
+        "note": "Les règles sont des données : la fiche et les actions des joueurs en découlent. La campagne garde la version choisie.",
+        "loadError": "Les systèmes de règles n’ont pas pu être chargés. Réessayez."
+      },
+      "pitch": {
+        "title": "Le pitch",
+        "kicker": "quelques phrases suffisent",
+        "pitchLabel": "Ton idée · pour toi seul",
+        "pitchPlaceholder": "Une ville minière qui enterre ses morts deux fois. Sous la colline, une crypte que personne n’ose ouvrir.",
+        "hookLabel": "L’accroche · ce que lisent les joueurs",
+        "hookPlaceholder": "Le maire de Valombre vous a fait venir. Il paie bien, et ne dit pas pourquoi.",
+        "playersLabel": "Joueurs",
+        "playersHint": "de 1 à 12",
+        "budgetLabel": "Budget IA ($)",
+        "budgetHint": "Le plafond des dépenses IA de la campagne. 0 : aucune dépense."
+      },
+      "next": "Suivant",
+      "nextSub": "Étape {{step}} sur 3",
+      "previous": "Retour",
+      "create": "Créer la campagne",
+      "createSub": "Vide : tu la prépares ensuite",
+      "creating": "Création…",
+      "errors": {
+        "TITLE_REQUIRED": "Donne un titre à la campagne.",
+        "INVALID_PLAYER_COUNT": "Le nombre de joueurs va de 1 à 12.",
+        "INVALID_AI_BUDGET": "Le budget IA est un montant en dollars, entre 0 et 10 000.",
+        "UNKNOWN_RULE_SYSTEM": "Ce système de règles n’est plus disponible sur ce serveur.",
+        "generic": "La campagne n’a pas pu être créée. Réessayez."
+      }
+    },
+    "campaign": {
+      "back": "Mes campagnes",
+      "loading": "Chargement…",
+      "notFound": "Cette campagne n’existe pas ou n’est pas la vôtre.",
+      "error": "La campagne n’a pas pu être chargée. Réessayez.",
+      "bannerPrep": "En préparation · rien n’est encore montré à tes joueurs tant que tu ne les invites pas.",
+      "bannerArchived": "Archivée le {{date}} · elle garde sa table et ses personnages.",
+      "table": "Inviter la table",
+      "tableSub": "Le lien, le message Discord, les joueurs installés",
+      "playerView": "Ce que voient les joueurs",
+      "playerViewSub": "La vue des joueurs, en direct",
+      "settings": "Réglages",
+      "rules": "Règles",
+      "save": "Enregistrer les réglages",
+      "saveSub": "Le titre, l’univers et l’accroche sont lus par les joueurs",
+      "saving": "Enregistrement…",
+      "saved": "Réglages enregistrés.",
+      "archive": "Archiver",
+      "confirmArchive": "Archiver cette campagne ?",
+      "unarchive": "Rouvrir la campagne",
+      "actionError": "L’action n’a pas abouti. Réessayez."
     },
     "table": {
-      "back": "Mes campagnes",
+      "back": "La campagne",
       "players": "Joueurs",
       "loading": "Chargement…",
       "notFound": "Cette campagne n'existe pas ou n'est pas la vôtre.",

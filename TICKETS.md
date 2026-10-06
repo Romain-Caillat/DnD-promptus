@@ -872,7 +872,7 @@ les deux mondes et tranche ce qui est inventé ; choisir les musiques du
 Brasier ; porter les fiches Vorr dans le système de règles quand il
 accueillera des adversaires au sol.
 
-### `campaign/list-campaigns` · todo
+### `campaign/list-campaigns` · doing — reste l'essai réel de Romain
 
 **Périmètre** — Liste des campagnes du MJ, création d'une campagne vide
 (univers, préréglage de règles), réglages, budget IA.
@@ -881,6 +881,29 @@ accueillera des adversaires au sol.
 autre compte MJ ne la voit pas.
 
 **Origine** — Planche « Préparer » (moments 1 à 3)
+
+**État** — Côté serveur : la migration `006_campaign_settings.sql`
+ajoute à la campagne le nombre de joueurs prévus, le budget IA (en
+cents de dollar) et `archived_at` ; la liste porte ce qu'affiche une
+carte (système de règles, joueurs installés, archivage, dernière
+activité) ; nouvelles routes MJ `PUT …/settings`, `PUT …/archive` et
+`GET /api/rule-systems` (les préréglages embarqués de `content/rules`
+et leurs noms de statistiques) ; la création refuse un système de
+règles inconnu. Côté MJ : l'accueil montre les campagnes en cartes (la
+dernière travaillée en ivoire, les archivées à part), « Nouvelle
+campagne » en trois étapes (titre et univers, préréglage de règles,
+pitch, accroche, joueurs et budget IA), et la page de campagne
+(`/campagnes/:id`) qui la rouvre : réglages modifiables, règles,
+archiver ou rouvrir, accès à l'invitation (`/campagnes/:id/table`) et
+à la vue des joueurs. Un test serveur vérifie qu'un MJ crée, retrouve
+et rouvre sa campagne et qu'un autre compte MJ ne la voit ni dans sa
+liste ni par son adresse (404). `bun run lint` et `bun run test`
+passent. **Limites assumées** : le budget IA n'est qu'un réglage — rien
+ne le consomme tant que `ai/count-ai-calls` n'est pas fait ; l'univers
+est un texte libre (il ne choisit pas encore de pack de tuiles ou de
+personnages) ; le préréglage n'est pas modifiable ici
+(`campaign/edit-rule-system`). **Reste** : que Romain crée, retrouve et
+rouvre une campagne pour de vrai, sur ordinateur et sur tablette.
 
 ### `campaign/review-story-graph` · todo
 

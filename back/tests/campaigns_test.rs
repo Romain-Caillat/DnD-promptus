@@ -141,6 +141,19 @@ async fn another_gm_gets_404_on_every_campaign_route() {
             ("GET", format!("/api/campaigns/{target}/live"), None),
             (
                 "PUT",
+                format!("/api/campaigns/{target}/settings"),
+                Some(json!({
+                    "title": "Volé", "world": "", "pitch": "", "playerHook": "",
+                    "playerCount": 2, "aiBudgetCents": 999
+                })),
+            ),
+            (
+                "PUT",
+                format!("/api/campaigns/{target}/archive"),
+                Some(json!({ "archived": true })),
+            ),
+            (
+                "PUT",
                 format!("/api/campaigns/{target}/import"),
                 Some(json!({ "yaml": other })),
             ),
@@ -173,6 +186,8 @@ async fn another_gm_gets_404_on_every_campaign_route() {
     )
     .await;
     assert_eq!(r.body["data"]["story"]["title"], "Le Phare de Kerbrume");
+    assert_eq!(r.body["data"]["settings"]["playerCount"], 6);
+    assert_eq!(r.body["data"]["archivedAt"], Value::Null);
 }
 
 #[tokio::test]
@@ -314,7 +329,7 @@ async fn a_new_empty_campaign_names_its_rule_system() {
         Some(&token),
         "POST",
         "/api/campaigns",
-        Some(json!({ "title": "  Le Brasier ", "world": "Espace", "rules": { "id": "brasier", "version": 2 } })),
+        Some(json!({ "title": "  Le Brasier ", "world": "Espace", "rules": { "id": "brasier", "version": 1 } })),
     )
     .await;
     assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
@@ -323,7 +338,7 @@ async fn a_new_empty_campaign_names_its_rule_system() {
     assert_eq!(story.title, "Le Brasier");
     assert_eq!(
         (story.rules.id.as_str(), story.rules.version),
-        ("brasier", 2)
+        ("brasier", 1)
     );
     assert!(story.nodes.is_empty());
     assert_eq!(r.body["data"]["issues"], json!([]));
@@ -333,11 +348,24 @@ async fn a_new_empty_campaign_names_its_rule_system() {
         Some(&token),
         "POST",
         "/api/campaigns",
-        Some(json!({ "title": "   ", "rules": { "id": "brasier", "version": 2 } })),
+        Some(json!({ "title": "   ", "rules": { "id": "brasier", "version": 1 } })),
     )
     .await;
     assert_eq!(r.status, StatusCode::BAD_REQUEST);
     assert_eq!(r.body["error"]["code"], "TITLE_REQUIRED");
+
+    // Only a preset the server has: a version that does not exist would
+    // leave the campaign with no rules to play.
+    let r = call(
+        &app,
+        Some(&token),
+        "POST",
+        "/api/campaigns",
+        Some(json!({ "title": "Le Brasier", "rules": { "id": "brasier", "version": 2 } })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::BAD_REQUEST);
+    assert_eq!(r.body["error"]["code"], "UNKNOWN_RULE_SYSTEM");
 }
 
 #[tokio::test]

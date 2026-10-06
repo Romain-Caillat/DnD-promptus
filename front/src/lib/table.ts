@@ -1,14 +1,6 @@
 import { apiRequest } from './api'
 import type { CharacterStatus, Role } from './play'
 
-/** One of the GM's campaigns, as their list shows it. */
-export interface CampaignSummary {
-  id: string
-  title: string
-  world: string
-  updatedAt: string
-}
-
 /**
  * The part of the players' view the invite panel quotes: read from the
  * GM's preview of the projection, so the Discord message can only repeat
@@ -34,14 +26,6 @@ export interface Seat {
   joinedAt: string
   lastSeenAt: string
   character: { id: string; status: CharacterStatus; name: string; updatedAt: string } | null
-}
-
-export function listCampaigns(): Promise<CampaignSummary[]> {
-  return apiRequest<CampaignSummary[]>('GET', '/campaigns')
-}
-
-export function importCampaign(yaml: string): Promise<{ id: string }> {
-  return apiRequest<{ id: string }>('POST', '/campaigns/import', { yaml })
 }
 
 export function fetchPlayerPreview(campaignId: string): Promise<PlayerPreview> {

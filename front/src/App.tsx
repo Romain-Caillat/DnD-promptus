@@ -1,8 +1,10 @@
 import { BrowserRouter, Route, Routes } from 'react-router'
 import { RegisterPage } from '@/features/auth/RegisterPage'
 import { SignInPage } from '@/features/auth/SignInPage'
+import { CampaignPage } from '@/features/gm/CampaignPage'
 import { GmHomePage } from '@/features/gm/GmHomePage'
 import { GmTablePage } from '@/features/gm/GmTablePage'
+import { NewCampaignPage } from '@/features/gm/NewCampaignPage'
 import { PlayerViewPage } from '@/features/gm/PlayerViewPage'
 import { HealthPage } from '@/features/health/HealthPage'
 import { JoinPage } from '@/features/play/JoinPage'
@@ -19,7 +21,9 @@ export default function App() {
         <Route path="/sante" element={<HealthPage />} />
         <Route path="/rejoindre/:code" element={<JoinPage />} />
         <Route path="/partie/:campaignId" element={<PlayerHomePage />} />
-        <Route path="/campagnes/:campaignId" element={<GmTablePage />} />
+        <Route path="/campagnes/nouvelle" element={<NewCampaignPage />} />
+        <Route path="/campagnes/:campaignId" element={<CampaignPage />} />
+        <Route path="/campagnes/:campaignId/table" element={<GmTablePage />} />
         <Route path="/campagnes/:campaignId/vue-joueurs" element={<PlayerViewPage />} />
         <Route path="*" element={<GmHomePage />} />
       </Routes>

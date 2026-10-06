@@ -10,7 +10,7 @@
 pub mod projection;
 
 use chrono::{DateTime, Utc};
-use promptus_shared::story::{Campaign, WorldState};
+use promptus_shared::story::{Campaign, RuleSystemRef, WorldState};
 use serde::Serialize;
 use sqlx::types::Json;
 use sqlx::{PgExecutor, PgPool, Postgres, Transaction};
@@ -20,14 +20,62 @@ use crate::auth::guard::{CurrentGm, OwnedByGm, owned_by};
 use crate::error::AppError;
 use crate::live::{self, Topic};
 
-/// A campaign row: its story, its world, and who owns it.
+/// A campaign row: its story, its world, who owns it, and the GM's
+/// planning (migration `006_campaign_settings.sql`).
 #[derive(Debug, Clone)]
 pub struct CampaignRow {
     pub id: Uuid,
     pub gm_id: Uuid,
     pub story: Campaign,
     pub world: WorldState,
+    pub settings: Settings,
+    /// When the GM shelved it; `None` while it is in use.
+    pub archived_at: Option<DateTime<Utc>>,
     pub updated_at: DateTime<Utc>,
+}
+
+/// The GM's planning of a campaign: never sent to a player, never in
+/// the YAML export.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Settings {
+    /// How many players the campaign is prepared for.
+    pub player_count: i16,
+    /// The most the campaign may spend on AI calls, in US cents. 0: none.
+    pub ai_budget_cents: i32,
+}
+
+impl Settings {
+    pub const PLAYERS: std::ops::RangeInclusive<i16> = 1..=12;
+    /// 10 000 $: a typo guard, not a policy.
+    pub const MAX_BUDGET_CENTS: i32 = 1_000_000;
+
+    /// The settings, or the code of the first field out of range (the
+    /// database refuses the same ranges, migration 006).
+    ///
+    /// # Errors
+    ///
+    /// 400 `INVALID_PLAYER_COUNT` or `INVALID_AI_BUDGET`.
+    pub fn checked(self) -> Result<Self, AppError> {
+        if !Self::PLAYERS.contains(&self.player_count) {
+            return Err(AppError::BadRequest("INVALID_PLAYER_COUNT"));
+        }
+        if !(0..=Self::MAX_BUDGET_CENTS).contains(&self.ai_budget_cents) {
+            return Err(AppError::BadRequest("INVALID_AI_BUDGET"));
+        }
+        Ok(self)
+    }
+}
+
+impl Default for Settings {
+    /// The column defaults of migration 006: Romain's table of six, and
+    /// no AI spending until the GM sets a budget.
+    fn default() -> Self {
+        Self {
+            player_count: 6,
+            ai_budget_cents: 0,
+        }
+    }
 }
 
 impl OwnedByGm for CampaignRow {
@@ -36,31 +84,56 @@ impl OwnedByGm for CampaignRow {
     }
 }
 
-/// One line of the GM's campaign list.
+/// One card of the GM's campaign list.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CampaignSummary {
     pub id: Uuid,
     pub title: String,
     pub world: String,
-    pub updated_at: DateTime<Utc>,
+    pub rules: RuleSystemRef,
+    pub player_count: i16,
+    /// Players who joined to play (spectators are not seated).
+    pub players_seated: i64,
+    pub archived_at: Option<DateTime<Utc>>,
+    /// The latest of: a change to the campaign, a player seen, a
+    /// character sheet written.
+    pub last_activity_at: DateTime<Utc>,
 }
 
-type Row = (Uuid, Uuid, Json<Campaign>, Json<WorldState>, DateTime<Utc>);
+type Row = (
+    Uuid,
+    Uuid,
+    Json<Campaign>,
+    Json<WorldState>,
+    i16,
+    i32,
+    Option<DateTime<Utc>>,
+    DateTime<Utc>,
+);
 
-fn from_row((id, gm_id, story, world, updated_at): Row) -> CampaignRow {
+fn from_row(
+    (id, gm_id, story, world, player_count, ai_budget_cents, archived_at, updated_at): Row,
+) -> CampaignRow {
     CampaignRow {
         id,
         gm_id,
         story: story.0,
         world: world.0,
+        settings: Settings {
+            player_count,
+            ai_budget_cents,
+        },
+        archived_at,
         updated_at,
     }
 }
 
-const COLUMNS: &str = "id, gm_id, story, world, updated_at";
+const COLUMNS: &str =
+    "id, gm_id, story, world, player_count, ai_budget_cents, archived_at, updated_at";
 
-/// Store a new campaign for `gm`, with an empty world.
+/// Store a new campaign for `gm`, with an empty world and the default
+/// [`Settings`].
 ///
 /// # Errors
 ///
@@ -70,39 +143,133 @@ pub async fn create(
     gm: &CurrentGm,
     story: &Campaign,
 ) -> Result<CampaignRow, AppError> {
+    create_planned(pool, gm, story, Settings::default()).await
+}
+
+/// [`create`], with the GM's [`Settings`] (already [`Settings::checked`]).
+///
+/// # Errors
+///
+/// Fails on a database error.
+pub async fn create_planned(
+    pool: &PgPool,
+    gm: &CurrentGm,
+    story: &Campaign,
+    settings: Settings,
+) -> Result<CampaignRow, AppError> {
     let row: Row = sqlx::query_as(&format!(
-        "INSERT INTO campaigns (gm_id, story, world) VALUES ($1, $2, $3) RETURNING {COLUMNS}"
+        "INSERT INTO campaigns (gm_id, story, world, player_count, ai_budget_cents)
+         VALUES ($1, $2, $3, $4, $5) RETURNING {COLUMNS}"
     ))
     .bind(gm.id)
     .bind(Json(story))
     .bind(Json(WorldState::default()))
+    .bind(settings.player_count)
+    .bind(settings.ai_budget_cents)
     .fetch_one(pool)
     .await?;
     Ok(from_row(row))
 }
 
-/// `gm`'s campaigns, most recently changed first.
+type SummaryRow = (
+    Uuid,
+    String,
+    Option<String>,
+    Json<RuleSystemRef>,
+    i16,
+    i64,
+    Option<DateTime<Utc>>,
+    DateTime<Utc>,
+);
+
+/// `gm`'s campaigns, archived ones included, most recent activity first.
 ///
 /// # Errors
 ///
 /// Fails on a database error.
 pub async fn list(pool: &PgPool, gm: &CurrentGm) -> Result<Vec<CampaignSummary>, AppError> {
-    let rows: Vec<(Uuid, String, Option<String>, DateTime<Utc>)> = sqlx::query_as(
-        "SELECT id, story->>'title', story->>'world', updated_at
-         FROM campaigns WHERE gm_id = $1 ORDER BY updated_at DESC",
+    // GREATEST ignores NULLs: a campaign nobody joined is as recent as
+    // its last change.
+    let rows: Vec<SummaryRow> = sqlx::query_as(
+        "SELECT c.id, c.story->>'title', c.story->>'world', c.story->'rules',
+                c.player_count,
+                (SELECT COUNT(*) FROM players p
+                  WHERE p.campaign_id = c.id AND p.role = 'player'),
+                c.archived_at,
+                GREATEST(
+                  c.updated_at,
+                  (SELECT MAX(p.last_seen_at) FROM players p WHERE p.campaign_id = c.id),
+                  (SELECT MAX(ch.updated_at) FROM characters ch WHERE ch.campaign_id = c.id)
+                ) AS last_activity
+         FROM campaigns c WHERE c.gm_id = $1
+         ORDER BY last_activity DESC, c.id",
     )
     .bind(gm.id)
     .fetch_all(pool)
     .await?;
     Ok(rows
         .into_iter()
-        .map(|(id, title, world, updated_at)| CampaignSummary {
-            id,
-            title,
-            world: world.unwrap_or_default(),
-            updated_at,
-        })
+        .map(
+            |(id, title, world, rules, player_count, seated, archived_at, last)| CampaignSummary {
+                id,
+                title,
+                world: world.unwrap_or_default(),
+                rules: rules.0,
+                player_count,
+                players_seated: seated,
+                archived_at,
+                last_activity_at: last,
+            },
+        )
         .collect())
+}
+
+/// Write the [`Settings`] of a campaign locked by [`lock`] in `tx`.
+/// Players never see them, so no live topic moves.
+///
+/// # Errors
+///
+/// Fails on a database error.
+pub async fn save_settings(
+    tx: &mut Transaction<'_, Postgres>,
+    id: Uuid,
+    settings: Settings,
+) -> Result<(), AppError> {
+    sqlx::query("UPDATE campaigns SET player_count = $2, ai_budget_cents = $3 WHERE id = $1")
+        .bind(id)
+        .bind(settings.player_count)
+        .bind(settings.ai_budget_cents)
+        .execute(&mut **tx)
+        .await?;
+    Ok(())
+}
+
+/// Shelve campaign `id` of `gm`, or take it off the shelf. Shelving an
+/// archived campaign keeps its first date. Players are not told: the
+/// shelf is the GM's.
+///
+/// # Errors
+///
+/// 404 when the campaign is missing or another GM's; a database error.
+pub async fn set_archived(
+    pool: &PgPool,
+    gm: &CurrentGm,
+    id: Uuid,
+    archived: bool,
+) -> Result<CampaignRow, AppError> {
+    let mut tx = pool.begin().await?;
+    owned_by(lock(&mut tx, id).await?, gm)?;
+    let row: Row = sqlx::query_as(&format!(
+        "UPDATE campaigns
+         SET archived_at = CASE WHEN $2 THEN COALESCE(archived_at, now()) END
+         WHERE id = $1 RETURNING {COLUMNS}"
+    ))
+    .bind(id)
+    .bind(archived)
+    .fetch_one(&mut *tx)
+    .await?;
+    tx.commit().await?;
+    Ok(from_row(row))
 }
 
 /// The campaign `id`, whoever owns it. Callers pass it to `owned_by`.
