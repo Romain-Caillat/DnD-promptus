@@ -11,9 +11,12 @@
 //! - [`progression`] — XP, upgrade points, levels
 //! - [`lint`] — whether the rules are good: coherence and balance checks
 //!   that report and never block (`lint::lint`, `lint::balance_report`)
+//! - [`character`] — whether a player's character follows the rules
+//!   (reports, never blocks)
 //! - [`variant`] — "what if" edits applied to a draft before it loads
 
 pub mod action;
+pub mod character;
 pub mod check;
 pub mod conditions;
 pub mod dice;
@@ -26,6 +29,7 @@ pub mod progression;
 pub mod sheet;
 pub mod variant;
 
+pub use character::{CharacterInput, check_character};
 pub use lint::{BalanceParams, BalanceReport, balance_report, lint, lint_with};
 pub use load::{ErrorCode, LoadError, RuleError};
 pub use model::RuleSystem;

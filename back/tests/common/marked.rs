@@ -184,3 +184,28 @@ pub fn leaks(json: &str) -> Vec<String> {
     }
     out
 }
+
+/// Give Marc's character (`character` of `campaign`) everything the GM
+/// keeps about a sheet, each marked: the snapshot of the last review
+/// and a secret hook drawn from the backstory (`players::review`). A
+/// player route must show none of it.
+pub async fn mark_review(pool: &sqlx::PgPool, campaign: uuid::Uuid, character: uuid::Uuid) {
+    sqlx::query("UPDATE characters SET reviewed_sheet = $2, reviewed_at = now() WHERE id = $1")
+        .bind(character)
+        .bind(serde_json::json!({ "name": m("characters.reviewed_sheet") }))
+        .execute(pool)
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO secret_hooks (campaign_id, character_id, title, body, links)
+         VALUES ($1, $2, $3, $4, $5)",
+    )
+    .bind(campaign)
+    .bind(character)
+    .bind(m("secret_hooks.title"))
+    .bind(m("secret_hooks.body"))
+    .bind(serde_json::json!([m("secret_hooks.links")]))
+    .execute(pool)
+    .await
+    .unwrap();
+}

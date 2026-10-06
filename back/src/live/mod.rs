@@ -49,16 +49,22 @@ pub enum Topic {
     Story,
     /// One character sheet.
     Character(Uuid),
+    /// Who sits at the table and where each character stands (the GM's
+    /// seat list): touched on join, removal and every character write
+    /// (`players::touch_character`).
+    Table,
 }
 
 impl Topic {
-    /// The topic as stored and sent: `world`, `story`, `character:<id>`.
+    /// The topic as stored and sent: `world`, `story`, `character:<id>`,
+    /// `table`.
     #[must_use]
     pub fn key(&self) -> String {
         match self {
             Self::World => "world".to_string(),
             Self::Story => "story".to_string(),
             Self::Character(id) => format!("character:{id}"),
+            Self::Table => "table".to_string(),
         }
     }
 }

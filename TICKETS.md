@@ -1225,7 +1225,7 @@ HTTPS) ; « reprendre » sur un autre appareil (lien de reprise donné par
 le MJ) et reprendre un personnage d'une autre campagne (Hugo et Sef) ne
 sont pas faits.
 
-### `session/validate-characters` · todo
+### `session/validate-characters` · doing — reste l'envoi joueur (créateur) et une vraie table
 
 **Périmètre** — Le MJ voit sa table se remplir, relit chaque fiche,
 valide ou renvoie avec un mot ; le joueur corrige et renvoie, le MJ ne
@@ -1235,6 +1235,33 @@ relit que la différence ; accroches secrètes tirées des histoires.
 faisables dans l'app.
 
 **Origine** — Planche « Inviter »
+
+**État** — Côté MJ, livré et vérifié dans PCT 105 (`bun run lint`,
+`bun run test`). Les règles vérifient chaque fiche
+(`rules::check_character` : classe absente ou inconnue, caractéristique
+inconnue, score hors classe, budget dépassé) et **signalent sans
+bloquer**. La page de table (`/campagnes/:id`) suit le sujet live
+`table` : chaque siège montre sprite, classe, présence et statut (« à
+relire », « corrigé · à relire »…). La relecture d'une fiche affiche la
+fiche, l'histoire, les points signalés et un mot proposé que le MJ
+réécrit ; il **renvoie avec ce mot ou valide quand même** (décision
+optimiste sur `updatedAt` : une fiche modifiée pendant la lecture
+répond 409 et se recharge). À chaque décision la fiche est
+photographiée (`reviewed_sheet`, migration 007, indépendante de 006) :
+quand le joueur renvoie, le MJ ne lit que la différence (« Force :
+18 → 17 »). Les accroches secrètes (table `secret_hooks`, jamais lue
+par une route joueur, prouvé par le balayage marqué) sont **écrites à
+la main par le MJ**, l'histoire du joueur sous les yeux, et nouées à des
+scènes ou des fronts ; les proposer par l'IA reste à
+`copilot/co-write-backstory`, la vérification des fiches par le co-MJ à
+`copilot/check-character-sheets`. **Reste** : le joueur ne peut pas
+encore enregistrer ni envoyer sa fiche — c'est
+`characters/build-character-creator`. Contrat pour la fusion : l'écriture
+joueur met `sheet` à jour, passe `draft`/`returned` → `submitted`,
+laisse `reviewed_sheet` intact (c'est lui qui donne la différence) et
+appelle `players::touch_character` dans sa transaction ; le mot du MJ
+(`gm_note`) arrive déjà au joueur par la projection. Ensuite, jouer les
+moments 3 à 6 avec de vrais joueurs sur téléphone.
 
 ### `session/schedule-sessions` · todo
 

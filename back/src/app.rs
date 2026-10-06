@@ -105,6 +105,26 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/players/{player}",
             delete(api::table::remove_player),
         )
+        .route(
+            "/api/campaigns/{id}/characters/{character}",
+            get(api::table::character),
+        )
+        .route(
+            "/api/campaigns/{id}/characters/{character}/validate",
+            post(api::table::validate_character),
+        )
+        .route(
+            "/api/campaigns/{id}/characters/{character}/return",
+            post(api::table::return_character),
+        )
+        .route(
+            "/api/campaigns/{id}/hooks",
+            get(api::table::hooks).post(api::table::add_hook),
+        )
+        .route(
+            "/api/campaigns/{id}/hooks/{hook}",
+            put(api::table::edit_hook).delete(api::table::delete_hook),
+        )
         .route("/api/campaigns/{id}/live", get(api::live::gm_socket))
         .route_layer(middleware::from_fn_with_state(state.clone(), require_gm));
 

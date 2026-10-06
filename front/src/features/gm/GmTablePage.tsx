@@ -1,29 +1,25 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useParams } from 'react-router'
 import { Button } from '@/components/ui/button'
+import { CardButton } from '@/components/game/CardButton'
+import { LiveIndicator } from '@/features/live/LiveIndicator'
+import { useLiveChanges } from '@/features/live/useLiveChanges'
+import { Sprite } from '@/features/sprites/Sprite'
 import { ApiError } from '@/lib/api'
-import { cn } from '@/lib/utils'
 import {
-  closeInvite,
   fetchInvite,
   fetchPlayerPreview,
-  forgetCode,
-  joinLink,
   listSeats,
-  mintInvite,
-  rememberCode,
-  rememberedCode,
   removeSeat,
   type InviteStatus,
   type PlayerPreview,
   type Seat,
 } from '@/lib/table'
-
-/** How often the table refreshes while the GM waits for players. */
-const SEATS_POLL_MS = 5000
-/** A player seen this recently is shown online. */
-const ONLINE_MS = 2 * 60 * 1000
+import { cn } from '@/lib/utils'
+import { CharacterReview } from './CharacterReview'
+import { SecretHooks } from './SecretHooks'
+import { TableInvite } from './TableInvite'
 
 const dateFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
 
@@ -34,39 +30,35 @@ type PageState =
   | { kind: 'error' }
   | { kind: 'ready'; preview: PlayerPreview; invite: InviteStatus | null }
 
+/** What the centre of the page shows. */
+type View = { kind: 'invite' } | { kind: 'review'; characterId: string } | { kind: 'hooks' }
+
+/** How a seat's status reads on the table (board « Inviter »). */
+type SeatTone = 'ok' | 'todo' | 'wait' | 'off'
+
 /**
- * `/campagnes/:campaignId/table` — the GM invites their table (board
- * « Inviter », moments 1 and 2): the campaign's link, a message ready to
- * paste on Discord, and the table filling up as players arrive.
+ * `/campagnes/:campaignId/table` — the GM's table (board « Inviter »): the
+ * invitation, the table filling up live, the review of each sheet and
+ * the secret hooks drawn from the backstories. The seat list follows
+ * the live channel's `table` topic; the open review follows its
+ * character's topic.
  */
 export function GmTablePage() {
   const { t } = useTranslation()
   const { campaignId = '' } = useParams()
   const [state, setState] = useState<PageState>({ kind: 'loading' })
-  const [code, setCode] = useState<string | null>(null)
-  const [message, setMessage] = useState('')
   const [seats, setSeats] = useState<Seat[]>([])
-  // When the seats were read: "online" is judged against it, not render time.
-  const [polledAt, setPolledAt] = useState(0)
-  const [copied, setCopied] = useState<'gm.table.copied' | 'gm.table.copyFailed' | null>(null)
+  const [view, setView] = useState<View>({ kind: 'invite' })
+  const [reviewVersion, setReviewVersion] = useState(0)
   const [actionError, setActionError] = useState(false)
   const [confirming, setConfirming] = useState<string | null>(null)
-
-  const draftMessage = useCallback(
-    (preview: PlayerPreview, link: string) =>
-      t('gm.table.message', { title: preview.title, hook: preview.playerHook, link }),
-    [t],
-  )
+  const latestSeats = useRef(0)
 
   useEffect(() => {
     let live = true
     Promise.all([fetchPlayerPreview(campaignId), fetchInvite(campaignId)]).then(
       ([preview, invite]) => {
-        if (!live) return
-        const known = rememberedCode(campaignId, invite)
-        setState({ kind: 'ready', preview, invite })
-        setCode(known)
-        if (known) setMessage(draftMessage(preview, joinLink(known)))
+        if (live) setState({ kind: 'ready', preview, invite })
       },
       (err: unknown) => {
         if (!live) return
@@ -78,76 +70,38 @@ export function GmTablePage() {
     return () => {
       live = false
     }
-  }, [campaignId, draftMessage])
+  }, [campaignId])
 
-  // The table fills up on its own: polled until realtime
-  // (`session/stream-live-changes`) says when to refetch.
-  useEffect(() => {
-    if (state.kind !== 'ready') return
-    let live = true
-    const refresh = () =>
-      listSeats(campaignId).then(
-        (list) => {
-          if (!live) return
-          setSeats(list)
-          setPolledAt(Date.now())
-        },
-        () => {
-          // Kept as it was; the next poll tries again.
-        },
-      )
-    void refresh()
-    const timer = setInterval(() => void refresh(), SEATS_POLL_MS)
-    return () => {
-      live = false
-      clearInterval(timer)
+  const loadSeats = useCallback(async () => {
+    const request = ++latestSeats.current
+    let list: Seat[] | null
+    try {
+      list = await listSeats(campaignId)
+    } catch {
+      // Kept as it was; the next change tries again.
+      list = null
     }
-  }, [campaignId, state.kind])
+    if (list && request === latestSeats.current) setSeats(list)
+  }, [campaignId])
+
+  useEffect(() => {
+    void loadSeats()
+  }, [loadSeats])
+
+  const reviewing = view.kind === 'review' ? view.characterId : null
+  const live = useLiveChanges(campaignId, (topics) => {
+    if (topics.includes('table')) void loadSeats()
+    if (reviewing && topics.includes(`character:${reviewing}`)) setReviewVersion((v) => v + 1)
+  })
 
   if (state.kind === 'signed-out') return <Navigate to="/connexion" replace />
-
-  async function mint() {
-    if (state.kind !== 'ready') return
-    setActionError(false)
-    setCopied(null)
-    try {
-      const minted = await mintInvite(campaignId)
-      rememberCode(campaignId, minted.code, minted.createdAt)
-      setCode(minted.code)
-      setMessage(draftMessage(state.preview, joinLink(minted.code)))
-      setState({ ...state, invite: { createdAt: minted.createdAt, expiresAt: minted.expiresAt } })
-    } catch {
-      setActionError(true)
-    }
-  }
-
-  async function close() {
-    if (state.kind !== 'ready') return
-    setActionError(false)
-    try {
-      await closeInvite(campaignId)
-      forgetCode(campaignId)
-      setCode(null)
-      setState({ ...state, invite: null })
-    } catch {
-      setActionError(true)
-    }
-  }
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(message)
-      setCopied('gm.table.copied')
-    } catch {
-      setCopied('gm.table.copyFailed')
-    }
-  }
 
   async function remove(seat: Seat) {
     setActionError(false)
     try {
       await removeSeat(campaignId, seat.id)
       setSeats((list) => list.filter((s) => s.id !== seat.id))
+      if (seat.character && reviewing === seat.character.id) setView({ kind: 'invite' })
     } catch {
       setActionError(true)
     } finally {
@@ -165,8 +119,8 @@ export function GmTablePage() {
     )
   }
 
-  const { preview, invite } = state
-  const link = code ? joinLink(code) : null
+  const characters = seats.filter((s) => s.character)
+  const validated = characters.filter((s) => s.character?.status === 'validated').length
 
   return (
     <main className="surface-table flex min-h-dvh flex-col text-chalk">
@@ -174,12 +128,17 @@ export function GmTablePage() {
         <Link className="underline underline-offset-4" to={`/campagnes/${encodeURIComponent(campaignId)}`}>
           {t('gm.table.back')}
         </Link>
-        <span className="type-title text-[15px] text-chalk">{preview.title}</span>
+        <span className="type-title text-[15px] text-chalk">{state.preview.title}</span>
         <span className="type-label text-chalk">{t('gm.table.players')}</span>
+        <span className="flex-1" />
+        {characters.length > 0 && (
+          <span>{t('gm.table.validatedCount', { validated, total: characters.length })}</span>
+        )}
+        <LiveIndicator status={live.status} />
       </header>
 
       <div className="grid flex-1 gap-4 p-4 lg:grid-cols-[300px_1fr]">
-        <section className="surface-slab flex flex-col gap-2 p-3 lg:order-none order-2">
+        <section className="surface-slab order-2 flex flex-col gap-2 p-3 lg:order-none">
           <h2 className="type-label text-chalk">{t('gm.table.tableTitle')}</h2>
           {seats.length === 0 ? (
             <p className="text-body text-mute">{t('gm.table.empty')}</p>
@@ -189,129 +148,154 @@ export function GmTablePage() {
                 <SeatRow
                   key={seat.id}
                   seat={seat}
-                  now={polledAt}
+                  online={live.presence.players.includes(seat.id)}
+                  current={seat.character !== null && reviewing === seat.character.id}
                   confirming={confirming === seat.id}
+                  onOpen={() => seat.character && setView({ kind: 'review', characterId: seat.character.id })}
                   onRemove={() => (confirming === seat.id ? void remove(seat) : setConfirming(seat.id))}
                 />
               ))}
             </ul>
           )}
-          <p className="mt-auto text-caption text-mute">{t('gm.table.footNote')}</p>
-        </section>
-
-        <section className="flex flex-col gap-4">
-          <h1 className="type-title text-heading">{t('gm.table.inviteTitle')}</h1>
-          <div className="flex flex-col gap-2">
-            <span className="type-label">{t('gm.table.linkLabel')}</span>
-            <div className="flex flex-wrap items-center gap-3 rounded-button border border-line-strong bg-well p-3">
-              {link ? (
-                <input
-                  className="min-w-0 flex-1 bg-transparent text-body text-chalk"
-                  value={link}
-                  readOnly
-                  aria-label={t('gm.table.linkField')}
-                  onFocus={(e) => e.currentTarget.select()}
-                />
-              ) : (
-                <p className="min-w-0 flex-1 text-body text-chalk-soft">
-                  {invite
-                    ? t('gm.table.hiddenLink', { date: dateFormat.format(new Date(invite.expiresAt)) })
-                    : t('gm.table.noLink')}
-                </p>
-              )}
-              <Button variant="outline" onClick={() => void mint()}>
-                {invite ? t('gm.table.regenerate') : t('gm.table.create')}
-              </Button>
-              {invite && (
-                <Button variant="ghost" onClick={() => void close()}>
-                  {t('gm.table.close')}
-                </Button>
-              )}
-            </div>
-            {invite && link && (
-              <p className="text-caption text-mute">
-                {t('gm.table.validUntil', { date: dateFormat.format(new Date(invite.expiresAt)) })}
-              </p>
-            )}
-          </div>
-
-          {link && (
-            <label className="flex flex-col gap-2">
-              <span className="type-label">{t('gm.table.messageLabel')}</span>
-              <textarea
-                className="min-h-36 rounded-button border border-line-strong bg-well p-3.5 text-body leading-relaxed text-chalk-soft"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-              />
-            </label>
-          )}
           {actionError && <p role="alert">{t('gm.table.error')}</p>}
+          <p className="mt-auto text-caption text-mute">{t('gm.table.footNote')}</p>
+          <div className="flex flex-col gap-2">
+            <CardButton
+              variant="dark"
+              size="small"
+              icon="link"
+              title={t('gm.table.inviteTitle')}
+              aria-pressed={view.kind === 'invite'}
+              onClick={() => setView({ kind: 'invite' })}
+            />
+            <CardButton
+              variant="dark"
+              size="small"
+              icon="eye"
+              title={t('gm.hooks.title')}
+              aria-pressed={view.kind === 'hooks'}
+              onClick={() => setView({ kind: 'hooks' })}
+            />
+          </div>
         </section>
-      </div>
 
-      <footer className="flex flex-wrap items-center justify-end gap-4 px-5 pb-5">
-        {copied && (
-          <p role="status" className="text-body text-chalk-soft">
-            {t(copied)}
-          </p>
-        )}
-        <button
-          type="button"
-          className="button-card w-full max-w-[460px] disabled:opacity-50"
-          disabled={!link}
-          onClick={() => void copy()}
-        >
-          <span className="card-frame flex min-h-10 flex-col justify-center px-3.5 py-1.5">
-            <span className="type-title text-card-title">{t('gm.table.copy')}</span>
-            <span className="mt-0.5 text-[11px] font-semibold text-(color:--sub-color)">{t('gm.table.copySub')}</span>
-          </span>
-        </button>
-      </footer>
+        <div className="flex min-w-0 flex-col">
+          {view.kind === 'invite' && (
+            <TableInvite
+              campaignId={campaignId}
+              preview={state.preview}
+              initialInvite={state.invite}
+              seats={seats}
+            />
+          )}
+          {view.kind === 'review' && (
+            <CharacterReview
+              key={view.characterId}
+              campaignId={campaignId}
+              characterId={view.characterId}
+              refreshKey={reviewVersion}
+              onDecided={() => void loadSeats()}
+            />
+          )}
+          {view.kind === 'hooks' && <SecretHooks campaignId={campaignId} seats={seats} />}
+        </div>
+      </div>
     </main>
   )
 }
 
+function seatTone(seat: Seat): SeatTone {
+  switch (seat.character?.status) {
+    case undefined:
+      return 'off'
+    case 'validated':
+      return 'ok'
+    case 'submitted':
+      return 'todo'
+    case 'draft':
+    case 'returned':
+      return 'wait'
+  }
+}
+
 function SeatRow({
   seat,
-  now,
+  online,
+  current,
   confirming,
+  onOpen,
   onRemove,
 }: {
   seat: Seat
-  now: number
+  online: boolean
+  current: boolean
   confirming: boolean
+  onOpen: () => void
   onRemove: () => void
 }) {
   const { t } = useTranslation()
-  const online = now - new Date(seat.lastSeenAt).getTime() < ONLINE_MS
-  const statusKey = seat.character ? seat.character.status : 'spectator'
-  const line = seat.character
-    ? seat.character.name || t('gm.table.creating')
+  const c = seat.character
+  const tone = seatTone(seat)
+  const statusKey = c ? (c.resubmitted ? 'resubmitted' : c.status) : 'spectator'
+  const line = c
+    ? c.name
+      ? [c.name, c.className].filter(Boolean).join(' · ')
+      : t('gm.table.creating')
     : t('gm.table.watching')
-  return (
-    <li className="flex items-center gap-3 rounded-button bg-well px-3 py-2.5">
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <b className="text-body">{seat.nickname}</b>
-        <small className="truncate text-caption text-mute">
-          {line} · {online ? t('gm.table.online') : t('gm.table.seen', { date: dateFormat.format(new Date(seat.lastSeenAt)) })}
-        </small>
-      </div>
+  const presence = online
+    ? t('gm.table.online')
+    : t('gm.table.seen', { date: dateFormat.format(new Date(seat.lastSeenAt)) })
+  const body = (
+    <>
       <span
         className={cn(
-          'rounded-md px-1.5 py-1 text-[10px] font-bold tracking-[0.08em] uppercase',
-          statusKey === 'validated' && 'bg-ivory text-ink',
-          statusKey === 'submitted' && 'bg-stat-init text-ink',
-          statusKey === 'returned' && 'border-[1.5px] border-stat-atk text-stat-atk',
-          (statusKey === 'draft' || statusKey === 'spectator') && 'border-[1.5px] border-dashed border-line-dashed text-mute-soft',
+          'grid h-14 w-11 flex-none place-items-end justify-center overflow-hidden rounded-[9px] border-2',
+          c?.look
+            ? 'border-line-strong bg-linear-to-b from-surface-raised to-well shadow-[0_3px_0_var(--color-black)]'
+            : 'border-dashed border-line-strong',
+        )}
+      >
+        {c?.look && <Sprite look={c.look} scale={2} />}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <b className="text-body">{seat.nickname}</b>
+        <small className="truncate text-caption text-mute">
+          {line} · {presence}
+        </small>
+      </span>
+      <span
+        className={cn(
+          'flex-none rounded-md px-1.5 py-1 text-[10px] font-bold tracking-[0.08em] whitespace-nowrap uppercase',
+          tone === 'ok' && 'bg-ivory text-ink',
+          tone === 'todo' && 'bg-stat-init text-ink',
+          tone === 'wait' && 'border-[1.5px] border-dashed border-line-dashed text-mute-soft',
+          tone === 'off' && 'border border-line text-mute',
         )}
       >
         {t(`gm.table.status.${statusKey}`)}
       </span>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onRemove}
-      >
+    </>
+  )
+  return (
+    <li
+      className={cn(
+        'flex flex-col gap-1 rounded-button border border-transparent bg-well px-3 py-2.5',
+        current && 'border-chalk bg-surface-raised',
+      )}
+    >
+      {c ? (
+        <button
+          type="button"
+          className="flex w-full items-center gap-3 text-left"
+          aria-current={current || undefined}
+          onClick={onOpen}
+        >
+          {body}
+        </button>
+      ) : (
+        <div className="flex items-center gap-3">{body}</div>
+      )}
+      <Button variant="ghost" size="sm" className="self-end" onClick={onRemove}>
         {confirming ? t('gm.table.confirmRemove', { nickname: seat.nickname }) : t('gm.table.remove')}
       </Button>
     </li>
