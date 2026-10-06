@@ -509,6 +509,21 @@
       "clues": "Les indices du groupe",
       "npcs": "Les gens rencontrés",
       "empty": "Le groupe n'a encore rien découvert."
+    },
+    "level": {
+      "title": "Monter de niveau",
+      "reached": "Niveau {{level}} !",
+      "hitPoints": "Tes points de vie",
+      "roll": "Lancer le dé",
+      "rollHint": "{{dice}} {{bonus}}, le serveur lance",
+      "average": "La moyenne",
+      "averageHint": "sans risque",
+      "rolled": "Le dé fait {{faces}} : +{{gain}} PV, tu en as {{max}} au maximum.",
+      "averaged": "La moyenne : +{{gain}} PV, tu en as {{max}} au maximum.",
+      "newCard": "Ta nouvelle carte · niveau {{level}}",
+      "upgrade_one": "{{count}} point d'amélioration à placer",
+      "upgrade_other": "{{count}} points d'amélioration à placer",
+      "raise": "+1 en {{ability}}"
     }
   },
   "creator": {
@@ -1017,7 +1032,8 @@
         "cover_half": "demi-couvert :",
         "cover_three_quarters": "couvert aux trois quarts :",
         "long_range": "longue portée :",
-        "flee": "fuir coûte :"
+        "flee": "fuir coûte :",
+        "level_hit_points": "points de vie par niveau :"
       }
     },
     "codes": {

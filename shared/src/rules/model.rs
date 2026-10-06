@@ -306,6 +306,22 @@ pub struct Progression {
     pub upgrade_points: u32,
     /// Level thresholds on total XP, from level 1 at 0 XP.
     pub levels: Vec<LevelThreshold>,
+    /// Hit points each level past the first adds, rolled or taken at the
+    /// average as the player chooses. Absent: hit points do not grow
+    /// with levels (both witness worlds).
+    #[serde(default)]
+    pub hit_points_per_level: Option<LevelHitPoints>,
+}
+
+/// What a new level adds to maximum hit points: the die (or its
+/// average) plus a bonus formula (`mod(CON)`).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LevelHitPoints {
+    pub dice: DiceExpr,
+    /// Added to the die or the average; absent = nothing.
+    #[serde(default)]
+    pub bonus: Option<Formula>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -602,6 +618,9 @@ pub struct ClassDef {
     pub actions: Vec<ActionDef>,
     #[serde(default)]
     pub notes: Vec<String>,
+    /// This class's hit die per level, over the progression's.
+    #[serde(default)]
+    pub hit_dice: Option<DiceExpr>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

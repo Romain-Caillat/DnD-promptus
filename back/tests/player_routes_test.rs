@@ -221,9 +221,20 @@ fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> 
 
 /// A route the sweep's table cannot make succeed for Marc, and the
 /// answer it gives instead. Fighting needs a fight; the leaks of a fight
-/// are swept in `board_test.rs`.
+/// are swept in `board_test.rs`. Levelling needs XP and rules whose
+/// levels add hit points (`level_up_test.rs`).
 fn refused_to_marc(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
-    (method == "POST" && path.ends_with("/fight")).then_some((StatusCode::CONFLICT, "NO_FIGHT"))
+    if method != "POST" {
+        return None;
+    }
+    if path.ends_with("/fight") {
+        return Some((StatusCode::CONFLICT, "NO_FIGHT"));
+    }
+    if path.ends_with("/character/level-up") {
+        return Some((StatusCode::CONFLICT, "NO_LEVEL_HIT_POINTS"));
+    }
+    path.ends_with("/character/upgrade")
+        .then_some((StatusCode::CONFLICT, "NO_UPGRADE_POINT"))
 }
 
 /// A route the sweep's table cannot make succeed for anyone: the quay
@@ -261,6 +272,8 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
             Some(json!({ "origin": "Du port.", "loss": "", "quest": "La mer." }))
         }
         ("POST", p) if p.ends_with("/equip") => Some(json!({ "entry": "k1", "equipped": true })),
+        ("POST", p) if p.ends_with("/level-up") => Some(json!({ "level": 2, "choice": "average" })),
+        ("POST", p) if p.ends_with("/upgrade") => Some(json!({ "ability": "FOR" })),
         ("POST", p) if p.ends_with("/walk") => Some(json!({ "path": [[1, 5]] })),
         ("POST", p) if p.ends_with("/fight") => Some(json!({ "kind": "endTurn" })),
         ("POST", p) if p.ends_with("/lobby") => Some(json!({ "soundOk": true, "remote": true })),

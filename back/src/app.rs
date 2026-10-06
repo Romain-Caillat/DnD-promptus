@@ -386,6 +386,17 @@ fn player_routes() -> Vec<RouteSpec> {
             "/api/play/{campaign}/character/equip",
             post(api::play::equip),
         ),
+        // engine/level-up: a level's hit points, an upgrade point.
+        (
+            "POST",
+            "/api/play/{campaign}/character/level-up",
+            post(api::play::level_up),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/character/upgrade",
+            post(api::play::upgrade),
+        ),
         // The evening: the scene, the music, my requests and their rolls,
         // the journal; the lobby; the feedback at the end.
         (

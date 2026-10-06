@@ -615,6 +615,27 @@ fn validate(s: &RuleSystem) -> Vec<RuleError> {
             "levels start at level 1 with 0 XP and go up one level at a time with increasing XP",
         );
     }
+    if let Some(hp) = &s.progression.hit_points_per_level {
+        if hp.dice.is_flat() {
+            v.err(
+                ErrorCode::InvalidDice,
+                "progression.hit_points_per_level.dice",
+                "a die to roll (1d10), not a flat number",
+            );
+        }
+        if let Some(bonus) = &hp.bonus {
+            v.formula(bonus, &["level"], "progression.hit_points_per_level.bonus");
+        }
+    }
+    for c in &s.classes {
+        if c.hit_dice.is_some_and(|d| d.is_flat()) {
+            v.err(
+                ErrorCode::InvalidDice,
+                format!("classes[{}].hit_dice", c.id),
+                "a die to roll (1d10), not a flat number",
+            );
+        }
+    }
     if s.progression.upgrade_every_xp == 0 {
         v.err(
             ErrorCode::InvalidValue,

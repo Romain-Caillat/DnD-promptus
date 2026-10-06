@@ -175,6 +175,12 @@ impl DiceExpr {
         })
     }
 
+    /// The average, each die rounded up (a d10 gives 6): what a player
+    /// who takes no risk gets.
+    pub fn average_up(&self) -> i32 {
+        self.count as i32 * (self.faces as i32 / 2 + 1) + self.modifier
+    }
+
     /// Smallest and largest total this expression can produce.
     pub fn range(&self) -> (i32, i32) {
         let n = self.count as i32;

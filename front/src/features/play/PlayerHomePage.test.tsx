@@ -63,6 +63,8 @@ const inPlay = (equipped: boolean) => ({
     ],
     resources: [{ id: 'or', name: "Pièces d'or", abbr: 'PO', amount: 15 }],
     inventory: bag(equipped),
+    levelHitPoints: null,
+    levelsToChoose: [],
   },
 })
 /** The evening before any session: what the Game tab reads first. */

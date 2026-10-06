@@ -19,7 +19,11 @@
 //! - `POST /api/play/{campaign}/character/submit` → send it to the GM;
 //! - `POST /api/play/{campaign}/character/equip` → `{ entry, equipped }`:
 //!   carry a bag line on the character, or put it back in the bag, once
-//!   in play (`players::play::equip`).
+//!   in play (`players::play::equip`);
+//! - `POST /api/play/{campaign}/character/level-up` → `{ level, choice }`:
+//!   take a reached level's hit points, rolled or at the average;
+//! - `POST /api/play/{campaign}/character/upgrade` → `{ ability }`: spend
+//!   an upgrade point (`engine/level-up`).
 
 use axum::Json;
 use axum::extract::{Path, State};
@@ -35,6 +39,7 @@ use crate::content;
 use crate::error::AppError;
 use crate::players::{self, CharacterSheet, Role};
 use crate::state::AppState;
+use promptus_shared::rules::progression::HitPointChoice;
 
 fn invite_not_found() -> AppError {
     AppError::NotFound("INVITE_NOT_FOUND")
@@ -249,4 +254,90 @@ pub async fn equip(
         .ok_or(AppError::NotFound("NO_CHARACTER"))?;
     let view = projection::project_character(rules, &character);
     Ok(Json(json!({ "data": view })).into_response())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LevelUpBody {
+    level: u32,
+    choice: HitPointChoice,
+}
+
+/// `POST /api/play/{campaign}/character/level-up` — `{ level, choice:
+/// roll | average }`: takes a reached level's hit points, the server
+/// rolling the die. Answers `{ taken, character }`: the roll, the
+/// maximum before and after, and the character as `me` shows it.
+///
+/// # Errors
+///
+/// 401 `NOT_JOINED`; 404 `NO_CHARACTER`; 409 `CHARACTER_NOT_VALIDATED`,
+/// `RULES_UNKNOWN`, `NO_LEVEL_HIT_POINTS`, `LEVEL_NOT_REACHED`,
+/// `LEVEL_ALREADY_TAKEN`; 400 `INVALID_BODY`.
+pub async fn level_up(
+    State(state): State<AppState>,
+    p: CurrentPlayer,
+    Body(body): Body<LevelUpBody>,
+) -> Result<Response, AppError> {
+    let row = campaign_of(&state, &p).await?;
+    let rules = row.rules();
+    let system = in_play_rules(&state, &p, rules).await?;
+    let taken = players::play::level_up(&state.pool, &p.0, system, body.level, body.choice).await?;
+    let character = players::character_of(&state.pool, &p.0)
+        .await?
+        .ok_or(AppError::NotFound("NO_CHARACTER"))?;
+    let view = projection::project_character(rules, &character);
+    Ok(Json(json!({ "data": { "taken": {
+        "level": taken.level,
+        "die": taken.die,
+        "faces": taken.roll.as_ref().map(|r| r.faces.clone()),
+        "maxBefore": taken.max_before,
+        "maxAfter": taken.max_after,
+    }, "character": view } }))
+    .into_response())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct UpgradeBody {
+    ability: String,
+}
+
+/// `POST /api/play/{campaign}/character/upgrade` — `{ ability }`: one
+/// upgrade point on an ability. Answers the character as `me` shows it.
+///
+/// # Errors
+///
+/// 401 `NOT_JOINED`; 404 `NO_CHARACTER`; 409 `CHARACTER_NOT_VALIDATED`,
+/// `RULES_UNKNOWN`, `NO_UPGRADE_POINT`; 400 `UNKNOWN_ABILITY`,
+/// `INVALID_BODY`.
+pub async fn upgrade(
+    State(state): State<AppState>,
+    p: CurrentPlayer,
+    Body(body): Body<UpgradeBody>,
+) -> Result<Response, AppError> {
+    let row = campaign_of(&state, &p).await?;
+    let rules = row.rules();
+    let system = in_play_rules(&state, &p, rules).await?;
+    players::play::upgrade(&state.pool, &p.0, system, &body.ability).await?;
+    let character = players::character_of(&state.pool, &p.0)
+        .await?
+        .ok_or(AppError::NotFound("NO_CHARACTER"))?;
+    let view = projection::project_character(rules, &character);
+    Ok(Json(json!({ "data": view })).into_response())
+}
+
+/// The rules a character plays by; without them nothing is in play, and
+/// a spectator still learns they have no character.
+async fn in_play_rules<'r>(
+    state: &AppState,
+    p: &CurrentPlayer,
+    rules: Option<&'r promptus_shared::rules::RuleSystem>,
+) -> Result<&'r promptus_shared::rules::RuleSystem, AppError> {
+    if let Some(system) = rules {
+        return Ok(system);
+    }
+    players::character_of(&state.pool, &p.0)
+        .await?
+        .ok_or(AppError::NotFound("NO_CHARACTER"))?;
+    Err(AppError::Conflict("RULES_UNKNOWN"))
 }

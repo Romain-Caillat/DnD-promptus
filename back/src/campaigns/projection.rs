@@ -43,6 +43,7 @@ use chrono::{DateTime, Utc};
 use promptus_shared::rules::RuleSystem;
 use promptus_shared::rules::action::{ActionCard, action_cards};
 use promptus_shared::rules::model::{ActionDef, RollSpec, Tag};
+use promptus_shared::rules::progression::levels_to_choose;
 use promptus_shared::rules::sheet::Combatant;
 use promptus_shared::sprite::CharacterLook;
 use promptus_shared::story::{Campaign, MusicTrack, WorldState};
@@ -302,6 +303,24 @@ pub struct PlayView {
     pub cards: Vec<ActionCardView>,
     pub resources: Vec<ResourceView>,
     pub inventory: Vec<ItemView>,
+    /// What a level adds to hit points, when the rules make it grow.
+    pub level_hit_points: Option<LevelHitPointsView>,
+    /// Levels reached whose hit points the player has not taken yet.
+    pub levels_to_choose: Vec<u32>,
+}
+
+/// A level's hit points, as the level-up screen offers them.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LevelHitPointsView {
+    /// The die rolled (« 1d10 »).
+    pub dice: String,
+    /// The die's average, rounded up.
+    pub average: i32,
+    /// Added to either (the Constitution modifier today).
+    pub bonus: i32,
+    /// The bonus as the rules write it (« mod(CON) »); empty for none.
+    pub bonus_formula: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -415,6 +434,24 @@ pub fn project_play(
                 }
             })
             .collect(),
+        level_hit_points: level_hit_points_view(rules, &c),
+        levels_to_choose: levels_to_choose(rules, &c),
+    })
+}
+
+fn level_hit_points_view(rules: &RuleSystem, c: &Combatant) -> Option<LevelHitPointsView> {
+    let rule = rules.progression.hit_points_per_level.as_ref()?;
+    let die = c.level_hit_die(rules)?;
+    let bonus = c.level_hit_bonus(rules).ok()?;
+    Some(LevelHitPointsView {
+        dice: die.to_string(),
+        average: die.average_up(),
+        bonus,
+        bonus_formula: rule
+            .bonus
+            .as_ref()
+            .map(|f| f.source().to_string())
+            .unwrap_or_default(),
     })
 }
 

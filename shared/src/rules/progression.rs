@@ -2,7 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::model::RuleSystem;
+use super::dice::{DiceRoll, DiceSource};
+use super::model::{ActionDef, RuleSystem};
 use super::sheet::{Combatant, Progress, SheetError};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -82,4 +83,89 @@ pub fn award_band(
         (Some(band), Some(progress)) => gain_xp(system, progress, band.xp(system)),
         _ => Vec::new(),
     }
+}
+
+/// How a player takes a new level's hit points.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum HitPointChoice {
+    /// The server rolls the die: risk for more.
+    Roll,
+    /// The die's average, no risk.
+    Average,
+}
+
+/// What a level's hit point choice gave.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LevelHitPointsTaken {
+    pub level: u32,
+    /// The die's value kept for the level (rolled or average).
+    pub die: i32,
+    /// The roll, when the player rolled.
+    pub roll: Option<DiceRoll>,
+    /// Maximum hit points before and after.
+    pub max_before: i32,
+    pub max_after: i32,
+}
+
+/// Levels reached past the first whose hit points are still to choose.
+pub fn levels_to_choose(system: &RuleSystem, sheet: &Combatant) -> Vec<u32> {
+    if sheet.level_hit_die(system).is_none() {
+        return Vec::new();
+    }
+    let level = sheet.level(system).unwrap_or(1);
+    (2..=level)
+        .filter(|l| !sheet.level_hit_dice.contains_key(l))
+        .collect()
+}
+
+/// Takes a reached level's hit points, once: the die rolled by the
+/// server, or its average. Current hit points grow with the maximum.
+pub fn choose_level_hit_points(
+    system: &RuleSystem,
+    sheet: &mut Combatant,
+    level: u32,
+    choice: HitPointChoice,
+    dice: &mut dyn DiceSource,
+) -> Result<LevelHitPointsTaken, SheetError> {
+    let die = sheet
+        .level_hit_die(system)
+        .ok_or(SheetError::NoLevelHitPoints)?;
+    if level < 2 || sheet.level(system).unwrap_or(1) < level {
+        return Err(SheetError::LevelNotReached(level));
+    }
+    if sheet.level_hit_dice.contains_key(&level) {
+        return Err(SheetError::LevelHitPointsChosen(level));
+    }
+    let max_before = sheet.max_hit_points(system)?;
+    let (value, roll) = match choice {
+        HitPointChoice::Average => (die.average_up(), None),
+        HitPointChoice::Roll => {
+            let roll = die.roll(dice);
+            (roll.total, Some(roll))
+        }
+    };
+    sheet.level_hit_dice.insert(level, value);
+    let max_after = sheet.max_hit_points(system)?;
+    sheet.hit_points += max_after - max_before;
+    Ok(LevelHitPointsTaken {
+        level,
+        die: value,
+        roll,
+        max_before,
+        max_after,
+    })
+}
+
+/// The class cards a level unlocks (actions whose `level` is exactly it).
+pub fn unlocked_at<'s>(system: &'s RuleSystem, class_id: &str, level: u32) -> Vec<&'s ActionDef> {
+    system
+        .class(class_id)
+        .map(|c| {
+            c.actions
+                .iter()
+                .filter(|a| a.level == Some(level))
+                .collect()
+        })
+        .unwrap_or_default()
 }

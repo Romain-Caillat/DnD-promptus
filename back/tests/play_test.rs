@@ -522,3 +522,148 @@ async fn a_brasier_table_plays_the_same_without_a_purse() {
     .await;
     assert_eq!(r.body["error"]["code"], "UNKNOWN_RESOURCE");
 }
+
+/// engine/level-up — the GM's rules make levels add a d10; Borin earns
+/// level 4 and, on his phone, rolls one level, takes the average of
+/// another, and spends an upgrade point. The GM's history shows each.
+#[tokio::test]
+async fn borin_levels_up_on_his_phone() {
+    let pool = common::test_pool().await;
+    let app = common::app(pool.clone());
+    let (_, gm) = common::signed_in_gm(&pool, "Romain").await;
+    let campaign = imported_campaign(&app, &gm, FIXTURE).await;
+    let code = invite_code(&app, &gm, &campaign).await;
+    let borin = validated(
+        &app,
+        &pool,
+        &gm,
+        &campaign,
+        &code,
+        "Marc",
+        json!({ "name": "Borin", "classId": "bretteur" }),
+    )
+    .await;
+
+    // Without a hit die in the rules, nothing to choose.
+    adjust(
+        &app,
+        &gm,
+        &campaign,
+        &borin,
+        json!({ "kind": "xp", "delta": 15 }),
+    )
+    .await;
+    let play = my_play(&app, &campaign, &borin).await;
+    assert_eq!(play["level"], 4);
+    assert!(play["levelHitPoints"].is_null());
+    assert_eq!(play["levelsToChoose"], json!([]));
+    let uri = format!("/api/play/{campaign}/character/level-up");
+    let level_up = |level: u32, choice: &str| {
+        call_as_player(
+            &app,
+            Some(&borin.token),
+            "POST",
+            &uri,
+            Some(json!({ "level": level, "choice": choice })),
+        )
+    };
+    let r = level_up(2, "average").await;
+    assert_eq!(r.status, StatusCode::CONFLICT);
+    assert_eq!(r.body["error"]["code"], "NO_LEVEL_HIT_POINTS");
+
+    // Romain's next rules: a d10 a level. They ship with the next session.
+    let base = format!("/api/campaigns/{campaign}/rules");
+    let r = call(&app, Some(&gm), "POST", &format!("{base}/draft"), None).await;
+    let yaml = r.body["data"]["draft"]["yaml"].as_str().unwrap().replacen(
+        "  upgrade_points: 1\n",
+        "  upgrade_points: 1\n  hit_points_per_level: { dice: 1d10, bonus: \"mod(CON)\" }\n",
+        1,
+    );
+    let r = call(
+        &app,
+        Some(&gm),
+        "PUT",
+        &format!("{base}/draft"),
+        Some(json!({ "yaml": yaml })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    let r = call(&app, Some(&gm), "POST", &format!("{base}/draft/lock"), None).await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    for path in ["session", "session/start"] {
+        let r = call(
+            &app,
+            Some(&gm),
+            "POST",
+            &format!("/api/campaigns/{campaign}/{path}"),
+            None,
+        )
+        .await;
+        assert!(r.status.is_success(), "{path}: {}", r.body);
+    }
+
+    // Three levels to take, counted at the average meanwhile (6 each).
+    let play = my_play(&app, &campaign, &borin).await;
+    assert_eq!(play["levelsToChoose"], json!([2, 3, 4]));
+    assert_eq!(play["levelHitPoints"]["dice"], "1d10");
+    assert_eq!(play["levelHitPoints"]["average"], 6);
+    assert_eq!(play["maxHitPoints"], 28);
+
+    let r = level_up(4, "roll").await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    let taken = &r.body["data"]["taken"];
+    let die = taken["die"].as_i64().unwrap();
+    assert!((1..=10).contains(&die), "{taken}");
+    assert_eq!(taken["faces"], json!([die]));
+    assert_eq!(taken["maxAfter"].as_i64().unwrap(), 28 - 6 + die);
+    assert_eq!(
+        r.body["data"]["character"]["play"]["levelsToChoose"],
+        json!([2, 3])
+    );
+    // Once a level: no rolling again for a better number.
+    let r = level_up(4, "roll").await;
+    assert_eq!(r.status, StatusCode::CONFLICT);
+    assert_eq!(r.body["error"]["code"], "LEVEL_ALREADY_TAKEN");
+    let r = level_up(5, "average").await;
+    assert_eq!(r.body["error"]["code"], "LEVEL_NOT_REACHED");
+    let r = level_up(3, "average").await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    assert_eq!(r.body["data"]["taken"]["die"], 6);
+
+    // Three upgrade points at 15 XP: one on Force.
+    let r = call_as_player(
+        &app,
+        Some(&borin.token),
+        "POST",
+        &format!("/api/play/{campaign}/character/upgrade"),
+        Some(json!({ "ability": "FOR" })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    let play = &r.body["data"]["play"];
+    assert_eq!(play["upgradePoints"], 2);
+    let force = play["abilities"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|a| a["id"] == "FOR")
+        .unwrap();
+    assert_eq!(force["score"], 14);
+
+    let b = board(&app, &gm, &campaign).await;
+    let kinds: Vec<(&str, &str)> = b["history"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .take(3)
+        .map(|l| (l["actor"].as_str().unwrap(), l["kind"].as_str().unwrap()))
+        .collect();
+    assert_eq!(
+        kinds,
+        [
+            ("player", "upgrade"),
+            ("player", "level"),
+            ("player", "level")
+        ]
+    );
+}

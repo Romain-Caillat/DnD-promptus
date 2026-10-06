@@ -53,7 +53,7 @@ model forced where the source was ambiguous.
 | `turn_contexts` | Action economy per setting (below) |
 | `cooldowns.meaning` | `skip_next_turns` or `turn_of_use_counts` (below) |
 | `durations.application_turn_counts` | Whether the turn a condition lands in counts (below) |
-| `progression` | `{ upgrade_every_xp, upgrade_points, levels: [{ level, xp }] }` |
+| `progression` | `{ upgrade_every_xp, upgrade_points, levels: [{ level, xp }], hit_points_per_level? }` — `hit_points_per_level: { dice: 1d10, bonus: "mod(CON)" }` makes each level past the first add the die (rolled by the server, or its average rounded up, as the player chooses once per level) plus the bonus, at least 1; a level not chosen yet counts the average. Absent, hit points do not grow with levels |
 | `zero_hp` | What 0 hit points does (below) |
 | `creation` | `{ abilities: from_class, free_action_slots }` |
 | `movement` | Per map scale (`world`, `place`, `encounter`): `cells_per_move` (`null` when unstated) and optional `grid: { diagonal: chebyshev\|alternate, difficult_factor, climb_cost, max_step, swim_factor }` — the `maps::MovementRules` the grid reads |
@@ -229,7 +229,8 @@ missing, or the targets do not fit.
 ```yaml
 classes:
   - { id, name, description, primary_abilities: [FOR, DEX], secondary_abilities: [],
-      abilities: { FOR: 13, … }, items: [{ item, qty }], actions: [...], notes: [] }
+      abilities: { FOR: 13, … }, items: [{ item, qty }], actions: [...], notes: [],
+      hit_dice?: 1d10 }   # over progression.hit_points_per_level.dice
 items:
   - { id, name, description, price?, consumable?, action?, note? }
 adversary_tiers:
