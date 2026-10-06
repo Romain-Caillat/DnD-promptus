@@ -1101,7 +1101,7 @@ appel.
 
 **Origine** — `MEMORY.md` §3 · planche « Préparer » (coût estimé)
 
-### `ai/generate-campaign` · todo
+### `ai/generate-campaign` · doing — reste une génération réelle avec OpenRouter, relue par Romain
 
 **Périmètre** — Pitch → bible, fronts, nœuds, indices, entités, en
 tâches de fond suivies en direct ; rien n'est appliqué avant la
@@ -1113,6 +1113,28 @@ que le MJ relit et applique ; tests `generation.test.ts` du V1 portés.
 
 **Origine** — V1 `generation/pipeline.ts` · planche « Préparer »
 (moments 4 et 5)
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). Sur une campagne pas encore validée, le bouton
+« Générer à partir d'une idée » mène à `/campagnes/:id/generer` : le MJ
+écrit l'idée, le ton, les thèmes, les contraintes et le format, voit le
+coût au plus et ce qui reste du budget, lance. La tâche de fond suit le
+pipeline du V1 : bible, actes, menaces et fiches (adversaires repris du
+système de règles), puis scènes, révélations et indices, puis
+vérification ; tant que le validateur trouve une erreur ou un défaut de
+structure (trois indices, scène inaccessible…), le modèle propose des
+corrections par identifiant, deux tours au plus, gardées seulement si
+elles n'aggravent rien. Une réponse hors format est renvoyée une fois
+avec ce qui n'allait pas. Les identifiants inventés sont écartés
+(`story::prune`) et listés ; chaque appel est compté, la tâche est
+refusée avant le premier appel si son estimation dépasse le budget, et
+s'arrête si un appel le dépasserait. L'écran suit les étapes en direct ;
+le brouillon dit ce qu'il contient et ce qu'en dit le validateur, et
+n'arrive dans la campagne que sur « Appliquer », qui mène à la
+relecture. Les tests du V1 sont portés (`generation_test.rs` : étapes
+dans l'ordre, correction gardée, seconde chance sur un JSON invalide,
+budget, brouillon appliqué une fois). Les cartes ne sont pas générées
+ici : c'est `maps/generate-map-llm`.
 
 ---
 

@@ -59,6 +59,11 @@ const GM_ROUTES: &[(&str, &str)] = &[
         "POST",
         "/api/campaigns/{campaign}/workshop/{proposal}/reject",
     ),
+    // A generation, on the campaign made unvalidated again, and a draft
+    // applied (validated again after).
+    ("GET", "/api/campaigns/{campaign}/generation"),
+    ("POST", "/api/campaigns/{campaign}/generation"),
+    ("POST", "/api/campaigns/{campaign}/generation/{job}/apply"),
     ("GET", "/api/campaigns/{campaign}/invite"),
     ("POST", "/api/campaigns/{campaign}/invite"),
     ("GET", "/api/campaigns/{campaign}/players"),
@@ -172,6 +177,9 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         (_, p) if p.ends_with("/story/edits") => Some(serde_json::json!({
             "edits": [{ "op": "set", "target": "bible", "field": "tone", "value": "Sombre." }]
         })),
+        ("POST", p) if p.ends_with("/generation") => Some(serde_json::json!({
+            "pitch": "Une ville tenue par une société secrète."
+        })),
         ("POST", p) if p.ends_with("/workshop") => {
             Some(serde_json::json!({ "prompt": "Rends le gardien plus ambigu." }))
         }
@@ -247,6 +255,7 @@ struct Ids {
     draft: String,
     asset: String,
     proposal: String,
+    job: String,
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
@@ -260,6 +269,7 @@ fn route_uri(path: &str, ids: &Ids) -> String {
         .replace("{draft}", &ids.draft)
         .replace("{asset}", &ids.asset)
         .replace("{proposal}", &ids.proposal)
+        .replace("{job}", &ids.job)
 }
 
 /// Every placeholder filled for `player` of `campaign`: an invitation of
@@ -294,6 +304,7 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         draft: Uuid::new_v4().to_string(),
         asset: Uuid::new_v4().to_string(),
         proposal: Uuid::new_v4().to_string(),
+        job: Uuid::new_v4().to_string(),
     }
 }
 
@@ -495,6 +506,25 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .unwrap()
             .to_string();
         }
+        if path.contains("/generation") {
+            sqlx::query("UPDATE campaigns SET validated_at = NULL WHERE id = $1")
+                .bind(Uuid::parse_str(&ids.campaign).unwrap())
+                .execute(&pool)
+                .await
+                .unwrap();
+        }
+        if path.contains("{job}") {
+            ids.job = sqlx::query_scalar::<_, Uuid>(
+                "INSERT INTO generation_jobs (campaign_id, status, input, steps, draft)
+                 SELECT id, 'succeeded', '{\"pitch\":\"Rien de neuf.\"}', '[]', story
+                 FROM campaigns WHERE id = $1 RETURNING id",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
+        }
         if path.contains("{asset}") {
             ids.asset = sqlx::query_scalar::<_, Uuid>(
                 "INSERT INTO media_assets (campaign_id, kind, subject, mime, image)
@@ -537,6 +567,13 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             (_, b) => b,
         };
         let r = call(&app, Some(&token), method, &uri, body).await;
+        if path.ends_with("/apply") {
+            sqlx::query("UPDATE campaigns SET validated_at = now() WHERE id = $1")
+                .bind(Uuid::parse_str(&ids.campaign).unwrap())
+                .execute(&pool)
+                .await
+                .unwrap();
+        }
         if path.ends_with("/live") {
             // Past the guard and the ownership check, a plain request
             // (not a WebSocket upgrade) is refused by the route itself.

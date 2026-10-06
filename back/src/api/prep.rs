@@ -7,7 +7,12 @@
 //! - `POST /api/campaigns/{id}/story/validate` → declare it playable;
 //! - `GET  /api/campaigns/{id}/workshop` → the co-GM's proposals;
 //! - `POST /api/campaigns/{id}/workshop` → ask the co-GM (201);
-//! - `POST /api/campaigns/{id}/workshop/{proposal}/accept|reject`.
+//! - `POST /api/campaigns/{id}/workshop/{proposal}/accept|reject`;
+//! - `GET  /api/campaigns/{id}/generation` → the generation jobs, and
+//!   what one more costs (`ai/generate-campaign`);
+//! - `POST /api/campaigns/{id}/generation` → start one (202);
+//! - `POST /api/campaigns/{id}/generation/{job}/apply` → install its
+//!   draft as the campaign's story, to review.
 
 use axum::Json;
 use axum::extract::{Path, State};
@@ -22,7 +27,7 @@ use super::body::Body;
 use super::campaigns::detail;
 use crate::auth::guard::CurrentGm;
 use crate::error::AppError;
-use crate::prep::{self, workshop};
+use crate::prep::{self, generation, workshop};
 use crate::state::AppState;
 
 fn parse_id(raw: &str) -> Result<Uuid, AppError> {
@@ -143,4 +148,48 @@ pub async fn reject(
     Path((id, proposal)): Path<(String, String)>,
 ) -> Result<Response, AppError> {
     decide(&state, &gm, &id, &proposal, false).await
+}
+
+/// `GET /api/campaigns/{id}/generation`
+///
+/// # Errors
+///
+/// As `generation::desk`.
+pub async fn generations(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path(id): Path<String>,
+) -> Result<Response, AppError> {
+    let desk = generation::desk(&state.pool, &state.ai, &gm, parse_id(&id)?).await?;
+    Ok(Json(json!({ "data": desk })).into_response())
+}
+
+/// `POST /api/campaigns/{id}/generation`
+///
+/// # Errors
+///
+/// As `generation::start`.
+pub async fn generate(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path(id): Path<String>,
+    Body(input): Body<generation::Input>,
+) -> Result<Response, AppError> {
+    let job = generation::start(&state.pool, &state.ai, &gm, parse_id(&id)?, input).await?;
+    Ok((StatusCode::ACCEPTED, Json(json!({ "data": job }))).into_response())
+}
+
+/// `POST /api/campaigns/{id}/generation/{job}/apply`
+///
+/// # Errors
+///
+/// As `generation::apply`.
+pub async fn apply_generation(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path((id, job)): Path<(String, String)>,
+) -> Result<Response, AppError> {
+    let job = Uuid::parse_str(&job).map_err(|_| AppError::NotFound("NO_SUCH_GENERATION"))?;
+    let (row, job) = generation::apply(&state.pool, &gm, parse_id(&id)?, job).await?;
+    Ok(Json(json!({ "data": { "campaign": detail(row), "job": job } })).into_response())
 }

@@ -226,6 +226,34 @@ playable, which needs no error left; only a validated campaign opens a
 session. An import is validated as it arrives (the GM wrote it); a
 campaign created from a pitch, or generated, waits for the GM.
 
+## Generated from a pitch
+
+`/campagnes/:id/generer` (`ai/generate-campaign`,
+`back/src/prep/generation.rs`) turns the GM's idea into a whole
+campaign, in a background job the screen follows live:
+
+| Step | The model writes | Template |
+|------|------------------|----------|
+| `cast` | bible, acts, fronts, NPCs, adversaries (`from_rules` from the rule system), places, items, factions | `generation-cast` |
+| `scenes` | nodes, revelations, clues, opening node | `generation-scenes` |
+| `check` | repair edits for what the validator finds (errors, three-clue rule, unreachable scenes, knowledge never given) — at most 2 rounds, a round kept only when it makes nothing worse | `generation-repair` |
+
+Each answer is read straight into the model types; one out of format
+goes back once with serde's complaint. Ids the model invented —
+references to nothing, ids declared twice, rule-system ids the rule
+system lacks — are removed (`story::prune`): an optional reference is
+emptied, an element that cannot stand without it (a clue in no scene,
+an exit to nowhere) is dropped, and the job lists what went. Repair
+edits go through `edit::sanitize` like the co-GM's.
+
+Every call is counted (`purpose = generation`): the job is refused
+before its first call when its estimate (each step's prompt and whole
+answer, one repair) passes what is left of the budget, and stops when
+a later call would. The result is a draft (`generation_jobs.draft`):
+**applying** it replaces the campaign's story, keeping its id, title,
+universe, rule system and party, and the campaign is still to review
+and validate. A validated campaign is not generated over.
+
 ## The witness worlds and `bun run worlds`
 
 The two worlds live in `content/campaigns/<world>/campagne.yaml`, next

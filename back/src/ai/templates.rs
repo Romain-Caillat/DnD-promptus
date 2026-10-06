@@ -49,8 +49,38 @@ pub const WORKSHOP: Template = Template {
     text: include_str!("../../prompts/workshop.v1.md"),
 };
 
+/// Campaign generation, step 1: bible, acts, fronts and the cast
+/// (`ai/generate-campaign`).
+pub const GENERATION_CAST: Template = Template {
+    id: "generation-cast",
+    version: 1,
+    text: include_str!("../../prompts/generation-cast.v1.md"),
+};
+
+/// Campaign generation, step 2: scenes, revelations and clues.
+pub const GENERATION_SCENES: Template = Template {
+    id: "generation-scenes",
+    version: 1,
+    text: include_str!("../../prompts/generation-scenes.v1.md"),
+};
+
+/// Campaign generation, repair: edits for what the validator found.
+pub const GENERATION_REPAIR: Template = Template {
+    id: "generation-repair",
+    version: 1,
+    text: include_str!("../../prompts/generation-repair.v1.md"),
+};
+
 /// Every template, for the tests that check each one renders.
-pub const ALL: [Template; 4] = [COPILOT, RECAP, PIXEL_ART, WORKSHOP];
+pub const ALL: [Template; 7] = [
+    COPILOT,
+    RECAP,
+    PIXEL_ART,
+    WORKSHOP,
+    GENERATION_CAST,
+    GENERATION_SCENES,
+    GENERATION_REPAIR,
+];
 
 const USER_MARK: &str = "---user---";
 

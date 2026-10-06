@@ -52,6 +52,8 @@ export interface CampaignDetail {
   }
   settings: CampaignPlan
   archivedAt: string | null
+  /** When the GM declared it playable; `null` while it is being prepared. */
+  validatedAt?: string | null
 }
 
 /** What the GM edits on the campaign page. */

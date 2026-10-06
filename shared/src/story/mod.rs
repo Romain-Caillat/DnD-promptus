@@ -9,12 +9,14 @@
 //! - [`encounter`] — a scene's planned fight, staged for the simulator;
 //! - [`edit`] — changes by id, from the review screen and the co-GM;
 //! - [`readiness`] — one gauge per act: is it ready to be played;
+//! - [`prune`] — dropping the ids a model invented;
 //! - [`v1`] — importer for V1 campaigns (entities YAML + story JSON).
 
 pub mod edit;
 pub mod encounter;
 pub mod library;
 pub mod model;
+pub mod prune;
 pub mod readiness;
 pub mod v1;
 pub mod validate;

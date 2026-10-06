@@ -205,6 +205,15 @@ export function CampaignPage() {
               subtitle={t('gm.campaign.reviewSub')}
               onClick={() => navigate(`${base}/preparer`)}
             />
+            {!campaign.validatedAt && (
+              <CardButton
+                variant="dark"
+                icon="flask"
+                title={t('gm.campaign.generate')}
+                subtitle={t('gm.campaign.generateSub')}
+                onClick={() => navigate(`${base}/generer`)}
+              />
+            )}
             <CardButton
               icon="arrow"
               title={t('gm.campaign.evening')}

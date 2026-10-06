@@ -1,13 +1,15 @@
 //! Preparing a campaign (`campaign/review-story-graph`): the GM's edits
 //! on the review screen, the co-GM's workshop, the readiness gauge of
 //! each act (`campaign/check-act-readiness`), and the validation that
-//! makes the campaign playable.
+//! makes the campaign playable; and the campaign generated from a pitch
+//! (`ai/generate-campaign`), which lands here to be reviewed.
 //!
 //! Every write takes the campaign lock (`campaigns::lock`). Edits never
 //! wait on the validator: it reports, the GM decides — except at the
 //! very end, where a campaign with errors (a reference to nothing, a
 //! duplicate id) is not declared playable.
 
+pub mod generation;
 pub mod workshop;
 
 use promptus_shared::maps::Map;

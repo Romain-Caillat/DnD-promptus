@@ -114,6 +114,14 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         .route("/api/campaigns/{id}/story/edits", post(api::prep::edits))
         .route("/api/campaigns/{id}/readiness", get(api::prep::readiness))
         .route(
+            "/api/campaigns/{id}/generation",
+            get(api::prep::generations).post(api::prep::generate),
+        )
+        .route(
+            "/api/campaigns/{id}/generation/{job}/apply",
+            post(api::prep::apply_generation),
+        )
+        .route(
             "/api/campaigns/{id}/story/validate",
             post(api::prep::validate),
         )
