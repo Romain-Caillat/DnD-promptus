@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { CardButton } from '@/components/game/CardButton'
 import { StatusBanner, type BannerTone } from '@/components/game/StatusBanner'
@@ -315,7 +316,7 @@ function proposedNote(review: Review): string {
     .join(' ')
 }
 
-type T = ReturnType<typeof useTranslation>['t']
+type T = TFunction
 
 function bannerFor(review: Review, name: string, resubmitted: boolean, t: T): { tone: BannerTone; text: string } {
   const nickname = review.nickname

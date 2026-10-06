@@ -210,6 +210,18 @@ The live channel only says "this changed" (Postgres NOTIFY relayed to
 the session's sockets, plus presence). Clients refetch through the API,
 so the projection is never bypassed.
 
+### The sheet and the play state are two things
+
+`characters.sheet` is what the player wrote and the GM reviewed; the
+review diffs it against `reviewed_sheet`. What moves at the table (XP,
+hit points lost, resources, the bag) lives in `character_play`, held by
+the server, changed only through `players::play` (GM gestures, the
+player's equip) under the campaign lock, each change logged in
+`play_adjustments`. Anything the rules derive (max HP, level, AC, cards)
+is computed through the engine, never stored. Writing play state into
+`sheet` would make every adjustment show up as a player edit in the
+review.
+
 ### Player tokens are hashed
 
 Players join with an invite link, a nickname and a free character —

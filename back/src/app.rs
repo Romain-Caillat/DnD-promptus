@@ -126,6 +126,12 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/hooks/{hook}",
             put(api::table::edit_hook).delete(api::table::delete_hook),
         )
+        // gm/adjust-sheets-fast: the characters in play, one gesture each.
+        .route("/api/campaigns/{id}/sheets", get(api::sheets::board))
+        .route(
+            "/api/campaigns/{id}/characters/{character}/adjust",
+            post(api::sheets::adjust),
+        )
         .route("/api/campaigns/{id}/live", get(api::live::gm_socket))
         .route_layer(middleware::from_fn_with_state(state.clone(), require_gm));
 

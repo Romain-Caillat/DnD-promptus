@@ -58,6 +58,58 @@ export interface SheetStats {
   cards: ActionCardView[]
 }
 
+/** An ability's score in play, with the modifier the rules give it. */
+interface AbilityScore {
+  id: string
+  name: string
+  score: number
+  modifier: number
+}
+
+/** A resource of the rules (the Corsaires' gold), as held now. */
+interface ResourceAmount {
+  id: string
+  name: string
+  abbr: string
+  amount: number
+}
+
+/** A bag line (`projection::ItemView`). */
+interface BagItem {
+  /** Stable within the bag: what `equipItem` names. */
+  key: string
+  itemId: string | null
+  name: string
+  description: string
+  qty: number
+  consumable: boolean
+  /** On the character rather than in the bag. */
+  equipped: boolean
+}
+
+/**
+ * A character in play (`projection::PlayView`): what the server holds
+ * and what the rules derive from it. The GM's board reads the same.
+ */
+export interface PlayView {
+  level: number
+  totalXp: number
+  /** Fills up to `xpBarMax`, then turns into an upgrade point. */
+  xpBar: number
+  xpBarMax: number
+  upgradePoints: number
+  nextLevelXp: number | null
+  hitPoints: number
+  maxHitPoints: number
+  armorClass: number
+  initiative: number
+  abilities: AbilityScore[]
+  /** Every class card; a `level` above the character's is still locked. */
+  cards: ActionCardView[]
+  resources: ResourceAmount[]
+  inventory: BagItem[]
+}
+
 /** A player's own character (`projection::CharacterView`). */
 export interface CharacterView {
   id: string
@@ -70,6 +122,8 @@ export interface CharacterView {
   className: string | null
   /** `null` until the sheet names a class of the rules. */
   stats: SheetStats | null
+  /** Once validated, the character in play. */
+  play?: PlayView | null
 }
 
 /** A player's home in one campaign (`projection::PlayerHomeView`). */
@@ -111,3 +165,4 @@ export async function fetchPlayerHome(campaignId: string): Promise<PlayerHome | 
 export function playPath(campaignId: string): string {
   return `/partie/${encodeURIComponent(campaignId)}`
 }
+

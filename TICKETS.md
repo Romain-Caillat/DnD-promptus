@@ -1514,13 +1514,43 @@ qu'un des six joueurs reste vingt minutes sans moment à lui.
 
 **Origine** — Romain, 4 octobre 2026 · `MEMORY.md` §6
 
-### `gm/adjust-sheets-fast` · todo
+### `gm/adjust-sheets-fast` · doing — reste une vraie table
 
 **Périmètre** — Depuis l'écran MJ, en un geste : +1 XP, retirer ou
 rendre des PV, donner un objet, de l'or ; la fiche du joueur change en
 direct, et chaque modification va dans l'historique de la session.
 
 **Origine** — `dnd-save/DnD-16-05-2026/prompt_plateforme_fiches.md`
+
+**État** — Livré et vérifié dans PCT 105 (`bun run lint`, `bun run
+test`), sur les deux mondes. La fiche écrite et relue (`sheet`,
+`reviewed_sheet`) ne bouge pas : l'état en jeu est à part, tenu par le
+serveur (migration 008, `character_play`) — XP totale, **PV perdus**
+(pas restants : si le maximum monte, les blessures restent), ressources
+des règles, sac. Une fiche validée sans ligne joue depuis son état de
+départ (les PV pleins, l'or de départ des règles, les objets de sa
+classe). PV max, niveau, barre d'XP, points d'amélioration, CA et
+cartes débloquées sont **calculés par le moteur de règles**, jamais
+saisis ni stockés. Sur la page de table, « Fiches en jeu » (dès qu'un
+personnage est validé) montre une carte par personnage — cœurs, XP,
+bourse, sac — avec −1 PV, +1 PV, +1 XP en un geste, et « Plus… » pour
+un montant, l'or, donner un objet des règles ou un objet nommé par le
+MJ, reprendre un objet. Chaque geste prend le verrou de la campagne,
+écrit, journalise et appelle `touch_character` dans la même transaction
+: la fiche du joueur (`me` → `play`) et la page du MJ suivent en direct.
+L'historique (`play_adjustments`, append-only : qui, quoi, avant,
+après, quand) est **celui de la campagne** : il n'existe pas encore
+d'entité session (`session/end-session`), une session en sera une
+tranche de temps. Il reste côté MJ : la note MJ d'un objet des règles
+n'est jamais montrée, le balayage joueur le prouve avec un marqueur
+dans l'historique. Limites : l'« or » est la ressource que les règles
+déclarent — les Corsaires ont leurs pièces d'or, **le Brasier n'en
+déclare aucune**, donc pas de bouton d'or sur une table Brasier tant
+que Romain n'en ajoute pas une à ses règles ; PV à 0 n'applique pas
+encore l'état « Inconscient » (avec `gm/run-combat`) ; dépenser un
+point d'amélioration reste à `player/play-between-sessions` ; l'écran
+MJ en direct complet est `gm/run-live-screen`. Jamais essayé à une
+vraie table.
 
 ### `gm/launch-session` · todo
 

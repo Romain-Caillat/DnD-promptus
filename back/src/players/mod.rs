@@ -12,8 +12,11 @@
 //! answer in `campaigns::projection`, the single projection point.
 //!
 //! The GM's review of the sheets (validate, return with a word, the
-//! difference since the last review, secret hooks) is in [`review`].
+//! difference since the last review, secret hooks) is in [`review`];
+//! a validated character's live play state (hit points, XP, purse, bag)
+//! and the history of what changed it are in [`play`].
 
+pub mod play;
 pub mod review;
 
 use std::collections::BTreeMap;
@@ -307,6 +310,10 @@ pub struct Character {
     /// The GM's word to the player when the sheet was returned.
     pub gm_note: Option<String>,
     pub updated_at: DateTime<Utc>,
+    /// The stored play state, read by [`character_of`] once validated;
+    /// `None` also while it was never changed (it is then the starting
+    /// state, [`play::PlayState::start`]).
+    pub play: Option<play::PlayState>,
 }
 
 /// The campaign's active invitation, as the GM sees it. Never the code.
@@ -591,7 +598,13 @@ pub async fn character_of(pool: &PgPool, player: &Player) -> Result<Option<Chara
     .bind(player.id)
     .fetch_optional(pool)
     .await?;
-    row.map(character_from_row).transpose()
+    let Some(mut character) = row.map(character_from_row).transpose()? else {
+        return Ok(None);
+    };
+    if character.status == CharacterStatus::Validated {
+        character.play = play::stored(pool, character.id).await?;
+    }
+    Ok(Some(character))
 }
 
 type CharacterRow = (
@@ -613,6 +626,7 @@ fn character_from_row(
         sheet: sheet.0,
         gm_note,
         updated_at,
+        play: None,
     })
 }
 

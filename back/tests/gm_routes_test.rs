@@ -49,6 +49,12 @@ const GM_ROUTES: &[(&str, &str)] = &[
         "POST",
         "/api/campaigns/{campaign}/characters/{character}/validate",
     ),
+    // After the validation: only a character in play is adjusted.
+    ("GET", "/api/campaigns/{campaign}/sheets"),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/characters/{character}/adjust",
+    ),
     ("GET", "/api/campaigns/{campaign}/hooks"),
     ("POST", "/api/campaigns/{campaign}/hooks"),
     ("PUT", "/api/campaigns/{campaign}/hooks/{hook}"),
@@ -89,6 +95,7 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         ("POST", p) if p.ends_with("/hooks") => {
             Some(serde_json::json!({ "characterId": Uuid::nil(), "title": "Sweep" }))
         }
+        (_, p) if p.ends_with("/adjust") => Some(serde_json::json!({ "kind": "xp", "delta": 1 })),
         ("PUT", p) if p.ends_with("/hooks/{hook}") => {
             Some(serde_json::json!({ "title": "Sweep", "body": "Réécrite." }))
         }
@@ -116,11 +123,15 @@ fn route_uri(path: &str, ids: &Ids) -> String {
 /// Every placeholder filled for `player` of `campaign`: an invitation of
 /// the GM, the player's character and a hook drawn from it.
 async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, player: String) -> Ids {
-    let character: Uuid = sqlx::query_scalar("SELECT id FROM characters WHERE player_id = $1")
-        .bind(Uuid::parse_str(&player).unwrap())
-        .fetch_one(pool)
-        .await
-        .unwrap();
+    // A class of the rules, so the character can be put in play.
+    let character: Uuid = sqlx::query_scalar(
+        "UPDATE characters SET sheet = '{\"name\":\"Borin\",\"classId\":\"bretteur\"}'
+         WHERE player_id = $1 RETURNING id",
+    )
+    .bind(Uuid::parse_str(&player).unwrap())
+    .fetch_one(pool)
+    .await
+    .unwrap();
     let r = call(
         app,
         Some(token),

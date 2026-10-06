@@ -9,6 +9,9 @@ pub const FIXTURE: &str = include_str!("../../../content/fixtures/phare-de-kerbr
 /// Hit points no text of the fixture contains.
 pub const SECRET_HP: i32 = 4_271;
 
+/// The GM's note on the Corsaires' `epee_de_bonne_facture`.
+pub const ITEM_NOTE: &str = "l'épée standard n'est définie nulle part";
+
 pub fn m(field: &str) -> String {
     format!("GMONLY<{field}>")
 }
@@ -186,9 +189,11 @@ pub fn leaks(json: &str) -> Vec<String> {
 }
 
 /// Give Marc's character (`character` of `campaign`) everything the GM
-/// keeps about a sheet, each marked: the snapshot of the last review
-/// and a secret hook drawn from the backstory (`players::review`). A
-/// player route must show none of it.
+/// keeps about a sheet, each marked: the snapshot of the last review,
+/// a secret hook drawn from the backstory (`players::review`) and a line
+/// of the history of play adjustments (`players::play`). A player route
+/// must show none of it. His bag holds a rules item whose GM note
+/// ([`ITEM_NOTE`]) must not reach him either.
 pub async fn mark_review(pool: &sqlx::PgPool, campaign: uuid::Uuid, character: uuid::Uuid) {
     sqlx::query("UPDATE characters SET reviewed_sheet = $2, reviewed_at = now() WHERE id = $1")
         .bind(character)
@@ -205,6 +210,28 @@ pub async fn mark_review(pool: &sqlx::PgPool, campaign: uuid::Uuid, character: u
     .bind(m("secret_hooks.title"))
     .bind(m("secret_hooks.body"))
     .bind(serde_json::json!([m("secret_hooks.links")]))
+    .execute(pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO character_play (character_id, campaign_id, inventory) VALUES ($1, $2, $3)",
+    )
+    .bind(character)
+    .bind(campaign)
+    .bind(serde_json::json!([
+        { "key": "k1", "item": "epee_de_bonne_facture", "qty": 1 }
+    ]))
+    .execute(pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO play_adjustments
+           (campaign_id, character_id, actor, kind, label, before_value, after_value)
+         VALUES ($1, $2, 'gm', 'item', $3, 0, 1)",
+    )
+    .bind(campaign)
+    .bind(character)
+    .bind(m("play_adjustments.label"))
     .execute(pool)
     .await
     .unwrap();

@@ -18,6 +18,7 @@ import {
 } from '@/lib/table'
 import { cn } from '@/lib/utils'
 import { CharacterReview } from './CharacterReview'
+import { PlaySheets } from './PlaySheets'
 import { SecretHooks } from './SecretHooks'
 import { TableInvite } from './TableInvite'
 
@@ -31,17 +32,22 @@ type PageState =
   | { kind: 'ready'; preview: PlayerPreview; invite: InviteStatus | null }
 
 /** What the centre of the page shows. */
-type View = { kind: 'invite' } | { kind: 'review'; characterId: string } | { kind: 'hooks' }
+type View =
+  | { kind: 'invite' }
+  | { kind: 'review'; characterId: string }
+  | { kind: 'hooks' }
+  | { kind: 'sheets' }
 
 /** How a seat's status reads on the table (board « Inviter »). */
 type SeatTone = 'ok' | 'todo' | 'wait' | 'off'
 
 /**
  * `/campagnes/:campaignId/table` — the GM's table (board « Inviter »): the
- * invitation, the table filling up live, the review of each sheet and
- * the secret hooks drawn from the backstories. The seat list follows
- * the live channel's `table` topic; the open review follows its
- * character's topic.
+ * invitation, the table filling up live, the review of each sheet, the
+ * secret hooks drawn from the backstories, and the characters in play
+ * with their one-gesture adjustments. The seat list and the sheets in
+ * play follow the live channel's `table` topic; the open review follows
+ * its character's topic.
  */
 export function GmTablePage() {
   const { t } = useTranslation()
@@ -50,6 +56,7 @@ export function GmTablePage() {
   const [seats, setSeats] = useState<Seat[]>([])
   const [view, setView] = useState<View>({ kind: 'invite' })
   const [reviewVersion, setReviewVersion] = useState(0)
+  const [tableVersion, setTableVersion] = useState(0)
   const [actionError, setActionError] = useState(false)
   const [confirming, setConfirming] = useState<string | null>(null)
   const latestSeats = useRef(0)
@@ -90,7 +97,10 @@ export function GmTablePage() {
 
   const reviewing = view.kind === 'review' ? view.characterId : null
   const live = useLiveChanges(campaignId, (topics) => {
-    if (topics.includes('table')) void loadSeats()
+    if (topics.includes('table')) {
+      void loadSeats()
+      setTableVersion((v) => v + 1)
+    }
     if (reviewing && topics.includes(`character:${reviewing}`)) setReviewVersion((v) => v + 1)
   })
 
@@ -168,6 +178,16 @@ export function GmTablePage() {
               aria-pressed={view.kind === 'invite'}
               onClick={() => setView({ kind: 'invite' })}
             />
+            {validated > 0 && (
+              <CardButton
+                variant="dark"
+                size="small"
+                icon="shield"
+                title={t('gm.sheets.title')}
+                aria-pressed={view.kind === 'sheets'}
+                onClick={() => setView({ kind: 'sheets' })}
+              />
+            )}
             <CardButton
               variant="dark"
               size="small"
@@ -198,6 +218,7 @@ export function GmTablePage() {
             />
           )}
           {view.kind === 'hooks' && <SecretHooks campaignId={campaignId} seats={seats} />}
+          {view.kind === 'sheets' && <PlaySheets campaignId={campaignId} refreshKey={tableVersion} />}
         </div>
       </div>
     </main>
