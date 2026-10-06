@@ -27,7 +27,7 @@ use promptus_shared::rules::progression::{
 use promptus_shared::rules::sheet::{Combatant, Progress, SheetError};
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
-use sqlx::{PgPool, Postgres, Transaction};
+use sqlx::{PgExecutor, PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
 use super::{CharacterSheet, CharacterStatus, Player, touch_character};
@@ -884,7 +884,7 @@ pub struct InPlay {
 /// # Errors
 ///
 /// Fails on a database error.
-pub async fn in_play(pool: &PgPool, campaign: Uuid) -> Result<Vec<InPlay>, AppError> {
+pub async fn in_play(db: impl PgExecutor<'_>, campaign: Uuid) -> Result<Vec<InPlay>, AppError> {
     type Row = (
         Uuid,
         Uuid,
@@ -907,7 +907,7 @@ pub async fn in_play(pool: &PgPool, campaign: Uuid) -> Result<Vec<InPlay>, AppEr
          ORDER BY p.created_at, p.id",
     )
     .bind(campaign)
-    .fetch_all(pool)
+    .fetch_all(db)
     .await?;
     Ok(rows
         .into_iter()

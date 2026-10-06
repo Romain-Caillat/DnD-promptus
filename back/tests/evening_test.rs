@@ -271,7 +271,8 @@ async fn an_evening_from_the_lobby_to_the_feedback() {
         "{screen}"
     );
 
-    // End: the recap stays the GM's, « Précédemment… » reaches the table.
+    // End: the recap stays the GM's; « Précédemment… » waits for the GM
+    // to reread it, then reaches the table (`session/write-recaps`).
     let r = t
         .gm(
             "POST",
@@ -280,7 +281,15 @@ async fn an_evening_from_the_lobby_to_the_feedback() {
         )
         .await;
     assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    assert_eq!(r.body["data"]["published"], false);
     let session = r.body["data"]["id"].as_str().unwrap().to_string();
+    let view = t.player(&t.marc, "GET", "/evening", None).await.body;
+    assert!(view["data"]["previously"].is_null(), "{view}");
+    let r = t
+        .gm("POST", &format!("/sessions/{session}/publish"), None)
+        .await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    assert_eq!(r.body["data"]["published"], true);
     let view = t.player(&t.marc, "GET", "/evening", None).await.body;
     assert_eq!(view["data"]["previously"], "Une clé a changé de poche.");
     assert!(!view.to_string().contains("il l'ignore"), "{view}");
@@ -384,6 +393,22 @@ async fn the_recap_draft_respects_the_budget_and_the_format() {
     let r = t.gm("POST", "/session/end", Some(json!({}))).await;
     let session = r.body["data"]["id"].as_str().unwrap().to_string();
     let draft = format!("/sessions/{session}/recap-draft");
+    // Written by nobody: the factual drafts, measured from the session,
+    // wait for the GM's reading.
+    let ended = &r.body["data"];
+    assert!(
+        ended["previously"]
+            .as_str()
+            .unwrap()
+            .starts_with("Précédemment"),
+        "{ended}"
+    );
+    assert!(
+        ended["recap"].as_str().unwrap().starts_with("Durée"),
+        "{ended}"
+    );
+    assert!(ended["facts"]["scenes"].is_array(), "{ended}");
+    assert_eq!(ended["published"], false);
 
     // The fixture's budget is zero.
     sqlx::query("UPDATE campaigns SET ai_budget_cents = 0 WHERE id = $1")
@@ -406,7 +431,7 @@ async fn the_recap_draft_respects_the_budget_and_the_format() {
     assert!(r.body["data"]["players"].is_string(), "{}", r.body);
     assert_eq!(fake.calls().len(), 1);
     let usage = t.gm("GET", "/ai", None).await.body;
-    assert_eq!(usage["data"]["calls"][0]["template"], "recap@1", "{usage}");
+    assert_eq!(usage["data"]["calls"][0]["template"], "recap@2", "{usage}");
     assert!(usage["data"]["spending"]["spentMicros"].as_i64().unwrap() > 0);
 
     // A provider that answers prose: a readable 502, the call still

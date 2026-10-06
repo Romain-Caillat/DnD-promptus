@@ -6,7 +6,8 @@
 //!   (hidden lines included), what the next scenes need, the spotlight;
 //! - `POST /api/campaigns/{id}/session` → open the lobby (201);
 //! - `POST /api/campaigns/{id}/session/start` → the session goes live;
-//! - `POST /api/campaigns/{id}/session/end` → `{ recap, previously }`;
+//! - `POST /api/campaigns/{id}/session/end` → `{ recap, previously }`
+//!   (empty: drafted from what the session changed, to reread);
 //! - `POST /api/campaigns/{id}/session/reveal` → a scene, a clue, an
 //!   NPC, a front's clock, a resolved scene (`evening::scenes::Reveal`);
 //! - `PUT /api/campaigns/{id}/session/music` → `{ track }` (or null);
@@ -20,7 +21,10 @@
 //! - `GET  /api/campaigns/{id}/knowledge?ref=…&situation=…` → what the
 //!   table knows about a story id, and past rulings like a situation;
 //! - `GET  /api/campaigns/{id}/sessions` → the chronicle;
-//! - `PUT  /api/campaigns/{id}/sessions/{session}/recap` → edit the recap;
+//! - `PUT  /api/campaigns/{id}/sessions/{session}/recap` → edit the recap
+//!   (`{ recap, previously, title?, chronicle? }`);
+//! - `POST /api/campaigns/{id}/sessions/{session}/publish` → the GM
+//!   reread it: « Précédemment… » and the chronicle reach the players;
 //! - `POST /api/campaigns/{id}/sessions/{session}/recap-draft` → the
 //!   co-GM's draft of both recaps (counted AI call; nothing saved);
 //! - `GET  /api/campaigns/{id}/sessions/{session}/feedback` → answers and
@@ -544,11 +548,29 @@ pub async fn edit_recap(
     Ok(session_json(&s))
 }
 
+/// `POST /api/campaigns/{id}/sessions/{session}/publish`
+///
+/// # Errors
+///
+/// 404; 409 `SESSION_NOT_ENDED`, `RECAP_EMPTY`.
+pub async fn publish_recap(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path((id, sid)): Path<(String, String)>,
+) -> Result<Response, AppError> {
+    let s = session::publish(&state.pool, &gm, parse_id(&id)?, parse_id(&sid)?).await?;
+    Ok(session_json(&s))
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct RecapDraft {
     players: String,
     gm: String,
+    #[serde(default)]
+    title: String,
+    #[serde(default)]
+    chronicle: String,
 }
 
 /// `POST /api/campaigns/{id}/sessions/{session}/recap-draft` — the
@@ -586,10 +608,23 @@ pub async fn recap_draft(
                 .iter()
                 .map(|g| format!("- À savoir pour « {} » : {}", g.node_title, g.statement)),
         )
+        .chain(s.facts.iter().flat_map(|f| {
+            f.fronts
+                .iter()
+                .map(|x| format!("- Menace « {} » : {}", x.name, x.step))
+        }))
         .collect();
+    // What the table saw, measured when the session ended: the factual
+    // « Précédemment… » holds no front and no hidden name.
+    let facts = s
+        .facts
+        .as_ref()
+        .map(|f| promptus_shared::story::recap::facts_recap(f).1)
+        .unwrap_or_default();
     let vars: BTreeMap<&str, String> = [
         ("title", row.story.title.clone()),
         ("number", s.number.to_string()),
+        ("facts", facts),
         ("journal", shared.join("\n")),
         ("gm", hidden.join("\n")),
     ]
@@ -609,7 +644,13 @@ pub async fn recap_draft(
         )
         .await?;
     let draft: RecapDraft = ai::parse_json(&answer.text).map_err(|e| ledger::app_error(&e))?;
-    Ok(Json(json!({ "data": { "players": draft.players, "gm": draft.gm } })).into_response())
+    Ok(Json(json!({ "data": {
+        "players": draft.players,
+        "gm": draft.gm,
+        "title": draft.title,
+        "chronicle": draft.chronicle,
+    } }))
+    .into_response())
 }
 
 /// `GET /api/campaigns/{id}/sessions/{session}/feedback`

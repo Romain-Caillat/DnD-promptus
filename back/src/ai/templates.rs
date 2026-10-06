@@ -31,8 +31,8 @@ pub const COPILOT: Template = Template {
 /// End-of-session recap drafts (`session/end-session`).
 pub const RECAP: Template = Template {
     id: "recap",
-    version: 1,
-    text: include_str!("../../prompts/recap.v1.md"),
+    version: 2,
+    text: include_str!("../../prompts/recap.v2.md"),
 };
 
 /// A pixel-art image (`media/draw-pixel-art-assets`).

@@ -197,6 +197,30 @@ pub async fn call_as_player(
     send(app, cookie.as_deref(), method, uri, body).await
 }
 
+/// GET `uri` as the device holding player `token`, for an answer that
+/// is not JSON (a calendar file): its status and its text.
+pub async fn send_raw(
+    app: &Router,
+    token: Option<&str>,
+    method: &str,
+    uri: &str,
+) -> (StatusCode, String) {
+    let mut req = Request::builder().method(method).uri(uri);
+    if let Some(token) = token {
+        req = req.header(header::COOKIE, format!("promptus_player={token}"));
+    }
+    let res = app
+        .clone()
+        .oneshot(req.body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    let status = res.status();
+    let bytes = axum::body::to_bytes(res.into_body(), MAX_TEST_BODY)
+        .await
+        .unwrap();
+    (status, String::from_utf8_lossy(&bytes).into_owned())
+}
+
 /// Send one request with `cookie` as its whole `Cookie` header.
 pub async fn send(
     app: &Router,

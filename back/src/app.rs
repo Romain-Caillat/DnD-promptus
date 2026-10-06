@@ -227,6 +227,10 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             put(api::evening::edit_recap),
         )
         .route(
+            "/api/campaigns/{id}/sessions/{session}/publish",
+            post(api::evening::publish_recap),
+        )
+        .route(
             "/api/campaigns/{id}/sessions/{session}/recap-draft",
             post(api::evening::recap_draft),
         )
@@ -239,6 +243,12 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             put(api::evening::note_changes),
         )
         .route("/api/campaigns/{id}/ai", get(api::evening::ai_usage))
+        // session/schedule-sessions: the next date.
+        .route(
+            "/api/campaigns/{id}/plan",
+            get(api::between::plan).put(api::between::propose),
+        )
+        .route("/api/campaigns/{id}/plan/choice", put(api::between::choose))
         // The grid and the fights.
         .route(
             "/api/campaigns/{id}/board",
@@ -433,6 +443,23 @@ fn player_routes() -> Vec<RouteSpec> {
             "POST",
             "/api/play/{campaign}/feedback",
             post(api::play_evening::answer_feedback),
+        ),
+        // Between sessions: what I gained, the published recap, the
+        // chronicle, the next date and my answer, the calendar reminder.
+        (
+            "GET",
+            "/api/play/{campaign}/between",
+            get(api::between::between),
+        ),
+        (
+            "PUT",
+            "/api/play/{campaign}/availability",
+            put(api::between::availability),
+        ),
+        (
+            "GET",
+            "/api/play/{campaign}/next-session.ics",
+            get(api::between::calendar),
         ),
         // The grid: the map as I may see it, my walk, my fight turn.
         (

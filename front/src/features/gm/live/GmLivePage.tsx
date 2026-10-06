@@ -18,12 +18,14 @@ import {
   decide,
   dismissDraft,
   draftRecap,
+  editRecap,
   endSession,
   fetchFeedback,
   fetchLiveScreen,
   giveSpotlight,
   openSession,
   playTrack,
+  publishRecap,
   reveal,
   saveChanges,
   showDraft,
@@ -31,7 +33,9 @@ import {
   writeNote,
   type LiveScreen,
 } from '@/lib/evening'
+import { chooseDate, fetchPlan, proposeDates, type Plan } from '@/lib/between'
 import { askImage, decideImage, fetchGmMedia, type MediaList } from '@/lib/media'
+import { PlanPanel, RecapPanel } from './BetweenPanels'
 import { BoardPanel } from './BoardPanel'
 import { CopilotPanel } from './CopilotPanel'
 import { EndPanel, FeedbackPanel } from './EndPanel'
@@ -63,10 +67,12 @@ export function GmLivePage() {
   const [state, setState] = useState<PageState>({ kind: 'loading' })
   const [board, setBoard] = useState<GmBoard | null>(null)
   const [media, setMedia] = useState<MediaList | null>(null)
+  const [plan, setPlan] = useState<Plan | null>(null)
   const [error, setError] = useState<string | null>(null)
   const latest = useRef(0)
   const latestBoard = useRef(0)
   const latestMedia = useRef(0)
+  const latestPlan = useRef(0)
 
   const loadScreen = useCallback(async () => {
     const request = ++latest.current
@@ -111,16 +117,31 @@ export function GmLivePage() {
     setMedia((m) => next ?? m)
   }, [campaignId])
 
+  const loadPlan = useCallback(async () => {
+    const request = ++latestPlan.current
+    let next: { plan: Plan | null } | null
+    try {
+      next = { plan: await fetchPlan(campaignId) }
+    } catch {
+      next = null
+    }
+    if (request !== latestPlan.current) return
+    // A failed refetch keeps what is on screen; the next change retries.
+    setPlan((p) => (next ? next.plan : p))
+  }, [campaignId])
+
   useEffect(() => {
     void loadScreen()
     void loadBoard()
     void loadMedia()
-  }, [loadScreen, loadBoard, loadMedia])
+    void loadPlan()
+  }, [loadScreen, loadBoard, loadMedia, loadPlan])
 
   const live = useLiveChanges(campaignId, (topics) => {
     if (topics.some((x) => ['session', 'world', 'story', 'table', 'desk'].includes(x) || x.startsWith('character:'))) {
       void loadScreen()
     }
+    if (topics.includes('session')) void loadPlan()
     if (topics.some((x) => ['map', 'fight', 'world'].includes(x))) void loadBoard()
     if (topics.includes('desk')) void loadMedia()
   })
@@ -215,6 +236,23 @@ export function GmLivePage() {
             />
           )}
           {!session && screen.lastEnded && (
+            <RecapPanel
+              key={screen.lastEnded.id}
+              session={screen.lastEnded}
+              aiConfigured={screen.ai.configured}
+              onSave={async (text) => {
+                await act(() => editRecap(campaignId, screen.lastEnded!.id, text))
+              }}
+              onPublish={async (text) => {
+                await act(async () => {
+                  await editRecap(campaignId, screen.lastEnded!.id, text)
+                  return publishRecap(campaignId, screen.lastEnded!.id)
+                })
+              }}
+              onDraft={() => act(() => draftRecap(campaignId, screen.lastEnded!.id))}
+            />
+          )}
+          {!session && screen.lastEnded && (
             <FeedbackPanel
               load={() => fetchFeedback(campaignId, screen.lastEnded!.id)}
               onChanges={async (text) => {
@@ -233,6 +271,18 @@ export function GmLivePage() {
               onShow={(d, n, l) => void act(() => showDraft(campaignId, d, n, l))}
               onDismiss={(d) => void act(() => dismissDraft(campaignId, d))}
               onReveal={(r) => void act(() => reveal(campaignId, r))}
+            />
+          )}
+          {!session && (
+            <PlanPanel
+              plan={plan}
+              screen={screen}
+              onPropose={async (options, minutes) => {
+                await act(() => proposeDates(campaignId, options, minutes), setPlan)
+              }}
+              onChoose={async (at) => {
+                await act(() => chooseDate(campaignId, at), setPlan)
+              }}
             />
           )}
           <JournalPanel

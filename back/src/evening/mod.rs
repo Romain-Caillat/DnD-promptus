@@ -9,6 +9,8 @@
 //! - [`knowledge`]: what the table knows (the journal), the rulings
 //!   given, what the next scenes need that the table does not know;
 //! - [`spotlight`]: who has not had a moment for a while;
+//! - [`recap`]: what a session changed, for the recaps;
+//! - [`schedule`]: the next date, and the lobby opening on time;
 //! - [`feedback`]: the players' thirty seconds at the end, and what
 //!   Promptus measured.
 //!
@@ -19,8 +21,10 @@
 
 pub mod feedback;
 pub mod knowledge;
+pub mod recap;
 pub mod requests;
 pub mod scenes;
+pub mod schedule;
 pub mod session;
 pub mod spotlight;
 

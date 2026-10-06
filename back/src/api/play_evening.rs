@@ -48,6 +48,7 @@ async fn evening_json(state: &AppState, p: &CurrentPlayer) -> Result<serde_json:
     let rules = row.rules();
     let current = session::current(pool, row.id).await?;
     let last = session::last_ended(pool, row.id).await?;
+    let published = session::last_published(pool, row.id).await?;
     let seats = players::seats(pool, row.id).await?;
     let lobby = match &current {
         Some(s) => session::attendance(pool, s.id)
@@ -86,6 +87,7 @@ async fn evening_json(state: &AppState, p: &CurrentPlayer) -> Result<serde_json:
         rules,
         current: current.as_ref(),
         last_ended: last.as_ref(),
+        last_published: published.as_ref(),
         lobby: &lobby,
         journal: &journal,
         requests: &mine,

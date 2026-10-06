@@ -1245,6 +1245,36 @@
       "SPECTATOR": "Tu regardes la partie : tu ne joues pas de carte.",
       "NO_PLAY_SHEET": "Ton personnage n'est pas encore en jeu.",
       "ALREADY_ANSWERED": "Tu as déjà répondu."
+    },
+    "between": {
+      "next": {
+        "title": "Session {{number}}",
+        "lobby": "Salle d'attente ouverte dès {{when}}",
+        "remind": "Ajouter à mon calendrier",
+        "ask": "Quand peux-tu jouer ? Touche les dates qui te vont.",
+        "proposed": "Dates proposées par le MJ",
+        "unanswered": "Tu n'as pas encore répondu.",
+        "answered_one": "{{count}} joueur a répondu.",
+        "answered_other": "{{count}} joueurs ont répondu."
+      },
+      "gains": {
+        "title": "Ce que tu as gagné à la session {{number}}",
+        "xp_one": "+{{count}} XP",
+        "xp_other": "+{{count}} XP",
+        "item": "{{label}} {{delta}}",
+        "levelHint": "Si tu as assez d'XP, monte de niveau dans l'onglet Perso."
+      },
+      "awaitingRecap": "Le MJ relit le résumé de la dernière session.",
+      "clues": "Ce que vous savez",
+      "open": "Ce qui reste ouvert",
+      "chronicle": "La chronique",
+      "entry": "Session {{number}}",
+      "errors": {
+        "NOT_PROPOSED": "Cette date n'est plus proposée.",
+        "NO_PLAN": "Le MJ n'a plus de date proposée.",
+        "SPECTATOR": "Tu regardes la partie : tu ne réponds pas aux dates.",
+        "UNEXPECTED": "Ta réponse n'est pas passée. Réessaie."
+      }
     }
   },
   "map": {
@@ -1345,7 +1375,14 @@
       "NO_CURRENCY": "Les règles n'ont pas de monnaie.",
       "TEXT_TOO_LONG": "Texte trop long.",
       "EMPTY_TEXT": "Le texte est vide.",
-      "CELL_BLOCKED": "Personne ne peut se tenir là."
+      "CELL_BLOCKED": "Personne ne peut se tenir là.",
+      "SESSION_NOT_ENDED": "Cette session n'est pas terminée.",
+      "RECAP_EMPTY": "Écrivez le « Précédemment… » avant de publier.",
+      "DATE_IN_PAST": "Cette date est déjà passée.",
+      "INVALID_OPTIONS": "Proposez entre une et six dates.",
+      "INVALID_LOBBY_MINUTES": "Le salon ouvre entre 0 et 180 minutes avant.",
+      "NOT_PROPOSED": "Cette date n'a pas été proposée.",
+      "NO_PLAN": "Aucune date n'est proposée."
     },
     "table": {
       "title": "La table",
@@ -1519,6 +1556,30 @@
       "changes": "Ce que je change la prochaine fois",
       "save": "Enregistrer",
       "saved": "Enregistré"
+    },
+    "recap": {
+      "title": "Récap de la session {{number}}",
+      "published": "Publié aux joueurs",
+      "draftState": "Pas encore publié",
+      "entryTitle": "Titre dans la chronique",
+      "entry": "Deux lignes pour la chronique (pour les joueurs)",
+      "save": "Enregistrer",
+      "saved": "Enregistré",
+      "publish": "Publier aux joueurs",
+      "republish": "Republier"
+    },
+    "plan": {
+      "title": "Prochaine session",
+      "can_one": "{{count}} joueur sur {{total}} peut",
+      "can_other": "{{count}} joueurs sur {{total}} peuvent",
+      "choose": "Fixer cette date",
+      "unchoose": "Annuler",
+      "chosen": "Fixée au {{when}} : le salon ouvrira seul {{minutes}} min avant.",
+      "propose": "Proposer des dates",
+      "option": "Date {{n}}",
+      "add": "Une autre date",
+      "lobby": "Salon ouvert (min avant)",
+      "send": "Envoyer aux joueurs"
     }
   },
   "prep": {

@@ -2,7 +2,7 @@
 //! allow-list, like the rest of the projection (`MEMORY.md` §3).
 //!
 //! Reaches players: the session's number and state, « Précédemment… » of
-//! the last ended session, the music playing and when it started, who
+//! the last session whose recap the GM published, the music playing and when it started, who
 //! is in the lobby (nicknames), the campaign view of the current scene
 //! (`project_for_players`), the shared lines of the journal (no story
 //! ids, no GM line), the player's **own** requests with the GM's answer
@@ -29,7 +29,7 @@ use crate::evening::session::{Attendance, Music, Session, Status};
 #[serde(rename_all = "camelCase")]
 pub struct EveningView {
     pub session: Option<SessionView>,
-    /// « Précédemment… » of the last ended session, when the GM wrote one.
+    /// « Précédemment… » of the last session the GM published.
     pub previously: Option<String>,
     pub music: Option<Music>,
     pub lobby: Vec<LobbySeatView>,
@@ -130,6 +130,8 @@ pub struct EveningInput<'a> {
     pub rules: Option<&'a RuleSystem>,
     pub current: Option<&'a Session>,
     pub last_ended: Option<&'a Session>,
+    /// The latest session whose recap the GM published.
+    pub last_published: Option<&'a Session>,
     /// Who is in the lobby, with their nickname.
     pub lobby: &'a [(Attendance, String)],
     pub journal: &'a [JournalLine],
@@ -229,8 +231,10 @@ pub fn project_evening(input: &EveningInput<'_>) -> EveningView {
         status: s.status,
         started_at: s.started_at,
     });
+    // Only once the GM reread and published it (`session/write-recaps`).
     let previously = input
-        .last_ended
+        .last_published
+        .filter(|s| s.published)
         .map(|s| s.previously.clone())
         .filter(|p| !p.trim().is_empty());
     EveningView {

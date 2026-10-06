@@ -85,6 +85,17 @@ const EVENING = {
       },
     },
   }),
+  'GET /api/play/c1/between': () => ({
+    status: 200,
+    body: {
+      data: {
+        lastSession: null,
+        previously: { number: 1, text: 'Les corsaires ont accosté.', clues: [], revelations: [], openThreads: [] },
+        chronicle: [],
+        next: null,
+      },
+    },
+  }),
   'GET /api/play/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
 }
 

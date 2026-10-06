@@ -154,6 +154,10 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("PUT", "/api/campaigns/{campaign}/sessions/{session}/recap"),
     (
         "POST",
+        "/api/campaigns/{campaign}/sessions/{session}/publish",
+    ),
+    (
+        "POST",
         "/api/campaigns/{campaign}/sessions/{session}/recap-draft",
     ),
     (
@@ -165,6 +169,9 @@ const GM_ROUTES: &[(&str, &str)] = &[
         "/api/campaigns/{campaign}/sessions/{session}/changes",
     ),
     ("GET", "/api/campaigns/{campaign}/ai"),
+    ("PUT", "/api/campaigns/{campaign}/plan"),
+    ("PUT", "/api/campaigns/{campaign}/plan/choice"),
+    ("GET", "/api/campaigns/{campaign}/plan"),
     ("DELETE", "/api/campaigns/{campaign}/hooks/{hook}"),
     // After the character routes: removing the player removes them.
     ("DELETE", "/api/campaigns/{campaign}/players/{player}"),
@@ -267,6 +274,12 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             "recap": "Ils ont trouvé la lanterne.",
             "previously": "La tempête approche."
         })),
+        ("PUT", p) if p.ends_with("/plan") => {
+            Some(serde_json::json!({ "options": ["2099-10-10T18:30:00Z"] }))
+        }
+        (_, p) if p.ends_with("/plan/choice") => {
+            Some(serde_json::json!({ "at": "2099-10-10T18:30:00Z" }))
+        }
         (_, p) if p.ends_with("/changes") => {
             Some(serde_json::json!({ "text": "Plus de scènes pour Marc." }))
         }

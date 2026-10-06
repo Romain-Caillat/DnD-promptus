@@ -130,6 +130,15 @@ async fn evening(pool: &PgPool, campaign: Uuid) {
     .execute(pool)
     .await
     .unwrap();
+    // The next date, chosen: the calendar reminder has something to say.
+    sqlx::query(
+        "INSERT INTO session_plans (campaign_id, options, chosen_at)
+         VALUES ($1, ARRAY['2099-10-10T18:30:00Z'::timestamptz], '2099-10-10T18:30:00Z')",
+    )
+    .bind(campaign)
+    .execute(pool)
+    .await
+    .unwrap();
     sqlx::query(
         "INSERT INTO table_journal (campaign_id, session_id, kind, ref, text, shared)
          VALUES ($1, $2, 'note', 'cl_gwen', $3, false), ($1, $2, 'scene', 'n_crique', 'La crique.', true)",
@@ -205,6 +214,10 @@ async fn marc_request(pool: &PgPool, campaign: &str, path: &str) -> Uuid {
 /// The evening routes a spectator has no part in: they ask nothing,
 /// roll nothing and answer no feedback.
 fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
+    // Dates are the players' to answer.
+    if method == "PUT" && path.ends_with("/availability") {
+        return Some((StatusCode::FORBIDDEN, "SPECTATOR"));
+    }
     if method != "POST" {
         return None;
     }
@@ -274,6 +287,9 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
         ("POST", p) if p.ends_with("/equip") => Some(json!({ "entry": "k1", "equipped": true })),
         ("POST", p) if p.ends_with("/level-up") => Some(json!({ "level": 2, "choice": "average" })),
         ("POST", p) if p.ends_with("/upgrade") => Some(json!({ "ability": "FOR" })),
+        ("PUT", p) if p.ends_with("/availability") => {
+            Some(json!({ "available": ["2099-10-10T18:30:00Z"] }))
+        }
         ("POST", p) if p.ends_with("/walk") => Some(json!({ "path": [[1, 5]] })),
         ("POST", p) if p.ends_with("/fight") => Some(json!({ "kind": "endTurn" })),
         ("POST", p) if p.ends_with("/lobby") => Some(json!({ "soundOk": true, "remote": true })),

@@ -25,6 +25,9 @@ pub struct Auth {
     pub setup: SetupState,
     /// `Secure` cookie flag: on whenever the app is served over HTTPS.
     pub secure_cookie: bool,
+    /// Where the app is opened (`PUBLIC_ORIGIN`), for links that leave
+    /// it: a calendar reminder leads back to the lobby.
+    pub public_origin: String,
 }
 
 impl Auth {
@@ -42,6 +45,7 @@ impl Auth {
             passkeys: Passkeys::from_origin(public_origin, rp_id)?,
             setup,
             secure_cookie: public_origin.starts_with("https://"),
+            public_origin: public_origin.trim_end_matches('/').to_string(),
         })
     }
 }
