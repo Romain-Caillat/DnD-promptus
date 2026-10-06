@@ -71,8 +71,15 @@ pub const GENERATION_REPAIR: Template = Template {
     text: include_str!("../../prompts/generation-repair.v1.md"),
 };
 
+/// An act's introduction video (`media/generate-images-and-video`).
+pub const INTRO_VIDEO: Template = Template {
+    id: "intro-video",
+    version: 1,
+    text: include_str!("../../prompts/intro-video.v1.md"),
+};
+
 /// Every template, for the tests that check each one renders.
-pub const ALL: [Template; 7] = [
+pub const ALL: [Template; 8] = [
     COPILOT,
     RECAP,
     PIXEL_ART,
@@ -80,6 +87,7 @@ pub const ALL: [Template; 7] = [
     GENERATION_CAST,
     GENERATION_SCENES,
     GENERATION_REPAIR,
+    INTRO_VIDEO,
 ];
 
 const USER_MARK: &str = "---user---";

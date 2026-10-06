@@ -1,6 +1,8 @@
 //! OpenRouter, the first [`Provider`]: its OpenAI-compatible chat API
 //! for text, and the same endpoint with `modalities: ["image", "text"]`
-//! for images, which come back as base64 data URLs.
+//! for images, which come back as base64 data URLs. Video has its own
+//! asynchronous API (`/videos`): a job is submitted, polled until it is
+//! `completed` or `failed`, and its file downloaded.
 //!
 //! OpenRouter reports the real cost of each call when asked
 //! (`usage: { include: true }`), in dollars; it is stored in millionths.
@@ -14,20 +16,26 @@ use serde_json::{Value, json};
 
 use super::{
     AiError, BoxFuture, ImageRequest, ImageResponse, LlmRequest, LlmResponse, Provider, Usage,
+    VideoRequest, VideoResponse,
 };
 
 pub const BASE_URL: &str = "https://openrouter.ai/api/v1";
 pub const DEFAULT_MODEL: &str = "anthropic/claude-sonnet-4.5";
 pub const DEFAULT_IMAGE_MODEL: &str = "google/gemini-2.5-flash-image";
+pub const DEFAULT_VIDEO_MODEL: &str = "google/veo-3.1";
 
 /// How long a call may take before it is given up.
 const TIMEOUT: Duration = Duration::from_secs(180);
+/// How often a video job is polled, and for how long at most.
+const VIDEO_POLL: Duration = Duration::from_secs(10);
+const VIDEO_WAIT: Duration = Duration::from_secs(20 * 60);
 
 #[derive(Debug, Clone)]
 pub struct Settings {
     pub base_url: String,
     pub model: String,
     pub image_model: String,
+    pub video_model: String,
     /// Sent as `HTTP-Referer`, OpenRouter's app attribution.
     pub app_url: Option<String>,
 }
@@ -55,17 +63,13 @@ impl OpenRouter {
         }
     }
 
-    async fn chat(&self, body: Value) -> Result<Completion, AiError> {
-        let url = format!(
-            "{}/chat/completions",
-            self.settings.base_url.trim_end_matches('/')
-        );
-        let mut request = self
-            .http
-            .post(url)
-            .bearer_auth(&self.key)
-            .header("X-Title", "Promptus")
-            .json(&body);
+    fn url(&self, path: &str) -> String {
+        format!("{}{path}", self.settings.base_url.trim_end_matches('/'))
+    }
+
+    /// A call to OpenRouter's API, its status and text.
+    async fn send(&self, request: reqwest::RequestBuilder) -> Result<(u16, String), AiError> {
+        let mut request = request.bearer_auth(&self.key).header("X-Title", "Promptus");
         if let Some(app) = &self.settings.app_url {
             request = request.header("HTTP-Referer", app);
         }
@@ -73,18 +77,82 @@ impl OpenRouter {
             .send()
             .await
             .map_err(|e| AiError::Unreachable(e.to_string()))?;
-        let status = response.status();
+        let status = response.status().as_u16();
         let text = response
             .text()
             .await
             .map_err(|e| AiError::Unreachable(e.to_string()))?;
-        let parsed: Completion = serde_json::from_str(&text).map_err(|_| AiError::Refused {
-            status: status.as_u16(),
+        Ok((status, text))
+    }
+
+    /// A video job's state.
+    async fn video_job(&self, request: reqwest::RequestBuilder) -> Result<VideoJob, AiError> {
+        let (status, text) = self.send(request).await?;
+        let job: VideoJob = serde_json::from_str(&text).map_err(|_| AiError::Refused {
+            status,
             message: text.chars().take(300).collect(),
         })?;
-        if !status.is_success() || parsed.error.is_some() {
+        if !(200..300).contains(&status) || (job.error.is_some() && job.status.is_none()) {
+            return Err(AiError::Refused {
+                status,
+                message: job
+                    .error_text()
+                    .unwrap_or_else(|| text.chars().take(300).collect()),
+            });
+        }
+        Ok(job)
+    }
+
+    /// The finished video's bytes and type: from its unsigned URL, or
+    /// from OpenRouter's content endpoint when there is none.
+    async fn download(&self, job: &VideoJob) -> Result<(Vec<u8>, String), AiError> {
+        let request = match job.unsigned_urls.first() {
+            // A signed storage URL: no key goes with it.
+            Some(url) => self.http.get(url),
+            None => self
+                .http
+                .get(self.url(&format!("/videos/{}/content?index=0", job.id)))
+                .bearer_auth(&self.key),
+        };
+        let response = request
+            .send()
+            .await
+            .map_err(|e| AiError::Unreachable(e.to_string()))?;
+        let status = response.status();
+        if !status.is_success() {
             return Err(AiError::Refused {
                 status: status.as_u16(),
+                message: "le fichier de la vidéo n’a pas pu être téléchargé".into(),
+            });
+        }
+        let mime = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .map(|v| v.split(';').next().unwrap_or(v).trim().to_string())
+            .filter(|v| v.starts_with("video/"))
+            .unwrap_or_else(|| "video/mp4".into());
+        let bytes = response
+            .bytes()
+            .await
+            .map_err(|e| AiError::Unreachable(e.to_string()))?;
+        if bytes.is_empty() {
+            return Err(AiError::Schema("vidéo vide".into()));
+        }
+        Ok((bytes.to_vec(), mime))
+    }
+
+    async fn chat(&self, body: Value) -> Result<Completion, AiError> {
+        let (status, text) = self
+            .send(self.http.post(self.url("/chat/completions")).json(&body))
+            .await?;
+        let parsed: Completion = serde_json::from_str(&text).map_err(|_| AiError::Refused {
+            status,
+            message: text.chars().take(300).collect(),
+        })?;
+        if !(200..300).contains(&status) || parsed.error.is_some() {
+            return Err(AiError::Refused {
+                status,
                 message: parsed
                     .error
                     .map(|e| e.message)
@@ -137,6 +205,32 @@ struct ApiUsage {
 #[derive(Debug, Deserialize)]
 struct ApiError {
     message: String,
+}
+
+/// A video job, as submitted or polled: `pending`, `in_progress`,
+/// `completed` or `failed`.
+#[derive(Debug, Deserialize)]
+struct VideoJob {
+    #[serde(default)]
+    id: String,
+    status: Option<String>,
+    #[serde(default)]
+    unsigned_urls: Vec<String>,
+    usage: Option<ApiUsage>,
+    /// A string or `{ message }`.
+    error: Option<Value>,
+}
+
+impl VideoJob {
+    fn error_text(&self) -> Option<String> {
+        self.error.as_ref().map(|e| match e {
+            Value::String(s) => s.clone(),
+            other => other
+                .get("message")
+                .and_then(Value::as_str)
+                .map_or_else(|| other.to_string(), str::to_string),
+        })
+    }
 }
 
 fn usage(u: Option<&ApiUsage>) -> Usage {
@@ -229,6 +323,67 @@ impl Provider for OpenRouter {
             })
         })
     }
+
+    fn video<'a>(&'a self, req: &'a VideoRequest) -> BoxFuture<'a, Result<VideoResponse, AiError>> {
+        Box::pin(self.generate_video(req))
+    }
+}
+
+impl OpenRouter {
+    async fn generate_video(&self, req: &VideoRequest) -> Result<VideoResponse, AiError> {
+        let model = req
+            .model
+            .clone()
+            .unwrap_or_else(|| self.settings.video_model.clone());
+        let body = json!({
+            "model": model,
+            "prompt": req.prompt,
+            "duration": req.seconds,
+            "aspect_ratio": "16:9",
+            "resolution": "720p",
+        });
+        let mut job = self
+            .video_job(self.http.post(self.url("/videos")).json(&body))
+            .await?;
+        if job.id.is_empty() {
+            return Err(AiError::Schema("aucun identifiant de tâche vidéo".into()));
+        }
+        let started = tokio::time::Instant::now();
+        loop {
+            match job.status.as_deref() {
+                Some("completed") => break,
+                Some("failed") => {
+                    return Err(AiError::Refused {
+                        status: 200,
+                        message: job
+                            .error_text()
+                            .unwrap_or_else(|| "la génération de la vidéo a échoué".into()),
+                    });
+                }
+                _ if started.elapsed() > VIDEO_WAIT => {
+                    return Err(AiError::Unreachable(
+                        "la vidéo n’est pas prête après vingt minutes".into(),
+                    ));
+                }
+                _ => {}
+            }
+            tokio::time::sleep(VIDEO_POLL).await;
+            let id = job.id.clone();
+            job = self
+                .video_job(self.http.get(self.url(&format!("/videos/{id}"))))
+                .await?;
+            if job.id.is_empty() {
+                job.id = id;
+            }
+        }
+        let (bytes, mime) = self.download(&job).await?;
+        Ok(VideoResponse {
+            bytes,
+            mime,
+            model,
+            usage: usage(job.usage.as_ref()),
+        })
+    }
 }
 
 #[cfg(test)]
@@ -242,6 +397,30 @@ mod tests {
         assert_eq!(bytes, [0x89, b'P', b'N', b'G']);
         assert!(decode_data_url("https://example.com/a.png").is_none());
         assert!(decode_data_url("data:image/png,raw").is_none());
+    }
+
+    #[test]
+    fn a_video_job_reads_as_documented_and_says_why_it_failed() {
+        let done: VideoJob = serde_json::from_str(
+            r#"{"generation_id":"gen-xyz789","id":"job-abc123",
+                "polling_url":"/api/v1/videos/job-abc123","status":"completed",
+                "unsigned_urls":["https://storage.example.com/video.mp4"],
+                "usage":{"cost":0.5}}"#,
+        )
+        .unwrap();
+        assert_eq!(done.status.as_deref(), Some("completed"));
+        assert_eq!(
+            done.unsigned_urls[0],
+            "https://storage.example.com/video.mp4"
+        );
+        assert_eq!(usage(done.usage.as_ref()).cost_micros, 500_000);
+        let failed: VideoJob = serde_json::from_str(
+            r#"{"id":"j","status":"failed","error":{"message":"contenu refusé"}}"#,
+        )
+        .unwrap();
+        assert_eq!(failed.error_text().as_deref(), Some("contenu refusé"));
+        let plain: VideoJob = serde_json::from_str(r#"{"error":"clé invalide"}"#).unwrap();
+        assert_eq!(plain.error_text().as_deref(), Some("clé invalide"));
     }
 
     #[test]

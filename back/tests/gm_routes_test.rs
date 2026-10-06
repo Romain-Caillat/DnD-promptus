@@ -104,6 +104,7 @@ const GM_ROUTES: &[(&str, &str)] = &[
     // Images: list, draw one, then on an image stored just before.
     ("GET", "/api/campaigns/{campaign}/media"),
     ("POST", "/api/campaigns/{campaign}/media"),
+    ("POST", "/api/campaigns/{campaign}/media/batch"),
     ("GET", "/api/campaigns/{campaign}/media/{asset}/image"),
     ("POST", "/api/campaigns/{campaign}/media/{asset}/decision"),
     // Each on a draft of the co-GM written just before.
@@ -221,6 +222,7 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         ("POST", p) if p.ends_with("/media") => {
             Some(serde_json::json!({ "kind": "scene", "subject": "sc_crique" }))
         }
+        (_, p) if p.ends_with("/media/batch") => Some(serde_json::json!({ "videos": false })),
         (_, p) if p.ends_with("/decision") => Some(serde_json::json!({ "approve": true })),
         (_, p) if p.ends_with("/copilot") => {
             Some(serde_json::json!({ "kind": "describe", "prompt": "Ils entrent." }))

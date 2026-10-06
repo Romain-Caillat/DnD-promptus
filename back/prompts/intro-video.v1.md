@@ -1,0 +1,1 @@
+Animated pixel art, 16-bit era, crisp square pixels, limited palette, in the style of a classic adventure game's opening cinematic. Slow camera movement, no cuts, no text, no letters, no subtitles, no watermark, no dialogue. Art direction of the world: {{direction}}. The campaign: {{pitch}}. This is the opening of « {{title}} »: {{scene}}

@@ -1187,7 +1187,7 @@ les sprites et les cartes.
 
 **Origine** — Romain, 4 octobre 2026
 
-### `media/generate-images-and-video` · todo
+### `media/generate-images-and-video` · doing — reste un vrai lot d'images et une vraie vidéo avec la clé OpenRouter, vus sur un téléphone
 
 **Périmètre** — Les médias des actes écrits ou générés dans Promptus :
 images pixel art par scène (`media/draw-pixel-art-assets`) et vidéo
@@ -1200,6 +1200,34 @@ vidéo d'OpenRouter (`MEMORY.md` §4).
 affichées sur les téléphones et la TV.
 
 **Origine** — V1 `media/` · planche « Préparer » (moment 9)
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`), sans clé réelle. Le format vidéo d'OpenRouter est
+vérifié sur sa documentation (pas d'accès réseau à l'API depuis ici) :
+`POST /api/v1/videos` rend une tâche, interrogée toutes les 10 s jusqu'à
+`completed` (vingt minutes au plus), puis le fichier est téléchargé
+depuis `unsigned_urls[0]` ; le coût vient de `usage.cost`. Modèle par
+défaut `google/veo-3.1`, 8 s en 16:9, estimé 4 $ avant de partir
+(`AI_PRICE_PER_VIDEO`). Le bouton « Images et vidéos » de la campagne
+mène à `/campagnes/:id/medias` : chaque acte (sa vidéo d'introduction),
+scène, PNJ, adversaire et lieu, avec ce qui est gardé, ce qui attend le
+MJ (Garder / Refaire), ce qui se dessine, et pourquoi un essai a
+échoué ; un mot de direction relance un sujet. « Dessiner les N
+médias » lance en tâche de fond tout ce qui n'a rien en attente ni de
+gardé, vidéos comprises si le MJ coche la case, avec le coût au plus
+affiché et refusé d'un bloc s'il dépasse le budget. Un dessin coupé par
+un redémarrage est marqué interrompu, jamais en attente sans fin. Les
+fichiers sont servis par morceaux (`Range`), ce que le lecteur vidéo
+d'un iPhone exige. Côté joueur, la vidéo gardée d'un acte passe au-dessus
+de la scène dès qu'une scène de l'acte est ouverte. **Écart assumé** :
+images et vidéos restent dans la base (`media_assets`), pas sur disque,
+pour être sauvegardées avec elle par `deploy/backup.sh` sans second
+chemin de sauvegarde ; à revoir si la base grossit trop. **Trouvé en
+route** : la stack de production ne transmettait aucun réglage d'IA au
+serveur (aucune fonction d'IA n'aurait marché) ; `OPENROUTER_*` et
+`AI_PRICE_*` passent maintenant par `.env.production` (`docs/install.md`).
+La TV n'existe pas encore : elle reprendra ces médias avec
+`tv/show-evening`.
 
 ---
 

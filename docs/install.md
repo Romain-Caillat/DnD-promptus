@@ -80,6 +80,9 @@ curl -fsS http://127.0.0.1:4380/api/health
 | `WEBAUTHN_RP_ID` | host of `PROMPTUS_DOMAIN` | Domain GM passkeys are bound to (the app sets `PUBLIC_ORIGIN=https://$PROMPTUS_DOMAIN`). Changing it, or the domain, means registering passkeys again |
 | `GM_SETUP_TOKEN` | random at each start | Pins the one-time code that creates the first GM account (16+ characters) |
 | `PROMPTUS_APP_ORIGINS` | `tauri://localhost,http://tauri.localhost` | Origins of the desktop and phone shells allowed to call the API |
+| `OPENROUTER_API_KEY` | unset (AI off) | The OpenRouter key every AI call uses (co-GM, generation, images, videos). Each campaign's AI budget caps what it may spend |
+| `OPENROUTER_MODEL`, `OPENROUTER_IMAGE_MODEL`, `OPENROUTER_VIDEO_MODEL` | `anthropic/claude-sonnet-4.5`, `google/gemini-2.5-flash-image`, `google/veo-3.1` | The models, by OpenRouter id |
+| `AI_PRICE_INPUT_PER_MTOK`, `AI_PRICE_OUTPUT_PER_MTOK`, `AI_PRICE_PER_IMAGE`, `AI_PRICE_PER_VIDEO` | `3`, `15`, `0.04`, `4` (dollars) | What a call is estimated at before it leaves: the budget refuses on the estimate, the real cost is recorded after. Match them to the models chosen |
 | `PROMPTUS_BACKUP_DIR`, `PROMPTUS_BACKUP_KEEP`, `PROMPTUS_BACKUP_AGE_RECIPIENT` | | [backup.md](backup.md) |
 | `COMPOSE_PROJECT_NAME` | `promptus` | Only to run a second, test stack next to the real one |
 | `RUST_LOG` | `info` | Server log level |

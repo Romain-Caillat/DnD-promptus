@@ -155,6 +155,8 @@
       "reviewSub": "Graphe, fiches, cohérence, atelier du co-MJ",
       "generate": "Générer à partir d'une idée",
       "generateSub": "Le co-MJ écrit un brouillon complet, vous l'appliquez puis le relisez",
+      "media": "Images et vidéos",
+      "mediaSub": "Dessiner les scènes, les PNJ et les lieux, filmer l'ouverture des actes, garder ce qui convient",
       "settings": "Réglages",
       "rules": "Règles",
       "save": "Enregistrer les réglages",
@@ -1103,6 +1105,7 @@
   },
   "evening": {
     "scene": "La scène",
+    "intro": "Introduction de l'acte",
     "here": "Ici : {{names}}",
     "waitingScene": "Le MJ prépare la scène…",
     "clues": "Indices",
@@ -1438,7 +1441,8 @@
         "adversary": "Adversaire",
         "location": "Lieu",
         "item": "Objet",
-        "tileset": "Matière de carte"
+        "tileset": "Matière de carte",
+        "intro": "Vidéo d'introduction"
       },
       "subject": "Sujet",
       "direction": "Un mot de direction (plus sombre, de face…)",
@@ -1480,6 +1484,29 @@
     "loading": "Chargement…",
     "notFound": "Cette campagne n'existe pas, ou elle n'est pas à vous.",
     "error": "Impossible de charger. Réessayez dans un instant.",
+    "media": {
+      "title": "Images et vidéos de la campagne",
+      "batchTitle": "Tout ce qui manque",
+      "missing": "Rien d'attendu ni de gardé pour l'instant : {{images}} sujets à dessiner, {{videos}} actes à filmer.",
+      "withVideos_one": "Avec la vidéo d'introduction de l'acte",
+      "withVideos_other": "Avec les vidéos d'introduction des {{count}} actes",
+      "drawAll_one": "Dessiner {{count}} média",
+      "drawAll_other": "Dessiner les {{count}} médias",
+      "running": "Dessin en cours…",
+      "filming": "Vidéo en cours de génération (quelques minutes)…",
+      "kept": "Gardé : la table le verra le moment venu.",
+      "none": "Rien de dessiné pour l'instant.",
+      "redraw": "Redessiner",
+      "errors": {
+        "AI_BUDGET_EXCEEDED": "Le budget IA de la campagne ne suffit pas. Augmentez-le dans les réglages de la campagne.",
+        "AI_NOT_CONFIGURED": "Aucun fournisseur d'IA n'est configuré sur ce serveur.",
+        "MEDIA_BATCH_RUNNING": "Un dessin est déjà en cours : attendez qu'il finisse.",
+        "NOTHING_TO_DRAW": "Il ne manque rien à dessiner.",
+        "ALREADY_DECIDED": "Ce média a déjà été tranché.",
+        "UNKNOWN_SUBJECT": "Ce sujet n'existe plus dans la campagne.",
+        "TEXT_TOO_LONG": "Le mot de direction est trop long."
+      }
+    },
     "generate": {
       "title": "Générer la campagne",
       "validated": "Cette campagne est déjà validée : la génération prépare une campagne neuve, avant sa relecture.",

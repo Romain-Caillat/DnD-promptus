@@ -215,6 +215,13 @@ export function CampaignPage() {
               />
             )}
             <CardButton
+              variant="dark"
+              icon="image"
+              title={t('gm.campaign.media')}
+              subtitle={t('gm.campaign.mediaSub')}
+              onClick={() => navigate(`${base}/medias`)}
+            />
+            <CardButton
               icon="arrow"
               title={t('gm.campaign.evening')}
               subtitle={t('gm.campaign.eveningSub')}

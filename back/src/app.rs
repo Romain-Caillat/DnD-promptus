@@ -250,6 +250,7 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/media",
             get(api::media::gm_list).post(api::media::ask),
         )
+        .route("/api/campaigns/{id}/media/batch", post(api::media::batch))
         .route(
             "/api/campaigns/{id}/media/{asset}/image",
             get(api::media::gm_image),

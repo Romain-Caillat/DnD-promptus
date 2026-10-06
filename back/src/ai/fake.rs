@@ -16,14 +16,15 @@ use promptus_shared::sprite::Image;
 use serde_json::json;
 
 use super::{
-    AiError, BoxFuture, ImageRequest, ImageResponse, LlmRequest, LlmResponse, Provider, Role, Usage,
+    AiError, BoxFuture, ImageRequest, ImageResponse, LlmRequest, LlmResponse, Provider, Role,
+    Usage, VideoRequest, VideoResponse,
 };
 
 /// What the fake answers with for one call.
 #[derive(Debug, Default)]
 pub struct FakeProvider {
-    /// Every call, in order: `complete:<first words of the system>` or
-    /// `image`.
+    /// Every call, in order: `complete:<first words of the system>`,
+    /// `generation:<step>`, `image` or `video`.
     calls: Mutex<Vec<String>>,
     /// Answer text that is not JSON (to test schema errors).
     pub broken: bool,
@@ -643,6 +644,28 @@ impl Provider for FakeProvider {
                 bytes: pattern(&req.prompt),
                 mime: "image/png".into(),
                 model: req.model.clone().unwrap_or_else(|| "fake/pixel".into()),
+                usage: self.usage(),
+            })
+        })
+    }
+
+    fn video<'a>(&'a self, req: &'a VideoRequest) -> BoxFuture<'a, Result<VideoResponse, AiError>> {
+        Box::pin(async move {
+            self.record("video".into());
+            if self.broken {
+                return Err(AiError::Refused {
+                    status: 422,
+                    message: "faux fournisseur : vidéo refusée".into(),
+                });
+            }
+            // Not a playable film: an MP4 header box followed by the
+            // prompt, so two prompts give two files.
+            let mut bytes = b"\0\0\0\x18ftypmp42\0\0\0\0mp42isom".to_vec();
+            bytes.extend_from_slice(req.prompt.as_bytes());
+            Ok(VideoResponse {
+                bytes,
+                mime: "video/mp4".into(),
+                model: req.model.clone().unwrap_or_else(|| "fake/video".into()),
                 usage: self.usage(),
             })
         })

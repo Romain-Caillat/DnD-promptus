@@ -19,7 +19,10 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::templates::Template;
-use super::{AiError, ImageRequest, ImageResponse, LlmRequest, LlmResponse, Usage};
+use super::{
+    AiError, ImageRequest, ImageResponse, LlmRequest, LlmResponse, Usage, VideoRequest,
+    VideoResponse,
+};
 use crate::ai::Ai;
 use crate::error::AppError;
 
@@ -28,6 +31,7 @@ use crate::error::AppError;
 pub enum CallKind {
     Llm,
     Image,
+    Video,
 }
 
 impl CallKind {
@@ -35,6 +39,7 @@ impl CallKind {
         match self {
             Self::Llm => "llm",
             Self::Image => "image",
+            Self::Video => "video",
         }
     }
 }
@@ -304,5 +309,39 @@ impl Ai {
             out.push(answer);
         }
         Ok(out)
+    }
+
+    /// One video for `campaign`, counted like an image: refused before it
+    /// leaves when its estimate would pass the budget. The provider's
+    /// failure is answered, not raised, so the caller can keep it with
+    /// the draft it was for.
+    ///
+    /// # Errors
+    ///
+    /// 409 `AI_BUDGET_EXCEEDED` (no call made); 503 `AI_NOT_CONFIGURED`;
+    /// a database error.
+    pub async fn video(
+        &self,
+        pool: &PgPool,
+        campaign: Uuid,
+        purpose: &str,
+        template: &Template,
+        req: &VideoRequest,
+    ) -> Result<Result<VideoResponse, AiError>, AppError> {
+        let provider = self.provider().map_err(|e| app_error(&e))?;
+        let planned = [Planned {
+            kind: CallKind::Video,
+            purpose,
+            template: Some(template),
+            model: req.model.as_deref(),
+            estimate: self.pricing.video(),
+        }];
+        let ids = reserve(pool, campaign, provider.name(), &planned).await?;
+        let answer = provider.video(req).await;
+        match &answer {
+            Ok(r) => settle(pool, ids[0], Some(&r.model), r.usage, None).await?,
+            Err(e) => settle(pool, ids[0], None, Usage::default(), Some(e)).await?,
+        }
+        Ok(answer)
     }
 }
