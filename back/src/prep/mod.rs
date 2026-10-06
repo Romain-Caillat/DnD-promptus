@@ -1,5 +1,6 @@
 //! Preparing a campaign (`campaign/review-story-graph`): the GM's edits
-//! on the review screen, the co-GM's workshop, and the validation that
+//! on the review screen, the co-GM's workshop, the readiness gauge of
+//! each act (`campaign/check-act-readiness`), and the validation that
 //! makes the campaign playable.
 //!
 //! Every write takes the campaign lock (`campaigns::lock`). Edits never
@@ -9,8 +10,9 @@
 
 pub mod workshop;
 
+use promptus_shared::maps::Map;
 use promptus_shared::story::edit::{self, Change, Edit};
-use promptus_shared::story::{Severity, validate};
+use promptus_shared::story::{ActReadiness, Library, Severity, readiness, validate};
 use uuid::Uuid;
 
 use crate::auth::guard::{CurrentGm, owned_by};
@@ -85,4 +87,31 @@ pub async fn validate_campaign(
         .ok_or(AppError::NotFound("NOT_FOUND"))?;
     tx.commit().await?;
     Ok(row)
+}
+
+/// The readiness gauge of every act, its planned fights simulated with
+/// the campaign's rule system on the world's maps. CPU work: run off
+/// the async runtime.
+///
+/// # Errors
+///
+/// 404 when the campaign is missing or another GM's; a database error.
+pub async fn act_readiness(
+    pool: &sqlx::PgPool,
+    gm: &CurrentGm,
+    campaign: Uuid,
+) -> Result<Vec<ActReadiness>, AppError> {
+    let row = owned_by(campaigns::find(pool, campaign).await?, gm)?;
+    let maps: Vec<Map> = crate::content::maps(&row.story).cloned().collect();
+    tokio::task::spawn_blocking(move || {
+        readiness(
+            &row.story,
+            &Library {
+                rules: row.rules(),
+                maps: Some(&maps),
+            },
+        )
+    })
+    .await
+    .map_err(|e| AppError::internal("readiness", e))
 }

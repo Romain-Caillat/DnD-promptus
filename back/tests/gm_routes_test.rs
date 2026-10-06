@@ -47,6 +47,7 @@ const GM_ROUTES: &[(&str, &str)] = &[
     // Preparing: an edit, the campaign declared playable, then the
     // co-GM's workshop — each decision on a proposal stored just before.
     ("POST", "/api/campaigns/{campaign}/story/edits"),
+    ("GET", "/api/campaigns/{campaign}/readiness"),
     ("POST", "/api/campaigns/{campaign}/story/validate"),
     ("GET", "/api/campaigns/{campaign}/workshop"),
     ("POST", "/api/campaigns/{campaign}/workshop"),

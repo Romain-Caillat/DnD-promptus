@@ -8,12 +8,14 @@
 //! - [`library`] — checks against the rule system and the maps;
 //! - [`encounter`] — a scene's planned fight, staged for the simulator;
 //! - [`edit`] — changes by id, from the review screen and the co-GM;
+//! - [`readiness`] — one gauge per act: is it ready to be played;
 //! - [`v1`] — importer for V1 campaigns (entities YAML + story JSON).
 
 pub mod edit;
 pub mod encounter;
 pub mod library;
 pub mod model;
+pub mod readiness;
 pub mod v1;
 pub mod validate;
 pub mod world;
@@ -22,6 +24,7 @@ pub mod yaml;
 pub use encounter::{StagingError, encounter_scenario};
 pub use library::{Library, validate_with};
 pub use model::*;
+pub use readiness::{ActReadiness, readiness};
 pub use validate::{Issue, Severity, validate};
 pub use world::{ClueReveal, FlagValue, FrontAdvance, NodeStatus, WorldError, WorldState};
 pub use yaml::{YamlError, from_yaml, to_yaml};

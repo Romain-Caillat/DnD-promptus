@@ -35,6 +35,35 @@ export function EndPanel({
         {t('gmLive.end.previously')}
         <textarea className={field} rows={3} value={previously} onChange={(e) => setPreviously(e.target.value)} />
       </label>
+      {screen.gaps.length > 0 && (
+        <section className="flex flex-col gap-1.5" aria-label={t('gmLive.end.gaps')}>
+          <h3 className="type-label text-stat-init">{t('gmLive.end.gaps')}</h3>
+          <ul className="flex flex-col gap-1.5">
+            {screen.gaps.map((g) => {
+              const line = t('gmLive.end.gapLine', { statement: g.statement })
+              const added = previously.includes(line)
+              return (
+                <li key={`${g.node}-${g.revelation}`} className="flex items-start justify-between gap-2 text-caption">
+                  <span className="flex flex-col">
+                    <b className="text-chalk">{t('gmLive.end.gap', { scene: g.nodeTitle, statement: g.statement })}</b>
+                    {g.clues.length > 0 && (
+                      <span className="text-mute-soft">
+                        {t('gmLive.end.gapWhere', { scenes: [...new Set(g.clues.map((c) => c.nodeTitle))].join(', ') })}
+                      </span>
+                    )}
+                  </span>
+                  <Btn
+                    disabled={added}
+                    onClick={() => setPreviously((p) => (p.trim() ? `${p.trimEnd()}\n${line}` : line))}
+                  >
+                    {added ? t('gmLive.end.gapAdded') : t('gmLive.end.gapAdd')}
+                  </Btn>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
       <div className="flex flex-wrap gap-1.5">
         <Btn
           disabled={busy || !screen.ai.configured}

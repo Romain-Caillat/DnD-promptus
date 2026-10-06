@@ -14,6 +14,7 @@ import {
   nameOf,
   validateCampaign,
   valueAt,
+  type ActReadiness,
   type Edit,
   type Entity,
   type ReviewCampaign,
@@ -22,6 +23,7 @@ import {
 } from '@/lib/prep'
 import { cn } from '@/lib/utils'
 import { TextField } from '../fields'
+import { Gauge, Readiness, useReadiness } from './Readiness'
 import { Workshop, useWorkshop } from './Workshop'
 
 const TABS = ['graph', 'bible', 'sheets', 'coherence', 'validate'] as const
@@ -131,6 +133,7 @@ export function ReviewPage() {
 
   const adopt = useCallback((campaign: ReviewCampaign) => setState({ kind: 'ready', campaign }), [])
   const workshop = useWorkshop(campaignId, workshopVersion, adopt)
+  const acts = useReadiness(campaignId, state.kind === 'ready' ? state.campaign.updatedAt : '')
 
   if (state.kind === 'signed-out') return <Navigate to="/connexion" replace />
   if (state.kind !== 'ready') {
@@ -219,7 +222,7 @@ export function ReviewPage() {
           <Workshop workshop={workshop} story={story} node={selectedNode?.id ?? null} />
 
           <section className="flex min-w-0 flex-col gap-4">
-            {tab === 'graph' && <Graph story={story} selected={selected} onSelect={setSelected} />}
+            {tab === 'graph' && <Graph story={story} acts={acts} selected={selected} onSelect={setSelected} />}
             {tab === 'bible' && (
               <EntityForm
                 key={`bible${campaign.updatedAt}`}
@@ -239,6 +242,7 @@ export function ReviewPage() {
                 onAsk={(issue) => void workshop.send({ issue: { code: issue.code, path: issue.path } })}
               />
             )}
+            {tab === 'validate' && <Readiness acts={acts} />}
             {tab === 'validate' && (
               <Validate
                 campaign={campaign}
@@ -273,10 +277,12 @@ export function ReviewPage() {
 
 function Graph({
   story,
+  acts: gauges,
   selected,
   onSelect,
 }: {
   story: Story
+  acts: ActReadiness[] | null
   selected: string | null
   onSelect: (id: string) => void
 }) {
@@ -291,6 +297,14 @@ function Graph({
         {acts.map((act) => (
           <div key={act.id} className="flex flex-col gap-2">
             <h3 className="type-label text-mute-soft">{act.title}</h3>
+            {gauges
+              ?.filter((g) => g.act === act.id)
+              .map((g) => (
+                <span key={g.act} className="flex flex-col gap-1 text-caption text-mute-soft">
+                  {g.ready ? t('prep.readiness.ready') : t('prep.readiness.notReady', { done: g.done, total: g.total })}
+                  <Gauge done={g.done} total={g.total} />
+                </span>
+              ))}
             {nodes
               .filter((n) => n.act === act.id)
               .map((n) => (

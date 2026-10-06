@@ -1453,7 +1453,13 @@
       "recap": "Votre récap (pour vous)",
       "previously": "« Précédemment… » (pour les joueurs)",
       "draft": "Brouillon du co-MJ",
-      "end": "Terminer la séance"
+      "end": "Terminer la séance",
+      "gaps": "Ce qui manque à la table pour la suite",
+      "gap": "« {{scene}} » demande : {{statement}}",
+      "gapWhere": "Encore à trouver dans : {{scenes}}",
+      "gapLine": "À retenir : {{statement}}",
+      "gapAdd": "Ajouter au « Précédemment… »",
+      "gapAdded": "Ajouté"
     },
     "feedback": {
       "title": "Retours de la séance {{number}}",
@@ -1472,6 +1478,41 @@
     "loading": "Chargement…",
     "notFound": "Cette campagne n'existe pas, ou elle n'est pas à vous.",
     "error": "Impossible de charger. Réessayez dans un instant.",
+    "readiness": {
+      "title": "Prêt à jouer ?",
+      "hint": "Une jauge par acte : scènes complètes, informations à trois chemins, une accroche par joueur, rencontres chiffrées, combats simulés. Elle dit ce qui manque, vous décidez.",
+      "meter": "{{done}} sur {{total}}",
+      "ready": "Prêt",
+      "notReady": "{{done}} / {{total}}",
+      "check": {
+        "scene_fields": "Scènes complètes",
+        "knowledge_paths": "Informations à trois chemins",
+        "player_hooks": "Une accroche par joueur",
+        "encounters": "Rencontres chiffrées, avec tactique",
+        "fights": "Combats simulés"
+      },
+      "fields": {
+        "summary": "le résumé",
+        "location": "le lieu",
+        "ambience": "l'ambiance",
+        "read_aloud": "le texte à lire",
+        "flow": "le déroulé",
+        "transition": "la transition"
+      },
+      "gap": {
+        "MISSING_FIELDS": "« {{name}} » : il manque {{fields}}.",
+        "FEW_PATHS_zero": "« {{name}} » n'est donnée par aucune scène avant celle qui en a besoin.",
+        "FEW_PATHS_one": "« {{name}} » n'a qu'un chemin sur trois.",
+        "FEW_PATHS_other": "« {{name}} » n'a que {{count}} chemins sur trois.",
+        "ONLY_OPTIONAL": "« {{name}} » ne se trouve que dans des scènes facultatives.",
+        "NO_HOOK": "{{name}} n'a aucune accroche dans l'acte.",
+        "NO_STATS": "« {{name}} » : des adversaires sans chiffres.",
+        "NO_TACTICS": "« {{name}} » : aucune tactique pour les adversaires.",
+        "NOT_STAGED": "« {{name}} » : le combat ne peut pas être simulé.",
+        "SIMULATION_FAILED": "« {{name}} » : la simulation du combat a échoué.",
+        "NO_RULES": "« {{name}} » : pas de règles pour simuler le combat."
+      }
+    },
     "review": {
       "validated": "Validée",
       "notValidated": "À valider",

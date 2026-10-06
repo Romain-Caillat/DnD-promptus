@@ -48,6 +48,27 @@ const PROPOSAL = {
   createdAt: '2026-10-06T10:01:00Z',
 }
 
+const NOT_READY = {
+  act: 'acte_1',
+  title: 'Acte I',
+  ready: false,
+  done: 3,
+  total: 5,
+  checks: [
+    {
+      kind: 'knowledge_paths',
+      done: 0,
+      total: 1,
+      gaps: [
+        { id: 'rev_route', name: 'La route du Greyhound', code: 'ONLY_OPTIONAL', detail: 'x' },
+        { id: 'rev_route', name: 'La route du Greyhound', code: 'FEW_PATHS', paths: 1, detail: 'x' },
+      ],
+    },
+    { kind: 'player_hooks', done: 1, total: 1, gaps: [] },
+  ],
+}
+const READY = { ...NOT_READY, ready: true, done: 5, checks: [] }
+
 function renderPage() {
   render(
     <MemoryRouter initialEntries={['/campagnes/c1/preparer']}>
@@ -76,6 +97,7 @@ describe('ReviewPage', () => {
     const api = mockApi({
       'GET /api/campaigns/c1': () => ({ status: 200, body: { data: campaign() } }),
       'GET /api/campaigns/c1/workshop': () => ({ status: 200, body: { data: [] } }),
+      'GET /api/campaigns/c1/readiness': () => ({ status: 200, body: { data: [READY] } }),
       'POST /api/campaigns/c1/story/edits': () => ({
         status: 200,
         body: { data: { campaign: campaign({ summary: 'La bagarre éclate.' }), changes: [] } },
@@ -136,10 +158,15 @@ describe('ReviewPage', () => {
         },
       }),
       'GET /api/campaigns/c1/workshop': () => ({ status: 200, body: { data: [] } }),
+      'GET /api/campaigns/c1/readiness': () => ({ status: 200, body: { data: [NOT_READY] } }),
     })
     renderPage()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Valider' }))
     expect(screen.getByRole('button', { name: /1 erreur à corriger d'abord/ })).toBeDisabled()
+    // The gauge says what the act lacks.
+    expect(await screen.findByText('« La route du Greyhound » ne se trouve que dans des scènes facultatives.')).toBeInTheDocument()
+    expect(screen.getByText("« La route du Greyhound » n'a qu'un chemin sur trois.")).toBeInTheDocument()
+    expect(screen.getAllByRole('meter', { name: '3 sur 5' }).length).toBeGreaterThan(0)
   })
 })

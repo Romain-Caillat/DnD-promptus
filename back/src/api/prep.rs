@@ -3,6 +3,7 @@
 //! - `POST /api/campaigns/{id}/story/edits` → the GM's edits by id
 //!   (`story::edit::Edit`), applied whole; answers the campaign and
 //!   what changed;
+//! - `GET  /api/campaigns/{id}/readiness` → one gauge per act;
 //! - `POST /api/campaigns/{id}/story/validate` → declare it playable;
 //! - `GET  /api/campaigns/{id}/workshop` → the co-GM's proposals;
 //! - `POST /api/campaigns/{id}/workshop` → ask the co-GM (201);
@@ -61,6 +62,20 @@ pub async fn validate(
 ) -> Result<Response, AppError> {
     let row = prep::validate_campaign(&state.pool, &gm, parse_id(&id)?).await?;
     Ok(Json(json!({ "data": detail(row) })).into_response())
+}
+
+/// `GET /api/campaigns/{id}/readiness`
+///
+/// # Errors
+///
+/// As `prep::act_readiness`.
+pub async fn readiness(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path(id): Path<String>,
+) -> Result<Response, AppError> {
+    let acts = prep::act_readiness(&state.pool, &gm, parse_id(&id)?).await?;
+    Ok(Json(json!({ "data": acts })).into_response())
 }
 
 /// `GET /api/campaigns/{id}/workshop`

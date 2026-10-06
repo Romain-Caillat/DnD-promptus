@@ -294,6 +294,28 @@ async fn the_gm_corrects_works_with_the_co_gm_and_validates() {
     let r = gm(&app, &token, "POST", &format!("{base}/session"), None).await;
     assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
 
+    // The gauge: the act still lacks scene fields and hooks, but the
+    // route now has its paths.
+    let r = gm(&app, &token, "GET", &format!("{base}/readiness"), None).await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    let act = &r.body["data"][0];
+    assert_eq!(act["act"], "acte_1");
+    assert_eq!(act["ready"], false);
+    let knowledge = act["checks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["kind"] == "knowledge_paths")
+        .unwrap();
+    assert!(
+        knowledge["gaps"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|g| g["id"] != "rev_route"),
+        "{knowledge}"
+    );
+
     // Every workshop call was counted.
     let calls: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM ai_calls WHERE campaign_id = $1 AND purpose = 'workshop'",

@@ -190,3 +190,34 @@ export function freshId(prefix: string, name: string, story: Story): string {
   for (let n = 2; taken.has(id); n++) id = `${stem}_${n}`
   return id
 }
+
+/** What one readiness check finds missing (`story::readiness::Gap`). */
+export interface ReadinessGap {
+  id: string
+  name: string
+  code: string
+  fields?: string[]
+  paths?: number
+  detail: string
+}
+
+interface ReadinessCheck {
+  kind: 'scene_fields' | 'knowledge_paths' | 'player_hooks' | 'encounters' | 'fights'
+  done: number
+  total: number
+  gaps: ReadinessGap[]
+}
+
+/** One act's gauge (`story::readiness::ActReadiness`). */
+export interface ActReadiness {
+  act: string
+  title: string
+  ready: boolean
+  done: number
+  total: number
+  checks: ReadinessCheck[]
+}
+
+export function fetchReadiness(campaignId: string): Promise<ActReadiness[]> {
+  return apiRequest<ActReadiness[]>('GET', `${base(campaignId)}/readiness`)
+}

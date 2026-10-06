@@ -215,6 +215,15 @@ interface GmJournalLine {
 }
 
 /** The GM's live screen (`GET /api/campaigns/{id}/session`). */
+/** What a scene ahead needs the table to know, and where it can still be learned. */
+interface KnowledgeGap {
+  node: string
+  nodeTitle: string
+  revelation: string
+  statement: string
+  clues: { clue: string; node: string; nodeTitle: string }[]
+}
+
 export interface LiveScreen {
   session: SessionInfo | null
   lastEnded: SessionInfo | null
@@ -236,6 +245,8 @@ export interface LiveScreen {
   } | null
   nodes: { id: string; title: string; act: string; visited: boolean; current: boolean }[]
   startNode: string | null
+  /** What the next scenes need that the table does not know yet. */
+  gaps: KnowledgeGap[]
   fronts: { id: string; name: string; goal: string; steps: string[]; progress: number }[]
   requests: GmRequest[]
   journal: GmJournalLine[]
