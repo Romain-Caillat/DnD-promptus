@@ -186,6 +186,21 @@ describe('RulesEditorPage', () => {
     expect(saved.document.house_rules).toEqual([{ ...FIRE, formal: { ...formal, players: 'rule' } }])
   })
 
+  it('says why the co-GM could not formalise, with the editor\'s own words', async () => {
+    mockApi({
+      'GET /api/campaigns/c1/rules': () => ({ status: 200, body: { data: editor(draft([FIRE])) } }),
+      'POST /api/campaigns/c1/rules/house-rules/formalise': () => ({
+        status: 400,
+        body: { error: { code: 'RULES_INVALID', message: 'invalid' } },
+      }),
+    })
+    renderPage()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Règles maison' }))
+    await userEvent.click(screen.getByRole('button', { name: /Formaliser avec le co-MJ/ }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ce texte ne se charge pas')
+  })
+
   it('says why a text that does not load is refused', async () => {
     mockApi({
       'GET /api/campaigns/c1/rules': () => ({ status: 200, body: { data: editor(draft()) } }),

@@ -168,7 +168,7 @@ function HouseRuleRow({
       )}
       {ask.kind === 'error' && (
         <p role="alert" className="text-caption text-stat-atk">
-          {t(`prep.rules.formal.errors.${ask.code}`, { defaultValue: t('prep.rules.formal.errors.action') })}
+          {t([`prep.rules.formal.errors.${ask.code}`, `prep.rules.errors.${ask.code}`, 'prep.rules.formal.errors.action'])}
         </p>
       )}
       {ask.kind === 'proposal' && (
