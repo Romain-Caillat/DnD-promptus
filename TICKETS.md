@@ -2194,7 +2194,7 @@ révélée ou d'un objet caché n'atteint un client joueur.
 
 **Origine** — `MEMORY.md` §3 (projection joueur)
 
-### `maps/travel-hex-world` · todo
+### `maps/travel-hex-world` · doing — reste un vrai voyage joué à une table, sur un téléphone, avec la TV
 
 **Pourquoi** — Le voyage entre les lieux est une partie du jeu, pas un
 écran de chargement.
@@ -2211,6 +2211,52 @@ garde de nuit, arrivée qui ouvre la carte du lieu.
 **Fini quand** — Le groupe voyage de Valombre à Morneval sur la carte
 du monde puis entre dans l'abbaye sans quitter l'écran de jeu ; les sept
 moments de la planche « Voyager » sont faisables dans l'app.
+
+*Hypothèse retenue* — Valombre et Morneval sont l'exemple de la planche,
+pas un monde à construire : le même voyage se joue sur les deux mondes
+témoins. Les Corsaires vont de Port-Louis au Palais (Belle-Île) sur la
+carte des côtes de Bretagne sud, La Mâchoire en pion ; le Brasier va du
+Toboggan au Reliquaire, station sereth, sur la carte du système, le
+Cure-Dent en pion.
+
+**État** — Moteur dans `shared/src/travel/` : routes vers un lieu (la
+moins chère et une seconde qui s'en écarte), portions de journée au pas
+de chaque terrain (le reste se reporte, un hexagone cher prend plusieurs
+portions), nuit après la dernière portion, vivres mangés à l'aube, tables
+d'événements par terrain tirées sans répétition. La vitesse, les
+portions, les vivres, les tours de garde et les tables vivent dans un
+guide de voyage à côté de la carte (`content/travel/`, format dans
+`docs/map-format.md`) ; une carte du monde sans guide se parcourt selon
+ses cases. Deux cartes du monde et deux cartes de lieu écrites
+(`cotes-bretagne-sud`, `le-palais`, `systeme-brasier`,
+`reliquaire-sereth`, INVENTÉ — à valider par Romain). Serveur : table
+`travels` (migration 044) par campagne et carte du monde : le pion du
+groupe, les hexagones vus, le jour, les vivres et le voyage en cours,
+recopiés sur le plateau dans la même transaction ; revenir sur la carte
+du monde la retrouve telle qu'on l'a laissée. Personne ne traîne le pion
+(`TRAVEL_MAP`) ; le brouillard s'y lève autour des hexagones traversés.
+Les sept moments : le MJ touche un lieu, le serveur propose deux routes
+que le MJ renomme et décrit ; chaque joueur vote sur son téléphone, le
+MJ voit qui veut quoi et choisit (le vote conseille, il ne décide pas) ;
+« Portion suivante » avance le pion, « Perdre une portion » fait passer
+le temps sans bouger ; après chaque portion, trois événements de la
+table du terrain arrivent au seul MJ, qui en garde un (texte retouché)
+ou aucun ; jet de groupe lancé par le MJ, chaque joueur lance sur son
+téléphone, le serveur applique le seuil du système (au moins la moitié
+pour les deux mondes) et l'XP ; la nuit, le MJ fixe les tours de garde
+et parle au seul veilleur, qui peut réveiller les autres ; à l'arrivée,
+« Entrer » ouvre la carte du lieu (la sortie posée sur son hexagone) et
+sa scène (sur le Brasier, `sc_carapace_sereth`). Les routes proposées
+sont montrées entières aux joueurs, brouillard compris ; un lieu secret
+visé par le MJ reste sans nom pour eux. Tests : 11 dans `shared`, 3 sur
+l'API pour les deux mondes (y compris l'absence de fuite des notes MJ,
+des événements non gardés et du mot au veilleur), 6 à l'écran. Écarts :
+« le co-MJ propose » tire dans les tables écrites, sans appel au modèle
+(pas d'événement inventé à partir des fronts) ; pas d'écran TV
+(`tv/show-evening`, phase 5) ; le pion est un losange, pas encore le
+sprite du groupe ; les tables d'événements d'une carte du monde faite
+par le MJ ne s'éditent pas encore dans l'app ; aucune horloge de front
+n'avance seule avec les jours. Pas encore joué pour de vrai.
 
 **Origine** — Planches « Cartes · trois échelles » et « Voyager »
 
