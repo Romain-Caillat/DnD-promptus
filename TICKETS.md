@@ -150,6 +150,15 @@ continuité entre sessions. `engine/support-vehicle-combat` ·
 `maps/travel-hex-world` · `characters/walk-in-four-directions` ·
 `player/play-on-desktop` · `gm/run-on-tablet` · `copilot/listen-by-voice`
 
+*État* : les sept tickets sont codés et intégrés sur une branche
+(fmt, clippy, tsc, eslint, knip et Vitest sous Bun au vert, tests sans
+base au vert) ; les tests serveur qui passent par la base n'ont pas tourné
+après intégration (Postgres de dev hors service). Restent ces tests, puis
+les essais réels : une règle maison et une dictée avec la clé OpenRouter,
+une campagne SRD jouée, un voyage et des déplacements vus sur de vrais
+téléphones et à la TV, une soirée jouée sur ordinateur et une menée
+depuis un iPad.
+
 Plus tard, sans jalon : `maps/support-hex-combat`.
 
 ---

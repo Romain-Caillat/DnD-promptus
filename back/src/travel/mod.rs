@@ -300,6 +300,12 @@ pub fn party_token(at: Cell) -> Token {
         at,
         hidden: false,
         invisible: false,
+        // A plain marker: the party has no sprite of its own yet, and the
+        // journey moves it hex to hex, not along a walked trail.
+        look: None,
+        facing: None,
+        trail: Vec::new(),
+        moves: 0,
     }
 }
 
