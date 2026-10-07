@@ -306,6 +306,13 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             post(api::evening::copilot_ask),
         )
         .route(
+            "/api/campaigns/{id}/session/copilot/voice",
+            // The dictation travels as base64 in the JSON body.
+            post(api::evening::copilot_voice).layer(DefaultBodyLimit::max(
+                crate::copilot::voice::MAX_WAV_BYTES * 4 / 3 + 64 * 1024,
+            )),
+        )
+        .route(
             "/api/campaigns/{id}/session/copilot/{draft}/show",
             post(api::evening::copilot_show),
         )

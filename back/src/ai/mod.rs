@@ -19,6 +19,10 @@
 //! Video (`media/generate-images-and-video`) follows OpenRouter's
 //! asynchronous video API: a job is submitted, polled until done, and
 //! its file downloaded ([`openrouter`]).
+//!
+//! Transcription (`copilot/listen-by-voice`) sends the GM's recorded
+//! words, as a WAV file, to a model that hears audio; it answers the
+//! text, parsed against a schema like any other call.
 
 pub mod fake;
 pub mod ledger;
@@ -154,6 +158,27 @@ pub struct VideoResponse {
     pub usage: Usage,
 }
 
+/// What the GM said, to write down (`copilot/listen-by-voice`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct TranscribeRequest {
+    /// The system and user messages of the transcription template: the
+    /// instruction and the campaign's names to spell right.
+    pub messages: Vec<Message>,
+    /// A 16-bit PCM WAV file: every audio model takes it.
+    pub wav: Vec<u8>,
+    /// Length of the recording, for the estimate.
+    pub seconds: f32,
+    pub model: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct TranscribeResponse {
+    /// The model's answer, JSON to parse (`{ "text": … }`).
+    pub text: String,
+    pub model: String,
+    pub usage: Usage,
+}
+
 /// Why a call failed. `Display` is written for the GM's eyes (French):
 /// it is what the screen shows next to the failed draft.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -196,6 +221,10 @@ pub trait Provider: Send + Sync {
     fn complete<'a>(&'a self, req: &'a LlmRequest) -> BoxFuture<'a, Result<LlmResponse, AiError>>;
     fn image<'a>(&'a self, req: &'a ImageRequest) -> BoxFuture<'a, Result<ImageResponse, AiError>>;
     fn video<'a>(&'a self, req: &'a VideoRequest) -> BoxFuture<'a, Result<VideoResponse, AiError>>;
+    fn transcribe<'a>(
+        &'a self,
+        req: &'a TranscribeRequest,
+    ) -> BoxFuture<'a, Result<TranscribeResponse, AiError>>;
 }
 
 /// What a call is estimated to cost before it leaves (`ledger`). Prices
@@ -208,6 +237,9 @@ pub struct Pricing {
     pub output_per_mtok_micros: i64,
     pub per_image_micros: i64,
     pub per_video_micros: i64,
+    /// One minute of recorded voice heard by the model (its audio
+    /// tokens), the written answer billed on top as output tokens.
+    pub per_audio_minute_micros: i64,
 }
 
 impl Default for Pricing {
@@ -218,6 +250,9 @@ impl Default for Pricing {
             per_image_micros: 40_000,
             // An 8-second clip at about 0.50 $ a second.
             per_video_micros: 4_000_000,
+            // Audio models bill about 2 000 tokens a minute, around
+            // 0.002 $; five times that, to err towards refusing.
+            per_audio_minute_micros: 10_000,
         }
     }
 }
@@ -243,6 +278,21 @@ impl Pricing {
     #[must_use]
     pub fn video(&self) -> i64 {
         self.per_video_micros
+    }
+
+    /// The most a transcription may cost: every started minute of
+    /// voice, the instruction, and the whole answer budget.
+    #[must_use]
+    pub fn transcribe(&self, req: &TranscribeRequest, max_answer_tokens: u32) -> i64 {
+        let minutes = (f64::from(req.seconds.max(0.0)) / 60.0).ceil().max(1.0) as i64;
+        let text = LlmRequest {
+            messages: req.messages.clone(),
+            model: None,
+            temperature: 0.0,
+            max_tokens: max_answer_tokens,
+            json: true,
+        };
+        minutes * self.per_audio_minute_micros + self.llm(&text)
     }
 }
 
@@ -282,7 +332,7 @@ impl Ai {
     /// fake provider, otherwise OpenRouter when `OPENROUTER_API_KEY` is
     /// set, otherwise none. Prices from `AI_PRICE_INPUT_PER_MTOK`,
     /// `AI_PRICE_OUTPUT_PER_MTOK`, `AI_PRICE_PER_IMAGE` and
-    /// `AI_PRICE_PER_VIDEO`, in dollars.
+    /// `AI_PRICE_PER_VIDEO` and `AI_PRICE_PER_AUDIO_MINUTE`, in dollars.
     #[must_use]
     pub fn from_env() -> Self {
         let dollars = |name: &str, default: i64| {
@@ -301,6 +351,10 @@ impl Ai {
             ),
             per_image_micros: dollars("AI_PRICE_PER_IMAGE", base.per_image_micros),
             per_video_micros: dollars("AI_PRICE_PER_VIDEO", base.per_video_micros),
+            per_audio_minute_micros: dollars(
+                "AI_PRICE_PER_AUDIO_MINUTE",
+                base.per_audio_minute_micros,
+            ),
         };
         let env = |name: &str| {
             std::env::var(name)
@@ -323,6 +377,8 @@ impl Ai {
                             .unwrap_or_else(|| openrouter::DEFAULT_IMAGE_MODEL.to_string()),
                         video_model: env("OPENROUTER_VIDEO_MODEL")
                             .unwrap_or_else(|| openrouter::DEFAULT_VIDEO_MODEL.to_string()),
+                        audio_model: env("OPENROUTER_AUDIO_MODEL")
+                            .unwrap_or_else(|| openrouter::DEFAULT_AUDIO_MODEL.to_string()),
                         app_url: env("PUBLIC_ORIGIN"),
                     },
                 )) as Arc<dyn Provider>
@@ -414,10 +470,19 @@ mod tests {
             output_per_mtok_micros: 2_000_000,
             per_image_micros: 5,
             per_video_micros: 7,
+            per_audio_minute_micros: 11,
         };
         let mut req = LlmRequest::json(vec![Message::user("x".repeat(4_000))]);
         req.max_tokens = 500;
         // 1 000 prompt tokens at 1 $/Mtok + 500 answer tokens at 2 $/Mtok.
         assert_eq!(pricing.llm(&req), 1_000 + 1_000);
+        // 61 seconds of voice bill two minutes, plus the instruction.
+        let voice = TranscribeRequest {
+            messages: vec![Message::user("x".repeat(400))],
+            wav: Vec::new(),
+            seconds: 61.0,
+            model: None,
+        };
+        assert_eq!(pricing.transcribe(&voice, 500), 2 * 11 + 100 + 1_000);
     }
 }
