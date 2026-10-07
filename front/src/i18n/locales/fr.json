@@ -442,6 +442,7 @@
     }
   },
   "play": {
+    "spectatorPane": "La partie",
     "loading": "Chargement…",
     "notJoined": "Ce navigateur n'a pas de place à cette table. Ouvre le lien d'invitation envoyé par le MJ.",
     "error": "La partie n'a pas pu être chargée. Réessaie.",
@@ -1169,6 +1170,7 @@
       "send": "Proposer au MJ : {{card}}"
     },
     "requests": {
+      "spaceToo": "Espace marche aussi",
       "title": "Mes demandes",
       "roll": "Lancer le dé",
       "against": "{{ability}}, difficulté {{difficulty}}",
@@ -1247,6 +1249,7 @@
     }
   },
   "fight": {
+    "keys": "Clavier : un chiffre choisit une carte, Entrée la joue, Échap la repose.",
     "yourTurn": "À toi, {{name}} !",
     "theirTurn": "Tour {{round}} : {{name}} joue",
     "order": "Ordre du tour",
@@ -1296,6 +1299,21 @@
     }
   },
   "gmLive": {
+    "tablet": {
+      "rail": "Sections",
+      "scene": "Scène",
+      "table": "Table",
+      "map": "Carte",
+      "journal": "Journal",
+      "copilot": "Co-MJ",
+      "close": "Fermer",
+      "seats": "Les places",
+      "here": "{{here}} sur {{all}}",
+      "see": "Voir la table",
+      "toLaptop": "Écran ordinateur",
+      "toTablet": "Écran tablette",
+      "noCopilot": "Le co-MJ s'ouvre avec la soirée."
+    },
     "loading": "Chargement de la soirée…",
     "notFound": "Cette campagne n'existe pas, ou elle n'est pas à vous.",
     "error": "La soirée n'a pas pu être chargée. Réessayez.",
@@ -1353,6 +1371,12 @@
       "hooks": "Accroches : {{hooks}}"
     },
     "requests": {
+      "asks": "{{who}} demande · {{card}}",
+      "thumbDifficulty": "Un test, difficulté :",
+      "checkAt": "Test {{name}} ({{value}})",
+      "yesNoRoll": "Oui, sans jet",
+      "no": "Non",
+      "nothingHere": "Non, rien ici.",
       "title": "Demandes ({{count}})",
       "none": "Aucune demande en attente.",
       "done": "{{who}} · {{card}} · {{status}}",
@@ -1390,6 +1414,7 @@
       "back": "−1"
     },
     "board": {
+      "fingers": "Un doigt touche, ou peint le brouillard avec Révéler et Cacher · deux doigts déplacent · pincer zoome. Rien ne part avant le relâcher.",
       "title": "La carte",
       "none": "Aucune carte montrée.",
       "noMaps": "Pas de carte pour ce monde.",
@@ -1419,6 +1444,11 @@
       "revealLayer": "Révéler : {{layer}}"
     },
     "fight": {
+      "proposes": "Le co-MJ propose le tour de {{who}}",
+      "foeTurn": "Tour de {{who}}",
+      "validate": "Valider",
+      "flees": "Il fuit",
+      "passes": "Il passe son tour",
       "title": "Combat",
       "start": "Lancer : {{title}}",
       "loot": "Butin",
@@ -1437,6 +1467,7 @@
       "removeCondition": "Retirer"
     },
     "copilot": {
+      "edit": "Modifier",
       "title": "Co-MJ",
       "budget": "IA : {{spent}} $ sur {{budget}} $",
       "notConfigured": "Aucun fournisseur d'IA configuré : le co-MJ est muet.",

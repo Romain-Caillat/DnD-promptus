@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { CardButton } from '@/components/game/CardButton'
 import { useLiveChanges } from '@/features/live/useLiveChanges'
 import { creatorPath } from '@/lib/creator'
+import { DESKTOP_QUERY, useMediaQuery } from '@/lib/useMediaQuery'
 import { cn } from '@/lib/utils'
 import { fetchPlayerHome, type CharacterView, type PlayerHome } from '@/lib/play'
 import { GameTab } from '@/features/evening/GameTab'
@@ -30,6 +31,12 @@ type Tab = 'jeu' | 'carte' | 'perso' | 'journal'
  * live — and **Journal**, what the group knows. A spectator watches the
  * game, the map and the journal. Everything comes from the server's
  * player projection; the live channel says when to fetch it again.
+ *
+ * On a computer (player/play-on-desktop, planche « Jouer sur
+ * ordinateur ») the same game unfolds side by side, without tabs: the
+ * character on the left, the scene and the hand in the middle, the map,
+ * the fight and the journal on the right; the keyboard plays the cards
+ * and rolls the die. Each tab is mounted once either way.
  */
 export function PlayerHomePage() {
   const { t } = useTranslation()
@@ -40,6 +47,8 @@ export function PlayerHomePage() {
   const [viewVersion, setViewVersion] = useState(0)
   const [eveningVersion, setEveningVersion] = useState(0)
   const [mapVersion, setMapVersion] = useState(0)
+  const [fightTurn, setFightTurn] = useState(false)
+  const desktop = useMediaQuery(DESKTOP_QUERY)
   const latest = useRef(0)
   const characterId = useRef<string | null>(null)
 
@@ -108,24 +117,67 @@ export function PlayerHomePage() {
     setState((s) => (s.kind === 'ready' ? { ...s, home: { ...s.home, character: next } } : s))
   }
 
-  return (
-    <main className="surface-table mx-auto flex min-h-dvh max-w-md flex-col text-chalk">
-      <p
-        role="status"
-        className={cn(
-          'mx-3 mt-4 rounded-button px-3.5 py-2.5 text-body font-bold',
+  const banner = (
+    <p
+      role="status"
+      className={cn(
+        'rounded-button px-3.5 py-2.5 text-body font-bold',
           good && 'bg-ivory text-ink shadow-ivory-flat',
           bannerKey === 'submitted' && 'border-[1.5px] border-dashed border-line-dashed bg-table text-chalk-soft',
           bannerKey === 'returned' && 'border-[1.5px] border-stat-atk bg-table text-chalk',
-          bannerKey === 'spectator' && 'border border-line bg-surface text-chalk-soft',
-        )}
-      >
-        {t(`play.banner.${bannerKey}`)}
-      </p>
-      <header className="flex flex-col gap-1 px-4 pt-4">
-        <span className="type-label">{t('play.hello', { nickname: me.nickname, gm: campaign.gmName })}</span>
-        <h1 className="type-title text-heading">{campaign.title}</h1>
-      </header>
+        bannerKey === 'spectator' && 'border border-line bg-surface text-chalk-soft',
+      )}
+    >
+      {t(`play.banner.${bannerKey}`)}
+    </p>
+  )
+  const title = (
+    <>
+      <span className="type-label">{t('play.hello', { nickname: me.nickname, gm: campaign.gmName })}</span>
+      <h1 className="type-title text-heading">{campaign.title}</h1>
+    </>
+  )
+  const characterPane = character ? (
+    play ? (
+      <CharacterTab campaignId={campaignId} character={character} play={play} onChanged={replaceCharacter} />
+    ) : (
+      <CharacterCard character={character} gmName={campaign.gmName} onOpen={() => navigate(creatorPath(campaignId))} />
+    )
+  ) : null
+
+  if (desktop) {
+    return (
+      <main className="surface-table flex min-h-dvh flex-col gap-4 p-5 text-chalk">
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex flex-col gap-1">{title}</div>
+          <div className="min-w-80">{banner}</div>
+        </header>
+        <div className="grid flex-1 grid-cols-[300px_minmax(0,1fr)_minmax(0,1.15fr)] items-start gap-5">
+          <aside className="flex flex-col gap-3" aria-label={t(seated ? 'play.tabs.perso' : 'play.spectatorPane')}>
+            {characterPane ?? <p className="text-body text-chalk-soft">{t('play.spectator')}</p>}
+            <RulesEntry campaignId={campaignId} />
+          </aside>
+          <section className="flex flex-col gap-3" aria-label={t('play.tabs.jeu')}>
+            <GameTab campaignId={campaignId} refreshKey={eveningVersion} seated={Boolean(play)} keyboard={!fightTurn} />
+          </section>
+          <div className="flex flex-col gap-5">
+            <section className="flex flex-col gap-3" aria-label={t('play.tabs.carte')}>
+              <MapTab campaignId={campaignId} refreshKey={mapVersion} keyboard onTurn={setFightTurn} />
+            </section>
+            <section className="flex flex-col gap-3" aria-label={t('play.tabs.journal')}>
+              <h2 className="type-label">{t('play.tabs.journal')}</h2>
+              <JournalTab campaignId={campaignId} refreshKey={viewVersion} />
+            </section>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="surface-table mx-auto flex min-h-dvh max-w-md flex-col text-chalk">
+      <div className="mx-3 mt-4">{banner}</div>
+      <header className="flex flex-col gap-1 px-4 pt-4">{title}</header>
       <section className="flex flex-1 flex-col gap-3 p-4" aria-label={t(`play.tabs.${tab}`)}>
         {tab === 'jeu' && <GameTab campaignId={campaignId} refreshKey={eveningVersion} seated={Boolean(play)} />}
         {tab === 'carte' && <MapTab campaignId={campaignId} refreshKey={mapVersion} />}
@@ -135,16 +187,7 @@ export function PlayerHomePage() {
             <JournalTab campaignId={campaignId} refreshKey={viewVersion} />
           </>
         )}
-        {tab === 'perso' && character && play && (
-          <CharacterTab campaignId={campaignId} character={character} play={play} onChanged={replaceCharacter} />
-        )}
-        {tab === 'perso' && character && !play && (
-          <CharacterCard
-            character={character}
-            gmName={campaign.gmName}
-            onOpen={() => navigate(creatorPath(campaignId))}
-          />
-        )}
+        {tab === 'perso' && characterPane}
         {(tab === 'perso' || tab === 'journal') && <RulesEntry campaignId={campaignId} />}
       </section>
       {tabs.length > 1 ? (

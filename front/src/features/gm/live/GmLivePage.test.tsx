@@ -96,9 +96,9 @@ const SCREEN = {
 }
 const BOARD = { board: null, maps: [{ id: 'quai', name: 'Le quai', nodes: [] }], encounters: [], encounter: null, conditions: null }
 
-function renderPage() {
+function renderPage(entry = '/campagnes/c1/soiree') {
   render(
-    <MemoryRouter initialEntries={['/campagnes/c1/soiree']}>
+    <MemoryRouter initialEntries={[entry]}>
       <Routes>
         <Route path="/campagnes/:campaignId/soiree" element={<GmLivePage />} />
       </Routes>
@@ -151,5 +151,96 @@ describe('GmLivePage', () => {
     expect(sentTo(fetchMock, 'PUT /api/campaigns/c1/session/music')).toEqual([{ track: 0 }])
     expect(sentTo(fetchMock, 'POST /api/campaigns/c1/board')).toEqual([{ map: 'quai' }])
     expect(sentTo(fetchMock, 'POST /api/campaigns/c1/session/spotlight/p1')).toHaveLength(1)
+  })
+
+  it('runs on a tablet: a rail of big targets, a check by thumb, a « no » that tells the player why', async () => {
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/session': () => ({ status: 200, body: { data: SCREEN } }),
+      'GET /api/campaigns/c1/board': () => ({ status: 200, body: { data: BOARD } }),
+      'GET /api/campaigns/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
+      'POST /api/campaigns/c1/session/requests/r1': () => ({ status: 200, body: { data: {} } }),
+    })
+    renderPage('/campagnes/c1/soiree?ecran=tablette')
+
+    const rail = await screen.findByRole('navigation', { name: 'Sections' })
+    expect(within(rail).getByRole('button', { name: /Scène/ })).toHaveAttribute('aria-current', 'page')
+    // Marc has been idle 25 minutes: his seat says so.
+    const seats = screen.getByRole('region', { name: 'Les places' })
+    expect(within(seats).getByRole('button', { name: /Borin/ })).toHaveTextContent('25 min')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Test Moyen (12)' }))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/session/requests/r1')).toEqual([
+      { kind: 'check', ability: 'DEX', difficulty: 'moyen' },
+    ])
+    await userEvent.click(screen.getByRole('button', { name: 'Non' }))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/session/requests/r1')[1]).toEqual({ kind: 'refuse', reason: 'Non, rien ici.' })
+
+    await userEvent.click(within(rail).getByRole('button', { name: /Journal/ }))
+    expect(screen.getByText(/Le phare clignote/)).toBeInTheDocument()
+    expect(screen.queryByText('La pluie bat les carreaux.')).not.toBeInTheDocument()
+
+    await userEvent.click(within(rail).getByRole('button', { name: /Co-MJ/ }))
+    expect(screen.getByRole('complementary', { name: 'Co-MJ' })).toBeInTheDocument()
+
+    // A seat opens the table; only « Donner la main » there records a moment.
+    await userEvent.click(within(seats).getByRole('button', { name: /Borin/ }))
+    expect(within(rail).getByRole('button', { name: /Table/ })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: 'Donner la main' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Écran ordinateur' }))
+    expect(screen.queryByRole('navigation', { name: 'Sections' })).not.toBeInTheDocument()
+    expect(screen.getByText('La pluie bat les carreaux.')).toBeInTheDocument()
+  })
+
+  it('answers the co-GM’s adversary turn on a tablet with three big keys', async () => {
+    const combatant = (id: string, name: string, side: string) => ({ id, name, side, hit_points: 6, conditions: [] })
+    const fight = {
+      ...BOARD,
+      board: {
+        mapId: 'quai',
+        map: { id: 'quai', name: 'Le quai', theme: 'port-1718', ambience: {}, grid: { legend: { '.': { terrain: 'pavés' } }, rows: ['...'] } },
+        fog: false,
+        revealed: [],
+        tokens: [],
+      },
+      encounter: {
+        id: 'e1',
+        node: 'sc_quai',
+        live: true,
+        version: 3,
+        fight: {
+          scene: { combatants: { m1: combatant('m1', 'Marin', 'opposition'), pc: combatant('pc', 'Borin', 'party') } },
+          positions: {},
+          order: ['m1', 'pc'],
+          standing: {},
+          round: 1,
+          turn: 0,
+          end: null,
+        },
+        maxHitPoints: {},
+        proposal: { who: 'm1', version: 3, steps: [], events: [] },
+        loot: [],
+        events: [],
+        reachable: [],
+      },
+    }
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/session': () => ({ status: 200, body: { data: SCREEN } }),
+      'GET /api/campaigns/c1/board': () => ({ status: 200, body: { data: fight } }),
+      'GET /api/campaigns/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
+      'POST /api/campaigns/c1/fight/command': () => ({ status: 200, body: { data: fight } }),
+    })
+    renderPage('/campagnes/c1/soiree?ecran=tablette')
+
+    await userEvent.click(await screen.findByRole('button', { name: /Carte/ }))
+    expect(await screen.findByText('Le co-MJ propose le tour de Marin')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Valider' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Il fuit' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Il passe son tour' }))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/fight/command')).toEqual([
+      { kind: 'accept' },
+      { kind: 'adversary', command: { kind: 'flee' } },
+      { kind: 'adversary', command: { kind: 'endTurn' } },
+    ])
   })
 })

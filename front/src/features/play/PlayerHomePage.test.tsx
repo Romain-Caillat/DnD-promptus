@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { DESKTOP_QUERY } from '@/lib/useMediaQuery'
 import { mockApi, sentTo, stubReducedMotion } from '@/test-utils'
 import { PlayerHomePage } from './PlayerHomePage'
 
@@ -200,5 +201,27 @@ describe('PlayerHomePage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Journal' }))
     expect(await screen.findByText("Le groupe n'a encore rien découvert.")).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Personnage' })).not.toBeInTheDocument()
+  })
+
+  it('unfolds the game side by side on a computer: sheet, scene, map and journal at once, no tabs', async () => {
+    stubReducedMotion(true, [DESKTOP_QUERY])
+    const fetchMock = mockApi({
+      ...EVENING,
+      'GET /api/play/c1/me': () => home(inPlay(false)),
+      'GET /api/play/c1/board': () => ({ status: 200, body: { data: null } }),
+      'GET /api/play/c1/view': () => ({
+        status: 200,
+        body: { data: { ...CAMPAIGN, party: [], scene: null, clues: ['Gwen a vu une lanterne.'], npcs: [] } },
+      }),
+    })
+    renderHome()
+
+    expect(await screen.findByText('Les corsaires ont accosté.')).toBeInTheDocument()
+    expect(screen.getByRole('complementary', { name: 'Personnage' })).toHaveTextContent('7 / 10 PV')
+    expect(await screen.findByText('Gwen a vu une lanterne.')).toBeInTheDocument()
+    expect(await within(screen.getByRole('region', { name: 'Carte' })).findByText(/pas encore montré de carte/)).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Onglets' })).not.toBeInTheDocument()
+    // Each part is fetched once: nothing is mounted twice behind the layout.
+    expect(fetchMock.mock.calls.filter(([url]) => String(url) === '/api/play/c1/evening')).toHaveLength(1)
   })
 })

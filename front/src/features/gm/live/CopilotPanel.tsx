@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { CopilotAction, CopilotKind, Draft, LiveScreen, Reveal } from '@/lib/evening'
 import { MAX_SECONDS, browserRecorder, type Heard, type Recorder, type Recording } from '@/lib/voice'
 import { cn } from '@/lib/utils'
-import { Btn, Panel, field } from './ui'
+import { BigKey, Btn, Panel, field, useTouchScreen } from './ui'
 
 const KINDS: CopilotKind[] = ['describe', 'npc', 'consequence', 'next', 'free']
 
@@ -25,7 +25,9 @@ function revealOf(a: CopilotAction): Reveal {
  * NPC's lines, a consequence, what comes next, or anything; the answer
  * is a draft only the GM reads. They edit it and « Montrer » sends their
  * text to the table, or they drop it. A suggestion with a gesture on the
- * campaign's ids is one tap. Each ask is a counted AI call.
+ * campaign's ids is one tap. Each ask is a counted AI call. On a tablet
+ * a draft is read whole and answered with three big keys: show it, edit
+ * it, drop it.
  *
  * The GM may also speak instead of typing (copilot/listen-by-voice): one
  * touch starts the microphone, another sends what was said; it is written
@@ -274,6 +276,48 @@ function DraftCard({
   const { t } = useTranslation()
   const [narration, setNarration] = useState(draft.answer.narration)
   const [lines, setLines] = useState(draft.answer.npcLines.map((l) => ({ speaker: l.speaker, text: l.text })))
+  const touch = useTouchScreen()
+  const [editing, setEditing] = useState(false)
+  const show = () => onShow(draft.id, narration, lines.filter((l) => l.text.trim()))
+  if (touch && !editing) {
+    return (
+      <article className="flex flex-col gap-2.5 rounded-2xl bg-ivory p-4 text-ink shadow-ivory-flat">
+        <span className="type-label text-ink-soft">{t(`gmLive.copilot.kind.${draft.kind}`)}</span>
+        <p className="text-body">{narration}</p>
+        {lines.map((l, i) => (
+          <p key={i} className="text-body">
+            <b>{l.speaker}</b> — {l.text}
+          </p>
+        ))}
+        {draft.answer.gmNote && <p className="text-caption text-ink-soft">{draft.answer.gmNote}</p>}
+        {draft.answer.suggestions.map((s, i) => (
+          <div key={i} className="flex items-center justify-between gap-2 text-caption">
+            <span>{s.label}</span>
+            {s.action && (
+              <button
+                type="button"
+                className="min-h-12 rounded-button border border-ink px-4 font-bold"
+                onClick={() => onReveal(revealOf(s.action!))}
+              >
+                {t('gmLive.copilot.apply')}
+              </button>
+            )}
+          </div>
+        ))}
+        <div className="grid grid-cols-[2fr_1fr_1fr] gap-2">
+          <BigKey className="bg-ink text-chalk" onClick={show}>
+            {t('gmLive.copilot.show')}
+          </BigKey>
+          <BigKey className="border-ink/40 bg-white text-ink" onClick={() => setEditing(true)}>
+            {t('gmLive.copilot.edit')}
+          </BigKey>
+          <BigKey className="border-ink/40 bg-white text-ink" onClick={() => onDismiss(draft.id)}>
+            {t('gmLive.copilot.dismiss')}
+          </BigKey>
+        </div>
+      </article>
+    )
+  }
   return (
     <article className="flex flex-col gap-1.5 rounded-lg border border-dashed border-line-dashed p-2.5">
       <span className="type-label">{t(`gmLive.copilot.kind.${draft.kind}`)}</span>
@@ -306,7 +350,7 @@ function DraftCard({
         </div>
       ))}
       <div className="flex gap-1.5">
-        <Btn main onClick={() => onShow(draft.id, narration, lines.filter((l) => l.text.trim()))}>
+        <Btn main onClick={show}>
           {t('gmLive.copilot.show')}
         </Btn>
         <Btn onClick={() => onDismiss(draft.id)}>{t('gmLive.copilot.dismiss')}</Btn>

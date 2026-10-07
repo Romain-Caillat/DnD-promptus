@@ -58,6 +58,16 @@ memory. If someone would re-litigate it in six months, it is.
 - **Media are pre-generated** (async jobs, cached on disk), never live
   by default. Cost is estimated before each batch and checked against
   the campaign's AI budget.
+- **One app, three layouts, chosen in JavaScript** (phase 6). The
+  player page unfolds into columns on a computer (wide screen and a fine
+  pointer, `DESKTOP_QUERY`); a tablet keeps the phone layout on the
+  player side. The GM live screen switches to a rail on a coarse
+  pointer of 768 px and more (`TABLET_QUERY`), or with `?ecran=tablette`
+  / `?ecran=ordinateur`: an iPad in landscape is 1180 px, as wide as a
+  laptop, so width alone cannot tell them apart. The layout is a media
+  query read by `useMediaQuery`, not CSS hiding, so each part is mounted
+  and fetched once. Panels are not copied for the tablet: they read the
+  `TouchScreen` context and grow to a finger's size.
 
 
 ## 2. Visual direction (design pass, October 2026)
@@ -277,6 +287,23 @@ against the campaign budget; a batch that would exceed it is refused.
 - **Design canvas: a grid or flex box splits mixed text into items.**
   `<b>{{a}}/{{b}}</b>` with `display:grid` puts each text node on its own
   row (the clock showed 3 / 6 stacked). Wrap mixed text in one `<span>`.
+
+- **Keyboard shortcuts must not double a button.** A focused button
+  already acts on Space and Enter: a shortcut on the same keys rolled the
+  die twice. `shortcutKey` drops Space and Enter on a focused button or
+  link, every key in a field, held keys and modifier chords.
+- **Tests on a Mac with Node 26:** `bun run test` fails the nine
+  `GmTablePage` tests with `TypeError: Cannot read properties of
+  undefined (reading 'clear')` on `localStorage.clear()`, while
+  `bun --bun node_modules/.bin/vitest run` (Bun, as in PCT 105) passes
+  them all. Likely cause, not checked: Node 26's own `localStorage`
+  global shadows jsdom's. Run Vitest under Bun.
+- **A finger on a map is not a mouse.** iOS cancels a pointer when it
+  takes the touch (`pointercancel`): a stroke left open painted on the
+  next touch. Map gestures go through the pure reducer
+  `features/map/gesture.ts` (tap, stroke, two-finger pan and pinch,
+  cancel), and the canvas is `touch-action: none` wherever it handles
+  the drag itself.
 
 - **YouTube player must stay visible** (YouTube terms) and starts muted:
   each player taps "activate sound". Ads can desync a player; playback
