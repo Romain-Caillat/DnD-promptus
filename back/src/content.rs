@@ -1,5 +1,6 @@
-//! Content compiled into the binary: the rule systems, the maps and the
-//! sprite packs of the two witness worlds (`content/`).
+//! Content compiled into the binary: the rule systems, the maps, their
+//! travel guides and the sprite packs of the two witness worlds
+//! (`content/`).
 //!
 //! The rule systems here are the presets a campaign starts from; a
 //! campaign's own versions are stored in the database and resolved by
@@ -19,6 +20,7 @@ use promptus_shared::rules::RuleSystem;
 use promptus_shared::sprite::{CharacterLook, LookBook, Pack, Packs};
 use promptus_shared::story::{Campaign, RuleSystemRef};
 use promptus_shared::theme::Theme;
+use promptus_shared::travel::Guide;
 
 /// The pack files, in a fixed order: their hash versions the renders.
 pub const PACK_FILES: [&str; 2] = [
@@ -35,8 +37,9 @@ const RULE_FILES: [&str; 2] = [
 ];
 
 /// The maps of the two worlds, by rule system id
-/// (`content/maps/<rules>/<map>.yaml`).
-const MAP_FILES: [(&str, &str); 2] = [
+/// (`content/maps/<rules>/<map>.yaml`): encounter and place maps, and
+/// each world's map in hexes (maps/travel-hex-world).
+const MAP_FILES: [(&str, &str); 6] = [
     (
         "corsaires",
         include_str!("../../content/maps/corsaires/quai-port-louis.yaml"),
@@ -45,7 +48,48 @@ const MAP_FILES: [(&str, &str); 2] = [
         "brasier",
         include_str!("../../content/maps/brasier/cure-dent-coursive.yaml"),
     ),
+    (
+        "corsaires",
+        include_str!("../../content/maps/corsaires/cotes-bretagne-sud.yaml"),
+    ),
+    (
+        "corsaires",
+        include_str!("../../content/maps/corsaires/le-palais.yaml"),
+    ),
+    (
+        "brasier",
+        include_str!("../../content/maps/brasier/systeme-brasier.yaml"),
+    ),
+    (
+        "brasier",
+        include_str!("../../content/maps/brasier/reliquaire-sereth.yaml"),
+    ),
 ];
+
+/// The travel guides of the worlds' maps in hexes
+/// (`content/travel/<rules>/<map>.yaml`).
+const GUIDE_FILES: [&str; 2] = [
+    include_str!("../../content/travel/corsaires/cotes-bretagne-sud.yaml"),
+    include_str!("../../content/travel/brasier/systeme-brasier.yaml"),
+];
+
+static GUIDES: LazyLock<Vec<Guide>> = LazyLock::new(|| {
+    GUIDE_FILES
+        .iter()
+        .map(|t| Guide::from_yaml(t).expect("the embedded travel guides load"))
+        .collect()
+});
+
+/// How `map` is travelled: its written guide, or the default one read
+/// from its cells (a world map the GM drew).
+#[must_use]
+pub fn guide(map: &Map) -> Guide {
+    GUIDES
+        .iter()
+        .find(|g| g.map == map.id && g.issues(map).is_empty())
+        .cloned()
+        .unwrap_or_else(|| Guide::default_for(map))
+}
 
 static MAPS: LazyLock<Vec<(&'static str, Map)>> = LazyLock::new(|| {
     MAP_FILES

@@ -254,6 +254,11 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/fight/loot",
             post(api::board::give_loot),
         )
+        // The journey on the world map (maps/travel-hex-world).
+        .route(
+            "/api/campaigns/{id}/travel",
+            get(api::travel::gm_travel).post(api::travel::gm_command),
+        )
         // The campaign's own maps (maps/edit-map-gm, maps/import-image-map,
         // maps/generate-map-llm).
         .route(
@@ -443,6 +448,17 @@ fn player_routes() -> Vec<RouteSpec> {
             "POST",
             "/api/play/{campaign}/fight",
             post(api::board::command),
+        ),
+        // The journey on the world map: my vote, my roll, my watch.
+        (
+            "GET",
+            "/api/play/{campaign}/travel",
+            get(api::travel::player_travel),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/travel",
+            post(api::travel::player_command),
         ),
         // The images the table may see, and the world's theme.
         (

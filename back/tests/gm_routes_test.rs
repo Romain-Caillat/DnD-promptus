@@ -110,6 +110,9 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/fight"),
     ("POST", "/api/campaigns/{campaign}/fight/command"),
     ("POST", "/api/campaigns/{campaign}/fight/loot"),
+    // The journey on the world map, shown just before the gesture.
+    ("GET", "/api/campaigns/{campaign}/travel"),
+    ("POST", "/api/campaigns/{campaign}/travel"),
     // The campaign's maps: list, create, import, generate, then on the
     // map stored just before.
     ("GET", "/api/campaigns/{campaign}/maps"),
@@ -238,6 +241,9 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         }
         (_, p) if p.ends_with("/fight") => Some(serde_json::json!({ "node": "sc_crique" })),
         (_, p) if p.ends_with("/fight/command") => Some(serde_json::json!({ "kind": "stop" })),
+        ("POST", p) if p.ends_with("/travel") => {
+            Some(serde_json::json!({ "kind": "supplies", "value": 12 }))
+        }
         (_, p) if p.ends_with("/fight/loot") => Some(serde_json::json!({
             "gives": [{ "index": 0, "character": Uuid::nil() }]
         })),
@@ -640,6 +646,12 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             }
             (_, b) => b,
         };
+        if *method == "POST" && path.ends_with("/travel") {
+            let board = format!("/api/campaigns/{}/board", ids.campaign);
+            let world = serde_json::json!({ "map": "cotes-bretagne-sud" });
+            let r = call(&app, Some(&token), "POST", &board, Some(world)).await;
+            assert!(r.status.is_success(), "the world map shows: {}", r.body);
+        }
         let r = call(&app, Some(&token), method, &uri, body).await;
         if path.ends_with("/apply") {
             sqlx::query("UPDATE campaigns SET validated_at = now() WHERE id = $1")
