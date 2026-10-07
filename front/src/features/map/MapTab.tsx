@@ -16,6 +16,7 @@ import {
 import { playerBackdropUrl } from '@/lib/maps'
 import { fetchPlayerMedia, playerImageUrl, type MediaList } from '@/lib/media'
 import { cn } from '@/lib/utils'
+import { DeathSavePanel, SaveBoxes } from './DeathSaves'
 import { eventLine } from './events'
 import { MapCanvas } from './MapCanvas'
 import { useImage } from './useImage'
@@ -146,7 +147,8 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
       />
       {!fight && me && <p className="text-caption text-mute">{t('map.walkHint')}</p>}
       {me?.ghost && <p className="text-caption text-mute">{t('map.ghost')}</p>}
-      {fight?.myTurn && (
+      {fight && <DeathSavePanel fight={fight} busy={busy} onRoll={() => play({ kind: 'deathSave' })} />}
+      {fight?.myTurn && !fight.deathSave && (
         <>
           <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label={t('fight.hand')}>
             {fight.cards.map((c) => (
@@ -215,7 +217,9 @@ function FightHeader({ fight }: { fight: FightView }) {
         )}
       >
         {fight.myTurn
-          ? t('fight.yourTurn', { name: active?.name ?? '' })
+          ? fight.deathSave
+            ? t('fight.death.yourSave')
+            : t('fight.yourTurn', { name: active?.name ?? '' })
           : t('fight.theirTurn', { name: active?.name ?? '', round: fight.round })}
       </p>
       <ol className="flex gap-1.5 overflow-x-auto" aria-label={t('fight.order')}>
@@ -234,6 +238,7 @@ function FightHeader({ fight }: { fight: FightView }) {
               <Hearts hp={f.hitPoints} max={f.maxHitPoints} count={4} px={2} animated={false} />
             )}
             {f.conditions.length > 0 && <span className="text-mute-soft">{f.conditions.join(', ')}</span>}
+            {f.deathSaves && <SaveBoxes boxes={f.deathSaves} />}
           </li>
         ))}
       </ol>

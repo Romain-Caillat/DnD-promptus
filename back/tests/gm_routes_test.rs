@@ -103,6 +103,7 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/session/reveal"),
     ("PUT", "/api/campaigns/{campaign}/session/music"),
     ("POST", "/api/campaigns/{campaign}/session/journal"),
+    ("POST", "/api/campaigns/{campaign}/session/reading"),
     // The grid: show the quay, edit it, fight on it, hand out the loot.
     ("GET", "/api/campaigns/{campaign}/board"),
     ("POST", "/api/campaigns/{campaign}/board"),
@@ -154,6 +155,10 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("PUT", "/api/campaigns/{campaign}/sessions/{session}/recap"),
     (
         "POST",
+        "/api/campaigns/{campaign}/sessions/{session}/publish",
+    ),
+    (
+        "POST",
         "/api/campaigns/{campaign}/sessions/{session}/recap-draft",
     ),
     (
@@ -165,6 +170,22 @@ const GM_ROUTES: &[(&str, &str)] = &[
         "/api/campaigns/{campaign}/sessions/{session}/changes",
     ),
     ("GET", "/api/campaigns/{campaign}/ai"),
+    // The shops: list, create, then on the shop just created.
+    ("GET", "/api/campaigns/{campaign}/shops"),
+    ("POST", "/api/campaigns/{campaign}/shops"),
+    ("PUT", "/api/campaigns/{campaign}/shops/{shop}"),
+    ("POST", "/api/campaigns/{campaign}/shops/{shop}/open"),
+    ("POST", "/api/campaigns/{campaign}/shops/{shop}/reveal"),
+    ("DELETE", "/api/campaigns/{campaign}/shops/{shop}"),
+    // The shared screens: a window, a TV waiting with its code, then
+    // forget the screen just seated.
+    ("GET", "/api/campaigns/{campaign}/tv"),
+    ("POST", "/api/campaigns/{campaign}/tv/window"),
+    ("POST", "/api/campaigns/{campaign}/tv"),
+    ("DELETE", "/api/campaigns/{campaign}/tv/{screen}"),
+    ("PUT", "/api/campaigns/{campaign}/plan"),
+    ("PUT", "/api/campaigns/{campaign}/plan/choice"),
+    ("GET", "/api/campaigns/{campaign}/plan"),
     ("DELETE", "/api/campaigns/{campaign}/hooks/{hook}"),
     // After the character routes: removing the player removes them.
     ("DELETE", "/api/campaigns/{campaign}/players/{player}"),
@@ -173,6 +194,9 @@ const GM_ROUTES: &[(&str, &str)] = &[
     // Last: it ends the session the control sweep uses.
     ("POST", "/api/auth/sign-out"),
 ];
+
+/// The code a TV shows while the sweep pairs it; no drawn code has a 0.
+const SWEEP_TV_CODE: &str = "SW00";
 
 const FIXTURE: &str = include_str!("../../content/fixtures/phare-de-kerbrume.yaml");
 const CORSAIRES_RULES: &str = include_str!("../../content/rules/corsaires/v1.yaml");
@@ -223,6 +247,7 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             Some(serde_json::json!({ "title": "Sweep", "body": "Réécrite." }))
         }
         (_, p) if p.ends_with("/played") => Some(serde_json::json!({ "played": true })),
+        (_, p) if p.ends_with("/shops/{shop}/reveal") => Some(serde_json::json!({ "line": "l1" })),
         (_, p) if p.ends_with("/reveal") => {
             Some(serde_json::json!({ "kind": "scene", "node": "sc_taverne" }))
         }
@@ -267,6 +292,21 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             "recap": "Ils ont trouvé la lanterne.",
             "previously": "La tempête approche."
         })),
+        ("PUT", p) if p.ends_with("/plan") => {
+            Some(serde_json::json!({ "options": ["2099-10-10T18:30:00Z"] }))
+        }
+        (_, p) if p.ends_with("/plan/choice") => {
+            Some(serde_json::json!({ "at": "2099-10-10T18:30:00Z" }))
+        }
+        ("POST" | "PUT", p) if p.ends_with("/shops") || p.ends_with("/shops/{shop}") => {
+            Some(serde_json::json!({
+                "name": "Le marché noir",
+                "lines": [{ "id": "l1", "name": "Longue-vue", "price": 12, "hidden": true }],
+            }))
+        }
+        (_, p) if p.ends_with("/shops/{shop}/open") => Some(serde_json::json!({ "open": true })),
+        (_, p) if p.ends_with("/session/reading") => Some(serde_json::json!({ "line": null })),
+        ("POST", p) if p.ends_with("/tv") => Some(serde_json::json!({ "code": SWEEP_TV_CODE })),
         (_, p) if p.ends_with("/changes") => {
             Some(serde_json::json!({ "text": "Plus de scènes pour Marc." }))
         }
@@ -289,6 +329,8 @@ struct Ids {
     proposal: String,
     job: String,
     map: String,
+    screen: String,
+    shop: String,
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
@@ -304,6 +346,8 @@ fn route_uri(path: &str, ids: &Ids) -> String {
         .replace("{proposal}", &ids.proposal)
         .replace("{job}", &ids.job)
         .replace("{map}", &ids.map)
+        .replace("{screen}", &ids.screen)
+        .replace("{shop}", &ids.shop)
 }
 
 /// Every placeholder filled for `player` of `campaign`: an invitation of
@@ -340,6 +384,8 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         proposal: Uuid::new_v4().to_string(),
         job: Uuid::new_v4().to_string(),
         map: "carte-inconnue".to_string(),
+        screen: Uuid::new_v4().to_string(),
+        shop: Uuid::new_v4().to_string(),
     }
 }
 
@@ -585,6 +631,34 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             ids.asset = sqlx::query_scalar::<_, Uuid>(
                 "INSERT INTO media_assets (campaign_id, kind, subject, mime, image)
                  VALUES ($1, 'scene', 'sc_crique', 'image/png', '\\x89504e47') RETURNING id",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
+        }
+        if *method == "POST" && path.ends_with("/tv") {
+            sqlx::query("INSERT INTO tv_pairings (secret_hash, code) VALUES ($1, $2) ON CONFLICT DO NOTHING")
+                .bind(format!("sweep-{}", ids.campaign))
+                .bind(SWEEP_TV_CODE)
+                .execute(&pool)
+                .await
+                .unwrap();
+        }
+        if path.contains("{shop}") {
+            ids.shop = sqlx::query_scalar::<_, Uuid>(
+                "SELECT id FROM shops WHERE campaign_id = $1 ORDER BY created_at DESC LIMIT 1",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
+        }
+        if path.contains("{screen}") {
+            ids.screen = sqlx::query_scalar::<_, Uuid>(
+                "SELECT id FROM players WHERE campaign_id = $1 AND screen LIMIT 1",
             )
             .bind(Uuid::parse_str(&ids.campaign).unwrap())
             .fetch_one(&pool)

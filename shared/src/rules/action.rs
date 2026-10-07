@@ -223,6 +223,7 @@ pub fn find_action(
 }
 
 fn resolve_targets(
+    system: &RuleSystem,
     scene: &Scene,
     actor: &Combatant,
     action: &ActionDef,
@@ -286,7 +287,13 @@ fn resolve_targets(
             let mut seen = Vec::new();
             for t in asked {
                 side(t, false)?;
-                if scene.get(t).is_some_and(|c| c.hit_points == 0) {
+                // A dying character can still be hit (each hit is a
+                // failed death save); anyone else down is out of reach.
+                let dying = matches!(system.zero_hp, ZeroHpRule::DeathSaves { .. });
+                if scene
+                    .get(t)
+                    .is_some_and(|c| c.hit_points == 0 && !(dying && c.progress.is_some()))
+                {
                     return Err(Refusal::TargetDown { target: t.clone() });
                 }
                 if !seen.contains(t) {
@@ -401,7 +408,7 @@ pub fn check_playable(
             });
         }
     }
-    let targets = resolve_targets(scene, actor, &action, &req.targets)?;
+    let targets = resolve_targets(system, scene, actor, &action, &req.targets)?;
     let tags = effective_tags(&action, req.choice)?;
     let open_save = |spec: &ApplySpec| spec.save.as_ref().is_some_and(|s| s.difficulty.is_none());
     let needs_difficulty = tags.iter().any(|t| match t {

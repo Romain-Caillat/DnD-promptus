@@ -144,6 +144,10 @@ export interface PlayerView {
   } | null
   clues: string[]
   npcs: PlayerNpc[]
+  /** Factions the table has met, with their gauge. */
+  factions: { id: string; name: string; affinity: number; min: number; max: number }[]
+  /** The campaign's goals, reached or not. */
+  goals: { id: string; title: string; done: boolean }[]
 }
 
 export type PlayerViewResult =

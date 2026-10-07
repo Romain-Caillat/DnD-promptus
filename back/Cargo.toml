@@ -27,6 +27,8 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 # campaign/edit-rule-system — a rule draft between YAML text and the
 # structured editor's JSON tree (same crate as `shared`).
 serde_yaml_ng = "0.10"
+# session/pair-shared-screen — the QR a TV shows to be paired.
+qrcode = { version = "0.14", default-features = false, features = ["svg"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

@@ -19,6 +19,9 @@ import { JoinPage } from '@/features/play/JoinPage'
 import { PlayerHomePage } from '@/features/play/PlayerHomePage'
 import { RulesPage } from '@/features/play/rules/RulesPage'
 import { ReferencePage } from '@/features/reference/ReferencePage'
+import { GmPairTvPage } from '@/features/tv/GmPairTvPage'
+import { TvPairPage } from '@/features/tv/TvPairPage'
+import { TvShowPage } from '@/features/tv/TvShowPage'
 
 export default function App() {
   return (
@@ -32,6 +35,9 @@ export default function App() {
         <Route path="/partie/:campaignId" element={<PlayerHomePage />} />
         <Route path="/partie/:campaignId/personnage" element={<CharacterCreatorPage />} />
         <Route path="/partie/:campaignId/regles" element={<RulesPage />} />
+        <Route path="/tv" element={<TvPairPage />} />
+        <Route path="/tv/jumeler" element={<GmPairTvPage />} />
+        <Route path="/tv/:campaignId" element={<TvShowPage />} />
         <Route path="/campagnes/nouvelle" element={<NewCampaignPage />} />
         <Route path="/campagnes/:campaignId" element={<CampaignPage />} />
         <Route path="/campagnes/:campaignId/table" element={<GmTablePage />} />

@@ -23,6 +23,18 @@ export function eventLine(e: FightEvent, name: (id: string) => string, t: TFunct
       return t('fight.log.fled', { who: name(e.who) })
     case 'defeated':
       return t('fight.log.defeated', { who: name(e.who) })
+    case 'death_save':
+      return t('fight.log.deathSave', { who: name(e.who), natural: e.natural, successes: e.successes, failures: e.failures })
+    case 'death_failure':
+      return t('fight.log.deathFailure', { who: name(e.who), failures: e.failures })
+    case 'stabilised':
+      return t('fight.log.stabilised', { who: name(e.who) })
+    case 'spared':
+      return t('fight.log.spared', { who: name(e.who) })
+    case 'died':
+      return t('fight.log.died', { who: name(e.who) })
+    case 'death_proposed':
+      return t('fight.log.deathProposed', { who: name(e.who) })
     case 'ended':
       return e.end.winner === 'party'
         ? t('fight.log.won')
@@ -46,6 +58,8 @@ export function eventLine(e: FightEvent, name: (id: string) => string, t: TFunct
           return t('fight.log.conditionEnded', { target: name(r.target), name: r.name })
         case 'knocked_out':
           return t('fight.log.knockedOut', { target: name(r.target) })
+        case 'revived':
+          return t('fight.log.revived', { target: name(r.target) })
         case 'item_used':
           return t('fight.log.item', { who: name(r.who), item: r.item })
         default:

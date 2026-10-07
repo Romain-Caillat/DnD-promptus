@@ -54,7 +54,12 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         // Sprites: a description is drawn the same for GM, players and TV.
         .route("/api/sprites/render.png", get(api::sprites::render_png))
         .route("/api/sprites/looks", get(api::sprites::looks))
-        .route("/api/sprites/packs/{pack}", get(api::sprites::pack));
+        .route("/api/sprites/packs/{pack}", get(api::sprites::pack))
+        // A TV asks for a code, then whether the GM typed it. Its secret
+        // is the only key; once paired it is a spectator seat.
+        .route("/api/tv/pairings", post(api::tv::start))
+        .route("/api/tv/pairings/{secret}", get(api::tv::poll))
+        .route("/api/tv/pairings/{secret}/qr.svg", get(api::tv::qr));
     let public = invitation_routes()
         .into_iter()
         .fold(public, |r, (_, path, handler)| r.route(path, handler))
@@ -227,6 +232,10 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             put(api::evening::edit_recap),
         )
         .route(
+            "/api/campaigns/{id}/sessions/{session}/publish",
+            post(api::evening::publish_recap),
+        )
+        .route(
             "/api/campaigns/{id}/sessions/{session}/recap-draft",
             post(api::evening::recap_draft),
         )
@@ -239,6 +248,40 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             put(api::evening::note_changes),
         )
         .route("/api/campaigns/{id}/ai", get(api::evening::ai_usage))
+        // player/buy-and-trade: the GM's shops.
+        .route(
+            "/api/campaigns/{id}/shops",
+            get(api::shops::list).post(api::shops::create),
+        )
+        .route(
+            "/api/campaigns/{id}/shops/{shop}",
+            put(api::shops::save).delete(api::shops::delete),
+        )
+        .route(
+            "/api/campaigns/{id}/shops/{shop}/open",
+            post(api::shops::open),
+        )
+        .route(
+            "/api/campaigns/{id}/shops/{shop}/reveal",
+            post(api::shops::reveal),
+        )
+        // gm/launch-session: the shared screens, the reading aloud.
+        .route(
+            "/api/campaigns/{id}/tv",
+            get(api::tv::list).post(api::tv::pair),
+        )
+        .route("/api/campaigns/{id}/tv/window", post(api::tv::window))
+        .route("/api/campaigns/{id}/tv/{screen}", delete(api::tv::forget))
+        .route(
+            "/api/campaigns/{id}/session/reading",
+            post(api::tv::reading),
+        )
+        // session/schedule-sessions: the next date.
+        .route(
+            "/api/campaigns/{id}/plan",
+            get(api::between::plan).put(api::between::propose),
+        )
+        .route("/api/campaigns/{id}/plan/choice", put(api::between::choose))
         // The grid and the fights.
         .route(
             "/api/campaigns/{id}/board",
@@ -386,6 +429,47 @@ fn player_routes() -> Vec<RouteSpec> {
             "/api/play/{campaign}/character/equip",
             post(api::play::equip),
         ),
+        // engine/level-up: a level's hit points, an upgrade point.
+        (
+            "POST",
+            "/api/play/{campaign}/character/level-up",
+            post(api::play::level_up),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/character/upgrade",
+            post(api::play::upgrade),
+        ),
+        // player/buy-and-trade: the open shop, buying, haggling, and
+        // sharing with the rest of the party.
+        ("GET", "/api/play/{campaign}/shop", get(api::shops::shop)),
+        (
+            "POST",
+            "/api/play/{campaign}/shop/buy",
+            post(api::shops::buy),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/shop/haggle",
+            post(api::shops::haggle),
+        ),
+        ("GET", "/api/play/{campaign}/party", get(api::shops::party)),
+        (
+            "POST",
+            "/api/play/{campaign}/character/give",
+            post(api::shops::give),
+        ),
+        // player/face-death: last words, then another character.
+        (
+            "PUT",
+            "/api/play/{campaign}/last-words",
+            put(api::play::last_words),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/new-character",
+            post(api::play::new_character),
+        ),
         // The evening: the scene, the music, my requests and their rolls,
         // the journal; the lobby; the feedback at the end.
         (
@@ -422,6 +506,23 @@ fn player_routes() -> Vec<RouteSpec> {
             "POST",
             "/api/play/{campaign}/feedback",
             post(api::play_evening::answer_feedback),
+        ),
+        // Between sessions: what I gained, the published recap, the
+        // chronicle, the next date and my answer, the calendar reminder.
+        (
+            "GET",
+            "/api/play/{campaign}/between",
+            get(api::between::between),
+        ),
+        (
+            "PUT",
+            "/api/play/{campaign}/availability",
+            put(api::between::availability),
+        ),
+        (
+            "GET",
+            "/api/play/{campaign}/next-session.ics",
+            get(api::between::calendar),
         ),
         // The grid: the map as I may see it, my walk, my fight turn.
         (

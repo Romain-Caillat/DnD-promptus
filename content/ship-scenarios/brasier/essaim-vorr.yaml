@@ -1,0 +1,28 @@
+# Le Brasier — le Cure-Dent contre une escouade de chasseurs vorr.
+# Rejoué par shared/tests/ship_fights.rs (engine/support-vehicle-combat).
+id: essaim-vorr
+name: L'essaim vorr
+description: >-
+  Le Cure-Dent, ses six postes tenus, contre cinq chasseurs vorr qui
+  arrivent en essaim par l'avant et cherchent son angle mort.
+source: dnd-save/DnD_07-06-2026/Combat_Vaisseau.md (§9, escouades)
+rules: brasier
+version: 1
+party:
+  ship: cure_dent
+  key: cure_dent
+  at: [0, 0]
+  facing: north
+  crew:
+    - { id: pilote, class: pilote, station: barre }
+    - { id: canonnier, class: canonnier, station: piece_lourde }
+    - { id: mecano, class: mecano, station: ingenieur }
+    - { id: xenologue, class: xenologue, station: capteurs }
+    - { id: toubib, class: toubib, station: integrite }
+    - { id: quartier_maitre, class: quartier_maitre, station: liaison }
+opposition:
+  - { ship: chasseur_vorr, key: vorr_1, name: Chasseur 1, at: [-2, -10], facing: south, group: essaim }
+  - { ship: chasseur_vorr, key: vorr_2, name: Chasseur 2, at: [0, -11], facing: south, group: essaim }
+  - { ship: chasseur_vorr, key: vorr_3, name: Chasseur 3, at: [2, -10], facing: south, group: essaim }
+  - { ship: chasseur_vorr, key: vorr_4, name: Chasseur 4, at: [-4, -12], facing: south, group: essaim }
+  - { ship: chasseur_vorr, key: vorr_5, name: Chasseur 5, at: [4, -12], facing: south, group: essaim }

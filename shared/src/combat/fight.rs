@@ -42,6 +42,7 @@ use crate::rules::model::{
 use crate::rules::progression::award_band;
 use crate::rules::sheet::{Combatant, Scene, SheetError, Side};
 
+use super::death::DeathTrack;
 use super::reach::{self, Reach, ReachRefusal};
 
 /// Movement per move when the rule system leaves `cells_per_move` null:
@@ -63,6 +64,8 @@ pub enum Standing {
     /// Put out of the scene by the zero-HP rule.
     OutOfScene,
     Fled,
+    /// A character whose death the GM confirmed.
+    Dead,
 }
 
 /// One initiative roll: the die faces, the bonus, the total, and the
@@ -153,6 +156,37 @@ pub enum FightEvent {
     Ended {
         end: FightEnd,
     },
+    /// A death save rolled on the downed character's turn.
+    DeathSave {
+        who: String,
+        die: String,
+        natural: u32,
+        difficulty: i32,
+        successes: u32,
+        failures: u32,
+    },
+    /// Hit while down: one failure, two on a critical.
+    DeathFailure {
+        who: String,
+        failures: u32,
+    },
+    /// Enough successes: down, but no longer dying.
+    Stabilised {
+        who: String,
+    },
+    /// Enough failures: the engine proposes the death; nothing more
+    /// happens before the GM's word.
+    DeathProposed {
+        who: String,
+    },
+    /// The GM confirmed the death.
+    Died {
+        who: String,
+    },
+    /// The GM decided another outcome: down and stable.
+    Spared {
+        who: String,
+    },
 }
 
 /// Why a fight cannot start.
@@ -202,6 +236,10 @@ pub enum CombatRefusal {
     },
     AreaEmpty,
     NoFleeRoll,
+    /// A downed character's turn waits for their death save.
+    DeathSaveDue,
+    NoDeathSaveDue,
+    NoDeathProposed,
     Rules {
         refusal: Refusal,
     },
@@ -313,6 +351,10 @@ pub struct Fight {
     /// The free move of this turn is spent (systems with no move kind).
     pub moved: bool,
     xp_at_start: BTreeMap<String, u32>,
+    /// The death saves of characters down at 0 hit points, when the
+    /// system plays them (`super::death`).
+    #[serde(default)]
+    pub dying: BTreeMap<String, DeathTrack>,
     pub end: Option<FightEnd>,
 }
 
@@ -406,6 +448,7 @@ impl Fight {
             turn: 0,
             moved: false,
             xp_at_start,
+            dying: BTreeMap::new(),
             end: None,
         };
         events.push(FightEvent::RoundStarted { round: 1 });
@@ -534,7 +577,7 @@ impl Fight {
         })
     }
 
-    fn open_turn(&self, who: &str) -> Result<(), CombatRefusal> {
+    pub(super) fn open_turn(&self, who: &str) -> Result<(), CombatRefusal> {
         if self.is_over() {
             return Err(CombatRefusal::FightOver);
         }
@@ -760,6 +803,7 @@ impl Fight {
         for (id, c) in resolution.scene.combatants {
             next.scene.combatants.insert(id, c);
         }
+        next.track_dying(system, &mut events);
         next.settle(system, &mut events);
         next.check_end(&mut events);
         Ok(Step {
@@ -867,6 +911,9 @@ impl Fight {
         dice: &mut dyn DiceSource,
     ) -> Result<Step, CombatRefusal> {
         self.open_turn(who)?;
+        if self.save_due(system, who) {
+            return Err(CombatRefusal::DeathSaveDue);
+        }
         let mut next = self.clone();
         let mut events = Vec::new();
         next.close_turn(system, who, dice, &mut events)
@@ -898,7 +945,7 @@ impl Fight {
         }
     }
 
-    fn close_turn(
+    pub(super) fn close_turn(
         &mut self,
         system: &RuleSystem,
         who: &str,
@@ -917,7 +964,7 @@ impl Fight {
     /// Begins the next turn after `from` (or the first one), wrapping into
     /// a new round, skipping whoever left the fight and closing at once
     /// the turns of those a condition keeps from acting.
-    fn advance(
+    pub(super) fn advance(
         &mut self,
         system: &RuleSystem,
         from: Option<usize>,
@@ -954,7 +1001,8 @@ impl Fight {
                 .scene
                 .get(&id)
                 .is_some_and(|c| c.incapacitated_by().is_some());
-            if !blocked {
+            // A dying character's turn opens for their death save.
+            if !blocked || self.save_due(system, &id) {
                 return Ok(());
             }
             self.close_turn(system, &id, dice, events)?;
@@ -967,7 +1015,7 @@ impl Fight {
         }
     }
 
-    fn leave(&mut self, who: &str, standing: Standing) {
+    pub(super) fn leave(&mut self, who: &str, standing: Standing) {
         self.standing.insert(who.into(), standing);
         self.positions.remove(who);
     }
@@ -999,7 +1047,7 @@ impl Fight {
         }
     }
 
-    fn check_end(&mut self, events: &mut Vec<FightEvent>) {
+    pub(super) fn check_end(&mut self, events: &mut Vec<FightEvent>) {
         if self.is_over() {
             return;
         }
@@ -1040,6 +1088,7 @@ impl Fight {
             xp,
         };
         self.scene.active = None;
+        self.settle_dying_at_end(winner == Some(Side::Party), events);
         events.push(FightEvent::Ended { end: end.clone() });
         self.end = Some(end);
     }

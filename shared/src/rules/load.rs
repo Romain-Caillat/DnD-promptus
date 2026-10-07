@@ -184,6 +184,136 @@ impl<'a> V<'a> {
         }
     }
 
+    /// engine/support-vehicle-combat: every reference resolves, the
+    /// numbers can be played.
+    fn ship_combat(&mut self, sc: &crate::ships::ShipCombat) {
+        use crate::ships::model::ShipEffect;
+        let r = sc.ranges;
+        if !(r.short < r.medium && r.medium < r.long) {
+            self.err(
+                ErrorCode::InvalidValue,
+                "ship_combat.ranges",
+                "short < medium < long",
+            );
+        }
+        let e = &sc.energy;
+        for (name, levels) in [
+            ("navigation", &e.navigation),
+            ("weapons", &e.weapons),
+            ("shields", &e.shields),
+        ] {
+            if levels.is_empty() {
+                self.err(
+                    ErrorCode::EmptyField,
+                    format!("ship_combat.energy.{name}"),
+                    "one level per point, from 0",
+                );
+            }
+        }
+        if e.start.total() > e.reactor
+            || e.start.navigation as usize >= e.navigation.len()
+            || e.start.weapons as usize >= e.weapons.len()
+            || e.start.shields as usize >= e.shields.len()
+        {
+            self.err(
+                ErrorCode::InvalidValue,
+                "ship_combat.energy.start",
+                "the starting split exceeds the reactor or a channel",
+            );
+        }
+        self.unique(
+            sc.stations.iter().map(|x| x.id.as_str()),
+            "ship_combat.stations",
+        );
+        for st in &sc.stations {
+            self.ability(
+                &st.ability,
+                &format!("ship_combat.stations[{}].ability", st.id),
+            );
+        }
+        self.unique(
+            sc.actions.iter().map(|x| x.id.as_str()),
+            "ship_combat.actions",
+        );
+        for a in &sc.actions {
+            let path = format!("ship_combat.actions[{}]", a.id);
+            if sc.station(&a.station).is_none() {
+                self.err(
+                    ErrorCode::InvalidValue,
+                    format!("{path}.station"),
+                    format!("no station `{}`", a.station),
+                );
+            }
+            if a.cost == 0 {
+                self.err(
+                    ErrorCode::InvalidValue,
+                    format!("{path}.cost"),
+                    "costs at least 1",
+                );
+            }
+            let hostile = matches!(
+                a.effect,
+                ShipEffect::Fire { .. } | ShipEffect::BreakMorale { .. }
+            );
+            if matches!(a.effect, ShipEffect::Fire { .. }) && !a.attack || a.attack && !hostile {
+                self.err(
+                    ErrorCode::InvalidValue,
+                    format!("{path}.attack"),
+                    "a shot is an attack; only a shot or breaking morale can be one",
+                );
+            }
+        }
+        let faces: Vec<u32> = sc
+            .damage_table
+            .results
+            .iter()
+            .flat_map(|x| x.faces.iter().copied())
+            .collect();
+        for f in 1..=sc.damage_table.die {
+            if faces.iter().filter(|&&x| x == f).count() != 1 {
+                self.err(
+                    ErrorCode::InvalidValue,
+                    "ship_combat.damage_table.results",
+                    format!("face {f} must have exactly one result"),
+                );
+            }
+        }
+        self.unique(sc.ships.iter().map(|x| x.id.as_str()), "ship_combat.ships");
+        for ship in &sc.ships {
+            let path = format!("ship_combat.ships[{}]", ship.id);
+            if ship.hull <= 0 {
+                self.err(
+                    ErrorCode::InvalidValue,
+                    format!("{path}.hull"),
+                    "a ship has hull",
+                );
+            }
+            for w in &ship.weapons {
+                let wp = format!("{path}.weapons[{}]", w.id);
+                if w.arcs.is_empty() {
+                    self.err(
+                        ErrorCode::EmptyField,
+                        format!("{wp}.arcs"),
+                        "a weapon fires somewhere",
+                    );
+                }
+                match (&w.station, ship.crewed) {
+                    (Some(st), true) if sc.station(st).is_none() => self.err(
+                        ErrorCode::InvalidValue,
+                        format!("{wp}.station"),
+                        format!("no station `{st}`"),
+                    ),
+                    (None, true) => self.err(
+                        ErrorCode::EmptyField,
+                        format!("{wp}.station"),
+                        "a crewed ship's weapon is fired from a station",
+                    ),
+                    _ => {}
+                }
+            }
+        }
+    }
+
     fn condition(&mut self, id: &str, path: &str) {
         if self.s.condition(id).is_none() {
             self.err(
@@ -615,6 +745,27 @@ fn validate(s: &RuleSystem) -> Vec<RuleError> {
             "levels start at level 1 with 0 XP and go up one level at a time with increasing XP",
         );
     }
+    if let Some(hp) = &s.progression.hit_points_per_level {
+        if hp.dice.is_flat() {
+            v.err(
+                ErrorCode::InvalidDice,
+                "progression.hit_points_per_level.dice",
+                "a die to roll (1d10), not a flat number",
+            );
+        }
+        if let Some(bonus) = &hp.bonus {
+            v.formula(bonus, &["level"], "progression.hit_points_per_level.bonus");
+        }
+    }
+    for c in &s.classes {
+        if c.hit_dice.is_some_and(|d| d.is_flat()) {
+            v.err(
+                ErrorCode::InvalidDice,
+                format!("classes[{}].hit_dice", c.id),
+                "a die to roll (1d10), not a flat number",
+            );
+        }
+    }
     if s.progression.upgrade_every_xp == 0 {
         v.err(
             ErrorCode::InvalidValue,
@@ -693,6 +844,9 @@ fn validate(s: &RuleSystem) -> Vec<RuleError> {
     for (i, h) in s.house_rules.iter().enumerate() {
         v.non_empty(&h.name, &format!("house_rules[{i}].name"));
         v.non_empty(&h.text, &format!("house_rules[{i}].text"));
+    }
+    if let Some(sc) = &s.ship_combat {
+        v.ship_combat(sc);
     }
     v.unique(s.resources.iter().map(|x| x.id.as_str()), "resources");
     v.unique(s.peoples.iter().map(|x| x.id.as_str()), "peoples");

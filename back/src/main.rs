@@ -38,6 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let live = LiveHub::new(LiveConfig::default());
     live::listener::spawn(pool.clone(), live.clone());
+    promptus_back::evening::schedule::spawn(pool.clone());
 
     let mut router = app::router(
         AppState {

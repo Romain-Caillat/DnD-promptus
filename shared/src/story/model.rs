@@ -128,6 +128,16 @@ impl Campaign {
     }
 
     #[must_use]
+    pub fn faction(&self, id: &str) -> Option<&Faction> {
+        self.factions.iter().find(|f| f.id == id)
+    }
+
+    #[must_use]
+    pub fn goal(&self, id: &str) -> Option<&Goal> {
+        self.goals.iter().find(|g| g.id == id)
+    }
+
+    #[must_use]
     pub fn front(&self, id: &str) -> Option<&Front> {
         self.fronts.iter().find(|f| f.id == id)
     }
@@ -562,6 +572,10 @@ pub struct Npc {
     pub faction: Option<Id>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<Id>,
+    /// Always with the party (the Brasier's ship AI): the co-GM may
+    /// speak for them in any scene.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub permanent: bool,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub gm_notes: String,
 }

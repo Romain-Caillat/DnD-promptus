@@ -21,6 +21,8 @@ const play = (over: Record<string, unknown> = {}) => ({
   inventory: [
     { key: 'sabre', itemId: 'sabre', name: "Sabre d'abordage", description: '', qty: 1, consumable: false, equipped: true },
   ],
+  levelHitPoints: null,
+  levelsToChoose: [],
   ...over,
 })
 

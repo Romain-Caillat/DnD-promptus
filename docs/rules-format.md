@@ -53,7 +53,7 @@ model forced where the source was ambiguous.
 | `turn_contexts` | Action economy per setting (below) |
 | `cooldowns.meaning` | `skip_next_turns` or `turn_of_use_counts` (below) |
 | `durations.application_turn_counts` | Whether the turn a condition lands in counts (below) |
-| `progression` | `{ upgrade_every_xp, upgrade_points, levels: [{ level, xp }] }` |
+| `progression` | `{ upgrade_every_xp, upgrade_points, levels: [{ level, xp }], hit_points_per_level? }` — `hit_points_per_level: { dice: 1d10, bonus: "mod(CON)" }` makes each level past the first add the die (rolled by the server, or its average rounded up, as the player chooses once per level) plus the bonus, at least 1; a level not chosen yet counts the average. Absent, hit points do not grow with levels |
 | `zero_hp` | What 0 hit points does (below) |
 | `creation` | `{ abilities: from_class, free_action_slots }` |
 | `movement` | Per map scale (`world`, `place`, `encounter`): `cells_per_move` (`null` when unstated) and optional `grid: { diagonal: chebyshev\|alternate, difficult_factor, climb_cost, max_step, swim_factor }` — the `maps::MovementRules` the grid reads |
@@ -63,6 +63,7 @@ model forced where the source was ambiguous.
 | `conditions`, `classes`, `items`, `adversary_tiers`, `adversaries` | Below |
 | `peoples` | Playable peoples (empty in both drafts) |
 | `house_rules` | Optional: `{ id, name, text }` — the GM's own rulings, in French, shown on the players' rules page and given to the co-GM |
+| `ship_combat` | Optional: ships fighting ships (below) |
 
 ## Formulas
 
@@ -112,7 +113,14 @@ zero_hp: { rule: death_saves, condition: mourant, difficulty: 10, successes: 3, 
 
 `knocked_out`: a heal lifts `condition`; after `out_after_turns` of the
 bearer's turns without one, `out_condition` replaces it.
-`death_saves` is modelled, played by `engine/save-against-death`.
+`death_saves` (`shared/src/combat/death.rs`): a character at 0 HP rolls
+the check die on each of their turns — at least `difficulty` marks a
+success, under it a failure, a natural 1 two failures, the die's top face
+brings them back at 1 HP. A hit while down marks a failure, two on a
+critical. `successes` successes make them stable; `failures` failures
+**propose** the death, which the GM confirms or turns into another
+outcome (stable). When the fight ends, those still dying are stabilised
+if the party won, else their death is proposed. Adversaries never roll.
 
 ## Fighting on a grid
 
@@ -229,7 +237,8 @@ missing, or the targets do not fit.
 ```yaml
 classes:
   - { id, name, description, primary_abilities: [FOR, DEX], secondary_abilities: [],
-      abilities: { FOR: 13, … }, items: [{ item, qty }], actions: [...], notes: [] }
+      abilities: { FOR: 13, … }, items: [{ item, qty }], actions: [...], notes: [],
+      hit_dice?: 1d10 }   # over progression.hit_points_per_level.dice
 items:
   - { id, name, description, price?, consumable?, action?, note? }
 adversary_tiers:
@@ -329,8 +338,33 @@ and every variant's comparison, in French; `--world`, `--n`, `--seed`,
 `--json`, `--markdown [file]` (default `docs/rapport-phase-1.md`). It
 exits non-zero only when a file, a scenario or a variant does not load.
 
+## Ship combat
+
+`ship_combat` (`shared/src/ships`, from the Brasier's
+`Combat_Vaisseau.md`) makes a ship a character the crew shares:
+
+| Key | What it is |
+| --- | --- |
+| `ranges` | `{ short, medium, long }`: the last cell of each band (Chebyshev distance); past `long`, out of range |
+| `boarding_range` | Cells within which a ship can be boarded (default 2) |
+| `energy` | `reactor` points a turn; `damaged: [{ hull_at_most, reactor }]`; `reactor_hit` (lost while the `reactor` station is out); `start: { navigation, weapons, shields }`; and one list per channel, entry *n* for *n* points: `{ movement, engines_dead, evade, damage, no_charged, recharge, offline, damage_taken }`, every field optional |
+| `stations` | `{ id, name, ability, reactor?, helm? }` — the helm's DEX gives the ship's initiative |
+| `actions` | `{ id, name, station, cost (1), attack (false), difficulty?, effect }`; `effect` is one of `maneuver: { cells, turns }`, `evade: { armor }`, `brace: { reduction }`, `fire: { charged }`, `recharge_shields`, `reroute`, `repair_hull: { amount }`, `repair_system`, `extinguish`, `patch_breach`, `lock: { bonus }`, `jam: { malus }`, `break_morale: { amount }`, `move` (change station). A shot is an attack; breaking morale may be one |
+| `damage_table` | `{ die, hull_thresholds, results: [{ faces, name, kind: fire \| breach \| system_down \| shake, hull_per_turn }] }` — every face has one result |
+| `ships` | `{ id, name, hull, shields, armor, morale?, resolve (12), speed (3), attack_bonus, initiative_bonus, crewed, weapons: [{ id, name, station?, arcs: [front, port, starboard, rear], range: short \| medium \| long, damage, charged_damage? }], notes }` |
+
+A crew member has two actions and one attack a turn, acts from the
+station they hold, and the whole crew plays its turn together; a turn
+with a refused order changes nothing. A hit (d20 + the station's
+ability, + a lock, − jamming, against armour + evasion; a natural 20
+always hits and rolls on the damage table of a crewed ship, a natural 1
+misses) goes to the shields, then the hull; crossing a hull threshold
+rolls on the damage table. Morale at 0 breaks a ship off: the second
+way to win. Ship fights are rehearsed from `content/ship-scenarios/
+<world>/<id>.yaml` (`ships::simulate`).
+
 ## Not yet in the format
 
-Vehicles (`engine/support-vehicle-combat`) and death saves played out
-(`engine/save-against-death`). Ship combat's action economy is already
-expressible as a turn context.
+Boarding as a switch to the ground fight, and the ship actions the GM
+still rules by hand (risky manoeuvre's flank attack, scanning,
+bluffing, rallying, cutting comms, EVA, overcharging).

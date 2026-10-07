@@ -75,6 +75,9 @@ pub enum Field {
     UpgradeEveryXp,
     UpgradePoints,
     LevelXp,
+    /// What a level adds to hit points (`1d10 + mod(CON)`); subject is a
+    /// class when it has its own die.
+    LevelHitPoints,
     CoverHalf,
     CoverThreeQuarters,
     LongRange,
@@ -569,6 +572,41 @@ pub fn rule_changes(old: &RuleSystem, new: &RuleSystem) -> Vec<RuleChange> {
             level_xp(op, level),
             level_xp(np, level),
         );
+    }
+
+    let level_hp = |sys: &RuleSystem, class: Option<&str>| {
+        let Some(rule) = &sys.progression.hit_points_per_level else {
+            return text("");
+        };
+        let die = class
+            .and_then(|id| sys.class(id))
+            .and_then(|c| c.hit_dice)
+            .unwrap_or(rule.dice);
+        match &rule.bonus {
+            Some(b) => text(format!("{die} + {}", b.source())),
+            None => text(die),
+        }
+    };
+    d.cmp(
+        s,
+        "",
+        Field::LevelHitPoints,
+        level_hp(old, None),
+        level_hp(new, None),
+    );
+    for nc in &new.classes {
+        let own = old
+            .class(&nc.id)
+            .map(|oc| oc.hit_dice.is_some() || nc.hit_dice.is_some());
+        if own == Some(true) {
+            d.cmp(
+                s,
+                &nc.name,
+                Field::LevelHitPoints,
+                level_hp(old, Some(&nc.id)),
+                level_hp(new, Some(&nc.id)),
+            );
+        }
     }
 
     let s = Section::Combat;

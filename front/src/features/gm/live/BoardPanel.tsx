@@ -8,6 +8,7 @@ import { useImage } from '@/features/map/useImage'
 import { useTileset } from '@/features/map/useTileset'
 import type { Cell, Edit, GmBoard, GmCommand, TokenView, Weather, TimeOfDay } from '@/lib/board'
 import { gmBackdropUrl } from '@/lib/maps'
+import { DeathDecisions } from './DeathDecisions'
 import { gmImageUrl, type MediaList } from '@/lib/media'
 import { cn } from '@/lib/utils'
 import { Btn, Panel, field } from './ui'
@@ -251,6 +252,7 @@ function FightBlock({
             </Btn>
           ))}
         </div>
+        {enc && <DeathDecisions enc={enc} onCommand={onCommand} />}
         {enc && enc.loot.length > 0 && (
           <div className="flex flex-col gap-1">
             <span className="type-label">{t('gmLive.fight.loot')}</span>
@@ -314,13 +316,24 @@ function FightBlock({
             >
               <span className="font-bold">{c.name}</span>
               <span className="tabular-nums">
-                {t('gmLive.fight.hp', { hp: c.hit_points, max: enc.maxHitPoints[id] ?? '?' })}
+                {f.standing[id] === 'dead'
+                  ? t('gmLive.fight.dead')
+                  : t('gmLive.fight.hp', { hp: c.hit_points, max: enc.maxHitPoints[id] ?? '?' })}
                 {c.conditions.length > 0 && ` · ${c.conditions.map((x) => x.name).join(', ')}`}
+                {f.dying?.[id] &&
+                  ` · ${t('gmLive.fight.saves', { successes: f.dying[id].successes, failures: f.dying[id].failures })}`}
               </span>
             </li>
           )
         })}
       </ol>
+      <DeathDecisions enc={enc} onCommand={onCommand} />
+      {enc.deathSaveDue && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-caption">{t('gmLive.fight.saveDue', { who: name(active) })}</span>
+          <Btn onClick={() => onCommand({ kind: 'deathSave' })}>{t('gmLive.fight.rollForThem')}</Btn>
+        </div>
+      )}
       {foeTurn && (
         <div className="flex flex-wrap gap-1.5">
           <Btn main={!enc.proposal} onClick={() => onCommand({ kind: 'propose' })}>
@@ -376,3 +389,4 @@ function FightBlock({
     </div>
   )
 }
+

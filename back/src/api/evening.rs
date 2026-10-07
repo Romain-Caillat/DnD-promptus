@@ -6,7 +6,8 @@
 //!   (hidden lines included), what the next scenes need, the spotlight;
 //! - `POST /api/campaigns/{id}/session` → open the lobby (201);
 //! - `POST /api/campaigns/{id}/session/start` → the session goes live;
-//! - `POST /api/campaigns/{id}/session/end` → `{ recap, previously }`;
+//! - `POST /api/campaigns/{id}/session/end` → `{ recap, previously }`
+//!   (empty: drafted from what the session changed, to reread);
 //! - `POST /api/campaigns/{id}/session/reveal` → a scene, a clue, an
 //!   NPC, a front's clock, a resolved scene (`evening::scenes::Reveal`);
 //! - `PUT /api/campaigns/{id}/session/music` → `{ track }` (or null);
@@ -20,7 +21,10 @@
 //! - `GET  /api/campaigns/{id}/knowledge?ref=…&situation=…` → what the
 //!   table knows about a story id, and past rulings like a situation;
 //! - `GET  /api/campaigns/{id}/sessions` → the chronicle;
-//! - `PUT  /api/campaigns/{id}/sessions/{session}/recap` → edit the recap;
+//! - `PUT  /api/campaigns/{id}/sessions/{session}/recap` → edit the recap
+//!   (`{ recap, previously, title?, chronicle? }`);
+//! - `POST /api/campaigns/{id}/sessions/{session}/publish` → the GM
+//!   reread it: « Précédemment… » and the chronicle reach the players;
 //! - `POST /api/campaigns/{id}/sessions/{session}/recap-draft` → the
 //!   co-GM's draft of both recaps (counted AI call; nothing saved);
 //! - `GET  /api/campaigns/{id}/sessions/{session}/feedback` → answers and
@@ -87,6 +91,8 @@ struct SceneNpc {
     wants: String,
     hides: String,
     met: bool,
+    /// Not listed in the scene: always with the party.
+    permanent: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -138,8 +144,28 @@ fn gm_scene(story: &Campaign, world: &WorldState) -> Option<GmScene> {
                     wants: n.wants.clone(),
                     hides: n.hides.clone(),
                     met: world.revealed.contains(&n.id),
+                    permanent: false,
                 })
             })
+            // campaign/track-factions-and-goals: the party's companion
+            // (LUMEN) speaks in every scene.
+            .chain(
+                story
+                    .npcs
+                    .iter()
+                    .filter(|n| n.permanent && !node.npcs.iter().any(|p| p.npc == n.id))
+                    .map(|n| SceneNpc {
+                        id: n.id.clone(),
+                        name: n.name.clone(),
+                        title: n.title.clone(),
+                        role: String::new(),
+                        roleplay: n.roleplay.clone(),
+                        wants: n.wants.clone(),
+                        hides: n.hides.clone(),
+                        met: world.revealed.contains(&n.id),
+                        permanent: true,
+                    }),
+            )
             .collect(),
         exits: node
             .exits
@@ -166,6 +192,28 @@ struct FrontView {
     goal: String,
     steps: Vec<String>,
     progress: u32,
+}
+
+/// A faction's gauge as the GM moves it.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct FactionGauge {
+    id: String,
+    name: String,
+    affinity: i32,
+    min: i32,
+    max: i32,
+    met: bool,
+    rivals: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GoalCheck {
+    id: String,
+    title: String,
+    held_by: Option<String>,
+    done: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -281,8 +329,15 @@ pub async fn live_screen(
     }
     let story = &row.story;
     let world = &row.world;
+    // gm/launch-session: « Précédemment… » as the GM reads it, line by
+    // line, to the shared screen.
+    let reading_lines = session::last_published(pool, row.id)
+        .await?
+        .map(|s| session::reading_lines(&s.previously))
+        .unwrap_or_default();
     let data = json!({
         "session": current,
+        "readingLines": reading_lines,
         "lastEnded": last,
         "presence": presence,
         "lobby": lobby,
@@ -301,6 +356,21 @@ pub async fn live_screen(
             goal: f.goal.clone(),
             steps: f.steps.iter().map(|s| s.label.clone()).collect(),
             progress: world.front_progress.get(&f.id).copied().unwrap_or(0),
+        }).collect::<Vec<_>>(),
+        "factions": story.factions.iter().map(|f| FactionGauge {
+            id: f.id.clone(),
+            name: f.name.clone(),
+            affinity: world.affinity(story, &f.id).unwrap_or(f.affinity.start),
+            min: f.affinity.min,
+            max: f.affinity.max,
+            met: world.met_factions.contains(&f.id),
+            rivals: f.rivals.iter().filter_map(|r| story.faction(r)).map(|r| r.name.clone()).collect(),
+        }).collect::<Vec<_>>(),
+        "goals": story.goals.iter().map(|g| GoalCheck {
+            id: g.id.clone(),
+            title: g.title.clone(),
+            held_by: g.held_by.as_deref().and_then(|h| story.faction(h)).map(|h| h.name.clone()),
+            done: world.goals_done.contains(&g.id),
         }).collect::<Vec<_>>(),
         "requests": gm_requests,
         "journal": knowledge::journal(pool, row.id, false).await?,
@@ -544,11 +614,29 @@ pub async fn edit_recap(
     Ok(session_json(&s))
 }
 
+/// `POST /api/campaigns/{id}/sessions/{session}/publish`
+///
+/// # Errors
+///
+/// 404; 409 `SESSION_NOT_ENDED`, `RECAP_EMPTY`.
+pub async fn publish_recap(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path((id, sid)): Path<(String, String)>,
+) -> Result<Response, AppError> {
+    let s = session::publish(&state.pool, &gm, parse_id(&id)?, parse_id(&sid)?).await?;
+    Ok(session_json(&s))
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct RecapDraft {
     players: String,
     gm: String,
+    #[serde(default)]
+    title: String,
+    #[serde(default)]
+    chronicle: String,
 }
 
 /// `POST /api/campaigns/{id}/sessions/{session}/recap-draft` — the
@@ -586,10 +674,23 @@ pub async fn recap_draft(
                 .iter()
                 .map(|g| format!("- À savoir pour « {} » : {}", g.node_title, g.statement)),
         )
+        .chain(s.facts.iter().flat_map(|f| {
+            f.fronts
+                .iter()
+                .map(|x| format!("- Menace « {} » : {}", x.name, x.step))
+        }))
         .collect();
+    // What the table saw, measured when the session ended: the factual
+    // « Précédemment… » holds no front and no hidden name.
+    let facts = s
+        .facts
+        .as_ref()
+        .map(|f| promptus_shared::story::recap::facts_recap(f).1)
+        .unwrap_or_default();
     let vars: BTreeMap<&str, String> = [
         ("title", row.story.title.clone()),
         ("number", s.number.to_string()),
+        ("facts", facts),
         ("journal", shared.join("\n")),
         ("gm", hidden.join("\n")),
     ]
@@ -609,7 +710,13 @@ pub async fn recap_draft(
         )
         .await?;
     let draft: RecapDraft = ai::parse_json(&answer.text).map_err(|e| ledger::app_error(&e))?;
-    Ok(Json(json!({ "data": { "players": draft.players, "gm": draft.gm } })).into_response())
+    Ok(Json(json!({ "data": {
+        "players": draft.players,
+        "gm": draft.gm,
+        "title": draft.title,
+        "chronicle": draft.chronicle,
+    } }))
+    .into_response())
 }
 
 /// `GET /api/campaigns/{id}/sessions/{session}/feedback`

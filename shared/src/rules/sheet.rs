@@ -82,6 +82,10 @@ pub struct Combatant {
     /// Action id → cooldown counter (0 or absent = ready).
     pub cooldowns: BTreeMap<String, u32>,
     pub turn: TurnBudget,
+    /// Level → the hit die the player rolled for it. A level reached
+    /// without a roll counts the die's average.
+    #[serde(default)]
+    pub level_hit_dice: BTreeMap<u32, i32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -90,7 +94,15 @@ pub enum SheetError {
     UnknownAdversary(String),
     UnknownAbility(String),
     NoUpgradePoint,
-    NoFreeSlot { slots: u32 },
+    /// This system's levels add no hit points.
+    NoLevelHitPoints,
+    /// The character has not reached that level (or it is level 1).
+    LevelNotReached(u32),
+    /// That level's hit points were already chosen.
+    LevelHitPointsChosen(u32),
+    NoFreeSlot {
+        slots: u32,
+    },
     DuplicateAction(String),
     Formula(String),
 }
@@ -128,6 +140,7 @@ impl Combatant {
             conditions: Vec::new(),
             cooldowns: BTreeMap::new(),
             turn: TurnBudget::default(),
+            level_hit_dice: BTreeMap::new(),
         };
         c.hit_points = c.max_hit_points(system)?;
         Ok(c)
@@ -157,6 +170,7 @@ impl Combatant {
             conditions: Vec::new(),
             cooldowns: BTreeMap::new(),
             turn: TurnBudget::default(),
+            level_hit_dice: BTreeMap::new(),
         })
     }
 
@@ -229,8 +243,52 @@ impl Combatant {
                 .adversary(id)
                 .map(|a| a.hit_points)
                 .ok_or_else(|| SheetError::UnknownAdversary(id.clone())),
-            Origin::Class(_) => self.eval(system, &system.stats.hit_points.formula),
+            Origin::Class(_) => Ok(self.eval(system, &system.stats.hit_points.formula)?
+                + self.level_hit_points(system)?),
         }
+    }
+
+    /// The hit die a new level rolls for this character, if levels add
+    /// hit points in this system.
+    pub fn level_hit_die(&self, system: &RuleSystem) -> Option<super::dice::DiceExpr> {
+        let rule = system.progression.hit_points_per_level.as_ref()?;
+        Some(
+            self.class(system)
+                .and_then(|c| c.hit_dice)
+                .unwrap_or(rule.dice),
+        )
+    }
+
+    /// The bonus each level adds to its die (`mod(CON)`), today.
+    pub fn level_hit_bonus(&self, system: &RuleSystem) -> Result<i32, SheetError> {
+        match system
+            .progression
+            .hit_points_per_level
+            .as_ref()
+            .and_then(|r| r.bonus.as_ref())
+        {
+            Some(f) => self.eval(system, f),
+            None => Ok(0),
+        }
+    }
+
+    /// What levels past the first add: each level's die (rolled, or the
+    /// average) plus the bonus formula, never less than 1 a level.
+    pub fn level_hit_points(&self, system: &RuleSystem) -> Result<i32, SheetError> {
+        let (Some(die), Some(level)) = (self.level_hit_die(system), self.level(system)) else {
+            return Ok(0);
+        };
+        let bonus = self.level_hit_bonus(system)?;
+        Ok((2..=level)
+            .map(|l| {
+                let die = self
+                    .level_hit_dice
+                    .get(&l)
+                    .copied()
+                    .unwrap_or_else(|| die.average_up());
+                (die + bonus).max(1)
+            })
+            .sum())
     }
 
     pub fn initiative_bonus(&self, system: &RuleSystem) -> Result<i32, SheetError> {

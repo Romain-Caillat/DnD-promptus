@@ -157,6 +157,7 @@ pub fn marked() -> Campaign {
         f.description = m("factions.description");
         f.diplomacy = m("factions.diplomacy");
         f.gm_notes = m("factions.gm_notes");
+        f.art = m("factions.art");
     }
     for g in &mut c.goals {
         g.description = m("goals.description");
@@ -165,7 +166,8 @@ pub fn marked() -> Campaign {
     c
 }
 
-/// In the crique, Gwen's and the map's clues found, Loïc met.
+/// In the crique, Gwen's and the map's clues found, Loïc met, the
+/// customs met, the goal reached.
 pub fn world(c: &Campaign) -> WorldState {
     let mut w = WorldState::default();
     w.enter_node(c, "sc_taverne").unwrap();
@@ -173,6 +175,10 @@ pub fn world(c: &Campaign) -> WorldState {
     w.reveal_clue(c, "cl_gwen").unwrap();
     w.reveal_clue(c, "cl_carte").unwrap();
     w.reveal_entity(c, "pnj_loic").unwrap();
+    // The customs met and won over (the wreckers, their rivals, lose
+    // favour unseen); the lighthouse goal reached.
+    w.shift_affinity(c, "fac_douane", 1).unwrap();
+    w.set_goal(c, "but_lumiere", true).unwrap();
     w
 }
 

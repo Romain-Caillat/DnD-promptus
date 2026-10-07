@@ -99,6 +99,34 @@ fn cut(s: &str, n: usize) -> String {
     }
 }
 
+/// « - pnj id Name — role [veut : … ; voix : …] ».
+fn npc_line(npc: &promptus_shared::story::Npc, role: &str, world: &WorldState) -> String {
+    let mut extra = Vec::new();
+    if !npc.wants.is_empty() {
+        extra.push(format!("veut : {}", cut(&npc.wants, 200)));
+    }
+    if !npc.hides.is_empty() {
+        extra.push(format!("cache : {}", cut(&npc.hides, 200)));
+    }
+    if !npc.roleplay.is_empty() {
+        extra.push(format!("voix : {}", cut(&npc.roleplay, 160)));
+    }
+    if world.revealed.contains(&npc.id) {
+        extra.push("connu des joueurs".into());
+    }
+    let role = if role.is_empty() {
+        String::new()
+    } else {
+        format!(" — {}", cut(role, 120))
+    };
+    let extra = if extra.is_empty() {
+        String::new()
+    } else {
+        format!(" [{}]", extra.join(" ; "))
+    };
+    format!("- pnj {} {}{role}{extra}", npc.id, npc.name)
+}
+
 /// How many journal lines the context carries: the most recent.
 const JOURNAL_LINES: usize = 40;
 
@@ -161,34 +189,7 @@ pub fn context(input: &ContextInput<'_>) -> String {
             if !npcs.is_empty() {
                 l.push("Présents :".into());
                 for (p, npc) in npcs {
-                    let mut extra = Vec::new();
-                    if !npc.wants.is_empty() {
-                        extra.push(format!("veut : {}", cut(&npc.wants, 200)));
-                    }
-                    if !npc.hides.is_empty() {
-                        extra.push(format!("cache : {}", cut(&npc.hides, 200)));
-                    }
-                    if !npc.roleplay.is_empty() {
-                        extra.push(format!("voix : {}", cut(&npc.roleplay, 160)));
-                    }
-                    if world.revealed.contains(&npc.id) {
-                        extra.push("connu des joueurs".into());
-                    }
-                    let role = if p.role.is_empty() {
-                        String::new()
-                    } else {
-                        format!(" — {}", cut(&p.role, 120))
-                    };
-                    l.push(format!(
-                        "- pnj {} {}{role}{}",
-                        npc.id,
-                        npc.name,
-                        if extra.is_empty() {
-                            String::new()
-                        } else {
-                            format!(" [{}]", extra.join(" ; "))
-                        }
-                    ));
+                    l.push(npc_line(npc, &p.role, world));
                 }
             }
             let clues: Vec<_> = story.clues.iter().filter(|c| c.node == n.id).collect();
@@ -224,6 +225,57 @@ pub fn context(input: &ContextInput<'_>) -> String {
                     start.id, start.title
                 ));
             }
+        }
+    }
+
+    // campaign/track-factions-and-goals: the party's companion speaks
+    // in every scene.
+    let along: Vec<_> = story.npcs.iter().filter(|n| n.permanent).collect();
+    if !along.is_empty() {
+        l.push(String::new());
+        l.push("# Toujours là (accompagne le groupe dans chaque scène)".into());
+        for npc in along {
+            l.push(npc_line(npc, "", world));
+        }
+    }
+
+    if !story.factions.is_empty() {
+        l.push(String::new());
+        l.push("# Factions (affinité du groupe)".into());
+        for f in &story.factions {
+            let at = world.affinity(story, &f.id).unwrap_or(f.affinity.start);
+            let met = if world.met_factions.contains(&f.id) {
+                "rencontrée"
+            } else {
+                "pas encore rencontrée"
+            };
+            let rivals: Vec<&str> = f
+                .rivals
+                .iter()
+                .filter_map(|r| story.faction(r))
+                .map(|r| r.name.as_str())
+                .collect();
+            let rivals = if rivals.is_empty() {
+                String::new()
+            } else {
+                format!(" ; rivaux : {}", rivals.join(", "))
+            };
+            l.push(format!(
+                "- faction {} {} : {at} ({}..{}), {met}{rivals}",
+                f.id, f.name, f.affinity.min, f.affinity.max
+            ));
+        }
+    }
+    if !story.goals.is_empty() {
+        l.push(String::new());
+        l.push("# Objectifs de campagne".into());
+        for g in &story.goals {
+            let done = if world.goals_done.contains(&g.id) {
+                "atteint"
+            } else {
+                "à atteindre"
+            };
+            l.push(format!("- objectif {} « {} » : {done}", g.id, g.title));
         }
     }
 
@@ -571,6 +623,40 @@ mod tests {
         assert!(ctx.contains("Borin fouille le comptoir"));
         assert!(ctx.contains("Marc : Dextérité"));
         assert!(ctx.chars().count() < 12_000, "{}", ctx.chars().count());
+    }
+
+    #[test]
+    fn the_context_holds_affinities_goals_and_the_companion_in_every_scene() {
+        let mut c = campaign();
+        // Corentin goes everywhere with the party, listed or not.
+        let along = c.npcs[0].id.clone();
+        c.npcs[0].permanent = true;
+        let mut w = WorldState::default();
+        let elsewhere = c
+            .nodes
+            .iter()
+            .find(|n| !n.npcs.iter().any(|p| p.npc == along))
+            .unwrap()
+            .id
+            .clone();
+        w.enter_node(&c, &elsewhere).unwrap();
+        w.shift_affinity(&c, "fac_douane", 2).unwrap();
+        w.set_goal(&c, "but_lumiere", true).unwrap();
+        let ctx = context(&input(&c, &w, &[]));
+        assert!(ctx.contains("# Toujours là"), "{ctx}");
+        assert!(ctx.contains(&format!("- pnj {along} ")), "{ctx}");
+        assert!(
+            ctx.contains("- faction fac_douane La douane royale : 2 (-5..5), rencontrée"),
+            "{ctx}"
+        );
+        assert!(
+            ctx.contains("- faction fac_contrebandiers Les naufrageurs : -4 (-5..5), pas encore rencontrée ; rivaux : La douane royale"),
+            "{ctx}"
+        );
+        assert!(
+            ctx.contains("- objectif but_lumiere « Rallumer le phare » : atteint"),
+            "{ctx}"
+        );
     }
 
     #[test]

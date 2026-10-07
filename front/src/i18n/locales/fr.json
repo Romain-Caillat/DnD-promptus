@@ -451,7 +451,8 @@
       "validated": "Ton personnage est validé !",
       "returned": "Le MJ te demande un changement",
       "spectator": "Tu regardes la partie",
-      "inPlay": "En jeu : ta fiche suit la partie"
+      "inPlay": "En jeu : ta fiche suit la partie",
+      "fallen": "{{name}} est tombé"
     },
     "hello": "{{nickname}}, à la table de {{gm}}",
     "character": "Ton personnage",
@@ -508,7 +509,46 @@
       "scene": "Où vous êtes",
       "clues": "Les indices du groupe",
       "npcs": "Les gens rencontrés",
-      "empty": "Le groupe n'a encore rien découvert."
+      "empty": "Le groupe n'a encore rien découvert.",
+      "factions": "Les factions",
+      "affinity": "Affinité avec {{name}}",
+      "goals": "Les objectifs",
+      "goalDone": "✓ Atteint",
+      "goalOpen": "À atteindre"
+    },
+    "level": {
+      "title": "Monter de niveau",
+      "reached": "Niveau {{level}} !",
+      "hitPoints": "Tes points de vie",
+      "roll": "Lancer le dé",
+      "rollHint": "{{dice}} {{bonus}}, le serveur lance",
+      "average": "La moyenne",
+      "averageHint": "sans risque",
+      "rolled": "Le dé fait {{faces}} : +{{gain}} PV, tu en as {{max}} au maximum.",
+      "averaged": "La moyenne : +{{gain}} PV, tu en as {{max}} au maximum.",
+      "newCard": "Ta nouvelle carte · niveau {{level}}",
+      "upgrade_one": "{{count}} point d'amélioration à placer",
+      "upgrade_other": "{{count}} points d'amélioration à placer",
+      "raise": "+1 en {{ability}}"
+    },
+    "fallen": {
+      "title": "{{name}} est tombé.",
+      "ask": "Ce que {{name}} dit en tombant",
+      "say": "Dire ses derniers mots",
+      "sayHint": "Lus à toute la table, gardés dans le journal",
+      "said": "Les derniers mots de {{name}}",
+      "kept": "Lus à la table et gardés dans le journal.",
+      "next": "Et maintenant ? Tu restes à la table",
+      "watch": "Regarder ce soir",
+      "watchHint": "Tu suis la fin de la soirée : le jeu, la carte et le journal.",
+      "create": "Créer un nouveau personnage",
+      "createHint": "Au niveau du groupe. Le MJ le fera entrer une fois validé.",
+      "errors": {
+        "LAST_WORDS_SAID": "Ses derniers mots sont déjà dits.",
+        "INVALID_LAST_WORDS": "Écris ses derniers mots (280 signes au plus).",
+        "CHARACTER_EXISTS": "Tu as déjà un personnage à la table.",
+        "UNEXPECTED": "Ça n'a pas marché. Réessaie."
+      }
     }
   },
   "creator": {
@@ -1017,7 +1057,8 @@
         "cover_half": "demi-couvert :",
         "cover_three_quarters": "couvert aux trois quarts :",
         "long_range": "longue portée :",
-        "flee": "fuir coûte :"
+        "flee": "fuir coûte :",
+        "level_hit_points": "points de vie par niveau :"
       }
     },
     "codes": {
@@ -1229,6 +1270,36 @@
       "SPECTATOR": "Tu regardes la partie : tu ne joues pas de carte.",
       "NO_PLAY_SHEET": "Ton personnage n'est pas encore en jeu.",
       "ALREADY_ANSWERED": "Tu as déjà répondu."
+    },
+    "between": {
+      "next": {
+        "title": "Session {{number}}",
+        "lobby": "Salle d'attente ouverte dès {{when}}",
+        "remind": "Ajouter à mon calendrier",
+        "ask": "Quand peux-tu jouer ? Touche les dates qui te vont.",
+        "proposed": "Dates proposées par le MJ",
+        "unanswered": "Tu n'as pas encore répondu.",
+        "answered_one": "{{count}} joueur a répondu.",
+        "answered_other": "{{count}} joueurs ont répondu."
+      },
+      "gains": {
+        "title": "Ce que tu as gagné à la session {{number}}",
+        "xp_one": "+{{count}} XP",
+        "xp_other": "+{{count}} XP",
+        "item": "{{label}} {{delta}}",
+        "levelHint": "Si tu as assez d'XP, monte de niveau dans l'onglet Perso."
+      },
+      "awaitingRecap": "Le MJ relit le résumé de la dernière session.",
+      "clues": "Ce que vous savez",
+      "open": "Ce qui reste ouvert",
+      "chronicle": "La chronique",
+      "entry": "Session {{number}}",
+      "errors": {
+        "NOT_PROPOSED": "Cette date n'est plus proposée.",
+        "NO_PLAN": "Le MJ n'a plus de date proposée.",
+        "SPECTATOR": "Tu regardes la partie : tu ne réponds pas aux dates.",
+        "UNEXPECTED": "Ta réponse n'est pas passée. Réessaie."
+      }
     }
   },
   "map": {
@@ -1281,7 +1352,14 @@
       "condition": "{{target}} : {{name}}",
       "conditionEnded": "{{target}} n'est plus {{name}}",
       "knockedOut": "{{target}} tombe à terre",
-      "item": "{{who}} utilise {{item}}"
+      "item": "{{who}} utilise {{item}}",
+      "deathSave": "{{who}} : jet contre la mort, {{natural}} ({{successes}} réussite(s), {{failures}} échec(s))",
+      "deathFailure": "{{who}} est frappé à terre ({{failures}} échec(s))",
+      "stabilised": "{{who}} est stable",
+      "spared": "{{who}} survit, à terre",
+      "died": "{{who}} est mort",
+      "deathProposed": "Trois échecs pour {{who}} : à toi de décider",
+      "revived": "{{target}} se relève"
     },
     "errors": {
       "UNEXPECTED": "Ce coup n'a pas marché. Réessaie.",
@@ -1293,6 +1371,16 @@
       "TOO_FAR": "C'est trop loin pour ce tour.",
       "SPECTATOR": "Tu regardes la partie : tu ne joues pas.",
       "FIGHT_IN_PROGRESS": "Un combat est en cours : joue ton tour."
+    },
+    "death": {
+      "down": "Tu es à terre",
+      "wait": "Pas mort. À ton tour, tu lanceras le jet contre la mort.",
+      "stable": "Tu es stable : à terre, mais hors de danger",
+      "yourSave": "À toi : jet contre la mort",
+      "need": "Il te faut {{difficulty}} ou plus",
+      "rolled": "{{natural}} au dé",
+      "roll": "Lancer le jet",
+      "boxes": "{{successes}} réussite(s), {{failures}} échec(s)"
     }
   },
   "gmLive": {
@@ -1329,7 +1417,31 @@
       "NO_CURRENCY": "Les règles n'ont pas de monnaie.",
       "TEXT_TOO_LONG": "Texte trop long.",
       "EMPTY_TEXT": "Le texte est vide.",
-      "CELL_BLOCKED": "Personne ne peut se tenir là."
+      "CELL_BLOCKED": "Personne ne peut se tenir là.",
+      "SESSION_NOT_ENDED": "Cette session n'est pas terminée.",
+      "RECAP_EMPTY": "Écrivez le « Précédemment… » avant de publier.",
+      "DATE_IN_PAST": "Cette date est déjà passée.",
+      "INVALID_OPTIONS": "Proposez entre une et six dates.",
+      "INVALID_LOBBY_MINUTES": "Le salon ouvre entre 0 et 180 minutes avant.",
+      "NOT_PROPOSED": "Cette date n'a pas été proposée.",
+      "NO_PLAN": "Aucune date n'est proposée.",
+      "NO_DEATH_SAVE_DUE": "Aucun jet contre la mort n'est attendu.",
+      "TV_CODE_UNKNOWN": "Aucune TV n’affiche ce code. Vérifie les quatre caractères, ou recharge la page de la TV.",
+      "NO_PREVIOUSLY": "Aucun « Précédemment… » publié à lire.",
+      "INVALID_LINE": "Cette ligne n’existe pas.",
+      "INVALID_SHOP_NAME": "Donne un nom à la boutique (80 caractères au plus).",
+      "UNKNOWN_ITEM": "Cet objet n’existe pas dans les règles de la campagne.",
+      "INVALID_ITEM_NAME": "Chaque objet nommé par toi a besoin d’un nom.",
+      "INVALID_PRICE": "Prix ou stock hors limites.",
+      "INVALID_HAGGLE": "Marchandage : choisis une caractéristique, une difficulté de 1 à 99 et une remise de 1 à 90 %.",
+      "TOO_MANY_LINES": "Quarante lignes au plus par boutique.",
+      "DUPLICATE_LINE": "Deux lignes portent le même identifiant.",
+      "NOT_HIDDEN": "Cette ligne est déjà sur le comptoir.",
+      "NO_SUCH_SHOP": "Cette boutique n’existe plus.",
+      "NO_SUCH_LINE": "Cette ligne n’existe plus.",
+      "UNKNOWN_FACTION": "Cette faction n'existe pas dans la campagne.",
+      "UNKNOWN_GOAL": "Cet objectif n'existe pas dans la campagne.",
+      "INVALID_DELTA": "Ce déplacement de jauge n'est pas valide."
     },
     "table": {
       "title": "La table",
@@ -1380,7 +1492,8 @@
       "other": "Toutes les scènes",
       "fronts": "Fronts",
       "advance": "+1",
-      "back": "−1"
+      "back": "−1",
+      "always": "Toujours là"
     },
     "board": {
       "title": "La carte",
@@ -1427,7 +1540,14 @@
       "who": "Qui",
       "condition": "État",
       "addCondition": "Poser",
-      "removeCondition": "Retirer"
+      "removeCondition": "Retirer",
+      "dead": "mort",
+      "saves": "{{successes}} réussite(s), {{failures}} échec(s)",
+      "saveDue": "{{who}} est à terre : à son tour, son jet contre la mort.",
+      "rollForThem": "Lancer pour le joueur absent",
+      "deathProposed": "Trois échecs pour {{who}}. Rien n'est envoyé aux joueurs avant ton choix.",
+      "confirmDeath": "Confirmer : {{who}} meurt",
+      "spare": "Une autre issue : stable, à terre"
     },
     "copilot": {
       "title": "Co-MJ",
@@ -1503,6 +1623,123 @@
       "changes": "Ce que je change la prochaine fois",
       "save": "Enregistrer",
       "saved": "Enregistré"
+    },
+    "recap": {
+      "title": "Récap de la session {{number}}",
+      "published": "Publié aux joueurs",
+      "draftState": "Pas encore publié",
+      "entryTitle": "Titre dans la chronique",
+      "entry": "Deux lignes pour la chronique (pour les joueurs)",
+      "save": "Enregistrer",
+      "saved": "Enregistré",
+      "publish": "Publier aux joueurs",
+      "republish": "Republier"
+    },
+    "plan": {
+      "title": "Prochaine session",
+      "can_one": "{{count}} joueur sur {{total}} peut",
+      "can_other": "{{count}} joueurs sur {{total}} peuvent",
+      "choose": "Fixer cette date",
+      "unchoose": "Annuler",
+      "chosen": "Fixée au {{when}} : le salon ouvrira seul {{minutes}} min avant.",
+      "propose": "Proposer des dates",
+      "option": "Date {{n}}",
+      "add": "Une autre date",
+      "lobby": "Salon ouvert (min avant)",
+      "send": "Envoyer aux joueurs"
+    },
+    "launch": {
+      "title": "Lancer la session",
+      "shared": "L’écran partagé · facultatif",
+      "tv": "Une TV dans la pièce",
+      "tvHint": "Ouvre /tv sur la TV ou un vieil ordinateur branché dessus, puis saisis son code ici.",
+      "code": "Code de la TV",
+      "pair": "Jumeler",
+      "window": "Partager une fenêtre",
+      "windowHint": "Tout le monde est à distance : ouvre la fenêtre TV et partage-la dans Discord. Même contenu, sans code.",
+      "openWindow": "Ouvrir la fenêtre TV",
+      "screens": "Écrans jumelés",
+      "pairedAt": "jumelée à {{time}}",
+      "forget": "Oublier cet écran",
+      "optional": "Sans écran partagé, chaque téléphone joue les grands moments lui-même. La TV n’est qu’un bonus.",
+      "sees": {
+        "title": "Ce que la TV peut montrer",
+        "content": "Contenu",
+        "tv": "TV",
+        "players": "Joueurs",
+        "rows": {
+          "map": "La carte, sans le brouillard levé",
+          "party": "Le groupe, l’ordre du tour, les menaces visibles",
+          "moments": "Les grands moments : dés, coups, butin, niveaux",
+          "sheet": "La fiche complète d’un joueur",
+          "notes": "Tes notes, les PV des monstres, les zones cachées",
+          "copilot": "Les propositions du co-MJ"
+        },
+        "note": "La TV ne montre que ce que tous les joueurs ont le droit de voir. Rien de secret ne quitte ton écran."
+      },
+      "yes": "oui",
+      "no": "non",
+      "before": "Avant de lancer",
+      "done": "✓",
+      "pending": "·",
+      "checks": {
+        "previously": "Le « Précédemment… » est publié",
+        "screen": "Écran partagé : {{name}}",
+        "noScreen": "Écran partagé : pas encore (facultatif)",
+        "allHere_one": "Le joueur est là",
+        "allHere_other": "Les {{count}} joueurs sont là",
+        "missing": "Pas encore là : {{names}}"
+      },
+      "read": "Lire « Précédemment… » à l’écran",
+      "nextLine": "Ligne suivante",
+      "stopReading": "Terminer la lecture"
+    },
+    "shops": {
+      "title": "Boutiques",
+      "new": "Nouvelle boutique",
+      "none": "Aucune boutique. Prépare un étal, un marché noir, une taverne : tu l’ouvres quand la table y entre.",
+      "isOpen": "ouverte",
+      "open": "Ouvrir",
+      "close": "Fermer",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "stock_one": "{{count}} en stock",
+      "stock_other": "{{count}} en stock",
+      "haggled": "marchandé : {{won}} réussi sur {{count}}",
+      "reveal": "Sortir du comptoir",
+      "newTitle": "Nouvelle boutique",
+      "editTitle": "Modifier la boutique",
+      "name": "Nom de la boutique",
+      "line": "Ligne {{n}}",
+      "item": "Objet de la ligne {{n}}",
+      "named": "Un objet que je nomme…",
+      "lineName": "Nom de l’objet, ligne {{n}}",
+      "lineNamePlaceholder": "Longue-vue de contrebande",
+      "lineText": "Description, ligne {{n}}",
+      "lineTextPlaceholder": "Ce que la table en voit",
+      "price": "Prix",
+      "stockLabel": "Stock",
+      "unlimited": "∞",
+      "hidden": "Sous le comptoir",
+      "removeLine": "Retirer",
+      "addLine": "Ajouter une ligne",
+      "haggle": "La table peut marchander (un jet par joueur et par ligne)",
+      "haggleAbility": "Caractéristique du marchandage",
+      "difficulty": "Difficulté",
+      "discount": "Remise %",
+      "save": "Enregistrer",
+      "cancel": "Annuler"
+    },
+    "factions": {
+      "title": "Factions et objectifs",
+      "notLive": "Lancez la partie pour bouger une jauge ou cocher un objectif.",
+      "met": "Rencontrée",
+      "meet": "Rencontrer",
+      "lose": "{{name}} : −1",
+      "win": "{{name}} : +1",
+      "gauge": "Affinité de {{name}}",
+      "rivals": "Rivaux : {{rivals}} (un gain leur coûte autant)",
+      "goals": "Objectifs"
     }
   },
   "prep": {
@@ -2036,6 +2273,75 @@
       "AI_NOT_CONFIGURED": "Aucun fournisseur d’IA n’est configuré sur ce serveur.",
       "AI_UNAVAILABLE": "Le fournisseur d’IA n’a pas répondu.",
       "AI_OUTPUT_INVALID": "Le modèle n’a pas produit une carte valide, même après une seconde chance."
+    }
+  },
+  "tv": {
+    "brand": "Promptus · TV",
+    "pair": {
+      "starting": "Préparation du code…",
+      "error": "Impossible d’obtenir un code. Recharge la page.",
+      "qr": "QR à scanner avec le téléphone du MJ",
+      "codeLabel": "Code de la TV",
+      "code": "Code {{code}}",
+      "hint": "Le MJ saisit ce code, ou scanne le QR."
+    },
+    "show": {
+      "session": "Session {{number}}",
+      "idle": "Pas de session en cours. La TV attend la prochaine.",
+      "tonight": "Ce soir",
+      "here": "Dans le salon",
+      "waitingGm": "En attente du MJ…",
+      "feed": "Dernier moment"
+    },
+    "gmPair": {
+      "title": "Jumeler une TV",
+      "signIn": "Connecte-toi pour jumeler la TV.",
+      "which": "À quelle table ?",
+      "done": "La TV a rejoint « {{title}} ». Elle suit la partie."
+    },
+    "errors": {
+      "UNEXPECTED": "Le jumelage a échoué. Réessaie.",
+      "UNREACHABLE": "Serveur injoignable. Réessaie dans un instant.",
+      "TV_CODE_UNKNOWN": "Aucune TV n’affiche ce code. Vérifie les quatre caractères."
+    }
+  },
+  "shop": {
+    "purse": "Ta bourse : {{amount}} {{abbr}}",
+    "haggleRule": "Marchander : un jet de {{ability}} contre {{difficulty}}, −{{discount}} % si tu réussis. Une fois par objet.",
+    "empty": "Le comptoir est vide pour l’instant.",
+    "price": "{{price}} {{abbr}}",
+    "soldOut": "épuisé",
+    "stock_one": "dernier en stock",
+    "stock_other": "{{count}} en stock",
+    "haggleWon": "marchandé, réussi",
+    "haggleLost": "marchandé, raté",
+    "haggle": "Marchander",
+    "buy": "Acheter",
+    "haggledWon": "{{name}} : {{total}} contre {{difficulty}}, le marchand cède.",
+    "haggledLost": "{{name}} : {{total}} contre {{difficulty}}, le marchand ne bouge pas.",
+    "share": {
+      "title": "Partager avec le groupe",
+      "to": "À qui",
+      "what": "Quoi",
+      "amount": "Combien",
+      "friend": "{{name}} ({{nickname}})",
+      "give": "Donner"
+    },
+    "errors": {
+      "UNEXPECTED": "Ça n’a pas marché. Réessaie.",
+      "UNREACHABLE": "Serveur injoignable. Réessaie dans un instant.",
+      "NO_SHOP": "La boutique vient de fermer.",
+      "NO_SUCH_LINE": "Cet objet n’est plus en vente.",
+      "OUT_OF_STOCK": "Il n’en reste plus assez.",
+      "NOT_ENOUGH": "Pas assez dans ta bourse ou ton sac.",
+      "ALREADY_HAGGLED": "Tu as déjà marchandé cet objet.",
+      "NO_HAGGLING": "On ne marchande pas ici.",
+      "SPECTATOR": "Tu regardes la partie : pas de bourse.",
+      "NO_CHARACTER": "Il te faut un personnage en jeu.",
+      "CHARACTER_NOT_VALIDATED": "Ton personnage attend encore le MJ.",
+      "NO_SUCH_CHARACTER": "Ce personnage n’est plus en jeu.",
+      "INVALID_GIFT": "Choisis des pièces ou un objet.",
+      "INVALID_QUANTITY": "Quantité impossible."
     }
   }
 }

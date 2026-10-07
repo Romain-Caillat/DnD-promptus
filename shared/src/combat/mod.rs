@@ -5,18 +5,21 @@
 //! it and the XP gained. Pure: a fight in, the next fight and its events
 //! out; dice injected.
 //!
+//! - [`death`] — death saves, and the GM's word on a death
 //! - [`fight`] — the fight state and its commands
 //! - [`reach`] — range, sight, cover and lines on the grid
 //! - [`run`] — playing a whole fight with one policy per side
 //! - [`scenario`] — an encounter as data: map, rosters, tactics, variants
 //! - [`simulate`] — N seeded fights summed up, and two rule versions compared
 
+pub mod death;
 pub mod fight;
 pub mod reach;
 pub mod run;
 pub mod scenario;
 pub mod simulate;
 
+pub use death::{DeathCall, DeathTrack};
 pub use fight::{
     Aim, CombatRefusal, EndReason, Fight, FightEnd, FightEvent, InitiativeRoll, Play, SetupError,
     Standing, Step,

@@ -86,6 +86,12 @@ async fn gm_json(state: &AppState, row: &CampaignRow) -> Result<serde_json::Valu
                 "loot": e.loot,
                 "events": events,
                 "reachable": reach,
+                // engine/save-against-death: the active character's turn
+                // waits for their roll.
+                "deathSaveDue": match (rules, &active) {
+                    (Some(r), Some(a)) => e.live && e.fight.save_due(r, a),
+                    _ => false,
+                },
                 "startedAt": e.started_at,
                 "endedAt": e.ended_at,
             })

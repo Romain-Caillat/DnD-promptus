@@ -12,8 +12,8 @@
 #   - "1 seule attaque par tour" aboard contradicts two attacks per turn
 #     on the ground;
 #   - the rules files are copies naming another world's classes.
-# Ship combat itself (hull, shields, energy, stations, arcs) waits for
-# engine/support-vehicle-combat; only its action economy is here.
+# Ship combat itself (hull, shields, energy, stations, arcs) is the
+# `ship_combat` section at the end (engine/support-vehicle-combat).
 # Where the model forced a reading, the choice is marked INTERPRETATION.
 
 id: brasier
@@ -489,3 +489,136 @@ items:
 # references are ships (Combat_Vaisseau.md §9), which wait for
 # engine/support-vehicle-combat. Act 1's adversaries are still to write.
 adversaries: []
+
+# engine/support-vehicle-combat — Combat_Vaisseau.md and
+# Fiche_Cure-Dent.md, as data. INTERPRETATIONS, to playtest:
+#   - a range band ends on its last cell: short 0–2, medium 3–5, long 6–8;
+#   - « Recharger les boucliers : +4 » is the nominal shields level; the
+#     shields channel sets how much (§6 table), offline gives nothing;
+#   - a reactor that drops cuts navigation first, then weapons, shields;
+#   - « Système touché » draws one station out of nine; the engineering
+#     station hit is « réacteur touché » (−2 points);
+#   - « Briser le Moral » rolls CHA against the target's resolve (12 when
+#     the sheet says nothing) and takes 2 morale on a success;
+#   - a natural 20 to hit is critical (§8): it rolls on the damage table
+#     of a crewed ship, without extra damage; a natural 1 misses;
+#   - a brig and the Greyhound are not here: the Corsaires' rules have no
+#     ship yet (their sheets are to write with Romain).
+# Not engine yet (stays the GM's, described in the action's name): the
+# risky manoeuvre's flank attack, scanning, detecting, bluffing, rallying,
+# cutting comms, EVA, overcharging, life support; boarding switches to
+# the ground fight on the deck map (`abordage-coursive`) by hand.
+ship_combat:
+  ranges: { short: 2, medium: 5, long: 8 }
+  boarding_range: 2
+  energy:
+    reactor: 6
+    damaged:
+      - { hull_at_most: 20, reactor: 5 }
+      - { hull_at_most: 10, reactor: 4 }
+    reactor_hit: 2
+    start: { navigation: 2, weapons: 2, shields: 2 }
+    navigation:
+      - { engines_dead: true }
+      - { movement: -1 }
+      - {}
+      - { movement: 1 }
+      - { movement: 2, evade: 2 }
+    weapons:
+      - { damage: -2, no_charged: true }
+      - { damage: -1 }
+      - {}
+      - { damage: 1 }
+      - { damage: 2 }
+    shields:
+      - { offline: true }
+      - { recharge: 2 }
+      - { recharge: 4 }
+      - { recharge: 6 }
+      - { recharge: 6, damage_taken: 2 }
+  stations:
+    - { id: barre, name: Barre, ability: DEX, helm: true }
+    - { id: piece_lourde, name: Pièce lourde, ability: FOR }
+    - { id: tourelle_dorsale, name: Tourelle dorsale, ability: DEX }
+    - { id: tourelle_babord, name: Tourelle bâbord, ability: DEX }
+    - { id: tourelle_tribord, name: Tourelle tribord, ability: DEX }
+    - { id: ingenieur, name: Ingénieur, ability: INT, reactor: true }
+    - { id: integrite, name: Intégrité et avaries, ability: CON }
+    - { id: capteurs, name: Capteurs, ability: SAG }
+    - { id: liaison, name: Liaison, ability: CHA }
+  actions:
+    - { id: manoeuvre, name: Manœuvre, station: barre, effect: { maneuver: { cells: 3, turns: 1 } } }
+    - { id: manoeuvre_risquee, name: Manœuvre risquée, station: barre, cost: 2, difficulty: 12, effect: { maneuver: { cells: 6, turns: 2 } } }
+    - { id: esquive, name: Esquive, station: barre, effect: { evade: { armor: 3 } } }
+    - { id: tir_canon_lourd, name: Tir du canon lourd, station: piece_lourde, attack: true, effect: { fire: { charged: false } } }
+    - { id: tir_charge, name: Tir chargé, station: piece_lourde, cost: 2, attack: true, effect: { fire: { charged: true } } }
+    - { id: tir_dorsal, name: Tir de la tourelle dorsale, station: tourelle_dorsale, attack: true, effect: { fire: { charged: false } } }
+    - { id: tir_babord, name: Tir de la tourelle bâbord, station: tourelle_babord, attack: true, effect: { fire: { charged: false } } }
+    - { id: tir_tribord, name: Tir de la tourelle tribord, station: tourelle_tribord, attack: true, effect: { fire: { charged: false } } }
+    - { id: recharger_boucliers, name: Recharger les boucliers, station: ingenieur, effect: recharge_shields }
+    - { id: rerouter, name: Rerouter l'énergie, station: ingenieur, effect: reroute }
+    - { id: reparer_coque, name: Réparer la coque, station: ingenieur, difficulty: 10, effect: { repair_hull: { amount: 3 } } }
+    - { id: reparer_systeme, name: Réparer un système, station: ingenieur, difficulty: 12, effect: repair_system }
+    - { id: se_braquer, name: Se braquer, station: integrite, effect: { brace: { reduction: 4 } } }
+    - { id: eteindre, name: Éteindre un incendie, station: integrite, difficulty: 10, effect: extinguish }
+    - { id: colmater, name: Colmater une brèche, station: integrite, difficulty: 12, effect: patch_breach }
+    - { id: verrouiller, name: Verrouiller une cible, station: capteurs, effect: { lock: { bonus: 4 } } }
+    - { id: brouiller, name: Brouiller, station: capteurs, effect: { jam: { malus: 3 } } }
+    - { id: briser_moral, name: Briser le Moral, station: liaison, attack: true, effect: { break_morale: { amount: 2 } } }
+    - { id: changer_de_poste, name: Changer de poste, station: barre, effect: move }
+  damage_table:
+    die: 6
+    hull_thresholds: [20, 10]
+    results:
+      - { faces: [1, 2], name: Incendie, kind: fire, hull_per_turn: 2 }
+      - { faces: [3, 4], name: Brèche, kind: breach }
+      - { faces: [5], name: Système touché, kind: system_down }
+      - { faces: [6], name: Secousse, kind: shake }
+  ships:
+    - id: cure_dent
+      name: Le Cure-Dent
+      hull: 30
+      shields: 12
+      armor: 14
+      crewed: true
+      weapons:
+        - { id: pic_vert, name: Canon lourd « Pic-Vert », station: piece_lourde, arcs: [front], range: long, damage: 8, charged_damage: 12 }
+        - { id: dorsale, name: Tourelle dorsale, station: tourelle_dorsale, arcs: [front, port, starboard], range: medium, damage: 4 }
+        - { id: babord, name: Tourelle bâbord, station: tourelle_babord, arcs: [port, front], range: medium, damage: 5 }
+        - { id: tribord, name: Tourelle tribord, station: tourelle_tribord, arcs: [starboard, front], range: medium, damage: 5 }
+      notes: "Angle mort arrière : aucune arme ne couvre le pur arrière."
+    # §9. Speeds, to-hit and initiative bonuses, the weapons' arcs and
+    # ranges, and the Vorr's resolve are INVENTÉS (the table gives none).
+    - id: chasseur_vorr
+      name: Chasseur vorr
+      hull: 6
+      armor: 12
+      speed: 4
+      attack_bonus: 3
+      initiative_bonus: 2
+      weapons:
+        - { id: crocs, name: Crocs, arcs: [front], range: short, damage: 3 }
+      notes: "Rapide ; attaque en essaim (3 à 5, initiative partagée). Moral : immunisé."
+    - id: corvette_pirate
+      name: Corvette pirate
+      hull: 15
+      shields: 6
+      armor: 13
+      morale: 6
+      resolve: 12
+      speed: 3
+      attack_bonus: 4
+      weapons:
+        - { id: canon, name: Canon, arcs: [front, port, starboard], range: medium, damage: 5 }
+    - id: carapace_sereth
+      name: Carapace sereth
+      hull: 25
+      shields: 10
+      armor: 16
+      morale: 8
+      resolve: 14
+      speed: 2
+      attack_bonus: 4
+      weapons:
+        - { id: mortier, name: Mortier, arcs: [front, port, starboard, rear], range: long, damage: 6 }
+      notes: "Très défensive, lente."

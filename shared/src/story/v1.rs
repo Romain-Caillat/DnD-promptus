@@ -523,6 +523,7 @@ pub fn import_v1(
                     sells: Vec::new(),
                     faction,
                     location: None,
+                    permanent: false,
                     gm_notes: String::new(),
                 });
             }

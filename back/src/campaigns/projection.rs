@@ -11,7 +11,8 @@
 //! transition, player hooks, fallback note and notes; what an NPC wants,
 //! hides, their traits, flaw, motivation, stats and inventory; the name
 //! of an NPC or adversary the players have not met, and any hit points
-//! or stat block. Art fields are prompts for the image generator, not
+//! or stat block; a faction not met yet, and a faction's description,
+//! diplomacy and rivals; a goal's description and holder. Art fields are prompts for the image generator, not
 //! player text.
 //!
 //! Every player and shared-screen route (`app::player_routes`,
@@ -33,9 +34,11 @@
 //! and the bag, all derived through the rules engine. The history of
 //! adjustments stays GM-side.
 
+pub mod between;
 pub mod board;
 pub mod evening;
 pub mod rules;
+pub mod shop;
 
 use std::collections::BTreeMap;
 
@@ -43,6 +46,7 @@ use chrono::{DateTime, Utc};
 use promptus_shared::rules::RuleSystem;
 use promptus_shared::rules::action::{ActionCard, action_cards};
 use promptus_shared::rules::model::{ActionDef, RollSpec, Tag};
+use promptus_shared::rules::progression::levels_to_choose;
 use promptus_shared::rules::sheet::Combatant;
 use promptus_shared::sprite::CharacterLook;
 use promptus_shared::story::{Campaign, MusicTrack, WorldState};
@@ -68,6 +72,32 @@ pub struct PlayerCampaignView {
     pub clues: Vec<String>,
     /// NPCs the players have met.
     pub npcs: Vec<NpcView>,
+    /// Factions the players have met, with their gauge.
+    pub factions: Vec<FactionView>,
+    /// The campaign's goals, ticked off or not.
+    pub goals: Vec<GoalView>,
+}
+
+/// A met faction: its name and gauge — never its description,
+/// diplomacy or GM notes.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FactionView {
+    pub id: String,
+    pub name: String,
+    pub affinity: i32,
+    pub min: i32,
+    pub max: i32,
+}
+
+/// A goal: its title and whether it is reached — never its
+/// description, holder or GM notes.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GoalView {
+    pub id: String,
+    pub title: String,
+    pub done: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -213,6 +243,27 @@ pub fn project_for_players(campaign: &Campaign, world: &WorldState) -> PlayerCam
             .filter(|n| met(&n.id))
             .filter_map(|n| npc_view(campaign, &n.id))
             .collect(),
+        factions: campaign
+            .factions
+            .iter()
+            .filter(|f| world.met_factions.contains(&f.id))
+            .map(|f| FactionView {
+                id: f.id.clone(),
+                name: f.name.clone(),
+                affinity: world.affinity(campaign, &f.id).unwrap_or(f.affinity.start),
+                min: f.affinity.min,
+                max: f.affinity.max,
+            })
+            .collect(),
+        goals: campaign
+            .goals
+            .iter()
+            .map(|g| GoalView {
+                id: g.id.clone(),
+                title: g.title.clone(),
+                done: world.goals_done.contains(&g.id),
+            })
+            .collect(),
     }
 }
 
@@ -247,6 +298,28 @@ pub struct PlayerHomeView {
     pub me: MeView,
     pub campaign: InvitationView,
     pub character: Option<CharacterView>,
+    /// The caller's last fallen character (player/face-death).
+    pub fallen: Option<FallenView>,
+}
+
+/// A character of the caller whose death the GM confirmed: its name,
+/// its last words once said, when it fell.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FallenView {
+    pub name: String,
+    pub last_words: String,
+    pub died_at: DateTime<Utc>,
+}
+
+/// The caller's own fallen character.
+#[must_use]
+pub fn project_fallen(f: &crate::players::death::Fallen) -> FallenView {
+    FallenView {
+        name: f.name.clone(),
+        last_words: f.last_words.clone(),
+        died_at: f.died_at,
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -302,6 +375,24 @@ pub struct PlayView {
     pub cards: Vec<ActionCardView>,
     pub resources: Vec<ResourceView>,
     pub inventory: Vec<ItemView>,
+    /// What a level adds to hit points, when the rules make it grow.
+    pub level_hit_points: Option<LevelHitPointsView>,
+    /// Levels reached whose hit points the player has not taken yet.
+    pub levels_to_choose: Vec<u32>,
+}
+
+/// A level's hit points, as the level-up screen offers them.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LevelHitPointsView {
+    /// The die rolled (« 1d10 »).
+    pub dice: String,
+    /// The die's average, rounded up.
+    pub average: i32,
+    /// Added to either (the Constitution modifier today).
+    pub bonus: i32,
+    /// The bonus as the rules write it (« mod(CON) »); empty for none.
+    pub bonus_formula: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -415,6 +506,24 @@ pub fn project_play(
                 }
             })
             .collect(),
+        level_hit_points: level_hit_points_view(rules, &c),
+        levels_to_choose: levels_to_choose(rules, &c),
+    })
+}
+
+fn level_hit_points_view(rules: &RuleSystem, c: &Combatant) -> Option<LevelHitPointsView> {
+    let rule = rules.progression.hit_points_per_level.as_ref()?;
+    let die = c.level_hit_die(rules)?;
+    let bonus = c.level_hit_bonus(rules).ok()?;
+    Some(LevelHitPointsView {
+        dice: die.to_string(),
+        average: die.average_up(),
+        bonus,
+        bonus_formula: rule
+            .bonus
+            .as_ref()
+            .map(|f| f.source().to_string())
+            .unwrap_or_default(),
     })
 }
 
@@ -571,6 +680,7 @@ pub fn project_home(
         },
         campaign: project_invitation(player.campaign_id, campaign, gm_name),
         character: character.map(|c| project_character(rules, c)),
+        fallen: None,
     }
 }
 

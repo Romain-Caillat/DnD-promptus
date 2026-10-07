@@ -115,6 +115,19 @@ pub fn run_fight(
             fight = step.fight;
             break;
         }
+        // A dying character only rolls their death save; a proposed
+        // death stays proposed (no GM here).
+        if fight.save_due(system, &who) {
+            let step = fight
+                .death_save(system, &who, dice)
+                .expect("a due death save can be rolled");
+            log.push(LogEntry::Events {
+                events: step.events,
+            });
+            fight = step.fight;
+            commands = 0;
+            continue;
+        }
         let side = fight.combatant(&who).map(|c| c.side);
         let policy: &mut dyn Policy = match side {
             Some(Side::Party) => party,

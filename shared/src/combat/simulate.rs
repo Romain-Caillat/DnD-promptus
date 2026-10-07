@@ -234,6 +234,8 @@ pub fn tally(log: &FightLog, time: &TimeModel) -> FightTally {
             Standing::Defeated => g.defeated += 1,
             Standing::OutOfScene => g.out_of_scene += 1,
             Standing::Fled => g.fled += 1,
+            // The simulator plays no GM: no death is ever confirmed.
+            Standing::Dead => {}
         }
     }
     let end = log.fight.end.as_ref();

@@ -14,6 +14,8 @@ use sqlx::types::Json;
 use sqlx::{PgExecutor, PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
+use promptus_shared::story::recap::{RecapFacts, default_title, facts_recap};
+
 use super::knowledge::{self, Gap};
 use crate::auth::guard::{CurrentGm, owned_by};
 use crate::campaigns::{self, CampaignRow};
@@ -77,40 +79,66 @@ pub struct Session {
     pub gm_changes: String,
     pub music: Option<Music>,
     pub gaps_at_end: Vec<Gap>,
+    /// What the session changed, measured when it ended (GM-side: it
+    /// names the fronts that moved).
+    pub facts: Option<RecapFacts>,
+    /// The chronicle's entry: a title and two lines.
+    pub title: String,
+    pub chronicle: String,
+    /// Players read « Précédemment… » and the entry once published.
+    pub published: bool,
+    pub published_at: Option<DateTime<Utc>>,
+    /// At the launch, « Précédemment… » read line by line: how many
+    /// lines the table sees now (`gm/launch-session`).
+    pub reading_line: Option<i32>,
 }
 
-type Row = (
-    Uuid,
-    Uuid,
-    i32,
-    String,
-    DateTime<Utc>,
-    Option<DateTime<Utc>>,
-    Option<DateTime<Utc>>,
-    String,
-    String,
-    String,
-    Option<Json<Music>>,
-    Option<Json<Vec<Gap>>>,
-);
+#[derive(sqlx::FromRow)]
+struct Row {
+    id: Uuid,
+    campaign_id: Uuid,
+    number: i32,
+    status: String,
+    opened_at: DateTime<Utc>,
+    started_at: Option<DateTime<Utc>>,
+    ended_at: Option<DateTime<Utc>>,
+    recap: String,
+    previously: String,
+    gm_changes: String,
+    music: Option<Json<Music>>,
+    gaps_at_end: Option<Json<Vec<Gap>>>,
+    facts: Option<Json<RecapFacts>>,
+    title: String,
+    chronicle: String,
+    recap_status: String,
+    published_at: Option<DateTime<Utc>>,
+    reading_line: Option<i32>,
+}
 
 const COLUMNS: &str = "id, campaign_id, number, status, opened_at, started_at, ended_at, \
-                       recap, previously, gm_changes, music, gaps_at_end";
+                       recap, previously, gm_changes, music, gaps_at_end, facts, title, \
+                       chronicle, recap_status, published_at, reading_line";
 
 fn from_row(r: Row) -> Result<Session, AppError> {
     Ok(Session {
-        id: r.0,
-        campaign_id: r.1,
-        number: r.2,
-        status: Status::parse(&r.3)?,
-        opened_at: r.4,
-        started_at: r.5,
-        ended_at: r.6,
-        recap: r.7,
-        previously: r.8,
-        gm_changes: r.9,
-        music: r.10.map(|m| m.0),
-        gaps_at_end: r.11.map(|g| g.0).unwrap_or_default(),
+        id: r.id,
+        campaign_id: r.campaign_id,
+        number: r.number,
+        status: Status::parse(&r.status)?,
+        opened_at: r.opened_at,
+        started_at: r.started_at,
+        ended_at: r.ended_at,
+        recap: r.recap,
+        previously: r.previously,
+        gm_changes: r.gm_changes,
+        music: r.music.map(|m| m.0),
+        gaps_at_end: r.gaps_at_end.map(|g| g.0).unwrap_or_default(),
+        facts: r.facts.map(|f| f.0),
+        title: r.title,
+        chronicle: r.chronicle,
+        published: r.recap_status == "published",
+        published_at: r.published_at,
+        reading_line: r.reading_line,
     })
 }
 
@@ -160,6 +188,26 @@ pub async fn all(db: impl PgExecutor<'_>, campaign: Uuid) -> Result<Vec<Session>
     .fetch_all(db)
     .await?;
     rows.into_iter().map(from_row).collect()
+}
+
+/// The latest session of `campaign` whose recap the GM published.
+///
+/// # Errors
+///
+/// A database error.
+pub async fn last_published(
+    db: impl PgExecutor<'_>,
+    campaign: Uuid,
+) -> Result<Option<Session>, AppError> {
+    let row: Option<Row> = sqlx::query_as(&format!(
+        "SELECT {COLUMNS} FROM game_sessions
+         WHERE campaign_id = $1 AND status = 'ended' AND recap_status = 'published'
+         ORDER BY number DESC LIMIT 1"
+    ))
+    .bind(campaign)
+    .fetch_optional(db)
+    .await?;
+    row.map(from_row).transpose()
 }
 
 /// The last ended session of `campaign`, if any.
@@ -252,19 +300,37 @@ pub async fn open(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Sessi
     if campaign_row.validated_at.is_none() {
         return Err(AppError::Conflict("CAMPAIGN_NOT_VALIDATED"));
     }
+    let session = open_locked(&mut tx, &campaign_row).await?;
+    tx.commit().await?;
+    Ok(session)
+}
+
+/// Opens the next session's lobby of `campaign_row`, locked by the
+/// caller and with no session open: the GM's gesture, or the planned
+/// date arriving (`schedule::tick`).
+pub(crate) async fn open_locked(
+    tx: &mut Transaction<'_, Postgres>,
+    campaign_row: &CampaignRow,
+) -> Result<Session, AppError> {
+    let campaign = campaign_row.id;
     // A rule change ships between sessions: the newest locked version
     // applies from this one (`campaign/edit-rule-system`).
-    crate::rules::versions::adopt_newest(&mut tx, &campaign_row).await?;
+    crate::rules::versions::adopt_newest(tx, campaign_row).await?;
     let row: Row = sqlx::query_as(&format!(
-        "INSERT INTO game_sessions (campaign_id, number)
-         VALUES ($1, COALESCE((SELECT MAX(number) FROM game_sessions WHERE campaign_id = $1), 0) + 1)
+        "INSERT INTO game_sessions (campaign_id, number, world_at_start)
+         VALUES ($1, COALESCE((SELECT MAX(number) FROM game_sessions WHERE campaign_id = $1), 0) + 1,
+                 (SELECT world FROM campaigns WHERE id = $1))
          RETURNING {COLUMNS}"
     ))
     .bind(campaign)
-    .fetch_one(&mut *tx)
+    .fetch_one(&mut **tx)
     .await?;
-    super::touch(&mut tx, campaign).await?;
-    tx.commit().await?;
+    // The planned date, if any, is spent: the next one is planned anew.
+    sqlx::query("DELETE FROM session_plans WHERE campaign_id = $1")
+        .bind(campaign)
+        .execute(&mut **tx)
+        .await?;
+    super::touch(tx, campaign).await?;
     from_row(row)
 }
 
@@ -288,17 +354,29 @@ pub async fn start(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Sess
     from_row(row)
 }
 
-/// What the GM writes when ending a session.
+/// What the GM writes when ending a session, or rereads after.
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Ending {
-    /// The GM's recap (GM-only).
+    /// The GM's recap (GM-only). Empty when ending: the factual draft.
     #[serde(default)]
     pub recap: String,
-    /// « Précédemment… », published to the players.
+    /// « Précédemment… », for the players once published. Empty when
+    /// ending: the factual draft.
     #[serde(default)]
     pub previously: String,
+    /// The chronicle's entry title; empty when ending: the last scene.
+    #[serde(default)]
+    pub title: Option<String>,
+    /// The chronicle's two lines.
+    #[serde(default)]
+    pub chronicle: Option<String>,
 }
+
+/// Longest chronicle title.
+const TITLE_MAX: usize = 120;
+/// Longest chronicle entry.
+const CHRONICLE_MAX: usize = 600;
 
 /// Longest recap or « Précédemment… ».
 const RECAP_MAX: usize = 8_000;
@@ -319,20 +397,31 @@ pub async fn end(
 ) -> Result<Session, AppError> {
     let recap = super::clean_text(&ending.recap, RECAP_MAX)?;
     let previously = super::clean_text(&ending.previously, RECAP_MAX)?;
+    let title = super::clean_text(ending.title.as_deref().unwrap_or(""), TITLE_MAX)?;
+    let chronicle = super::clean_text(ending.chronicle.as_deref().unwrap_or(""), CHRONICLE_MAX)?;
     let mut tx = pool.begin().await?;
     let (row, session) = lock_for_gm(&mut tx, gm, campaign, &[Status::Live, Status::Lobby]).await?;
     let gaps = knowledge::gaps(&row.story, &row.world);
+    let facts = super::recap::facts_of(&mut tx, &row, &session).await?;
+    // What the GM did not write, the facts draft: they reread it before
+    // publishing.
+    let (gm_draft, players_draft) = facts_recap(&facts);
+    let or = |written: String, draft: String| if written.is_empty() { draft } else { written };
     let saved: Row = sqlx::query_as(&format!(
         "UPDATE game_sessions
          SET status = 'ended', ended_at = now(), started_at = COALESCE(started_at, now()),
-             recap = $2, previously = $3, world_at_end = $4, gaps_at_end = $5, music = NULL
+             recap = $2, previously = $3, world_at_end = $4, gaps_at_end = $5, music = NULL,
+             facts = $6, title = $7, chronicle = $8
          WHERE id = $1 RETURNING {COLUMNS}"
     ))
     .bind(session.id)
-    .bind(&recap)
-    .bind(&previously)
+    .bind(or(recap, gm_draft))
+    .bind(or(previously, players_draft))
     .bind(Json(&row.world))
     .bind(Json(&gaps))
+    .bind(Json(&facts))
+    .bind(or(title, default_title(&facts)))
+    .bind(&chronicle)
     .fetch_one(&mut *tx)
     .await?;
     super::touch(&mut tx, campaign).await?;
@@ -362,12 +451,58 @@ pub async fn edit_recap(
     if session.status != Status::Ended {
         return Err(AppError::Conflict("SESSION_NOT_ENDED"));
     }
+    let title = match &ending.title {
+        Some(t) => super::clean_text(t, TITLE_MAX)?,
+        None => session.title.clone(),
+    };
+    let chronicle = match &ending.chronicle {
+        Some(c) => super::clean_text(c, CHRONICLE_MAX)?,
+        None => session.chronicle.clone(),
+    };
     let saved: Row = sqlx::query_as(&format!(
-        "UPDATE game_sessions SET recap = $2, previously = $3 WHERE id = $1 RETURNING {COLUMNS}"
+        "UPDATE game_sessions SET recap = $2, previously = $3, title = $4, chronicle = $5
+         WHERE id = $1 RETURNING {COLUMNS}"
     ))
     .bind(id)
     .bind(&recap)
     .bind(&previously)
+    .bind(&title)
+    .bind(&chronicle)
+    .fetch_one(&mut *tx)
+    .await?;
+    super::touch(&mut tx, campaign).await?;
+    tx.commit().await?;
+    from_row(saved)
+}
+
+/// The GM has reread the recap: « Précédemment… » and the chronicle's
+/// entry reach the players. Publishing again keeps the first date.
+///
+/// # Errors
+///
+/// 404 when missing or another GM's; 409 `SESSION_NOT_ENDED`,
+/// `RECAP_EMPTY` when « Précédemment… » is empty.
+pub async fn publish(
+    pool: &PgPool,
+    gm: &CurrentGm,
+    campaign: Uuid,
+    id: Uuid,
+) -> Result<Session, AppError> {
+    let mut tx = pool.begin().await?;
+    owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
+    let session = by_id(&mut *tx, campaign, id).await?;
+    if session.status != Status::Ended {
+        return Err(AppError::Conflict("SESSION_NOT_ENDED"));
+    }
+    if session.previously.trim().is_empty() {
+        return Err(AppError::Conflict("RECAP_EMPTY"));
+    }
+    let saved: Row = sqlx::query_as(&format!(
+        "UPDATE game_sessions
+         SET recap_status = 'published', published_at = COALESCE(published_at, now())
+         WHERE id = $1 RETURNING {COLUMNS}"
+    ))
+    .bind(id)
     .fetch_one(&mut *tx)
     .await?;
     super::touch(&mut tx, campaign).await?;
@@ -387,6 +522,50 @@ pub(super) async fn set_music(
         .execute(&mut **tx)
         .await?;
     Ok(())
+}
+
+pub(super) async fn set_reading(
+    tx: &mut Transaction<'_, Postgres>,
+    session: Uuid,
+    line: Option<i32>,
+) -> Result<(), AppError> {
+    sqlx::query("UPDATE game_sessions SET reading_line = $2 WHERE id = $1")
+        .bind(session)
+        .bind(line)
+        .execute(&mut **tx)
+        .await?;
+    Ok(())
+}
+
+/// « Précédemment… » cut into the lines the GM reads one by one: its
+/// own lines, or its sentences when it is one paragraph.
+#[must_use]
+pub fn reading_lines(text: &str) -> Vec<String> {
+    let lines: Vec<String> = text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(str::to_string)
+        .collect();
+    if lines.len() != 1 {
+        return lines;
+    }
+    let mut sentences = Vec::new();
+    let mut current = String::new();
+    let chars: Vec<char> = lines[0].chars().collect();
+    for (i, c) in chars.iter().enumerate() {
+        current.push(*c);
+        let ends = matches!(c, '.' | '!' | '?' | '…')
+            && chars.get(i + 1).is_none_or(|n| n.is_whitespace());
+        if ends && !current.trim().is_empty() {
+            sentences.push(current.trim().to_string());
+            current.clear();
+        }
+    }
+    if !current.trim().is_empty() {
+        sentences.push(current.trim().to_string());
+    }
+    sentences
 }
 
 /// One seat in the lobby.
@@ -488,5 +667,32 @@ impl Status {
     #[must_use]
     pub fn key(self) -> &'static str {
         self.as_str()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::reading_lines;
+
+    #[test]
+    fn a_recap_is_read_line_by_line() {
+        assert_eq!(
+            reading_lines("Les corsaires ont accosté.\n\n  Dorn a menti.  \n"),
+            ["Les corsaires ont accosté.", "Dorn a menti."]
+        );
+    }
+
+    #[test]
+    fn one_paragraph_is_read_sentence_by_sentence() {
+        assert_eq!(
+            reading_lines("Ils ont fui… Le port brûle ! Qui a parlé ? 3.5 lieues plus loin, rien"),
+            [
+                "Ils ont fui…",
+                "Le port brûle !",
+                "Qui a parlé ?",
+                "3.5 lieues plus loin, rien"
+            ]
+        );
+        assert!(reading_lines("   ").is_empty());
     }
 }

@@ -109,6 +109,31 @@ export interface PlayView {
   cards: ActionCardView[]
   resources: ResourceAmount[]
   inventory: BagItem[]
+  /** What a level adds to hit points, when the rules make them grow. */
+  levelHitPoints: LevelHitPoints | null
+  /** Levels reached whose hit points are still to take. */
+  levelsToChoose: number[]
+}
+
+/** A level's hit points as the level-up screen offers them. */
+interface LevelHitPoints {
+  /** The die (« 1d10 »). */
+  dice: string
+  /** Its average, rounded up. */
+  average: number
+  /** Added to either (the Constitution modifier). */
+  bonus: number
+  bonusFormula: string
+}
+
+/** What taking a level's hit points gave. */
+export interface LevelTaken {
+  level: number
+  die: number
+  /** The faces rolled, `null` for the average. */
+  faces: number[] | null
+  maxBefore: number
+  maxAfter: number
 }
 
 /** A player's own character (`projection::CharacterView`). */
@@ -132,6 +157,8 @@ export interface PlayerHome {
   me: { id: string; nickname: string; role: Role }
   campaign: Invitation
   character: CharacterView | null
+  /** My last character whose death the GM confirmed (player/face-death). */
+  fallen: { name: string; lastWords: string; diedAt: string } | null
 }
 
 /** The campaign an invitation code opens, or `null` for a dead link. */
@@ -162,6 +189,16 @@ export async function fetchPlayerHome(campaignId: string): Promise<PlayerHome | 
   }
 }
 
+/** My fallen character's last words, said once; answers my home. */
+export function sayLastWords(campaignId: string, text: string): Promise<PlayerHome> {
+  return apiRequest<PlayerHome>('PUT', `/play/${encodeURIComponent(campaignId)}/last-words`, { text })
+}
+
+/** After a death, another character to write, at the group's level. */
+export function newCharacter(campaignId: string): Promise<PlayerHome> {
+  return apiRequest<PlayerHome>('POST', `/play/${encodeURIComponent(campaignId)}/new-character`)
+}
+
 /** Where a player's home in `campaignId` lives in the app. */
 export function playPath(campaignId: string): string {
   return `/partie/${encodeURIComponent(campaignId)}`
@@ -178,4 +215,18 @@ export function equipItem(campaignId: string, entry: string, equipped: boolean):
 /** The campaign as players see it now (`GET /api/play/…/view`). */
 export function fetchCampaignView(campaignId: string): Promise<PlayerView> {
   return apiRequest<PlayerView>('GET', `/play/${encodeURIComponent(campaignId)}/view`)
+}
+
+/** Take a reached level's hit points: the server rolls, or the average. */
+export function takeLevel(
+  campaignId: string,
+  level: number,
+  choice: 'roll' | 'average',
+): Promise<{ taken: LevelTaken; character: CharacterView }> {
+  return apiRequest('POST', `/play/${encodeURIComponent(campaignId)}/character/level-up`, { level, choice })
+}
+
+/** Spend an upgrade point: +1 to an ability. */
+export function spendUpgrade(campaignId: string, ability: string): Promise<CharacterView> {
+  return apiRequest<CharacterView>('POST', `/play/${encodeURIComponent(campaignId)}/character/upgrade`, { ability })
 }

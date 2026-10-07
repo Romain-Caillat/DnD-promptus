@@ -60,6 +60,8 @@ export interface SceneCard {
 export interface EveningView {
   session: { number: number; status: SessionStatus; startedAt: string | null } | null
   previously: string | null
+  /** At the launch, the GM reading « Précédemment… » aloud: how many lines are up. */
+  reading: { lines: string[]; shown: number } | null
   music: Music | null
   lobby: { playerId: string; nickname: string; soundOk: boolean; remote: boolean }[]
   campaign: PlayerView
@@ -126,6 +128,13 @@ export interface SessionInfo {
   previously: string
   gmChanges: string
   music: Music | null
+  /** The chronicle's entry: a title and two lines. */
+  title: string
+  chronicle: string
+  /** Players read « Précédemment… » and the entry once published. */
+  published: boolean
+  /** At the launch, how many lines of « Précédemment… » the table sees. */
+  readingLine: number | null
 }
 
 interface MusicTrack {
@@ -214,6 +223,16 @@ interface GmJournalLine {
   createdAt: string
 }
 
+interface FactionGauge {
+  id: string
+  name: string
+  affinity: number
+  min: number
+  max: number
+  met: boolean
+  rivals: string[]
+}
+
 /** The GM's live screen (`GET /api/campaigns/{id}/session`). */
 /** What a scene ahead needs the table to know, and where it can still be learned. */
 interface KnowledgeGap {
@@ -226,6 +245,8 @@ interface KnowledgeGap {
 
 export interface LiveScreen {
   session: SessionInfo | null
+  /** The published « Précédemment… », cut into the lines the GM reads. */
+  readingLines: string[]
   lastEnded: SessionInfo | null
   lobby: {
     playerId: string
@@ -240,11 +261,14 @@ export interface LiveScreen {
   scene: {
     node: GmNode
     clues: { id: string; text: string; discovery: string; found: boolean; revelation: string }[]
-    npcs: { id: string; name: string; title: string; role: string; roleplay: string; wants: string; hides: string; met: boolean }[]
+    npcs: { id: string; name: string; title: string; role: string; roleplay: string; wants: string; hides: string; met: boolean; permanent: boolean }[]
     exits: { to: string; label: string; title: string; visited: boolean }[]
   } | null
   nodes: { id: string; title: string; act: string; visited: boolean; current: boolean }[]
   startNode: string | null
+  /** Each faction's gauge, met or not, with its rivals' names. */
+  factions: FactionGauge[]
+  goals: { id: string; title: string; heldBy: string | null; done: boolean }[]
   /** What the next scenes need that the table does not know yet. */
   gaps: KnowledgeGap[]
   fronts: { id: string; name: string; goal: string; steps: string[]; progress: number }[]
@@ -263,6 +287,8 @@ export type Reveal =
   | { kind: 'npc'; npc: string }
   | { kind: 'front'; front: string; delta: number }
   | { kind: 'resolve'; node: string }
+  | { kind: 'faction'; faction: string; delta: number }
+  | { kind: 'goal'; goal: string; done: boolean }
 
 export type Decision =
   | { kind: 'accept'; reason: string }
@@ -325,13 +351,31 @@ export function dismissDraft(campaignId: string, draft: string): Promise<void> {
   return apiRequest<void>('POST', `${gm(campaignId)}/session/copilot/${encodeURIComponent(draft)}/dismiss`)
 }
 
-/** The co-GM's draft of both recaps (a counted AI call; nothing saved). */
-export async function draftRecap(campaignId: string, session: string): Promise<{ recap: string; previously: string }> {
-  const d = await apiRequest<{ players: string; gm: string }>(
+/** What the GM rereads after the evening. */
+export interface RecapText {
+  recap: string
+  previously: string
+  title: string
+  chronicle: string
+}
+
+/** The co-GM's draft of the recaps and the chronicle entry (a counted AI call; nothing saved). */
+export async function draftRecap(campaignId: string, session: string): Promise<RecapText> {
+  const d = await apiRequest<{ players: string; gm: string; title: string; chronicle: string }>(
     'POST',
     `${gm(campaignId)}/sessions/${encodeURIComponent(session)}/recap-draft`,
   )
-  return { recap: d.gm, previously: d.players }
+  return { recap: d.gm, previously: d.players, title: d.title, chronicle: d.chronicle }
+}
+
+/** Save the reread recap of an ended session. */
+export function editRecap(campaignId: string, session: string, text: RecapText): Promise<SessionInfo> {
+  return apiRequest<SessionInfo>('PUT', `${gm(campaignId)}/sessions/${encodeURIComponent(session)}/recap`, text)
+}
+
+/** « Précédemment… » and the chronicle entry reach the players. */
+export function publishRecap(campaignId: string, session: string): Promise<SessionInfo> {
+  return apiRequest<SessionInfo>('POST', `${gm(campaignId)}/sessions/${encodeURIComponent(session)}/publish`)
 }
 
 export interface FeedbackReport {

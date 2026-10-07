@@ -16,9 +16,11 @@ const SESSION = {
   previously: '',
   gmChanges: '',
   music: null,
+  readingLine: null,
 }
 const SCREEN = {
   session: SESSION,
+  readingLines: [],
   lastEnded: null,
   lobby: [
     {
@@ -48,6 +50,8 @@ const SCREEN = {
   startNode: 'sc_taverne',
   gaps: [],
   fronts: [],
+  factions: [],
+  goals: [],
   requests: [
     {
       id: 'r1',

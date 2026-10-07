@@ -19,6 +19,7 @@
 use std::collections::BTreeMap;
 
 use chrono::{DateTime, Utc};
+use promptus_shared::combat::DeathCall;
 use promptus_shared::combat::fight::{Fight, FightEvent, Play, Standing};
 use promptus_shared::combat::run::{Decision, Focus, Policy};
 use promptus_shared::maps::{Cell, Map, Side as MapSide};
@@ -404,10 +405,11 @@ fn sync_tokens(board: &mut Board, fight: &Fight) {
             });
         }
     }
-    // The fallen and the fled leave the board.
-    board
-        .tokens
-        .retain(|t| t.kind == TokenKind::Character || fight.positions.contains_key(&t.id));
+    // The fallen and the fled leave the board, and so do the dead.
+    board.tokens.retain(|t| {
+        (t.kind == TokenKind::Character || fight.positions.contains_key(&t.id))
+            && fight.standing.get(&t.id) != Some(&Standing::Dead)
+    });
     board.reveal_from_party();
 }
 
@@ -445,6 +447,9 @@ async fn sync_hit_points(
         let Some(character) = character_of_combatant(id) else {
             continue;
         };
+        if fight.standing.get(id) == Some(&Standing::Dead) {
+            continue;
+        }
         let (sheet, state) = play::in_play_locked(tx, campaign, character, rules).await?;
         let Some(now) = play::combatant(rules, &sheet, &state) else {
             continue;
@@ -694,6 +699,8 @@ pub enum Command {
     },
     Flee,
     EndTurn,
+    /// engine/save-against-death: the dying character's roll.
+    DeathSave,
 }
 
 /// The save difficulty the GM gives when the rules leave it open
@@ -754,6 +761,7 @@ fn run(
         }
         Command::Flee => fight.flee(rules, who, None, &mut dice),
         Command::EndTurn => fight.end_turn(rules, who, &mut dice),
+        Command::DeathSave => fight.death_save(rules, who, &mut dice),
     }
     .map_err(|r| refused(&r))?;
     Ok((step.fight, step.events))
@@ -816,6 +824,12 @@ pub enum GmCommand {
     },
     /// End the fight now.
     Stop,
+    /// Roll the death save of the active character for their absent
+    /// player.
+    DeathSave,
+    /// The GM's word on a death the engine proposed — also after the
+    /// fight ended.
+    Death { who: String, call: DeathCall },
 }
 
 /// Apply `cmd` of the GM to the live fight.
@@ -831,7 +845,12 @@ pub async fn gm_command(
     cmd: &GmCommand,
 ) -> Result<Option<Proposal>, AppError> {
     let mut tx = pool.begin().await?;
-    let (row, _) = session::lock_for_gm(&mut tx, gm, campaign, &[Status::Live]).await?;
+    let (row, live) = session::lock_for_gm(&mut tx, gm, campaign, &[Status::Live]).await?;
+    if let GmCommand::Death { who, call } = cmd {
+        decide_death(&mut tx, &row, live.id, who, *call).await?;
+        tx.commit().await?;
+        return Ok(None);
+    }
     let enc = locked_live(&mut tx, campaign).await?;
     let rules = &rules_of(&row)?;
     let adversary_turn = || {
@@ -898,9 +917,64 @@ pub async fn gm_command(
             let step = enc.fight.stop();
             commit_step(&mut tx, &row, rules, &enc, &step.fight, &step.events).await?;
         }
+        GmCommand::DeathSave => {
+            let who = enc
+                .fight
+                .active()
+                .filter(|w| enc.fight.save_due(rules, w))
+                .map(str::to_string)
+                .ok_or(AppError::Conflict("NO_DEATH_SAVE_DUE"))?;
+            let (fight, events) = run(rules, &enc.fight, &who, &Command::DeathSave)?;
+            commit_step(&mut tx, &row, rules, &enc, &fight, &events).await?;
+        }
+        GmCommand::Death { .. } => unreachable!("handled above"),
     }
     tx.commit().await?;
     Ok(proposal)
+}
+
+/// The GM confirms or turns away a death the engine proposed, in the
+/// session's last encounter (live or just ended). A confirmed death
+/// marks the character dead (`players::death`).
+async fn decide_death(
+    tx: &mut Transaction<'_, Postgres>,
+    row: &CampaignRow,
+    session: Uuid,
+    who: &str,
+    call: DeathCall,
+) -> Result<(), AppError> {
+    let found: Option<Row> = sqlx::query_as(&format!(
+        "SELECT {COLUMNS} FROM encounters WHERE campaign_id = $1 AND session_id = $2
+         ORDER BY (status = 'live') DESC, started_at DESC LIMIT 1 FOR UPDATE"
+    ))
+    .bind(row.id)
+    .bind(session)
+    .fetch_optional(&mut **tx)
+    .await?;
+    let enc = found.map(encounter).ok_or(AppError::Conflict("NO_FIGHT"))?;
+    let step = enc.fight.decide_death(who, call).map_err(|r| refused(&r))?;
+    if enc.live {
+        let rules = &rules_of(row)?;
+        commit_step(tx, row, rules, &enc, &step.fight, &step.events).await?;
+    } else {
+        append(tx, enc.id, &step.events).await?;
+        sqlx::query("UPDATE encounters SET fight = $2, version = version + 1 WHERE id = $1")
+            .bind(enc.id)
+            .bind(Json(&step.fight))
+            .execute(&mut **tx)
+            .await?;
+        if let Some(mut board) = super::current(&mut **tx, row.id).await? {
+            sync_tokens(&mut board, &step.fight);
+            super::save(tx, row.id, &board).await?;
+        }
+        live::touch(tx, row.id, &Topic::Fight).await?;
+    }
+    if call == DeathCall::Die
+        && let Some(character) = character_of_combatant(who)
+    {
+        crate::players::death::mark_dead(tx, row.id, character, enc.session_id).await?;
+    }
+    Ok(())
 }
 
 /// How many commands a proposed turn may take.
