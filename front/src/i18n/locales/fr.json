@@ -202,7 +202,8 @@
         "validated": "validé",
         "returned": "renvoyé",
         "resubmitted": "corrigé · à relire",
-        "spectator": "spectateur"
+        "spectator": "spectateur",
+        "fallen": "tombé"
       },
       "remove": "Retirer",
       "confirmRemove": "Retirer {{nickname}} et son personnage ?",
@@ -250,6 +251,7 @@
         "draft": "{{nickname}} crée son personnage…",
         "returned": "{{nickname}} corrige avec ton mot…",
         "validated": "{{name}} est validé.",
+        "fallen": "{{name}} est tombé.",
         "clean": "{{name}} est conforme aux règles.",
         "corrected": "{{nickname}} a corrigé {{name}}.",
         "flagged_one": "{{name}} a un point qui ne passe pas les règles.",
@@ -344,7 +346,21 @@
         "itemTaken_one": "rend {{label}}",
         "itemTaken_other": "rend {{label}} ×{{count}}",
         "equipped": "s'équipe : {{label}}",
-        "unequipped": "range {{label}} dans son sac"
+        "unequipped": "range {{label}} dans son sac",
+        "level": "{{label}} : {{after}} PV max (+{{delta}})",
+        "death": "meurt ({{label}})"
+      },
+      "death": "Il meurt…",
+      "deathConfirm": "Confirmer la mort de {{name}}",
+      "deathHint": "À 0 PV. Les règles ne le tuent pas : c'est ta décision, et elle est définitive.",
+      "cancel": "Annuler",
+      "fallen": "Tombés",
+      "fallenLine": "{{name}} · niveau {{level}} · joué par {{nickname}}",
+      "noWords": "Pas encore de derniers mots.",
+      "next": {
+        "watch": "regarde la soirée",
+        "new": "crée un nouveau personnage",
+        "hook": "attend une accroche"
       },
       "errors": {
         "notEnough": "Il n'en a pas assez.",
@@ -451,7 +467,8 @@
       "validated": "Ton personnage est validé !",
       "returned": "Le MJ te demande un changement",
       "spectator": "Tu regardes la partie",
-      "inPlay": "En jeu : ta fiche suit la partie"
+      "inPlay": "En jeu : ta fiche suit la partie",
+      "fallen": "Ton personnage est tombé"
     },
     "hello": "{{nickname}}, à la table de {{gm}}",
     "character": "Ton personnage",
@@ -460,7 +477,8 @@
       "draft": "Brouillon. Ta place est gardée : crée-le quand tu veux, en deux minutes.",
       "submitted": "Le MJ regarde ton personnage…",
       "validated": "Validé par le MJ.",
-      "returned": "Le MJ t'a renvoyé ton personnage avec un mot."
+      "returned": "Le MJ t'a renvoyé ton personnage avec un mot.",
+      "fallen": "Tombé."
     },
     "gmNote": "Le mot du MJ",
     "spectator": "Tu verras ce que montre l'écran partagé, pas les fiches.",
@@ -502,6 +520,44 @@
       "equip": "L'équiper",
       "unequip": "Le ranger",
       "consumable": "S'utilise une fois par unité."
+    },
+    "levelUp": {
+      "title": "Niveau {{level}}",
+      "lead_one": "{{name}} passe au niveau {{level}}.",
+      "lead_other": "{{name}} passe du niveau {{from}} au niveau {{level}}.",
+      "hitPoints": "Tes points de vie · niveau {{level}}",
+      "roll": "Lancer le dé",
+      "rollSub": "{{dice}} + {{ability}}",
+      "rollSubPlain": "{{dice}}",
+      "average": "La moyenne",
+      "averageSub": "+{{amount}}, sans risque",
+      "taken": "Niveau {{level}} : +{{amount}} PV",
+      "takenRoll": "Niveau {{level}} : {{faces}} au dé, +{{amount}} PV",
+      "cards": "Ta nouvelle carte",
+      "noCard": "Pas de nouvelle carte à ce niveau.",
+      "seen": "C'est noté",
+      "seenSub": "{{name}} a {{hp}} PV",
+      "error": "Le niveau n'a pas pu être enregistré. Réessaie."
+    },
+    "fallen": {
+      "kicker": "Tombé · niveau {{level}}",
+      "words": "Ses derniers mots",
+      "wordsHint": "Ce que {{name}} dit en tombant. Toute la table les lira, et la chronique les gardera.",
+      "say": "Dire ses derniers mots",
+      "saySub": "Une phrase, pour toute la table",
+      "said": "Lus à la table et gardés dans la chronique.",
+      "next": "Et maintenant ?",
+      "stay": "Tu restes à la table.",
+      "watch": "Regarder ce soir",
+      "watchSub": "Tu suis la fin de la soirée comme spectateur : la carte, le jeu et le journal.",
+      "new": "Créer un nouveau personnage",
+      "newSub_one": "Il arrive avec {{count}} XP, comme le groupe. Le MJ le valide et le fait entrer.",
+      "newSub_other": "Il arrive avec {{count}} XP, comme le groupe. Le MJ le valide et le fait entrer.",
+      "hook": "Attendre une accroche",
+      "hookSub": "Le MJ te fera revenir dans l'histoire, à sa façon.",
+      "chosen": "Ton choix",
+      "newMade": "Ton nouveau personnage t'attend dans l'onglet Perso.",
+      "error": "Ça n'a pas pu être envoyé. Réessaie."
     },
     "journal": {
       "hook": "Ce qu'on vous a dit",
@@ -1295,7 +1351,23 @@
       "condition": "{{target}} : {{name}}",
       "conditionEnded": "{{target}} n'est plus {{name}}",
       "knockedOut": "{{target}} tombe à terre",
-      "item": "{{who}} utilise {{item}}"
+      "item": "{{who}} utilise {{item}}",
+      "deathSaves": "{{target}} : {{successes}} réussite(s), {{failures}} échec(s) contre la mort",
+      "stabilized": "{{target}} est stabilisé",
+      "died": "{{who}} est mort"
+    },
+    "death": {
+      "title": "Tu es à terre",
+      "turn": "À toi : jet contre la mort",
+      "lead": "Tu n'es pas mort. À ton tour, tu lances le dé contre la mort.",
+      "roll": "Lancer le jet contre la mort",
+      "rollSub": "Ton tour entier",
+      "successes": "Réussites",
+      "failures": "Échecs",
+      "stable": "Stabilisé : plus de jets, toujours à terre.",
+      "waiting": "Le MJ regarde ce qui se passe…",
+      "stabilize": "Stabiliser {{name}}",
+      "stabilizeSub": "{{kind}} · {{ability}} contre {{difficulty}}"
     },
     "errors": {
       "UNEXPECTED": "Ce coup n'a pas marché. Réessaie.",
@@ -1441,7 +1513,13 @@
       "who": "Qui",
       "condition": "État",
       "addCondition": "Poser",
-      "removeCondition": "Retirer"
+      "removeCondition": "Retirer",
+      "saves": "contre la mort : {{successes}} ✓ · {{failures}} ✗",
+      "stable": "stabilisé",
+      "deathDue": "Les dés proposent la mort de {{name}}. Rien n'est montré aux joueurs avant ton choix.",
+      "confirmDeath": "Confirmer : {{name}} meurt",
+      "spare": "Autre issue : stabilisé",
+      "declareDeath": "{{name}} meurt…"
     },
     "copilot": {
       "title": "Co-MJ",

@@ -12,7 +12,7 @@ export interface Invitation {
 }
 
 export type Role = 'player' | 'spectator'
-export type CharacterStatus = 'draft' | 'submitted' | 'validated' | 'returned'
+export type CharacterStatus = 'draft' | 'submitted' | 'validated' | 'returned' | 'fallen'
 
 /** Three short answers and the paragraph made of them (`players::Backstory`). */
 export interface Backstory {
@@ -109,6 +109,42 @@ export interface PlayView {
   cards: ActionCardView[]
   resources: ResourceAmount[]
   inventory: BagItem[]
+  /** A level reached the player has not gone through yet (engine/level-up). */
+  levelUp: LevelUp | null
+}
+
+/** What a level's hit points were, as taken (`rules::level_up::HitPointGain`). */
+export interface HitPointGain {
+  level: number
+  method: 'roll' | 'average'
+  faces: number[]
+  base: number
+  modifier: number
+  amount: number
+}
+
+/** What the new levels bring, from the last one the player went through. */
+export interface LevelUp {
+  from: number
+  to: number
+  /** The die-or-average choice, when the rules add hit points per level. */
+  hitPoints: { dice: string; average: number; ability: string | null; modifier: number; due: number[] } | null
+  gains: HitPointGain[]
+  cards: ActionCardView[]
+}
+
+export type FateNext = 'watch' | 'new' | 'hook'
+
+/** The player's last dead character (player/face-death). */
+export interface FallenView {
+  characterId: string
+  name: string
+  className: string | null
+  look: CharacterLook | null
+  level: number
+  lastWords: string | null
+  next: FateNext | null
+  diedAt: string
 }
 
 /** A player's own character (`projection::CharacterView`). */
@@ -132,6 +168,8 @@ export interface PlayerHome {
   me: { id: string; nickname: string; role: Role }
   campaign: Invitation
   character: CharacterView | null
+  /** The last character of this player who died, if any. */
+  fallen?: FallenView | null
 }
 
 /** The campaign an invitation code opens, or `null` for a dead link. */
@@ -173,6 +211,23 @@ export function equipItem(campaignId: string, entry: string, equipped: boolean):
     entry,
     equipped,
   })
+}
+
+export type LevelUpChoice = { kind: 'hitPoints'; level: number; method: 'roll' | 'average' } | { kind: 'seen' }
+
+/** Go through a new level; answers the character as `me` shows it. */
+export function levelUp(campaignId: string, choice: LevelUpChoice): Promise<CharacterView> {
+  return apiRequest<CharacterView>('POST', `/play/${encodeURIComponent(campaignId)}/character/level-up`, choice)
+}
+
+/** The last words of my dead character; answers my home. */
+export function sayLastWords(campaignId: string, text: string): Promise<PlayerHome> {
+  return apiRequest<PlayerHome>('POST', `/play/${encodeURIComponent(campaignId)}/fate/words`, { text })
+}
+
+/** What I do after my character's death; answers my home. */
+export function chooseNext(campaignId: string, next: FateNext): Promise<PlayerHome> {
+  return apiRequest<PlayerHome>('POST', `/play/${encodeURIComponent(campaignId)}/fate/next`, { next })
 }
 
 /** The campaign as players see it now (`GET /api/play/…/view`). */
