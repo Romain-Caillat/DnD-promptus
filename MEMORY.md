@@ -244,6 +244,18 @@ confirm it exists. The first GM is created with the setup code from
 the server log, every other one through an invitation: registration is
 never open to whoever reaches the server first.
 
+### The shared screen is a third kind of caller
+
+A TV (or the window the GM shares on Discord) holds its own hashed
+token in a cookie on `/api/tv`, behind `require_screen`; no path names
+its campaign, it is the one it was paired with. It opens no GM or player
+route, and the GM's session opens none of its routes — which is what
+keeps the Discord window, living in the GM's browser, free of GM data.
+Its whole answer is `projection::screen`, built from the players'
+projection and the spectator's grid, narrowed (never widened) by the
+GM's switches; every screen route is swept like the player routes.
+Presence counts screens apart, never as players.
+
 ### Every AI call is counted
 
 Each LLM, image or video call is recorded with its cost and counted
