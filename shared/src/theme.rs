@@ -201,9 +201,12 @@ mod tests {
         include_str!("../../content/themes/corsaires.yaml"),
         include_str!("../../content/themes/brasier.yaml"),
     ];
-    const MAPS: [&str; 2] = [
+    const MAPS: [&str; 5] = [
         include_str!("../../content/maps/corsaires/quai-port-louis.yaml"),
         include_str!("../../content/maps/brasier/cure-dent-coursive.yaml"),
+        include_str!("../../content/maps/corsaires/large-de-belle-ile.yaml"),
+        include_str!("../../content/maps/corsaires/pont-du-greyhound.yaml"),
+        include_str!("../../content/maps/brasier/abords-du-toboggan.yaml"),
     ];
 
     #[test]

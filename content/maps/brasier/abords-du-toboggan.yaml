@@ -1,0 +1,55 @@
+# Le Brasier, acte 1 — l'essaim vorr.
+# INVENTÉ — à valider par Romain, d'après la campagne (front de la
+# ruche : « trois à cinq chasseurs Vorr, une seule initiative, traquent
+# le Cure-Dent à travers le système ») et Combat_Vaisseau.md §12 (cartes
+# de décor spatial : astéroïdes, débris, gravité). Le Cure-Dent sort du
+# Toboggan à l'ouest ; l'essaim arrive de l'est à travers une ceinture
+# de débris. La gravité du Brasier tire vers le sud.
+# Carte de combat de vaisseau (engine/support-vehicle-combat) : les
+# astéroïdes bloquent la route et le tir.
+version: 1
+id: abords-du-toboggan
+name: Les abords du Toboggan
+scale: place
+theme: espace-brasier
+ambience:
+  light: dim
+  mood: combat-spatial
+  # The pull of the Brasier: from the north, towards the south.
+  wind: { from: n, strength: 2 }
+gm_notes: >-
+  L'essaim cherche l'angle mort arrière du Cure-Dent : aucune arme ne
+  couvre le pur arrière. LUMEN tient les capteurs si le Xénologue est
+  ailleurs. Si un chasseur s'arrime (portée courte), l'abordage se joue
+  dans la coursive.
+grid:
+  legend:
+    "#": { terrain: astéroïde, wall: true }
+    ".": { terrain: vide }
+  rows:
+    - "........................"
+    - "..........##............"
+    - "..........##.......#...."
+    - "........................"
+    - "....#..................."
+    - "...............##......."
+    - "...............##......."
+    - "........................"
+    - "........................"
+    - ".........#.............."
+    - "........................"
+    - "...................##..."
+    - "....##..............#..."
+    - "........................"
+    - "........................"
+    - "........................"
+starts:
+  - { id: cure-dent, side: party, at: [3, 8] }
+  - { id: chasseur-1, side: foes, at: [20, 4], entity: chasseur_vorr }
+  - { id: chasseur-2, side: foes, at: [21, 7], entity: chasseur_vorr }
+  - { id: chasseur-3, side: foes, at: [20, 9], entity: chasseur_vorr }
+  - { id: chasseur-4, side: foes, at: [22, 13], entity: chasseur_vorr }
+  - { id: chasseur-5, side: foes, at: [22, 2], entity: chasseur_vorr }
+labels:
+  - { text: Sortie du Toboggan, at: [1, 8] }
+  - { text: Ceinture de débris, at: [15, 4] }

@@ -12,8 +12,8 @@
 #   - "1 seule attaque par tour" aboard contradicts two attacks per turn
 #     on the ground;
 #   - the rules files are copies naming another world's classes.
-# Ship combat itself (hull, shields, energy, stations, arcs) waits for
-# engine/support-vehicle-combat; only its action economy is here.
+# Ship combat itself (hull, shields, energy, stations, arcs) is the
+# `vehicles:` block at the end of the file.
 # Where the model forced a reading, the choice is marked INTERPRETATION.
 
 id: brasier
@@ -489,3 +489,209 @@ items:
 # references are ships (Combat_Vaisseau.md §9), which wait for
 # engine/support-vehicle-combat. Act 1's adversaries are still to write.
 adversaries: []
+
+# Ship combat (engine/support-vehicle-combat), transcribed from
+# dnd-save/DnD_07-06-2026/Combat_Vaisseau.md and Fiche_Cure-Dent.md
+# (« v1 à playtester »). Numbers are the source's; what the model forced
+# is marked INTERPRETATION:
+#   - « Toucher : d20 + stat du poste » — a crew member rolls their
+#     station's ability; an enemy ship's gunners roll + attack_bonus,
+#     which the source does not give (+3, +2 for the Sereth mortar);
+#   - « Briser le Moral : d20 + CHA vs Moral/SAG » — against the ship's
+#     `resolve` (12, 14 for the Sereth), for 3 morale (« -X Moral »);
+#   - enemy speeds (« Rapide », « lente ») and initiatives are readings;
+#   - « Changer de portée » is a manoeuvre; a fight's escape (§11) is a
+#     risky manoeuvre at long range of every enemy;
+#   - gravity is the terrain of space (§12 « gravité »): bow along the
+#     pull +1 cell, against it -1;
+#   - the stations of the crew follow Fiche_Cure-Dent.md (Barre for the
+#     Pilote, the turrets free for whoever runs to them).
+vehicles:
+  name: Combat de vaisseau
+  description: >-
+    Le vaisseau est un personnage partagé. Chaque joueur tient un poste :
+    deux actions par tour, une seule attaque. On détruit un vaisseau
+    (Coque à 0) ou on brise son Moral (il fuit, se rend ou décroche).
+  context: vaisseau
+  attack_kind: attaque
+  hull: { name: Coque, abbr: COQ }
+  screen: { name: Boucliers, abbr: BOU, role: absorb }
+  armor: { name: Blindage, abbr: BLI }
+  morale: { name: Moral, abbr: MOR }
+  power:
+    name: Énergie
+    abbr: ÉNE
+    points: 6
+    reduced:
+      - { hull_at_most: 20, points: 5 }
+      - { hull_at_most: 10, points: 4 }
+    channels:
+      - id: navigation
+        name: Navigation
+        start: 2
+        levels:
+          - { note: "Moteurs morts : ni déplacement ni esquive.", immobile: true, no_evade: true }
+          - { note: "Ralenti : -1 case.", speed: -1 }
+          - { note: "Nominal." }
+          - { note: "+1 case de déplacement.", speed: 1 }
+          - { note: "+2 cases et +2 à l'esquive.", speed: 2, evade: 2 }
+      - id: armes
+        name: Armes
+        start: 2
+        levels:
+          - { note: "Secours : -2 dégâts, pas de tir chargé.", damage: -2, no_heavy: true }
+          - { note: "-1 dégât.", damage: -1 }
+          - { note: "Nominal." }
+          - { note: "+1 dégât par tir.", damage: 1 }
+          - { note: "+2 dégâts par tir.", damage: 2 }
+      - id: boucliers
+        name: Boucliers
+        start: 2
+        levels:
+          - { note: "Hors ligne : plus de recharge, n'absorbe plus (dégâts → Coque).", screen_offline: true }
+          - { note: "Faible : recharge +2.", recharge: 2 }
+          - { note: "Nominal : recharge +4.", recharge: 4 }
+          - { note: "Renforcés : recharge +6.", recharge: 6 }
+          - { note: "Surchargés : recharge +6 et -2 dégâts subis.", recharge: 6, damage_taken: -2 }
+  ranges:
+    - { id: courte, name: Courte, max: 2 }
+    - { id: moyenne, name: Moyenne, max: 5 }
+    - { id: longue, name: Longue, max: 8 }
+  boarding_range: 2
+  current: { name: Gravité, with: 1, against: 1 }
+  initiative_station: barre
+  station_change_cost: 1
+  stations:
+    - id: barre
+      name: Pilote — barre
+      description: "Tient le vaisseau en vie par le mouvement."
+      ability: DEX
+      suits: [pilote]
+      actions:
+        - { id: manoeuvre, name: Manœuvre, description: "Avancer jusqu'à 3 cases et pivoter d'un quart de tour.", effect: { maneuver: {} } }
+        - { id: esquive, name: Esquive, description: "+3 au Blindage jusqu'au prochain tour du vaisseau.", effect: { evade: { armor: 3 } } }
+        - { id: manoeuvre_risquee, name: Manœuvre risquée, description: "Jet de DEX (12) : double déplacement, jusqu'à un demi-tour.", cost: 2, check: 12, effect: { maneuver: { multiplier: 2, turns: 2 } } }
+        - { id: decrocher, name: Décrocher, description: "Jet de DEX (12), à longue portée de tout ennemi : le Cure-Dent s'échappe.", cost: 2, check: 12, effect: { disengage: { min_distance: 6 } } }
+    - id: piece_lourde
+      name: Pièce lourde
+      description: "Le canon lourd « Pic-Vert » : il faut pointer la proue."
+      ability: FOR
+      suits: [canonnier]
+      actions:
+        - { id: tir_canon_lourd, name: Tir du canon lourd, description: "8 dégâts, arc avant, longue portée.", attack: true, effect: { fire: {} } }
+        - { id: tir_charge, name: Tir chargé, description: "12 dégâts.", cost: 2, attack: true, effect: { fire: { damage: 12 } } }
+        - { id: forcer_un_systeme, name: Forcer un système grippé, description: "Éjecter un module, forcer un sas : le MJ dit la difficulté.", effect: narrative }
+    - id: tourelle_dorsale
+      name: Tourelle dorsale
+      ability: DEX
+      actions:
+        - { id: tir_tourelle_dorsale, name: Tir de la tourelle dorsale, attack: true, effect: { fire: {} } }
+    - id: tourelle_babord
+      name: Tourelle bâbord
+      ability: DEX
+      actions:
+        - { id: tir_tourelle_babord, name: Tir de la tourelle bâbord, attack: true, effect: { fire: {} } }
+    - id: tourelle_tribord
+      name: Tourelle tribord
+      ability: DEX
+      actions:
+        - { id: tir_tourelle_tribord, name: Tir de la tourelle tribord, attack: true, effect: { fire: {} } }
+    - id: ingenieur
+      name: Ingénieur
+      description: "Sans lui : plus de boucliers, plus d'énergie, plus de moteur."
+      ability: INT
+      suits: [mecano]
+      actions:
+        - { id: recharger_boucliers, name: Recharger les boucliers, description: "+4 Boucliers (selon l'énergie).", effect: { recharge: { amount: 4 } } }
+        - { id: rerouter_energie, name: Rerouter l'énergie, description: "Redistribuer entre Navigation, Armes et Boucliers.", effect: reroute }
+        - { id: reparer_coque, name: Réparer la coque, description: "Jet d'INT (10) : +3 Coque.", check: 10, effect: { repair: { amount: 3 } } }
+        - { id: reparer_systeme, name: Réparer un système, description: "Jet d'INT (12) : un poste hors service revient.", effect: { fix: { damages: [systeme_touche] } } }
+        - { id: surcharger, name: Surcharger un système, description: "Effet doublé ce tour, risque d'incendie : le MJ tranche.", cost: 2, effect: narrative }
+    - id: integrite
+      name: Intégrité & avaries
+      description: "Garde le vaisseau en un seul morceau."
+      ability: CON
+      suits: [toubib]
+      actions:
+        - { id: se_braquer, name: Se braquer, description: "-4 dégâts sur chaque attaque reçue jusqu'au prochain tour.", effect: { brace: { damage_taken: -4 } } }
+        - { id: eteindre_incendie, name: Éteindre un incendie, description: "Jet de CON (10).", effect: { fix: { damages: [incendie] } } }
+        - { id: colmater_breche, name: Colmater une brèche, description: "Jet de CON (12).", effect: { fix: { damages: [breche] } } }
+        - { id: maintenir_en_survie, name: Maintenir un système en survie, description: "Le MJ garde un poste en ligne le temps qu'on le répare.", effect: narrative }
+    - id: capteurs
+      name: Capteurs
+      description: "Tenus par LUMEN quand personne n'y est."
+      ability: SAG
+      suits: [xenologue]
+      # INTERPRETATION: LUMEN (played by the GM) rolls +2.
+      held_by: { name: LUMEN, modifier: 2 }
+      actions:
+        - { id: verrouiller, name: Verrouiller une cible, description: "La prochaine attaque alliée sur cette cible : +4.", effect: { lock: { bonus: 4 } } }
+        - { id: scanner, name: Scanner, description: "Révèle la Coque et le Moral d'un vaisseau ennemi.", effect: scan }
+        - { id: brouiller, name: Brouiller, description: "La cible : -3 à toucher jusqu'à la fin de son prochain tour.", effect: { jam: { malus: -3 } } }
+        - { id: detecter, name: Détecter, description: "Renforts, sorties, dangers du décor : le MJ répond.", effect: narrative }
+    - id: liaison
+      name: Liaison
+      description: "Négocier, bluffer, briser le moral."
+      ability: CHA
+      suits: [quartier_maitre]
+      actions:
+        - { id: briser_le_moral, name: Briser le Moral, description: "CHA contre la résolution ennemie : -3 Moral.", attack: true, effect: { break_morale: { amount: 3 } } }
+        - { id: bluffer, name: Bluffer, description: "Faux transpondeur, fausse allégeance : le MJ dit ce que l'ennemi croit.", effect: narrative }
+        - { id: rallier, name: Rallier l'équipage, description: "Le prochain jet de l'équipage : +3.", effect: { rally: { bonus: 3 } } }
+        - { id: couper_les_comms, name: Couper les comms ennemies, description: "Empêche renforts et coordination : le MJ tranche.", effect: narrative }
+  damage:
+    dice: 1d6
+    on_critical: true
+    hull_thresholds: [20, 10]
+    entries:
+      - { from: 1, to: 2, id: incendie, name: Incendie, description: "2 dégâts à la Coque au début de chaque tour ; peut se propager.", effect: { burn: { hull: 2 } }, fix: { ability: CON, difficulty: 10 } }
+      - { from: 3, to: 4, id: breche, name: Brèche, description: "Décompression : la section devient dangereuse.", effect: hazard, fix: { ability: CON, difficulty: 12 } }
+      - { from: 5, to: 5, id: systeme_touche, name: Système touché, description: "Un poste hors service.", effect: station_down, fix: { ability: INT, difficulty: 12 } }
+      - { from: 6, to: 6, id: secousse, name: Secousse, description: "Un membre d'équipage au hasard perd 1 action au prochain tour.", effect: jolt }
+  ships:
+    - id: cure_dent
+      name: Le Cure-Dent
+      description: "HMS-230 132, explorateur léger de la Confédération. Irremplaçable."
+      hull: 30
+      screen: 12
+      armor: 14
+      speed: 3
+      weapons:
+        - { id: pic_vert, name: Canon lourd « Pic-Vert », station: piece_lourde, arcs: [front], range: longue, damage: 8 }
+        - { id: tourelle_dorsale, name: Tourelle dorsale, station: tourelle_dorsale, arcs: [front, port, starboard], range: moyenne, damage: 4 }
+        - { id: tourelle_babord, name: Tourelle bâbord, station: tourelle_babord, arcs: [port, front], range: moyenne, damage: 5 }
+        - { id: tourelle_tribord, name: Tourelle tribord, station: tourelle_tribord, arcs: [starboard, front], range: moyenne, damage: 5 }
+    - id: chasseur_vorr
+      name: Chasseur Vorr
+      description: "Rapide ; attaque en essaim de 3 à 5, une seule initiative."
+      hull: 6
+      armor: 12
+      speed: 5
+      initiative: 2
+      squad: true
+      tactics: "L'essaim cherche l'angle mort arrière du Cure-Dent."
+      weapons:
+        - { id: crocs, name: Crocs, arcs: [front], range: courte, damage: 3, attack_bonus: 3 }
+    - id: corvette_pirate
+      name: Corvette pirate
+      description: "Standard ; se brise au Moral."
+      hull: 15
+      screen: 6
+      armor: 13
+      morale: 6
+      resolve: 12
+      speed: 3
+      initiative: 1
+      weapons:
+        - { id: canon, name: Canon, arcs: [front, port, starboard], range: moyenne, damage: 5, attack_bonus: 3 }
+    - id: carapace_sereth
+      name: Carapace Sereth
+      description: "Très défensive, lente."
+      hull: 25
+      screen: 10
+      armor: 16
+      morale: 8
+      resolve: 14
+      speed: 2
+      weapons:
+        - { id: mortier, name: Mortier, arcs: [front, port, starboard, rear], range: longue, damage: 6, attack_bonus: 2 }

@@ -1,0 +1,27 @@
+# Corsaires de la Couronne — combat naval : l'interception du Greyhound
+# (acte 2). La Mâchoire surgit de derrière la pointe de Kerdonis ; le
+# Greyhound et son sloop d'escorte arrivent de l'ouest, vent arrière.
+# Rejoué par shared/tests/vehicle_battles.rs. INVENTÉ — à valider par
+# Romain : tout le système naval des Corsaires (voir le bloc `vehicles`
+# de content/rules/corsaires/v1.yaml).
+id: interception-greyhound
+name: L'interception du Greyhound
+description: >-
+  Six corsaires de niveau 1 à leurs postes sur La Mâchoire, contre le
+  HMS Greyhound et le sloop qui l'escorte.
+source: content/campaigns/corsaires/campagne.yaml (rev_route, rev_escorte, rev_courants)
+rules: corsaires
+version: 1
+map: large-de-belle-ile
+ship: { kind: la_machoire, facing: s }
+crew:
+  - { id: navigateur, class: navigateur }
+  - { id: canonnier, class: canonnier }
+  - { id: bretteur, class: bretteur }
+  - { id: chirurgien, class: chirurgien }
+  - { id: vigie, class: vigie }
+  - { id: quartier_maitre, class: quartier_maitre }
+opponents:
+  - { id: greyhound, kind: hms_greyhound, facing: e }
+  - { id: sloop, kind: sloop_escorte, facing: e }
+simulation: { battles: 200, seed: 1 }

@@ -15,3 +15,4 @@ pub mod rules;
 pub mod sprite;
 pub mod story;
 pub mod theme;
+pub mod vehicle;

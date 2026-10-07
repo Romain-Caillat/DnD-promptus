@@ -24,3 +24,12 @@ tilesets:
       reacteur: { name: Réacteur, shape: reactor, color: "#3b4450", accent: "#ff8a3c" }
       conduites: { name: Conduites, shape: pipes, color: "#6f7a86", accent: "#c0582c" }
       balise: { name: Balise, shape: beacon, color: "#3a4047", accent: "#ff4d5e" }
+  # Space around the ship (engine/support-vehicle-combat): the void and
+  # its asteroids, drawn as walls.
+  - id: espace-brasier
+    name: Les abords du Brasier
+    void: "#020308"
+    walls: { cap: "#6a5a4c", face: "#3f342b", joint: "#1c1712", pattern: stones }
+    materials:
+      vide: { name: Vide spatial, base: "#0a0d16", dark: "#05070c", light: "#1a2030", pattern: plain }
+    props: {}
