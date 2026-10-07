@@ -226,7 +226,7 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
 }
 
 /** Three circles of each kind, filled as the server counts them. */
-export function SaveCircles({ successes, failures, of = 3 }: { successes: number; failures: number; of?: number }) {
+function SaveCircles({ successes, failures, of = 3 }: { successes: number; failures: number; of?: number }) {
   const { t } = useTranslation()
   const row = (label: string, n: number, good: boolean) => (
     <div className="flex items-center gap-2">

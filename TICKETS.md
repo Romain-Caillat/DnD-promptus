@@ -641,7 +641,7 @@ les Vorr réels viendront de `campaign/rewrite-two-worlds`.
 
 **Origine** — V1 `combat.ts`, `grid.ts`
 
-### `engine/level-up` · todo
+### `engine/level-up` · doing — reste un passage de niveau joué pour de vrai, sur téléphone
 
 **Périmètre** — Niveaux par expérience ; points de vie au dé de vie ou à
 la moyenne, au choix du joueur ; nouvelles cartes de classe.
@@ -651,7 +651,25 @@ nouvelle carte, comme sur la planche.
 
 **Origine** — Planche « Entre deux » (moments 1 et 2)
 
-### `engine/save-against-death` · todo
+**État** — Livré et vérifié (`cargo test --workspace`, clippy, `tsc -b`,
+ESLint, Vitest). Le niveau vient toujours de l'XP. Un système de règles
+peut dire que chaque niveau au-delà du premier ajoute des PV : le dé
+(lancé par le serveur) ou la moyenne, plus le modificateur d'une
+caractéristique, au choix du joueur, une seule fois par niveau, jamais
+relancé ; l'XP reprise reprend les PV de ses niveaux. Un niveau débloque
+les cartes de classe qui l'attendaient. Sur le téléphone, onglet Perso,
+une carte « Niveau 4 » s'affiche tant que le joueur n'est pas passé par
+ce niveau : les deux options de PV niveau par niveau, la nouvelle carte,
+puis « C'est noté » ; le MJ lit « Niveau 4 : 19 PV max (+9) » dans
+l'historique des fiches. Le test du moteur rejoue Borin au niveau 4
+sur les deux mondes témoins. Hypothèse posée : les règles transcrites
+des Corsaires et du Brasier ne donnent pas de PV par niveau, elles sont
+gardées telles quelles ; sur ces mondes un niveau apporte ses cartes
+(niveaux 3 et 7), et les deux options de PV arrivent dès que le MJ les
+écrit dans ses règles (`progression.hit_points_per_level`, éditeur de
+règles).
+
+### `engine/save-against-death` · doing — reste une mort jouée pour de vrai à une soirée
 
 **Pourquoi** — Une mort de personnage ne doit jamais être un accident
 de calcul ; le MJ confirme.
@@ -666,6 +684,22 @@ par le moteur et confirmée par le MJ.
 dans les tests du moteur, la confirmation du MJ comprise.
 
 **Origine** — Planche « Mourir »
+
+**État** — Livré et vérifié (`cargo test --workspace`, clippy, Vitest). Deux règles
+de 0 PV, données du système : `knocked_out` (les deux mondes témoins :
+inconscient, hors combat après 3 tours sans soin) ne propose jamais de
+mort ; `death_saves` garde le personnage mourant dans le combat — son
+tour est un jet contre la mort, 1 et 20 naturels, un coup reçu compte un
+échec (deux sur un critique), un soin relève tout, un allié à côté peut
+le stabiliser — et trois échecs **proposent** la mort, cachée aux
+joueurs, que le MJ confirme ou remplace par « stabilisé ». Sous les deux
+règles, le MJ peut décider la mort d'un personnage à 0 PV, depuis le
+combat ou les fiches, en deux gestes. Le mort passe « tombé » : sa fiche
+reste pour la chronique, son jeton quitte la carte, le journal de la
+table le dit, il ne reçoit plus d'XP du combat. Les sept moments de la
+planche se rejouent dans `shared/tests/character_fate.rs` sur les deux
+mondes (sous `death_saves` écrit par le MJ dans ses règles), le parcours
+serveur dans `back/tests/fate_test.rs`.
 
 ### `engine/formalise-house-rules` · todo · à spécifier
 
@@ -1647,13 +1681,29 @@ faisables dans l'app.
 
 **Origine** — Planche « Entre deux »
 
-### `player/face-death` · todo
+### `player/face-death` · doing — reste une mort vécue sur un vrai téléphone
 
 **Périmètre** — Jets contre la mort sur le téléphone, derniers mots,
 puis la suite : regarder, créer un nouveau personnage, ou attendre une
 accroche du MJ.
 
 **Origine** — Planche « Mourir »
+
+**État** — Livré et vérifié (Vitest, tests serveur). Onglet Carte : à
+terre, le joueur voit « Tu es à terre » et ses cases de réussites et
+d'échecs ; à son tour, la main et la grappe arcade laissent la place au
+seul « Lancer le jet contre la mort » ; trois échecs : « Le MJ regarde
+ce qui se passe… ». Un allié, à son tour, a « Stabiliser Borin ».
+L'ordre du tour montre les jets de chaque mourant. Après la mort, le
+joueur garde sa place : bandeau « Ton personnage est tombé », le
+personnage en gris, ses derniers mots (une phrase, une seule fois, lus
+par toute la table dans le journal), puis « Regarder ce soir »,
+« Créer un nouveau personnage » (définitif : un brouillon qui arrive
+avec l'XP du mort une fois validé par le MJ) ou « Attendre une
+accroche ». Le MJ retrouve les morts dans « Tombés », sous les fiches,
+avec leurs derniers mots et le choix du joueur. Hypothèse posée : la TV
+(silence, portrait) et « Léguer ses objets » de la planche ne sont pas
+dans ce lot (`tv/show-evening`, `player/buy-and-trade`).
 
 ### `player/play-on-desktop` · todo
 

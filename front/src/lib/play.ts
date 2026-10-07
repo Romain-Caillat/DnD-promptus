@@ -114,7 +114,7 @@ export interface PlayView {
 }
 
 /** What a level's hit points were, as taken (`rules::level_up::HitPointGain`). */
-export interface HitPointGain {
+interface HitPointGain {
   level: number
   method: 'roll' | 'average'
   faces: number[]
