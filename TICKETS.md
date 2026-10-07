@@ -589,8 +589,8 @@ combattant qui perd son tour ; `end_turn` applique les dégâts par tour,
 décompte les durées du porteur et passe en hors combat un KO resté 3
 tours sans soin. Chaque état garde ce que montre le badge (nom, bienfait
 ou malus, tours restants). Intentions de `conditions.test.ts` portées
-sur les états des deux mondes ; le catalogue des 14 états du SRD viendra
-avec `engine/add-srd-preset`.
+sur les états des deux mondes ; les 14 états du SRD sont dans le
+préréglage `srd` (`engine/add-srd-preset`).
 
 **Origine** — V1 `conditions.ts` · planche « États des personnages »
 
@@ -634,8 +634,8 @@ sur 20 en fonçant un par un dans le sas). À valider par Romain, marqué
 (D&D 5e), les portées en cases ajoutées aux actions des deux mondes
 d'après leur description, couvert et longue portée par défaut, un
 adversaire à 0 PV vaincu sur-le-champ, un corps au sol enjambable.
-Reste : le combat de démo gobelins du V1 n'est pas porté (il demande le
-SRD, `engine/add-srd-preset`) ; aucune XP de victoire séparée (les deux
+Le combat de démo gobelins du V1 est porté sur le préréglage SRD
+(`engine/add-srd-preset`). Reste : aucune XP de victoire séparée (les deux
 mondes n'en donnent pas) ; la lumière (nuit) ne gêne pas encore la vue ;
 les Vorr réels viendront de `campaign/rewrite-two-worlds`.
 
@@ -667,7 +667,7 @@ dans les tests du moteur, la confirmation du MJ comprise.
 
 **Origine** — Planche « Mourir »
 
-### `engine/formalise-house-rules` · todo · à spécifier
+### `engine/formalise-house-rules` · doing — reste une vraie règle maison formalisée avec la clé OpenRouter, puis jouée à une soirée
 
 **Pourquoi** — Un MJ écrit sa règle en français ; le serveur doit
 pouvoir la juger.
@@ -677,15 +677,127 @@ pouvoir la juger.
 cas de test ; le MJ relit et valide. Format formel à définir sur les
 effets primitifs existants.
 
+**Fini quand** *(hypothèse de spécification, octobre 2026 : la lecture
+la plus probable de la planche « Règles », moment 5, et des deux mondes ;
+à corriger par Romain)* —
+- une règle maison peut porter, à côté de son texte, une **forme
+  formelle** dans le fichier de règles : un déclencheur pris parmi ce que
+  le moteur sait déjà voir (une attaque qui touche, éventuellement en
+  critique ou avec un type de dégâts ; une attaque ratée, éventuellement
+  sur un 1 naturel), qui est concerné (camp, étiquettes de créature,
+  exceptions), un effet fait des primitives existantes (un état posé à
+  la cible ou à l'attaquant, des dégâts, un soin), ce que voient les
+  joueurs (la règle, ou seulement son effet) et des cas de test ;
+- le serveur l'applique en combat comme les autres règles, une seule
+  fois par attaque (l'effet d'une règle maison ne redéclenche aucune
+  règle maison), et le journal de combat le dit ; une règle « effet
+  seulement » n'est jamais nommée aux joueurs, ni sur leur page des
+  règles ni dans leur journal ;
+- dans l'éditeur, le MJ écrit sa règle en français et demande au co-MJ
+  de la formaliser : le co-MJ propose déclencheur, effet, exception et
+  visibilité avec trois cas de test, que le serveur rejoue tout de suite
+  (✓ ou —) ; un identifiant inventé par le modèle est retiré et signalé ;
+  rien n'est enregistré avant que le MJ ajoute la règle au brouillon ;
+- chaque enregistrement du brouillon rejoue les cas de chaque règle
+  formalisée, et les combats simulés tiennent compte des règles ;
+- cela marche sur les trois systèmes : « les morts-vivants craignent le
+  feu » sur le SRD (moment 5 de la planche), « le pied qui glisse » sur
+  les Corsaires et « l'arme qui s'enraye » au Brasier (le 1 naturel en
+  attaque, que les deux mondes laissent aujourd'hui à l'improvisation).
+
+**État** — Construit et testé, pas encore essayé avec un vrai modèle.
+Une règle maison peut porter une forme `formal` dans le fichier de
+règles (`shared/src/rules/house.rs`, format dans `docs/rules-format.md`
+§ House rules) : quand (une attaque qui touche, en critique ou non, avec
+un type de dégâts ; ou qui rate, sur un 1 naturel ou non), qui (camp,
+étiquettes exigées, étiquettes et classes/adversaires exceptés), des
+effets (un état sur la cible ou l'attaquant, des dégâts, un soin), ce
+que voient les joueurs (`rule` ou `effect`) et des cas de test. Le
+moteur l'applique dans `resolve_action`, une seule fois par cible, et
+l'annonce par un événement « règle maison » ; une règle « effet
+seulement » est coupée à la projection (page des règles, changements à
+lire, journal de combat), son état ou ses dégâts restent visibles. Le
+chargement refuse une forme qui nomme ce que le système n'a pas. Dans
+l'éditeur, onglet « Règles maison » : « Formaliser avec le co-MJ »
+(gabarit `house-rule.v1`, appel compté `rules.house_rule`) rend le
+tableau Quand / Effet / Exception / Joueurs, le mot du co-MJ, les
+identifiants inventés retirés et nommés, et les cas rejoués par le
+serveur (✓ ou —, conforme ou non) ; le MJ peut montrer ou cacher la règle
+aux joueurs, rejouer les cas, puis « Ajouter la règle » au brouillon.
+Rien n'est stocké avant. Chaque enregistrement du brouillon rejoue les
+cas de chaque règle formalisée (`report.houseRules`), et les combats
+simulés tiennent compte des règles (le moteur les applique). Essayé sur
+les trois systèmes dans les tests : « les morts-vivants craignent le
+feu » (SRD, livrée avec le préréglage), « le pied qui glisse »
+(Corsaires, renversé sur un 1 naturel) et « l'arme qui s'enraye »
+(Brasier, étourdi sur un 1 naturel). Écarts : les déclencheurs se
+limitent à l'attaque qui touche ou rate (pas de début ou fin de tour, de
+mise à 0 PV, de test hors combat) ; le MJ corrige une proposition par la
+case de visibilité ou dans l'onglet « Texte », pas encore champ par
+champ ; le Brasier n'ayant pas d'adversaire, ses cas opposent deux
+classes.
+
 **Origine** — Planche « Règles » (moment 5)
 
-### `engine/add-srd-preset` · todo · à spécifier
+### `engine/add-srd-preset` · doing — reste une campagne SRD préparée et jouée pour de vrai, et la relecture du fichier par Romain
 
 **Pourquoi** — Beaucoup de MJ jouent à D&D 5e ; le SRD 5.1 est la partie
 libre de ses règles, publiable sous licence Creative Commons.
 
 **Périmètre** — Le SRD comme troisième système de règles, à côté des
 deux mondes ; vérifier que le modèle le porte sans cas particulier.
+
+**Fini quand** *(hypothèse de spécification, octobre 2026, d'après la
+planche « Règles » (moments 1 et 6) et le combat de démo du V1 ; à
+corriger par Romain)* —
+- un préréglage `srd` (« D&D 5e · SRD 5.1 », attribution CC-BY-4.0)
+  se charge et se propose à la création d'une campagne, à côté des deux
+  mondes, puis s'édite comme eux (brouillon, version, verrou) ;
+- il contient les six caractéristiques, la maîtrise qui grandit avec le
+  niveau, l'avantage et le désavantage, les quatre classes de la planche
+  (guerrier, rôdeur, roublard, magicien) avec leurs PV et leur CA
+  propres, les peuples (nain, elfe, halfelin, humain), les 14 états du
+  SRD, les jets contre la mort comme règle du 0 PV, les types de dégâts
+  et des créatures étiquetées (gobelins, squelette, zombie…) ;
+- tout cela passe par des champs **génériques** du format (aucun
+  `if srd` dans le code), que les deux mondes peuvent aussi employer ;
+- le combat de démo des gobelins du V1 se rejoue jusqu'au bout dans
+  les tests du moteur et dans le rapport (`bun run rules-report`), et
+  le contrôle des règles ne trouve aucune erreur dans le préréglage ;
+- ce que le modèle **ne porte pas** du SRD est écrit noir sur blanc
+  (dans le fichier et ici), plutôt qu'approché en silence.
+
+**État** — Construit et testé. `content/rules/srd/v1.yaml` (« D&D 5e ·
+SRD 5.1 », attribution CC-BY-4.0 en tête et dans `sources`, texte
+français réécrit) est proposé à la création d'une campagne, s'édite et se
+verrouille comme les deux mondes. Il apporte au format quatre champs
+génériques et facultatifs, aucun cas particulier dans le moteur : un
+bonus d'attaque qui suit le niveau (la maîtrise, `attack.bonus`, montrée
+sur les cartes, la page des règles et le détail du jet), des PV et une
+CA propres à une classe (dé de vie, armure de départ), des étiquettes de
+créature et des types de dégâts. Contenu : six caractéristiques,
+difficultés 5 à 30, avantage et désavantage, une action + une action
+bonus + un déplacement par tour, longue portée en désavantage, les 14
+états, les jets contre la mort comme règle du 0 PV, quatre classes
+(guerrier, rôdeur, roublard, magicien), quatre peuples, trois objets
+(torche, potion de soins, feu grégeois), six adversaires étiquetés
+(gobelin, chef gobelin, squelette, zombie, loup, bandit). Le combat de
+démo du V1 est porté : `content/scenarios/srd/embuscade-des-gobelins.yaml`
+sur la carte `route-des-gobelins`, joué jusqu'au bout dans
+`shared/tests/srd_preset.rs` et dans `bun run rules-report` (200 combats :
+69 % de victoires des PJ en bagarreurs, 78 % en concentrés, 5 à 6
+rounds) ; le contrôle des règles ne trouve aucune erreur ni
+avertissement. **Pas porté** (écrit en tête du fichier et dans
+`docs/rules-format.md`) : maîtrises de compétences et de sauvegardes,
+achat de points et bonus des peuples (les caractéristiques viennent de
+la classe), emplacements de sorts et repos (approchés par des
+recharges), résistances et vulnérabilités (une règle maison peut en
+exprimer une), sauvegarde pour moitié, modificateur ajouté aux dégâts
+(écrit dans le montant), critique qui double tout, réactions,
+concentration ; les jets contre la mort se jouent avec
+`engine/save-against-death`. Pas de pack de thème ni de sprites SRD :
+la carte se dessine avec les tuiles par défaut et les personnages avec
+le premier pack.
 
 **Origine** — Romain, 4 octobre 2026 (sorti du jalon 1)
 

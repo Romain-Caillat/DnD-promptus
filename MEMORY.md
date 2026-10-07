@@ -31,8 +31,22 @@ memory. If someone would re-litigate it in six months, it is.
   (abilities, roll formula, actions, conditions, resources, movement per
   map level, action economy, cooldowns). A rule system is a versioned
   data file the GM edits; no rule is hard-coded. The first two systems
-  are drafts drawn from Romain's games (§6); the D&D 5e SRD comes later
-  as a third. The player UI is derived from the rule system.
+  are drafts drawn from Romain's games (§6); the D&D 5e SRD is the
+  third preset (`content/rules/srd/`, October 2026). The player UI is
+  derived from the rule system.
+- **No preset gets a case of its own in the engine.** What the SRD
+  needed became generic, optional fields of the format (an attack bonus
+  over `level`, a class's own hit points and armour class, traits,
+  damage types); what the format cannot carry is written down
+  (`NOT MODELLED` in the file, `docs/rules-format.md`), never approached
+  in silence. The SRD 5.1 is CC-BY-4.0: its attribution stays in the
+  file's header and `sources`, and its French text is our own wording.
+- **A house rule the server judges is formal, and validated by the GM.**
+  The co-GM proposes the formal form of a rule written in French
+  (trigger, filters, effects built on the action primitives, what
+  players see, cases the server replays); the GM adds it to the draft.
+  Triggers are limited to what the engine already sees (an attack that
+  lands or misses); anything else stays the GM's to apply.
 - **Story is a graph, not a script.** Bible → fronts (threats with a
   4–6 step clock) → nodes (scenes/places) linked by clues; every key
   revelation is reachable through ≥ 3 clues in different nodes. Stable
@@ -244,7 +258,32 @@ never open to whoever reaches the server first.
 Each LLM, image or video call is recorded with its cost and counted
 against the campaign budget; a batch that would exceed it is refused.
 
+### House rules fire once, and a hidden one is never named
+
+The effects of a formal house rule never trigger a house rule (one pass
+per target, `action::resolve_action`); without that, « fire on the
+undead burns them » would loop. A rule with `players: effect` is cut at
+the projection — the players' rules page, the change list they read and
+their fight log (`Event::HouseRule { shown: false }`) — while the
+condition or damage it causes still reaches them as its own event.
+
 ## 4. Traps
+
+- **Persisted engine types only take defaulted fields.** A fight, its
+  combatants, their conditions and learned actions are stored as JSON;
+  a new required field breaks every stored fight. New fields on
+  `Combatant`, `ActiveCondition`, `ActionDef` and its tags are
+  `#[serde(default)]`, and what can be read through a combatant's origin
+  (its traits) is read there, not copied onto the sheet.
+- **A `CARGO_TARGET_DIR` shared by several worktrees mixes their
+  `promptus_shared`.** Cargo does not key a workspace member on its path:
+  a build in another worktree replaces the shared crate's artifact and
+  its fingerprint, and the next build here links the other version
+  (« could not find `house` in `rules` »). `touch shared/src/lib.rs`
+  before building, or give each worktree its own target.
+- **Vitest under Bun on the Mac has no `localStorage`** in some suites
+  (`GmTablePage.test.tsx`: « Cannot read properties of undefined
+  (reading 'clear') »), independent of the code under test.
 
 - **Design canvas: a board's CSS leaks into the components it imports.**
   A board class named `.fr` reshaped the item slot frame and broke the
