@@ -1037,6 +1037,9 @@ nodes:
     transition: >-
       À l'aube, La Mâchoire quitte Port-Louis. La brume se lève sur
       l'Atlantique. Devant : Belle-Île et le HMS Greyhound.
+    exits:
+      - to: sc_interception_greyhound
+        label: Cap sur Belle-Île, à l'affût du Greyhound
     player_hooks:
       - character: pj_navigateur
         reason: Il fixe le cap — par le sud de Belle-Île, avec le jusant, pour se cacher derrière la pointe de Kerdonis.

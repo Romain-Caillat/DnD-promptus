@@ -254,6 +254,11 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/fight/loot",
             post(api::board::give_loot),
         )
+        .route("/api/campaigns/{id}/battle", post(api::board::start_battle))
+        .route(
+            "/api/campaigns/{id}/battle/command",
+            post(api::board::battle_command),
+        )
         // The campaign's own maps (maps/edit-map-gm, maps/import-image-map,
         // maps/generate-map-llm).
         .route(
@@ -443,6 +448,17 @@ fn player_routes() -> Vec<RouteSpec> {
             "POST",
             "/api/play/{campaign}/fight",
             post(api::board::command),
+        ),
+        // The ship battle as I may see it, my station's command.
+        (
+            "GET",
+            "/api/play/{campaign}/battle",
+            get(api::board::player_battle),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/battle",
+            post(api::board::crew_command),
         ),
         // The images the table may see, and the world's theme.
         (

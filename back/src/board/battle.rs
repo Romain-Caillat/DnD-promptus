@@ -118,12 +118,12 @@ fn stored(r: Row) -> StoredBattle {
 ///
 /// A database error.
 pub async fn live_id(db: impl PgExecutor<'_>, campaign: Uuid) -> Result<Option<Uuid>, AppError> {
-    Ok(sqlx::query_scalar(
-        "SELECT id FROM battles WHERE campaign_id = $1 AND status <> 'ended'",
+    Ok(
+        sqlx::query_scalar("SELECT id FROM battles WHERE campaign_id = $1 AND status <> 'ended'")
+            .bind(campaign)
+            .fetch_optional(db)
+            .await?,
     )
-    .bind(campaign)
-    .fetch_optional(db)
-    .await?)
 }
 
 /// The battle of `campaign` not over yet, or the last one.
@@ -279,8 +279,8 @@ pub async fn start(
         .setup(&rules, &map, crew)
         .map_err(|e| setup_error(e.to_string()))?;
     let mut dice = SeededDice::from_os();
-    let step = Battle::start(&rules, map, setup, &mut dice)
-        .map_err(|e| setup_error(format!("{e:?}")))?;
+    let step =
+        Battle::start(&rules, map, setup, &mut dice).map_err(|e| setup_error(format!("{e:?}")))?;
     let row_out: Row = sqlx::query_as(&format!(
         "INSERT INTO battles (campaign_id, session_id, node, battle)
          VALUES ($1, $2, $3, $4) RETURNING {COLUMNS}"
@@ -482,7 +482,10 @@ pub enum GmCommand {
     },
     /// A command for a crew member: the ship's holder (LUMEN), or a
     /// player away from their screen.
-    Crew { crew: String, command: CrewCommand },
+    Crew {
+        crew: String,
+        command: CrewCommand,
+    },
     /// The active enemy ship's manoeuvre.
     Maneuver {
         ship: String,
@@ -511,14 +514,20 @@ pub enum GmCommand {
         morale: Option<i32>,
     },
     /// Take a ship out: it strikes, flees, sinks.
-    Strike { ship: String, standing: ShipStanding },
+    Strike {
+        ship: String,
+        standing: ShipStanding,
+    },
     /// Turn the wind (or the pull).
     Current {
         #[serde(default)]
         from: Option<Direction>,
     },
     /// Grapple: the fight moves to the deck.
-    Board { attacker: String, defender: String },
+    Board {
+        attacker: String,
+        defender: String,
+    },
     /// End the battle now.
     Stop,
 }
@@ -676,6 +685,39 @@ pub fn enemy_reach(rules: &RuleSystem, battle: &Battle) -> BTreeMap<String, Vec<
                 id.clone(),
                 battle.reachable(v, id, 1).into_iter().collect::<Vec<_>>(),
             );
+        }
+    }
+    out
+}
+
+/// What each ship of the active enemy unit can fire at now: its
+/// weapons, each with the party ships in arc and range.
+#[must_use]
+pub fn enemy_fire_options(rules: &RuleSystem, battle: &Battle) -> Vec<serde_json::Value> {
+    let (Some(v), Some(unit)) = (rules.vehicles.as_ref(), battle.active()) else {
+        return Vec::new();
+    };
+    if unit.side == Side::Party || battle.boarding.is_some() {
+        return Vec::new();
+    }
+    let mut out = Vec::new();
+    for id in &unit.ships {
+        let Some(s) = battle.ship(id).filter(|s| s.afloat() && !s.fired) else {
+            continue;
+        };
+        for t in battle
+            .ships
+            .iter()
+            .filter(|t| t.side != s.side && t.afloat())
+        {
+            for w in battle.weapons_on(v, s, t) {
+                out.push(serde_json::json!({
+                    "ship": s.id,
+                    "weapon": w.id,
+                    "name": w.name,
+                    "target": t.id,
+                }));
+            }
         }
     }
     out
