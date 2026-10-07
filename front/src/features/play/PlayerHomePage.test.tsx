@@ -201,4 +201,90 @@ describe('PlayerHomePage', () => {
     expect(await screen.findByText("Le groupe n'a encore rien découvert.")).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Personnage' })).not.toBeInTheDocument()
   })
+  it('goes through a new level: the hit points, die or average, then the new card', async () => {
+    const up = (due: number[], gains: unknown[]) => ({
+      ...inPlay(false),
+      play: {
+        ...inPlay(false).play,
+        level: 4,
+        maxHitPoints: due.length ? 10 : 19,
+        levelUp: {
+          from: 3,
+          to: 4,
+          hitPoints: { dice: '1d10', average: 6, ability: 'Constitution', modifier: 3, due },
+          gains,
+          cards: [{ ...CARD, id: 'botte', name: 'Botte secrète', level: 4 }],
+        },
+      },
+    })
+    const fetchMock = mockApi({
+      ...EVENING,
+      'GET /api/play/c1/me': () => home(up([4], [])),
+      'POST /api/play/c1/character/level-up': (body) =>
+        body && (body as { kind: string }).kind === 'seen'
+          ? { status: 200, body: { data: inPlay(false) } }
+          : {
+              status: 200,
+              body: {
+                data: up([], [{ level: 4, method: 'average', faces: [], base: 6, modifier: 3, amount: 9 }]),
+              },
+            },
+    })
+    renderHome()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Personnage' }))
+    expect(await screen.findByText('Lyra passe au niveau 4.')).toBeInTheDocument()
+    expect(screen.getByText('Botte secrète')).toBeInTheDocument()
+    // The level's hit points first: « C'est noté » waits for them.
+    expect(screen.getByRole('button', { name: /C'est noté/ })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: /La moyenne/ }))
+    expect(await screen.findByText('Niveau 4 : +9 PV')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /C'est noté/ }))
+    expect(sentTo(fetchMock, 'POST /api/play/c1/character/level-up')).toEqual([
+      { kind: 'hitPoints', level: 4, method: 'average' },
+      { kind: 'seen' },
+    ])
+    expect(screen.queryByText('Botte secrète')).not.toBeInTheDocument()
+  })
+
+  it('after a death: the last words once, then what comes next', async () => {
+    const fallen = (lastWords: string | null, next: string | null) => ({
+      characterId: 'k1',
+      name: 'Borin',
+      className: 'Bretteur',
+      look: null,
+      level: 3,
+      lastWords,
+      next,
+      diedAt: '2026-10-07T20:00:00Z',
+    })
+    const dead = (lastWords: string | null, next: string | null, character: unknown = null) => ({
+      status: 200,
+      body: {
+        data: { me: { id: 'p1', nickname: 'Marc', role: 'player' }, campaign: CAMPAIGN, character, fallen: fallen(lastWords, next) },
+      },
+    })
+    const words = 'Dis à Dorn que je suis descendu le chercher.'
+    const fetchMock = mockApi({
+      ...EVENING,
+      'GET /api/play/c1/me': () => dead(null, null),
+      'POST /api/play/c1/fate/words': () => dead(words, null),
+      'POST /api/play/c1/fate/next': () =>
+        dead(words, 'new', { id: 'k2', status: 'draft', sheet: { name: '' }, gmNote: null, updatedAt: '' }),
+    })
+    renderHome()
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Ton personnage est tombé')
+    expect(screen.getByText('Bretteur · Tombé · niveau 3')).toBeInTheDocument()
+    await userEvent.type(screen.getByRole('textbox', { name: 'Ses derniers mots' }), words)
+    await userEvent.click(screen.getByRole('button', { name: /Dire ses derniers mots/ }))
+    expect(await screen.findByText(`« ${words} »`)).toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /Créer un nouveau personnage/ }))
+    expect(sentTo(fetchMock, 'POST /api/play/c1/fate/words')).toEqual([{ text: words }])
+    expect(sentTo(fetchMock, 'POST /api/play/c1/fate/next')).toEqual([{ next: 'new' }])
+    // The new character is a draft: the way into the creator.
+    expect(await screen.findByRole('button', { name: /Créer mon personnage|Créer/ })).toBeInTheDocument()
+  })
 })

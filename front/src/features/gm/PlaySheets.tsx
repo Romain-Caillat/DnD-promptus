@@ -8,6 +8,7 @@ import { Sprite } from '@/features/sprites/Sprite'
 import { ApiError } from '@/lib/api'
 import {
   adjustSheet,
+  declareDeath,
   fetchBoard,
   type Adjustment,
   type Board,
@@ -27,6 +28,7 @@ const ERRORS = {
   NOT_ENOUGH: 'gm.sheets.errors.notEnough',
   INVALID_ITEM_NAME: 'gm.sheets.errors.itemName',
   CHARACTER_NOT_VALIDATED: 'gm.sheets.errors.notValidated',
+  NOT_DOWN: 'gm.sheets.errors.notDown',
 } as const
 
 type ErrorKey = (typeof ERRORS)[keyof typeof ERRORS] | 'gm.table.error'
@@ -70,7 +72,10 @@ export function PlaySheets({ campaignId, refreshKey }: { campaignId: string; ref
   if (state.kind === 'loading') return <p role="status">{t('gm.table.loading')}</p>
   if (state.kind === 'error') return <p role="alert">{t('gm.table.error')}</p>
   const { board } = state
-  const names = new Map(board.sheets.map((s) => [s.characterId, s.name || s.nickname]))
+  const names = new Map([
+    ...board.fallen.map((f) => [f.characterId, f.name || f.nickname] as const),
+    ...board.sheets.map((s) => [s.characterId, s.name || s.nickname] as const),
+  ])
 
   return (
     <section className="flex flex-col gap-4" aria-labelledby="sheets-title">
@@ -90,6 +95,7 @@ export function PlaySheets({ campaignId, refreshKey }: { campaignId: string; ref
           ))}
         </ul>
       )}
+      {board.fallen.length > 0 && <Fallen fallen={board.fallen} />}
       <History entries={board.history} names={names} />
     </section>
   )
@@ -113,6 +119,7 @@ function SheetCard({
   const [amount, setAmount] = useState(1)
   const [give, setGive] = useState('')
   const [custom, setCustom] = useState({ name: '', description: '' })
+  const [dying, setDying] = useState(false)
   const play = sheet.play
   const name = sheet.name || sheet.nickname
 
@@ -128,6 +135,20 @@ function SheetCard({
       return false
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function die() {
+    setBusy(true)
+    setFailed(null)
+    try {
+      await declareDeath(campaignId, sheet.characterId)
+      await onChanged()
+    } catch (err) {
+      setFailed(errorKey(err))
+    } finally {
+      setBusy(false)
+      setDying(false)
     }
   }
 
@@ -194,7 +215,26 @@ function SheetCard({
             <Button variant="ghost" size="sm" aria-expanded={more} onClick={() => setMore((m) => !m)}>
               {t(more ? 'gm.sheets.less' : 'gm.sheets.more')}
             </Button>
+            {/* engine/save-against-death: under any rule the GM may decide a death at 0. */}
+            {play.hitPoints === 0 && !dying && (
+              <Button variant="outline" size="sm" disabled={busy} onClick={() => setDying(true)}>
+                {t('gm.sheets.death')}
+              </Button>
+            )}
           </div>
+          {dying && (
+            <div role="alertdialog" aria-label={t('gm.sheets.deathConfirm', { name })} className="flex flex-col gap-2 rounded-button border border-stat-atk p-2.5">
+              <p className="text-caption text-chalk-soft">{t('gm.sheets.deathHint')}</p>
+              <div className="flex flex-wrap gap-1.5">
+                <Button variant="destructive" size="sm" disabled={busy} onClick={() => void die()}>
+                  {t('gm.sheets.deathConfirm', { name })}
+                </Button>
+                <Button variant="ghost" size="sm" disabled={busy} onClick={() => setDying(false)}>
+                  {t('gm.sheets.cancel')}
+                </Button>
+              </div>
+            </div>
+          )}
           {more && (
             <div className="flex flex-col gap-3 border-t border-line pt-3">
               <label className="flex items-center gap-2 text-caption text-mute-soft">
@@ -334,8 +374,40 @@ function useChangeText() {
         })
       case 'equip':
         return t(e.after ? 'gm.sheets.log.equipped' : 'gm.sheets.log.unequipped', { label: e.label ?? '' })
+      case 'level':
+        return t('gm.sheets.log.level', { label: e.label ?? '', after: e.after, delta: e.after - e.before })
+      case 'death':
+        return t('gm.sheets.log.death', { level: e.before })
     }
   }
+}
+
+/** The dead of the campaign, with their last words (planche « Mourir », moment 7). */
+function Fallen({ fallen }: { fallen: Board['fallen'] }) {
+  const { t } = useTranslation()
+  return (
+    <section className="surface-slab flex flex-col gap-2 p-3.5" aria-labelledby="sheets-fallen">
+      <h3 id="sheets-fallen" className="type-label text-chalk">
+        {t('gm.sheets.fallen')}
+      </h3>
+      <ul className="flex flex-col gap-2">
+        {fallen.map((f) => (
+          <li key={f.characterId} className="flex items-start gap-3 text-caption">
+            {f.look && (
+              <span className="flex-none brightness-75 grayscale">
+                <Sprite look={f.look} scale={2} />
+              </span>
+            )}
+            <span className="flex flex-col gap-0.5">
+              <b>{t('gm.sheets.fallenLine', { name: f.name, level: f.level, nickname: f.nickname })}</b>
+              <span className="text-chalk-soft italic">{f.lastWords ? `« ${f.lastWords} »` : t('gm.sheets.noWords')}</span>
+              {f.next && <span className="text-mute">{t(`gm.sheets.next.${f.next}`)}</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
 }
 
 /** The history of the changes, newest first. */

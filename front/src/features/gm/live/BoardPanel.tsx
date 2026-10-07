@@ -238,6 +238,7 @@ function FightBlock({
   const enc = data.encounter
   const [who, setWho] = useState('')
   const [condition, setCondition] = useState('')
+  const [deathOf, setDeathOf] = useState<string | null>(null)
   const characters = (data.board?.tokens ?? []).filter((tk) => tk.kind === 'character')
 
   if (!enc?.live) {
@@ -288,6 +289,8 @@ function FightBlock({
   const name = (id: string) => f.scene.combatants[id]?.name ?? id
   const active = f.order[f.turn]
   const foeTurn = f.scene.combatants[active]?.side === 'opposition'
+  // engine/save-against-death: the deaths the dice propose wait for the GM.
+  const due = f.order.filter((id) => f.scene.combatants[id]?.death_saves?.death_due && f.standing[id] !== 'dead')
   const lines = (enc.proposal?.events ?? enc.events)
     .map((e) => eventLine(e, name, t))
     .filter((l): l is string => l !== null)
@@ -313,14 +316,55 @@ function FightBlock({
               )}
             >
               <span className="font-bold">{c.name}</span>
-              <span className="tabular-nums">
+              <span className="flex flex-wrap items-center justify-end gap-1.5 tabular-nums">
                 {t('gmLive.fight.hp', { hp: c.hit_points, max: enc.maxHitPoints[id] ?? '?' })}
                 {c.conditions.length > 0 && ` · ${c.conditions.map((x) => x.name).join(', ')}`}
+                {c.death_saves && c.hit_points <= 0 && (
+                  <span className="text-stat-atk">
+                    {' · '}
+                    {c.death_saves.stable
+                      ? t('gmLive.fight.stable')
+                      : t('gmLive.fight.saves', { successes: c.death_saves.successes, failures: c.death_saves.failures })}
+                  </span>
+                )}
+                {/* The GM may decide a death for any character down at 0, under any rule. */}
+                {id.startsWith('pc-') &&
+                  c.hit_points <= 0 &&
+                  !c.death_saves?.death_due &&
+                  (f.standing[id] === 'in_fight' || f.standing[id] === 'out_of_scene') && (
+                    deathOf === id ? (
+                      <>
+                        <Btn
+                          main
+                          onClick={() => {
+                            setDeathOf(null)
+                            onCommand({ kind: 'confirmDeath', who: id })
+                          }}
+                        >
+                          {t('gmLive.fight.confirmDeath', { name: c.name })}
+                        </Btn>
+                        <Btn onClick={() => setDeathOf(null)}>{t('gmLive.fight.cancel')}</Btn>
+                      </>
+                    ) : (
+                      <Btn onClick={() => setDeathOf(id)}>{t('gmLive.fight.declareDeath', { name: c.name })}</Btn>
+                    )
+                  )}
               </span>
             </li>
           )
         })}
       </ol>
+      {due.map((id) => (
+        <div key={id} role="alert" className="flex flex-col gap-1.5 rounded-md border border-stat-atk p-2 text-caption">
+          <span>{t('gmLive.fight.deathDue', { name: name(id) })}</span>
+          <div className="flex flex-wrap gap-1.5">
+            <Btn main onClick={() => onCommand({ kind: 'confirmDeath', who: id })}>
+              {t('gmLive.fight.confirmDeath', { name: name(id) })}
+            </Btn>
+            <Btn onClick={() => onCommand({ kind: 'spare', who: id })}>{t('gmLive.fight.spare')}</Btn>
+          </div>
+        </div>
+      ))}
       {foeTurn && (
         <div className="flex flex-wrap gap-1.5">
           <Btn main={!enc.proposal} onClick={() => onCommand({ kind: 'propose' })}>

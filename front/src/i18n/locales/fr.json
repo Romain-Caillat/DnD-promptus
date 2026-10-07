@@ -348,7 +348,7 @@
         "equipped": "s'équipe : {{label}}",
         "unequipped": "range {{label}} dans son sac",
         "level": "{{label}} : {{after}} PV max (+{{delta}})",
-        "death": "meurt ({{label}})"
+        "death": "meurt, au niveau {{level}}"
       },
       "death": "Il meurt…",
       "deathConfirm": "Confirmer la mort de {{name}}",
@@ -365,7 +365,8 @@
       "errors": {
         "notEnough": "Il n'en a pas assez.",
         "itemName": "Donne un nom à l'objet.",
-        "notValidated": "Ce personnage n'est pas encore validé."
+        "notValidated": "Ce personnage n'est pas encore validé.",
+        "notDown": "Il n'est pas à 0 PV."
       }
     },
     "playerView": {
@@ -551,8 +552,7 @@
       "watch": "Regarder ce soir",
       "watchSub": "Tu suis la fin de la soirée comme spectateur : la carte, le jeu et le journal.",
       "new": "Créer un nouveau personnage",
-      "newSub_one": "Il arrive avec {{count}} XP, comme le groupe. Le MJ le valide et le fait entrer.",
-      "newSub_other": "Il arrive avec {{count}} XP, comme le groupe. Le MJ le valide et le fait entrer.",
+      "newSub": "Il arrive avec l'expérience de {{name}}, au niveau du groupe. Le MJ le valide et le fait entrer.",
       "hook": "Attendre une accroche",
       "hookSub": "Le MJ te fera revenir dans l'histoire, à sa façon.",
       "chosen": "Ton choix",
@@ -1367,7 +1367,9 @@
       "stable": "Stabilisé : plus de jets, toujours à terre.",
       "waiting": "Le MJ regarde ce qui se passe…",
       "stabilize": "Stabiliser {{name}}",
-      "stabilizeSub": "{{kind}} · {{ability}} contre {{difficulty}}"
+      "stabilizeSub": "{{kind}} · {{ability}} contre {{difficulty}}, à côté de lui",
+      "short": "{{successes}} ✓ · {{failures}} ✗",
+      "stableShort": "stabilisé"
     },
     "errors": {
       "UNEXPECTED": "Ce coup n'a pas marché. Réessaie.",
@@ -1519,7 +1521,8 @@
       "deathDue": "Les dés proposent la mort de {{name}}. Rien n'est montré aux joueurs avant ton choix.",
       "confirmDeath": "Confirmer : {{name}} meurt",
       "spare": "Autre issue : stabilisé",
-      "declareDeath": "{{name}} meurt…"
+      "declareDeath": "{{name}} meurt…",
+      "cancel": "Annuler"
     },
     "copilot": {
       "title": "Co-MJ",

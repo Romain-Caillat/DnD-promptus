@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArcadeCluster } from '@/components/game/ArcadeCluster'
+import { CardButton } from '@/components/game/CardButton'
 import { Hearts } from '@/components/game/Hearts'
 import { ApiError } from '@/lib/api'
 import {
@@ -87,7 +88,14 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
   const me = board.tokens.find((tk) => tk.mine)
   const mineId = fight?.order.find((f) => f.mine)?.id
   const myCell: Cell | undefined = (mineId && fight?.order.find((f) => f.id === mineId)?.at) || me?.at
-  const canMove = fight ? fight.myTurn : Boolean(me)
+  const myFighter = fight?.order.find((f) => f.mine)
+  const dying = myFighter?.dying ?? null
+  const canMove = fight ? fight.myTurn && !fight.deathSave : Boolean(me)
+  // Allies dying and not yet stable, whom I may try to stabilise on my turn.
+  const toStabilize =
+    fight?.myTurn && !fight.deathSave && fight.stabilize
+      ? fight.order.filter((f) => !f.mine && f.party && f.dying && !f.dying.stable && f.standing === 'in_fight')
+      : []
   const nameOf = (id: string) =>
     fight?.order.find((f) => f.id === id)?.name ??
     board.fight?.order.find((f) => f.id === id)?.name ??
@@ -146,7 +154,22 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
       />
       {!fight && me && <p className="text-caption text-mute">{t('map.walkHint')}</p>}
       {me?.ghost && <p className="text-caption text-mute">{t('map.ghost')}</p>}
-      {fight?.myTurn && (
+      {fight && dying && <DeathSaves fight={fight} dying={dying} busy={busy} onRoll={() => play({ kind: 'deathSave' })} />}
+      {toStabilize.length > 0 && fight?.stabilize && (
+        <div className="flex flex-col gap-2">
+          {toStabilize.map((f) => (
+            <CardButton
+              key={f.id}
+              variant="dark"
+              title={t('fight.death.stabilize', { name: f.name })}
+              subtitle={t('fight.death.stabilizeSub', fight.stabilize!)}
+              disabled={busy}
+              onClick={() => play({ kind: 'stabilize', target: f.id })}
+            />
+          ))}
+        </div>
+      )}
+      {fight?.myTurn && !fight.deathSave && (
         <>
           <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label={t('fight.hand')}>
             {fight.cards.map((c) => (
@@ -202,6 +225,76 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
   )
 }
 
+/** Three circles of each kind, filled as the server counts them. */
+export function SaveCircles({ successes, failures, of = 3 }: { successes: number; failures: number; of?: number }) {
+  const { t } = useTranslation()
+  const row = (label: string, n: number, good: boolean) => (
+    <div className="flex items-center gap-2">
+      <span className="w-20 text-caption font-bold">{label}</span>
+      {Array.from({ length: of }, (_, i) => (
+        <span
+          key={i}
+          aria-hidden
+          className={cn(
+            'size-7 rounded-full',
+            i < n
+              ? good
+                ? 'bg-ivory shadow-ivory-flat'
+                : 'bg-stat-atk'
+              : 'border-2 border-dashed border-line-strong',
+          )}
+        />
+      ))}
+    </div>
+  )
+  return (
+    <div
+      className="flex flex-col gap-1.5"
+      role="img"
+      aria-label={`${t('fight.death.successes')} ${successes}/${of}, ${t('fight.death.failures')} ${failures}/${of}`}
+    >
+      {row(t('fight.death.successes'), successes, true)}
+      {row(t('fight.death.failures'), failures, false)}
+    </div>
+  )
+}
+
+/**
+ * engine/save-against-death on the phone (planche « Mourir »): down at 0
+ * but not dead; on my turn the whole turn is the save, the server rolls
+ * and keeps the count. Three failures wait for the GM: nothing is said
+ * before they decide.
+ */
+function DeathSaves({
+  fight,
+  dying,
+  busy,
+  onRoll,
+}: {
+  fight: FightView
+  dying: { successes: number; failures: number; stable: boolean }
+  busy: boolean
+  onRoll: () => void
+}) {
+  const { t } = useTranslation()
+  const waiting = !dying.stable && dying.failures >= 3
+  return (
+    <section
+      aria-label={t('fight.death.title')}
+      className="flex flex-col gap-3 rounded-2xl border border-stat-atk bg-[#140b0c] p-4"
+    >
+      <h3 className="type-title text-[20px]">{fight.deathSave ? t('fight.death.turn') : t('fight.death.title')}</h3>
+      {!dying.stable && !waiting && <p className="text-body text-chalk-soft">{t('fight.death.lead')}</p>}
+      <SaveCircles successes={dying.successes} failures={dying.failures} />
+      {dying.stable && <p className="text-body text-chalk-soft">{t('fight.death.stable')}</p>}
+      {waiting && <p role="status" className="text-body text-chalk-soft">{t('fight.death.waiting')}</p>}
+      {fight.deathSave && (
+        <CardButton title={t('fight.death.roll')} subtitle={t('fight.death.rollSub')} disabled={busy} onClick={onRoll} />
+      )}
+    </section>
+  )
+}
+
 function FightHeader({ fight }: { fight: FightView }) {
   const { t } = useTranslation()
   const active = fight.order.find((f) => f.id === fight.active)
@@ -234,6 +327,13 @@ function FightHeader({ fight }: { fight: FightView }) {
               <Hearts hp={f.hitPoints} max={f.maxHitPoints} count={4} px={2} animated={false} />
             )}
             {f.conditions.length > 0 && <span className="text-mute-soft">{f.conditions.join(', ')}</span>}
+            {f.dying && (
+              <span className="text-stat-atk tabular-nums">
+                {f.dying.stable
+                  ? t('fight.death.stableShort')
+                  : t('fight.death.short', { successes: f.dying.successes, failures: f.dying.failures })}
+              </span>
+            )}
           </li>
         ))}
       </ol>

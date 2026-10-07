@@ -24,7 +24,7 @@ const play = (over: Record<string, unknown> = {}) => ({
   ...over,
 })
 
-const board = (lyra: Record<string, unknown>, history: unknown[] = []) => ({
+const board = (lyra: Record<string, unknown>, history: unknown[] = [], fallen: unknown[] = []) => ({
   rulesKnown: true,
   sheets: [
     {
@@ -40,6 +40,7 @@ const board = (lyra: Record<string, unknown>, history: unknown[] = []) => ({
   items: [{ id: 'rhum', name: 'Fiole de rhum fortifiant', description: 'Restaure 3 PV.', consumable: true }],
   resources: [{ id: 'or', name: "Pièces d'or", abbr: 'PO' }],
   history,
+  fallen,
 })
 
 describe('PlaySheets', () => {
@@ -97,5 +98,44 @@ describe('PlaySheets', () => {
 
     await userEvent.click(within(card).getByRole('button', { name: '−1 PO' }))
     expect(await within(card).findByRole('alert')).toHaveTextContent("Il n'en a pas assez.")
+  })
+  it('decides a death at 0, after a confirmation, and lists the fallen', async () => {
+    let current = board({ hitPoints: 0 })
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/sheets': () => ({ status: 200, body: { data: current } }),
+      'POST /api/campaigns/c1/characters/k1/death': () => {
+        current = {
+          ...board({}, [
+            { id: 'h1', characterId: 'k1', actor: 'gm', kind: 'death', label: 'Lyra', before: 3, after: 0, createdAt: '2026-10-06T21:00:00Z' },
+          ], [
+            {
+              characterId: 'k1',
+              nickname: 'Camille',
+              name: 'Lyra',
+              className: 'Bretteur',
+              look: null,
+              level: 3,
+              lastWords: null,
+              next: null,
+              diedAt: '2026-10-06T21:00:00Z',
+            },
+          ]),
+          sheets: [],
+        }
+        return { status: 204 }
+      },
+    })
+    render(<PlaySheets campaignId="c1" refreshKey={0} />)
+
+    const card = await screen.findByRole('listitem', { name: 'Lyra' })
+    await userEvent.click(within(card).getByRole('button', { name: 'Il meurt…' }))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/characters/k1/death')).toHaveLength(0)
+    await userEvent.click(within(card).getByRole('button', { name: 'Confirmer la mort de Lyra' }))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/characters/k1/death')).toHaveLength(1)
+    const fallen = (await screen.findByRole('heading', { name: 'Tombés' })).parentElement!
+    expect(within(fallen).getByText('Lyra · niveau 3 · joué par Camille')).toBeInTheDocument()
+    expect(within(fallen).getByText('Pas encore de derniers mots.')).toBeInTheDocument()
+    const history = screen.getByRole('heading', { name: 'Historique' }).parentElement!
+    expect(within(history).getByRole('listitem')).toHaveTextContent('Lyra · meurt, au niveau 3')
   })
 })
