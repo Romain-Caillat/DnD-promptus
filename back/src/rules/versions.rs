@@ -119,7 +119,7 @@ fn text_of<'a>(rows: &'a [Row], rules_id: &str, version: u32) -> Option<&'a str>
         })
 }
 
-fn load(text: &str) -> Result<RuleSystem, AppError> {
+pub(super) fn load(text: &str) -> Result<RuleSystem, AppError> {
     RuleSystem::from_yaml(text).map_err(|e| AppError::Invalid {
         code: "RULES_INVALID",
         detail: e
@@ -238,6 +238,27 @@ async fn editor(pool: &PgPool, row: &CampaignRow) -> Result<Editor, AppError> {
 pub async fn get(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Editor, AppError> {
     let row = owned_by(campaigns::find(pool, campaign).await?, gm)?;
     editor(pool, &row).await
+}
+
+/// The campaign and the text of its draft (`campaigns::find` and
+/// `owned_by`, without a lock: nothing is written).
+///
+/// # Errors
+///
+/// 404 as [`get`]; 409 `NO_DRAFT`; a database error.
+pub(super) async fn draft_of(
+    pool: &PgPool,
+    gm: &CurrentGm,
+    campaign: Uuid,
+) -> Result<(CampaignRow, String), AppError> {
+    let row = owned_by(campaigns::find(pool, campaign).await?, gm)?;
+    let text = rows(pool, campaign)
+        .await?
+        .into_iter()
+        .find(|r| r.3.is_none())
+        .map(|r| r.1)
+        .ok_or(AppError::Conflict("NO_DRAFT"))?;
+    Ok((row, text))
 }
 
 /// Set the top-level `version:` line of `text` to `version`, keeping

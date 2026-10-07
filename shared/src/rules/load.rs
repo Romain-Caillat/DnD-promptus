@@ -37,6 +37,10 @@ pub enum ErrorCode {
     InvalidTag,
     InvalidApply,
     MissingAttackAbility,
+    UnknownTrait,
+    UnknownDamageType,
+    UnknownOrigin,
+    UnknownAction,
 }
 
 impl ErrorCode {
@@ -63,6 +67,10 @@ impl ErrorCode {
             Self::InvalidTag => "invalid_tag",
             Self::InvalidApply => "invalid_apply",
             Self::MissingAttackAbility => "missing_attack_ability",
+            Self::UnknownTrait => "unknown_trait",
+            Self::UnknownDamageType => "unknown_damage_type",
+            Self::UnknownOrigin => "unknown_origin",
+            Self::UnknownAction => "unknown_action",
         }
     }
 }
@@ -191,6 +199,135 @@ impl<'a> V<'a> {
                 path,
                 format!("no condition `{id}` in this system"),
             );
+        }
+    }
+
+    fn trait_ref(&mut self, id: &str, path: &str) {
+        if self.s.trait_def(id).is_none() {
+            self.err(
+                ErrorCode::UnknownTrait,
+                path,
+                format!("no trait `{id}` in this system"),
+            );
+        }
+    }
+
+    fn damage_type(&mut self, id: &str, path: &str) {
+        if self.s.damage_type(id).is_none() {
+            self.err(
+                ErrorCode::UnknownDamageType,
+                path,
+                format!("no damage type `{id}` in this system"),
+            );
+        }
+    }
+
+    fn who(&mut self, who: &super::house::Who, path: &str) {
+        for t in who.traits.iter().chain(&who.except_traits) {
+            self.trait_ref(t, &format!("{path}.traits"));
+        }
+        for id in &who.except {
+            if self.s.class(id).is_none() && self.s.adversary(id).is_none() {
+                self.err(
+                    ErrorCode::UnknownOrigin,
+                    format!("{path}.except"),
+                    format!("no class or adversary `{id}`"),
+                );
+            }
+        }
+    }
+
+    fn fighter(&mut self, f: &super::house::CaseFighter, path: &str) -> bool {
+        use super::house::CaseFighter;
+        let known = match f {
+            CaseFighter::Class(id) => self.s.class(id).is_some(),
+            CaseFighter::Adversary(id) => self.s.adversary(id).is_some(),
+        };
+        if !known {
+            self.err(
+                ErrorCode::UnknownOrigin,
+                path,
+                format!("no class or adversary `{}`", f.id()),
+            );
+        }
+        known
+    }
+
+    /// A house rule's formal form (`engine/formalise-house-rules`).
+    fn formal(&mut self, f: &super::house::FormalRule, path: &str) {
+        use super::house::{CaseFighter, HouseEffect, Trigger};
+        if let Some(kind) = &f.damage_type {
+            if f.when == Trigger::Miss {
+                self.err(
+                    ErrorCode::InvalidValue,
+                    format!("{path}.damage_type"),
+                    "a missed attack deals no damage: `damage_type` goes with `when: hit`",
+                );
+            }
+            self.damage_type(kind, &format!("{path}.damage_type"));
+        }
+        self.who(&f.actor, &format!("{path}.actor"));
+        self.who(&f.target, &format!("{path}.target"));
+        if f.effects.is_empty() {
+            self.err(
+                ErrorCode::EmptyField,
+                format!("{path}.effects"),
+                "a house rule does at least one thing",
+            );
+        }
+        for (i, e) in f.effects.iter().enumerate() {
+            let p = format!("{path}.effects[{i}]");
+            match e {
+                HouseEffect::Apply(spec) => {
+                    self.apply(spec, &p, None);
+                    if spec.save.as_ref().is_some_and(|s| s.difficulty.is_none()) {
+                        self.err(
+                            ErrorCode::UnknownDifficulty,
+                            format!("{p}.save.difficulty"),
+                            "a house rule's save names its difficulty: nobody is asked mid-attack",
+                        );
+                    }
+                }
+                HouseEffect::Damage(a) | HouseEffect::Heal(a) => {
+                    if a.amount.range().0 < 0 {
+                        self.err(
+                            ErrorCode::InvalidDice,
+                            p,
+                            format!("`{}` can be negative", a.amount),
+                        );
+                    }
+                }
+            }
+        }
+        for (i, c) in f.cases.iter().enumerate() {
+            let p = format!("{path}.cases[{i}]");
+            self.non_empty(&c.name, &format!("{p}.name"));
+            self.fighter(&c.target, &format!("{p}.target"));
+            if !self.fighter(&c.actor, &format!("{p}.actor")) {
+                continue;
+            }
+            let owned = match &c.actor {
+                CaseFighter::Class(id) => self
+                    .s
+                    .class(id)
+                    .is_some_and(|x| x.actions.iter().any(|a| a.id == c.action)),
+                CaseFighter::Adversary(id) => self
+                    .s
+                    .adversary(id)
+                    .is_some_and(|x| x.actions.iter().any(|a| a.id == c.action)),
+            };
+            let item = self.s.item(&c.action).is_some_and(|i| i.action.is_some());
+            if !owned && !item {
+                self.err(
+                    ErrorCode::UnknownAction,
+                    format!("{p}.action"),
+                    format!(
+                        "`{}` is neither an action of `{}` nor a usable item",
+                        c.action,
+                        c.actor.id()
+                    ),
+                );
+            }
         }
     }
 
@@ -338,6 +475,9 @@ impl<'a> V<'a> {
             let p = format!("{path}[{i}]");
             match t {
                 Tag::Damage(d) => {
+                    if let Some(kind) = &d.damage_type {
+                        self.damage_type(kind, &format!("{p}.damage.type"));
+                    }
                     if d.amount.range().0 < 0 {
                         self.err(
                             ErrorCode::InvalidDice,
@@ -515,6 +655,12 @@ fn validate(s: &RuleSystem) -> Vec<RuleError> {
         "stats.hit_points.formula",
     );
     v.formula(&s.initiative.bonus, &["level"], "initiative.bonus");
+    if let Some(b) = &s.attack.bonus {
+        v.non_empty(&b.name, "attack.bonus.name");
+        v.formula(&b.formula, &["level"], "attack.bonus.formula");
+    }
+    v.unique(s.traits.iter().map(|x| x.id.as_str()), "traits");
+    v.unique(s.damage_types.iter().map(|x| x.id.as_str()), "damage_types");
 
     let die = s.check.dice;
     if die.count != 1 || die.modifier != 0 {
@@ -693,6 +839,9 @@ fn validate(s: &RuleSystem) -> Vec<RuleError> {
     for (i, h) in s.house_rules.iter().enumerate() {
         v.non_empty(&h.name, &format!("house_rules[{i}].name"));
         v.non_empty(&h.text, &format!("house_rules[{i}].text"));
+        if let Some(f) = &h.formal {
+            v.formal(f, &format!("house_rules[{}].formal", h.id));
+        }
     }
     v.unique(s.resources.iter().map(|x| x.id.as_str()), "resources");
     v.unique(s.peoples.iter().map(|x| x.id.as_str()), "peoples");
@@ -734,6 +883,15 @@ fn validate(s: &RuleSystem) -> Vec<RuleError> {
             v.ability(a, &format!("{path}.primary_abilities"));
         }
         v.score_table(&c.abilities, &format!("{path}.abilities"));
+        if let Some(f) = &c.hit_points {
+            v.formula(f, &["level"], &format!("{path}.hit_points"));
+        }
+        if let Some(f) = &c.armor_class {
+            v.formula(f, &["level"], &format!("{path}.armor_class"));
+        }
+        for t in &c.traits {
+            v.trait_ref(t, &format!("{path}.traits"));
+        }
         for it in &c.items {
             if s.item(&it.item).is_none() {
                 v.err(
@@ -769,6 +927,9 @@ fn validate(s: &RuleSystem) -> Vec<RuleError> {
             );
         }
         v.score_table(&a.abilities, &format!("{path}.abilities"));
+        for t in &a.traits {
+            v.trait_ref(t, &format!("{path}.traits"));
+        }
         if let Some(reason) = &a.exception {
             v.non_empty(reason, &format!("{path}.exception"));
         }

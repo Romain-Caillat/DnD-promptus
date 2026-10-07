@@ -10,9 +10,11 @@
 //!
 //! [`versions`] is the GM's editor (`campaign/edit-rule-system`):
 //! drafts, the report each save produces ([`report`]), locking, and the
-//! comparison of two versions ([`diff`]).
+//! comparison of two versions ([`diff`]). [`house`] is the co-GM that
+//! formalises a house rule (`engine/formalise-house-rules`).
 
 pub mod diff;
+pub mod house;
 pub mod report;
 pub mod versions;
 
@@ -105,7 +107,7 @@ mod tests {
     #[test]
     fn without_a_stored_version_the_preset_answers() {
         let c = Uuid::new_v4();
-        for id in ["corsaires", "brasier"] {
+        for id in ["corsaires", "brasier", "srd"] {
             assert_eq!(resolve(c, &r(id, 1), None).unwrap().id, id);
         }
         assert!(resolve(c, &r("corsaires", 99), None).is_none());

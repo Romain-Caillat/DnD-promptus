@@ -12,7 +12,9 @@
 //! - the **fights**: every scenario of the world, and every planned
 //!   encounter of the campaign that can be staged
 //!   (`story::encounter_scenario`), played on the current version and on
-//!   the draft with the same seeds.
+//!   the draft with the same seeds;
+//! - the **house rules** the server judges: every case of each formal
+//!   rule replayed on the draft (`engine/formalise-house-rules`).
 
 use std::collections::BTreeSet;
 
@@ -21,6 +23,7 @@ use promptus_shared::combat::simulate::{SimParams, SimReport, simulate};
 use promptus_shared::issue::Issue;
 use promptus_shared::maps::Map;
 use promptus_shared::rules::changes::{RuleChange, rule_changes};
+use promptus_shared::rules::house::{CaseResult, run_cases};
 use promptus_shared::rules::{RuleSystem, lint};
 use promptus_shared::story::{Campaign, Library, encounter_scenario, validate_with};
 use serde::Serialize;
@@ -44,6 +47,17 @@ pub struct Report {
     /// The campaign's references the draft no longer satisfies.
     pub story: Vec<Issue>,
     pub fights: Vec<FightCheck>,
+    /// The draft's formalised house rules and their cases.
+    pub house_rules: Vec<HouseRuleCheck>,
+}
+
+/// One formalised house rule, its cases replayed on the draft.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HouseRuleCheck {
+    pub id: String,
+    pub name: String,
+    pub cases: Vec<CaseResult>,
 }
 
 /// One fight, on both versions.
@@ -141,6 +155,17 @@ pub fn report(
         changes: rule_changes(current.system, draft.system),
         story,
         fights: fights(campaign, maps, current, draft),
+        house_rules: draft
+            .system
+            .house_rules
+            .iter()
+            .filter(|h| h.formal.is_some())
+            .map(|h| HouseRuleCheck {
+                id: h.id.clone(),
+                name: h.name.clone(),
+                cases: run_cases(draft.system, h),
+            })
+            .collect(),
     }
 }
 

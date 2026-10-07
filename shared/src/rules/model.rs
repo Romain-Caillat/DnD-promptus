@@ -50,6 +50,13 @@ pub struct RuleSystem {
     pub combat: CombatRule,
     #[serde(default)]
     pub situations: Vec<Situation>,
+    /// Labels a class or an adversary carries (`mort_vivant`, `chef`):
+    /// what a house rule's trigger or exception can name.
+    #[serde(default)]
+    pub traits: Vec<TraitDef>,
+    /// Kinds of damage an action's `damage` tag may name (`feu`).
+    #[serde(default)]
+    pub damage_types: Vec<DamageTypeDef>,
     #[serde(default)]
     pub resources: Vec<ResourceDef>,
     pub conditions: Vec<ConditionDef>,
@@ -63,14 +70,15 @@ pub struct RuleSystem {
     #[serde(default)]
     pub adversaries: Vec<AdversaryDef>,
     /// The GM's own rules, written in French (`campaign/edit-rule-system`).
-    /// Players read them on the rules page and the co-GM reads them; the
-    /// server does not apply them — the GM does, at the table — until
-    /// `engine/formalise-house-rules` turns one into data.
+    /// The co-GM reads them. One with a `formal` form is applied by the
+    /// engine (`super::house`); one without is the GM's to apply at the
+    /// table.
     #[serde(default)]
     pub house_rules: Vec<HouseRule>,
 }
 
-/// A house rule as the GM wrote it.
+/// A house rule as the GM wrote it, and as the server applies it once
+/// formalised (`engine/formalise-house-rules`).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct HouseRule {
@@ -79,6 +87,35 @@ pub struct HouseRule {
     pub name: String,
     /// The rule, as the GM would say it at the table.
     pub text: String,
+    /// The rule as the engine judges it, once the GM validated it.
+    #[serde(default)]
+    pub formal: Option<super::house::FormalRule>,
+}
+
+impl HouseRule {
+    /// Whether players may read this rule (its name and text). A
+    /// formalised rule can show only its effect.
+    pub fn shown_to_players(&self) -> bool {
+        self.formal
+            .as_ref()
+            .is_none_or(|f| f.players == super::house::PlayersSee::Rule)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TraitDef {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub description: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DamageTypeDef {
+    pub id: String,
+    pub name: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -208,8 +245,21 @@ pub struct AttackRule {
     pub ability: AttackAbility,
     /// Whether an action's or condition's "precision" adds to the roll.
     pub precision: PrecisionRule,
+    /// A bonus added to every attack roll, growing with `level` (D&D's
+    /// proficiency bonus). Adversaries count as level 1.
+    #[serde(default)]
+    pub bonus: Option<AttackBonus>,
     #[serde(default)]
     pub note: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AttackBonus {
+    /// What the roll breakdown calls it (« Maîtrise »).
+    pub name: String,
+    /// Over `level`.
+    pub formula: Formula,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -610,6 +660,17 @@ pub struct ClassDef {
     #[serde(default)]
     pub secondary_abilities: Vec<String>,
     pub abilities: BTreeMap<String, i32>,
+    /// This class's own hit point formula, in place of
+    /// `stats.hit_points` (a hit die per class).
+    #[serde(default)]
+    pub hit_points: Option<Formula>,
+    /// This class's own armour class formula, in place of
+    /// `stats.armor_class` (the armour it starts in).
+    #[serde(default)]
+    pub armor_class: Option<Formula>,
+    /// Ids of `traits` this class's characters carry.
+    #[serde(default)]
+    pub traits: Vec<String>,
     #[serde(default)]
     pub items: Vec<StartingItem>,
     pub actions: Vec<ActionDef>,
@@ -662,6 +723,9 @@ pub struct AdversaryDef {
     pub description: String,
     #[serde(default)]
     pub tier: Option<String>,
+    /// Ids of `traits` (`mort_vivant`, `chef`).
+    #[serde(default)]
+    pub traits: Vec<String>,
     pub abilities: BTreeMap<String, i32>,
     pub armor_class: i32,
     pub hit_points: i32,
@@ -795,6 +859,9 @@ pub enum Tag {
 #[serde(deny_unknown_fields)]
 pub struct DamageTag {
     pub amount: DiceExpr,
+    /// Id of a `damage_types` entry (`feu`), when the system types damage.
+    #[serde(default, rename = "type", skip_serializing_if = "Option::is_none")]
+    pub damage_type: Option<String>,
     #[serde(default)]
     pub note: String,
 }
@@ -883,6 +950,29 @@ impl RuleSystem {
     }
     pub fn situation(&self, id: &str) -> Option<&Situation> {
         self.situations.iter().find(|s| s.id == id)
+    }
+    pub fn trait_def(&self, id: &str) -> Option<&TraitDef> {
+        self.traits.iter().find(|t| t.id == id)
+    }
+    pub fn damage_type(&self, id: &str) -> Option<&DamageTypeDef> {
+        self.damage_types.iter().find(|t| t.id == id)
+    }
+    pub fn house_rule(&self, id: &str) -> Option<&HouseRule> {
+        self.house_rules.iter().find(|h| h.id == id)
+    }
+    /// The hit point formula of a character of `class`: the class's
+    /// own, else the system's.
+    pub fn hit_points_formula<'a>(&'a self, class: Option<&'a ClassDef>) -> &'a Formula {
+        class
+            .and_then(|c| c.hit_points.as_ref())
+            .unwrap_or(&self.stats.hit_points.formula)
+    }
+    /// The armour class formula of a character of `class`: the class's
+    /// own, else the system's.
+    pub fn armor_class_formula<'a>(&'a self, class: Option<&'a ClassDef>) -> &'a Formula {
+        class
+            .and_then(|c| c.armor_class.as_ref())
+            .unwrap_or(&self.stats.armor_class.formula)
     }
     /// The movement rule of one map scale, if the system has one.
     pub fn movement(&self, scale: MapScale) -> Option<&MovementRule> {

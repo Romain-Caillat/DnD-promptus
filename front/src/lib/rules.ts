@@ -12,6 +12,7 @@ export type ModifierSource =
   | { from: 'situation'; id: string }
   | { from: 'cover'; id: string }
   | { from: 'long_range' }
+  | { from: 'attack_bonus'; id: string }
 
 interface Modifier {
   source: ModifierSource
@@ -106,7 +107,13 @@ export interface RulesView {
   abilities: AbilityView[]
   difficulties: DifficultyView[]
   outcomes: OutcomeView[]
-  attack: { ability: 'first_primary' | 'best_primary'; precisionApplies: boolean; armorClass: StatView }
+  attack: {
+    ability: 'first_primary' | 'best_primary'
+    precisionApplies: boolean
+    /** Added to every attack with the level (the SRD's proficiency). */
+    bonus: { name: string; formula: string } | null
+    armorClass: StatView
+  }
   hitPoints: StatView
   turns: { name: string; actionsPerTurn: number; limits: { kind: string; maxPerTurn: number }[] }[]
   actionKinds: KindView[]

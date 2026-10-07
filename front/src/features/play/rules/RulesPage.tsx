@@ -299,6 +299,9 @@ function Attack({ rules }: { rules: RulesView }) {
       <Row label={t('rules.attack.precision')}>
         {t(rules.attack.precisionApplies ? 'rules.codes.added_to_attack_roll' : 'rules.codes.not_applied')}
       </Row>
+      {rules.attack.bonus && (
+        <Row label={t('rules.attack.bonus', { name: rules.attack.bonus.name })}>{rules.attack.bonus.formula}</Row>
+      )}
       <Row label={t('rules.attack.armorClass', { name: ac.name, abbr: ac.abbr })}>{ac.formula}</Row>
       <Row label={t('rules.attack.hitPoints', { name: rules.hitPoints.name, abbr: rules.hitPoints.abbr })}>
         {rules.hitPoints.formula}

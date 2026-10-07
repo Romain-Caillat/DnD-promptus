@@ -115,8 +115,16 @@ pub const TRANSCRIBE: Template = Template {
     text: include_str!("../../prompts/transcribe.v1.md"),
 };
 
+/// A house rule written in French, formalised for the engine
+/// (`engine/formalise-house-rules`).
+pub const HOUSE_RULE: Template = Template {
+    id: "house-rule",
+    version: 1,
+    text: include_str!("../../prompts/house-rule.v1.md"),
+};
+
 /// Every template, for the tests that check each one renders.
-pub const ALL: [Template; 13] = [
+pub const ALL: [Template; 14] = [
     COPILOT,
     RECAP,
     PIXEL_ART,
@@ -130,6 +138,7 @@ pub const ALL: [Template; 13] = [
     BACKSTORY,
     HOOKS,
     TRANSCRIBE,
+    HOUSE_RULE,
 ];
 
 const USER_MARK: &str = "---user---";

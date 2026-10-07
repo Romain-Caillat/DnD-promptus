@@ -78,6 +78,8 @@ pub enum ModifierSource {
     Cover(crate::maps::Cover),
     /// Beyond the action's range, within its long range.
     LongRange,
+    /// The system's attack bonus (`attack.bonus`), by its name.
+    AttackBonus(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

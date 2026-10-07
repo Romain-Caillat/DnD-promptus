@@ -41,6 +41,12 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/campaigns/{campaign}/rules"),
     ("POST", "/api/campaigns/{campaign}/rules/draft"),
     ("PUT", "/api/campaigns/{campaign}/rules/draft"),
+    // On the draft just saved (a house rule needs one).
+    (
+        "POST",
+        "/api/campaigns/{campaign}/rules/house-rules/formalise",
+    ),
+    ("POST", "/api/campaigns/{campaign}/rules/house-rules/try"),
     ("GET", "/api/campaigns/{campaign}/rules/compare?from=1&to=2"),
     ("POST", "/api/campaigns/{campaign}/rules/draft/lock"),
     ("DELETE", "/api/campaigns/{campaign}/rules/draft"),
@@ -210,6 +216,16 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         ("POST", p) if p.ends_with("/workshop") => {
             Some(serde_json::json!({ "prompt": "Rends le gardien plus ambigu." }))
         }
+        (_, p) if p.contains("/rules/house-rules/") => Some(serde_json::json!({
+            "id": "pied_qui_glisse",
+            "name": "Le pied qui glisse",
+            "text": "Sur un 1 naturel, le corsaire glisse.",
+            "formal": {
+                "when": "miss",
+                "critical": true,
+                "effects": [{ "apply": { "condition": "renverse", "turns": 1, "to": "self" } }]
+            }
+        })),
         ("PUT", p) if p.ends_with("/rules/draft") => Some(serde_json::json!({
             "yaml": CORSAIRES_RULES.replacen("\nversion: 1\n", "\nversion: 2\n", 1),
             "note": "Facile à 12."

@@ -293,6 +293,59 @@ fn hooks_answer(request: &str) -> String {
     .to_string()
 }
 
+/// The ids listed under `## <header>` in a house-rule prompt, in order.
+fn section_ids<'a>(prompt: &'a str, header: &str) -> Vec<&'a str> {
+    let Some(at) = prompt.find(header) else {
+        return Vec::new();
+    };
+    prompt[at..]
+        .lines()
+        .skip(1)
+        .take_while(|l| !l.starts_with("## "))
+        .filter_map(|l| l.strip_prefix("- `")?.split_once('`').map(|(id, _)| id))
+        .collect()
+}
+
+/// A house rule read as « on a natural 1 in attack, the attacker gets
+/// the first fitting condition », with cases on the first class and the
+/// first adversary (or the second class) — plus an invented trait and a
+/// case on an invented class, for the server to drop.
+fn house_rule_answer(prompt: &str) -> serde_json::Value {
+    let conditions = section_ids(prompt, "## États");
+    let condition = ["renverse", "etourdi", "a_terre", "effraye"]
+        .into_iter()
+        .find(|c| conditions.contains(c))
+        .or_else(|| conditions.first().copied())
+        .unwrap_or("etat_inconnu");
+    let classes = section_ids(prompt, "## Classes");
+    let class = classes.first().copied().unwrap_or("classe");
+    let action = prompt
+        .lines()
+        .find(|l| l.starts_with(&format!("- `{class}`")))
+        .and_then(|l| l.split("actions `").nth(1))
+        .and_then(|r| r.split('`').next())
+        .unwrap_or("action");
+    let target = match section_ids(prompt, "## Adversaires").first() {
+        Some(a) => json!({ "adversary": a }),
+        None => json!({ "class": classes.get(1).copied().unwrap_or(class) }),
+    };
+    json!({
+        "formal": {
+            "when": "miss",
+            "critical": true,
+            "actor": { "side": "party", "except_traits": ["trait_invente"] },
+            "effects": [{ "apply": { "condition": condition, "turns": 1, "to": "self" } }],
+            "players": "rule",
+            "cases": [
+                { "name": "Sur un 1 naturel", "actor": { "class": class }, "action": action, "target": target, "roll": "fumble", "expect": "applies" },
+                { "name": "Simplement raté", "actor": { "class": class }, "action": action, "target": target, "roll": "miss", "expect": "nothing" },
+                { "name": "Une classe inventée", "actor": { "class": "classe_inventee" }, "action": action, "target": target, "roll": "fumble", "expect": "applies" }
+            ]
+        },
+        "remark": "J’ai lu ta règle comme un échec critique en attaque. Les adversaires aussi ?"
+    })
+}
+
 fn workshop_answer(prompt: &str) -> serde_json::Value {
     use promptus_shared::story::{Importance, from_yaml};
     let yaml = prompt
@@ -770,6 +823,8 @@ impl Provider for FakeProvider {
                     _ => generation_repair(first),
                 }
                 .to_string()
+            } else if system.contains("Tu formalises les règles maison") {
+                house_rule_answer(prompt).to_string()
             } else if system.contains("cartographe") {
                 map_answer(first).to_string()
             } else if system.contains("fiches de personnage") {
