@@ -1185,6 +1185,15 @@ mod tests {
     }
 
     #[test]
+    fn the_secret_anchorage_can_be_sailed_to_from_the_party_start() {
+        // What `travel_test` plans to: a journey there must exist.
+        let map = corsaires();
+        let guide = content::guide(&map);
+        let party = Party::start(&map, 6).unwrap();
+        assert!(!routes(&map, &guide, party.at, Cell { x: 2, y: 7 }).is_empty());
+    }
+
+    #[test]
     fn a_known_place_is_named_and_an_unnamed_hex_reads_cleanly() {
         let map = corsaires();
         let palais = to(&map, Cell { x: 9, y: 9 });
