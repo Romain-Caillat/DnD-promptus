@@ -344,7 +344,7 @@ async fn the_rule_presets_bring_their_stat_names() {
         .iter()
         .map(|p| (p["id"].as_str().unwrap(), p["version"].as_u64().unwrap()))
         .collect();
-    assert_eq!(ids, [("corsaires", 1), ("brasier", 1)]);
+    assert_eq!(ids, [("corsaires", 1), ("brasier", 1), ("srd", 1)]);
     let corsaires = &presets[0];
     assert_eq!(corsaires["name"], "Corsaires de la Couronne");
     assert_eq!(
