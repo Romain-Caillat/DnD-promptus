@@ -112,6 +112,14 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/rules/compare",
             get(api::rule_versions::compare),
         )
+        .route(
+            "/api/campaigns/{id}/rules/house-rules/formalise",
+            post(api::rule_versions::formalise_house_rule),
+        )
+        .route(
+            "/api/campaigns/{id}/rules/house-rules/try",
+            post(api::rule_versions::try_house_rule),
+        )
         .route("/api/campaigns/{id}/story/edits", post(api::prep::edits))
         .route("/api/campaigns/{id}/readiness", get(api::prep::readiness))
         .route(

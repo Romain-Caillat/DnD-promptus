@@ -155,6 +155,9 @@ fn event_for_players(
         }
         FightEvent::Rules { event } => match event {
             Event::ForTheGm { .. } => None,
+            // A house rule that shows only its effect is not named: its
+            // condition or damage still follows, as its own event.
+            Event::HouseRule { shown: false, .. } => None,
             Event::Damaged {
                 target, breakdown, ..
             } if opponent(target) => Some(FightEvent::Rules {
@@ -317,5 +320,53 @@ pub fn project_board(
         tokens,
         reachable,
         fight: encounter.map(|(e, ev)| fight_view(e, ev, looker, &seen)),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use promptus_shared::rules::dice::SeededDice;
+    use promptus_shared::rules::sheet::Combatant;
+    use promptus_shared::story::RuleSystemRef;
+
+    use super::*;
+
+    #[test]
+    fn a_house_rule_that_shows_only_its_effect_is_never_named_to_players() {
+        let srd = crate::content::preset(&RuleSystemRef {
+            id: "srd".into(),
+            version: 1,
+        })
+        .unwrap();
+        let map = crate::content::world_map("srd", "route-des-gobelins")
+            .unwrap()
+            .clone();
+        let placements = vec![
+            (
+                Combatant::from_class(srd, "pc", "Borin", "guerrier").unwrap(),
+                Cell { x: 1, y: 3 },
+            ),
+            (
+                Combatant::from_adversary(srd, "zombie", "Zombie", "zombie").unwrap(),
+                Cell { x: 5, y: 3 },
+            ),
+        ];
+        let fight = Fight::start(srd, "combat", map, placements, &mut SeededDice::new(1))
+            .unwrap()
+            .fight;
+        let fired = |shown| FightEvent::Rules {
+            event: Event::HouseRule {
+                rule: "morts_vivants_feu".into(),
+                name: "Les morts-vivants craignent le feu".into(),
+                target: "zombie".into(),
+                shown,
+            },
+        };
+        let all = |_: Cell| true;
+        assert!(event_for_players(&fight, &fired(false), &all).is_none());
+        assert_eq!(
+            event_for_players(&fight, &fired(true), &all),
+            Some(fired(true))
+        );
     }
 }

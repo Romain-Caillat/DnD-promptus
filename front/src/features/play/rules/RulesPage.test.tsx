@@ -49,6 +49,7 @@ function corsaires(over: Partial<RulesView> = {}): RulesView {
     attack: {
       ability: 'first_primary',
       precisionApplies: false,
+      bonus: null,
       armorClass: { name: "Classe d'armure", abbr: 'CA', formula: '10 + mod(DEX)' },
     },
     hitPoints: { name: 'Points de vie', abbr: 'PV', formula: '10' },

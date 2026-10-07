@@ -131,6 +131,7 @@ type RulesEvent =
   | { event: 'knocked_out' | 'revived' | 'out_of_scene'; target: string }
   | { event: 'turn_lost'; who: string; because: string }
   | { event: 'item_used'; who: string; item: string; left: number }
+  | { event: 'house_rule'; rule: string; name: string; target: string; shown: boolean }
   | { event: 'cooldown_started' | 'progress' | 'for_the_gm'; [k: string]: unknown }
 
 export interface FightView {
