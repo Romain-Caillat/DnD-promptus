@@ -1,4 +1,5 @@
 import { apiRequest } from './api'
+import type { GmBattle } from './battle'
 import type { RollBreakdown } from './rules'
 
 const play = (campaignId: string) => `/play/${encodeURIComponent(campaignId)}`
@@ -248,6 +249,9 @@ export interface GmBoard {
   encounters: { node: string; title: string; map: string | null }[]
   encounter: GmEncounter | null
   conditions: { id: string; name: string }[] | null
+  /** The scenes that open a ship battle. */
+  battles?: { node: string; title: string }[]
+  battle?: GmBattle | null
 }
 
 export type Edit =

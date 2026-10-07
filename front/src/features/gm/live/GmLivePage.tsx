@@ -31,7 +31,9 @@ import {
   writeNote,
   type LiveScreen,
 } from '@/lib/evening'
+import { gmBattleCommand, startBattle } from '@/lib/battle'
 import { askImage, decideImage, fetchGmMedia, type MediaList } from '@/lib/media'
+import { BattlePanel } from './BattlePanel'
 import { BoardPanel } from './BoardPanel'
 import { CopilotPanel } from './CopilotPanel'
 import { EndPanel, FeedbackPanel } from './EndPanel'
@@ -212,6 +214,14 @@ export function GmLivePage() {
               onStart={(n) => void boardGesture(() => startFight(campaignId, n))}
               onCommand={(c) => void boardGesture(() => gmFightCommand(campaignId, c))}
               onLoot={(index, character) => void boardGesture(() => giveLoot(campaignId, [{ index, character }]))}
+            />
+          )}
+          {board && (
+            <BattlePanel
+              data={board}
+              live={session?.status === 'live'}
+              onStart={(n) => void boardGesture(() => startBattle(campaignId, n))}
+              onCommand={(c) => void boardGesture(() => gmBattleCommand(campaignId, c))}
             />
           )}
           {!session && screen.lastEnded && (

@@ -41,7 +41,10 @@ const board = (fight: unknown = null) => ({
     },
   },
 })
-const MEDIA = { 'GET /api/play/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }) }
+const MEDIA = {
+  'GET /api/play/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
+  'GET /api/play/c1/battle': () => ({ status: 200, body: { data: null } }),
+}
 
 /** A tap on cell (x, y) of the canvas (32 px a cell, drawn at scale 1). */
 function tap(x: number, y: number) {
