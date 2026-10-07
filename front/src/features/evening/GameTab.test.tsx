@@ -130,6 +130,39 @@ describe('GameTab', () => {
     expect(screen.getAllByText('Réussite').length).toBeGreaterThan(0)
   })
 
+  it('plays from the keyboard on a computer: a digit picks, Enter sends, Space rolls', async () => {
+    const fetchMock = mockApi({
+      ...MEDIA,
+      'GET /api/play/c1/evening': () => evening({}),
+      'POST /api/play/c1/requests': () => evening({ requests: [request('check')] }),
+      'POST /api/play/c1/requests/r1/roll': () => evening({ requests: [request('rolled', ROLL)] }),
+    })
+    render(<GameTab campaignId="c1" refreshKey={0} seated keyboard />)
+    expect(await screen.findByRole('heading', { name: 'Le Goéland Ivre' })).toBeInTheDocument()
+
+    await userEvent.keyboard('1')
+    expect(screen.getByRole('button', { pressed: true })).toHaveTextContent(/^Dextérité/)
+    // The text box takes the focus: a space typed there is a space, not a roll.
+    await userEvent.keyboard('Je file {Enter}')
+    expect(sentTo(fetchMock, 'POST /api/play/c1/requests')).toEqual([
+      { card: { kind: 'ability', ability: 'DEX' }, text: 'Je file' },
+    ])
+    expect(sentTo(fetchMock, 'POST /api/play/c1/requests/r1/roll')).toHaveLength(0)
+
+    expect(await screen.findByText(/Espace marche aussi/)).toBeInTheDocument()
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    await userEvent.keyboard(' ')
+    expect(sentTo(fetchMock, 'POST /api/play/c1/requests/r1/roll')).toHaveLength(1)
+  })
+
+  it('keeps the keys off the hand on a phone', async () => {
+    mockApi({ ...MEDIA, 'GET /api/play/c1/evening': () => evening({}) })
+    render(<GameTab campaignId="c1" refreshKey={0} seated />)
+    expect(await screen.findByRole('heading', { name: 'Le Goéland Ivre' })).toBeInTheDocument()
+    await userEvent.keyboard('1')
+    expect(screen.queryByRole('button', { pressed: true })).not.toBeInTheDocument()
+  })
+
   it('answers the three questions after the session', async () => {
     const fetchMock = mockApi({
       ...MEDIA,

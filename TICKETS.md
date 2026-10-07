@@ -1655,13 +1655,39 @@ accroche du MJ.
 
 **Origine** — Planche « Mourir »
 
-### `player/play-on-desktop` · todo
+### `player/play-on-desktop` · doing — reste une soirée jouée par un joueur sur son ordinateur
 
 **Périmètre** — La même partie dépliée sur un grand écran : scène, main,
 carte et combat côte à côte ; raccourcis clavier (chiffres pour les
 cartes, espace pour le dé).
 
+**Fini quand** — Un joueur suit une soirée entière depuis son
+ordinateur sans jamais changer d'onglet, et joue ses cartes, lance ses
+dés et mène ses tours de combat au clavier, sur une table Corsaires
+comme sur une table Brasier.
+
 **Origine** — Planche « Jouer sur ordinateur »
+
+**État** — Livré et testé (Vitest), sans changement serveur : c'est la
+même projection joueur, mise en page autrement. Sur un écran large
+avec une souris (1100 px et plus), la page de partie quitte ses onglets
+: la fiche à gauche (cœurs, gemmes, cartes, sac, ou le personnage en
+cours de création), la scène, la musique, les demandes et la main au
+centre, la carte, le combat et le journal à droite ; chaque partie
+n'est chargée qu'une fois. Clavier : 1 à 9 choisissent les cartes de
+la main dans l'ordre, 0 « Autre… », Échap repose la carte, Entrée
+envoie ce qui est écrit (Maj+Entrée : une ligne), Espace lance le dé
+que le MJ a demandé (le plus ancien) ; en combat, à mon tour, les
+chiffres prennent les cartes de combat et Entrée joue. Les touches se
+taisent quand on écrit dans un champ, avec une touche de modification,
+et Espace ou Entrée ne doublent jamais un bouton qui a le focus. La
+carte se fait glisser à la souris. Une tablette garde la mise en page
+du téléphone. Les deux mondes ont six caractéristiques plus les cartes
+de classe : au-delà de neuf cartes, les suivantes n'ont pas de touche
+(on les clique). Pas encore : le panneau « le groupe » de la planche
+(les PV des autres joueurs hors combat ne sont pas dans la projection
+joueur). Jamais essayé par un vrai joueur, ni vu rendu dans un vrai
+navigateur.
 
 ---
 
@@ -1751,7 +1777,7 @@ ligne, première scène.
 
 **Origine** — Planche « Lancer » (moments 4 et 5)
 
-### `gm/run-on-tablet` · todo
+### `gm/run-on-tablet` · doing — reste une soirée entière menée depuis un iPad
 
 **Périmètre** — L'écran MJ sur tablette : rail de grosses cibles à la
 place des onglets, demandes au pouce, carte au doigt (un doigt peint le
@@ -1761,6 +1787,34 @@ trois grosses touches.
 **Fini quand** — Romain mène une soirée entière depuis un iPad.
 
 **Origine** — Planche « Tablette »
+
+**État** — Livré et testé (Vitest), sans changement serveur : chaque
+geste passe par les routes de l'écran MJ existantes. L'écran de soirée
+passe en mode tablette sur un appareil tactile de 768 px et plus, ou
+avec `?ecran=tablette` (`?ecran=ordinateur` force l'ordinateur ; un
+bouton de l'en-tête bascule). Un rail de cinq grosses cibles remplace
+les trois colonnes : Scène (les demandes en attente, la scène, les
+images), Table, Carte (la carte et le combat), Journal (avec la fin de
+soirée et les retours) et Co-MJ, qui glisse en tiroir par-dessus sans
+quitter la section. Un point sur une cible dit qu'une chose y attend
+(une demande, un joueur oublié, le tour d'un adversaire, un brouillon
+du co-MJ). À droite, dès 1000 px, les places en grand : qui est là,
+depuis quand il n'a rien fait, qui demande ; un appui lui donne la
+main. Tous les boutons prennent la taille d'un doigt. Une demande se
+juge au pouce : la caractéristique en grosses touches, puis une touche
+par difficulté des règles (quatre aux Corsaires) envoie le test ; « Oui,
+sans jet » ; « Non » part avec « Non, rien ici. » si le MJ n'a rien
+écrit (le serveur exige un mot). La carte : un doigt touche ou peint le
+brouillard (outils Révéler, Cacher), un second doigt annule le trait,
+deux doigts la font glisser, pincer zoome, rien ne part avant le
+relâcher. Au tour d'un adversaire, trois grosses touches : « Valider »
+la proposition du co-MJ (ou la demander), « Il fuit », « Il passe son
+tour » — la planche disait « Changer », mais le MJ ne peut pas encore
+choisir à la main l'action d'un adversaire, donc la touche dit ce
+qu'elle fait. Un brouillon du co-MJ se lit en entier, avec « Montrer »,
+« Modifier », « Écarter ». Pas de micro : parler au co-MJ est
+`copilot/listen-by-voice` ; le tiroir est l'endroit où il se branchera.
+Jamais essayé sur un vrai iPad.
 
 ---
 

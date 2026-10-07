@@ -78,7 +78,7 @@ describe('MapTab', () => {
     expect(sentTo(fetchMock, 'POST /api/play/c1/board/walk')).toHaveLength(1)
   })
 
-  it('plays a card on a target picked on the map, on my turn', async () => {
+  it('plays a card on a target picked on the map, on my turn, by hand or by keyboard', async () => {
     const fight = {
       live: true,
       round: 1,
@@ -108,14 +108,26 @@ describe('MapTab', () => {
       'GET /api/play/c1/board': () => board(fight),
       'POST /api/play/c1/fight': () => board(fight),
     })
-    render(<MapTab campaignId="c1" refreshKey={0} />)
+    const turns: boolean[] = []
+    render(<MapTab campaignId="c1" refreshKey={0} keyboard onTurn={(mine) => turns.push(mine)} />)
     expect(await screen.findByText('À toi, Borin !')).toBeInTheDocument()
     expect(screen.getByText('Au tour de Borin')).toBeInTheDocument()
+    // The page learns the keys are the fight's now.
+    expect(turns.at(-1)).toBe(true)
     await userEvent.click(screen.getByRole('button', { name: /Estocade/ }))
     tap(3, 0)
     await userEvent.click(screen.getByRole('button', { name: /Jouer/ }))
     expect(sentTo(fetchMock, 'POST /api/play/c1/fight')).toEqual([
       { kind: 'act', action: 'estocade', targets: ['marin-1'] },
     ])
+
+    // On a computer: 1 picks the first card, the map gives the target, Enter plays.
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    await userEvent.keyboard('1')
+    expect(screen.getByRole('button', { name: /Estocade/ })).toHaveAttribute('aria-pressed', 'true')
+    tap(3, 0)
+    await userEvent.keyboard('{Enter}')
+    expect(sentTo(fetchMock, 'POST /api/play/c1/fight')).toHaveLength(2)
+    expect(sentTo(fetchMock, 'POST /api/play/c1/fight')[1]).toEqual({ kind: 'act', action: 'estocade', targets: ['marin-1'] })
   })
 })

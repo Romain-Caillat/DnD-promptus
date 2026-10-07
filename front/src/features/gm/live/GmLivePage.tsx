@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, Navigate, useParams } from 'react-router'
+import { Link, Navigate, useParams, useSearchParams } from 'react-router'
 import { LiveIndicator } from '@/features/live/LiveIndicator'
 import { useLiveChanges } from '@/features/live/useLiveChanges'
 import { ApiError } from '@/lib/api'
@@ -32,6 +32,8 @@ import {
   type LiveScreen,
 } from '@/lib/evening'
 import { askImage, decideImage, fetchGmMedia, type MediaList } from '@/lib/media'
+import { TABLET_QUERY, useMediaQuery } from '@/lib/useMediaQuery'
+import { cn } from '@/lib/utils'
 import { BoardPanel } from './BoardPanel'
 import { CopilotPanel } from './CopilotPanel'
 import { EndPanel, FeedbackPanel } from './EndPanel'
@@ -40,7 +42,8 @@ import { MediaPanel } from './MediaPanel'
 import { RequestsPanel } from './RequestsPanel'
 import { ScenePanel } from './ScenePanel'
 import { TablePanel } from './TablePanel'
-import { Btn } from './ui'
+import { TabletScreen } from './TabletScreen'
+import { Btn, TouchScreen } from './ui'
 
 type PageState =
   | { kind: 'loading' }
@@ -56,6 +59,10 @@ type PageState =
  * the map and the fight in the middle; the co-GM, the journal and the
  * images on the right. One main action per moment in the header: open
  * the lobby, start, end. Each block refetches on its live topic.
+ *
+ * On a tablet (gm/run-on-tablet) the same blocks sit behind a rail of
+ * big targets and grow to a finger's size; `?ecran=tablette` or
+ * `?ecran=ordinateur` forces one layout, and the header switches it.
  */
 export function GmLivePage() {
   const { t } = useTranslation()
@@ -64,6 +71,10 @@ export function GmLivePage() {
   const [board, setBoard] = useState<GmBoard | null>(null)
   const [media, setMedia] = useState<MediaList | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [params, setParams] = useSearchParams()
+  const touchDevice = useMediaQuery(TABLET_QUERY)
+  const forced = params.get('ecran')
+  const tablet = forced === 'tablette' || (forced !== 'ordinateur' && touchDevice)
   const latest = useRef(0)
   const latestBoard = useRef(0)
   const latestMedia = useRef(0)
@@ -117,7 +128,7 @@ export function GmLivePage() {
     void loadMedia()
   }, [loadScreen, loadBoard, loadMedia])
 
-  const live = useLiveChanges(campaignId, (topics) => {
+  const channel = useLiveChanges(campaignId, (topics) => {
     if (topics.some((x) => ['session', 'world', 'story', 'table', 'desk'].includes(x) || x.startsWith('character:'))) {
       void loadScreen()
     }
@@ -155,112 +166,175 @@ export function GmLivePage() {
   const base = `/campagnes/${encodeURIComponent(campaignId)}`
   const boardGesture = (call: () => Promise<GmBoard>) => act(call, setBoard)
 
+  const live = session?.status === 'live'
+  const requests = live ? (
+    <RequestsPanel screen={screen} onDecide={(id, d) => void act(() => decide(campaignId, id, d))} />
+  ) : null
+  const table = <TablePanel screen={screen} onSpotlight={(p) => void act(() => giveSpotlight(campaignId, p))} />
+  const scene = session ? (
+    <ScenePanel
+      screen={screen}
+      onReveal={(r) => void act(() => reveal(campaignId, r))}
+      onTrack={(i) => void act(() => playTrack(campaignId, i))}
+    />
+  ) : null
+  const boardPanel = board ? (
+    <BoardPanel
+      campaignId={campaignId}
+      data={board}
+      media={media}
+      live={live}
+      onShow={(m) => void boardGesture(() => showMap(campaignId, m))}
+      onEdit={(e) => void boardGesture(() => editBoard(campaignId, e))}
+      onStart={(n) => void boardGesture(() => startFight(campaignId, n))}
+      onCommand={(c) => void boardGesture(() => gmFightCommand(campaignId, c))}
+      onLoot={(index, character) => void boardGesture(() => giveLoot(campaignId, [{ index, character }]))}
+    />
+  ) : null
+  const feedback =
+    !session && screen.lastEnded ? (
+      <FeedbackPanel
+        load={() => fetchFeedback(campaignId, screen.lastEnded!.id)}
+        onChanges={async (text) => {
+          await act(() => saveChanges(campaignId, screen.lastEnded!.id, text))
+        }}
+      />
+    ) : null
+  const copilot = session ? (
+    <CopilotPanel
+      screen={screen}
+      onAsk={async (kind, prompt, npc) => {
+        await act(() => askCopilot(campaignId, kind, prompt, npc))
+      }}
+      onShow={(d, n, l) => void act(() => showDraft(campaignId, d, n, l))}
+      onDismiss={(d) => void act(() => dismissDraft(campaignId, d))}
+      onReveal={(r) => void act(() => reveal(campaignId, r))}
+    />
+  ) : null
+  const journal = (
+    <JournalPanel
+      screen={screen}
+      onNote={async (kind, text, shared) => {
+        await act(() => writeNote(campaignId, kind, text, shared))
+      }}
+    />
+  )
+  const mediaPanel = (
+    <MediaPanel
+      campaignId={campaignId}
+      screen={screen}
+      media={media}
+      onAsk={async (kind, subject, direction) => {
+        await act(() => askImage(campaignId, kind, subject, direction), () => void loadMedia())
+      }}
+      onDecide={(a, approve) => void act(() => decideImage(campaignId, a, approve), () => void loadMedia())}
+    />
+  )
+  const end =
+    session && session.status !== 'ended' ? (
+      <EndPanel
+        screen={screen}
+        onEnd={async (recap, previously) => {
+          await act(() => endSession(campaignId, recap, previously))
+        }}
+        onDraft={() => act(() => draftRecap(campaignId, session.id))}
+      />
+    ) : null
+  const enc = board?.encounter
+  const foe = enc?.live ? enc.fight.scene.combatants[enc.fight.order[enc.fight.turn]] : undefined
+
   return (
-    <main className="surface-table flex min-h-dvh flex-col gap-3 p-4 text-chalk">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-col">
-          <Link className="text-caption text-mute-soft underline underline-offset-4" to={base}>
-            {t('gmLive.back')}
-          </Link>
-          <h1 className="type-title text-heading">
-            {session ? t('gmLive.session', { number: session.number, status: t(`gmLive.status.${session.status}`) }) : t('gmLive.noSession')}
-          </h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <LiveIndicator status={live.status} />
-          <span className="text-caption text-mute-soft">{t('live.players', { count: live.presence.players.length })}</span>
-          {!session && (
-            <Btn main onClick={() => void act(() => openSession(campaignId))}>
-              {t('gmLive.open')}
+    <TouchScreen.Provider value={tablet}>
+      <main
+        className={cn(
+          'surface-table flex min-h-dvh flex-col gap-3 p-4 text-chalk',
+          tablet && '[&_input:not([type=checkbox])]:min-h-12 [&_select]:min-h-12',
+        )}
+      >
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col">
+            <Link className="text-caption text-mute-soft underline underline-offset-4" to={base}>
+              {t('gmLive.back')}
+            </Link>
+            <h1 className="type-title text-heading">
+              {session
+                ? t('gmLive.session', { number: session.number, status: t(`gmLive.status.${session.status}`) })
+                : t('gmLive.noSession')}
+            </h1>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <LiveIndicator status={channel.status} />
+            <span className="text-caption text-mute-soft">{t('live.players', { count: channel.presence.players.length })}</span>
+            <Btn onClick={() => setParams({ ecran: tablet ? 'ordinateur' : 'tablette' }, { replace: true })}>
+              {t(tablet ? 'gmLive.tablet.toLaptop' : 'gmLive.tablet.toTablet')}
             </Btn>
-          )}
-          {session?.status === 'lobby' && (
-            <Btn main onClick={() => void act(() => startSession(campaignId))}>
-              {t('gmLive.start')}
-            </Btn>
-          )}
-        </div>
-      </header>
-      {error && (
-        <p role="alert" className="rounded-button border border-stat-atk px-3 py-2 text-body">
-          {t(`gmLive.errors.${error}`, { defaultValue: t('gmLive.errors.UNEXPECTED', { code: error }) })}
-        </p>
-      )}
-      <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_minmax(420px,2fr)_minmax(280px,1fr)]">
-        <div className="flex flex-col gap-3">
-          <TablePanel screen={screen} onSpotlight={(p) => void act(() => giveSpotlight(campaignId, p))} />
-          {session?.status === 'live' && (
-            <RequestsPanel screen={screen} onDecide={(id, d) => void act(() => decide(campaignId, id, d))} />
-          )}
-        </div>
-        <div className="flex flex-col gap-3">
-          {session && (
-            <ScenePanel
-              screen={screen}
-              onReveal={(r) => void act(() => reveal(campaignId, r))}
-              onTrack={(i) => void act(() => playTrack(campaignId, i))}
-            />
-          )}
-          {board && (
-            <BoardPanel
-              campaignId={campaignId}
-              data={board}
-              media={media}
-              live={session?.status === 'live'}
-              onShow={(m) => void boardGesture(() => showMap(campaignId, m))}
-              onEdit={(e) => void boardGesture(() => editBoard(campaignId, e))}
-              onStart={(n) => void boardGesture(() => startFight(campaignId, n))}
-              onCommand={(c) => void boardGesture(() => gmFightCommand(campaignId, c))}
-              onLoot={(index, character) => void boardGesture(() => giveLoot(campaignId, [{ index, character }]))}
-            />
-          )}
-          {!session && screen.lastEnded && (
-            <FeedbackPanel
-              load={() => fetchFeedback(campaignId, screen.lastEnded!.id)}
-              onChanges={async (text) => {
-                await act(() => saveChanges(campaignId, screen.lastEnded!.id, text))
-              }}
-            />
-          )}
-        </div>
-        <div className="flex flex-col gap-3">
-          {session && (
-            <CopilotPanel
-              screen={screen}
-              onAsk={async (kind, prompt, npc) => {
-                await act(() => askCopilot(campaignId, kind, prompt, npc))
-              }}
-              onShow={(d, n, l) => void act(() => showDraft(campaignId, d, n, l))}
-              onDismiss={(d) => void act(() => dismissDraft(campaignId, d))}
-              onReveal={(r) => void act(() => reveal(campaignId, r))}
-            />
-          )}
-          <JournalPanel
+            {!session && (
+              <Btn main onClick={() => void act(() => openSession(campaignId))}>
+                {t('gmLive.open')}
+              </Btn>
+            )}
+            {session?.status === 'lobby' && (
+              <Btn main onClick={() => void act(() => startSession(campaignId))}>
+                {t('gmLive.start')}
+              </Btn>
+            )}
+          </div>
+        </header>
+        {error && (
+          <p role="alert" className="rounded-button border border-stat-atk px-3 py-2 text-body">
+            {t(`gmLive.errors.${error}`, { defaultValue: t('gmLive.errors.UNEXPECTED', { code: error }) })}
+          </p>
+        )}
+        {tablet ? (
+          <TabletScreen
             screen={screen}
-            onNote={async (kind, text, shared) => {
-              await act(() => writeNote(campaignId, kind, text, shared))
+            onSpotlight={(p) => void act(() => giveSpotlight(campaignId, p))}
+            waiting={{
+              scene: screen.requests.some((r) => r.status === 'pending'),
+              table: screen.spotlight.some((x) => x.alert),
+              map: foe?.side === 'opposition',
+              copilot: screen.drafts.some((d) => d.status === 'draft'),
             }}
-          />
-          <MediaPanel
-            campaignId={campaignId}
-            screen={screen}
-            media={media}
-            onAsk={async (kind, subject, direction) => {
-              await act(() => askImage(campaignId, kind, subject, direction), () => void loadMedia())
+            sections={{
+              scene: (
+                <>
+                  {requests}
+                  {scene}
+                  {mediaPanel}
+                </>
+              ),
+              table,
+              map: boardPanel ?? <p className="text-body text-mute">{t('gmLive.board.none')}</p>,
+              journal: (
+                <>
+                  {journal}
+                  {end}
+                  {feedback}
+                </>
+              ),
             }}
-            onDecide={(a, approve) => void act(() => decideImage(campaignId, a, approve), () => void loadMedia())}
+            copilot={copilot ?? <p className="text-body text-mute">{t('gmLive.tablet.noCopilot')}</p>}
           />
-          {session && session.status !== 'ended' && (
-            <EndPanel
-              screen={screen}
-              onEnd={async (recap, previously) => {
-                await act(() => endSession(campaignId, recap, previously))
-              }}
-              onDraft={() => act(() => draftRecap(campaignId, session.id))}
-            />
-          )}
-        </div>
-      </div>
-    </main>
+        ) : (
+          <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_minmax(420px,2fr)_minmax(280px,1fr)]">
+            <div className="flex flex-col gap-3">
+              {table}
+              {requests}
+            </div>
+            <div className="flex flex-col gap-3">
+              {scene}
+              {boardPanel}
+              {feedback}
+            </div>
+            <div className="flex flex-col gap-3">
+              {copilot}
+              {journal}
+              {mediaPanel}
+              {end}
+            </div>
+          </div>
+        )}
+      </main>
+    </TouchScreen.Provider>
   )
 }

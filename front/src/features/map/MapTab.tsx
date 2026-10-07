@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArcadeCluster } from '@/components/game/ArcadeCluster'
 import { Hearts } from '@/components/game/Hearts'
+import { Kbd } from '@/components/game/Kbd'
 import { ApiError } from '@/lib/api'
 import {
   fetchBoard,
@@ -15,6 +16,7 @@ import {
 } from '@/lib/board'
 import { playerBackdropUrl } from '@/lib/maps'
 import { fetchPlayerMedia, playerImageUrl, type MediaList } from '@/lib/media'
+import { cardIndex, cardKey, useShortcuts } from '@/lib/useShortcuts'
 import { cn } from '@/lib/utils'
 import { eventLine } from './events'
 import { MapCanvas } from './MapCanvas'
@@ -29,9 +31,24 @@ type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; board: B
  * fight, a tap on a highlighted cell walks the character there along
  * the path the server checks again. In a fight: whose turn it is, the
  * order with hearts for the party, and on my turn the hand of cards,
- * the target picked on the map, the arcade buttons and the log.
+ * the target picked on the map, the arcade buttons and the log. On a
+ * computer (player/play-on-desktop) a digit picks a card, Enter plays
+ * it, Escape puts it back; `onTurn` tells the page when the keys are the
+ * fight's.
  */
-export function MapTab({ campaignId, refreshKey }: { campaignId: string; refreshKey: number }) {
+export function MapTab({
+  campaignId,
+  refreshKey,
+  keyboard = false,
+  onTurn,
+}: {
+  campaignId: string
+  refreshKey: number
+  /** Shortcuts on and their hints shown, while it is my turn. */
+  keyboard?: boolean
+  /** Whether it is my turn in a live fight, each time it changes. */
+  onTurn?: (mine: boolean) => void
+}) {
   const { t } = useTranslation()
   const [state, setState] = useState<State>({ kind: 'loading' })
   const [media, setMedia] = useState<MediaList | null>(null)
@@ -63,6 +80,28 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
   }, [load, refreshKey])
 
   const board = state.kind === 'ready' ? state.board : null
+  const myTurn = Boolean(board?.fight?.live && board.fight.myTurn)
+  useEffect(() => {
+    onTurn?.(myTurn)
+  }, [myTurn, onTurn])
+  const playable = myTurn ? (board?.fight?.cards ?? []) : []
+  useShortcuts(keyboard && myTurn, (key) => {
+    if (key === 'Escape' && card) {
+      setCard(null)
+      setTargets([])
+      return true
+    }
+    if (key === 'Enter' && card && !busy) {
+      play({ kind: 'act', action: card, targets })
+      return true
+    }
+    const index = cardIndex(key)
+    const picked = index === null ? undefined : playable[index]
+    if (!picked || picked.locked) return false
+    setCard(picked.id)
+    setTargets([])
+    return true
+  })
   const { tileset, atlases } = useTileset(board?.map ?? null, media, (id) => playerImageUrl(campaignId, id))
   // The board's map id is not the players'; its image is the one shown.
   const backdrop = useImage(board?.map.backdrop?.image ? playerBackdropUrl(campaignId, board.map.id) : null)
@@ -149,7 +188,7 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
       {fight?.myTurn && (
         <>
           <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label={t('fight.hand')}>
-            {fight.cards.map((c) => (
+            {fight.cards.map((c, i) => (
               <button
                 key={c.id}
                 type="button"
@@ -170,10 +209,12 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
                   {t('fight.range', { range: c.range })}
                   {c.attackBonus !== null ? ` · ${t('fight.bonus', { value: c.attackBonus })}` : ''}
                 </span>
+                {keyboard && cardKey(i) && <Kbd>{cardKey(i)!}</Kbd>}
               </button>
             ))}
           </div>
           {card && <p className="text-caption text-mute">{t('fight.pickTarget', { count: targets.length })}</p>}
+          {keyboard && <p className="text-caption text-mute">{t('fight.keys')}</p>}
           <ArcadeCluster
             busy={busy}
             main={{
