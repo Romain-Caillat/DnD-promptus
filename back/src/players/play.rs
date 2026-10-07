@@ -742,10 +742,11 @@ pub async fn level_up(
     let campaign = player.campaign_id;
     let mut tx = pool.begin().await?;
     let (sheet, mut state) = lock_in_play(&mut tx, campaign, id, rules).await?;
-    if let Some(enc) = crate::board::fight::latest(&mut *tx, campaign).await? {
-        if enc.live && enc.fight.in_fight(&crate::board::character_token(id)) {
-            return Err(AppError::Conflict("IN_FIGHT"));
-        }
+    if let Some(enc) = crate::board::fight::latest(&mut *tx, campaign).await?
+        && enc.live
+        && enc.fight.in_fight(&crate::board::character_token(id))
+    {
+        return Err(AppError::Conflict("IN_FIGHT"));
     }
     let c = combatant(rules, &sheet, &state).ok_or(AppError::Conflict("NO_PLAY_SHEET"))?;
     match choice {

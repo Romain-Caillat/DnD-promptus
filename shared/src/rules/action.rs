@@ -288,9 +288,10 @@ fn resolve_targets(
                 side(t, false)?;
                 // A dying character can still be hit (each hit is a
                 // failed death save); anyone else down is out of reach.
-                if scene.get(t).is_some_and(|c| {
-                    c.hit_points == 0 && !c.death_saves.is_some_and(|d| !d.death_due)
-                }) {
+                if scene
+                    .get(t)
+                    .is_some_and(|c| c.hit_points == 0 && c.death_saves.is_none_or(|d| d.death_due))
+                {
                     return Err(Refusal::TargetDown { target: t.clone() });
                 }
                 if !seen.contains(t) {

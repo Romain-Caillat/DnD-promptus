@@ -268,18 +268,16 @@ pub async fn declare(
     Ok(())
 }
 
+/// A death row: the character, its last words, the player's choice,
+/// the session it happened in, the character's name.
+type DeathRow<Name> = (Uuid, Option<String>, Option<String>, Option<Uuid>, Name);
+
 /// The latest death of `player`'s characters, its row locked.
 async fn locked_death(
     tx: &mut Transaction<'_, Postgres>,
     player: &Player,
-) -> Result<(Uuid, Option<String>, Option<String>, Option<Uuid>, String), AppError> {
-    let row: Option<(
-        Uuid,
-        Option<String>,
-        Option<String>,
-        Option<Uuid>,
-        Option<String>,
-    )> = sqlx::query_as(
+) -> Result<DeathRow<String>, AppError> {
+    let row: Option<DeathRow<Option<String>>> = sqlx::query_as(
         "SELECT d.character_id, d.last_words, d.next, d.session_id, c.sheet->>'name'
              FROM character_deaths d JOIN characters c ON c.id = d.character_id
              WHERE d.player_id = $1 ORDER BY d.died_at DESC LIMIT 1 FOR UPDATE OF d",
