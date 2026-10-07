@@ -107,7 +107,9 @@ words), `importance`: `critical` (needed to go on) or `optional`.
 them by), `traits` (list), `flaw`, `motivation`, `disposition`
 (`friendly`, `neutral`, `hostile`), `wants`, `hides`, `stats`,
 `inventory` (`{ item, quantity }`), `sells` (`{ item, price }`, a shop),
-`faction`, `location`, `gm_notes`.
+`faction`, `location`, `permanent` (`true`: always with the party,
+like the Brasier's ship AI — the co-GM may speak for them in any scene),
+`gm_notes`.
 
 **`stats`** (NPCs and adversaries) — `abilities` (map of the rule
 system's ability ids to scores), `armor_class`, `hit_points`, `attacks`
@@ -133,10 +135,14 @@ effects in the rule system).
 
 **`factions`** — `id`, `name`, `description`, `diplomacy`, `affinity`
 (`{ start, min, max }`, default `0` in `-5..5`), `rivals` (faction
-ids), `art`, `gm_notes`.
+ids), `art`, `gm_notes`. In play the GM moves a faction's gauge from
+the evening screen: winning `n` points with a faction costs `n` with
+each of its rivals (bounded), losing favour moves no one else. Players
+see a faction once met: its name and gauge only.
 
 **`goals`** — campaign goals to tick off: `id`, `title`,
-`description`, `held_by` (a faction), `item`, `gm_notes`.
+`description`, `held_by` (a faction), `item`, `gm_notes`. Players see
+each goal's title and whether it is reached.
 
 ## What the validator reports
 

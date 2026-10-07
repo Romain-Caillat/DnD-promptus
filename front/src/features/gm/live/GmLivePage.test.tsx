@@ -50,6 +50,8 @@ const SCREEN = {
   startNode: 'sc_taverne',
   gaps: [],
   fronts: [],
+  factions: [],
+  goals: [],
   requests: [
     {
       id: 'r1',

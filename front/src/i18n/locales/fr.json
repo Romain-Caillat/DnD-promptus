@@ -509,7 +509,12 @@
       "scene": "Où vous êtes",
       "clues": "Les indices du groupe",
       "npcs": "Les gens rencontrés",
-      "empty": "Le groupe n'a encore rien découvert."
+      "empty": "Le groupe n'a encore rien découvert.",
+      "factions": "Les factions",
+      "affinity": "Affinité avec {{name}}",
+      "goals": "Les objectifs",
+      "goalDone": "✓ Atteint",
+      "goalOpen": "À atteindre"
     },
     "level": {
       "title": "Monter de niveau",
@@ -1433,7 +1438,10 @@
       "DUPLICATE_LINE": "Deux lignes portent le même identifiant.",
       "NOT_HIDDEN": "Cette ligne est déjà sur le comptoir.",
       "NO_SUCH_SHOP": "Cette boutique n’existe plus.",
-      "NO_SUCH_LINE": "Cette ligne n’existe plus."
+      "NO_SUCH_LINE": "Cette ligne n’existe plus.",
+      "UNKNOWN_FACTION": "Cette faction n'existe pas dans la campagne.",
+      "UNKNOWN_GOAL": "Cet objectif n'existe pas dans la campagne.",
+      "INVALID_DELTA": "Ce déplacement de jauge n'est pas valide."
     },
     "table": {
       "title": "La table",
@@ -1484,7 +1492,8 @@
       "other": "Toutes les scènes",
       "fronts": "Fronts",
       "advance": "+1",
-      "back": "−1"
+      "back": "−1",
+      "always": "Toujours là"
     },
     "board": {
       "title": "La carte",
@@ -1720,6 +1729,17 @@
       "discount": "Remise %",
       "save": "Enregistrer",
       "cancel": "Annuler"
+    },
+    "factions": {
+      "title": "Factions et objectifs",
+      "notLive": "Lancez la partie pour bouger une jauge ou cocher un objectif.",
+      "met": "Rencontrée",
+      "meet": "Rencontrer",
+      "lose": "{{name}} : −1",
+      "win": "{{name}} : +1",
+      "gauge": "Affinité de {{name}}",
+      "rivals": "Rivaux : {{rivals}} (un gain leur coûte autant)",
+      "goals": "Objectifs"
     }
   },
   "prep": {

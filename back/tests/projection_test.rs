@@ -53,6 +53,20 @@ fn what_players_are_entitled_to_is_there() {
         .map(|o| (o.label.as_str(), o.count))
         .collect();
     assert_eq!(opp, vec![(UNKNOWN_OPPONENT, 1), (UNKNOWN_OPPONENT, 4)]);
+    // campaign/track-factions-and-goals: the customs, met, with their
+    // gauge; the wreckers, not met, are absent; the goal, ticked.
+    let factions: Vec<(&str, i32, i32, i32)> = view
+        .factions
+        .iter()
+        .map(|f| (f.name.as_str(), f.affinity, f.min, f.max))
+        .collect();
+    assert_eq!(factions, vec![("La douane royale", 1, -5, 5)]);
+    let goals: Vec<(&str, bool)> = view
+        .goals
+        .iter()
+        .map(|g| (g.title.as_str(), g.done))
+        .collect();
+    assert_eq!(goals, vec![("Rallumer le phare", true)]);
 }
 
 #[test]

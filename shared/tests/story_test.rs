@@ -3,8 +3,8 @@
 //! `story-validator.test.ts` and `world.test.ts`.
 
 use promptus_shared::story::{
-    Campaign, Clue, ClueReveal, Exit, Importance, Issue, NodeStatus, Revelation, Severity,
-    WorldError, WorldState, from_yaml, to_yaml, validate,
+    AffinityShift, Campaign, Clue, ClueReveal, Exit, Importance, Issue, NodeStatus, Revelation,
+    Severity, WorldError, WorldState, from_yaml, to_yaml, validate,
 };
 
 const FIXTURE: &str = include_str!("../../content/fixtures/phare-de-kerbrume.yaml");
@@ -393,4 +393,82 @@ fn only_npcs_and_adversaries_can_be_revealed() {
     w.reveal_entity(&c, "adv_contrebandier").unwrap();
     assert!(w.reveal_entity(&c, "lieu_port").is_err());
     assert_eq!(w.revealed.len(), 2);
+}
+
+#[test]
+fn winning_a_factions_favour_costs_as_much_with_its_rivals() {
+    let c = fixture();
+    let mut w = WorldState::default();
+    assert_eq!(w.affinity(&c, "fac_contrebandiers").unwrap(), -2);
+    assert!(w.met_factions.is_empty());
+
+    // +2 with the customs: the wreckers lose 2, both bounded.
+    let shifts = w.shift_affinity(&c, "fac_douane", 2).unwrap();
+    assert_eq!(
+        shifts,
+        vec![
+            AffinityShift {
+                faction: "fac_douane".into(),
+                from: 0,
+                to: 2
+            },
+            AffinityShift {
+                faction: "fac_contrebandiers".into(),
+                from: -2,
+                to: -4
+            },
+        ]
+    );
+    // Dealing with them is meeting them; not their rivals.
+    assert!(w.met_factions.contains("fac_douane"));
+    assert!(!w.met_factions.contains("fac_contrebandiers"));
+
+    // The floor holds: only what moved comes back.
+    let shifts = w.shift_affinity(&c, "fac_douane", 4).unwrap();
+    assert_eq!(shifts[0].to, 5);
+    assert_eq!(
+        shifts[1],
+        AffinityShift {
+            faction: "fac_contrebandiers".into(),
+            from: -4,
+            to: -5
+        }
+    );
+    assert_eq!(w.shift_affinity(&c, "fac_douane", 1).unwrap(), vec![]);
+
+    // Losing favour moves no rival.
+    let shifts = w.shift_affinity(&c, "fac_douane", -3).unwrap();
+    assert_eq!(shifts.len(), 1);
+    assert_eq!(w.affinity(&c, "fac_contrebandiers").unwrap(), -5);
+    assert_eq!(w.affinity(&c, "fac_douane").unwrap(), 2);
+
+    assert_eq!(
+        w.shift_affinity(&c, "fac_x", 1),
+        Err(WorldError::UnknownFaction("fac_x".into()))
+    );
+    assert!(w.affinity(&c, "fac_x").is_err());
+    assert!(w.meet_faction(&c, "fac_contrebandiers").unwrap());
+    assert!(!w.meet_faction(&c, "fac_contrebandiers").unwrap());
+    assert!(w.meet_faction(&c, "fac_x").is_err());
+
+    // Saved and loaded with the rest of the world.
+    let back: WorldState = serde_json::from_value(serde_json::to_value(&w).unwrap()).unwrap();
+    assert_eq!(back, w);
+    let old: WorldState = serde_json::from_str(r#"{"current_node":"sc_taverne"}"#).unwrap();
+    assert!(old.faction_affinity.is_empty() && old.goals_done.is_empty());
+}
+
+#[test]
+fn a_goal_is_ticked_and_unticked() {
+    let c = fixture();
+    let mut w = WorldState::default();
+    assert!(w.set_goal(&c, "but_lumiere", true).unwrap());
+    assert!(!w.set_goal(&c, "but_lumiere", true).unwrap());
+    assert!(w.goals_done.contains("but_lumiere"));
+    assert!(w.set_goal(&c, "but_lumiere", false).unwrap());
+    assert!(w.goals_done.is_empty());
+    assert_eq!(
+        w.set_goal(&c, "but_x", true),
+        Err(WorldError::UnknownGoal("but_x".into()))
+    );
 }

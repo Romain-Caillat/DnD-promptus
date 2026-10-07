@@ -1005,14 +1005,68 @@ adversaire absent des règles) ; l'acte 1 des Corsaires tel que joué
 signale la route du Greyhound seulement dans une scène facultative ;
 l'acte 1 réécrit des Corsaires est prêt.
 
-### `campaign/track-factions-and-goals` · todo · à spécifier
+### `campaign/track-factions-and-goals` · doing — reste l'essai réel au Brasier
 
 **Périmètre** — Jauges d'affinité par faction, où gagner la faveur des
 uns fait baisser celle de leurs rivaux ; objectifs de campagne à cocher
 (les quatre composants du Brasier) ; un PNJ permanent joué par le co-MJ
 (l'IA de bord LUMEN).
 
+**Spécification** — Les données existent déjà dans le format de
+campagne (`factions` avec `affinity { start, min, max }` et `rivals`,
+`goals` avec `held_by` et `item`) ; ce ticket les fait vivre.
+
+- *Monde* : l'affinité de chaque faction (absente = `start`), les
+  factions rencontrées, les objectifs atteints. Trois gestes purs dans
+  `shared/` : déplacer une affinité, rencontrer une faction, cocher ou
+  décocher un objectif.
+- *Rivalités* : gagner `n` points auprès d'une faction en fait perdre
+  `n` à chacun de ses rivaux (bornés par leurs `min`/`max`) ; perdre la
+  faveur d'une faction ne rapproche pas ses rivaux (INTERPRÉTATION, à
+  valider par Romain). Déplacer une affinité fait rencontrer la faction.
+- *Le MJ* : depuis l'écran de soirée, un panneau « Factions et
+  objectifs » : chaque jauge (−/+, rencontrée ou non, les rivaux
+  rappelés), « Rencontrer » sans bouger la jauge, chaque objectif à
+  cocher. Un geste = une écriture du monde sous le verrou de campagne,
+  comme les autres révélations (session en jeu).
+- *Le journal* : la rencontre et la jauge d'une faction rencontrée sont
+  des lignes partagées (« Les Sereth : affinité 0 → 2 ») ; le recul d'un
+  rival encore inconnu reste une ligne MJ. Un objectif coché ou décoché
+  est une ligne partagée.
+- *Les joueurs* (projection unique, liste blanche) : les factions
+  rencontrées — nom, affinité et ses bornes — et les objectifs —
+  titre, atteint ou non — dans l'onglet Journal. Jamais la description,
+  la diplomatie, les notes MJ d'une faction, ni la description, le
+  détenteur ou les notes MJ d'un objectif (le marqueur de
+  `projection_test` les couvre déjà).
+- *PNJ permanent* : un PNJ marqué `permanent: true` accompagne le groupe
+  partout. Le co-MJ le connaît dans chaque scène (contexte « toujours
+  là ») et le MJ peut lui faire donner des répliques depuis n'importe
+  quelle scène. LUMEN l'est dans le Brasier.
+- *Le co-MJ* : son contexte reçoit les affinités et les objectifs.
+
+**Fini quand** — Au Brasier, Romain fait gagner deux points auprès des
+Sereth : la jauge des Sereth monte sur les téléphones, celle des Vorr
+descend ; il coche « Obtenir la Lentille-écho » et la table le voit ;
+LUMEN donne une réplique dans une scène où elle n'est pas listée.
+
 **Origine** — `dnd-save/DnD_07-06-2026/Univers.md`
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). Le monde porte l'affinité, les factions rencontrées
+et les objectifs atteints (`shared/src/story/world.rs` :
+`shift_affinity`, `meet_faction`, `set_goal`) ; deux nouvelles
+révélations de la soirée (`faction`, `goal`) écrivent le journal comme
+spécifié. Le panneau « Factions et objectifs » de l'écran de soirée
+bouge les jauges et coche les objectifs ; l'onglet Journal des joueurs
+montre les factions rencontrées (jauge) et les objectifs. Un PNJ
+`permanent: true` apparaît « Toujours là » dans chaque scène du MJ (et
+donc dans le choix du PNJ qui parle au co-MJ) et dans le contexte du
+co-MJ, avec les affinités et les objectifs ; LUMEN l'est au Brasier.
+Tests : `factions_test.rs`, `story_test.rs`, `projection_test.rs`
+(marqueurs), contexte du co-MJ, `FactionsPanel.test`,
+`PlayerHomePage.test`. La règle « un recul ne rapproche pas les
+rivaux » reste à valider par Romain.
 
 ### `campaign/edit-rule-system` · doing — reste une vraie modification jouée à la soirée suivante
 

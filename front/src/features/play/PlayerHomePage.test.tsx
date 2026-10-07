@@ -185,6 +185,11 @@ describe('PlayerHomePage', () => {
             scene: null,
             clues: ['Gwen a vu une lanterne sur la falaise.'],
             npcs: [{ id: 'pnj_loic', name: 'Loïc', title: 'Le mousse', appearance: '' }],
+            factions: [{ id: 'fac_douane', name: 'La douane royale', affinity: 2, min: -5, max: 5 }],
+            goals: [
+              { id: 'but_lumiere', title: 'Rallumer le phare', done: true },
+              { id: 'but_carte', title: 'Retrouver la carte', done: false },
+            ],
           },
         },
       }),
@@ -195,6 +200,12 @@ describe('PlayerHomePage', () => {
     expect(await screen.findByText('Gwen a vu une lanterne sur la falaise.')).toBeInTheDocument()
     expect(screen.getByText('Loïc')).toBeInTheDocument()
     expect(screen.getByText('Une ville minière.')).toBeInTheDocument()
+    // The factions met, with their gauge; the goals, reached or not.
+    expect(screen.getByRole('meter', { name: 'Affinité avec La douane royale' })).toHaveAttribute('aria-valuenow', '2')
+    expect(screen.getByText('+2')).toBeInTheDocument()
+    const goals = screen.getByRole('heading', { name: 'Les objectifs' }).parentElement!
+    const items = within(goals).getAllByRole('listitem').map((li) => li.textContent)
+    expect(items).toEqual(['Rallumer le phare✓ Atteint', 'Retrouver la carteÀ atteindre'])
   })
 
   it('gives a spectator the game, the map and the journal, no sheet', async () => {
@@ -203,7 +214,7 @@ describe('PlayerHomePage', () => {
       'GET /api/play/c1/me': () => home(null, 'spectator'),
       'GET /api/play/c1/view': () => ({
         status: 200,
-        body: { data: { ...CAMPAIGN, party: [], scene: null, clues: [], npcs: [] } },
+        body: { data: { ...CAMPAIGN, party: [], scene: null, clues: [], npcs: [], factions: [], goals: [] } },
       }),
     })
     renderHome()

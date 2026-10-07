@@ -91,6 +91,8 @@ struct SceneNpc {
     wants: String,
     hides: String,
     met: bool,
+    /// Not listed in the scene: always with the party.
+    permanent: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -142,8 +144,28 @@ fn gm_scene(story: &Campaign, world: &WorldState) -> Option<GmScene> {
                     wants: n.wants.clone(),
                     hides: n.hides.clone(),
                     met: world.revealed.contains(&n.id),
+                    permanent: false,
                 })
             })
+            // campaign/track-factions-and-goals: the party's companion
+            // (LUMEN) speaks in every scene.
+            .chain(
+                story
+                    .npcs
+                    .iter()
+                    .filter(|n| n.permanent && !node.npcs.iter().any(|p| p.npc == n.id))
+                    .map(|n| SceneNpc {
+                        id: n.id.clone(),
+                        name: n.name.clone(),
+                        title: n.title.clone(),
+                        role: String::new(),
+                        roleplay: n.roleplay.clone(),
+                        wants: n.wants.clone(),
+                        hides: n.hides.clone(),
+                        met: world.revealed.contains(&n.id),
+                        permanent: true,
+                    }),
+            )
             .collect(),
         exits: node
             .exits
@@ -170,6 +192,28 @@ struct FrontView {
     goal: String,
     steps: Vec<String>,
     progress: u32,
+}
+
+/// A faction's gauge as the GM moves it.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct FactionGauge {
+    id: String,
+    name: String,
+    affinity: i32,
+    min: i32,
+    max: i32,
+    met: bool,
+    rivals: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GoalCheck {
+    id: String,
+    title: String,
+    held_by: Option<String>,
+    done: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -312,6 +356,21 @@ pub async fn live_screen(
             goal: f.goal.clone(),
             steps: f.steps.iter().map(|s| s.label.clone()).collect(),
             progress: world.front_progress.get(&f.id).copied().unwrap_or(0),
+        }).collect::<Vec<_>>(),
+        "factions": story.factions.iter().map(|f| FactionGauge {
+            id: f.id.clone(),
+            name: f.name.clone(),
+            affinity: world.affinity(story, &f.id).unwrap_or(f.affinity.start),
+            min: f.affinity.min,
+            max: f.affinity.max,
+            met: world.met_factions.contains(&f.id),
+            rivals: f.rivals.iter().filter_map(|r| story.faction(r)).map(|r| r.name.clone()).collect(),
+        }).collect::<Vec<_>>(),
+        "goals": story.goals.iter().map(|g| GoalCheck {
+            id: g.id.clone(),
+            title: g.title.clone(),
+            held_by: g.held_by.as_deref().and_then(|h| story.faction(h)).map(|h| h.name.clone()),
+            done: world.goals_done.contains(&g.id),
         }).collect::<Vec<_>>(),
         "requests": gm_requests,
         "journal": knowledge::journal(pool, row.id, false).await?,

@@ -53,6 +53,7 @@ import { JournalPanel } from './JournalPanel'
 import { LaunchPanel } from './LaunchPanel'
 import { MediaPanel } from './MediaPanel'
 import { RequestsPanel } from './RequestsPanel'
+import { FactionsPanel } from './FactionsPanel'
 import { ScenePanel } from './ScenePanel'
 import { ShopsPanel } from './ShopsPanel'
 import { TablePanel } from './TablePanel'
@@ -349,6 +350,13 @@ export function GmLivePage() {
               onChoose={async (at) => {
                 await act(() => chooseDate(campaignId, at), setPlan)
               }}
+            />
+          )}
+          {session && (
+            <FactionsPanel
+              screen={screen}
+              live={session.status === 'live'}
+              onReveal={(r) => void act(() => reveal(campaignId, r))}
             />
           )}
           {shops && (

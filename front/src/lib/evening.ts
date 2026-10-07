@@ -223,6 +223,16 @@ interface GmJournalLine {
   createdAt: string
 }
 
+export interface FactionGauge {
+  id: string
+  name: string
+  affinity: number
+  min: number
+  max: number
+  met: boolean
+  rivals: string[]
+}
+
 /** The GM's live screen (`GET /api/campaigns/{id}/session`). */
 /** What a scene ahead needs the table to know, and where it can still be learned. */
 interface KnowledgeGap {
@@ -251,11 +261,14 @@ export interface LiveScreen {
   scene: {
     node: GmNode
     clues: { id: string; text: string; discovery: string; found: boolean; revelation: string }[]
-    npcs: { id: string; name: string; title: string; role: string; roleplay: string; wants: string; hides: string; met: boolean }[]
+    npcs: { id: string; name: string; title: string; role: string; roleplay: string; wants: string; hides: string; met: boolean; permanent: boolean }[]
     exits: { to: string; label: string; title: string; visited: boolean }[]
   } | null
   nodes: { id: string; title: string; act: string; visited: boolean; current: boolean }[]
   startNode: string | null
+  /** Each faction's gauge, met or not, with its rivals' names. */
+  factions: FactionGauge[]
+  goals: { id: string; title: string; heldBy: string | null; done: boolean }[]
   /** What the next scenes need that the table does not know yet. */
   gaps: KnowledgeGap[]
   fronts: { id: string; name: string; goal: string; steps: string[]; progress: number }[]
@@ -274,6 +287,8 @@ export type Reveal =
   | { kind: 'npc'; npc: string }
   | { kind: 'front'; front: string; delta: number }
   | { kind: 'resolve'; node: string }
+  | { kind: 'faction'; faction: string; delta: number }
+  | { kind: 'goal'; goal: string; done: boolean }
 
 export type Decision =
   | { kind: 'accept'; reason: string }

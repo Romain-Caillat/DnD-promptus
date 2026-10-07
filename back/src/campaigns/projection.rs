@@ -11,7 +11,8 @@
 //! transition, player hooks, fallback note and notes; what an NPC wants,
 //! hides, their traits, flaw, motivation, stats and inventory; the name
 //! of an NPC or adversary the players have not met, and any hit points
-//! or stat block. Art fields are prompts for the image generator, not
+//! or stat block; a faction not met yet, and a faction's description,
+//! diplomacy and rivals; a goal's description and holder. Art fields are prompts for the image generator, not
 //! player text.
 //!
 //! Every player and shared-screen route (`app::player_routes`,
@@ -71,6 +72,32 @@ pub struct PlayerCampaignView {
     pub clues: Vec<String>,
     /// NPCs the players have met.
     pub npcs: Vec<NpcView>,
+    /// Factions the players have met, with their gauge.
+    pub factions: Vec<FactionView>,
+    /// The campaign's goals, ticked off or not.
+    pub goals: Vec<GoalView>,
+}
+
+/// A met faction: its name and gauge — never its description,
+/// diplomacy or GM notes.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FactionView {
+    pub id: String,
+    pub name: String,
+    pub affinity: i32,
+    pub min: i32,
+    pub max: i32,
+}
+
+/// A goal: its title and whether it is reached — never its
+/// description, holder or GM notes.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GoalView {
+    pub id: String,
+    pub title: String,
+    pub done: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -215,6 +242,27 @@ pub fn project_for_players(campaign: &Campaign, world: &WorldState) -> PlayerCam
             .iter()
             .filter(|n| met(&n.id))
             .filter_map(|n| npc_view(campaign, &n.id))
+            .collect(),
+        factions: campaign
+            .factions
+            .iter()
+            .filter(|f| world.met_factions.contains(&f.id))
+            .map(|f| FactionView {
+                id: f.id.clone(),
+                name: f.name.clone(),
+                affinity: world.affinity(campaign, &f.id).unwrap_or(f.affinity.start),
+                min: f.affinity.min,
+                max: f.affinity.max,
+            })
+            .collect(),
+        goals: campaign
+            .goals
+            .iter()
+            .map(|g| GoalView {
+                id: g.id.clone(),
+                title: g.title.clone(),
+                done: world.goals_done.contains(&g.id),
+            })
             .collect(),
     }
 }

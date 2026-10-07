@@ -115,7 +115,10 @@ export function ScenePanel({
           {scene.npcs.map((n) => (
             <details key={n.id} className="rounded-lg border border-line px-2 py-1.5">
               <summary className="flex cursor-pointer items-center justify-between gap-2 text-body font-bold">
-                {n.name}
+                <span>
+                  {n.name}
+                  {n.permanent && <span className="ml-1.5 text-caption font-normal text-mute-soft">{t('gmLive.scene.always')}</span>}
+                </span>
                 {!n.met && (
                   <Btn disabled={!live} onClick={() => onReveal({ kind: 'npc', npc: n.id })}>
                     {t('gmLive.scene.meet')}

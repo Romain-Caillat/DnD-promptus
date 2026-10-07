@@ -36,6 +36,15 @@ pub struct WorldState {
     /// Free flags the GM sets (« pont_coupe »).
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub flags: BTreeMap<String, FlagValue>,
+    /// Each faction's affinity once it moved (absent = its `start`).
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub faction_affinity: BTreeMap<Id, i32>,
+    /// Factions the players have met: only those reach their screen.
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub met_factions: BTreeSet<Id>,
+    /// Campaign goals ticked off.
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub goals_done: BTreeSet<Id>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -60,6 +69,8 @@ pub enum WorldError {
     UnknownClue(Id),
     UnknownFront(Id),
     UnknownEntity(Id),
+    UnknownFaction(Id),
+    UnknownGoal(Id),
 }
 
 impl std::fmt::Display for WorldError {
@@ -69,6 +80,8 @@ impl std::fmt::Display for WorldError {
             Self::UnknownClue(id) => write!(f, "unknown clue `{id}`"),
             Self::UnknownFront(id) => write!(f, "unknown front `{id}`"),
             Self::UnknownEntity(id) => write!(f, "unknown NPC or adversary `{id}`"),
+            Self::UnknownFaction(id) => write!(f, "unknown faction `{id}`"),
+            Self::UnknownGoal(id) => write!(f, "unknown goal `{id}`"),
         }
     }
 }
@@ -93,6 +106,14 @@ pub struct FrontAdvance {
     pub to: u32,
     /// Steps newly reached (0-based), in order; empty when going back.
     pub reached: Vec<usize>,
+}
+
+/// One faction's affinity moving.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AffinityShift {
+    pub faction: Id,
+    pub from: i32,
+    pub to: i32,
 }
 
 impl WorldState {
@@ -202,5 +223,117 @@ impl WorldState {
 
     pub fn set_flag(&mut self, flag: &str, value: FlagValue) {
         self.flags.insert(flag.to_string(), value);
+    }
+
+    /// A faction's affinity now: its `start` until it moved.
+    ///
+    /// # Errors
+    ///
+    /// `UnknownFaction` when the campaign has no such faction.
+    pub fn affinity(&self, campaign: &Campaign, faction: &str) -> Result<i32, WorldError> {
+        let f = campaign
+            .faction(faction)
+            .ok_or_else(|| WorldError::UnknownFaction(faction.to_string()))?;
+        Ok(self
+            .faction_affinity
+            .get(faction)
+            .copied()
+            .unwrap_or(f.affinity.start))
+    }
+
+    /// The players meet `faction`: it now shows on their screen.
+    /// Returns whether it was new.
+    ///
+    /// # Errors
+    ///
+    /// `UnknownFaction` when the campaign has no such faction.
+    pub fn meet_faction(&mut self, campaign: &Campaign, faction: &str) -> Result<bool, WorldError> {
+        if campaign.faction(faction).is_none() {
+            return Err(WorldError::UnknownFaction(faction.to_string()));
+        }
+        Ok(self.met_factions.insert(faction.to_string()))
+    }
+
+    /// Move a faction's affinity by `delta`, within its bounds; dealing
+    /// with a faction means meeting it. Winning a faction's favour
+    /// (`delta > 0`) costs as much with each of its rivals; losing it
+    /// moves no one else. The shifts that actually happened come back,
+    /// the faction first.
+    ///
+    /// # Errors
+    ///
+    /// `UnknownFaction` when the campaign has no such faction (a rival
+    /// missing from the campaign is skipped: the validator reports it).
+    pub fn shift_affinity(
+        &mut self,
+        campaign: &Campaign,
+        faction: &str,
+        delta: i32,
+    ) -> Result<Vec<AffinityShift>, WorldError> {
+        let f = campaign
+            .faction(faction)
+            .ok_or_else(|| WorldError::UnknownFaction(faction.to_string()))?;
+        self.met_factions.insert(faction.to_string());
+        let mut shifts = Vec::new();
+        self.move_affinity(campaign, &f.id, delta, &mut shifts);
+        if delta > 0 {
+            for rival in &f.rivals {
+                if rival != faction {
+                    self.move_affinity(campaign, rival, -delta, &mut shifts);
+                }
+            }
+        }
+        Ok(shifts)
+    }
+
+    fn move_affinity(
+        &mut self,
+        campaign: &Campaign,
+        faction: &str,
+        delta: i32,
+        shifts: &mut Vec<AffinityShift>,
+    ) {
+        let Some(f) = campaign.faction(faction) else {
+            return;
+        };
+        let from = self
+            .faction_affinity
+            .get(faction)
+            .copied()
+            .unwrap_or(f.affinity.start);
+        let (lo, hi) = (
+            f.affinity.min.min(f.affinity.max),
+            f.affinity.max.max(f.affinity.min),
+        );
+        let to = from.saturating_add(delta).clamp(lo, hi);
+        if to != from {
+            self.faction_affinity.insert(faction.to_string(), to);
+            shifts.push(AffinityShift {
+                faction: faction.to_string(),
+                from,
+                to,
+            });
+        }
+    }
+
+    /// Tick (or untick) a campaign goal. Returns whether it changed.
+    ///
+    /// # Errors
+    ///
+    /// `UnknownGoal` when the campaign has no such goal.
+    pub fn set_goal(
+        &mut self,
+        campaign: &Campaign,
+        goal: &str,
+        done: bool,
+    ) -> Result<bool, WorldError> {
+        if campaign.goal(goal).is_none() {
+            return Err(WorldError::UnknownGoal(goal.to_string()));
+        }
+        Ok(if done {
+            self.goals_done.insert(goal.to_string())
+        } else {
+            self.goals_done.remove(goal)
+        })
     }
 }

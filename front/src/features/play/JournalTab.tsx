@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { AffinityGauge } from '@/components/game/AffinityGauge'
 import type { PlayerView } from '@/lib/campaigns'
 import { fetchCampaignView } from '@/lib/play'
 
@@ -9,7 +10,8 @@ type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; view: Pl
  * The Journal tab (planche « Jouer », onglet Journal): what the whole
  * group knows, read from the server's player projection (`GET
  * /api/play/…/view`) — what the players were told, the scene they are
- * in, the clues found and the people met. Nothing here is written on the
+ * in, the clues found, the people and factions met and the campaign's
+ * goals. Nothing here is written on the
  * phone. `refreshKey` moves when the live channel says the world or the
  * story changed.
  */
@@ -79,6 +81,34 @@ export function JournalTab({ campaignId, refreshKey }: { campaignId: string; ref
                 <b className="text-body">{npc.name}</b>
                 {npc.title && <small className="text-caption text-mute-soft">{npc.title}</small>}
                 {npc.appearance && <small className="text-caption text-mute">{npc.appearance}</small>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {view.factions.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h2 className="type-label">{t('play.journal.factions')}</h2>
+          <ul className="flex flex-col gap-1.5">
+            {view.factions.map((f) => (
+              <li key={f.id} className="flex flex-col gap-1.5 rounded-button border border-line bg-well px-3 py-2.5">
+                <b className="text-body">{f.name}</b>
+                <AffinityGauge value={f.affinity} min={f.min} max={f.max} label={t('play.journal.affinity', { name: f.name })} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {view.goals.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h2 className="type-label">{t('play.journal.goals')}</h2>
+          <ul className="flex flex-col gap-1.5">
+            {view.goals.map((g) => (
+              <li key={g.id} className="flex items-center justify-between gap-2 rounded-button border border-line px-3 py-2.5">
+                <span className={g.done ? 'text-body text-mute line-through' : 'text-body'}>{g.title}</span>
+                <small className="text-caption font-bold">
+                  {g.done ? t('play.journal.goalDone') : t('play.journal.goalOpen')}
+                </small>
               </li>
             ))}
           </ul>

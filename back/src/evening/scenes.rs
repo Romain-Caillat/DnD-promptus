@@ -30,6 +30,11 @@ pub enum Reveal {
     Front { front: String, delta: i32 },
     /// The scene is resolved.
     Resolve { node: String },
+    /// A faction's affinity moves (its rivals follow on a gain); `delta`
+    /// 0 only meets it.
+    Faction { faction: String, delta: i32 },
+    /// A campaign goal is ticked off (or reopened).
+    Goal { goal: String, done: bool },
 }
 
 /// Apply `reveal` to the live session of `campaign`.
@@ -38,7 +43,7 @@ pub enum Reveal {
 ///
 /// As `session::lock_for_gm` (the session must be live); 400
 /// `UNKNOWN_NODE`, `UNKNOWN_CLUE`, `UNKNOWN_NPC`, `UNKNOWN_FRONT`,
-/// `INVALID_DELTA`.
+/// `UNKNOWN_FACTION`, `UNKNOWN_GOAL`, `INVALID_DELTA`.
 pub async fn reveal(
     pool: &PgPool,
     gm: &CurrentGm,
@@ -142,6 +147,80 @@ pub async fn reveal(
             world
                 .resolve_node(story, node)
                 .map_err(|_| AppError::BadRequest("UNKNOWN_NODE"))?;
+        }
+        Reveal::Faction { faction, delta } => {
+            if delta.abs() > 10 {
+                return Err(AppError::BadRequest("INVALID_DELTA"));
+            }
+            let f = story
+                .faction(faction)
+                .ok_or(AppError::BadRequest("UNKNOWN_FACTION"))?;
+            let unknown = |_| AppError::BadRequest("UNKNOWN_FACTION");
+            let met = world.meet_faction(story, faction).map_err(unknown)?;
+            let shifts = if *delta == 0 {
+                Vec::new()
+            } else {
+                world
+                    .shift_affinity(story, faction, *delta)
+                    .map_err(unknown)?
+            };
+            if met {
+                let text = format!("Rencontre : {}.", f.name);
+                knowledge::write(
+                    &mut tx,
+                    campaign,
+                    sid,
+                    JournalKind::Note,
+                    Some(faction),
+                    &text,
+                    true,
+                )
+                .await?;
+            }
+            for s in &shifts {
+                let name = story
+                    .faction(&s.faction)
+                    .map_or(s.faction.as_str(), |f| f.name.as_str());
+                let text = format!("{name} : affinité {} → {}", s.from, s.to);
+                // A rival the table has not met moves behind the screen.
+                let shared = world.met_factions.contains(&s.faction);
+                knowledge::write(
+                    &mut tx,
+                    campaign,
+                    sid,
+                    JournalKind::Note,
+                    Some(&s.faction),
+                    &text,
+                    shared,
+                )
+                .await?;
+            }
+        }
+        Reveal::Goal { goal, done } => {
+            let changed = world
+                .set_goal(story, goal, *done)
+                .map_err(|_| AppError::BadRequest("UNKNOWN_GOAL"))?;
+            let title = story
+                .goal(goal)
+                .map(|g| g.title.as_str())
+                .unwrap_or_default();
+            if changed {
+                let text = if *done {
+                    format!("Objectif atteint : {title}.")
+                } else {
+                    format!("Objectif rouvert : {title}.")
+                };
+                knowledge::write(
+                    &mut tx,
+                    campaign,
+                    sid,
+                    JournalKind::Note,
+                    Some(goal),
+                    &text,
+                    true,
+                )
+                .await?;
+            }
         }
     }
     let world = row.world.clone();
