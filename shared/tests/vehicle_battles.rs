@@ -282,8 +282,13 @@ fn the_crew_turn_ends_when_everyone_is_done_and_the_enemy_plays() {
     let s = battle
         .crew_act(&b, "toubib", "se_braquer", &Aim::default(), &mut dice)
         .unwrap();
+    // The GM plays LUMEN while the crew acts; it never holds the turn.
+    let s = s
+        .battle
+        .crew_act(&b, &lumen.id, "scanner", &aim_at("eux"), &mut dice)
+        .unwrap();
+    assert!(s.battle.ship("eux").unwrap().scanned);
     let s = s.battle.pass(&b, "toubib", &mut dice).unwrap();
-    let s = s.battle.pass(&b, &lumen.id, &mut dice).unwrap();
     assert!(!s.battle.crew_turn(), "the corvette's turn");
     // Braced until the ship's next turn: -4 on the corvette's 5.
     let s = s
@@ -316,7 +321,7 @@ fn a_hull_threshold_breaks_something_aboard_and_it_can_be_repaired() {
         .unwrap()
         .battle;
     let mut dice = SeededDice::new(1);
-    for m in battle.crew.clone() {
+    for m in battle.crew.clone().into_iter().filter(|m| !m.npc) {
         battle = battle.pass(&b, &m.id, &mut dice).unwrap().battle;
     }
     // Hit (19), then the damage die: 1 = fire.

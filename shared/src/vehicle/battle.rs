@@ -1197,7 +1197,9 @@ impl Battle {
             c.actions = per_turn.saturating_sub(c.shaken);
             c.shaken = 0;
             c.attacks = attacks;
-            c.done = c.actions == 0;
+            // The ship's own holder (LUMEN) never holds the turn: the GM plays
+            // it while the players act.
+            c.done = c.actions == 0 || c.npc;
         }
     }
 
