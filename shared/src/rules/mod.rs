@@ -13,6 +13,7 @@
 //!   that report and never block (`lint::lint`, `lint::balance_report`)
 //! - [`character`] — whether a player's character follows the rules
 //!   (reports, never blocks)
+//! - [`house`] — the GM's house rules, formalised: triggers, effects, cases
 //! - [`changes`] — what changed between two versions, as players read it
 //! - [`variant`] — "what if" edits applied to a draft before it loads
 
@@ -24,6 +25,7 @@ pub mod conditions;
 pub mod dice;
 pub mod events;
 pub mod formula;
+pub mod house;
 pub mod lint;
 pub mod load;
 pub mod model;

@@ -14,8 +14,8 @@ use serde::Serialize;
 
 use super::check::OutcomeBand;
 use super::model::{
-    ActionDef, AttackAbility, CooldownMeaning, LongRangeRule, NaturalBand, PrecisionRule,
-    RuleSystem, Tag, ZeroHpRule,
+    ActionDef, AttackAbility, CooldownMeaning, HouseRule, LongRangeRule, NaturalBand,
+    PrecisionRule, RuleSystem, Tag, ZeroHpRule,
 };
 
 /// The part of the rules page a change belongs to.
@@ -336,6 +336,33 @@ pub fn rule_changes(old: &RuleSystem, new: &RuleSystem) -> Vec<RuleChange> {
             text(&n.formula),
         );
     }
+    // A class's own hit points or armour class, where both versions
+    // have the class.
+    for nc in &new.classes {
+        let Some(oc) = old.class(&nc.id) else {
+            continue;
+        };
+        for (stat, of, nf) in [
+            (
+                &new.stats.hit_points.name,
+                old.hit_points_formula(Some(oc)),
+                new.hit_points_formula(Some(nc)),
+            ),
+            (
+                &new.stats.armor_class.name,
+                old.armor_class_formula(Some(oc)),
+                new.armor_class_formula(Some(nc)),
+            ),
+        ] {
+            d.cmp(
+                s,
+                &format!("{} · {stat}", nc.name),
+                Field::Formula,
+                text(of),
+                text(nf),
+            );
+        }
+    }
 
     d.lists(
         Section::Difficulties,
@@ -415,6 +442,16 @@ pub fn rule_changes(old: &RuleSystem, new: &RuleSystem) -> Vec<RuleChange> {
         precision(old.attack.precision),
         precision(new.attack.precision),
     );
+    let bonus = |sys: &RuleSystem| {
+        text(
+            sys.attack
+                .bonus
+                .as_ref()
+                .map(|b| format!("{} : {}", b.name, b.formula))
+                .unwrap_or_default(),
+        )
+    };
+    d.cmp(s, "", Field::Formula, bonus(old), bonus(new));
 
     d.lists(
         Section::Turn,
@@ -605,10 +642,26 @@ pub fn rule_changes(old: &RuleSystem, new: &RuleSystem) -> Vec<RuleChange> {
     };
     d.cmp(s, "", Field::Flee, flee(old), flee(new));
 
+    // Only the house rules players may read: one that shows its effect
+    // alone is not named to them, nor are its changes.
+    let shown = |sys: &RuleSystem| -> Vec<HouseRule> {
+        sys.house_rules
+            .iter()
+            .filter(|h| h.shown_to_players())
+            .cloned()
+            .collect()
+    };
+    let judged = |h: &HouseRule| {
+        code(if h.formal.is_some() {
+            "house_judged"
+        } else {
+            "house_by_gm"
+        })
+    };
     d.lists(
         Section::HouseRules,
-        &old.house_rules,
-        &new.house_rules,
+        &shown(old),
+        &shown(new),
         |x| &x.id,
         |x| x.name.clone(),
         |d, o, n| {
@@ -620,6 +673,23 @@ pub fn rule_changes(old: &RuleSystem, new: &RuleSystem) -> Vec<RuleChange> {
                     Some(text(&o.text)),
                     Some(text(&n.text)),
                 );
+            }
+            match (&o.formal, &n.formal) {
+                (Some(a), Some(b)) if a != b => d.push(
+                    Section::HouseRules,
+                    &n.name,
+                    Field::Rule,
+                    Some(judged(o)),
+                    Some(code("house_judged_new")),
+                ),
+                (a, b) if a.is_some() != b.is_some() => d.push(
+                    Section::HouseRules,
+                    &n.name,
+                    Field::Rule,
+                    Some(judged(o)),
+                    Some(judged(n)),
+                ),
+                _ => {}
             }
         },
     );

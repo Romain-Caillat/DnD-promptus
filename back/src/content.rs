@@ -1,5 +1,8 @@
 //! Content compiled into the binary: the rule systems, the maps and the
-//! sprite packs of the two witness worlds (`content/`).
+//! sprite packs of the two witness worlds (`content/`), and the D&D 5e
+//! SRD preset (`engine/add-srd-preset`), which has rules, a map and a
+//! scenario but no theme or sprite pack of its own yet: its campaigns
+//! fall back to the first pack and the plain map tiles.
 //!
 //! The rule systems here are the presets a campaign starts from; a
 //! campaign's own versions are stored in the database and resolved by
@@ -29,14 +32,15 @@ const LOOK_FILES: [&str; 2] = [
     include_str!("../../content/sprites/looks/corsaires.yaml"),
     include_str!("../../content/sprites/looks/brasier.yaml"),
 ];
-const RULE_FILES: [&str; 2] = [
+const RULE_FILES: [&str; 3] = [
     include_str!("../../content/rules/corsaires/v1.yaml"),
     include_str!("../../content/rules/brasier/v1.yaml"),
+    include_str!("../../content/rules/srd/v1.yaml"),
 ];
 
-/// The maps of the two worlds, by rule system id
+/// The maps of the two worlds and the SRD, by rule system id
 /// (`content/maps/<rules>/<map>.yaml`).
-const MAP_FILES: [(&str, &str); 2] = [
+const MAP_FILES: [(&str, &str); 3] = [
     (
         "corsaires",
         include_str!("../../content/maps/corsaires/quai-port-louis.yaml"),
@@ -44,6 +48,10 @@ const MAP_FILES: [(&str, &str); 2] = [
     (
         "brasier",
         include_str!("../../content/maps/brasier/cure-dent-coursive.yaml"),
+    ),
+    (
+        "srd",
+        include_str!("../../content/maps/srd/route-des-gobelins.yaml"),
     ),
 ];
 
@@ -109,9 +117,10 @@ static RULES: LazyLock<Vec<(&'static str, Arc<RuleSystem>)>> = LazyLock::new(|| 
 
 /// The fight scenarios of the two worlds (`content/scenarios/`): the
 /// rule system editor plays them on every saved draft.
-const SCENARIO_FILES: [&str; 2] = [
+const SCENARIO_FILES: [&str; 3] = [
     include_str!("../../content/scenarios/corsaires/bagarre-du-quai.yaml"),
     include_str!("../../content/scenarios/brasier/abordage-coursive.yaml"),
+    include_str!("../../content/scenarios/srd/embuscade-des-gobelins.yaml"),
 ];
 
 static SCENARIOS: LazyLock<Vec<Scenario>> = LazyLock::new(|| {
@@ -223,7 +232,7 @@ mod tests {
 
     #[test]
     fn every_campaign_world_gets_a_pack_and_a_start_look_that_draws() {
-        for rules in ["corsaires", "brasier", "unknown-system"] {
+        for rules in ["corsaires", "brasier", "srd", "unknown-system"] {
             let campaign = Campaign::empty(
                 "c",
                 "C",

@@ -101,4 +101,12 @@ pub enum Event {
     ForTheGm {
         text: String,
     },
+    /// A formalised house rule fired on `target`; its effects follow.
+    /// `shown`: players may read the rule (`house::PlayersSee::Rule`).
+    HouseRule {
+        rule: String,
+        name: String,
+        target: String,
+        shown: bool,
+    },
 }

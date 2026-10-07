@@ -1,0 +1,596 @@
+# D&D 5e · SRD 5.1 — rule system preset, version 1 (engine/add-srd-preset).
+#
+# A third preset beside the two witness worlds, for the GMs who play
+# D&D 5e. It draws on the System Reference Document 5.1 by Wizards of
+# the Coast LLC, available at
+# https://dnd.wizards.com/resources/systems-reference-document and
+# licensed under the Creative Commons Attribution 4.0 International
+# License (https://creativecommons.org/licenses/by/4.0/legalcode).
+# The French text below is our own wording of those rules, not a
+# translation of the document; only SRD content is used.
+#
+# The point of this file is also to check that the format carries D&D 5e
+# with no special case in the engine. Everything here is plain data; the
+# fields the SRD needed (attack.bonus, a class's own hit_points and
+# armor_class, traits, damage types) are generic and optional. What the
+# format does NOT carry is listed below and marked NOT MODELLED where it
+# shows; readings the model forced are marked INTERPRETATION.
+#
+# NOT MODELLED (the GM applies them at the table, or a later ticket):
+#   - skill proficiencies and saving-throw proficiencies: a check or a
+#     save adds the ability modifier only, never the proficiency bonus;
+#   - point buy and the standard array chosen by the player: scores come
+#     from the class (the standard array 15, 14, 13, 12, 10, 8, placed
+#     for that class), and peoples give no ability bonus;
+#   - spell slots, rests and "once per rest" features: approached with a
+#     cooldown in turns (INTERPRETATION, see `cooldowns`);
+#   - damage resistance, vulnerability and immunity (a house rule can
+#     express one: see docs/rules-format.md, house rules);
+#   - saves for half damage (Mains brûlantes hits every enemy in the area);
+#   - the ability modifier added to damage: it is written into each
+#     damage amount at the class's base scores (1d8+2 with FOR 15);
+#   - critical hits double the whole damage, not only the dice;
+#   - reactions (opportunity attacks), concentration, exhaustion;
+#   - death saves are modelled as the zero-HP rule; playing them out is
+#     engine/save-against-death.
+
+id: srd
+version: 1
+name: D&D 5e · SRD 5.1
+description: >-
+  Le cœur libre de D&D 5e (SRD 5.1, Wizards of the Coast, licence CC-BY-4.0) :
+  six caractéristiques, d20 + modificateur + maîtrise contre une difficulté,
+  avantage et désavantage, une action, une action bonus et un déplacement par
+  tour, les 14 états, les jets contre la mort.
+sources:
+  - "System Reference Document 5.1, Wizards of the Coast LLC — CC-BY-4.0"
+  - promptus-V1/scripts/seed-demo.ts (combat de démo des gobelins)
+
+abilities:
+  - { id: FOR, name: Force, description: "Puissance physique : soulever, pousser, frapper au corps à corps." }
+  - { id: DEX, name: Dextérité, description: "Agilité, réflexes, équilibre ; tir et armes de finesse." }
+  - { id: CON, name: Constitution, description: "Santé et endurance ; ajoute aux points de vie." }
+  - { id: INT, name: Intelligence, description: "Raisonnement et mémoire ; la caractéristique des sorts du magicien." }
+  - { id: SAG, name: Sagesse, description: "Perception et intuition ; repérer, deviner, soigner." }
+  - { id: CHA, name: Charisme, description: "Présence et force de persuasion." }
+
+modifier: "(score - 10) / 2"
+
+# The defaults below are those of a d8 class; each class gives its own.
+stats:
+  armor_class: { name: Classe d'armure, abbr: CA, formula: "10 + mod(DEX)" }
+  hit_points: { name: Points de vie, abbr: PV, formula: "8 + mod(CON) + (level - 1) * (5 + mod(CON))" }
+
+check: { dice: 1d20, advantage: true }
+
+difficulties:
+  - { id: tres_facile, name: Très facile, value: 5 }
+  - { id: facile, name: Facile, value: 10 }
+  - { id: moyen, name: Moyen, value: 15 }
+  - { id: difficile, name: Difficile, value: 20 }
+  - { id: tres_difficile, name: Très difficile, value: 25 }
+  - { id: quasi_impossible, name: Quasi impossible, value: 30 }
+
+outcomes:
+  critical_failure:
+    name: Échec automatique
+    natural: [1]
+    description: "Un 1 naturel en attaque rate, quel que soit le total."
+  failure:
+    name: Échec
+    description: "Le total n'atteint pas la difficulté ou la CA."
+  success:
+    name: Réussite
+    description: "Le total atteint la difficulté ou la CA."
+  critical_success:
+    name: Coup critique
+    natural: [20]
+    description: "Un 20 naturel en attaque touche et double les dégâts."
+    # INTERPRETATION: the SRD doubles the damage dice only; the format
+    # multiplies the whole damage.
+    damage_multiplier: 2
+
+group_check:
+  succeeds_when: at_least_half
+  note: "Le groupe réussit si au moins la moitié réussit."
+
+attack:
+  ability: best_primary
+  precision: added_to_attack_roll
+  # The proficiency bonus: +2 at levels 1–4, +3 at 5–8, … +6 at 17–20.
+  # Adversaries count as level 1 (+2), which is the bonus of every stat
+  # block below; a tougher one adds its difference as `precision`.
+  bonus: { name: Maîtrise, formula: "2 + (level - 1) / 4" }
+  note: "d20 + modificateur de la caractéristique de l'arme + maîtrise, contre la CA."
+
+initiative: { dice: 1d20, bonus: "mod(DEX)", ties: reroll }
+
+action_kinds:
+  - { id: action, name: Action, cost: 1, description: "Attaquer, lancer un sort, se désengager, aider, se cacher…" }
+  - { id: action_bonus, name: Action bonus, cost: 1, description: "Ce qu'une capacité permet en plus de l'action." }
+  - { id: deplacement, name: Déplacement, cost: 1, description: "Jusqu'à sa vitesse, en une fois." }
+
+turn_contexts:
+  - id: combat
+    name: Combat
+    actions_per_turn: 3
+    limits:
+      - { kind: action, max_per_turn: 1 }
+      - { kind: action_bonus, max_per_turn: 1 }
+      - { kind: deplacement, max_per_turn: 1 }
+    note: "Une action, une action bonus et un déplacement, dans l'ordre voulu."
+
+cooldowns:
+  # INTERPRETATION: the SRD has no cooldowns. Spell slots and "once per
+  # short rest" features are approached by a cooldown in turns, so a
+  # fight does not let them be played every turn.
+  meaning: turn_of_use_counts
+  note: "Le SRD n'a pas de recharge : une recharge de N tours remplace ici les emplacements de sorts et les capacités « une fois par repos »."
+
+durations:
+  # "Until the end of its next turn" for an effect put on oneself.
+  application_turn_counts: false
+
+progression:
+  # INTERPRETATION: XP comes from the GM (monsters, milestones), never
+  # from a roll; ability score improvements are +2 at level 4, read here
+  # as 2 points every 2 700 XP.
+  upgrade_every_xp: 2700
+  upgrade_points: 2
+  levels:
+    - { level: 1, xp: 0 }
+    - { level: 2, xp: 300 }
+    - { level: 3, xp: 900 }
+    - { level: 4, xp: 2700 }
+    - { level: 5, xp: 6500 }
+    - { level: 6, xp: 14000 }
+    - { level: 7, xp: 23000 }
+    - { level: 8, xp: 34000 }
+    - { level: 9, xp: 48000 }
+    - { level: 10, xp: 64000 }
+    - { level: 11, xp: 85000 }
+    - { level: 12, xp: 100000 }
+    - { level: 13, xp: 120000 }
+    - { level: 14, xp: 140000 }
+    - { level: 15, xp: 165000 }
+    - { level: 16, xp: 195000 }
+    - { level: 17, xp: 225000 }
+    - { level: 18, xp: 265000 }
+    - { level: 19, xp: 305000 }
+    - { level: 20, xp: 355000 }
+
+zero_hp:
+  rule: death_saves
+  condition: inconscient
+  difficulty: 10
+  successes: 3
+  failures: 3
+  note: "À 0 PV : inconscient et mourant. Un d20 par tour : 10 ou plus réussit ; trois réussites stabilisent, trois échecs tuent ; un 20 relève avec 1 PV, un 1 compte deux échecs. Un soin relève."
+
+creation:
+  abilities: from_class
+  free_action_slots: 0
+  note: "Niveau 1. Les caractéristiques suivent la classe (le tableau standard 15, 14, 13, 12, 10, 8) ; l'achat de points n'est pas encore proposé."
+
+movement:
+  - scale: encounter
+    # 9 m (30 ft) of walking speed on 1,5 m squares.
+    cells_per_move: 6
+    note: "Vitesse 9 m : 6 cases de 1,5 m."
+
+combat:
+  move_kind: deplacement
+  # Fleeing is the Disengage action: no opportunity attack (not modelled).
+  flee: { kind: action }
+  long_range: disadvantage
+
+situations:
+  - { id: allie_au_contact, name: Un allié au contact de la cible }
+
+traits:
+  - { id: humanoide, name: Humanoïde }
+  - { id: gobelinoide, name: Gobelinoïde }
+  - { id: mort_vivant, name: Mort-vivant }
+  - { id: bete, name: Bête }
+  - { id: chef, name: Chef }
+
+damage_types:
+  - { id: acide, name: Acide }
+  - { id: contondant, name: Contondant }
+  - { id: feu, name: Feu }
+  - { id: force, name: Force }
+  - { id: foudre, name: Foudre }
+  - { id: froid, name: Froid }
+  - { id: necrotique, name: Nécrotique }
+  - { id: percant, name: Perçant }
+  - { id: poison, name: Poison }
+  - { id: psychique, name: Psychique }
+  - { id: radiant, name: Radiant }
+  - { id: tonnerre, name: Tonnerre }
+  - { id: tranchant, name: Tranchant }
+
+resources:
+  - { id: po, name: Pièces d'or, abbr: PO, start: 10 }
+
+# The 14 conditions. What the format cannot compute is a narrative
+# effect, shown to the GM.
+conditions:
+  - id: aveugle
+    name: Aveuglé
+    kind: bane
+    description: "Ne voit rien : rate ce qui demande la vue, désavantage à ses attaques, avantage aux attaques contre lui."
+    effects: [{ disadvantage: { rolls: attacks } }, advantage_against, { narrative: "Rate tout test qui demande la vue." }]
+  - id: charme
+    name: Charmé
+    kind: bane
+    description: "Ne peut ni attaquer ni viser de façon nuisible celui qui l'a charmé, qui a l'avantage pour lui parler."
+    effects: [{ narrative: "N'attaque pas celui qui l'a charmé ; celui-ci a l'avantage pour interagir avec lui." }]
+  - id: assourdi
+    name: Assourdi
+    kind: bane
+    description: "N'entend rien : rate ce qui demande l'ouïe."
+    effects: [{ narrative: "Rate tout test qui demande l'ouïe." }]
+  - id: effraye
+    visual: effraye
+    name: Effrayé
+    kind: bane
+    description: "Désavantage à ses tests et à ses attaques tant qu'il voit ce qui l'effraie ; ne peut pas s'en approcher."
+    effects: [{ disadvantage: { rolls: checks } }, { disadvantage: { rolls: attacks } }, { narrative: "Ne s'approche pas de ce qui l'effraie." }]
+  - id: agrippe
+    visual: entrave
+    name: Agrippé
+    kind: bane
+    description: "Sa vitesse tombe à 0."
+    effects: [cannot_move]
+  - id: neutralise
+    visual: etourdi
+    name: Neutralisé
+    kind: bane
+    description: "Ne peut ni agir ni réagir."
+    effects: [skips_turn]
+  - id: invisible
+    visual: invisible
+    name: Invisible
+    kind: boon
+    description: "On ne le voit pas : avantage à ses attaques, désavantage aux attaques contre lui."
+    effects: [{ advantage: { rolls: attacks } }, disadvantage_against]
+  - id: paralyse
+    visual: entrave
+    name: Paralysé
+    kind: bane
+    description: "Neutralisé, immobile ; rate ses sauvegardes de FOR et de DEX ; avantage contre lui, critique au contact."
+    effects: [skips_turn, advantage_against, { narrative: "Rate ses sauvegardes de FOR et de DEX ; une attaque au contact qui touche est un critique." }]
+  - id: petrifie
+    name: Pétrifié
+    kind: bane
+    description: "Changé en pierre : neutralisé, résiste à tous les dégâts ; avantage contre lui."
+    effects: [skips_turn, advantage_against, { narrative: "Résistance à tous les dégâts ; rate ses sauvegardes de FOR et de DEX." }]
+  - id: empoisonne
+    visual: poison
+    name: Empoisonné
+    kind: bane
+    description: "Désavantage à ses attaques et à ses tests."
+    effects: [{ disadvantage: { rolls: attacks } }, { disadvantage: { rolls: checks } }]
+  - id: a_terre
+    visual: etourdi
+    name: À terre
+    kind: bane
+    description: "Au sol : désavantage à ses attaques ; avantage au contact contre lui, désavantage à distance."
+    # INTERPRETATION: whether an attacker is adjacent is not read here;
+    # the GM grants the advantage at contact.
+    effects: [{ disadvantage: { rolls: attacks } }, { narrative: "Avantage aux attaques au contact contre lui, désavantage à distance ; se relever coûte la moitié du déplacement." }]
+  - id: entrave
+    visual: entrave
+    name: Entravé
+    kind: bane
+    description: "Vitesse 0 ; désavantage à ses attaques et sauvegardes de DEX ; avantage contre lui."
+    effects: [cannot_move, { disadvantage: { rolls: attacks } }, advantage_against, { narrative: "Désavantage aux sauvegardes de DEX." }]
+  - id: etourdi
+    visual: etourdi
+    name: Étourdi
+    kind: bane
+    description: "Neutralisé, ne bouge plus ; rate ses sauvegardes de FOR et de DEX ; avantage contre lui."
+    effects: [skips_turn, advantage_against, { narrative: "Rate ses sauvegardes de FOR et de DEX." }]
+  - id: inconscient
+    visual: ko
+    name: Inconscient
+    kind: bane
+    description: "Neutralisé, à terre, lâche ce qu'il tient ; avantage contre lui, critique au contact. À 0 PV, il fait ses jets contre la mort."
+    effects: [skips_turn, advantage_against, { narrative: "Une attaque au contact qui touche est un critique ; rate ses sauvegardes de FOR et de DEX." }]
+
+peoples:
+  - { id: humain, name: Humain, description: "Adaptable et ambitieux. (Bonus de caractéristiques non appliqués.)" }
+  - { id: nain, name: Nain, description: "Robuste, vision dans le noir, résistant au poison. (Bonus non appliqués.)" }
+  - { id: elfe, name: Elfe, description: "Gracieux, sens aiguisés, vision dans le noir. (Bonus non appliqués.)" }
+  - { id: halfelin, name: Halfelin, description: "Petit, chanceux et brave. (Bonus non appliqués.)" }
+
+classes:
+  - id: guerrier
+    name: Guerrier
+    description: "Maître des armes et des armures, en première ligne."
+    primary_abilities: [FOR, CON]
+    secondary_abilities: [DEX]
+    abilities: { FOR: 15, DEX: 13, CON: 14, INT: 8, SAG: 12, CHA: 10 }
+    # d10 hit die; chain mail (AC 16).
+    hit_points: "10 + mod(CON) + (level - 1) * (6 + mod(CON))"
+    armor_class: "16"
+    traits: [humanoide]
+    items: [{ item: torche, qty: 1 }, { item: potion_de_soins, qty: 1 }]
+    actions:
+      - id: epee_longue
+        name: Épée longue
+        description: "Une frappe au corps à corps."
+        kind: action
+        target: enemy
+        roll: attack
+        ability: FOR
+        tags: [{ damage: { amount: 1d8+2, type: tranchant } }]
+      - id: javeline
+        name: Javeline
+        description: "Lancée jusqu'à 9 m, 36 m au plus loin."
+        kind: action
+        target: enemy
+        range: 6
+        long_range: 24
+        roll: attack
+        ability: FOR
+        tags: [{ damage: { amount: 1d6+2, type: percant } }]
+      - id: second_souffle
+        name: Second souffle
+        description: "Reprend son souffle et des points de vie."
+        kind: action_bonus
+        target: self
+        roll: none
+        # INTERPRETATION: once per short rest, read as a 10-turn cooldown.
+        tags: [{ heal: { amount: 1d10+1 } }, { cooldown: 10 }]
+    notes: ["Fougue (niveau 2) et les styles de combat ne sont pas modélisés."]
+
+  - id: rodeur
+    name: Rôdeur
+    description: "Chasseur des terres sauvages, à l'arc comme à l'épée."
+    primary_abilities: [DEX, SAG]
+    secondary_abilities: [CON]
+    abilities: { FOR: 12, DEX: 15, CON: 13, INT: 10, SAG: 14, CHA: 8 }
+    # d10 hit die; leather armour (AC 11 + DEX).
+    hit_points: "10 + mod(CON) + (level - 1) * (6 + mod(CON))"
+    armor_class: "11 + mod(DEX)"
+    traits: [humanoide]
+    items: [{ item: potion_de_soins, qty: 1 }]
+    actions:
+      - id: arc_long
+        name: Arc long
+        description: "Un tir jusqu'à 45 m, 180 m au plus loin."
+        kind: action
+        target: enemy
+        range: 30
+        long_range: 120
+        roll: attack
+        ability: DEX
+        tags: [{ damage: { amount: 1d8+2, type: percant } }]
+      - id: epee_courte_rodeur
+        name: Épée courte
+        description: "Une frappe rapide au corps à corps."
+        kind: action
+        target: enemy
+        roll: attack
+        ability: DEX
+        tags: [{ damage: { amount: 1d6+2, type: percant } }]
+    notes: ["Ennemi juré, explorateur-né et les sorts de rôdeur ne sont pas modélisés."]
+
+  - id: roublard
+    name: Roublard
+    description: "Discret et précis : frappe là où ça fait mal."
+    primary_abilities: [DEX]
+    secondary_abilities: [INT, CHA]
+    abilities: { FOR: 8, DEX: 15, CON: 14, INT: 12, SAG: 10, CHA: 13 }
+    # d8 hit die (the system default); leather armour.
+    armor_class: "11 + mod(DEX)"
+    traits: [humanoide]
+    items: [{ item: feu_gregeois, qty: 2 }]
+    actions:
+      - id: rapiere
+        name: Rapière
+        description: "Une arme de finesse ; attaque sournoise quand un allié est au contact de la cible."
+        kind: action
+        target: enemy
+        roll: attack
+        ability: DEX
+        tags:
+          - { damage: { amount: 1d8+2, type: percant } }
+          # INTERPRETATION: Sneak Attack's 1d6 as its average, when an
+          # ally is next to the target (the GM declares it).
+          - { situational: { situation: allie_au_contact, damage: 3 } }
+      - id: arc_court
+        name: Arc court
+        description: "Un tir jusqu'à 24 m, 96 m au plus loin."
+        kind: action
+        target: enemy
+        range: 16
+        long_range: 64
+        roll: attack
+        ability: DEX
+        tags: [{ damage: { amount: 1d6+2, type: percant } }]
+    notes: ["Expertise et ruse (niveau 2) ne sont pas modélisées."]
+
+  - id: magicien
+    name: Magicien
+    description: "Lanceur de sorts savant ; fragile, mais redoutable à distance."
+    primary_abilities: [INT]
+    secondary_abilities: [DEX, CON]
+    abilities: { FOR: 8, DEX: 14, CON: 13, INT: 15, SAG: 12, CHA: 10 }
+    # d6 hit die; no armour.
+    hit_points: "6 + mod(CON) + (level - 1) * (4 + mod(CON))"
+    armor_class: "10 + mod(DEX)"
+    traits: [humanoide]
+    items: [{ item: potion_de_soins, qty: 1 }]
+    actions:
+      - id: trait_de_feu
+        name: Trait de feu
+        description: "Un tour de magie : une flamme jetée jusqu'à 36 m."
+        kind: action
+        target: enemy
+        range: 24
+        roll: attack
+        ability: INT
+        tags: [{ damage: { amount: 1d10, type: feu } }]
+      - id: projectile_magique
+        name: Projectile magique
+        description: "Trois fléchettes de force qui ne ratent jamais."
+        kind: action
+        target: enemy
+        range: 24
+        roll: auto_hit
+        # INTERPRETATION: a level-1 slot, read as a 3-turn cooldown.
+        tags: [{ damage: { amount: 3d4+3, type: force } }, { cooldown: 3 }]
+      - id: mains_brulantes
+        name: Mains brûlantes
+        description: "Un éventail de flammes sur les ennemis au contact."
+        kind: action
+        target: enemies
+        area: melee_burst
+        roll: auto_hit
+        # NOT MODELLED: the DEX save for half; every enemy takes it all.
+        tags: [{ damage: { amount: 3d6, type: feu } }, { cooldown: 3 }, { note: "Sauvegarde de DEX (DD 12) pour moitié : à appliquer par le MJ." }]
+    notes: ["Le grimoire, la préparation des sorts et les emplacements ne sont pas modélisés."]
+
+items:
+  - id: torche
+    name: Torche
+    description: "Éclaire 6 m ; frappée au visage, elle brûle."
+    price: 1
+    action:
+      id: torche_coup
+      name: Coup de torche
+      kind: action
+      target: enemy
+      roll: attack
+      ability: FOR
+      # An improvised weapon (1d4), whose damage is fire.
+      tags: [{ damage: { amount: 1d4, type: feu } }]
+  - id: potion_de_soins
+    name: Potion de soins
+    description: "Rend 2d4 + 2 PV."
+    price: 50
+    consumable: true
+    action:
+      id: boire_potion
+      name: Boire une potion
+      kind: action
+      target: ally_or_self
+      roll: none
+      tags: [{ heal: { amount: 2d4+2 } }]
+  - id: feu_gregeois
+    name: Feu grégeois
+    description: "Une fiole lancée qui s'enflamme au contact."
+    price: 50
+    consumable: true
+    action:
+      id: lancer_feu_gregeois
+      name: Lancer le feu grégeois
+      kind: action
+      target: enemy
+      range: 4
+      roll: attack
+      ability: DEX
+      tags:
+        - { damage: { amount: 1d4, type: feu } }
+        - { control: { effects: [{ damage_per_turn: 1d4 }], kind: bane, turns: 1, to: targets, note: "Une action et un test de DEX (DD 10) éteignent les flammes." } }
+
+# Stat blocks from the SRD (and the V1 demo fight). Their armour comes
+# from what they wear, hence the `exception` on each that differs from
+# 10 + DEX.
+adversaries:
+  - id: gobelin
+    name: Gobelin
+    description: "Petit humanoïde sournois, en bande."
+    traits: [humanoide, gobelinoide]
+    abilities: { FOR: 8, DEX: 14, CON: 10, INT: 10, SAG: 8, CHA: 8 }
+    armor_class: 15
+    hit_points: 7
+    exception: "armure de cuir et bouclier (SRD)"
+    tactics: "Frappe et se replie ; tire à l'arc depuis l'ombre."
+    actions:
+      - { id: gobelin_cimeterre, name: Cimeterre, kind: action, target: enemy, roll: attack, ability: DEX, tags: [{ damage: { amount: 1d6+2, type: tranchant } }] }
+      - { id: gobelin_arc_court, name: Arc court, kind: action, target: enemy, range: 16, long_range: 64, roll: attack, ability: DEX, tags: [{ damage: { amount: 1d6+2, type: percant } }] }
+  - id: chef_gobelin
+    name: Chef gobelin
+    description: "Le chef de la bande ; ne se bat jamais à la loyale."
+    traits: [humanoide, gobelinoide, chef]
+    abilities: { FOR: 10, DEX: 14, CON: 10, INT: 10, SAG: 8, CHA: 10 }
+    armor_class: 17
+    hit_points: 21
+    exception: "chemise de mailles et bouclier (SRD)"
+    tactics: "Reste derrière ses gobelins ; fuit si la moitié de la bande tombe."
+    actions:
+      - { id: chef_gobelin_cimeterre, name: Cimeterre, kind: action, target: enemy, roll: attack, ability: DEX, tags: [{ damage: { amount: 1d6+2, type: tranchant } }] }
+      - { id: chef_gobelin_javeline, name: Javeline, kind: action, target: enemy, range: 6, long_range: 24, roll: attack, ability: FOR, tags: [{ damage: { amount: 1d6, type: percant } }] }
+  - id: squelette
+    name: Squelette
+    description: "Des os que seule la malveillance tient ensemble."
+    traits: [mort_vivant]
+    abilities: { FOR: 10, DEX: 14, CON: 15, INT: 6, SAG: 8, CHA: 5 }
+    armor_class: 13
+    hit_points: 13
+    exception: "restes d'armure (SRD)"
+    note: "Vulnérable aux dégâts contondants (non modélisé)."
+    actions:
+      - { id: squelette_epee_courte, name: Épée courte, kind: action, target: enemy, roll: attack, ability: DEX, tags: [{ damage: { amount: 1d6+2, type: percant } }] }
+      - { id: squelette_arc_court, name: Arc court, kind: action, target: enemy, range: 16, long_range: 64, roll: attack, ability: DEX, tags: [{ damage: { amount: 1d6+2, type: percant } }] }
+  - id: zombie
+    name: Zombie
+    description: "Lent, implacable, affamé."
+    traits: [mort_vivant]
+    abilities: { FOR: 13, DEX: 6, CON: 16, INT: 3, SAG: 6, CHA: 5 }
+    armor_class: 8
+    hit_points: 22
+    note: "Robustesse de mort-vivant (sauvegarde pour rester à 1 PV) non modélisée."
+    actions:
+      - { id: zombie_coup, name: Coup, kind: action, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 1d6+1, type: contondant } }] }
+  - id: loup
+    name: Loup
+    description: "Chasseur de meute à la morsure cruelle."
+    traits: [bete]
+    abilities: { FOR: 12, DEX: 15, CON: 12, INT: 3, SAG: 12, CHA: 6 }
+    armor_class: 13
+    hit_points: 11
+    exception: "armure naturelle (SRD)"
+    actions:
+      - id: loup_morsure
+        name: Morsure
+        kind: action
+        target: enemy
+        roll: attack
+        ability: DEX
+        tags:
+          - { damage: { amount: 2d4+2, type: percant } }
+          - { control: { condition: a_terre, turns: 1, to: targets, save: { ability: FOR, difficulty: facile } } }
+  - id: bandit
+    name: Bandit
+    description: "Un humain masqué en quête d'argent facile."
+    traits: [humanoide]
+    abilities: { FOR: 11, DEX: 12, CON: 12, INT: 10, SAG: 10, CHA: 10 }
+    armor_class: 12
+    hit_points: 11
+    exception: "armure de cuir (SRD)"
+    actions:
+      - { id: bandit_cimeterre, name: Cimeterre, kind: action, target: enemy, roll: attack, ability: DEX, tags: [{ damage: { amount: 1d6+1, type: tranchant } }] }
+      - { id: bandit_arbalete, name: Arbalète légère, kind: action, target: enemy, range: 16, long_range: 64, roll: attack, ability: DEX, tags: [{ damage: { amount: 1d8+1, type: percant } }] }
+
+# The board's example (« Règles », moment 5), formalised. It comes with
+# the preset so a GM sees one at work; deleting it changes nothing else.
+house_rules:
+  - id: morts_vivants_feu
+    name: Les morts-vivants craignent le feu
+    text: "Les morts-vivants ont peur du feu : quand l'un d'eux prend des dégâts de feu, il est effrayé jusqu'à la fin de son prochain tour."
+    formal:
+      when: hit
+      damage_type: feu
+      target: { traits: [mort_vivant] }
+      effects:
+        - { apply: { condition: effraye, turns: 1, to: targets } }
+      players: effect
+      cases:
+        - { name: Torche contre zombie, actor: { class: guerrier }, action: torche, target: { adversary: zombie }, roll: hit, expect: applies }
+        - { name: Trait de feu contre squelette, actor: { class: magicien }, action: trait_de_feu, target: { adversary: squelette }, roll: hit, expect: applies }
+        - { name: Torche contre le chef gobelin, actor: { class: guerrier }, action: torche, target: { adversary: chef_gobelin }, roll: critical, expect: nothing }
+        - { name: Épée contre zombie, actor: { class: guerrier }, action: epee_longue, target: { adversary: zombie }, roll: hit, expect: nothing }
