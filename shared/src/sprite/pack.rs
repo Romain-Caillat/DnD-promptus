@@ -8,9 +8,11 @@
 //! (`skin`, `hair`, and the piece's own `dye` and `accent`). A piece
 //! worn on the body may have one variant per body (`per_body`).
 //!
-//! Frames are kept per direction so `characters/walk-in-four-directions`
-//! can add the others; today only `east` (right profile) is drawn, and
-//! `west` is its mirror.
+//! Frames are kept per direction (characters/walk-in-four-directions):
+//! every piece draws `east` (right profile), `south` (front) and `north`
+//! (back) — an empty list is a decision (a beard seen from behind), a
+//! missing one an error — and `west` is the mirror of `east` unless the
+//! piece draws it.
 
 use std::collections::{BTreeMap, HashSet};
 
@@ -84,8 +86,8 @@ pub enum Depth {
     Front,
 }
 
-/// The four directions a character can face. Only `East` has frames in
-/// the starter packs; `West` falls back to the mirrored `East`.
+/// The four directions a character can face. `West` falls back to the
+/// mirrored `East` when a piece does not draw it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum Direction {
@@ -97,6 +99,30 @@ pub enum Direction {
 }
 
 impl Direction {
+    /// Which way a character turns to walk or act from `from` toward `to`
+    /// (characters/walk-in-four-directions): the axis it moves most along;
+    /// on a perfect diagonal, the profile (east or west), which reads best
+    /// on a small sprite. `None` when the two cells are one.
+    pub fn toward(from: crate::maps::Cell, to: crate::maps::Cell) -> Option<Direction> {
+        let (dx, dy) = (to.x - from.x, to.y - from.y);
+        if dx == 0 && dy == 0 {
+            None
+        } else if dx.abs() >= dy.abs() {
+            Some(if dx > 0 {
+                Direction::East
+            } else {
+                Direction::West
+            })
+        } else {
+            // Row 0 is at the top of the map: north is up.
+            Some(if dy > 0 {
+                Direction::South
+            } else {
+                Direction::North
+            })
+        }
+    }
+
     pub fn as_str(self) -> &'static str {
         match self {
             Direction::East => "east",
@@ -537,9 +563,7 @@ impl PieceFile {
         let dye = colour(&self.dye)?;
         let accent = colour(&self.accent)?;
         let frames = self.frames.compile(ctx)?;
-        if frames.east.is_none() {
-            return Err("no east frame".into());
-        }
+        frames.complete()?;
         let mut per_body = BTreeMap::new();
         for (body, f) in self.per_body {
             if !bodies.contains(&body) {
@@ -548,9 +572,7 @@ impl PieceFile {
             let f = f
                 .compile(ctx)
                 .map_err(|m| format!("per_body {body}: {m}"))?;
-            if f.east.is_none() {
-                return Err(format!("per_body {body}: no east frame"));
-            }
+            f.complete().map_err(|m| format!("per_body {body}: {m}"))?;
             per_body.insert(body, f);
         }
         let all = std::iter::once(&frames).chain(per_body.values());
@@ -582,6 +604,22 @@ impl PieceFile {
             uses_dye,
             uses_accent,
         })
+    }
+}
+
+impl Frames {
+    /// Every direction but `west` (the mirror) must be drawn.
+    fn complete(&self) -> Result<(), String> {
+        for (name, frame) in [
+            ("east", &self.east),
+            ("south", &self.south),
+            ("north", &self.north),
+        ] {
+            if frame.is_none() {
+                return Err(format!("no {name} frame"));
+            }
+        }
+        Ok(())
     }
 }
 

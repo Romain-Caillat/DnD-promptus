@@ -5,7 +5,9 @@
 //! fog on, `Map::fogged` (nothing of a fogged cell: not its material,
 //! not a door, prop, object, light, label, start or exit there); the
 //! tokens standing on revealed cells and not hidden by the GM — an
-//! invisible one only on its owner's screen, as a ghost; in a fight,
+//! invisible one only on its owner's screen, as a ghost — with their
+//! look, the way they face and their last move cut to the revealed cells
+//! (characters/walk-in-four-directions); in a fight,
 //! the order, whose turn, each combatant's standing, the party's hit
 //! points (an opponent's never: only whether it is down), the caller's
 //! cards and reachable cells on their turn, the events with opponents'
@@ -24,6 +26,7 @@ use promptus_shared::rules::action::action_cards;
 use promptus_shared::rules::events::Event;
 use promptus_shared::rules::model::{AreaShape, Targeting};
 use promptus_shared::rules::sheet::Side;
+use promptus_shared::sprite::{CharacterLook, Direction};
 use serde::Serialize;
 use uuid::Uuid;
 
@@ -51,6 +54,13 @@ pub struct TokenView {
     pub mine: bool,
     /// Invisible: only its owner sees it, as a ghost.
     pub ghost: bool,
+    /// What its sprite draws; none for a token put down before looks
+    /// were stored (drawn as a disc).
+    pub look: Option<CharacterLook>,
+    pub facing: Direction,
+    /// Its last move, only through cells the caller sees.
+    pub trail: Vec<Cell>,
+    pub moves: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -293,6 +303,12 @@ pub fn project_board(
             party: t.kind == TokenKind::Character,
             mine: mine.as_deref() == Some(t.id.as_str()),
             ghost: t.invisible,
+            look: t.look.clone(),
+            facing: t.facing(),
+            // A walk that crossed the fog shows only where the party sees,
+            // like an opponent's `Moved` in the fight log.
+            trail: t.trail.iter().copied().filter(|c| seen(*c)).collect(),
+            moves: t.moves,
         })
         .collect();
     let in_fight = encounter.is_some_and(|(e, _)| e.live);
