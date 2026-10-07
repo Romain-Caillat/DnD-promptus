@@ -120,6 +120,26 @@ pub fn run_fight(
             Some(Side::Party) => party,
             _ => opposition,
         };
+        // A dying character's turn is their death save: no choice there.
+        if fight.awaits_death_save(&who) {
+            match fight.death_save(system, &who, dice) {
+                Ok(step) => {
+                    commands = 0;
+                    log.push(LogEntry::Events {
+                        events: step.events,
+                    });
+                    fight = step.fight;
+                    continue;
+                }
+                Err(refusal) => {
+                    log.push(LogEntry::Refused {
+                        who: who.clone(),
+                        refusal,
+                    });
+                    break;
+                }
+            }
+        }
         let decision = if commands >= limits.max_commands_per_turn {
             Decision::EndTurn
         } else {

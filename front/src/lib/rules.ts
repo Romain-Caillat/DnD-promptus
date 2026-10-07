@@ -115,8 +115,22 @@ export interface RulesView {
   conditions: { name: string; description: string; kind: 'boon' | 'bane' }[]
   zeroHp:
     | { rule: 'knockedOut'; condition: string; outAfterTurns: number; outCondition: string }
-    | { rule: 'deathSaves'; difficulty: number; successes: number; failures: number }
-  progression: { upgradeEveryXp: number; upgradePoints: number; levels: { level: number; xp: number }[] }
+    | {
+        rule: 'deathSaves'
+        difficulty: number
+        successes: number
+        failures: number
+        failuresOnHit: number
+        failuresOnCriticalFailure: number
+        criticalSuccessRevives: boolean
+        stabilize: { kind: string; ability: string; difficulty: number } | null
+      }
+  progression: {
+    upgradeEveryXp: number
+    upgradePoints: number
+    levels: { level: number; xp: number }[]
+    hitPointsPerLevel: { dice: string; average: number; ability: string | null } | null
+  }
   combat: {
     moveKind: KindView | null
     flee: { kind: KindView; ability: string | null } | null

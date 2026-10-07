@@ -286,7 +286,11 @@ fn resolve_targets(
             let mut seen = Vec::new();
             for t in asked {
                 side(t, false)?;
-                if scene.get(t).is_some_and(|c| c.hit_points == 0) {
+                // A dying character can still be hit (each hit is a
+                // failed death save); anyone else down is out of reach.
+                if scene.get(t).is_some_and(|c| {
+                    c.hit_points == 0 && !c.death_saves.is_some_and(|d| !d.death_due)
+                }) {
                     return Err(Refusal::TargetDown { target: t.clone() });
                 }
                 if !seen.contains(t) {

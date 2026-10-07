@@ -232,7 +232,8 @@ pub fn tally(log: &FightLog, time: &TimeModel) -> FightTally {
         match standing {
             Standing::InFight => {}
             Standing::Defeated => g.defeated += 1,
-            Standing::OutOfScene => g.out_of_scene += 1,
+            // No GM in a simulation confirms a death: never reached.
+            Standing::OutOfScene | Standing::Dead => g.out_of_scene += 1,
             Standing::Fled => g.fled += 1,
         }
     }

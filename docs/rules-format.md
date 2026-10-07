@@ -53,7 +53,7 @@ model forced where the source was ambiguous.
 | `turn_contexts` | Action economy per setting (below) |
 | `cooldowns.meaning` | `skip_next_turns` or `turn_of_use_counts` (below) |
 | `durations.application_turn_counts` | Whether the turn a condition lands in counts (below) |
-| `progression` | `{ upgrade_every_xp, upgrade_points, levels: [{ level, xp }] }` |
+| `progression` | `{ upgrade_every_xp, upgrade_points, levels: [{ level, xp }], hit_points_per_level? }` (below) |
 | `zero_hp` | What 0 hit points does (below) |
 | `creation` | `{ abilities: from_class, free_action_slots }` |
 | `movement` | Per map scale (`world`, `place`, `encounter`): `cells_per_move` (`null` when unstated) and optional `grid: { diagonal: chebyshev\|alternate, difficult_factor, climb_cost, max_step, swim_factor }` — the `maps::MovementRules` the grid reads |
@@ -111,8 +111,47 @@ zero_hp: { rule: death_saves, condition: mourant, difficulty: 10, successes: 3, 
 ```
 
 `knocked_out`: a heal lifts `condition`; after `out_after_turns` of the
-bearer's turns without one, `out_condition` replaces it.
-`death_saves` is modelled, played by `engine/save-against-death`.
+bearer's turns without one, `out_condition` replaces it. No death is
+ever proposed: a character dies only when the GM decides it.
+
+`death_saves` (`rules::death`, engine/save-against-death): a player
+character at 0 is dying and stays in the fight; each of their turns is
+one save — the check die alone against `difficulty`, no modifier, no
+XP. A success counts one, a failure one; the system's critical failure
+band counts `failures_on_critical_failure` (default 2), its critical
+success brings them back with 1 hit point when `critical_success_revives`
+(default true). `successes` of them: stable, still down, no more saves.
+`failures`: the engine **proposes** the death and waits for the GM, who
+confirms it or decides another outcome (stable). A hit while dying is
+`failures_on_hit` failures (default 1; `failures_on_critical_hit`,
+default 2, on a critical); a stable character hit rolls again. A heal
+lifts it all. Optional `stabilize: { kind, ability, difficulty }`: an
+ally next to them spends an action of `kind` and rolls `ability`.
+
+```yaml
+zero_hp:
+  rule: death_saves
+  condition: mourant
+  difficulty: 10
+  successes: 3
+  failures: 3
+  failures_on_hit: 2
+  stabilize: { kind: soin, ability: SAG, difficulty: 10 }
+```
+
+Under either rule the GM may confirm the death of a character down at
+0 hit points: the rules propose, the GM has the last word.
+
+## Levels
+
+`progression.levels` gives the level from total XP. Optional
+`hit_points_per_level: { dice: 1d10, average: 6, ability: CON }`: each
+level above the first adds to the maximum hit points the die (rolled by
+the server) or the average — the player's choice, once per level, never
+rerolled — plus the ability's modifier, at least 1 (`rules::level_up`).
+XP taken back takes the levels' hit points with it. Without it the
+maximum is `stats.hit_points` alone (both witness worlds). A level also
+unlocks the class actions whose `level` it reaches.
 
 ## Fighting on a grid
 
@@ -331,6 +370,5 @@ exits non-zero only when a file, a scenario or a variant does not load.
 
 ## Not yet in the format
 
-Vehicles (`engine/support-vehicle-combat`) and death saves played out
-(`engine/save-against-death`). Ship combat's action economy is already
+Vehicles (`engine/support-vehicle-combat`). Ship combat's action economy is already
 expressible as a turn context.

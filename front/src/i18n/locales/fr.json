@@ -1014,6 +1014,11 @@
         "upgrade_every_xp": "XP par amélioration :",
         "upgrade_points": "points par amélioration :",
         "level_xp": "XP pour ce niveau :",
+        "hit_points_per_level": "PV par niveau :",
+        "save_difficulty": "difficulté des jets contre la mort :",
+        "successes": "réussites pour se stabiliser :",
+        "failures": "échecs avant la mort :",
+        "failures_on_hit": "échecs par coup reçu à terre :",
         "cover_half": "demi-couvert :",
         "cover_three_quarters": "couvert aux trois quarts :",
         "long_range": "longue portée :",
@@ -1113,13 +1118,22 @@
       "title": "À 0 {{abbr}}",
       "knockedOut_one": "Tu tombes : {{condition}}. Un soin te relève. Sans soin pendant {{count}} tour, tu es {{out}} jusqu'à la scène suivante.",
       "knockedOut_other": "Tu tombes : {{condition}}. Un soin te relève. Sans soin pendant {{count}} tours, tu es {{out}} jusqu'à la scène suivante.",
-      "deathSaves": "Tu tombes et tu lances des jets contre la mort (difficulté {{difficulty}}) : {{successes}} réussites te stabilisent, {{failures}} échecs t'emportent."
+      "deathSaves": "Tu tombes et tu lances des jets contre la mort (difficulté {{difficulty}}) : {{successes}} réussites te stabilisent, {{failures}} échecs t'emportent.",
+      "criticals_one": "Un échec critique compte pour {{count}} échec.",
+      "criticals_other": "Un échec critique compte pour {{count}} échecs.",
+      "revives": "Une réussite critique te relève avec 1 PV.",
+      "hit_one": "Un coup reçu à terre compte pour {{count}} échec ; un soin te relève tout de suite.",
+      "hit_other": "Un coup reçu à terre compte pour {{count}} échecs ; un soin te relève tout de suite.",
+      "stabilize": "Un allié à côté de toi peut te stabiliser ({{kind}}, {{ability}} contre {{difficulty}}).",
+      "gm": "Une mort n'arrive jamais sans le MJ : les dés la proposent, il la confirme ou décide d'une autre issue."
     },
     "progression": {
       "title": "Progresser",
       "upgrade_one": "Chaque réussite rapporte de l'XP. Tous les {{xp}} XP, tu gagnes {{count}} point à ajouter à une caractéristique.",
       "upgrade_other": "Chaque réussite rapporte de l'XP. Tous les {{xp}} XP, tu gagnes {{count}} points à ajouter à tes caractéristiques.",
-      "level": "Niveau {{level}} · {{xp}} XP"
+      "level": "Niveau {{level}} · {{xp}} XP",
+      "hitPoints": "Chaque niveau ajoute des PV : tu choisis entre lancer {{dice}} + {{ability}} ou prendre {{average}} + {{ability}}.",
+      "hitPointsPlain": "Chaque niveau ajoute des PV : tu choisis entre lancer {{dice}} ou prendre {{average}}."
     },
     "houseRules": {
       "title": "Règles maison",

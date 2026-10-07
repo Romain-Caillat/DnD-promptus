@@ -14,6 +14,10 @@ pub enum RollPurpose {
     Contest,
     /// Resisting a condition.
     Save,
+    /// A dying character's roll against death.
+    DeathSave,
+    /// An ally trying to stabilise someone dying.
+    Stabilize,
 }
 
 /// Damage, term by term.
@@ -77,6 +81,21 @@ pub enum Event {
         target: String,
     },
     OutOfScene {
+        target: String,
+    },
+    /// The dying character's tally after a save or a hit.
+    DeathSaves {
+        target: String,
+        successes: u32,
+        failures: u32,
+    },
+    /// Enough successes (or an ally's care, or the GM): no more saves.
+    Stabilized {
+        target: String,
+    },
+    /// Enough failures: the engine proposes the death; the GM confirms
+    /// or decides otherwise. GM-only until then.
+    DeathDue {
         target: String,
     },
     TurnLost {

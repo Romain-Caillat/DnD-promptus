@@ -9,6 +9,9 @@
 //! - [`action`] — resolving an action (to-hit, damage, effects, cooldown, XP)
 //! - [`conditions`] — conditions and the turn boundaries
 //! - [`progression`] — XP, upgrade points, levels
+//! - [`level_up`] — what a new level brings: hit points (die or
+//!   average), cards unlocked
+//! - [`death`] — death saves, stabilising, the death the GM confirms
 //! - [`lint`] — whether the rules are good: coherence and balance checks
 //!   that report and never block (`lint::lint`, `lint::balance_report`)
 //! - [`character`] — whether a player's character follows the rules
@@ -21,9 +24,11 @@ pub mod changes;
 pub mod character;
 pub mod check;
 pub mod conditions;
+pub mod death;
 pub mod dice;
 pub mod events;
 pub mod formula;
+pub mod level_up;
 pub mod lint;
 pub mod load;
 pub mod model;
