@@ -810,9 +810,11 @@ le rassoit à un autre poste.
   faire agir LUMEN, manœuvrer (tap sur la carte) et tirer pour l'ennemi
   ou valider la proposition du co-MJ, aborder, arrêter.
 
-Reste : jouer les deux combats à six pour de vrai et les chronométrer
-(moins de 45 minutes chacun), et l'affichage TV, qui vient avec
-`tv/show-evening`.
+Reste : faire tourner les tests serveur sur base (`battle_test.rs` et
+les balayages de routes sont écrits mais n'ont pas tourné : le Postgres
+de développement était hors service), jouer les deux combats à six pour
+de vrai et les chronométrer (moins de 45 minutes chacun), et
+l'affichage TV, qui vient avec `tv/show-evening`.
 
 ---
 

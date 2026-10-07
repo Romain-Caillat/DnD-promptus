@@ -443,3 +443,91 @@ pub fn project_battle(
         reason: b.end.as_ref().map(|e| e.reason),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use promptus_shared::rules::check::RollBreakdown;
+    use promptus_shared::story::RuleSystemRef;
+    use promptus_shared::vehicle::scenario::VehicleScenario;
+    use uuid::Uuid;
+
+    use super::*;
+
+    /// The Greyhound's interception at its start, as the server stores it.
+    fn interception() -> (StoredBattle, &'static RuleSystem) {
+        let rules = crate::content::preset(&RuleSystemRef {
+            id: "corsaires".into(),
+            version: 1,
+        })
+        .expect("the Corsaires preset");
+        let scenario = VehicleScenario::from_yaml(include_str!(
+            "../../../../content/scenarios/corsaires/vaisseau/interception-greyhound.yaml"
+        ))
+        .unwrap();
+        let map = crate::content::world_map("corsaires", &scenario.map).expect("the sea map");
+        let battle = scenario.battle(rules, map, 7).unwrap();
+        let stored = StoredBattle {
+            id: Uuid::nil(),
+            session_id: None,
+            node: "sc_interception_greyhound".into(),
+            status: "live".into(),
+            version: 1,
+            battle,
+            proposal: None,
+            boarding_encounter: None,
+            started_at: chrono::Utc::now(),
+            ended_at: None,
+        };
+        (stored, rules)
+    }
+
+    fn shot(roll: RollBreakdown) -> BattleEvent {
+        BattleEvent::Fired {
+            ship: "la_machoire".into(),
+            weapon: "mousquets".into(),
+            by: Some("bretteur".into()),
+            target: "greyhound".into(),
+            roll,
+            hit: true,
+            damage: 4,
+            screen_after: Some(3),
+            hull_after: Some(17),
+        }
+    }
+
+    #[test]
+    fn an_unscanned_enemy_keeps_its_numbers_until_the_crew_reads_it() {
+        let (mut stored, rules) = interception();
+        let roll: RollBreakdown = serde_json::from_value(serde_json::json!({
+            "die": "d20", "faces": [12], "natural": 12, "advantage": "normal",
+            "modifiers": [], "total": 12, "target": null, "band": null,
+        }))
+        .unwrap();
+        let events = [shot(roll)];
+        let view = project_battle(&stored, &events, Some(rules), Some("bretteur"));
+        let grey = view.ships.iter().find(|s| s.id == "greyhound").unwrap();
+        assert!(!grey.known && grey.hull.is_none() && grey.morale.is_none());
+        let json = serde_json::to_value(&view.events).unwrap();
+        assert!(json[0]["hull_after"].is_null(), "{json}");
+        assert!(json[0]["screen_after"].is_null(), "{json}");
+        // The party ship is always known; my station's actions come with
+        // what they can aim at.
+        let me = view.me.as_ref().unwrap();
+        assert_eq!(me.station.as_deref(), Some("pont"));
+        assert!(!me.options.is_empty());
+
+        // Scanned: the crew sees it all.
+        let i = stored
+            .battle
+            .ships
+            .iter()
+            .position(|s| s.id == "greyhound")
+            .unwrap();
+        stored.battle.ships[i].scanned = true;
+        let view = project_battle(&stored, &events, Some(rules), Some("bretteur"));
+        let grey = view.ships.iter().find(|s| s.id == "greyhound").unwrap();
+        assert!(grey.known && grey.hull.is_some());
+        let json = serde_json::to_value(&view.events).unwrap();
+        assert_eq!(json[0]["hull_after"], 17);
+    }
+}
