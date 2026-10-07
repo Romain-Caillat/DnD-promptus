@@ -96,7 +96,9 @@ async fn gm_json(state: &AppState, row: &CampaignRow) -> Result<serde_json::Valu
         .story
         .nodes
         .iter()
-        .filter(|n| n.encounter.is_some())
+        // A ship battle opens from its own panel; its deck fight only by
+        // boarding.
+        .filter(|n| n.encounter.as_ref().is_some_and(|e| e.vehicles.is_none()))
         .map(|n| json!({ "node": n.id, "title": n.title, "map": n.map }))
         .collect();
     Ok(json!({

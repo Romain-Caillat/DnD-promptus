@@ -16,6 +16,8 @@
 
 use std::collections::BTreeMap;
 
+use serde::{Deserialize, Serialize};
+
 use crate::maps::Cell;
 use crate::rules::RuleSystem;
 use crate::rules::dice::DiceSource;
@@ -26,7 +28,8 @@ use super::geometry::{Facing, distance};
 use super::model::{ScreenRole, StationAction, VehicleEffect, VehicleRules};
 
 /// One command of a crew member or an enemy ship.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Order {
     Station {
         crew: String,

@@ -234,13 +234,38 @@ impl VehicleScenario {
         serde_yaml_ng::from_str(text).map_err(|e| VehicleScenarioError::Yaml(e.to_string()))
     }
 
-    /// The battle at its start (dice rolled for initiative).
+    /// The battle at its start (dice rolled for initiative), the crew
+    /// built from the scenario's classes.
     pub fn battle(
         &self,
         system: &RuleSystem,
         map: &Map,
         seed: u64,
     ) -> Result<Battle, VehicleScenarioError> {
+        let mut crew = Vec::new();
+        for c in &self.crew {
+            let sheet = Combatant::from_class(system, &c.id, &c.id, &c.class)
+                .map_err(|_| VehicleScenarioError::UnknownClass(c.class.clone()))?;
+            let mut member = Crew::from_combatant(system, &sheet, Some(c.class.clone()));
+            member.station = c.station.clone();
+            crew.push(member);
+        }
+        let (map, setup) = self.setup(system, map, crew)?;
+        let mut dice = SeededDice::new(seed);
+        Battle::start(system, map, setup, &mut dice)
+            .map(|s| s.battle)
+            .map_err(|e| VehicleScenarioError::Setup(format!("{e:?}")))
+    }
+
+    /// How the battle opens with `crew` aboard: the ships on the map's
+    /// starts, each member without a station seated by class, the
+    /// scenario's current blowing.
+    pub fn setup(
+        &self,
+        system: &RuleSystem,
+        map: &Map,
+        mut crew: Vec<Crew>,
+    ) -> Result<(Map, Setup), VehicleScenarioError> {
         let v = system
             .vehicles
             .as_ref()
@@ -271,26 +296,18 @@ impl VehicleScenario {
                 facing: o.facing,
             });
         }
-        let mut crew = Vec::new();
-        for c in &self.crew {
-            let sheet = Combatant::from_class(system, &c.id, &c.id, &c.class)
-                .map_err(|_| VehicleScenarioError::UnknownClass(c.class.clone()))?;
-            crew.push(Crew::from_combatant(system, &sheet, Some(c.class.clone())));
-        }
         let seats = seat_by_class(
             v,
-            &self
-                .crew
+            &crew
                 .iter()
                 .filter(|c| c.station.is_none())
-                .map(|c| (c.id.clone(), Some(c.class.clone())))
+                .map(|c| (c.id.clone(), c.class.clone()))
                 .collect::<Vec<_>>(),
         );
-        for (member, spec) in crew.iter_mut().zip(&self.crew) {
-            member.station = spec
-                .station
-                .clone()
-                .or_else(|| seats.get(&spec.id).cloned());
+        for member in &mut crew {
+            if member.station.is_none() {
+                member.station = seats.get(&member.id).cloned();
+            }
         }
         let mut map = map.clone();
         if let Some(from) = self.current {
@@ -314,10 +331,7 @@ impl VehicleScenario {
             crew,
             enemies,
         };
-        let mut dice = SeededDice::new(seed);
-        Battle::start(system, map, setup, &mut dice)
-            .map(|s| s.battle)
-            .map_err(|e| VehicleScenarioError::Setup(format!("{e:?}")))
+        Ok((map, setup))
     }
 
     /// Plays the scenario's battles (`spec` overrides the file's count
