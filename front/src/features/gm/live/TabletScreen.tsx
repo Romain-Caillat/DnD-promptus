@@ -21,21 +21,20 @@ const COPILOT_GLYPH = '✦'
  * the end of the evening, and the co-GM, which slides in as a drawer
  * over the section without leaving it. A dot on a target says something
  * waits there. The seats stay on the right while the screen is wide
- * enough: six players, who asks, who waits too long.
+ * enough: six players, who asks, who waits too long. A seat only opens
+ * the table: a stray thumb must not record a moment for a player.
  */
 export function TabletScreen({
   screen,
   sections,
   waiting,
   copilot,
-  onSpotlight,
 }: {
   screen: LiveScreen
   sections: Record<Section, ReactNode>
   /** Where something waits for the GM. */
   waiting: Partial<Record<Section | 'copilot', boolean>>
   copilot: ReactNode
-  onSpotlight: (player: string) => void
 }) {
   const { t } = useTranslation()
   const [current, setCurrent] = useState<Section>('scene')
@@ -76,7 +75,13 @@ export function TabletScreen({
         </button>
       </nav>
       <div className="flex min-w-0 flex-col gap-3">{sections[current]}</div>
-      <Seats screen={screen} onSpotlight={onSpotlight} />
+      <Seats
+        screen={screen}
+        onOpen={() => {
+          setCurrent('table')
+          setDrawer(false)
+        }}
+      />
       {drawer && (
         <aside
           aria-label={t('gmLive.tablet.copilot')}
@@ -93,9 +98,8 @@ export function TabletScreen({
 }
 
 /** The seats, big enough for a thumb: who is here, who asks, who waits too long. */
-function Seats({ screen, onSpotlight }: { screen: LiveScreen; onSpotlight: (player: string) => void }) {
+function Seats({ screen, onOpen }: { screen: LiveScreen; onOpen: () => void }) {
   const { t } = useTranslation()
-  const live = screen.session?.status === 'live'
   const seated = screen.lobby.filter((s) => s.role !== 'spectator')
   return (
     <section aria-label={t('gmLive.tablet.seats')} className="surface-slab hidden flex-col gap-1.5 self-start p-2.5 min-[1000px]:flex">
@@ -109,14 +113,13 @@ function Seats({ screen, onSpotlight }: { screen: LiveScreen; onSpotlight: (play
           <button
             key={s.playerId}
             type="button"
-            disabled={!live || !spot}
             className={cn(
               'flex min-h-16 items-center gap-2.5 rounded-xl bg-surface px-3 text-left',
               spot && spot.pendingRequests > 0 && 'border-[1.5px] border-stat-init',
               spot?.alert && 'border-[1.5px] border-stat-atk',
             )}
-            onClick={() => onSpotlight(s.playerId)}
-            aria-label={t('gmLive.tablet.give', { name: s.characterName ?? s.nickname })}
+            onClick={onOpen}
+            title={t('gmLive.tablet.see')}
           >
             <span className="flex min-w-0 flex-1 flex-col">
               <b className="truncate text-body">{s.characterName ?? s.nickname}</b>

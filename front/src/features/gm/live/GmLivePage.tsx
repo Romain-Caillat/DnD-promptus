@@ -288,7 +288,6 @@ export function GmLivePage() {
         {tablet ? (
           <TabletScreen
             screen={screen}
-            onSpotlight={(p) => void act(() => giveSpotlight(campaignId, p))}
             waiting={{
               scene: screen.requests.some((r) => r.status === 'pending'),
               table: screen.spotlight.some((x) => x.alert),

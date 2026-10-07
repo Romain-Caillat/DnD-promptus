@@ -290,10 +290,12 @@ against the campaign budget; a batch that would exceed it is refused.
   already acts on Space and Enter: a shortcut on the same keys rolled the
   die twice. `shortcutKey` drops Space and Enter on a focused button or
   link, every key in a field, held keys and modifier chords.
-- **Tests on a Mac with Node 26:** Node's own `localStorage` global
-  shadows jsdom's, and the `GmTablePage` tests fail on `localStorage.clear`.
-  Run Vitest under Bun as PCT 105 does:
-  `bun --bun node_modules/.bin/vitest run`.
+- **Tests on a Mac with Node 26:** `bun run test` fails the nine
+  `GmTablePage` tests with `TypeError: Cannot read properties of
+  undefined (reading 'clear')` on `localStorage.clear()`, while
+  `bun --bun node_modules/.bin/vitest run` (Bun, as in PCT 105) passes
+  them all. Likely cause, not checked: Node 26's own `localStorage`
+  global shadows jsdom's. Run Vitest under Bun.
 - **A finger on a map is not a mouse.** iOS cancels a pointer when it
   takes the touch (`pointercancel`): a stroke left open painted on the
   next touch. Map gestures go through the pure reducer

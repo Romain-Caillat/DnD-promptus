@@ -164,8 +164,9 @@ describe('GmLivePage', () => {
 
     const rail = await screen.findByRole('navigation', { name: 'Sections' })
     expect(within(rail).getByRole('button', { name: /Scène/ })).toHaveAttribute('aria-current', 'page')
-    // Marc has been idle 25 minutes: his seat says so, and the table target carries a dot.
-    expect(screen.getByRole('button', { name: 'Donner la main à Borin' })).toHaveTextContent('25 min')
+    // Marc has been idle 25 minutes: his seat says so.
+    const seats = screen.getByRole('region', { name: 'Les places' })
+    expect(within(seats).getByRole('button', { name: /Borin/ })).toHaveTextContent('25 min')
 
     await userEvent.click(screen.getByRole('button', { name: 'Test Moyen (12)' }))
     expect(sentTo(fetchMock, 'POST /api/campaigns/c1/session/requests/r1')).toEqual([
@@ -180,6 +181,11 @@ describe('GmLivePage', () => {
 
     await userEvent.click(within(rail).getByRole('button', { name: /Co-MJ/ }))
     expect(screen.getByRole('complementary', { name: 'Co-MJ' })).toBeInTheDocument()
+
+    // A seat opens the table; only « Donner la main » there records a moment.
+    await userEvent.click(within(seats).getByRole('button', { name: /Borin/ }))
+    expect(within(rail).getByRole('button', { name: /Table/ })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: 'Donner la main' })).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Écran ordinateur' }))
     expect(screen.queryByRole('navigation', { name: 'Sections' })).not.toBeInTheDocument()

@@ -38,6 +38,7 @@ export function MapCanvas({
   const painting = useRef<Cell[] | null>(null)
   const [painted, setPainted] = useState<Cell[] | null>(null)
   const [zoom, setZoom] = useState(1)
+  const zoomRef = useRef(1)
   const tile = scene.tile ?? TILE
   const grid = readGrid(scene.map)
   const moving = !reduced && animated(scene.map, scene.tileset)
@@ -112,8 +113,13 @@ export function MapCanvas({
         const rect = el.getBoundingClientRect()
         const cx = effect.center.x - rect.left
         const cy = effect.center.y - rect.top
-        const next = clampZoom(zoom * effect.scale)
-        const k = next / zoom
+        const before = zoomRef.current
+        const next = clampZoom(before * effect.scale)
+        const k = next / before
+        zoomRef.current = next
+        // Widen the canvas now: a scroll set before React renders would be
+        // clamped to the old, smaller width (the zoom would grow from the corner).
+        if (canvas.current) canvas.current.style.width = `${grid.width * tile * next}px`
         setZoom(next)
         // Keep the point under the fingers where it is, then follow them.
         el.scrollLeft = (el.scrollLeft + cx) * k - cx - effect.by.x

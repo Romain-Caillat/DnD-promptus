@@ -1799,8 +1799,9 @@ soirée et les retours) et Co-MJ, qui glisse en tiroir par-dessus sans
 quitter la section. Un point sur une cible dit qu'une chose y attend
 (une demande, un joueur oublié, le tour d'un adversaire, un brouillon
 du co-MJ). À droite, dès 1000 px, les places en grand : qui est là,
-depuis quand il n'a rien fait, qui demande ; un appui lui donne la
-main. Tous les boutons prennent la taille d'un doigt. Une demande se
+depuis quand il n'a rien fait, qui demande ; un appui ouvre la Table,
+où seul « Donner la main » compte un moment (un pouce égaré sur une
+tablette tenue en main ne doit rien écrire). Tous les boutons prennent la taille d'un doigt. Une demande se
 juge au pouce : la caractéristique en grosses touches, puis une touche
 par difficulté des règles (quatre aux Corsaires) envoie le test ; « Oui,
 sans jet » ; « Non » part avec « Non, rien ici. » si le MJ n'a rien
@@ -1814,7 +1815,8 @@ choisir à la main l'action d'un adversaire, donc la touche dit ce
 qu'elle fait. Un brouillon du co-MJ se lit en entier, avec « Montrer »,
 « Modifier », « Écarter ». Pas de micro : parler au co-MJ est
 `copilot/listen-by-voice` ; le tiroir est l'endroit où il se branchera.
-Jamais essayé sur un vrai iPad.
+Jamais essayé sur un vrai iPad : le zoom au pincement, en particulier,
+n'a été vérifié que par sa logique, pas sous les doigts.
 
 ---
 
