@@ -1,3 +1,4 @@
+import type { CharacterLook, Facing } from '@/features/sprites/look'
 import { apiRequest } from './api'
 import type { RollBreakdown } from './rules'
 
@@ -79,6 +80,13 @@ export interface TokenView {
   mine: boolean
   /** Invisible: only its owner sees it. */
   ghost: boolean
+  /** What its sprite draws; none on a token put down before looks were stored (a disc). */
+  look: CharacterLook | null
+  facing: Facing
+  /** Its last move — the cell it left, then each cell entered — cut to what this player sees. */
+  trail: Cell[]
+  /** How many moves it made: a screen walks only a trail it has not shown yet. */
+  moves: number
 }
 
 type Standing = 'in_fight' | 'defeated' | 'out_of_scene' | 'fled'
@@ -184,6 +192,11 @@ interface Token {
   at: Cell
   hidden: boolean
   invisible: boolean
+  look?: CharacterLook
+  /** Absent until it first turns: its side's rest (heroes east, foes west). */
+  facing?: Facing
+  trail?: Cell[]
+  moves?: number
 }
 
 interface Board {

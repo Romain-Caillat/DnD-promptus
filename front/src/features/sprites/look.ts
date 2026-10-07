@@ -18,8 +18,14 @@ export interface CharacterLook {
   accessories?: Worn[]
 }
 
-/** Heroes face east (right), enemies west (left). */
-export type Facing = 'east' | 'west'
+/**
+ * Where a character faces (characters/walk-in-four-directions). At rest
+ * heroes face east (right) and enemies west (left); on a map they turn
+ * toward where they walk or what they act on.
+ */
+export type Facing = 'east' | 'west' | 'north' | 'south'
+
+export const FACINGS: readonly Facing[] = ['south', 'west', 'north', 'east']
 
 /**
  * The effect a condition shows on the character (rule system,
@@ -49,11 +55,23 @@ function worn(w: Worn | undefined) {
   return { piece: w.piece, dye: w.dye, accent: w.accent }
 }
 
+/** Frames of a sheet (`sheetUrl`), left to right: rest, breath, then the two steps of a walk. */
+export const SHEET_FRAMES = 4
+
 /**
  * The URL of a look's PNG. Keys are written in one fixed order, so the
  * same look is always the same URL and the browser cache holds it once.
  */
 export function spriteUrl(look: CharacterLook, facing: Facing = 'east'): string {
+  return drawingUrl('render.png', look, facing)
+}
+
+/** The URL of a look's sheet: `SHEET_FRAMES` frames side by side, each the size of one sprite. */
+export function sheetUrl(look: CharacterLook, facing: Facing = 'east'): string {
+  return drawingUrl('sheet.png', look, facing)
+}
+
+function drawingUrl(file: string, look: CharacterLook, facing: Facing): string {
   const canonical = {
     pack: look.pack,
     body: look.body,
@@ -67,5 +85,5 @@ export function spriteUrl(look: CharacterLook, facing: Facing = 'east'): string 
     accessories: look.accessories?.map(worn),
   }
   const params = new URLSearchParams({ look: JSON.stringify(canonical), facing })
-  return `/api/sprites/render.png?${params.toString()}`
+  return `/api/sprites/${file}?${params.toString()}`
 }

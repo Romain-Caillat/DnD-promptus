@@ -141,6 +141,7 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
           selected: targets[0] ?? null,
           highlight: fight?.order.filter((f) => targets.includes(f.id) && f.at).map((f) => f.at!) ?? [],
         }}
+        fightEvents={board.fight?.events}
         className="max-h-[55dvh]"
         onCell={tapCell}
       />

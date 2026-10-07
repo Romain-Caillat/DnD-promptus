@@ -79,6 +79,10 @@ export function BoardPanel({
     party: tk.kind === 'character',
     mine: false,
     ghost: tk.hidden || tk.invisible,
+    look: tk.look ?? null,
+    facing: tk.facing ?? (tk.kind === 'character' ? 'east' : 'west'),
+    trail: tk.trail ?? [],
+    moves: tk.moves ?? 0,
   }))
   const sel = board.tokens.find((tk) => tk.id === selected)
 
@@ -145,6 +149,7 @@ export function BoardPanel({
           selected,
           reachable: fighting ? (enc?.reachable ?? []) : [],
         }}
+        fightEvents={enc?.events}
         className="max-h-[60vh]"
         onCell={tool === 'move' ? tap : undefined}
         onPaint={

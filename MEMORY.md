@@ -79,6 +79,14 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   outline is drawn only on empty cells around the silhouette, so it
   never covers the face; condition effects are client-side overlays
   chosen by the rule system (`conditions[].visual`).
+- **Characters turn and walk from server frames
+  (characters/walk-in-four-directions).** Every pack piece draws `east`,
+  `south` and `north` (an empty list is a choice, a missing one is
+  refused); `west` mirrors `east`. Motion is four server-drawn frames per
+  direction (`sheet.png`: rest, breath, two steps), made by moving cells
+  by depth; the client only picks a frame and moves the whole image
+  (walk along the path, lunge, hit blink). Attack and hit are whole-sprite
+  motions, never per-piece art.
 - **Every visual players see is pixel art**: sprites, items, maps, and
   also scene illustrations and NPC portraits (decided 4 October 2026;
   the ink-engraving images of the Corsaires are not reused). Each world
@@ -186,6 +194,12 @@ in one pure function (`projectPlayerView`) and every player route went
 through it. Keep a **single projection point** on the server; never
 filter on the client.
 
+A token's last move (`trail`) goes through the same projection: cut to
+the cells the player sees, like an opponent's `Moved` event — a walk
+through the fog must not draw where it came from. Screens replay only a
+move whose `moves` count they have not shown yet, so a refetch never
+walks a token twice.
+
 ### The server decides every rule
 
 Movement (turn, speed, walls, fog, occupied cells), range, line of
@@ -276,6 +290,12 @@ against the campaign budget; a batch that would exceed it is refused.
   `<b>{{a}}/{{b}}</b>` with `display:grid` puts each text node on its own
   row (the clock showed 3 / 6 stacked). Wrap mixed text in one `<span>`.
 
+- **A `CARGO_TARGET_DIR` shared between worktrees builds the wrong
+  crate.** Workspace crates get the same artifact names in every
+  worktree, and freshness is checked by mtime: a `promptus_shared` built
+  by another worktree looks up to date, and the build fails on items
+  that exist in your sources. Touch your sources (`find shared/src
+  back/src -name '*.rs' -exec touch {} +`) or use your own target dir.
 - **YouTube player must stay visible** (YouTube terms) and starts muted:
   each player taps "activate sound". Ads can desync a player; playback
   re-syncs on its own.

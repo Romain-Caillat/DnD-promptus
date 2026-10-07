@@ -532,6 +532,14 @@
     },
     "look": {
       "yours": "Ton personnage",
+      "turn": "Tourner le personnage",
+      "facing": {
+        "south": "De face",
+        "west": "Vers la gauche",
+        "north": "De dos",
+        "east": "Vers la droite"
+      },
+      "walk": "Marcher",
       "tabs": {
         "body": "Corps",
         "outfit": "Tenue",
@@ -639,6 +647,7 @@
         "brasier": "Le Brasier"
       },
       "effects": "Effets d'état sur le personnage",
+      "walk": "En marche, de face, vers la gauche, de dos, vers la droite",
       "visuals": {
         "poison": "Empoisonné",
         "etourdi": "Étourdi",
@@ -651,7 +660,7 @@
         "ko": "Hors de combat",
         "cible": "Ciblé"
       },
-      "note": "Chaque personnage est une description (pièces et couleurs) que le serveur dessine : le même dessin sur le téléphone, l'écran MJ et la TV. Le groupe regarde à droite, les adversaires à gauche."
+      "note": "Chaque personnage est une description (pièces et couleurs) que le serveur dessine : le même dessin sur le téléphone, l'écran MJ et la TV. Au repos, le groupe regarde à droite, les adversaires à gauche ; sur la carte, chacun se tourne vers là où il va."
     },
     "game": {
       "kicker": "Composants du jeu",

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { apiRequest } from '@/lib/api'
-import { CONDITION_VISUALS, type CharacterLook } from './look'
+import { CONDITION_VISUALS, FACINGS, type CharacterLook } from './look'
 import { Sprite } from './Sprite'
 
 interface NamedLook {
@@ -20,7 +20,9 @@ type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; worlds: 
 /**
  * The characters of the two witness worlds, drawn by the app from their
  * description: the six party slots facing right, their foes facing left,
- * then every condition effect on one of them.
+ * each of them walking in the four directions
+ * (characters/walk-in-four-directions), then every condition effect on
+ * one of them.
  */
 export function SpritesSection() {
   const { t } = useTranslation()
@@ -53,6 +55,16 @@ export function SpritesSection() {
               ))}
               {world.foes.map((p) => (
                 <SpriteTile key={p.id} id={p.id} look={p.look} facing="west" />
+              ))}
+            </ul>
+            <h4 className="type-label">{t('reference.sprites.walk')}</h4>
+            <ul className="flex flex-wrap gap-x-6 gap-y-3">
+              {[...world.party, ...world.foes].map((p) => (
+                <li key={p.id} className="flex items-end gap-1" aria-label={p.id}>
+                  {FACINGS.map((f) => (
+                    <Sprite key={f} look={p.look} scale={2} facing={f} motion="marche" />
+                  ))}
+                </li>
               ))}
             </ul>
           </div>
