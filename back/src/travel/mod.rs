@@ -396,6 +396,37 @@ pub struct Place {
     pub secret: bool,
 }
 
+/// Whether the table knows the place at `at`: a label stands there on a
+/// layer every player sees.
+#[must_use]
+pub fn known_place(map: &Map, at: Cell) -> bool {
+    map.labels
+        .iter()
+        .any(|l| l.at == at && map.visibility(&l.layer) == Visibility::All)
+}
+
+/// The destination's name as the table may hear it: `None` for a place
+/// on a GM layer, or a hex no label names.
+fn told_name<'a>(map: &Map, d: &'a Destination) -> Option<&'a str> {
+    (known_place(map, d.at) && !d.name.is_empty()).then_some(d.name.as_str())
+}
+
+/// The shared journal line when the party leaves on route `route`.
+fn leaving_line(map: &Map, d: &Destination, route: &str) -> String {
+    match told_name(map, d) {
+        Some(name) => format!("En route vers {name} : {route}."),
+        None => format!("En route : {route}."),
+    }
+}
+
+/// The shared journal line when the party enters the place reached.
+fn arrival_line(map: &Map, d: &Destination, day: u32) -> String {
+    match told_name(map, d) {
+        Some(name) => format!("Arrivée : {name} (jour {day})."),
+        None => format!("Arrivée (jour {day})."),
+    }
+}
+
 /// The places of `map`, as the GM sees them.
 #[must_use]
 pub fn places(map: &Map) -> Vec<Place> {
@@ -590,7 +621,8 @@ pub async fn gm(
                 .routes
                 .get(*index)
                 .ok_or(AppError::BadRequest("UNKNOWN_ROUTE"))?;
-            let line = format!("En route vers {} : {}.", j.destination.name, r.name);
+            // A place on a GM layer keeps its name off the shared journal.
+            let line = leaving_line(&map, &j.destination, &r.name);
             let hexes = r.route.hexes.clone();
             j.chosen = Some(*index);
             t.party.way = Some(Way {
@@ -864,10 +896,7 @@ pub async fn gm(
                 sid,
                 JournalKind::Narration,
                 None,
-                &format!(
-                    "Arrivée : {} (jour {}).",
-                    j.destination.name, t.party.clock.day
-                ),
+                &arrival_line(&map, &j.destination, t.party.clock.day),
                 true,
             )
             .await?;
@@ -1114,4 +1143,65 @@ pub async fn on_table(
     let t = get(pool, campaign, &b.map_id).await?;
     let guide = content::guide(&b.map);
     Ok(Some((b.map, guide, t)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn corsaires() -> Map {
+        Map::from_yaml(include_str!(
+            "../../../content/maps/corsaires/cotes-bretagne-sud.yaml"
+        ))
+        .unwrap()
+    }
+
+    fn to(map: &Map, at: Cell) -> Destination {
+        let name = map
+            .labels
+            .iter()
+            .find(|l| l.at == at)
+            .map_or_else(String::new, |l| l.text.clone());
+        Destination { name, at }
+    }
+
+    #[test]
+    fn a_secret_place_never_names_itself_in_the_shared_journal() {
+        let map = corsaires();
+        let secret = to(&map, Cell { x: 2, y: 7 });
+        assert_eq!(secret.name, "Mouillage de la frégate anglaise");
+        assert!(!known_place(&map, secret.at));
+        for line in [
+            leaving_line(&map, &secret, "Haute mer"),
+            arrival_line(&map, &secret, 2),
+        ] {
+            assert!(!line.contains("frégate"), "{line}");
+        }
+        assert_eq!(
+            leaving_line(&map, &secret, "Haute mer"),
+            "En route : Haute mer."
+        );
+        assert_eq!(arrival_line(&map, &secret, 2), "Arrivée (jour 2).");
+    }
+
+    #[test]
+    fn a_known_place_is_named_and_an_unnamed_hex_reads_cleanly() {
+        let map = corsaires();
+        let palais = to(&map, Cell { x: 9, y: 9 });
+        assert!(known_place(&map, palais.at));
+        assert_eq!(
+            leaving_line(&map, &palais, "Haute mer"),
+            "En route vers Belle-Île · Le Palais : Haute mer."
+        );
+        assert_eq!(
+            arrival_line(&map, &palais, 3),
+            "Arrivée : Belle-Île · Le Palais (jour 3)."
+        );
+        let open_sea = to(&map, Cell { x: 4, y: 4 });
+        assert!(open_sea.name.is_empty());
+        assert_eq!(
+            leaving_line(&map, &open_sea, "Haute mer"),
+            "En route : Haute mer."
+        );
+    }
 }

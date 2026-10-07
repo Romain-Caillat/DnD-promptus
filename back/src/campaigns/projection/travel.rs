@@ -15,13 +15,13 @@
 //! tables, a secret destination's name, the GM's message to another
 //! player's watch.
 
-use promptus_shared::maps::{Cell, Map, Visibility};
+use promptus_shared::maps::{Cell, Map};
 use promptus_shared::rules::check::{OutcomeBand, RollBreakdown};
 use promptus_shared::travel::Guide;
 use serde::Serialize;
 use uuid::Uuid;
 
-use crate::travel::{Member, Travel};
+use crate::travel::{Member, Travel, known_place};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -145,10 +145,7 @@ pub fn project_travel(
             .map(|m| m.name.clone())
     };
     let journey = t.journey.as_ref().map(|j| {
-        let known = map
-            .labels
-            .iter()
-            .any(|l| l.at == j.destination.at && map.visibility(&l.layer) == Visibility::All);
+        let known = known_place(map, j.destination.at);
         let routes = j
             .routes
             .iter()

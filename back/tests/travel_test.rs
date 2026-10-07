@@ -103,7 +103,8 @@ impl Table {
             ("Camille", &self.camille),
             ("Léa", &self.lea),
         ] {
-            for path in ["/travel", "/board"] {
+            // The evening carries the shared journal the journey writes.
+            for path in ["/travel", "/board", "/evening"] {
                 let r = self.player(token, "GET", path, None).await;
                 assert_eq!(r.status, StatusCode::OK, "{who} {path}");
                 let json = r.body.to_string();
@@ -511,4 +512,27 @@ async fn the_gm_holds_the_party_and_places_it_but_not_mid_journey() {
     assert_eq!(r.body["error"]["code"], "NO_WORLD_MAP");
     let r = t.player(&t.marc, "GET", "/travel", None).await;
     assert_eq!(r.body["data"], Value::Null);
+}
+
+#[tokio::test]
+async fn a_journey_to_a_secret_place_keeps_its_name_off_every_phone() {
+    let t = table(&CORSAIRES).await;
+    // The frigate's anchorage is on the GM's layer.
+    let r = t.travel(json!({ "kind": "plan", "to": [2, 7] })).await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    assert_eq!(
+        r.body["data"]["travel"]["journey"]["destination"]["name"],
+        "Mouillage de la frégate anglaise"
+    );
+    let r = t.travel(json!({ "kind": "choose", "index": 0 })).await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    let mine = t.player(&t.marc, "GET", "/travel", None).await.body["data"].clone();
+    assert_eq!(mine["journey"]["destination"], "");
+    let evening = t
+        .player(&t.marc, "GET", "/evening", None)
+        .await
+        .body
+        .to_string();
+    assert!(evening.contains("En route : "), "{evening}");
+    t.assert_phones_clean(&[]).await;
 }
