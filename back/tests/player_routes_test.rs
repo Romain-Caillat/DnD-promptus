@@ -215,14 +215,19 @@ fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> 
     (path.ends_with("/requests")
         || path.ends_with("/feedback")
         || path.ends_with("/walk")
-        || path.ends_with("/fight"))
+        || path.ends_with("/fight")
+        || path.ends_with("/travel"))
     .then_some((StatusCode::FORBIDDEN, "SPECTATOR"))
 }
 
 /// A route the sweep's table cannot make succeed for Marc, and the
 /// answer it gives instead. Fighting needs a fight; the leaks of a fight
-/// are swept in `board_test.rs`.
+/// are swept in `board_test.rs`. Voting needs a world map on the table;
+/// the leaks of a journey are swept in `travel_test.rs`.
 fn refused_to_marc(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
+    if method == "POST" && path.ends_with("/travel") {
+        return Some((StatusCode::CONFLICT, "NO_WORLD_MAP"));
+    }
     (method == "POST" && path.ends_with("/fight")).then_some((StatusCode::CONFLICT, "NO_FIGHT"))
 }
 
@@ -263,6 +268,7 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
         ("POST", p) if p.ends_with("/equip") => Some(json!({ "entry": "k1", "equipped": true })),
         ("POST", p) if p.ends_with("/walk") => Some(json!({ "path": [[1, 5]] })),
         ("POST", p) if p.ends_with("/fight") => Some(json!({ "kind": "endTurn" })),
+        ("POST", p) if p.ends_with("/travel") => Some(json!({ "kind": "vote", "route": 0 })),
         ("POST", p) if p.ends_with("/lobby") => Some(json!({ "soundOk": true, "remote": true })),
         ("POST", p) if p.ends_with("/requests") => Some(json!({
             "card": { "kind": "ability", "ability": "SAG" },

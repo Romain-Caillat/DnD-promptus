@@ -18,6 +18,7 @@ import { playerBackdropUrl } from '@/lib/maps'
 import { fetchPlayerMedia, playerImageUrl, type MediaList } from '@/lib/media'
 import { cardIndex, cardKey, useShortcuts } from '@/lib/useShortcuts'
 import { cn } from '@/lib/utils'
+import { WorldMapTab } from '@/features/travel/PlayerTravel'
 import { eventLine } from './events'
 import { MapCanvas } from './MapCanvas'
 import { useImage } from './useImage'
@@ -121,6 +122,9 @@ export function MapTab({
   if (state.kind === 'loading') return <p role="status">{t('play.loading')}</p>
   if (state.kind === 'error') return <p role="alert">{t('play.error')}</p>
   if (!board) return <p className="text-body text-chalk-soft">{t('map.none')}</p>
+  if (board.map.scale === 'world') {
+    return <WorldMapTab campaignId={campaignId} board={board} tileset={tileset} refreshKey={refreshKey} />
+  }
 
   const fight = board.fight?.live ? board.fight : null
   const me = board.tokens.find((tk) => tk.mine)

@@ -6,7 +6,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::dice::DiceSource;
-use super::model::{ConditionEffect, GroupThreshold, RollScope, RuleSystem};
+use super::model::{ConditionEffect, RollScope, RuleSystem};
 use super::sheet::{Combatant, SheetError};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -324,12 +324,7 @@ pub fn group_check(
         .iter()
         .filter(|(_, r)| r.band.is_some_and(OutcomeBand::is_success))
         .count();
-    let needed = match rule.succeeds_when {
-        GroupThreshold::AtLeastHalf => n.div_ceil(2),
-        GroupThreshold::Majority => n / 2 + 1,
-        GroupThreshold::All => n,
-        GroupThreshold::Any => 1,
-    };
+    let needed = rule.succeeds_when.needed(n);
     Ok(GroupCheck {
         rolls,
         successes,

@@ -10,6 +10,7 @@ import type { Cell, Edit, GmBoard, GmCommand, TokenView, Weather, TimeOfDay } fr
 import { gmBackdropUrl } from '@/lib/maps'
 import { gmImageUrl, type MediaList } from '@/lib/media'
 import { cn } from '@/lib/utils'
+import { TravelPanel } from '@/features/travel/TravelPanel'
 import { BigKey, Btn, Panel, field, useTouchScreen } from './ui'
 
 const TOOLS = ['move', 'reveal', 'hide'] as const
@@ -66,6 +67,17 @@ export function BoardPanel({
       <Panel title={t('gmLive.board.title')}>
         <p className="text-caption text-mute">{t('gmLive.board.none')}</p>
         <MapPicker data={data} live={live} onShow={onShow} />
+      </Panel>
+    )
+  }
+
+  if (board.map.scale === 'world') {
+    return (
+      <Panel
+        title={t('gmLive.board.title')}
+        actions={<MapPicker data={data} live={live && !fighting} onShow={onShow} current={board.mapId} />}
+      >
+        <TravelPanel campaignId={campaignId} map={board.map} tileset={tileset} refreshKey={data} />
       </Panel>
     )
   }

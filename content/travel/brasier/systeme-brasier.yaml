@@ -1,0 +1,59 @@
+# Le Brasier — le guide de voyage du système (maps/travel-hex-world) :
+# le Cure-Dent, moteur de distorsion hors service, avance à
+# l'impulsion. Les tables d'événements sont pour le MJ : le co-MJ en
+# tire trois par portion, le MJ en garde un ou aucun.
+# INVENTÉ — à valider par Romain : allures, vivres et événements.
+map: systeme-brasier
+portions: [Premier quart, Deuxième quart, Troisième quart]
+steps_per_portion: 2
+supplies: { name: Vivres, per_person_per_day: 1 }
+watches: [Veille de nuit, Veille du cœur, Veille de l'aube]
+terrains:
+  vide:
+    name: l'espace libre
+    cost: 1
+    events:
+      - id: chasseur-vorr
+        title: Un chasseur Vorr
+        text: Un écho bref sur les capteurs, puis plus rien. LUMEN parle d'un « artefact de mesure ».
+        gm_notes: Un éclaireur de l'essaim suit la balise. Le front de la Ruche peut avancer si personne ne la cherche.
+      - id: appel-cephalopode
+        title: Un appel sur toutes les fréquences
+        text: Une voix douce, en sept langues, propose « une assistance désintéressée à l'honorable vaisseau inconnu ».
+        gm_notes: Le courtier céphalopode — le front du marché s'il obtient un rendez-vous.
+      - id: silence
+        title: Le silence
+        text: Rien que les étoiles et le ronronnement du réacteur. LUMEN fredonne un vieil air de la Confédération.
+        gm_notes: Une portion calme ; le moment d'une scène entre membres d'équipage.
+  débris:
+    name: le champ de débris
+    cost: 2
+    events:
+      - id: epave-sereth
+        title: Une épave sereth
+        text: Une coque en forme de carapace, éventrée, tourne lentement sur elle-même.
+        gm_notes: Récupérable — fragments de carapace (valeur 5) et un journal de bord qui mentionne le Toboggan.
+      - id: impact
+        title: Un impact
+        text: Un éclat de métal traverse le bouclier et frappe la coque. Une alarme s'allume en salle des machines.
+        gm_notes: Jet de groupe de DEX, DD 12, pour manœuvrer ; raté, une portion perdue en réparations.
+  astéroïdes:
+    name: la ceinture
+    cost: 3
+    events:
+      - id: patrouille-sereth
+        title: Une patrouille sereth
+        text: Trois vaisseaux en carapace sortent de l'ombre d'un rocher et se placent autour du Cure-Dent, sans tirer.
+        gm_notes: Ils escortent jusqu'au Reliquaire si l'équipage montre du respect ; sinon ils le suivent de loin.
+  station:
+    name: une station
+    cost: 1
+  toboggan:
+    name: le Toboggan
+    cost: 1
+  étoile:
+    name: l'étoile
+    impassable: true
+  planète:
+    name: une planète
+    impassable: true

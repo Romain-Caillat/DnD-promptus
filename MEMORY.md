@@ -194,6 +194,19 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   deals and flips, hit shake, "your turn" slam. Every animation has a
   meaning and respects `prefers-reduced-motion`.
 
+- **World maps are travelled, not walked (`maps/travel-hex-world`).**
+  On a map in hexes the party is one token, moved only by the journey
+  the GM plays portion by portion; nobody drags it (`TRAVEL_MAP`). Its
+  hex, the hexes it has seen, the day and the supplies live in
+  `travels` (one row per campaign and world map) and are copied onto the
+  board in the same transaction, so a world map comes back as it was
+  left. How a map is crossed (pace per terrain, portions, supplies,
+  watches, event tables) is a travel guide next to the map
+  (`content/travel/`), not a field of `Map`: the map model stays the
+  grid every other part reads. The players' vote on a route advises;
+  the GM chooses. A route the GM proposes is shown whole to players,
+  fog included — it is a road the table is told of.
+
 ## 3. Load-bearing invariants (proven in V1, keep them)
 
 Break one of these and the failure is silent, not loud.
@@ -323,7 +336,8 @@ against the campaign budget; a batch that would exceed it is refused.
   worktree, and freshness is checked by mtime: a `promptus_shared` built
   by another worktree looks up to date, and the build fails on items
   that exist in your sources. Touch your sources (`find shared/src
-  back/src -name '*.rs' -exec touch {} +`) or use your own target dir.
+  back/src -name '*.rs' -exec touch {} +`) or use your own target dir. Same trap for the integration tests:
+  parallel lots with different migrations need their own test database.
 - **YouTube player must stay visible** (YouTube terms) and starts muted:
   each player taps "activate sound". Ads can desync a player; playback
   re-syncs on its own.
