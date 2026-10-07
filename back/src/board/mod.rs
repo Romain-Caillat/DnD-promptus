@@ -11,7 +11,11 @@
 //!   `Map::fogged`, and no token on a fogged cell or hidden from them
 //!   (`campaigns::projection::board`);
 //! - maps/blend-outdoor-terrain: the GM changes the time, the weather or
-//!   the light live.
+//!   the light live;
+//! - characters/walk-in-four-directions: each token carries its look, the
+//!   way it faces and its last move (`trail`, numbered by `moves`), so
+//!   every screen shows the character walk that path and turn toward
+//!   where it went or what it acted on.
 //!
 //! Every write takes the campaign lock and touches the `map` topic.
 
@@ -25,6 +29,7 @@ use promptus_shared::maps::{
     Visibility, Weather, check_path, reachable, visible_cells,
 };
 use promptus_shared::rules::RuleSystem;
+use promptus_shared::sprite::{CharacterLook, Direction};
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
 use sqlx::{PgExecutor, PgPool, Postgres, Transaction};
@@ -68,6 +73,80 @@ pub struct Token {
     /// ghost.
     #[serde(default)]
     pub invisible: bool,
+    /// What its sprite draws, set when it is put on the map: the
+    /// character's sheet, or the NPC's look (`content::npc_look`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub look: Option<CharacterLook>,
+    /// Where it faces; none until it first moves or acts (see
+    /// `Token::facing`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub facing: Option<Direction>,
+    /// Its last move: the cell it left, then every cell it entered.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub trail: Vec<Cell>,
+    /// How many moves it made: a screen walks a trail it has not shown
+    /// yet, and only that one.
+    #[serde(default)]
+    pub moves: u32,
+}
+
+impl Token {
+    /// A token as it is first put on the map, facing its side's way.
+    #[must_use]
+    pub fn new(
+        id: String,
+        kind: TokenKind,
+        r#ref: String,
+        name: String,
+        at: Cell,
+        look: Option<CharacterLook>,
+    ) -> Self {
+        Self {
+            id,
+            kind,
+            r#ref,
+            name,
+            at,
+            hidden: false,
+            invisible: false,
+            look,
+            facing: None,
+            trail: Vec::new(),
+            moves: 0,
+        }
+    }
+
+    /// Where it faces: the way it last turned, else its side's rest —
+    /// heroes east, foes west (`MEMORY.md` §2).
+    #[must_use]
+    pub fn facing(&self) -> Direction {
+        self.facing.unwrap_or(match self.kind {
+            TokenKind::Character => Direction::East,
+            TokenKind::Npc => Direction::West,
+        })
+    }
+
+    /// Walk along `path`, the cells entered in order (already checked):
+    /// it ends on the last one, facing its last step.
+    pub fn walk(&mut self, path: &[Cell]) {
+        let Some(&to) = path.last() else { return };
+        let mut trail = Vec::with_capacity(path.len() + 1);
+        trail.push(self.at);
+        trail.extend_from_slice(path);
+        if let Some(d) = Direction::toward(trail[trail.len() - 2], to) {
+            self.facing = Some(d);
+        }
+        self.at = to;
+        self.trail = trail;
+        self.moves += 1;
+    }
+
+    /// Turn toward `cell` (a target), staying where it stands.
+    pub fn face(&mut self, cell: Cell) {
+        if let Some(d) = Direction::toward(self.at, cell) {
+            self.facing = Some(d);
+        }
+    }
 }
 
 /// The map at the table, as the server holds it.
@@ -204,8 +283,8 @@ async fn party_tokens(
     map: &Map,
     before: &[Token],
 ) -> Result<Vec<Token>, AppError> {
-    let rows: Vec<(Uuid, String)> = sqlx::query_as(
-        "SELECT c.id, COALESCE(c.sheet->>'name', p.nickname)
+    let rows: Vec<(Uuid, String, Option<Json<CharacterLook>>)> = sqlx::query_as(
+        "SELECT c.id, COALESCE(c.sheet->>'name', p.nickname), c.sheet->'look'
          FROM characters c JOIN players p ON p.id = c.player_id
          WHERE p.campaign_id = $1 AND p.role = 'player' AND c.status = 'validated'
          ORDER BY p.created_at",
@@ -219,25 +298,30 @@ async fn party_tokens(
         .filter(|s| s.side == Some(MapSide::Party))
         .map(|s| s.at);
     let mut tokens = Vec::new();
-    for (id, name) in rows {
+    for (id, name, look) in rows {
         let tid = character_token(id);
         let kept = before
             .iter()
             .find(|t| t.id == tid)
-            .map(|t| t.at)
-            .filter(|at| map.grid.contains(*at));
-        let Some(at) = kept.or_else(|| starts.next()) else {
+            .filter(|t| map.grid.contains(t.at));
+        let Some(at) = kept.map(|t| t.at).or_else(|| starts.next()) else {
             break;
         };
-        tokens.push(Token {
-            id: tid,
-            kind: TokenKind::Character,
-            r#ref: id.to_string(),
+        let mut token = Token::new(
+            tid,
+            TokenKind::Character,
+            id.to_string(),
             name,
             at,
-            hidden: false,
-            invisible: false,
-        });
+            look.map(|Json(l)| l),
+        );
+        // A token that stays keeps the way it faced and its last move.
+        if let Some(k) = kept {
+            token.facing = k.facing;
+            token.trail.clone_from(&k.trail);
+            token.moves = k.moves;
+        }
+        tokens.push(token);
     }
     Ok(tokens)
 }
@@ -504,7 +588,10 @@ pub async fn edit(
                 .iter_mut()
                 .find(|t| &t.id == token)
                 .ok_or(AppError::BadRequest("UNKNOWN_TOKEN"))?;
-            t.at = *at;
+            // The GM lifts the token and sets it down: it glides there.
+            if t.at != *at {
+                t.walk(&[*at]);
+            }
             b.reveal_from_party();
         }
         Edit::PlaceNpc { npc, at, hidden } => {
@@ -516,15 +603,16 @@ pub async fn edit(
                 .or_else(|| row.story.adversary(npc).map(|a| a.name.clone()))
                 .ok_or(AppError::BadRequest("UNKNOWN_NPC"))?;
             let n = b.tokens.iter().filter(|t| t.r#ref == *npc).count();
-            b.tokens.push(Token {
-                id: format!("{npc}-{}", n + 1),
-                kind: TokenKind::Npc,
-                r#ref: npc.clone(),
+            let mut t = Token::new(
+                format!("{npc}-{}", n + 1),
+                TokenKind::Npc,
+                npc.clone(),
                 name,
-                at: *at,
-                hidden: *hidden,
-                invisible: false,
-            });
+                *at,
+                Some(content::npc_look(&row.story, npc)),
+            );
+            t.hidden = *hidden;
+            b.tokens.push(t);
         }
         Edit::RemoveToken { token } => {
             let before = b.tokens.len();
@@ -599,8 +687,8 @@ pub async fn walk(pool: &PgPool, player: &Player, path: &[Cell]) -> Result<Board
         EXPLORE_BUDGET,
     )
     .map_err(|_| AppError::BadRequest("INVALID_PATH"))?;
-    if let (Some(to), Some(t)) = (path.last(), b.tokens.iter_mut().find(|t| t.id == tid)) {
-        t.at = *to;
+    if let Some(t) = b.tokens.iter_mut().find(|t| t.id == tid) {
+        t.walk(path);
     }
     b.reveal_from_party();
     save(&mut tx, player.campaign_id, &b).await?;

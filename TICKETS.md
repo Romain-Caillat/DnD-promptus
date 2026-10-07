@@ -1996,7 +1996,7 @@ humanoïdes en carapace, casque fermé, recolorés chitine et ambre : le
 pack ne dessine que des humains. Images de référence :
 `shared/tests/golden/<monde>/planche.png`. Reste pour Romain : regarder
 les douze personnages et les adversaires sur `/reference` et dire ce qui
-cloche ; les directions nord et sud viennent avec
+cloche ; les vues de face et de dos sont arrivées avec
 `characters/walk-in-four-directions`.
 
 ### `characters/build-character-creator` · doing — reste l'essai sur un vrai téléphone
@@ -2040,12 +2040,13 @@ dessiné et propose « Créer / Reprendre / Corriger » tant que la fiche
 est en brouillon ou renvoyée. Un test suit Marc sur les huit moments.
 **Limites** : aucun des deux mondes témoins ne définit encore de
 peuples, l'étape « peuple » n'apparaît donc qu'avec un système qui en a ;
-le personnage sur la carte et la TV attend ces écrans ; le même
+le personnage est sur la carte depuis
+`characters/walk-in-four-directions`, la TV attend `tv/show-evening` ; le même
 créateur côté MJ pour les PNJ et monstres reste à faire. **Reste** : un
 joueur crée son personnage sur un vrai téléphone en moins de deux
 minutes.
 
-### `characters/walk-in-four-directions` · todo
+### `characters/walk-in-four-directions` · doing — reste un vrai déplacement vu sur plusieurs téléphones, la TV, et la relecture des vues de face et de dos par Romain
 
 **Pourquoi** — Sur la carte, un personnage qui se tourne vers là où il
 va rend le déplacement lisible et vivant.
@@ -2058,6 +2059,47 @@ direction ; le pion se tourne vers sa case d'arrivée ou sa cible.
 marcher dans la bonne direction, chez tous les joueurs et sur la TV.
 
 **Origine** — Romain, session de design du 3 octobre 2026
+
+**État** — Chaque pièce des deux packs se dessine maintenant de profil,
+de face et de dos (la gauche reste le miroir du profil) : les corps,
+cheveux, barbes et coiffes de face et de dos sont dessinés à la main,
+le reste (tenues, armures, armes, accessoires) a été tourné une fois
+depuis le profil par une règle par profondeur
+(`docs/design/sprite-turn.py`), et les packs sont redevenus la source
+qu'on édite à la main. Un pack qui oublie une direction est refusé ; une
+liste vide dit « on ne la voit pas de ce côté » (une barbe de dos). Le
+serveur dessine, pour chaque allure et chaque direction, une planche de
+quatre images (`GET /api/sprites/sheet.png`) : repos, respiration et
+deux pas — jambes écartées de profil, un pied levé de face et de dos
+(planche « Sprite » du canevas : `repos`, `marche`). Sur la carte, les
+pions sont ces personnages (et plus des disques) : ils respirent au
+repos, marchent case par case le chemin de leur dernier déplacement en
+se tournant à chaque pas, se fendent vers la cible qu'ils frappent et
+clignotent quand ils sont touchés ; immobiles si l'appareil demande
+moins d'animations. Le serveur tient l'orientation et le dernier
+déplacement de chaque pion (déplacement du joueur, pion posé par le MJ,
+pas et coups du combat), si bien que chaque écran rejoue le même
+déplacement ; ce qu'un écran voit en s'ouvrant n'est jamais rejoué, et
+un déplacement passé par le brouillard n'est montré aux joueurs que sur
+les cases qu'ils voient. Les PNJ prennent l'allure de leur monde (un
+« marin 2 » est un marin), et un PNJ sans allure (campagne générée) en
+reçoit une tirée de son identifiant, la même partout. Le créateur montre
+l'aperçu en mouvement, tournable dans les quatre directions, avec un
+bouton « Marcher » ; `/reference` montre chaque personnage des deux
+mondes marchant dans les quatre directions. Testé sur les deux mondes
+(le quai de Port-Louis, la coursive du Cure-Dent) jusqu'au combat, et
+essayé dans un navigateur au format téléphone sur le quai. Aucune
+migration : l'orientation et le dernier déplacement vivent dans les
+pions déjà stockés en JSON.
+**Hypothèse** : l'attaque et le touché sont des mouvements du sprite
+entier (fente, clignotement, recul), comme sur la planche « Sprite », et
+pas des images dessinées par pièce. **Limite** : la TV
+(`tv/show-evening`, phase 5) n'existe pas encore ; elle reprendra le
+même dessin de carte et les mêmes planches, et c'est là qu'il faudra
+voir la marche. **Reste** : un déplacement joué pour de vrai, vu en même
+temps sur plusieurs téléphones ; la TV ; Romain regarde les vues de face
+et de dos (`shared/tests/golden/<monde>/marche.png`, ou `/reference`) et
+dit ce qui cloche.
 
 ---
 

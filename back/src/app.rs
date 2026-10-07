@@ -53,6 +53,7 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         .route("/api/auth/sign-in", post(api::auth::sign_in))
         // Sprites: a description is drawn the same for GM, players and TV.
         .route("/api/sprites/render.png", get(api::sprites::render_png))
+        .route("/api/sprites/sheet.png", get(api::sprites::sheet_png))
         .route("/api/sprites/looks", get(api::sprites::looks))
         .route("/api/sprites/packs/{pack}", get(api::sprites::pack));
     let public = invitation_routes()

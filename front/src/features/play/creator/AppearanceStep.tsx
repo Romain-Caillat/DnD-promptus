@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Sprite } from '@/features/sprites/Sprite'
-import type { CharacterLook } from '@/features/sprites/look'
+import { Sprite, type SpriteMotion } from '@/features/sprites/Sprite'
+import { FACINGS, type CharacterLook, type Facing } from '@/features/sprites/look'
 import { randomLook, type CataloguePiece, type PackCatalogue, type Swatch } from '@/lib/creator'
 
 const APPEARANCE_TABS = ['body', 'outfit', 'colours'] as const
@@ -18,10 +19,15 @@ function full(w: Worn | undefined): { piece: string; dye?: string; accent?: stri
   return typeof w === 'string' ? { piece: w } : w
 }
 
+/** The arrow of each way the preview can face. */
+const ARROWS: Record<Facing, string> = { south: '↓', west: '←', north: '↑', east: '→' }
+
 /**
  * The layered configurator (board « Créer », moments 2 to 4): the
- * character drawn live by the server, then the pieces of the pack, slot
- * by slot, and their colours. Three tabs: body, outfit, colours.
+ * character drawn live by the server, breathing or walking, turned to
+ * any of the four directions it will walk on the map
+ * (characters/walk-in-four-directions); then the pieces of the pack,
+ * slot by slot, and their colours. Three tabs: body, outfit, colours.
  */
 export function AppearanceStep({
   pack,
@@ -41,6 +47,8 @@ export function AppearanceStep({
   onName: (name: string) => void
 }) {
   const { t } = useTranslation()
+  const [facing, setFacing] = useState<Facing>('east')
+  const [motion, setMotion] = useState<SpriteMotion>('repos')
   const set = (patch: Partial<CharacterLook>) => onLook({ ...look, ...patch })
   const piece = (slot: WornSlot, id: string | undefined) => {
     if (id === undefined) return set({ [slot]: undefined })
@@ -68,7 +76,35 @@ export function AppearanceStep({
     <div className="flex flex-col gap-3">
       <div className="cr-stage">
         <span className="cr-stage-label type-label">{name || t('creator.look.yours')}</span>
-        <Sprite look={look} scale={8} label={name || t('creator.look.yours')} className="cr-stage-sprite" />
+        <Sprite
+          look={look}
+          scale={8}
+          facing={facing}
+          motion={motion}
+          label={name || t('creator.look.yours')}
+          className="cr-stage-sprite"
+        />
+        <div className="cr-turn" role="group" aria-label={t('creator.look.turn')}>
+          {FACINGS.map((f) => (
+            <button
+              key={f}
+              type="button"
+              aria-pressed={facing === f}
+              aria-label={t(`creator.look.facing.${f}`)}
+              title={t(`creator.look.facing.${f}`)}
+              onClick={() => setFacing(f)}
+            >
+              {ARROWS[f]}
+            </button>
+          ))}
+          <button
+            type="button"
+            aria-pressed={motion === 'marche'}
+            onClick={() => setMotion(motion === 'marche' ? 'repos' : 'marche')}
+          >
+            {t('creator.look.walk')}
+          </button>
+        </div>
       </div>
       <div className="cr-tabs" role="tablist">
         {APPEARANCE_TABS.map((k) => (

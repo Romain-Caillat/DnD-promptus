@@ -24,6 +24,24 @@
   pointer-events: none;
 }
 
+/*
+ * The server's sheet (characters/walk-in-four-directions): rest, breath,
+ * step, step. At rest the first two frames alternate each half second;
+ * walking, the two steps every 0.2 s with a small hop (board « Sprite »).
+ * Still, the first frame of each.
+ */
+.sprite-sheet {
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+.sprite-sheet-repos { animation: sprite-repos 1s steps(1) infinite; }
+@keyframes sprite-repos { 0% { background-position: 0 0 } 50% { background-position: calc(-1 * var(--sprite-w)) 0 } }
+.sprite-sheet-marche { background-position: calc(-2 * var(--sprite-w)) 0; animation: sprite-marche .4s steps(1) infinite; }
+@keyframes sprite-marche {
+  0% { background-position: calc(-2 * var(--sprite-w)) 0; transform: translateY(0) }
+  50% { background-position: calc(-3 * var(--sprite-w)) 0; transform: translateY(-4%) }
+}
+
 /* poison: sickly tint pulse, bubbles rising */
 .sprite-fx-poison .sprite-body { filter: sepia(0.35) hue-rotate(38deg) saturate(1.4); animation: sprite-sick 1.6s ease-in-out infinite; }
 @keyframes sprite-sick { 0%, 100% { filter: none } 50% { filter: sepia(.7) hue-rotate(38deg) saturate(1.8) } }

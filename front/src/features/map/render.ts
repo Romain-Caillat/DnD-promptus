@@ -1,5 +1,7 @@
 import type { Cell, CellKind, MapData, ReachCell, TokenView } from '@/lib/board'
 import type { Material, Tileset } from '@/lib/media'
+import { SPRITE_HEIGHT, SPRITE_WIDTH, sheetUrl } from '@/features/sprites/look'
+import type { Pose } from './motion'
 
 /**
  * The grid renderer (maps/render-three-quarter-tiles,
@@ -99,6 +101,10 @@ export interface Scene {
   backdrop?: HTMLImageElement | null
   /** Editor: walls shown over the backdrop, to trace them. */
   showWalls?: boolean
+  /** Loaded character sheets, by `sheetUrl`: a token whose sheet is here is drawn as its sprite. */
+  sprites?: Record<string, CanvasImageSource>
+  /** Where each token is and which frame it shows now (`Motion.pose`), by token id. */
+  poses?: Record<string, Pose>
 }
 
 export const cellKey = ([x, y]: Cell) => `${x},${y}`
@@ -410,10 +416,35 @@ function drawWeather(ctx: CanvasRenderingContext2D, scene: Scene) {
   }
 }
 
-function drawToken(ctx: CanvasRenderingContext2D, tk: TokenView, t: number, selected: boolean) {
-  const cx = (tk.at[0] + 0.5) * t
-  const cy = (tk.at[1] + 0.5) * t
-  ctx.globalAlpha = tk.ghost ? 0.45 : 1
+/** Sprite pixels per screen pixel on a map of `t`-pixel cells: about a cell and a third tall, whole numbers only. */
+function spriteScale(t: number): number {
+  return Math.max(1, Math.round((t * 1.3) / SPRITE_HEIGHT))
+}
+
+function drawToken(ctx: CanvasRenderingContext2D, tk: TokenView, t: number, selected: boolean, scene: Scene) {
+  const pose = scene.poses?.[tk.id]
+  const x = pose?.x ?? tk.at[0]
+  const y = pose?.y ?? tk.at[1]
+  const cx = (x + 0.5) * t
+  const cy = (y + 0.5) * t
+  const sheet = tk.look ? scene.sprites?.[sheetUrl(tk.look, pose?.facing ?? tk.facing)] : undefined
+  ctx.globalAlpha = tk.ghost ? 0.45 : pose?.blink ? 0.3 : 1
+  if (sheet) {
+    // The ring under the feet says whose it is and who is picked.
+    ctx.lineWidth = Math.max(2, t / 16)
+    ctx.strokeStyle = selected ? '#e0a650' : tk.mine ? '#3aa0ff' : tk.party ? 'rgba(239,230,210,0.7)' : 'rgba(194,69,58,0.85)'
+    ctx.beginPath()
+    ctx.ellipse(cx, cy + t * 0.3, t * 0.36, t * 0.14, 0, 0, Math.PI * 2)
+    ctx.stroke()
+    const k = spriteScale(t)
+    const w = SPRITE_WIDTH * k
+    const h = SPRITE_HEIGHT * k
+    const frame = pose?.frame ?? 0
+    // Feet on the lower part of the cell; the head rises over the row above (three-quarter view).
+    ctx.drawImage(sheet, frame * SPRITE_WIDTH, 0, SPRITE_WIDTH, SPRITE_HEIGHT, Math.round(cx - w / 2), Math.round((y + 1) * t - h + k * 2), w, h)
+    ctx.globalAlpha = 1
+    return
+  }
   ctx.fillStyle = 'rgba(0,0,0,0.4)'
   ctx.beginPath()
   ctx.ellipse(cx, cy + t * 0.32, t * 0.32, t * 0.12, 0, 0, Math.PI * 2)
@@ -531,7 +562,9 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene) {
   }
 
   drawLights(ctx, scene, t)
-  for (const tk of scene.tokens) drawToken(ctx, tk, t, tk.id === scene.selected)
+  // Later rows paint over earlier ones: a character south of another stands in front of it.
+  const rowOf = (tk: TokenView) => scene.poses?.[tk.id]?.y ?? tk.at[1]
+  for (const tk of [...scene.tokens].sort((a, b) => rowOf(a) - rowOf(b))) drawToken(ctx, tk, t, tk.id === scene.selected, scene)
   drawWeather(ctx, scene)
 
   if (scene.veiled && scene.veiled.size > 0) {
