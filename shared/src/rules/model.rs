@@ -193,11 +193,20 @@ pub struct NaturalBand {
     pub description: String,
     /// Natural faces that land in this band (`[20]`, `[19, 20]`).
     pub natural: Vec<u32>,
+    /// The rolls the natural faces decide (`all` when absent). D&D 5e
+    /// gives a natural 20 or 1 its weight on attacks only: a check or a
+    /// save is then judged by its total.
+    #[serde(default = "every_roll")]
+    pub rolls: RollScope,
     #[serde(default)]
     pub grants: Grants,
     /// Damage multiplier when this band is an attack (critical hit).
     #[serde(default)]
     pub damage_multiplier: Option<i32>,
+}
+
+fn every_roll() -> RollScope {
+    RollScope::All
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]

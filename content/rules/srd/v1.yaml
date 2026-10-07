@@ -75,6 +75,9 @@ outcomes:
   critical_failure:
     name: Échec automatique
     natural: [1]
+    # A natural 1 decides an attack only: a check or a save is judged by
+    # its total.
+    rolls: attacks
     description: "Un 1 naturel en attaque rate, quel que soit le total."
   failure:
     name: Échec
@@ -85,6 +88,7 @@ outcomes:
   critical_success:
     name: Coup critique
     natural: [20]
+    rolls: attacks
     description: "Un 20 naturel en attaque touche et double les dégâts."
     # INTERPRETATION: the SRD doubles the damage dice only; the format
     # multiplies the whole damage.

@@ -92,6 +92,11 @@ an armour class, or the other side's total in a contest). The band:
 2. a natural face listed in `critical_success.natural` → critical success;
 3. otherwise total ≥ target → success, else failure; no target → no band.
 
+Steps 1 and 2 apply to the rolls the band's optional `rolls` names:
+`all` (the default), `attacks`, `checks` or `saves`. D&D 5e sets
+`rolls: attacks` on both: a natural 20 on a check against a difficulty
+of 25 is still a failure, a natural 1 on an easy save still a success.
+
 Each band has a `name`, a `description` and `grants: { xp }`.
 `critical_success.damage_multiplier` multiplies an attack's damage.
 Every roll returns its breakdown: faces, kept face, each modifier and its

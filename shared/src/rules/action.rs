@@ -570,6 +570,7 @@ fn attack_roll(
     }
     Ok(check::roll(
         system,
+        RollScope::Attacks,
         mods,
         Advantage::combine(adv, dis),
         Some(RollTarget::ArmorClass {
@@ -766,8 +767,13 @@ pub fn resolve_action(
                 attack.target = Some(RollTarget::Opposed {
                     value: defence.total,
                 });
-                attack.band =
-                    check::band_for(system, attack.natural, attack.total, Some(defence.total));
+                attack.band = check::band_for(
+                    system,
+                    RollScope::Checks,
+                    attack.natural,
+                    attack.total,
+                    Some(defence.total),
+                );
                 let band = attack.band;
                 events.push(Event::Roll {
                     roller: target_id.clone(),

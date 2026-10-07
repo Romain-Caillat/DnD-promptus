@@ -238,12 +238,12 @@ fn attack_bonus(s: &RuleSystem, c: &ClassDef, a: &ActionDef, level: u32) -> i32 
 }
 
 /// Chances of (success, critical success) of a check die + `bonus`
-/// against `target`, from the system's bands.
-fn odds(s: &RuleSystem, bonus: i32, target: i32) -> (f64, f64) {
+/// against `target`, for a roll of kind `scope`, from the system's bands.
+fn odds(s: &RuleSystem, scope: RollScope, bonus: i32, target: i32) -> (f64, f64) {
     let faces = s.check.dice.faces.max(1);
     let (mut hit, mut crit) = (0u32, 0u32);
     for n in 1..=faces {
-        match band_for(s, n, n as i32 + bonus, Some(target)) {
+        match band_for(s, scope, n, n as i32 + bonus, Some(target)) {
             Some(OutcomeBand::Success) => hit += 1,
             Some(OutcomeBand::CriticalSuccess) => crit += 1,
             _ => {}
@@ -274,12 +274,12 @@ fn expected_damage(s: &RuleSystem, c: &ClassDef, a: &ActionDef, ac: i32, level: 
         RollSpec::None | RollSpec::AutoHit => base,
         RollSpec::AutoCritical => base * mult,
         RollSpec::Attack => {
-            let (hit, crit) = odds(s, attack_bonus(s, c, a, level), ac);
+            let (hit, crit) = odds(s, RollScope::Attacks, attack_bonus(s, c, a, level), ac);
             base * (hit + crit * mult)
         }
         // Both sides roll the same die: even odds before modifiers.
         RollSpec::Contest { actor, target: _ } => {
-            let (hit, crit) = odds(s, modifier(s, c, actor), 11);
+            let (hit, crit) = odds(s, RollScope::Checks, modifier(s, c, actor), 11);
             base * (hit + crit)
         }
     }
@@ -288,12 +288,12 @@ fn expected_damage(s: &RuleSystem, c: &ClassDef, a: &ActionDef, ac: i32, level: 
 /// Expected XP of one use: rolls grant what their band grants.
 fn expected_xp(s: &RuleSystem, c: &ClassDef, a: &ActionDef, ac: i32, level: u32) -> f64 {
     let o = &s.outcomes;
-    let (bonus, target) = match &a.roll {
-        RollSpec::Attack => (attack_bonus(s, c, a, level), ac),
-        RollSpec::Contest { actor, .. } => (modifier(s, c, actor), 11),
+    let (scope, bonus, target) = match &a.roll {
+        RollSpec::Attack => (RollScope::Attacks, attack_bonus(s, c, a, level), ac),
+        RollSpec::Contest { actor, .. } => (RollScope::Checks, modifier(s, c, actor), 11),
         _ => return 0.0,
     };
-    let (hit, crit) = odds(s, bonus, target);
+    let (hit, crit) = odds(s, scope, bonus, target);
     hit * o.success.grants.xp as f64 + crit * o.critical_success.grants.xp as f64
 }
 
@@ -376,7 +376,7 @@ fn class_balance(
         .max()
         .unwrap_or(0);
     let xp_per_check = {
-        let (hit, crit) = odds(s, check_bonus, check_difficulty);
+        let (hit, crit) = odds(s, RollScope::Checks, check_bonus, check_difficulty);
         hit * s.outcomes.success.grants.xp as f64
             + crit * s.outcomes.critical_success.grants.xp as f64
     };

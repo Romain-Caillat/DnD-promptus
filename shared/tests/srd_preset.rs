@@ -10,9 +10,12 @@ use promptus_shared::combat::{EndReason, Limits, PolicyKind, Scenario, simulate:
 use promptus_shared::issue::Severity;
 use promptus_shared::maps::Map;
 use promptus_shared::rules::action::action_cards;
-use promptus_shared::rules::check::ModifierSource;
+use promptus_shared::rules::check::{
+    self, Advantage, ModifierSource, OutcomeBand, RollTarget, band_for,
+};
+use promptus_shared::rules::dice::ScriptedDice;
 use promptus_shared::rules::events::Event;
-use promptus_shared::rules::model::{RollSpec, ZeroHpRule};
+use promptus_shared::rules::model::{RollScope, RollSpec, ZeroHpRule};
 use promptus_shared::rules::sheet::{Combatant, Side};
 use promptus_shared::rules::{RuleSystem, lint};
 
@@ -155,4 +158,67 @@ fn the_goblin_ambush_of_the_v1_demo_is_played_to_the_end() {
         "the party won {party_wins} of 40"
     );
     assert!(knocked_out > 0, "nobody ever dropped");
+}
+
+/// In the SRD a natural 20 or 1 decides an attack, never a check or a
+/// save; the witness worlds keep it on every roll.
+#[test]
+fn natural_twenty_and_one_decide_attacks_only() {
+    let s = srd();
+    // The band alone, for each kind of roll.
+    assert_eq!(
+        band_for(&s, RollScope::Attacks, 20, 20, Some(30)),
+        Some(OutcomeBand::CriticalSuccess)
+    );
+    assert_eq!(
+        band_for(&s, RollScope::Attacks, 1, 30, Some(10)),
+        Some(OutcomeBand::CriticalFailure)
+    );
+    for scope in [RollScope::Checks, RollScope::Saves] {
+        assert_eq!(
+            band_for(&s, scope, 20, 20, Some(25)),
+            Some(OutcomeBand::Failure),
+            "{scope:?}"
+        );
+        assert_eq!(
+            band_for(&s, scope, 20, 22, Some(15)),
+            Some(OutcomeBand::Success),
+            "{scope:?}"
+        );
+        assert_eq!(
+            band_for(&s, scope, 1, 7, Some(5)),
+            Some(OutcomeBand::Success),
+            "{scope:?}"
+        );
+    }
+
+    // Through the engine: Borin rolls a natural 20 to climb a wall of
+    // difficulty 25 (FOR +2: 22, a failure)…
+    let borin = Combatant::from_class(&s, "b", "Borin", "guerrier").unwrap();
+    let climb = check::ability_check(
+        &s,
+        &borin,
+        "FOR",
+        RollScope::Checks,
+        Some(RollTarget::Difficulty {
+            id: Some("tres_difficile".into()),
+            value: 25,
+        }),
+        Advantage::Normal,
+        &mut ScriptedDice::new([20]),
+    )
+    .unwrap();
+    assert_eq!((climb.natural, climb.total), (20, 22));
+    assert_eq!(climb.band, Some(OutcomeBand::Failure));
+
+    // …and the witness worlds still crown a natural 20 on a check.
+    let corsaires = RuleSystem::from_yaml(&read("content/rules/corsaires/v1.yaml")).unwrap();
+    assert_eq!(
+        band_for(&corsaires, RollScope::Checks, 20, 20, Some(40)),
+        Some(OutcomeBand::CriticalSuccess)
+    );
+    assert_eq!(
+        band_for(&corsaires, RollScope::Saves, 1, 40, Some(5)),
+        Some(OutcomeBand::CriticalFailure)
+    );
 }

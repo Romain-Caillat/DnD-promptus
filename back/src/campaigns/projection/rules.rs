@@ -315,7 +315,8 @@ fn condition_name(system: &RuleSystem, id: &str) -> String {
 /// `bonus`, as the engine bands it.
 fn from_face(system: &RuleSystem, bonus: i32, target: i32) -> Option<u32> {
     (1..=system.check.dice.faces).find(|&f| {
-        band_for(system, f, f as i32 + bonus, Some(target)).is_some_and(OutcomeBand::is_success)
+        band_for(system, RollScope::Checks, f, f as i32 + bonus, Some(target))
+            .is_some_and(OutcomeBand::is_success)
     })
 }
 
@@ -338,7 +339,15 @@ fn examples(system: &RuleSystem, sheet: &Combatant, ability: &str) -> Option<Vec
     let (mods, _, _) = ability_modifiers(system, sheet, ability, RollScope::Checks).ok()?;
     let bonus = sum(&mods);
     let faces = system.check.dice.faces;
-    let band = |f: u32| band_for(system, f, f as i32 + bonus, Some(target.value()));
+    let band = |f: u32| {
+        band_for(
+            system,
+            RollScope::Checks,
+            f,
+            f as i32 + bonus,
+            Some(target.value()),
+        )
+    };
     let pick = [
         (1..=faces).find(|&f| band(f) == Some(OutcomeBand::CriticalFailure)),
         (1..=faces)
