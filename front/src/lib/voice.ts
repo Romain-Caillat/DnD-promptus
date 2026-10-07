@@ -85,11 +85,20 @@ function audioContextClass(): AudioContextClass | undefined {
 
 /** Record the microphone through Web Audio until `stop`. */
 async function startBrowserRecording(): Promise<Recording> {
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
-  })
+  // Made before the first await, inside the GM's touch: Safari starts a
+  // context made later « suspended », and it would record nothing.
   const Ctx = audioContextClass()!
   const ctx = new Ctx()
+  let stream: MediaStream
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+    })
+    if (ctx.state === 'suspended') await ctx.resume()
+  } catch (err) {
+    void ctx.close()
+    throw err
+  }
   const source = ctx.createMediaStreamSource(stream)
   // ScriptProcessor is deprecated but runs everywhere, Safari included,
   // without a separate worklet file; a minute of speech is little work.

@@ -157,6 +157,11 @@ function VoiceButton({
   const [heard, setHeard] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const recording = useRef<Recording | null>(null)
+  // The latest kind and NPC, even for the automatic stop at the limit.
+  const send = useRef(onRecorded)
+  useEffect(() => {
+    send.current = onRecorded
+  })
 
   // A recording left running when the panel goes away is dropped.
   useEffect(() => () => recording.current?.cancel(), [])
@@ -169,7 +174,7 @@ function VoiceButton({
     onBusy(true)
     try {
       const { audio } = await r.stop()
-      const result = await onRecorded(audio)
+      const result = await send.current(audio)
       setHeard(result?.transcript ?? null)
     } finally {
       onBusy(false)
@@ -184,7 +189,7 @@ function VoiceButton({
       if (Date.now() - state.since >= MAX_SECONDS * 1000) void finish()
     }, 250)
     return () => clearInterval(tick)
-    // `finish` reads only refs and setters.
+    // `finish` reads only refs and state setters.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state])
 

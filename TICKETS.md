@@ -1868,7 +1868,11 @@ local), le panneau le dit au lieu d'afficher un bouton. Écarts : aucune
 transcription réelle n'a encore tourné (modèle par défaut
 `google/gemini-2.5-flash`, `OPENROUTER_AUDIO_MODEL`) ; l'autorisation
 micro de l'app iOS (`src-tauri/Info.ios.plist`) n'a pas été essayée dans
-le simulateur ; la proposition « Faire fuir le gobelin » de la planche
+le simulateur, et Android (`RECORD_AUDIO`, manifeste généré par
+`tauri android init`) comme le bureau macOS (sa propre phrase
+d'autorisation micro) restent à faire ; l'enregistrement sur un vrai
+iPad n'est pas mesuré ; un budget qui couvre l'écoute mais pas la
+réponse paie l'écoute et perd ce qui a été dit ; la proposition « Faire fuir le gobelin » de la planche
 n'a pas de bouton : les gestes proposés restent ceux du co-MJ écrit
 (indice, menace, scène, PNJ).
 

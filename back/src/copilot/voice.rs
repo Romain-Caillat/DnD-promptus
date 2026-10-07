@@ -164,8 +164,10 @@ pub async fn listen(
     if seconds > MAX_SECONDS + 1.0 {
         return Err(AppError::BadRequest("RECORDING_TOO_LONG"));
     }
-    // Everything the ask would refuse is refused before the voice is
-    // sent: no transcription is paid for nothing.
+    // What the ask would refuse whatever the words (another GM's
+    // campaign, no live session, an unknown NPC) is refused before the
+    // voice is sent. A budget that covers the hearing but not the co-GM
+    // still pays the hearing: the GM gets `AI_BUDGET_EXCEEDED`.
     let row = owned_by(campaigns::find(pool, campaign).await?, gm)?;
     session::current(pool, campaign)
         .await?
