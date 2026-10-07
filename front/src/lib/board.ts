@@ -25,6 +25,8 @@ type DoorState = 'open' | 'closed' | 'locked'
 export interface MapData {
   id: string
   name: string
+  /** `world` is a map in hexes, travelled by the party as one token. */
+  scale?: 'world' | 'place' | 'encounter'
   theme: string
   ambience: {
     time?: TimeOfDay
@@ -59,7 +61,7 @@ export interface MapData {
   }[]
   lights?: { id: string; at: Cell; bright: number; dim: number; color?: string | null; flicker?: boolean; layer?: string }[]
   exits?: { id: string; cells: Cell[]; to: string; label?: string | null }[]
-  labels?: { text: string; at: Cell }[]
+  labels?: { text: string; at: Cell; scene?: string | null }[]
   starts?: { id: string; at: Cell; side?: string | null; entity?: string | null; layer?: string }[]
   /** An imported image behind the grid: decor only. */
   backdrop?: { image?: string | null; cell_px?: number | null; offset?: [number, number] | null } | null

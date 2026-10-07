@@ -22,6 +22,7 @@ import {
 import { fetchPlayerMedia, imageOf, playerImageUrl, type MediaList } from '@/lib/media'
 import type { ModifierSource } from '@/lib/rules'
 import { cn } from '@/lib/utils'
+import { TravelMoments } from '@/features/travel/PlayerTravel'
 import { MusicPlayer } from './MusicPlayer'
 
 type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; view: EveningView }
@@ -129,6 +130,7 @@ export function GameTab({
       {session?.status === 'live' && (
         <>
           {view.music && <MusicPlayer music={view.music} />}
+          <TravelMoments campaignId={campaignId} refreshKey={refreshKey} />
           {scene ? (
             <section className="flex flex-col gap-2">
               {intro && (
