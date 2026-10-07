@@ -1423,7 +1423,17 @@
       "NO_DEATH_SAVE_DUE": "Aucun jet contre la mort n'est attendu.",
       "TV_CODE_UNKNOWN": "Aucune TV n’affiche ce code. Vérifie les quatre caractères, ou recharge la page de la TV.",
       "NO_PREVIOUSLY": "Aucun « Précédemment… » publié à lire.",
-      "INVALID_LINE": "Cette ligne n’existe pas."
+      "INVALID_LINE": "Cette ligne n’existe pas.",
+      "INVALID_SHOP_NAME": "Donne un nom à la boutique (80 caractères au plus).",
+      "UNKNOWN_ITEM": "Cet objet n’existe pas dans les règles de la campagne.",
+      "INVALID_ITEM_NAME": "Chaque objet nommé par toi a besoin d’un nom.",
+      "INVALID_PRICE": "Prix ou stock hors limites.",
+      "INVALID_HAGGLE": "Marchandage : choisis une caractéristique, une difficulté de 1 à 99 et une remise de 1 à 90 %.",
+      "TOO_MANY_LINES": "Quarante lignes au plus par boutique.",
+      "DUPLICATE_LINE": "Deux lignes portent le même identifiant.",
+      "NOT_HIDDEN": "Cette ligne est déjà sur le comptoir.",
+      "NO_SUCH_SHOP": "Cette boutique n’existe plus.",
+      "NO_SUCH_LINE": "Cette ligne n’existe plus."
     },
     "table": {
       "title": "La table",
@@ -1674,6 +1684,42 @@
       "read": "Lire « Précédemment… » à l’écran",
       "nextLine": "Ligne suivante",
       "stopReading": "Terminer la lecture"
+    },
+    "shops": {
+      "title": "Boutiques",
+      "new": "Nouvelle boutique",
+      "none": "Aucune boutique. Prépare un étal, un marché noir, une taverne : tu l’ouvres quand la table y entre.",
+      "isOpen": "ouverte",
+      "open": "Ouvrir",
+      "close": "Fermer",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "stock_one": "{{count}} en stock",
+      "stock_other": "{{count}} en stock",
+      "haggled": "marchandé : {{won}} réussi sur {{count}}",
+      "reveal": "Sortir du comptoir",
+      "newTitle": "Nouvelle boutique",
+      "editTitle": "Modifier la boutique",
+      "name": "Nom de la boutique",
+      "line": "Ligne {{n}}",
+      "item": "Objet de la ligne {{n}}",
+      "named": "Un objet que je nomme…",
+      "lineName": "Nom de l’objet, ligne {{n}}",
+      "lineNamePlaceholder": "Longue-vue de contrebande",
+      "lineText": "Description, ligne {{n}}",
+      "lineTextPlaceholder": "Ce que la table en voit",
+      "price": "Prix",
+      "stockLabel": "Stock",
+      "unlimited": "∞",
+      "hidden": "Sous le comptoir",
+      "removeLine": "Retirer",
+      "addLine": "Ajouter une ligne",
+      "haggle": "La table peut marchander (un jet par joueur et par ligne)",
+      "haggleAbility": "Caractéristique du marchandage",
+      "difficulty": "Difficulté",
+      "discount": "Remise %",
+      "save": "Enregistrer",
+      "cancel": "Annuler"
     }
   },
   "prep": {
@@ -2237,6 +2283,45 @@
       "UNEXPECTED": "Le jumelage a échoué. Réessaie.",
       "UNREACHABLE": "Serveur injoignable. Réessaie dans un instant.",
       "TV_CODE_UNKNOWN": "Aucune TV n’affiche ce code. Vérifie les quatre caractères."
+    }
+  },
+  "shop": {
+    "purse": "Ta bourse : {{amount}} {{abbr}}",
+    "haggleRule": "Marchander : un jet de {{ability}} contre {{difficulty}}, −{{discount}} % si tu réussis. Une fois par objet.",
+    "empty": "Le comptoir est vide pour l’instant.",
+    "price": "{{price}} {{abbr}}",
+    "soldOut": "épuisé",
+    "stock_one": "dernier en stock",
+    "stock_other": "{{count}} en stock",
+    "haggleWon": "marchandé, réussi",
+    "haggleLost": "marchandé, raté",
+    "haggle": "Marchander",
+    "buy": "Acheter",
+    "haggledWon": "{{name}} : {{total}} contre {{difficulty}}, le marchand cède.",
+    "haggledLost": "{{name}} : {{total}} contre {{difficulty}}, le marchand ne bouge pas.",
+    "share": {
+      "title": "Partager avec le groupe",
+      "to": "À qui",
+      "what": "Quoi",
+      "amount": "Combien",
+      "friend": "{{name}} ({{nickname}})",
+      "give": "Donner"
+    },
+    "errors": {
+      "UNEXPECTED": "Ça n’a pas marché. Réessaie.",
+      "UNREACHABLE": "Serveur injoignable. Réessaie dans un instant.",
+      "NO_SHOP": "La boutique vient de fermer.",
+      "NO_SUCH_LINE": "Cet objet n’est plus en vente.",
+      "OUT_OF_STOCK": "Il n’en reste plus assez.",
+      "NOT_ENOUGH": "Pas assez dans ta bourse ou ton sac.",
+      "ALREADY_HAGGLED": "Tu as déjà marchandé cet objet.",
+      "NO_HAGGLING": "On ne marchande pas ici.",
+      "SPECTATOR": "Tu regardes la partie : pas de bourse.",
+      "NO_CHARACTER": "Il te faut un personnage en jeu.",
+      "CHARACTER_NOT_VALIDATED": "Ton personnage attend encore le MJ.",
+      "NO_SUCH_CHARACTER": "Ce personnage n’est plus en jeu.",
+      "INVALID_GIFT": "Choisis des pièces ou un objet.",
+      "INVALID_QUANTITY": "Quantité impossible."
     }
   }
 }

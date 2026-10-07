@@ -71,6 +71,7 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
     evening(pool, Uuid::parse_str(&campaign).unwrap()).await;
     board(pool, Uuid::parse_str(&campaign).unwrap(), character).await;
     let asset = media(pool, Uuid::parse_str(&campaign).unwrap()).await;
+    shop(pool, Uuid::parse_str(&campaign).unwrap()).await;
     Table {
         gm,
         campaign,
@@ -79,6 +80,25 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
         spectator: spectator.player_token().unwrap(),
         asset: asset.to_string(),
     }
+}
+
+/// An open shop: a free sword on the counter (its rules item carries
+/// the GM's note), a line under the counter, marked, and a haggle.
+async fn shop(pool: &PgPool, campaign: Uuid) {
+    sqlx::query(
+        "INSERT INTO shops (campaign_id, name, is_open, lines, haggle_ability,
+                            haggle_difficulty, haggle_discount)
+         VALUES ($1, 'Le marché noir', true, $2, 'SAG', 10, 20)",
+    )
+    .bind(campaign)
+    .bind(json!([
+        { "id": "l1", "item": "epee_de_bonne_facture", "price": 0 },
+        { "id": "l2", "name": m("shops.hidden line"), "description": m("shops.hidden text"),
+          "price": 99, "hidden": true },
+    ]))
+    .execute(pool)
+    .await
+    .unwrap();
 }
 
 /// An approved tileset image (any player may see it), and images the
@@ -230,6 +250,8 @@ fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> 
         return Some((StatusCode::NOT_FOUND, "NO_SUCH_REQUEST"));
     }
     (path.ends_with("/requests")
+        || path.ends_with("/shop/buy")
+        || path.ends_with("/shop/haggle")
         || path.ends_with("/feedback")
         || path.ends_with("/walk")
         || path.ends_with("/fight"))
@@ -253,6 +275,10 @@ fn refused_to_marc(method: &str, path: &str) -> Option<(StatusCode, &'static str
     }
     if path.ends_with("/fight") {
         return Some((StatusCode::CONFLICT, "NO_FIGHT"));
+    }
+    if path.ends_with("/character/give") {
+        // Nobody to give to: the sweep's table has one character.
+        return Some((StatusCode::NOT_FOUND, "NO_SUCH_CHARACTER"));
     }
     if path.ends_with("/character/level-up") {
         return Some((StatusCode::CONFLICT, "NO_LEVEL_HIT_POINTS"));
@@ -299,6 +325,11 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
         ("POST", p) if p.ends_with("/level-up") => Some(json!({ "level": 2, "choice": "average" })),
         ("POST", p) if p.ends_with("/upgrade") => Some(json!({ "ability": "FOR" })),
         ("PUT", p) if p.ends_with("/last-words") => Some(json!({ "text": "Dis à Dorn…" })),
+        ("POST", p) if p.ends_with("/shop/buy") => Some(json!({ "line": "l1" })),
+        ("POST", p) if p.ends_with("/shop/haggle") => Some(json!({ "line": "l1" })),
+        ("POST", p) if p.ends_with("/character/give") => {
+            Some(json!({ "to": Uuid::nil(), "coins": 1 }))
+        }
         ("PUT", p) if p.ends_with("/availability") => {
             Some(json!({ "available": ["2099-10-10T18:30:00Z"] }))
         }
@@ -466,6 +497,26 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
     );
     assert_eq!(play["inventory"][0]["equipped"], true, "{play}");
     assert!(!r.body.to_string().contains(ITEM_NOTE), "{play}");
+    // The shop: the sword bought, its note kept; the line under the
+    // counter never shown.
+    let r = call_as_player(
+        &app,
+        Some(&t.marc),
+        "GET",
+        &format!("/api/play/{}/shop", t.campaign),
+        None,
+    )
+    .await;
+    let lines = r.body["data"]["lines"].as_array().unwrap();
+    assert_eq!(lines.len(), 1, "{}", r.body);
+    assert_eq!(lines[0]["name"], "Épée de bonne facture");
+    assert!(lines[0]["haggled"].is_boolean(), "{}", r.body);
+    assert!(!r.body.to_string().contains(ITEM_NOTE), "{}", r.body);
+    let bag = &play["inventory"];
+    assert!(
+        bag.as_array().unwrap().len() >= 2 || bag[0]["qty"] == 2,
+        "{play}"
+    );
     let r = call_as_player(
         &app,
         Some(&t.marc),

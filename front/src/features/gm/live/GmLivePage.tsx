@@ -35,6 +35,15 @@ import {
 } from '@/lib/evening'
 import { chooseDate, fetchPlan, proposeDates, type Plan } from '@/lib/between'
 import { askImage, decideImage, fetchGmMedia, type MediaList } from '@/lib/media'
+import {
+  createShop,
+  deleteShop,
+  fetchShops,
+  openShop,
+  revealLine,
+  saveShop,
+  type GmShops,
+} from '@/lib/shop'
 import { fetchScreens, forgetScreen, openWindow, pairScreen, setReading, type Screen } from '@/lib/tv'
 import { PlanPanel, RecapPanel } from './BetweenPanels'
 import { BoardPanel } from './BoardPanel'
@@ -45,6 +54,7 @@ import { LaunchPanel } from './LaunchPanel'
 import { MediaPanel } from './MediaPanel'
 import { RequestsPanel } from './RequestsPanel'
 import { ScenePanel } from './ScenePanel'
+import { ShopsPanel } from './ShopsPanel'
 import { TablePanel } from './TablePanel'
 import { Btn } from './ui'
 
@@ -71,12 +81,14 @@ export function GmLivePage() {
   const [media, setMedia] = useState<MediaList | null>(null)
   const [plan, setPlan] = useState<Plan | null>(null)
   const [screens, setScreens] = useState<Screen[]>([])
+  const [shops, setShops] = useState<GmShops | null>(null)
   const [error, setError] = useState<string | null>(null)
   const latest = useRef(0)
   const latestBoard = useRef(0)
   const latestMedia = useRef(0)
   const latestPlan = useRef(0)
   const latestScreens = useRef(0)
+  const latestShops = useRef(0)
 
   const loadScreen = useCallback(async () => {
     const request = ++latest.current
@@ -146,19 +158,35 @@ export function GmLivePage() {
     setScreens((s) => next ?? s)
   }, [campaignId])
 
+  const loadShops = useCallback(async () => {
+    const request = ++latestShops.current
+    let next: GmShops | null
+    try {
+      next = await fetchShops(campaignId)
+    } catch {
+      next = null
+    }
+    if (request !== latestShops.current) return
+    setShops((s) => next ?? s)
+  }, [campaignId])
+
   useEffect(() => {
+    void loadShops()
     void loadScreen()
     void loadBoard()
     void loadMedia()
     void loadPlan()
     void loadScreens()
-  }, [loadScreen, loadBoard, loadMedia, loadPlan, loadScreens])
+  }, [loadScreen, loadBoard, loadMedia, loadPlan, loadScreens, loadShops])
 
   const live = useLiveChanges(campaignId, (topics) => {
     if (topics.some((x) => ['session', 'world', 'story', 'table', 'desk'].includes(x) || x.startsWith('character:'))) {
       void loadScreen()
     }
-    if (topics.includes('session')) void loadPlan()
+    if (topics.includes('session')) {
+      void loadPlan()
+      void loadShops()
+    }
     if (topics.includes('table')) void loadScreens()
     if (topics.some((x) => ['map', 'fight', 'world'].includes(x))) void loadBoard()
     if (topics.includes('desk')) void loadMedia()
@@ -321,6 +349,18 @@ export function GmLivePage() {
               onChoose={async (at) => {
                 await act(() => chooseDate(campaignId, at), setPlan)
               }}
+            />
+          )}
+          {shops && (
+            <ShopsPanel
+              data={shops}
+              onSave={async (id, input) =>
+                (await act(() => (id ? saveShop(campaignId, id, input) : createShop(campaignId, input)), () => void loadShops())) !==
+                null
+              }
+              onOpen={(shop, open) => void act(() => openShop(campaignId, shop, open), () => void loadShops())}
+              onReveal={(shop, line) => void act(() => revealLine(campaignId, shop, line), () => void loadShops())}
+              onDelete={(shop) => void act(() => deleteShop(campaignId, shop), () => void loadShops())}
             />
           )}
           <JournalPanel

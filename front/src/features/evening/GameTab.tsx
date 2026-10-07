@@ -22,6 +22,7 @@ import {
 import { fetchPlayerMedia, imageOf, playerImageUrl, type MediaList } from '@/lib/media'
 import type { ModifierSource } from '@/lib/rules'
 import { cn } from '@/lib/utils'
+import { ShopPanel } from '@/features/play/ShopPanel'
 import { BetweenPanel } from './BetweenPanel'
 import { MusicPlayer } from './MusicPlayer'
 
@@ -123,6 +124,7 @@ export function GameTab({
           {t(`evening.errors.${error}`, { defaultValue: t('evening.errors.UNEXPECTED') })}
         </p>
       )}
+      <ShopPanel campaignId={campaignId} refreshKey={refreshKey} />
       {!session && (
         <NoSession view={view} campaignId={campaignId} refreshKey={refreshKey} seated={seated} onView={show} />
       )}

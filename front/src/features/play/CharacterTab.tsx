@@ -8,6 +8,7 @@ import { Sprite } from '@/features/sprites/Sprite'
 import { equipItem, type BagItem, type CharacterView, type PlayView } from '@/lib/play'
 import { ActionCard, signed } from './creator/RuleSteps'
 import { LevelUpPanel } from './LevelUpPanel'
+import { SharePanel } from './SharePanel'
 
 /**
  * The Character tab once in play (planche « Jouer », onglet Personnage):
@@ -145,6 +146,7 @@ export function CharacterTab({
           <ItemList items={bag} action={t('play.sheet.equip')} busy={busy} onAct={(i) => void carry(i, true)} />
         )}
       </section>
+      <SharePanel campaignId={campaignId} play={play} onChanged={onChanged} />
       {failed && <p role="alert">{t('play.error')}</p>}
     </div>
   )

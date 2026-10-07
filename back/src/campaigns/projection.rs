@@ -37,6 +37,7 @@ pub mod between;
 pub mod board;
 pub mod evening;
 pub mod rules;
+pub mod shop;
 
 use std::collections::BTreeMap;
 

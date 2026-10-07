@@ -15,6 +15,7 @@ pub mod prep;
 pub mod rule_versions;
 pub mod rules;
 pub mod sheets;
+pub mod shops;
 pub mod sprites;
 pub mod table;
 pub mod tv;

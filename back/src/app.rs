@@ -248,6 +248,23 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             put(api::evening::note_changes),
         )
         .route("/api/campaigns/{id}/ai", get(api::evening::ai_usage))
+        // player/buy-and-trade: the GM's shops.
+        .route(
+            "/api/campaigns/{id}/shops",
+            get(api::shops::list).post(api::shops::create),
+        )
+        .route(
+            "/api/campaigns/{id}/shops/{shop}",
+            put(api::shops::save).delete(api::shops::delete),
+        )
+        .route(
+            "/api/campaigns/{id}/shops/{shop}/open",
+            post(api::shops::open),
+        )
+        .route(
+            "/api/campaigns/{id}/shops/{shop}/reveal",
+            post(api::shops::reveal),
+        )
         // gm/launch-session: the shared screens, the reading aloud.
         .route(
             "/api/campaigns/{id}/tv",
@@ -422,6 +439,25 @@ fn player_routes() -> Vec<RouteSpec> {
             "POST",
             "/api/play/{campaign}/character/upgrade",
             post(api::play::upgrade),
+        ),
+        // player/buy-and-trade: the open shop, buying, haggling, and
+        // sharing with the rest of the party.
+        ("GET", "/api/play/{campaign}/shop", get(api::shops::shop)),
+        (
+            "POST",
+            "/api/play/{campaign}/shop/buy",
+            post(api::shops::buy),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/shop/haggle",
+            post(api::shops::haggle),
+        ),
+        ("GET", "/api/play/{campaign}/party", get(api::shops::party)),
+        (
+            "POST",
+            "/api/play/{campaign}/character/give",
+            post(api::shops::give),
         ),
         // player/face-death: last words, then another character.
         (

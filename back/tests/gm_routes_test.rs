@@ -170,6 +170,13 @@ const GM_ROUTES: &[(&str, &str)] = &[
         "/api/campaigns/{campaign}/sessions/{session}/changes",
     ),
     ("GET", "/api/campaigns/{campaign}/ai"),
+    // The shops: list, create, then on the shop just created.
+    ("GET", "/api/campaigns/{campaign}/shops"),
+    ("POST", "/api/campaigns/{campaign}/shops"),
+    ("PUT", "/api/campaigns/{campaign}/shops/{shop}"),
+    ("POST", "/api/campaigns/{campaign}/shops/{shop}/open"),
+    ("POST", "/api/campaigns/{campaign}/shops/{shop}/reveal"),
+    ("DELETE", "/api/campaigns/{campaign}/shops/{shop}"),
     // The shared screens: a window, a TV waiting with its code, then
     // forget the screen just seated.
     ("GET", "/api/campaigns/{campaign}/tv"),
@@ -240,6 +247,7 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             Some(serde_json::json!({ "title": "Sweep", "body": "Réécrite." }))
         }
         (_, p) if p.ends_with("/played") => Some(serde_json::json!({ "played": true })),
+        (_, p) if p.ends_with("/shops/{shop}/reveal") => Some(serde_json::json!({ "line": "l1" })),
         (_, p) if p.ends_with("/reveal") => {
             Some(serde_json::json!({ "kind": "scene", "node": "sc_taverne" }))
         }
@@ -290,6 +298,13 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         (_, p) if p.ends_with("/plan/choice") => {
             Some(serde_json::json!({ "at": "2099-10-10T18:30:00Z" }))
         }
+        ("POST" | "PUT", p) if p.ends_with("/shops") || p.ends_with("/shops/{shop}") => {
+            Some(serde_json::json!({
+                "name": "Le marché noir",
+                "lines": [{ "id": "l1", "name": "Longue-vue", "price": 12, "hidden": true }],
+            }))
+        }
+        (_, p) if p.ends_with("/shops/{shop}/open") => Some(serde_json::json!({ "open": true })),
         (_, p) if p.ends_with("/session/reading") => Some(serde_json::json!({ "line": null })),
         ("POST", p) if p.ends_with("/tv") => Some(serde_json::json!({ "code": SWEEP_TV_CODE })),
         (_, p) if p.ends_with("/changes") => {
@@ -315,6 +330,7 @@ struct Ids {
     job: String,
     map: String,
     screen: String,
+    shop: String,
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
@@ -331,6 +347,7 @@ fn route_uri(path: &str, ids: &Ids) -> String {
         .replace("{job}", &ids.job)
         .replace("{map}", &ids.map)
         .replace("{screen}", &ids.screen)
+        .replace("{shop}", &ids.shop)
 }
 
 /// Every placeholder filled for `player` of `campaign`: an invitation of
@@ -368,6 +385,7 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         job: Uuid::new_v4().to_string(),
         map: "carte-inconnue".to_string(),
         screen: Uuid::new_v4().to_string(),
+        shop: Uuid::new_v4().to_string(),
     }
 }
 
@@ -627,6 +645,16 @@ async fn every_gm_route_refuses_without_a_valid_session() {
                 .execute(&pool)
                 .await
                 .unwrap();
+        }
+        if path.contains("{shop}") {
+            ids.shop = sqlx::query_scalar::<_, Uuid>(
+                "SELECT id FROM shops WHERE campaign_id = $1 ORDER BY created_at DESC LIMIT 1",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
         }
         if path.contains("{screen}") {
             ids.screen = sqlx::query_scalar::<_, Uuid>(
