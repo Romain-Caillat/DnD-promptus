@@ -275,6 +275,31 @@ fn check_status(session: &Session, allowed: &[Status]) -> Result<(), AppError> {
 pub async fn open(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Session, AppError> {
     let mut tx = pool.begin().await?;
     let campaign_row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
+    open_locked(tx, &campaign_row).await
+}
+
+/// session/schedule-sessions: the lobby opens on its own at the time the
+/// GM fixed — the same opening as the GM's, without a GM at the keyboard.
+///
+/// # Errors
+///
+/// 404 `NO_SUCH_CAMPAIGN`; 409 `CAMPAIGN_NOT_VALIDATED`; a database
+/// error.
+pub async fn open_scheduled(pool: &PgPool, campaign: Uuid) -> Result<Session, AppError> {
+    let mut tx = pool.begin().await?;
+    let campaign_row = campaigns::lock(&mut tx, campaign)
+        .await?
+        .ok_or(AppError::NotFound("NO_SUCH_CAMPAIGN"))?;
+    open_locked(tx, &campaign_row).await
+}
+
+/// Open the lobby of `campaign_row`, locked in `tx` — or answer the
+/// session already open.
+async fn open_locked(
+    mut tx: Transaction<'_, Postgres>,
+    campaign_row: &CampaignRow,
+) -> Result<Session, AppError> {
+    let campaign = campaign_row.id;
     if let Some(open) = current(&mut *tx, campaign).await? {
         return Ok(open);
     }
@@ -285,7 +310,7 @@ pub async fn open(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Sessi
     }
     // A rule change ships between sessions: the newest locked version
     // applies from this one (`campaign/edit-rule-system`).
-    crate::rules::versions::adopt_newest(&mut tx, &campaign_row).await?;
+    crate::rules::versions::adopt_newest(&mut tx, campaign_row).await?;
     let row: Row = sqlx::query_as(&format!(
         "INSERT INTO game_sessions (campaign_id, number)
          VALUES ($1, COALESCE((SELECT MAX(number) FROM game_sessions WHERE campaign_id = $1), 0) + 1)

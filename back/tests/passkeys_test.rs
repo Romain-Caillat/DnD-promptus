@@ -425,6 +425,7 @@ async fn over_https_the_session_cookie_is_secure() {
             auth,
             live: promptus_back::live::LiveHub::new(Default::default()),
             ai: promptus_back::ai::Ai::none(),
+            notifier: promptus_back::schedule::Notifier::recorder(HTTPS).0,
         },
         &[],
     );

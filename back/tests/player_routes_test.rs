@@ -35,6 +35,8 @@ struct Table {
     spectator: String,
     /// An approved image the table may see.
     asset: String,
+    /// A date proposed for the next session.
+    date: String,
 }
 
 /// Romain's marked campaign mid-scene, Marc seated as a player with a
@@ -71,6 +73,7 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
     evening(pool, Uuid::parse_str(&campaign).unwrap()).await;
     board(pool, Uuid::parse_str(&campaign).unwrap(), character).await;
     let asset = media(pool, Uuid::parse_str(&campaign).unwrap()).await;
+    let date = schedule(pool, Uuid::parse_str(&campaign).unwrap()).await;
     Table {
         gm,
         campaign,
@@ -78,7 +81,46 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
         marc: marc.player_token().unwrap(),
         spectator: spectator.player_token().unwrap(),
         asset: asset.to_string(),
+        date: date.to_string(),
     }
+}
+
+/// The next session: a date fixed, another proposed, the table's Discord
+/// webhook and what was sent through it — the last two GM-only, marked.
+async fn schedule(pool: &PgPool, campaign: Uuid) -> Uuid {
+    let chosen: Uuid = sqlx::query_scalar(
+        "INSERT INTO session_dates (campaign_id, starts_at, status, chosen_at)
+         VALUES ($1, now() + interval '3 days', 'chosen', now()) RETURNING id",
+    )
+    .bind(campaign)
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO reminder_log (date_id, kind, ok, detail) VALUES ($1, 'chosen', false, $2)",
+    )
+    .bind(chosen)
+    .bind(m("reminder_log.detail"))
+    .execute(pool)
+    .await
+    .unwrap();
+    sqlx::query("INSERT INTO campaign_reminders (campaign_id, discord_webhook) VALUES ($1, $2)")
+        .bind(campaign)
+        .bind(format!(
+            "https://discord.com/api/webhooks/1/{}",
+            m("reminders.webhook")
+        ))
+        .execute(pool)
+        .await
+        .unwrap();
+    sqlx::query_scalar(
+        "INSERT INTO session_dates (campaign_id, starts_at) VALUES ($1, now() + interval '10 days')
+         RETURNING id",
+    )
+    .bind(campaign)
+    .fetch_one(pool)
+    .await
+    .unwrap()
 }
 
 /// An approved tileset image (any player may see it), and images the
@@ -222,6 +264,9 @@ async fn marc_request(pool: &PgPool, campaign: &str, path: &str) -> Uuid {
 /// The evening routes a spectator has no part in: they ask nothing,
 /// roll nothing and answer no feedback.
 fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
+    if method == "PUT" && path.ends_with("/schedule/{date}") {
+        return Some((StatusCode::FORBIDDEN, "SPECTATOR"));
+    }
     if method != "POST" {
         return None;
     }
@@ -254,6 +299,7 @@ fn uri(path: &str, t: &Table) -> String {
     path.replace("{campaign}", &t.campaign)
         .replace("{code}", &t.code)
         .replace("{asset}", &t.asset)
+        .replace("{date}", &t.date)
 }
 
 fn seated(path: &str) -> bool {
@@ -281,6 +327,7 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
         ("POST", p) if p.ends_with("/walk") => Some(json!({ "path": [[1, 5]] })),
         ("POST", p) if p.ends_with("/fight") => Some(json!({ "kind": "endTurn" })),
         ("POST", p) if p.ends_with("/lobby") => Some(json!({ "soundOk": true, "remote": true })),
+        ("PUT", p) if p.ends_with("/schedule/{date}") => Some(json!({ "available": true })),
         ("POST", p) if p.ends_with("/requests") => Some(json!({
             "card": { "kind": "ability", "ability": "SAG" },
             "text": "Je scrute la crique.",
@@ -380,6 +427,12 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
                 r.body
             );
             assert_clean(&format!("{method} {uri} as {who}"), &r.body);
+            // Answers that are not JSON (the calendar) are swept as text.
+            assert!(
+                leaks(&r.text).is_empty(),
+                "{method} {uri} as {who}: {}",
+                r.text
+            );
             if who == "Léa" {
                 assert!(
                     !r.body.to_string().contains(MARC_SECRET),

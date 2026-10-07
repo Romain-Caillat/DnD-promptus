@@ -23,6 +23,7 @@ import { fetchPlayerMedia, imageOf, playerImageUrl, type MediaList } from '@/lib
 import type { ModifierSource } from '@/lib/rules'
 import { cn } from '@/lib/utils'
 import { MusicPlayer } from './MusicPlayer'
+import { NextSession } from './NextSession'
 
 type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; view: EveningView }
 
@@ -122,7 +123,9 @@ export function GameTab({
           {t(`evening.errors.${error}`, { defaultValue: t('evening.errors.UNEXPECTED') })}
         </p>
       )}
-      {!session && <NoSession view={view} campaignId={campaignId} seated={seated} onView={show} />}
+      {!session && (
+        <NoSession view={view} campaignId={campaignId} refreshKey={refreshKey} seated={seated} onView={show} />
+      )}
       {session?.status === 'lobby' && (
         <Lobby view={view} seated={seated} onArrive={(soundOk) => act(() => arrive(campaignId, soundOk, true))} />
       )}
@@ -218,11 +221,13 @@ function Launch({ launch }: { launch: NonNullable<EveningView['launch']> }) {
 function NoSession({
   view,
   campaignId,
+  refreshKey,
   seated,
   onView,
 }: {
   view: EveningView
   campaignId: string
+  refreshKey: number
   seated: boolean
   onView: (v: EveningView) => void
 }) {
@@ -230,6 +235,7 @@ function NoSession({
   return (
     <section className="flex flex-col gap-3">
       <p className="text-body text-chalk-soft">{t('evening.noSession')}</p>
+      <NextSession campaignId={campaignId} refreshKey={refreshKey} />
       {view.previously && (
         <div className="surface-slab flex flex-col gap-1 p-3.5">
           <span className="type-label">{t('evening.previously')}</span>

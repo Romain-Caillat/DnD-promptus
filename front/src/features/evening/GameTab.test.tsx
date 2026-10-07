@@ -148,6 +148,53 @@ describe('GameTab', () => {
     expect(screen.queryByRole('heading', { name: 'Le Goéland Ivre' })).not.toBeInTheDocument()
   })
 
+  it('between sessions, answers a proposed date, then finds the date fixed and its calendar', async () => {
+    const proposed = (mine: boolean | null) => ({
+      status: 200,
+      body: {
+        data: {
+          number: 2,
+          next: null,
+          proposed: [{ id: 'd1', startsAt: '2026-10-15T18:30:00Z', minutes: 150, mine, yes: mine ? ['Marc', 'Hugo'] : ['Hugo'] }],
+          canAnswer: true,
+        },
+      },
+    })
+    const fetchMock = mockApi({
+      ...MEDIA,
+      'GET /api/play/c1/evening': () => evening({ session: null }),
+      'GET /api/play/c1/schedule': () => proposed(null),
+      'PUT /api/play/c1/schedule/d1': () => proposed(true),
+    })
+    const { unmount } = render(<GameTab campaignId="c1" refreshKey={0} seated />)
+    const ask = await screen.findByRole('region', { name: 'Séance 2 : tu es libre quand ?' })
+    expect(within(ask).getByText('Peuvent : Hugo')).toBeInTheDocument()
+    await userEvent.click(within(ask).getByRole('button', { name: 'Je peux' }))
+    expect(sentTo(fetchMock, 'PUT /api/play/c1/schedule/d1')).toEqual([{ available: true }])
+    expect(await within(ask).findByText('Peuvent : Marc, Hugo')).toBeInTheDocument()
+    expect(within(ask).getByRole('button', { name: 'Je peux' })).toHaveAttribute('aria-pressed', 'true')
+    unmount()
+
+    mockApi({
+      ...MEDIA,
+      'GET /api/play/c1/evening': () => evening({ session: null }),
+      'GET /api/play/c1/schedule': () => ({
+        status: 200,
+        body: {
+          data: {
+            number: 2,
+            next: { id: 'd1', startsAt: '2030-10-15T18:30:00Z', minutes: 150, lobbyOpensAt: '2030-10-15T18:15:00Z' },
+            proposed: [],
+            canAnswer: true,
+          },
+        },
+      }),
+    })
+    render(<GameTab campaignId="c1" refreshKey={0} seated />)
+    expect(await screen.findByText('Séance 2')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Ajouter à mon agenda' })).toHaveAttribute('href', '/api/play/c1/schedule.ics')
+  })
+
   it('answers the three questions after the session', async () => {
     const fetchMock = mockApi({
       ...MEDIA,

@@ -243,6 +243,26 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             put(api::evening::note_changes),
         )
         .route("/api/campaigns/{id}/ai", get(api::evening::ai_usage))
+        .route(
+            "/api/campaigns/{id}/schedule",
+            get(api::schedule::gm_schedule),
+        )
+        .route(
+            "/api/campaigns/{id}/schedule/dates",
+            post(api::schedule::propose),
+        )
+        .route(
+            "/api/campaigns/{id}/schedule/dates/{date}",
+            delete(api::schedule::drop_date),
+        )
+        .route(
+            "/api/campaigns/{id}/schedule/dates/{date}/choose",
+            post(api::schedule::choose),
+        )
+        .route(
+            "/api/campaigns/{id}/schedule/discord",
+            put(api::schedule::set_discord),
+        )
         // The grid and the fights.
         .route(
             "/api/campaigns/{id}/board",
@@ -431,6 +451,21 @@ fn player_routes() -> Vec<RouteSpec> {
             "GET",
             "/api/play/{campaign}/chronicle",
             get(api::play_evening::chronicle),
+        ),
+        (
+            "GET",
+            "/api/play/{campaign}/schedule",
+            get(api::schedule::play_schedule),
+        ),
+        (
+            "PUT",
+            "/api/play/{campaign}/schedule/{date}",
+            put(api::schedule::answer),
+        ),
+        (
+            "GET",
+            "/api/play/{campaign}/schedule.ics",
+            get(api::schedule::calendar),
         ),
         // The grid: the map as I may see it, my walk, my fight turn.
         (

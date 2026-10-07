@@ -6,7 +6,11 @@
 //!   (hidden lines included), what the next scenes need, the spotlight;
 //! - `POST /api/campaigns/{id}/session` → open the lobby (201);
 //! - `POST /api/campaigns/{id}/session/start` → the session goes live;
-//! - `POST /api/campaigns/{id}/session/end` → `{ recap, previously }`;
+//! - `POST /api/campaigns/{id}/session/end` → `{ recap, previously,
+//!   chronicleTitle, chronicle }`, kept as drafts (what is empty is
+//!   drafted from the session's facts);
+//! - `POST /api/campaigns/{id}/session/previously/next` → the next
+//!   sentence of « Précédemment… » reaches the table (gm/launch-session);
 //! - `POST /api/campaigns/{id}/session/reveal` → a scene, a clue, an
 //!   NPC, a front's clock, a resolved scene (`evening::scenes::Reveal`);
 //! - `PUT /api/campaigns/{id}/session/music` → `{ track }` (or null);
@@ -19,10 +23,12 @@
 //! - `PUT  /api/campaigns/{id}/hooks/{hook}/played` → `{ played }`;
 //! - `GET  /api/campaigns/{id}/knowledge?ref=…&situation=…` → what the
 //!   table knows about a story id, and past rulings like a situation;
-//! - `GET  /api/campaigns/{id}/sessions` → the chronicle;
-//! - `PUT  /api/campaigns/{id}/sessions/{session}/recap` → edit the recap;
+//! - `GET  /api/campaigns/{id}/sessions` → the chronicle, drafts
+//!   included, each with the names its player texts should not hold;
+//! - `PUT  /api/campaigns/{id}/sessions/{session}/recap` → edit the
+//!   recaps, `publish` to give them to the players;
 //! - `POST /api/campaigns/{id}/sessions/{session}/recap-draft` → the
-//!   co-GM's draft of both recaps (counted AI call; nothing saved);
+//!   co-GM's draft of the recaps (counted AI call; nothing saved);
 //! - `GET  /api/campaigns/{id}/sessions/{session}/feedback` → answers and
 //!   measures on one screen;
 //! - `PUT  /api/campaigns/{id}/sessions/{session}/changes` → `{ text }`;

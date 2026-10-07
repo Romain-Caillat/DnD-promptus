@@ -36,6 +36,7 @@
 pub mod board;
 pub mod evening;
 pub mod rules;
+pub mod schedule;
 
 use std::collections::BTreeMap;
 
