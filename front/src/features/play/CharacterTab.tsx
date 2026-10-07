@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Sprite } from '@/features/sprites/Sprite'
 import { equipItem, type ActionCardView, type BagItem, type CharacterView, type PlayView } from '@/lib/play'
 import { CardDetail } from './between/CardDetail'
+import { GiveForm } from './trade/GiveForm'
 import { ActionCard, signed } from './creator/RuleSteps'
 
 /**
@@ -158,6 +159,7 @@ export function CharacterTab({
         )}
       </section>
       {failed && <p role="alert">{t('play.error')}</p>}
+      <GiveForm campaignId={campaignId} play={play} />
     </div>
   )
 }

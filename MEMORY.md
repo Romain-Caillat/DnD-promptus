@@ -239,6 +239,15 @@ one place, `Session::published_previously`: the evening, the between
 screen and the chronicle all read it there. A draft must never be read
 from `game_sessions.previously` directly.
 
+### Money is the rules' first resource
+
+Loot coins and shop prices are counted in `RuleSystem::currency()`, the
+first resource the rules declare (the Corsaires' `or`). Rules with no
+resource have no money: loot coins and shops answer `NO_CURRENCY`, and
+the GM adds one in the rules editor. Every purchase and gift moves the
+purse and the bag through `players::play`, never around it; a shop's
+hidden lines never leave the server until revealed.
+
 ### Player tokens are hashed
 
 Players join with an invite link, a nickname and a free character —

@@ -24,6 +24,7 @@ import type { ModifierSource } from '@/lib/rules'
 import { cn } from '@/lib/utils'
 import { EveningEnd } from '@/features/play/between/EveningEnd'
 import { useBetween } from '@/features/play/between/useBetween'
+import { Market } from '@/features/play/trade/Market'
 import type { PlayerTab } from '@/lib/between'
 import { MusicPlayer } from './MusicPlayer'
 
@@ -128,6 +129,7 @@ export function GameTab({
           {t(`evening.errors.${error}`, { defaultValue: t('evening.errors.UNEXPECTED') })}
         </p>
       )}
+      <Market campaignId={campaignId} refreshKey={refreshKey} seated={seated} />
       {!session && (
         <NoSession
           view={view}

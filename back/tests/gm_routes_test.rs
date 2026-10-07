@@ -110,6 +110,14 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/fight"),
     ("POST", "/api/campaigns/{campaign}/fight/command"),
     ("POST", "/api/campaigns/{campaign}/fight/loot"),
+    // Shops: list, open one, then on a shop with a line under the
+    // counter stored just before.
+    ("GET", "/api/campaigns/{campaign}/shops"),
+    ("POST", "/api/campaigns/{campaign}/shops"),
+    ("PUT", "/api/campaigns/{campaign}/shops/{shop}"),
+    ("POST", "/api/campaigns/{campaign}/shops/{shop}/open"),
+    ("POST", "/api/campaigns/{campaign}/shops/{shop}/reveal"),
+    ("DELETE", "/api/campaigns/{campaign}/shops/{shop}"),
     // The campaign's maps: list, create, import, generate, then on the
     // map stored just before.
     ("GET", "/api/campaigns/{campaign}/maps"),
@@ -223,6 +231,16 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             Some(serde_json::json!({ "title": "Sweep", "body": "Réécrite." }))
         }
         (_, p) if p.ends_with("/played") => Some(serde_json::json!({ "played": true })),
+        ("POST", p) if p.ends_with("/shops") => Some(serde_json::json!({ "name": "Le marché" })),
+        ("PUT", p) if p.ends_with("/shops/{shop}") => Some(serde_json::json!({
+            "name": "Le marché",
+            "lines": [{ "key": "under", "name": "Une boussole", "price": 25, "hidden": true }],
+            "haggle": { "ability": "CHA", "difficulty": 10 }
+        })),
+        (_, p) if p.ends_with("/shops/{shop}/open") => Some(serde_json::json!({ "open": true })),
+        (_, p) if p.ends_with("/shops/{shop}/reveal") => {
+            Some(serde_json::json!({ "line": "under" }))
+        }
         (_, p) if p.ends_with("/reveal") => {
             Some(serde_json::json!({ "kind": "scene", "node": "sc_taverne" }))
         }
@@ -289,6 +307,8 @@ struct Ids {
     proposal: String,
     job: String,
     map: String,
+    /// A shop of the campaign, stored on first use; empty before.
+    shop: String,
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
@@ -304,6 +324,14 @@ fn route_uri(path: &str, ids: &Ids) -> String {
         .replace("{proposal}", &ids.proposal)
         .replace("{job}", &ids.job)
         .replace("{map}", &ids.map)
+        .replace(
+            "{shop}",
+            if ids.shop.is_empty() {
+                "00000000-0000-0000-0000-000000000000"
+            } else {
+                &ids.shop
+            },
+        )
 }
 
 /// Every placeholder filled for `player` of `campaign`: an invitation of
@@ -340,6 +368,7 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         proposal: Uuid::new_v4().to_string(),
         job: Uuid::new_v4().to_string(),
         map: "carte-inconnue".to_string(),
+        shop: String::new(),
     }
 }
 
@@ -580,6 +609,16 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .execute(&pool)
             .await
             .unwrap();
+        }
+        if path.contains("{shop}") && ids.shop.is_empty() {
+            ids.shop = sqlx::query_scalar::<_, Uuid>(
+                "SELECT id FROM shops WHERE campaign_id = $1 ORDER BY created_at LIMIT 1",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
         }
         if path.contains("{asset}") {
             ids.asset = sqlx::query_scalar::<_, Uuid>(

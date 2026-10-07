@@ -715,6 +715,141 @@ pub async fn upgrade(
     Ok((sheet, state))
 }
 
+/// What a player hands to a companion (player/buy-and-trade, « partager
+/// le butin »): some of a bag line, or an amount of the rules' currency.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Gift {
+    /// The companion's character.
+    pub to: Uuid,
+    /// A bag line of the giver, by key.
+    #[serde(default)]
+    pub entry: Option<String>,
+    /// How many of that line; all of it when absent.
+    #[serde(default)]
+    pub qty: Option<u32>,
+    /// An amount of the rules' currency, instead of a bag line.
+    #[serde(default)]
+    pub amount: Option<u32>,
+}
+
+/// The player hands `gift` to a companion's character: it leaves their
+/// bag or purse and lands in the companion's, both changes logged « par
+/// le joueur », and the table's journal says so (the line names the
+/// companion: it is on their end-of-evening screen).
+///
+/// # Errors
+///
+/// 403 `SPECTATOR`; 404 `NO_CHARACTER`, `NO_SUCH_CHARACTER` (no such
+/// companion at this table), `NO_SUCH_ENTRY`; 400 `INVALID_GIFT` (both
+/// or neither of a line and an amount, a zero, or oneself),
+/// `INVALID_QUANTITY`; 409 `NOT_ENOUGH`, `NO_CURRENCY`,
+/// `CHARACTER_NOT_VALIDATED`.
+pub async fn give(
+    pool: &PgPool,
+    player: &Player,
+    rules: &RuleSystem,
+    gift: &Gift,
+) -> Result<(), AppError> {
+    // A spectator has no character: 404 `NO_CHARACTER`.
+    let from: Option<Uuid> = sqlx::query_scalar("SELECT id FROM characters WHERE player_id = $1")
+        .bind(player.id)
+        .fetch_optional(pool)
+        .await?;
+    let from = from.ok_or(AppError::NotFound("NO_CHARACTER"))?;
+    if from == gift.to || gift.entry.is_some() == gift.amount.is_some() || gift.amount == Some(0) {
+        return Err(AppError::BadRequest("INVALID_GIFT"));
+    }
+    let mut tx = pool.begin().await?;
+    let (giver, state) = lock_in_play(&mut tx, player.campaign_id, from, rules).await?;
+    let (receiver, _) = lock_in_play(&mut tx, player.campaign_id, gift.to, rules)
+        .await
+        .map_err(|e| match e {
+            AppError::NotFound(_) => AppError::NotFound("NO_SUCH_CHARACTER"),
+            other => other,
+        })?;
+    let (take, put, what) = match (&gift.entry, gift.amount) {
+        (Some(key), None) => {
+            let line = state
+                .inventory
+                .iter()
+                .find(|e| &e.key == key)
+                .ok_or(AppError::NotFound("NO_SUCH_ENTRY"))?;
+            let qty = gift.qty.unwrap_or(line.qty);
+            check_qty(qty)?;
+            let name = line.display_name(rules);
+            (
+                Adjustment::TakeItem {
+                    entry: key.clone(),
+                    qty,
+                },
+                Adjustment::GiveItem {
+                    item: line.item.clone(),
+                    name: line.name.clone(),
+                    description: line.description.clone(),
+                    qty,
+                },
+                if qty > 1 {
+                    format!("{name} ×{qty}")
+                } else {
+                    name
+                },
+            )
+        }
+        (None, Some(amount)) => {
+            let currency = rules.currency().ok_or(AppError::Conflict("NO_CURRENCY"))?;
+            let delta = i32::try_from(amount).unwrap_or(i32::MAX);
+            (
+                Adjustment::Resource {
+                    resource: currency.id.clone(),
+                    delta: -delta,
+                },
+                Adjustment::Resource {
+                    resource: currency.id.clone(),
+                    delta,
+                },
+                format!("{amount} {}", currency.name),
+            )
+        }
+        _ => return Err(AppError::BadRequest("INVALID_GIFT")),
+    };
+    adjust_in(
+        &mut tx,
+        player.campaign_id,
+        rules,
+        from,
+        take,
+        Actor::Player,
+    )
+    .await?;
+    adjust_in(
+        &mut tx,
+        player.campaign_id,
+        rules,
+        gift.to,
+        put,
+        Actor::Player,
+    )
+    .await?;
+    let session = crate::evening::session::current(&mut *tx, player.campaign_id)
+        .await?
+        .map(|s| s.id);
+    crate::evening::knowledge::write_about(
+        &mut tx,
+        player.campaign_id,
+        session,
+        crate::evening::knowledge::JournalKind::Item,
+        None,
+        &format!("{} donne {what} à {}", giver.name, receiver.name),
+        true,
+        Some(gift.to),
+    )
+    .await?;
+    crate::evening::touch(&mut tx, player.campaign_id).await?;
+    tx.commit().await?;
+    Ok(())
+}
+
 /// XP character `id` earned from `from` (until `to`, or now), what the
 /// GM took back counted out: a sum the between screen shows its player.
 /// The history's lines themselves stay GM-side.

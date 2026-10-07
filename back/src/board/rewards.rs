@@ -26,36 +26,54 @@ pub struct Give {
     pub character: Uuid,
 }
 
+/// What giving `qty` of item `id` puts in a bag: the rules item when the
+/// rules have it (or the one the story's item carries its effects with,
+/// `from_rules`), else the story's own item by its name and description
+/// (`fallback` when the story has no such item either). Shared by loot
+/// and shops (`crate::shops`).
+#[must_use]
+pub fn item_adjustment(
+    rules: &RuleSystem,
+    story: &promptus_shared::story::Campaign,
+    id: &str,
+    fallback: &str,
+    qty: u32,
+) -> Adjustment {
+    let story_item = story.items.iter().find(|i| i.id == id);
+    let rules_id = if rules.item(id).is_some() {
+        Some(id.to_string())
+    } else {
+        story_item
+            .and_then(|i| i.from_rules.clone())
+            .filter(|r| rules.item(r).is_some())
+    };
+    match rules_id {
+        Some(item) => Adjustment::GiveItem {
+            item: Some(item),
+            name: String::new(),
+            description: String::new(),
+            qty,
+        },
+        None => Adjustment::GiveItem {
+            item: None,
+            name: story_item.map_or_else(|| fallback.to_string(), |i| i.name.clone()),
+            description: story_item
+                .map(|i| i.description.clone())
+                .unwrap_or_default(),
+            qty,
+        },
+    }
+}
+
 fn adjustment(
     rules: &RuleSystem,
     story: &promptus_shared::story::Campaign,
     line: &LootLine,
 ) -> Result<Adjustment, AppError> {
     match (&line.item, line.coins) {
-        (Some(id), _) => {
-            // A rules item when the rules have it, else the story's own.
-            if rules.items.iter().any(|i| &i.id == id) {
-                Ok(Adjustment::GiveItem {
-                    item: Some(id.clone()),
-                    name: String::new(),
-                    description: String::new(),
-                    qty: 1,
-                })
-            } else {
-                let item = story.items.iter().find(|i| &i.id == id);
-                Ok(Adjustment::GiveItem {
-                    item: None,
-                    name: item.map_or_else(|| line.name.clone(), |i| i.name.clone()),
-                    description: item.map(|i| i.description.clone()).unwrap_or_default(),
-                    qty: 1,
-                })
-            }
-        }
+        (Some(id), _) => Ok(item_adjustment(rules, story, id, &line.name, 1)),
         (None, Some(n)) => {
-            let resource = rules
-                .resources
-                .first()
-                .ok_or(AppError::Conflict("NO_CURRENCY"))?;
+            let resource = rules.currency().ok_or(AppError::Conflict("NO_CURRENCY"))?;
             Ok(Adjustment::Resource {
                 resource: resource.id.clone(),
                 delta: i32::try_from(n).unwrap_or(i32::MAX),

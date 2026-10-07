@@ -254,6 +254,23 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/fight/loot",
             post(api::board::give_loot),
         )
+        // Shops (player/buy-and-trade).
+        .route(
+            "/api/campaigns/{id}/shops",
+            get(api::trade::gm_shops).post(api::trade::create),
+        )
+        .route(
+            "/api/campaigns/{id}/shops/{shop}",
+            put(api::trade::edit).delete(api::trade::delete),
+        )
+        .route(
+            "/api/campaigns/{id}/shops/{shop}/open",
+            post(api::trade::set_open),
+        )
+        .route(
+            "/api/campaigns/{id}/shops/{shop}/reveal",
+            post(api::trade::reveal),
+        )
         // The campaign's own maps (maps/edit-map-gm, maps/import-image-map,
         // maps/generate-map-llm).
         .route(
@@ -398,6 +415,24 @@ fn player_routes() -> Vec<RouteSpec> {
             "GET",
             "/api/play/{campaign}/between",
             get(api::between::between),
+        ),
+        // Trading: hand an item or money to a companion, the open shops,
+        // buy one unit, haggle once.
+        (
+            "POST",
+            "/api/play/{campaign}/character/give",
+            post(api::trade::give),
+        ),
+        ("GET", "/api/play/{campaign}/trade", get(api::trade::trade)),
+        (
+            "POST",
+            "/api/play/{campaign}/shops/{shop}/haggle",
+            post(api::trade::haggle),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/shops/{shop}/buy",
+            post(api::trade::buy),
         ),
         // The evening: the scene, the music, my requests and their rolls,
         // the journal; the lobby; the feedback at the end.

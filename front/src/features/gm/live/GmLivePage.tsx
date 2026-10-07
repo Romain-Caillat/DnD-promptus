@@ -39,6 +39,7 @@ import { JournalPanel } from './JournalPanel'
 import { MediaPanel } from './MediaPanel'
 import { RequestsPanel } from './RequestsPanel'
 import { ScenePanel } from './ScenePanel'
+import { ShopsPanel } from './ShopsPanel'
 import { TablePanel } from './TablePanel'
 import { Btn } from './ui'
 
@@ -64,6 +65,7 @@ export function GmLivePage() {
   const [board, setBoard] = useState<GmBoard | null>(null)
   const [media, setMedia] = useState<MediaList | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [shopsVersion, setShopsVersion] = useState(0)
   const latest = useRef(0)
   const latestBoard = useRef(0)
   const latestMedia = useRef(0)
@@ -123,6 +125,7 @@ export function GmLivePage() {
     }
     if (topics.some((x) => ['map', 'fight', 'world'].includes(x))) void loadBoard()
     if (topics.includes('desk')) void loadMedia()
+    if (topics.some((x) => x === 'session' || x.startsWith('character:'))) setShopsVersion((v) => v + 1)
   })
 
   /** Run a gesture; refresh what it moved; say what went wrong. */
@@ -214,6 +217,7 @@ export function GmLivePage() {
               onLoot={(index, character) => void boardGesture(() => giveLoot(campaignId, [{ index, character }]))}
             />
           )}
+          <ShopsPanel campaignId={campaignId} refreshKey={shopsVersion} />
           {!session && screen.lastEnded && (
             <FeedbackPanel
               load={() => fetchFeedback(campaignId, screen.lastEnded!.id)}

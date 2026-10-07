@@ -859,6 +859,12 @@ impl RuleSystem {
     pub fn item(&self, id: &str) -> Option<&ItemDef> {
         self.items.iter().find(|i| i.id == id)
     }
+    /// The money of the system: its first resource (the Corsaires' gold).
+    /// Loot coins and shop prices are counted in it; `None` when the
+    /// system declares no resource.
+    pub fn currency(&self) -> Option<&ResourceDef> {
+        self.resources.first()
+    }
     pub fn condition(&self, id: &str) -> Option<&ConditionDef> {
         self.conditions.iter().find(|c| c.id == id)
     }

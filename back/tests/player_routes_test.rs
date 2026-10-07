@@ -35,6 +35,8 @@ struct Table {
     spectator: String,
     /// An approved image the table may see.
     asset: String,
+    /// The open shop.
+    shop: String,
 }
 
 /// Romain's marked campaign mid-scene, Marc seated as a player with a
@@ -71,7 +73,9 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
     evening(pool, Uuid::parse_str(&campaign).unwrap()).await;
     board(pool, Uuid::parse_str(&campaign).unwrap(), character).await;
     let asset = media(pool, Uuid::parse_str(&campaign).unwrap()).await;
+    let shop = shops(pool, Uuid::parse_str(&campaign).unwrap()).await;
     Table {
+        shop: shop.to_string(),
         gm,
         campaign,
         code,
@@ -106,6 +110,36 @@ async fn media(pool: &PgPool, campaign: Uuid) -> Uuid {
     .await
     .unwrap();
     shown
+}
+
+/// An open shop with a free line on the counter and one hidden under
+/// it, kept by a story NPC; and a closed shop. What players may not see
+/// is marked.
+async fn shops(pool: &PgPool, campaign: Uuid) -> Uuid {
+    sqlx::query(
+        "INSERT INTO shops (campaign_id, name, npc, currency, lines)
+         VALUES ($1, $2, NULL, 'or', '[]')",
+    )
+    .bind(campaign)
+    .bind(m("shops.name (closed)"))
+    .execute(pool)
+    .await
+    .unwrap();
+    sqlx::query_scalar(
+        "INSERT INTO shops (campaign_id, name, keeper, npc, open, currency, lines, haggle)
+         VALUES ($1, 'Le marché', 'Dents-de-Fer', $2, true, 'or', $3,
+                 '{\"ability\": \"CHA\", \"difficulty\": 10}')
+         RETURNING id",
+    )
+    .bind(campaign)
+    .bind(m("shops.npc"))
+    .bind(json!([
+        { "key": "free", "name": "Un caillou", "price": 0 },
+        { "key": "under", "name": m("shops.lines (hidden)"), "price": 25, "hidden": true },
+    ]))
+    .fetch_one(pool)
+    .await
+    .unwrap()
 }
 
 /// Session 1 ended with a GM recap and a GM-only journal line, session
@@ -213,6 +247,7 @@ fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> 
         return Some((StatusCode::NOT_FOUND, "NO_SUCH_REQUEST"));
     }
     (path.ends_with("/requests")
+        || path.contains("/shops/")
         || path.ends_with("/feedback")
         || path.ends_with("/walk")
         || path.ends_with("/fight"))
@@ -228,6 +263,11 @@ fn refused_to_marc(method: &str, path: &str) -> Option<(StatusCode, &'static str
     }
     if path.ends_with("/fight") {
         return Some((StatusCode::CONFLICT, "NO_FIGHT"));
+    }
+    // Borin sits alone: nobody to give to. Giving is swept in
+    // `trade_test.rs`.
+    if path.ends_with("/character/give") {
+        return Some((StatusCode::NOT_FOUND, "NO_SUCH_CHARACTER"));
     }
     // Session 2 is live: no upgrade point is spent mid-game (and Borin
     // has none). Spending one is swept in `between_test.rs`.
@@ -246,6 +286,7 @@ fn uri(path: &str, t: &Table) -> String {
     path.replace("{campaign}", &t.campaign)
         .replace("{code}", &t.code)
         .replace("{asset}", &t.asset)
+        .replace("{shop}", &t.shop)
 }
 
 fn seated(path: &str) -> bool {
@@ -271,6 +312,8 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
         }
         ("POST", p) if p.ends_with("/equip") => Some(json!({ "entry": "k1", "equipped": true })),
         ("POST", p) if p.ends_with("/upgrade") => Some(json!({ "ability": "FOR" })),
+        ("POST", p) if p.ends_with("/give") => Some(json!({ "to": Uuid::new_v4(), "amount": 1 })),
+        ("POST", p) if p.ends_with("/buy") => Some(json!({ "line": "free" })),
         ("POST", p) if p.ends_with("/walk") => Some(json!({ "path": [[1, 5]] })),
         ("POST", p) if p.ends_with("/fight") => Some(json!({ "kind": "endTurn" })),
         ("POST", p) if p.ends_with("/lobby") => Some(json!({ "soundOk": true, "remote": true })),

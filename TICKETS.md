@@ -1568,13 +1568,51 @@ phase 3 : un vrai jet en séance affiché par `RollDetail`
 (`ui/roll-faceted-dice`, `player/fight-turn`) — c'est là que le « fini
 quand » se vérifiera.
 
-### `player/buy-and-trade` · todo
+### `player/buy-and-trade` · doing — reste le marché de Kerjean joué pour de vrai, et la monnaie du Brasier à trancher par Romain
 
 **Périmètre** — L'or ; une boutique ouverte par le MJ (prix, stock,
 objet « sous le comptoir » révélé par un jet ou une discussion) ;
 marchander par un jet ; partager le butin.
 
+**Fini quand** (hypothèse, écrite d'après Kerjean et le Brasier) — Au
+marché noir de Kerjean, le MJ ouvre la boutique de Dents-de-Fer en un
+geste depuis l'histoire ; un joueur achète depuis sa bourse, marchande
+une fois (le serveur lance Charisme contre 10 : moitié prix sur un
+achat au choix arrondi en faveur du marchand, +2 PO sur tous les prix
+sur un 1, la boussole sort sur un 20) ; la boussole reste invisible
+aux téléphones tant que le MJ ne la sort pas ; deux joueurs se passent
+de l'or et un objet. Une table Brasier fait de même une fois que le MJ
+a donné une monnaie à ses règles.
+
 **Origine** — Marché noir de Kerjean, Corsaires acte 1
+
+**État** — Livré et testé sur les deux mondes (`back/tests/trade_test.rs`,
+moteur `rules::trade`, vitest `features/play/trade`), balayages MJ et
+joueur verts (une ligne cachée marquée ne sort jamais). Le MJ, sur son
+écran en direct (panneau Boutiques), ouvre la boutique d'un PNJ qui vend
+— ses prix, ce qu'il cache dans son inventaire « sous le comptoir » à la
+valeur de l'objet, le test « Marchander » de sa scène — ou une boutique
+vide ; il édite le comptoir (objet des règles, de l'histoire ou qu'il
+nomme ; prix, stock, caché), les termes du marchandage, ouvre et ferme,
+sort une ligne cachée (le journal le dit), voit qui a marchandé.
+Migration 033. Côté joueur, onglet Jeu, en séance ou entre deux : la
+boutique ouverte, sa bourse, « Acheter » (une unité, payée dans la
+monnaie des règles, posée dans le sac par `players::play`, journalisée
+« par le joueur »), « Marchander » une fois par personnage et par
+boutique (jet du serveur, XP du résultat, détail du jet affiché), puis
+« Acheter à 8 PO » tant que le rabais n'est pas utilisé. Onglet
+Personnage : « Donner à un compagnon » (un objet du sac ou de l'or) ;
+la ligne du journal nomme celui qui reçoit et apparaît dans sa fin de
+soirée. La monnaie est la première ressource des règles, la même que
+celle du butin.
+Hypothèses et limites : le 20 de Kerjean sort la boussole « pour
+15 PO » ; ici elle sort au prix du comptoir (25) et le rabais gagné
+peut la mettre à 13. Le Brasier ne déclare toujours aucune monnaie
+(« Crédits / monnaie d'échange : ____ » sur la fiche du Cure-Dent) :
+le panneau le dit au MJ et le test l'ajoute par l'éditeur de règles
+(« Crédits », départ 0) — à trancher par Romain. Pas de vente au
+marchand (les plaques de chitine Vorr « intéresseront un marchand ») ni
+de partage automatique d'un butin d'or entre tous. Jamais joué.
 
 ### `player/explore-map` · doing — reste la soirée du jalon jouée pour de vrai
 
