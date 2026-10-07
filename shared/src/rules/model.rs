@@ -187,6 +187,19 @@ pub enum GroupThreshold {
     Any,
 }
 
+impl GroupThreshold {
+    /// Successes a group of `n` needs.
+    #[must_use]
+    pub fn needed(self, n: usize) -> usize {
+        match self {
+            Self::AtLeastHalf => n.div_ceil(2),
+            Self::Majority => n / 2 + 1,
+            Self::All => n,
+            Self::Any => 1,
+        }
+    }
+}
+
 /// How an attack roll is built.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]

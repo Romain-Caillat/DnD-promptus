@@ -5,7 +5,8 @@
 //!
 //! `rules` is the rules engine, `story` the campaign graph, `maps` the
 //! grid maps and their geometry, `combat` fights played on those maps,
-//! `sprite` the layered pixel characters; `issue` what their checks
+//! `sprite` the layered pixel characters, `travel` the party's journeys
+//! on a world map; `issue` what their checks
 //! report.
 
 pub mod combat;
@@ -15,3 +16,4 @@ pub mod rules;
 pub mod sprite;
 pub mod story;
 pub mod theme;
+pub mod travel;

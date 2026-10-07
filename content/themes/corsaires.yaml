@@ -33,3 +33,14 @@ tilesets:
       bastingage: { name: Bastingage, shape: rail, color: "#6b4a2e", accent: "#3d2a18" }
       mat: { name: Mât, shape: mast, color: "#5c3f24", accent: "#d8cfb8" }
       trappe: { name: Trappe, shape: hatch, color: "#4f3720", accent: "#2b1d10" }
+  # maps/travel-hex-world — the world map's hexes, sailed by La Mâchoire.
+  - id: cotes-1718
+    name: Les côtes de 1718
+    void: "#07090c"
+    walls: { cap: "#5c6650", face: "#3d4436", joint: "#23281f", pattern: stones }
+    materials:
+      mer: { name: Haute mer, base: "#1f3a4a", dark: "#132733", light: "#2f5466", pattern: water }
+      côte: { name: Eaux côtières, base: "#2c5058", dark: "#1c363c", light: "#3f6c74", pattern: water }
+      terre: { name: Terre, base: "#4a5238", dark: "#323826", light: "#646e4c", pattern: grass, blend: true }
+      port: { name: Port, base: "#6a5a44", dark: "#46392a", light: "#8a7658", pattern: cobbles }
+    props: {}
