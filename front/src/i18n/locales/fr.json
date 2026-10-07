@@ -1329,7 +1329,14 @@
       "NO_CURRENCY": "Les règles n'ont pas de monnaie.",
       "TEXT_TOO_LONG": "Texte trop long.",
       "EMPTY_TEXT": "Le texte est vide.",
-      "CELL_BLOCKED": "Personne ne peut se tenir là."
+      "CELL_BLOCKED": "Personne ne peut se tenir là.",
+      "NOTHING_HEARD": "Le co-MJ n'a rien entendu : reparlez plus près du micro.",
+      "AUDIO_INVALID": "L'enregistrement est illisible : recommencez.",
+      "RECORDING_TOO_SHORT": "Trop court : touchez une fois pour parler, une fois pour envoyer.",
+      "RECORDING_TOO_LONG": "Plus d'une minute : dites-le en plus court.",
+      "UNKNOWN_NPC": "Ce PNJ n'existe pas dans la campagne.",
+      "AI_UNAVAILABLE": "Le fournisseur d'IA ne répond pas : réessayez.",
+      "AI_OUTPUT_INVALID": "La réponse de l'IA était illisible : réessayez."
     },
     "table": {
       "title": "La table",
@@ -1448,7 +1455,18 @@
       "narration": "Narration",
       "apply": "Faire",
       "show": "Montrer à la table",
-      "dismiss": "Écarter"
+      "dismiss": "Écarter",
+      "voice": {
+        "speak": "Parler au co-MJ",
+        "touchToTalk": "Touche pour parler",
+        "listening": "J'écoute… {{seconds}} s",
+        "touchToSend": "Touche pour envoyer (une minute au plus)",
+        "sending": "Le co-MJ écoute ce que vous avez dit…",
+        "heard": "Vous avez dit :",
+        "change": "Changer",
+        "denied": "Le micro est refusé : autorisez-le pour cette page dans le navigateur.",
+        "unsupported": "Pas de micro ici : la dictée demande une page en HTTPS (ou sur cet ordinateur)."
+      }
     },
     "journal": {
       "title": "Journal",

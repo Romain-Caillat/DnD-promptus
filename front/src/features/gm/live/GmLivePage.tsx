@@ -32,6 +32,7 @@ import {
   type LiveScreen,
 } from '@/lib/evening'
 import { askImage, decideImage, fetchGmMedia, type MediaList } from '@/lib/media'
+import { dictate } from '@/lib/voice'
 import { BoardPanel } from './BoardPanel'
 import { CopilotPanel } from './CopilotPanel'
 import { EndPanel, FeedbackPanel } from './EndPanel'
@@ -230,6 +231,7 @@ export function GmLivePage() {
               onAsk={async (kind, prompt, npc) => {
                 await act(() => askCopilot(campaignId, kind, prompt, npc))
               }}
+              onDictate={(audio, kind, npc) => act(() => dictate(campaignId, audio, kind, npc))}
               onShow={(d, n, l) => void act(() => showDraft(campaignId, d, n, l))}
               onDismiss={(d) => void act(() => dismissDraft(campaignId, d))}
               onReveal={(r) => void act(() => reveal(campaignId, r))}

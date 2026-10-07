@@ -20,8 +20,8 @@ use uuid::Uuid;
 
 use super::templates::Template;
 use super::{
-    AiError, ImageRequest, ImageResponse, LlmRequest, LlmResponse, Usage, VideoRequest,
-    VideoResponse,
+    AiError, ImageRequest, ImageResponse, LlmRequest, LlmResponse, TranscribeRequest,
+    TranscribeResponse, Usage, VideoRequest, VideoResponse,
 };
 use crate::ai::Ai;
 use crate::error::AppError;
@@ -343,5 +343,40 @@ impl Ai {
             Err(e) => settle(pool, ids[0], None, Usage::default(), Some(e)).await?,
         }
         Ok(answer)
+    }
+
+    /// One transcription for `campaign` (`copilot/listen-by-voice`),
+    /// counted like a completion: a model call whose input is audio, so
+    /// it is recorded as an `llm` call (its purpose says it was voice).
+    ///
+    /// # Errors
+    ///
+    /// 409 `AI_BUDGET_EXCEEDED` (no call made); 503 `AI_NOT_CONFIGURED`;
+    /// 502 `AI_UNAVAILABLE`; a database error.
+    pub async fn transcribe(
+        &self,
+        pool: &PgPool,
+        campaign: Uuid,
+        purpose: &str,
+        template: &Template,
+        req: &TranscribeRequest,
+    ) -> Result<TranscribeResponse, AppError> {
+        let provider = self.provider().map_err(|e| app_error(&e))?;
+        let planned = [Planned {
+            kind: CallKind::Llm,
+            purpose,
+            template: Some(template),
+            model: req.model.as_deref(),
+            estimate: self
+                .pricing
+                .transcribe(req, super::openrouter::TRANSCRIPT_TOKENS),
+        }];
+        let ids = reserve(pool, campaign, provider.name(), &planned).await?;
+        let answer = provider.transcribe(req).await;
+        match &answer {
+            Ok(r) => settle(pool, ids[0], Some(&r.model), r.usage, None).await?,
+            Err(e) => settle(pool, ids[0], None, Usage::default(), Some(e)).await?,
+        }
+        answer.map_err(|e| app_error(&e))
     }
 }

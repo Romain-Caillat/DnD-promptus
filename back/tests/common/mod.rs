@@ -290,3 +290,27 @@ pub async fn signed_in_gm(pool: &PgPool, name: &str) -> (Uuid, String) {
     tx.commit().await.unwrap();
     (id, token)
 }
+
+/// A one-second 16 kHz mono 16-bit WAV, base64, whose samples are
+/// `text` (padded with spaces): the fake provider hears that text
+/// (`copilot/listen-by-voice`). An empty `text` is a second of silence.
+pub fn wav_saying(text: &str) -> String {
+    use base64::Engine;
+    let pad = if text.is_empty() { 0 } else { b' ' };
+    let mut samples = text.as_bytes().to_vec();
+    samples.resize(samples.len().max(32_000), pad);
+    let mut w = Vec::new();
+    w.extend_from_slice(b"RIFF");
+    w.extend_from_slice(&(36 + samples.len() as u32).to_le_bytes());
+    w.extend_from_slice(b"WAVEfmt ");
+    w.extend_from_slice(&16u32.to_le_bytes());
+    // PCM, mono, 16 kHz, 32 000 bytes a second, 2-byte frames, 16 bits.
+    w.extend_from_slice(&[1, 0, 1, 0]);
+    w.extend_from_slice(&16_000u32.to_le_bytes());
+    w.extend_from_slice(&32_000u32.to_le_bytes());
+    w.extend_from_slice(&[2, 0, 16, 0]);
+    w.extend_from_slice(b"data");
+    w.extend_from_slice(&(samples.len() as u32).to_le_bytes());
+    w.extend_from_slice(&samples);
+    base64::engine::general_purpose::STANDARD.encode(w)
+}

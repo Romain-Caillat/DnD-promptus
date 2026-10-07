@@ -1827,10 +1827,54 @@ encore adaptées à la campagne).
 
 **Origine** — Planche « Créer » (moment 7)
 
-### `copilot/listen-by-voice` · todo · à spécifier
+### `copilot/listen-by-voice` · doing — reste une vraie dictée transcrite avec la clé OpenRouter, sur une tablette en HTTPS
 
 **Périmètre** — Dicter au co-MJ (tablette surtout) ; transcription et
 proposition à valider.
+
+**Hypothèse retenue** — C'est le MJ qui parle au co-MJ, micro tenu
+(« touche pour parler », planche « Tablette », moment 5) ; le co-MJ
+n'écoute pas la table en continu : la voix des joueurs reste sur
+Discord (`MEMORY.md` §1), et écouter six joueurs en permanence coûterait
+cher et poserait la question de leur accord. Ce qu'il entend remplace ce
+que le MJ aurait tapé : la réponse est un brouillon comme les autres.
+
+**Fini quand** —
+- Sur l'écran MJ en direct, le MJ touche « Parler au co-MJ », parle,
+  touche à nouveau : ce qu'il a dit s'affiche (« Vous avez dit : … »)
+  et le co-MJ répond avec le type choisi (Décrire, Faire parler un PNJ,
+  Conséquence, Et ensuite ?, Libre par défaut).
+- La réponse est un brouillon ordinaire : le MJ le modifie, le montre
+  ou l'écarte ; ni ses mots ni le brouillon n'atteignent un téléphone
+  sans ce geste. « Changer » remet ce qui a été entendu dans le champ
+  texte pour le corriger et redemander.
+- La transcription passe par le trait de fournisseur (faux fournisseur
+  en test, OpenRouter en vrai), avec un gabarit versionné qui donne au
+  modèle les noms propres de la campagne (Vaubernier, LUMEN, le
+  Cure-Dent…) ; elle est comptée sur le budget IA, refusée avant
+  l'envoi si le budget ne suffit pas ou si la partie n'est pas lancée.
+- Un silence ne coûte qu'une écoute (« Le co-MJ n'a rien entendu ») ;
+  une minute au plus par dictée.
+- Testé sur les deux mondes, Corsaires et Brasier.
+
+**État** — Livré et vérifié (`cargo test`, Vitest). Le bouton micro est
+dans le panneau co-MJ de l'écran en direct, grand pour le doigt ; le
+tiroir de la tablette qui l'accueillera est à `gm/run-on-tablet`. Le
+navigateur enregistre et envoie un WAV 16 kHz (même format sur Chrome et
+Safari) ; le serveur l'écrit (gabarit `transcribe.v1`, appel compté
+`copilot.voice`) puis demande au co-MJ (`copilot.<type>`) : deux appels
+par dictée. Sans micro possible (page en HTTP hors de l'ordinateur
+local), le panneau le dit au lieu d'afficher un bouton. Écarts : aucune
+transcription réelle n'a encore tourné (modèle par défaut
+`google/gemini-2.5-flash`, `OPENROUTER_AUDIO_MODEL`) ; l'autorisation
+micro de l'app iOS (`src-tauri/Info.ios.plist`) n'a pas été essayée dans
+le simulateur, et Android (`RECORD_AUDIO`, manifeste généré par
+`tauri android init`) comme le bureau macOS (sa propre phrase
+d'autorisation micro) restent à faire ; l'enregistrement sur un vrai
+iPad n'est pas mesuré ; un budget qui couvre l'écoute mais pas la
+réponse paie l'écoute et perd ce qui a été dit ; la proposition « Faire fuir le gobelin » de la planche
+n'a pas de bouton : les gestes proposés restent ceux du co-MJ écrit
+(indice, menace, scène, PNJ).
 
 **Origine** — Planche « Tablette » (moment 5)
 

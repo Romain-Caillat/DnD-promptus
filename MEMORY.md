@@ -26,6 +26,8 @@ memory. If someone would re-litigate it in six months, it is.
   Devotion's mobile hooks, item menus, i18n setup and lint rules.
 - **Fully remote first.** Every player on their own device (confirmed by the Corsaires game, §6). A table +
   TV mode comes later. Voice goes through an external tool (Discord…).
+  The co-GM hears only the GM, push to talk (`copilot/listen-by-voice`):
+  it never listens to the table.
 - **Only the GM creates content.** Players do not author the world.
 - **Rules are data.** The GM defines a rule system per campaign
   (abilities, roll formula, actions, conditions, resources, movement per
@@ -283,6 +285,22 @@ against the campaign budget; a batch that would exceed it is refused.
   `POST /api/v1/videos` returns a job, polled at `/videos/{id}` until
   `completed`, the file at `unsigned_urls[0]`. Built from OpenRouter's
   docs; no live call has run yet — check the first real one.
+- **OpenRouter hears audio through the chat API** (`copilot/listen-by-voice`):
+  the WAV rides base64 in an `input_audio` part (`format: "wav"`) of the
+  user message, sent to a model that takes audio. Built from OpenRouter's
+  docs; no live call has run yet — check the first real dictation.
+- **The microphone needs a secure page**: `getUserMedia` exists only over
+  HTTPS or on localhost. A tablet that opens the server by its LAN address
+  in plain HTTP gets no microphone (the co-GM panel says so). The browser
+  records raw samples and encodes a 16 kHz WAV itself: `MediaRecorder`
+  gives WebM on Chrome and MP4 on Safari, and audio models do not all
+  take both.
+- **Parallel branches share `promptus_test`.** sqlx refuses to migrate a
+  database holding a migration version the branch does not know: a branch
+  whose tests fail on « migration … was previously applied but is
+  missing » is not broken, it meets another lot's migrations. Point
+  `TEST_DATABASE_URL` at a database of its own; never delete rows from
+  `_sqlx_migrations`.
 - **A phone's video player needs `Range`**: iOS Safari plays nothing
   served whole. Media bytes are served with 206 partial answers.
 - **V1 GM pages had no authentication.** The rewrite has a GM account

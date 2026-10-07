@@ -107,8 +107,16 @@ pub const HOOKS: Template = Template {
     text: include_str!("../../prompts/hooks.v1.md"),
 };
 
+/// What the GM dictates to the co-GM, written down
+/// (`copilot/listen-by-voice`).
+pub const TRANSCRIBE: Template = Template {
+    id: "transcribe",
+    version: 1,
+    text: include_str!("../../prompts/transcribe.v1.md"),
+};
+
 /// Every template, for the tests that check each one renders.
-pub const ALL: [Template; 12] = [
+pub const ALL: [Template; 13] = [
     COPILOT,
     RECAP,
     PIXEL_ART,
@@ -121,6 +129,7 @@ pub const ALL: [Template; 12] = [
     SHEET_NOTE,
     BACKSTORY,
     HOOKS,
+    TRANSCRIBE,
 ];
 
 const USER_MARK: &str = "---user---";

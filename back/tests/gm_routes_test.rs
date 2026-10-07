@@ -129,6 +129,7 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/media/{asset}/decision"),
     // Each on a draft of the co-GM written just before.
     ("POST", "/api/campaigns/{campaign}/session/copilot"),
+    ("POST", "/api/campaigns/{campaign}/session/copilot/voice"),
     (
         "POST",
         "/api/campaigns/{campaign}/session/copilot/{draft}/show",
@@ -254,6 +255,9 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         (_, p) if p.ends_with("/maps/generate") => Some(serde_json::json!({ "node": "sc_crique" })),
         (_, p) if p.ends_with("/media/batch") => Some(serde_json::json!({ "videos": false })),
         (_, p) if p.ends_with("/decision") => Some(serde_json::json!({ "approve": true })),
+        (_, p) if p.ends_with("/copilot/voice") => Some(serde_json::json!({
+            "audio": common::wav_saying("Que fait le gardien du phare ?")
+        })),
         (_, p) if p.ends_with("/copilot") => {
             Some(serde_json::json!({ "kind": "describe", "prompt": "Ils entrent." }))
         }

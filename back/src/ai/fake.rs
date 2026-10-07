@@ -9,6 +9,9 @@
 //! A campaign generation gets a small campaign drawn from the pitch, with
 //! a few invented ids for the server to remove.
 //! Images are small pixel patterns drawn from the prompt's hash.
+//! It hears no voice: a recording of silence is heard as nothing, one
+//! whose samples are UTF-8 text is heard as that text (so a test can
+//! « say » a sentence), any other as one fixed sentence.
 
 use std::sync::Mutex;
 
@@ -17,7 +20,7 @@ use serde_json::json;
 
 use super::{
     AiError, BoxFuture, ImageRequest, ImageResponse, LlmRequest, LlmResponse, Provider, Role,
-    Usage, VideoRequest, VideoResponse,
+    TranscribeRequest, TranscribeResponse, Usage, VideoRequest, VideoResponse,
 };
 
 /// What the fake answers with for one call.
@@ -689,6 +692,28 @@ fn pattern(prompt: &str) -> Vec<u8> {
     .to_png()
 }
 
+/// What the fake hears in a dictation that is neither silence nor text.
+pub const HEARD: &str = "Que se passe-t-il si les joueurs prennent la première sortie ?";
+
+/// The samples of a WAV file: what follows its `data` chunk header.
+fn wav_samples(wav: &[u8]) -> &[u8] {
+    wav.windows(4)
+        .position(|w| w == b"data")
+        .and_then(|at| wav.get(at + 8..))
+        .unwrap_or(&[])
+}
+
+fn heard(wav: &[u8]) -> String {
+    let samples = wav_samples(wav);
+    if samples.iter().all(|b| *b == 0) {
+        return String::new();
+    }
+    match std::str::from_utf8(samples) {
+        Ok(text) => text.trim().to_string(),
+        Err(_) => HEARD.to_string(),
+    }
+}
+
 impl Provider for FakeProvider {
     fn name(&self) -> &'static str {
         "fake"
@@ -802,6 +827,25 @@ impl Provider for FakeProvider {
                 bytes,
                 mime: "video/mp4".into(),
                 model: req.model.clone().unwrap_or_else(|| "fake/video".into()),
+                usage: self.usage(),
+            })
+        })
+    }
+
+    fn transcribe<'a>(
+        &'a self,
+        req: &'a TranscribeRequest,
+    ) -> BoxFuture<'a, Result<TranscribeResponse, AiError>> {
+        Box::pin(async move {
+            self.record("transcribe".into());
+            let text = if self.broken {
+                "J’ai entendu quelque chose".to_string()
+            } else {
+                json!({ "text": heard(&req.wav) }).to_string()
+            };
+            Ok(TranscribeResponse {
+                text,
+                model: req.model.clone().unwrap_or_else(|| "fake/ear".into()),
                 usage: self.usage(),
             })
         })
