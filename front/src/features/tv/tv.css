@@ -1,0 +1,308 @@
+/*
+ * The shared screen (tv/show-evening), after the « Écran TV » board: a
+ * 1920 × 1080 stage scaled to the window, black and white, colour only
+ * for numbers. Every class is prefixed `tv-` (the board's own trap:
+ * generic names leak into imported components). Every animation has a
+ * calm resting style, so reduced motion shows the moment, still.
+ */
+.tv-root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #050505;
+  color: var(--color-chalk);
+}
+
+.tv-stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: center;
+}
+
+.tv-screen,
+.tv-stage > .tv-center {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(70% 70% at 40% 50%, #1e1e1e 0, #0e0e0e 60%, #030303 100%);
+}
+
+.tv-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.tv-top {
+  position: absolute;
+  left: 60px;
+  top: 40px;
+  z-index: 30;
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+}
+
+.tv-music {
+  position: absolute;
+  right: 60px;
+  top: 30px;
+  z-index: 30;
+  width: 420px;
+}
+
+.tv-letter {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 120px;
+  border-radius: 14px;
+  background: var(--color-ivory);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 68px;
+  box-shadow: 0 6px 0 var(--color-ivory-edge);
+}
+
+.tv-noportrait {
+  display: block;
+  width: 132px;
+  height: 168px;
+  border-radius: 14px;
+  border: 2px dashed var(--color-line-dashed);
+}
+
+.tv-noportrait-sm {
+  width: 44px;
+  height: 56px;
+}
+
+.tv-art {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 70% at 50% 100%, rgb(5 5 5 / 0.95), transparent 70%),
+    repeating-linear-gradient(135deg, #2e2e2e 0 3px, #222 3px 11px);
+}
+
+.tv-art > img {
+  opacity: 0.85;
+}
+
+.tv-lower {
+  position: absolute;
+  left: 120px;
+  right: 120px;
+  bottom: 120px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px 32px;
+  border-radius: 18px;
+  background: rgb(8 8 8 / 0.78);
+}
+
+.tv-map {
+  position: absolute;
+  left: 60px;
+  top: 150px;
+  width: 1120px;
+  height: 800px;
+  overflow: hidden;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  border: 2px solid var(--color-line);
+  background: #000;
+  box-shadow: 0 40px 90px rgb(0 0 0 / 0.75);
+}
+
+.tv-party {
+  position: absolute;
+  right: 60px;
+  top: 150px;
+  width: 620px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tv-pc {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 20px;
+  border-radius: 18px;
+  border: 1px solid var(--color-line);
+  background: linear-gradient(180deg, #191919, #101010);
+}
+
+.tv-pc-now {
+  border-color: var(--color-stat-init);
+  box-shadow: 0 0 30px rgb(255 214 10 / 0.25);
+}
+
+.tv-track {
+  position: absolute;
+  left: 1240px;
+  right: 60px;
+  top: 90px;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tv-chip {
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 2px solid var(--color-line-strong);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.tv-chip-foe {
+  border-color: var(--color-chalk);
+  background: #0a0a0a;
+}
+
+.tv-chip-now {
+  border-color: var(--color-stat-init);
+  box-shadow: 0 0 22px rgb(255 214 10 / 0.45);
+}
+
+.tv-feed {
+  position: absolute;
+  left: 60px;
+  right: 60px;
+  bottom: 40px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 0;
+  padding: 18px 24px;
+  border-radius: 16px;
+  border: 1px solid var(--color-line);
+  background: rgb(8 8 8 / 0.92);
+  font-size: 26px;
+}
+
+.tv-moment {
+  position: absolute;
+  inset: 0;
+  z-index: 990;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  text-align: center;
+  background: rgb(3 3 3 / 0.82);
+  animation: tv-fade 0.4s ease-out both;
+}
+
+.tv-rays::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1400px;
+  height: 1400px;
+  margin: -700px 0 0 -700px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(rgb(255 255 255 / 0.08) 0 7deg, transparent 7deg 20deg);
+  mask-image: radial-gradient(circle, #000 15%, transparent 60%);
+  animation: tv-spin 24s linear infinite;
+  z-index: -1;
+}
+
+.tv-slam {
+  display: inline-block;
+  padding: 8px 30px;
+  background: var(--color-ivory);
+  color: var(--color-ink);
+  font-family: var(--font-title);
+  font-weight: 800;
+  transform: rotate(-3deg);
+  box-shadow: 0 8px 0 #6e6e6e;
+  animation: tv-slam 0.7s cubic-bezier(0.2, 1.4, 0.3, 1) 2.2s both;
+}
+
+.tv-flip {
+  animation: tv-flip 1.4s cubic-bezier(0.2, 0.9, 0.25, 1.1) both;
+}
+
+.tv-line {
+  animation: tv-line 0.8s ease-out both;
+}
+
+.tv-pulse {
+  animation: tv-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes tv-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes tv-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes tv-slam {
+  0% {
+    transform: rotate(-3deg) scale(3);
+    opacity: 0;
+  }
+  70% {
+    transform: rotate(-3deg) scale(0.94);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(-3deg) scale(1);
+  }
+}
+
+@keyframes tv-flip {
+  0% {
+    transform: rotateY(180deg) scale(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes tv-line {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes tv-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tv-moment,
+  .tv-rays::before,
+  .tv-slam,
+  .tv-flip,
+  .tv-line,
+  .tv-pulse {
+    animation: none;
+  }
+}

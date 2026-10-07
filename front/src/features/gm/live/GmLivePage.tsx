@@ -40,6 +40,7 @@ import { JournalPanel } from './JournalPanel'
 import { MediaPanel } from './MediaPanel'
 import { RequestsPanel } from './RequestsPanel'
 import { ScenePanel } from './ScenePanel'
+import { ScreenPanel } from './ScreenPanel'
 import { TablePanel } from './TablePanel'
 import { Btn } from './ui'
 
@@ -65,6 +66,7 @@ export function GmLivePage() {
   const [board, setBoard] = useState<GmBoard | null>(null)
   const [media, setMedia] = useState<MediaList | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [screensKey, setScreensKey] = useState(0)
   const latest = useRef(0)
   const latestBoard = useRef(0)
   const latestMedia = useRef(0)
@@ -124,6 +126,7 @@ export function GmLivePage() {
     }
     if (topics.some((x) => ['map', 'fight', 'world'].includes(x))) void loadBoard()
     if (topics.includes('desk')) void loadMedia()
+    if (topics.includes('screens')) setScreensKey((k) => k + 1)
   })
 
   /** Run a gesture; refresh what it moved; say what went wrong. */
@@ -190,6 +193,7 @@ export function GmLivePage() {
       <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_minmax(420px,2fr)_minmax(280px,1fr)]">
         <div className="flex flex-col gap-3">
           <TablePanel screen={screen} onSpotlight={(p) => void act(() => giveSpotlight(campaignId, p))} />
+          <ScreenPanel campaignId={campaignId} online={live.presence.screens} refreshKey={screensKey} />
           {session?.status === 'live' && (
             <RequestsPanel screen={screen} onDecide={(id, d) => void act(() => decide(campaignId, id, d))} />
           )}

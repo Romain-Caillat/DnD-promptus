@@ -165,6 +165,13 @@ impl Reply {
         (!value.is_empty()).then(|| value.to_string())
     }
 
+    /// The shared-screen device token the response stored, if it set one.
+    pub fn screen_token(&self) -> Option<String> {
+        let cookie = self.set_cookie.as_deref()?;
+        let value = cookie.strip_prefix("promptus_screen=")?.split(';').next()?;
+        (!value.is_empty()).then(|| value.to_string())
+    }
+
     /// The player device token the response stored, if it set one.
     pub fn player_token(&self) -> Option<String> {
         let cookie = self.set_cookie.as_deref()?;
@@ -194,6 +201,18 @@ pub async fn call_as_player(
     body: Option<Value>,
 ) -> Reply {
     let cookie = token.map(|token| format!("promptus_player={token}"));
+    send(app, cookie.as_deref(), method, uri, body).await
+}
+
+/// Send one request as the shared screen holding `token`.
+pub async fn call_as_screen(
+    app: &Router,
+    token: Option<&str>,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> Reply {
+    let cookie = token.map(|token| format!("promptus_screen={token}"));
     send(app, cookie.as_deref(), method, uri, body).await
 }
 

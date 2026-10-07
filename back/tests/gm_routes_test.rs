@@ -169,6 +169,13 @@ const GM_ROUTES: &[(&str, &str)] = &[
     // After the character routes: removing the player removes them.
     ("DELETE", "/api/campaigns/{campaign}/players/{player}"),
     ("DELETE", "/api/campaigns/{campaign}/invite"),
+    // The shared screens: the list, a TV paired with the code it shows
+    // just before, a window, what they show, then one forgotten.
+    ("GET", "/api/campaigns/{campaign}/screens"),
+    ("POST", "/api/campaigns/{campaign}/screens"),
+    ("POST", "/api/campaigns/{campaign}/screens/window"),
+    ("PUT", "/api/campaigns/{campaign}/screens/shows"),
+    ("DELETE", "/api/campaigns/{campaign}/screens/{screen}"),
     ("GET", "/api/campaigns/{campaign}/live"),
     // Last: it ends the session the control sweep uses.
     ("POST", "/api/auth/sign-out"),
@@ -267,6 +274,10 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             "recap": "Ils ont trouvé la lanterne.",
             "previously": "La tempête approche."
         })),
+        ("POST", p) if p.ends_with("/screens") => Some(serde_json::json!({ "code": "ZZZZ" })),
+        (_, p) if p.ends_with("/screens/shows") => Some(serde_json::json!({
+            "scene": true, "map": false, "party": true, "moments": true
+        })),
         (_, p) if p.ends_with("/changes") => {
             Some(serde_json::json!({ "text": "Plus de scènes pour Marc." }))
         }
@@ -289,6 +300,7 @@ struct Ids {
     proposal: String,
     job: String,
     map: String,
+    screen: String,
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
@@ -304,6 +316,7 @@ fn route_uri(path: &str, ids: &Ids) -> String {
         .replace("{proposal}", &ids.proposal)
         .replace("{job}", &ids.job)
         .replace("{map}", &ids.map)
+        .replace("{screen}", &ids.screen)
 }
 
 /// Every placeholder filled for `player` of `campaign`: an invitation of
@@ -340,6 +353,7 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         proposal: Uuid::new_v4().to_string(),
         job: Uuid::new_v4().to_string(),
         map: "carte-inconnue".to_string(),
+        screen: Uuid::new_v4().to_string(),
     }
 }
 
@@ -602,6 +616,16 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .unwrap()
             .to_string();
         }
+        if path.contains("{screen}") {
+            ids.screen = sqlx::query_scalar::<_, Uuid>(
+                "SELECT id FROM shared_screens WHERE campaign_id = $1 LIMIT 1",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
+        }
         let uri = route_uri(path, &ids);
         let decision = path.contains("/characters/")
             && (path.ends_with("/validate")
@@ -637,6 +661,11 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             (&"POST", Some(mut b)) if path.ends_with("/fight/loot") => {
                 b["gives"][0]["character"] = Value::String(ids.character.clone());
                 Some(b)
+            }
+            // A TV shows a code just before the GM types it.
+            (&"POST", Some(_)) if path.ends_with("/screens") => {
+                let tv = common::call_as_screen(&app, None, "POST", "/api/tv", None).await;
+                Some(serde_json::json!({ "code": tv.body["data"]["code"] }))
             }
             (_, b) => b,
         };

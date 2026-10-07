@@ -17,7 +17,7 @@ use axum::Router;
 use axum::http::StatusCode;
 use common::marked::{ITEM_NOTE, leaks, m, mark_review, marked, world};
 use common::{call, call_as_player, imported_campaign, invite_code, join, send};
-use promptus_back::app::player_facing_routes;
+use promptus_back::app::{player_facing_routes, screen_facing_routes};
 use promptus_shared::story::to_yaml;
 use serde_json::{Value, json};
 use sqlx::PgPool;
@@ -434,6 +434,67 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
     )
     .await;
     assert_eq!(r.body["data"]["scene"]["title"], "La crique aux Morts");
+
+    // session/pair-shared-screen, tv/show-evening: the TV paired with
+    // this table sees what every player may see — and not even what one
+    // player sees of their own: no sheet, no request answered by the GM.
+    sqlx::query("UPDATE player_requests SET gm_reason = $2 WHERE campaign_id = $1")
+        .bind(Uuid::parse_str(&t.campaign).unwrap())
+        .bind(m("requests.gm_reason"))
+        .execute(&pool)
+        .await
+        .unwrap();
+    let tv = common::call_as_screen(&app, None, "POST", "/api/tv", None).await;
+    let screen = tv.screen_token().unwrap();
+    let r = common::call(
+        &app,
+        Some(&t.gm),
+        "POST",
+        &format!("/api/campaigns/{}/screens", t.campaign),
+        Some(json!({ "code": tv.body["data"]["code"] })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
+    let routes = screen_facing_routes();
+    assert!(routes.len() >= 4, "{routes:?}");
+    for (method, path) in routes {
+        let uri = uri(path, &t);
+        let r = common::call_as_screen(&app, Some(&screen), method, &uri, None).await;
+        if path.ends_with("/live") {
+            assert_eq!(r.status, StatusCode::BAD_REQUEST, "{uri}");
+            assert_eq!(r.body["error"]["code"], "WEBSOCKET_REQUIRED");
+            continue;
+        }
+        if let Some((status, code)) = refused_to_all(method, path) {
+            assert_eq!(r.status, status, "{method} {uri}: {}", r.body);
+            assert_eq!(r.body["error"]["code"], code);
+            continue;
+        }
+        assert!(
+            r.status.is_success(),
+            "{method} {uri}: {} {}",
+            r.status,
+            r.body
+        );
+        assert_clean(&format!("{method} {uri} on the TV"), &r.body);
+        assert!(
+            !r.body.to_string().contains(MARC_SECRET),
+            "{method} {uri} showed Marc's sheet on the TV"
+        );
+    }
+    // What the TV is for is there: Borin in the party, the crique, the
+    // quay as a spectator sees it.
+    let r = common::call_as_screen(&app, Some(&screen), "GET", "/api/tv/show", None).await;
+    let view = &r.body["data"];
+    assert_eq!(view["party"][0]["name"], "Borin", "{view}");
+    assert_eq!(view["scene"]["title"], "La crique aux Morts");
+    assert!(view["board"]["map"].is_object(), "{view}");
+    // The sailor in the fog and the hidden ambusher are not on the TV.
+    let tokens = view["board"]["tokens"].to_string();
+    assert!(
+        !tokens.contains("marin-1") && !tokens.contains("gueule-rouge-1"),
+        "{tokens}"
+    );
 }
 
 #[tokio::test]

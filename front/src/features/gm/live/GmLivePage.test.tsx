@@ -100,6 +100,7 @@ const SCREEN = {
   },
   ai: { configured: true, spending: { budgetMicros: 1_000_000, spentMicros: 0 } },
 }
+const SCREENS = { screens: [], shows: { scene: true, map: true, party: true, moments: true } }
 const BOARD = { board: null, maps: [{ id: 'quai', name: 'Le quai', nodes: [] }], encounters: [], encounter: null, conditions: null }
 
 function renderPage() {
@@ -131,6 +132,7 @@ describe('GmLivePage', () => {
       'GET /api/campaigns/c1/session': () => ({ status: 200, body: { data: SCREEN } }),
       'GET /api/campaigns/c1/board': () => ({ status: 200, body: { data: BOARD } }),
       'GET /api/campaigns/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
+      'GET /api/campaigns/c1/screens': () => ({ status: 200, body: { data: SCREENS } }),
       'POST /api/campaigns/c1/session/requests/r1': () => ({ status: 200, body: { data: {} } }),
       'POST /api/campaigns/c1/session/reveal': () => ({ status: 204 }),
       'PUT /api/campaigns/c1/session/music': () => ({ status: 200, body: { data: null } }),
@@ -164,6 +166,7 @@ describe('GmLivePage', () => {
       'GET /api/campaigns/c1/session': () => ({ status: 200, body: { data: SCREEN } }),
       'GET /api/campaigns/c1/board': () => ({ status: 200, body: { data: BOARD } }),
       'GET /api/campaigns/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
+      'GET /api/campaigns/c1/screens': () => ({ status: 200, body: { data: SCREENS } }),
       'POST /api/campaigns/c1/session/reveal': () => ({ status: 204 }),
       'POST /api/campaigns/c1/session/copilot': () => ({ status: 201, body: { data: {} } }),
     })
@@ -183,5 +186,41 @@ describe('GmLivePage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Faire parler LUMEN' }))
     expect(sentTo(fetchMock, 'POST /api/campaigns/c1/session/copilot')).toEqual([{ kind: 'npc', prompt: '', npc: 'pnj_lumen' }])
+  })
+
+  it('pairs the TV of the living room with its code and narrows what it shows', async () => {
+    const paired = {
+      screens: [{ id: 'tv1', kind: 'tv', pairedAt: '', online: false }],
+      shows: { scene: true, map: true, party: true, moments: true },
+    }
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/session': () => ({ status: 200, body: { data: SCREEN } }),
+      'GET /api/campaigns/c1/board': () => ({ status: 200, body: { data: BOARD } }),
+      'GET /api/campaigns/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
+      'GET /api/campaigns/c1/screens': () => ({ status: 200, body: { data: SCREENS } }),
+      'POST /api/campaigns/c1/screens': (b) =>
+        (b as { code: string }).code === 'K7QF'
+          ? { status: 201, body: { data: paired } }
+          : { status: 404, body: { error: { code: 'NO_SUCH_CODE' } } },
+      'PUT /api/campaigns/c1/screens/shows': (b) => ({ status: 200, body: { data: { ...paired, shows: b } } }),
+    })
+    renderPage()
+
+    const panel = await screen.findByRole('region', { name: 'Écran partagé' })
+    const code = within(panel).getByRole('textbox', { name: 'Code affiché par la TV' })
+    await userEvent.type(code, 'zzzz')
+    await userEvent.click(within(panel).getByRole('button', { name: 'Jumeler' }))
+    expect(await within(panel).findByRole('alert')).toHaveTextContent('Aucune TV n')
+    await userEvent.clear(code)
+    await userEvent.type(code, 'k7qf')
+    await userEvent.click(within(panel).getByRole('button', { name: 'Jumeler' }))
+    expect(await within(panel).findByText('TV')).toBeInTheDocument()
+    expect(within(panel).getByText('hors ligne')).toBeInTheDocument()
+
+    await userEvent.click(within(panel).getByRole('checkbox', { name: /Le groupe et ses cœurs/ }))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/screens')).toEqual([{ code: 'ZZZZ' }, { code: 'K7QF' }])
+    expect(sentTo(fetchMock, 'PUT /api/campaigns/c1/screens/shows')).toEqual([
+      { scene: true, map: true, party: false, moments: true },
+    ])
   })
 })
