@@ -14,12 +14,17 @@ const SESSION = {
   endedAt: null,
   recap: '',
   previously: '',
+  chronicleTitle: '',
+  chronicle: '',
+  publishedAt: null,
   gmChanges: '',
   music: null,
+  previouslyShown: null,
 }
 const SCREEN = {
   session: SESSION,
   lastEnded: null,
+  launch: null,
   lobby: [
     {
       playerId: 'p1',
@@ -151,5 +156,88 @@ describe('GmLivePage', () => {
     expect(sentTo(fetchMock, 'PUT /api/campaigns/c1/session/music')).toEqual([{ track: 0 }])
     expect(sentTo(fetchMock, 'POST /api/campaigns/c1/board')).toEqual([{ map: 'quai' }])
     expect(sentTo(fetchMock, 'POST /api/campaigns/c1/session/spotlight/p1')).toHaveLength(1)
+  })
+
+  it('launches: « Précédemment… » sentence by sentence, then the scene where the table stopped', async () => {
+    const ENDED = { ...SESSION, id: 's1', number: 1, status: 'ended', recap: 'Le capitaine ment.', publishedAt: '2026-10-05T10:00:00Z' }
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/session': () => ({
+        status: 200,
+        body: {
+          data: {
+            ...SCREEN,
+            session: { ...SESSION, previouslyShown: 1 },
+            lastEnded: ENDED,
+            requests: [],
+            launch: {
+              number: 1,
+              lines: ['Vous avez accosté.', 'Une boussole a changé de main.'],
+              shown: 1,
+              firstScene: { node: 'sc_taverne', title: 'Le Goéland Ivre' },
+            },
+          },
+        },
+      }),
+      'GET /api/campaigns/c1/board': () => ({ status: 200, body: { data: BOARD } }),
+      'GET /api/campaigns/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
+      'POST /api/campaigns/c1/session/previously/next': () => ({ status: 200, body: { data: SESSION } }),
+      'POST /api/campaigns/c1/session/reveal': () => ({ status: 204 }),
+    })
+    renderPage()
+
+    const reading = await screen.findByRole('region', { name: 'Précédemment… · séance 1' })
+    expect(within(reading).getByText('Le capitaine ment.')).toBeInTheDocument()
+    await userEvent.click(within(reading).getByRole('button', { name: 'Phrase suivante' }))
+    await userEvent.click(within(reading).getByRole('button', { name: 'Envoyer la première scène : Le Goéland Ivre' }))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/session/previously/next')).toHaveLength(1)
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/session/reveal')).toEqual([{ kind: 'scene', node: 'sc_taverne' }])
+  })
+
+  it('rereads the recaps after the evening, sees what to check, and publishes', async () => {
+    const ENDED = {
+      ...SESSION,
+      id: 's1',
+      number: 1,
+      status: 'ended',
+      recap: 'Le capitaine ment.',
+      previously: 'La Couronne approche.',
+      chronicleTitle: 'Le quai',
+      chronicle: 'Une nuit agitée.',
+    }
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/session': () => ({
+        status: 200,
+        body: { data: { ...SCREEN, session: null, lastEnded: ENDED, requests: [] } },
+      }),
+      'GET /api/campaigns/c1/board': () => ({ status: 200, body: { data: BOARD } }),
+      'GET /api/campaigns/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
+      'GET /api/campaigns/c1/sessions': () => ({
+        status: 200,
+        body: { data: [{ ...ENDED, warnings: [{ name: 'La Couronne', kind: 'front' }] }] },
+      }),
+      'GET /api/campaigns/c1/sessions/s1/feedback': () => ({
+        status: 200,
+        body: { data: { sessionId: 's1', number: 1, players: [], gaps: [], gmChanges: '' } },
+      }),
+      'PUT /api/campaigns/c1/sessions/s1/recap': () => ({ status: 200, body: { data: { ...ENDED, publishedAt: 'now' } } }),
+    })
+    renderPage()
+
+    const panel = await screen.findByRole('region', { name: 'Récapitulatifs de la séance 1' })
+    expect(within(panel).getByText('Brouillon : les joueurs ne le voient pas encore.')).toBeInTheDocument()
+    expect(await within(panel).findByText('« La Couronne » est une menace : les joueurs ne la voient pas.')).toBeInTheDocument()
+    const previously = within(panel).getByLabelText('« Précédemment… » (pour les joueurs)')
+    await userEvent.clear(previously)
+    await userEvent.type(previously, 'Vous avez accosté.')
+    await userEvent.click(within(panel).getByRole('button', { name: 'Publier aux joueurs' }))
+    expect(sentTo(fetchMock, 'PUT /api/campaigns/c1/sessions/s1/recap')).toEqual([
+      {
+        recap: 'Le capitaine ment.',
+        previously: 'Vous avez accosté.',
+        chronicleTitle: 'Le quai',
+        chronicle: 'Une nuit agitée.',
+        publish: true,
+      },
+    ])
   })
 })

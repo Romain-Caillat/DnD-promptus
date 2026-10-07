@@ -108,14 +108,17 @@ async fn media(pool: &PgPool, campaign: Uuid) -> Uuid {
     shown
 }
 
-/// Session 1 ended with a GM recap and a GM-only journal line, session
-/// 2 live: what the evening routes need to succeed, and what they must
+/// Session 1 ended with a GM recap, its « Précédemment… » published,
+/// and a GM-only journal line; session 2 ended with recaps still drafts;
+/// session 3 live: what the evening routes need to succeed, and what they must
 /// keep from the players.
 async fn evening(pool: &PgPool, campaign: Uuid) {
     let first: Uuid = sqlx::query_scalar(
-        "INSERT INTO game_sessions (campaign_id, number, status, started_at, ended_at, recap, previously)
+        "INSERT INTO game_sessions (campaign_id, number, status, started_at, ended_at, recap, previously,
+                                    chronicle_title, chronicle, published_at)
          VALUES ($1, 1, 'ended', now() - interval '1 week', now() - interval '6 days', $2,
-                 'Les corsaires ont accosté.')
+                 'Les corsaires ont accosté.', 'Port-Louis', 'Le quai, puis la taverne.',
+                 now() - interval '5 days')
          RETURNING id",
     )
     .bind(campaign)
@@ -123,8 +126,22 @@ async fn evening(pool: &PgPool, campaign: Uuid) {
     .fetch_one(pool)
     .await
     .unwrap();
+    // Session 2's recaps are drafts the GM has not published yet.
     sqlx::query(
-        "INSERT INTO game_sessions (campaign_id, number, status, started_at) VALUES ($1, 2, 'live', now())",
+        "INSERT INTO game_sessions (campaign_id, number, status, started_at, ended_at, recap, previously,
+                                    chronicle_title, chronicle)
+         VALUES ($1, 2, 'ended', now() - interval '2 days', now() - interval '2 days', $2, $3, $4, $5)",
+    )
+    .bind(campaign)
+    .bind(m("sessions.recap (draft)"))
+    .bind(m("sessions.previously (draft)"))
+    .bind(m("sessions.chronicle_title (draft)"))
+    .bind(m("sessions.chronicle (draft)"))
+    .execute(pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO game_sessions (campaign_id, number, status, started_at) VALUES ($1, 3, 'live', now())",
     )
     .bind(campaign)
     .execute(pool)

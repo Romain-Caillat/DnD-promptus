@@ -103,6 +103,8 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/session/reveal"),
     ("PUT", "/api/campaigns/{campaign}/session/music"),
     ("POST", "/api/campaigns/{campaign}/session/journal"),
+    // On a reading of « Précédemment… » set under way just before.
+    ("POST", "/api/campaigns/{campaign}/session/previously/next"),
     // The grid: show the quay, edit it, fight on it, hand out the loot.
     ("GET", "/api/campaigns/{campaign}/board"),
     ("POST", "/api/campaigns/{campaign}/board"),
@@ -591,6 +593,16 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .await
             .unwrap()
             .to_string();
+        }
+        if path.ends_with("/previously/next") {
+            sqlx::query(
+                "UPDATE game_sessions SET previously_shown = 1
+                 WHERE campaign_id = $1 AND status = 'live'",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .execute(&pool)
+            .await
+            .unwrap();
         }
         if path.contains("{session}") {
             ids.session = sqlx::query_scalar::<_, Uuid>(

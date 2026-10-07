@@ -134,17 +134,29 @@ fn copilot_answer(prompt: &str) -> serde_json::Value {
     })
 }
 
+/// The recaps: « Précédemment… » retells the journal and the players'
+/// facts; the chronicle entry is titled after the last scene played.
 fn recap_answer(prompt: &str) -> serde_json::Value {
-    let journal: Vec<&str> = prompt
-        .split("# Ce que la table sait (journal des joueurs)")
-        .nth(1)
-        .and_then(|s| s.split("# Ce que le MJ sait en plus").next())
-        .map(|s| {
-            s.lines()
-                .filter_map(|l| l.trim().strip_prefix("- "))
-                .collect()
-        })
-        .unwrap_or_default();
+    let section = |heading: &str| -> Vec<&str> {
+        prompt
+            .split(heading)
+            .nth(1)
+            .and_then(|s| s.split("\n# ").next())
+            .map(|s| {
+                s.lines()
+                    .filter_map(|l| l.trim().strip_prefix("- "))
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let mut journal = section("# Ce que la table sait (journal des joueurs)");
+    let facts = section("# Faits de la session (joueurs)");
+    let last_scene = facts
+        .iter()
+        .rev()
+        .find_map(|f| f.strip_prefix("Scène : "))
+        .unwrap_or("La session");
+    journal.extend(facts.iter().copied());
     let told = if journal.is_empty() {
         "rien de notable".to_string()
     } else {
@@ -153,6 +165,8 @@ fn recap_answer(prompt: &str) -> serde_json::Value {
     json!({
         "players": format!("Précédemment… {told}."),
         "gm": journal.iter().map(|l| format!("- {l}")).collect::<Vec<_>>().join("\n"),
+        "chronicleTitle": last_scene,
+        "chronicle": format!("{last_scene}."),
     })
 }
 

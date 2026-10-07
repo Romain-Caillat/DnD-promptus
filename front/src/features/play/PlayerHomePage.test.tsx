@@ -73,6 +73,7 @@ const EVENING = {
       data: {
         session: null,
         previously: 'Les corsaires ont accosté.',
+        launch: null,
         music: null,
         lobby: [],
         campaign: { ...CAMPAIGN, scene: null, clues: [], npcs: [] },
@@ -84,6 +85,7 @@ const EVENING = {
     },
   }),
   'GET /api/play/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
+  'GET /api/play/c1/chronicle': () => ({ status: 200, body: { data: [] } }),
 }
 
 const home = (character: unknown, role = 'player') => ({
@@ -175,6 +177,14 @@ describe('PlayerHomePage', () => {
           },
         },
       }),
+      'GET /api/play/c1/chronicle': () => ({
+        status: 200,
+        body: {
+          data: [
+            { number: 1, playedOn: '2026-10-03T18:30:00Z', title: 'Le quai de Port-Louis', text: 'La boussole a changé de main.', previously: '' },
+          ],
+        },
+      }),
     })
     renderHome()
 
@@ -182,6 +192,10 @@ describe('PlayerHomePage', () => {
     expect(await screen.findByText('Gwen a vu une lanterne sur la falaise.')).toBeInTheDocument()
     expect(screen.getByText('Loïc')).toBeInTheDocument()
     expect(screen.getByText('Une ville minière.')).toBeInTheDocument()
+    // The chronicle: one entry per session the GM published.
+    const chronicle = screen.getByRole('region', { name: 'La chronique' })
+    expect(within(chronicle).getByText('Le quai de Port-Louis')).toBeInTheDocument()
+    expect(within(chronicle).getByText('La boussole a changé de main.')).toBeInTheDocument()
   })
 
   it('gives a spectator the game, the map and the journal, no sheet', async () => {

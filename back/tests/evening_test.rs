@@ -271,16 +271,20 @@ async fn an_evening_from_the_lobby_to_the_feedback() {
         "{screen}"
     );
 
-    // End: the recap stays the GM's, « Précédemment… » reaches the table.
-    let r = t
-        .gm(
-            "POST",
-            "/session/end",
-            Some(json!({ "recap": "Borin a la clé, il l'ignore.", "previously": "Une clé a changé de poche." })),
-        )
-        .await;
+    // End: the recap stays the GM's; « Précédemment… » is a draft until
+    // the GM publishes it, then it reaches the table.
+    let ending = json!({ "recap": "Borin a la clé, il l'ignore.", "previously": "Une clé a changé de poche." });
+    let r = t.gm("POST", "/session/end", Some(ending.clone())).await;
     assert_eq!(r.status, StatusCode::OK, "{}", r.body);
     let session = r.body["data"]["id"].as_str().unwrap().to_string();
+    let view = t.player(&t.marc, "GET", "/evening", None).await.body;
+    assert!(view["data"]["previously"].is_null(), "{view}");
+    let mut publish = ending;
+    publish["publish"] = json!(true);
+    let r = t
+        .gm("PUT", &format!("/sessions/{session}/recap"), Some(publish))
+        .await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
     let view = t.player(&t.marc, "GET", "/evening", None).await.body;
     assert_eq!(view["data"]["previously"], "Une clé a changé de poche.");
     assert!(!view.to_string().contains("il l'ignore"), "{view}");
@@ -406,7 +410,7 @@ async fn the_recap_draft_respects_the_budget_and_the_format() {
     assert!(r.body["data"]["players"].is_string(), "{}", r.body);
     assert_eq!(fake.calls().len(), 1);
     let usage = t.gm("GET", "/ai", None).await.body;
-    assert_eq!(usage["data"]["calls"][0]["template"], "recap@1", "{usage}");
+    assert_eq!(usage["data"]["calls"][0]["template"], "recap@2", "{usage}");
     assert!(usage["data"]["spending"]["spentMicros"].as_i64().unwrap() > 0);
 
     // A provider that answers prose: a readable 502, the call still

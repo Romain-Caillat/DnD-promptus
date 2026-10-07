@@ -7,9 +7,11 @@ const QUESTIONS = ['rulesClear', 'hadMoment', 'knowsNext'] as const
 
 /**
  * The end of the evening (session/end-session): the GM's recap, kept for
- * them, and « Précédemment… », published to the players — the co-GM can
- * draft both from the journal (a counted AI call, nothing saved until
- * the GM ends the session).
+ * them, and « Précédemment… » for the players — the co-GM can draft both
+ * from the journal (a counted AI call, nothing saved until the GM ends
+ * the session). What the GM leaves empty the server drafts from what
+ * happened; all of it stays a draft until the GM publishes it after
+ * rereading (`RecapPanel`, session/write-recaps).
  */
 export function EndPanel({
   screen,
@@ -35,6 +37,7 @@ export function EndPanel({
         {t('gmLive.end.previously')}
         <textarea className={field} rows={3} value={previously} onChange={(e) => setPreviously(e.target.value)} />
       </label>
+      <p className="text-caption text-mute-soft">{t('gmLive.end.hint')}</p>
       {screen.gaps.length > 0 && (
         <section className="flex flex-col gap-1.5" aria-label={t('gmLive.end.gaps')}>
           <h3 className="type-label text-stat-init">{t('gmLive.end.gaps')}</h3>

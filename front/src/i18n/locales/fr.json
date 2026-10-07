@@ -508,7 +508,11 @@
       "scene": "Où vous êtes",
       "clues": "Les indices du groupe",
       "npcs": "Les gens rencontrés",
-      "empty": "Le groupe n'a encore rien découvert."
+      "empty": "Le groupe n'a encore rien découvert.",
+      "chronicle": "La chronique",
+      "chronicleEntry": "Séance {{number}}",
+      "chronicleEntryOn": "Séance {{number}} · {{date}}",
+      "chronicleNote": "La chronique ne garde que ce que toute la table a vu."
     }
   },
   "creator": {
@@ -1137,6 +1141,7 @@
     "clues": "Indices",
     "noSession": "Pas de soirée en cours. Le MJ ouvrira la salle d'attente le jour venu.",
     "previously": "Précédemment…",
+    "launchWait": "Le MJ lit la suite…",
     "music": {
       "label": "Musique",
       "unmute": "Activer le son",
@@ -1329,7 +1334,47 @@
       "NO_CURRENCY": "Les règles n'ont pas de monnaie.",
       "TEXT_TOO_LONG": "Texte trop long.",
       "EMPTY_TEXT": "Le texte est vide.",
-      "CELL_BLOCKED": "Personne ne peut se tenir là."
+      "CELL_BLOCKED": "Personne ne peut se tenir là.",
+      "NOT_READING": "La lecture du « Précédemment… » est déjà finie.",
+      "NOTHING_TO_PUBLISH": "Écrivez d'abord le « Précédemment… ».",
+      "PUBLISH_AFTER_THE_END": "On publie après avoir relu, une fois la séance terminée."
+    },
+    "launch": {
+      "title": "Avant de lancer",
+      "recapPublished": "Le récap de la séance {{number}} est publié : il sera lu phrase par phrase.",
+      "recapDraft": "Le récap de la séance {{number}} n'est pas publié : rien ne sera lu.",
+      "firstSession": "Première séance : rien à lire, la partie commence sur sa première scène.",
+      "here": "{{here}} joueurs sur {{total}} sont là, {{sound}} avec le son.",
+      "allHere": "Toute la table est là.",
+      "reading": "Précédemment… · séance {{number}}",
+      "pace": "Chaque phrase part sur les téléphones quand vous la montrez.",
+      "forYou": "Pour vous seul",
+      "next": "Phrase suivante",
+      "allRead": "Tout est lu",
+      "firstScene": "Envoyer la première scène : {{title}}",
+      "done": "✓",
+      "todo": "·"
+    },
+    "recaps": {
+      "title": "Récapitulatifs de la séance {{number}}",
+      "draftState": "Brouillon : les joueurs ne le voient pas encore.",
+      "publishedState": "Publié : les joueurs le lisent.",
+      "recap": "Votre récap (pour vous)",
+      "previously": "« Précédemment… » (pour les joueurs)",
+      "chronicleTitle": "Titre de l'entrée de chronique",
+      "chronicle": "Entrée de chronique (pour les joueurs)",
+      "draft": "Réécrire avec le co-MJ",
+      "save": "Enregistrer",
+      "saved": "Enregistré",
+      "publish": "Publier aux joueurs",
+      "warnings": "À vérifier avant de publier",
+      "warning": {
+        "front": "« {{name}} » est une menace : les joueurs ne la voient pas.",
+        "unmet": "« {{name}} » : la table ne l'a pas encore rencontré."
+      },
+      "chronicleList": "La chronique",
+      "entry": "Séance {{number}} · {{title}}",
+      "entryDraft": "brouillon"
     },
     "table": {
       "title": "La table",
@@ -1483,7 +1528,8 @@
     "end": {
       "title": "Fin de soirée",
       "recap": "Votre récap (pour vous)",
-      "previously": "« Précédemment… » (pour les joueurs)",
+      "previously": "« Précédemment… » (pour les joueurs, après relecture)",
+      "hint": "Ce que vous laissez vide, le serveur le rédige à partir de ce qui s'est passé. Rien ne part aux joueurs avant que vous publiiez.",
       "draft": "Brouillon du co-MJ",
       "end": "Terminer la séance",
       "gaps": "Ce qui manque à la table pour la suite",

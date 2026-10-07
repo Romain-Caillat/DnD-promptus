@@ -55,6 +55,8 @@ pub async fn reveal(
             world
                 .enter_node(story, node)
                 .map_err(|_| AppError::BadRequest("UNKNOWN_NODE"))?;
+            // gm/launch-session: the first scene ends « Précédemment… ».
+            session::end_reading(&mut tx, live.id).await?;
             let n = story
                 .node(node)
                 .ok_or(AppError::BadRequest("UNKNOWN_NODE"))?;

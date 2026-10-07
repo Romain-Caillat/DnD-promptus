@@ -10,6 +10,8 @@
 //! - `POST /api/play/{campaign}/requests/{request}/contest`;
 //! - `POST /api/play/{campaign}/feedback` → my three answers about the
 //!   last session.
+//! - `GET  /api/play/{campaign}/chronicle` → the published entries of the
+//!   campaign's chronicle, the latest first (session/write-recaps).
 
 use axum::Json;
 use axum::extract::{Path, State};
@@ -20,7 +22,7 @@ use uuid::Uuid;
 
 use super::body::Body;
 use crate::auth::player::CurrentPlayer;
-use crate::campaigns::projection::evening::{EveningInput, project_evening};
+use crate::campaigns::projection::evening::{EveningInput, project_chronicle, project_evening};
 use crate::campaigns::projection::project_play;
 use crate::campaigns::{self, CampaignRow};
 use crate::error::AppError;
@@ -207,4 +209,17 @@ pub async fn answer_feedback(
     feedback::answer(&state.pool, &p.0, &answers).await?;
     let view = evening_json(&state, &p).await?;
     Ok(Json(json!({ "data": view })).into_response())
+}
+
+/// `GET /api/play/{campaign}/chronicle`
+///
+/// # Errors
+///
+/// 401 `NOT_JOINED`; a database error.
+pub async fn chronicle(
+    State(state): State<AppState>,
+    p: CurrentPlayer,
+) -> Result<Response, AppError> {
+    let all = session::all(&state.pool, p.0.campaign_id).await?;
+    Ok(Json(json!({ "data": project_chronicle(&all) })).into_response())
 }

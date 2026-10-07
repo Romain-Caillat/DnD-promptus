@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockApi, sentTo, stubReducedMotion } from '@/test-utils'
@@ -42,6 +42,7 @@ const evening = (over: Record<string, unknown>) => ({
     data: {
       session: { number: 2, status: 'live', startedAt: '2026-10-06T20:00:00Z' },
       previously: null,
+      launch: null,
       music: null,
       lobby: [],
       campaign: { ...CAMPAIGN, scene: SCENE },
@@ -128,6 +129,23 @@ describe('GameTab', () => {
     expect(die).toHaveAttribute('data-rolling', 'false')
     expect(screen.getByTestId('die-face')).toHaveTextContent('14')
     expect(screen.getAllByText('Réussite').length).toBeGreaterThan(0)
+  })
+
+  it('reads « Précédemment… » as the GM shows it, before the scene', async () => {
+    mockApi({
+      ...MEDIA,
+      'GET /api/play/c1/evening': () =>
+        evening({ launch: { number: 1, lines: ['Vous avez accosté.', 'Une boussole a changé de main.'], total: 3 } }),
+    })
+    render(<GameTab campaignId="c1" refreshKey={0} seated />)
+    const reading = await screen.findByRole('region', { name: 'Précédemment…' })
+    expect(within(reading).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      'Vous avez accosté.',
+      'Une boussole a changé de main.',
+    ])
+    expect(screen.getByText('Le MJ lit la suite…')).toBeInTheDocument()
+    // The scene waits for the GM to send it.
+    expect(screen.queryByRole('heading', { name: 'Le Goéland Ivre' })).not.toBeInTheDocument()
   })
 
   it('answers the three questions after the session', async () => {

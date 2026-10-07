@@ -126,7 +126,8 @@ export function GameTab({
       {session?.status === 'lobby' && (
         <Lobby view={view} seated={seated} onArrive={(soundOk) => act(() => arrive(campaignId, soundOk, true))} />
       )}
-      {session?.status === 'live' && (
+      {session?.status === 'live' && view.launch && <Launch launch={view.launch} />}
+      {session?.status === 'live' && !view.launch && (
         <>
           {view.music && <MusicPlayer music={view.music} />}
           {scene ? (
@@ -183,6 +184,34 @@ export function GameTab({
         </>
       )}
     </div>
+  )
+}
+
+/**
+ * gm/launch-session: « Précédemment… » arrives on the phone sentence by
+ * sentence, as the GM reads it; the newest one is the bright one. The
+ * scene follows when the GM sends it.
+ */
+function Launch({ launch }: { launch: NonNullable<EveningView['launch']> }) {
+  const { t } = useTranslation()
+  return (
+    <section className="flex flex-col gap-3" aria-label={t('evening.previously')}>
+      <span className="type-label">{t('evening.previously')}</span>
+      <ol className="flex flex-col gap-2">
+        {launch.lines.map((line, i) => (
+          <li
+            key={`${i}-${line}`}
+            className={cn(
+              'type-narration text-[22px] leading-snug motion-safe:animate-pop',
+              i === launch.lines.length - 1 ? 'text-chalk' : 'text-chalk-soft',
+            )}
+          >
+            {line}
+          </li>
+        ))}
+      </ol>
+      {launch.lines.length < launch.total && <p className="text-caption text-mute">{t('evening.launchWait')}</p>}
+    </section>
   )
 }
 

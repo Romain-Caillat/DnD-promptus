@@ -194,6 +194,10 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         )
         .route("/api/campaigns/{id}/session/end", post(api::evening::end))
         .route(
+            "/api/campaigns/{id}/session/previously/next",
+            post(api::evening::read_next),
+        )
+        .route(
             "/api/campaigns/{id}/session/reveal",
             post(api::evening::reveal),
         )
@@ -422,6 +426,11 @@ fn player_routes() -> Vec<RouteSpec> {
             "POST",
             "/api/play/{campaign}/feedback",
             post(api::play_evening::answer_feedback),
+        ),
+        (
+            "GET",
+            "/api/play/{campaign}/chronicle",
+            get(api::play_evening::chronicle),
         ),
         // The grid: the map as I may see it, my walk, my fight turn.
         (

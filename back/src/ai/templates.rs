@@ -28,11 +28,14 @@ pub const COPILOT: Template = Template {
     text: include_str!("../../prompts/copilot.v1.md"),
 };
 
-/// End-of-session recap drafts (`session/end-session`).
+/// End-of-session recap drafts (`session/write-recaps`): the GM's
+/// recap, « Précédemment… » and the chronicle entry. Version 2 adds the
+/// session's facts, the names the table does not know, and the
+/// chronicle entry.
 pub const RECAP: Template = Template {
     id: "recap",
-    version: 1,
-    text: include_str!("../../prompts/recap.v1.md"),
+    version: 2,
+    text: include_str!("../../prompts/recap.v2.md"),
 };
 
 /// A pixel-art image (`media/draw-pixel-art-assets`).
