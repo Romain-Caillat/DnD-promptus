@@ -166,6 +166,12 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ),
     ("GET", "/api/campaigns/{campaign}/ai"),
     ("DELETE", "/api/campaigns/{campaign}/hooks/{hook}"),
+    // The character dies (down at 0, put there just before): last of the
+    // routes that need it in play.
+    (
+        "POST",
+        "/api/campaigns/{campaign}/characters/{character}/death",
+    ),
     // After the character routes: removing the player removes them.
     ("DELETE", "/api/campaigns/{campaign}/players/{player}"),
     ("DELETE", "/api/campaigns/{campaign}/invite"),
@@ -607,6 +613,22 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             && (path.ends_with("/validate")
                 || path.ends_with("/return")
                 || path.ends_with("/note-draft"));
+        if path.ends_with("/death") {
+            sqlx::query("UPDATE characters SET status = 'validated' WHERE id = $1")
+                .bind(Uuid::parse_str(&ids.character).unwrap())
+                .execute(&pool)
+                .await
+                .unwrap();
+            sqlx::query(
+                "INSERT INTO character_play (character_id, campaign_id, damage)
+                 SELECT id, campaign_id, 10 FROM characters WHERE id = $1
+                 ON CONFLICT (character_id) DO UPDATE SET damage = 10",
+            )
+            .bind(Uuid::parse_str(&ids.character).unwrap())
+            .execute(&pool)
+            .await
+            .unwrap();
+        }
         if path.ends_with("/hooks/propose") {
             sqlx::query(
                 r#"UPDATE characters

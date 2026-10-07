@@ -14,13 +14,19 @@
 //! Nothing the rules derive is stored: maximum hit points, level, the
 //! XP bar and upgrade points, armour class and the unlocked cards come
 //! from the sheet and this state through the rules engine
-//! ([`combatant`]).
+//! ([`combatant`]). What a level asked the player — the hit points of
+//! each level, die or average (engine/level-up) — is stored, because it
+//! was a choice and a roll: [`level_up`].
 
 use std::collections::BTreeMap;
 
 use chrono::{DateTime, Utc};
 use promptus_shared::rules::RuleSystem;
-use promptus_shared::rules::progression::gain_xp;
+use promptus_shared::rules::dice::SeededDice;
+use promptus_shared::rules::level_up::{
+    HitPointGain, HitPointMethod, LevelUpError, hit_point_bonus, hit_points_due, take_hit_points,
+};
+use promptus_shared::rules::progression::{gain_xp, level_for};
 use promptus_shared::rules::sheet::{Combatant, Progress};
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
@@ -86,6 +92,13 @@ pub struct PlayState {
     /// Amount by resource id; a missing id holds the rules' start.
     pub resources: BTreeMap<String, i32>,
     pub inventory: Vec<InventoryEntry>,
+    /// What each level above the first added to the maximum hit points,
+    /// as the player chose it (engine/level-up). Only the levels the
+    /// character still has count.
+    pub hit_point_gains: Vec<HitPointGain>,
+    /// The last level the player went through: above it, the level-up
+    /// screen waits for them.
+    pub level_seen: u32,
 }
 
 impl PlayState {
@@ -113,7 +126,15 @@ impl PlayState {
                         .collect()
                 })
                 .unwrap_or_default(),
+            hit_point_gains: Vec::new(),
+            level_seen: 1,
         }
+    }
+
+    /// The levels whose hit points the player chose.
+    #[must_use]
+    pub fn chosen_levels(&self) -> Vec<u32> {
+        self.hit_point_gains.iter().map(|g| g.level).collect()
     }
 
     /// The amount of resource `id`.
@@ -148,6 +169,7 @@ pub fn combatant(
     let mut progress = Progress::default();
     gain_xp(rules, &mut progress, state.total_xp);
     c.progress = Some(progress);
+    c.hit_point_bonus = hit_point_bonus(&state.hit_point_gains, level_for(rules, state.total_xp));
     let max = c.max_hit_points(rules).ok()?;
     c.hit_points = (max - state.damage).clamp(0, max.max(0));
     Some(c)
@@ -196,6 +218,10 @@ pub enum Kind {
     Resource,
     Item,
     Equip,
+    /// A level's hit points taken (maximum before and after).
+    Level,
+    /// The GM confirmed the character's death (hit points before, 0).
+    Death,
 }
 
 impl Kind {
@@ -206,6 +232,8 @@ impl Kind {
             Self::Resource => "resource",
             Self::Item => "item",
             Self::Equip => "equip",
+            Self::Level => "level",
+            Self::Death => "death",
         }
     }
 
@@ -216,6 +244,8 @@ impl Kind {
             "resource" => Self::Resource,
             "item" => Self::Item,
             "equip" => Self::Equip,
+            "level" => Self::Level,
+            "death" => Self::Death,
             other => return Err(AppError::Internal(format!("unknown adjustment {other}"))),
         })
     }
@@ -416,14 +446,23 @@ type StateRow = (
     i32,
     Json<BTreeMap<String, i32>>,
     Json<Vec<InventoryEntry>>,
+    Json<Vec<HitPointGain>>,
+    i32,
 );
 
-fn state_from_row((total_xp, damage, resources, inventory): StateRow) -> PlayState {
+/// The columns of a [`StateRow`], in order.
+const STATE_COLUMNS: &str = "total_xp, damage, resources, inventory, hit_point_gains, level_seen";
+
+fn state_from_row(
+    (total_xp, damage, resources, inventory, gains, level_seen): StateRow,
+) -> PlayState {
     PlayState {
         total_xp: u32::try_from(total_xp).unwrap_or(0),
         damage,
         resources: resources.0,
         inventory: inventory.0,
+        hit_point_gains: gains.0,
+        level_seen: u32::try_from(level_seen).unwrap_or(1).max(1),
     }
 }
 
@@ -433,27 +472,35 @@ fn state_from_row((total_xp, damage, resources, inventory): StateRow) -> PlaySta
 ///
 /// Fails on a database error.
 pub async fn stored(pool: &PgPool, id: Uuid) -> Result<Option<PlayState>, AppError> {
-    let row: Option<StateRow> = sqlx::query_as(
-        "SELECT total_xp, damage, resources, inventory FROM character_play WHERE character_id = $1",
-    )
+    let row: Option<StateRow> = sqlx::query_as(&format!(
+        "SELECT {STATE_COLUMNS} FROM character_play WHERE character_id = $1"
+    ))
     .bind(id)
     .fetch_optional(pool)
     .await?;
     Ok(row.map(state_from_row))
 }
 
-async fn save(
+/// Store `state` as character `character`'s, within the caller's
+/// transaction (a replacement character seeded at the party's XP).
+///
+/// # Errors
+///
+/// A database error.
+pub async fn save(
     tx: &mut Transaction<'_, Postgres>,
     campaign: Uuid,
     character: Uuid,
     state: &PlayState,
 ) -> Result<(), AppError> {
     sqlx::query(
-        "INSERT INTO character_play (character_id, campaign_id, total_xp, damage, resources, inventory)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        "INSERT INTO character_play (character_id, campaign_id, total_xp, damage, resources, inventory,
+                                     hit_point_gains, level_seen)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          ON CONFLICT (character_id) DO UPDATE
            SET total_xp = EXCLUDED.total_xp, damage = EXCLUDED.damage,
-               resources = EXCLUDED.resources, inventory = EXCLUDED.inventory",
+               resources = EXCLUDED.resources, inventory = EXCLUDED.inventory,
+               hit_point_gains = EXCLUDED.hit_point_gains, level_seen = EXCLUDED.level_seen",
     )
     .bind(character)
     .bind(campaign)
@@ -461,6 +508,8 @@ async fn save(
     .bind(state.damage)
     .bind(Json(&state.resources))
     .bind(Json(&state.inventory))
+    .bind(Json(&state.hit_point_gains))
+    .bind(to_i32(state.level_seen))
     .execute(&mut **tx)
     .await?;
     Ok(())
@@ -476,7 +525,12 @@ pub enum Actor {
     Rules,
 }
 
-async fn log(
+/// Append `record` to the history, within the caller's transaction.
+///
+/// # Errors
+///
+/// A database error.
+pub async fn log(
     tx: &mut Transaction<'_, Postgres>,
     campaign: Uuid,
     character: Uuid,
@@ -530,10 +584,9 @@ async fn lock_in_play(
         return Err(AppError::Conflict("CHARACTER_NOT_VALIDATED"));
     }
     let sheet = sheet.0;
-    let state: Option<StateRow> = sqlx::query_as(
-        "SELECT total_xp, damage, resources, inventory FROM character_play
-         WHERE character_id = $1 FOR UPDATE",
-    )
+    let state: Option<StateRow> = sqlx::query_as(&format!(
+        "SELECT {STATE_COLUMNS} FROM character_play WHERE character_id = $1 FOR UPDATE"
+    ))
     .bind(id)
     .fetch_optional(&mut **tx)
     .await?;
@@ -619,10 +672,11 @@ pub async fn equip(
     entry: &str,
     equipped: bool,
 ) -> Result<(), AppError> {
-    let id: Option<Uuid> = sqlx::query_scalar("SELECT id FROM characters WHERE player_id = $1")
-        .bind(player.id)
-        .fetch_optional(pool)
-        .await?;
+    let id: Option<Uuid> =
+        sqlx::query_scalar("SELECT id FROM characters WHERE player_id = $1 AND status <> 'fallen'")
+            .bind(player.id)
+            .fetch_optional(pool)
+            .await?;
     let id = id.ok_or(AppError::NotFound("NO_CHARACTER"))?;
     let mut tx = pool.begin().await?;
     let (_, mut state) = lock_in_play(&mut tx, player.campaign_id, id, rules).await?;
@@ -644,6 +698,99 @@ pub async fn equip(
     save(&mut tx, player.campaign_id, id, &state).await?;
     log(&mut tx, player.campaign_id, id, Actor::Player, &record).await?;
     touch_character(&mut tx, player.campaign_id, id).await?;
+    tx.commit().await?;
+    Ok(())
+}
+
+/// What the player does with a new level (engine/level-up).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
+pub enum LevelUpChoice {
+    /// Take level `level`'s hit points by the die or the average.
+    HitPoints { level: u32, method: HitPointMethod },
+    /// « C'est noté »: the player went through the new level.
+    Seen,
+}
+
+/// The validated character of `player`, if they have one.
+async fn own_character(pool: &PgPool, player: &Player) -> Result<Uuid, AppError> {
+    let id: Option<Uuid> = sqlx::query_scalar(
+        "SELECT id FROM characters WHERE player_id = $1 AND status = 'validated'",
+    )
+    .bind(player.id)
+    .fetch_optional(pool)
+    .await?;
+    id.ok_or(AppError::NotFound("NO_CHARACTER"))
+}
+
+/// The player goes through a new level: takes each level's hit points
+/// (the server rolls the die), then says they have seen it. Not while
+/// their character fights: the fight holds its own copy of them.
+///
+/// # Errors
+///
+/// 404 `NO_CHARACTER`; 409 `CHARACTER_NOT_VALIDATED`, `IN_FIGHT`,
+/// `NO_HIT_POINTS_PER_LEVEL`, `ALREADY_CHOSEN`, `HIT_POINTS_TO_CHOOSE`,
+/// `NO_PLAY_SHEET`; 400 `NOT_A_LEVEL`.
+pub async fn level_up(
+    pool: &PgPool,
+    player: &Player,
+    rules: &RuleSystem,
+    choice: LevelUpChoice,
+) -> Result<(), AppError> {
+    let id = own_character(pool, player).await?;
+    let campaign = player.campaign_id;
+    let mut tx = pool.begin().await?;
+    let (sheet, mut state) = lock_in_play(&mut tx, campaign, id, rules).await?;
+    if let Some(enc) = crate::board::fight::latest(&mut *tx, campaign).await? {
+        if enc.live && enc.fight.in_fight(&crate::board::character_token(id)) {
+            return Err(AppError::Conflict("IN_FIGHT"));
+        }
+    }
+    let c = combatant(rules, &sheet, &state).ok_or(AppError::Conflict("NO_PLAY_SHEET"))?;
+    match choice {
+        LevelUpChoice::HitPoints { level, method } => {
+            let before = c.max_hit_points(rules).unwrap_or(0);
+            let gain = take_hit_points(
+                rules,
+                &c,
+                level,
+                method,
+                &state.chosen_levels(),
+                &mut SeededDice::from_os(),
+            )
+            .map_err(|e| match e {
+                LevelUpError::NoHitPointsPerLevel => AppError::Conflict("NO_HIT_POINTS_PER_LEVEL"),
+                LevelUpError::NotALevel(_) => AppError::BadRequest("NOT_A_LEVEL"),
+                LevelUpError::AlreadyChosen(_) => AppError::Conflict("ALREADY_CHOSEN"),
+                LevelUpError::Sheet(e) => AppError::Internal(format!("level up: {e:?}")),
+            })?;
+            state.hit_point_gains.push(gain);
+            let after = combatant(rules, &sheet, &state)
+                .and_then(|c| c.max_hit_points(rules).ok())
+                .unwrap_or(before);
+            let record = Record {
+                kind: Kind::Level,
+                label: Some(format!("Niveau {level}")),
+                before,
+                after,
+            };
+            save(&mut tx, campaign, id, &state).await?;
+            log(&mut tx, campaign, id, Actor::Player, &record).await?;
+        }
+        LevelUpChoice::Seen => {
+            if !hit_points_due(rules, state.total_xp, &state.chosen_levels()).is_empty() {
+                return Err(AppError::Conflict("HIT_POINTS_TO_CHOOSE"));
+            }
+            let level = c.level(rules).unwrap_or(1);
+            if state.level_seen == level {
+                return Ok(());
+            }
+            state.level_seen = level;
+            save(&mut tx, campaign, id, &state).await?;
+        }
+    }
+    touch_character(&mut tx, campaign, id).await?;
     tx.commit().await?;
     Ok(())
 }
@@ -732,10 +879,13 @@ pub async fn in_play(pool: &PgPool, campaign: Uuid) -> Result<Vec<InPlay>, AppEr
         Option<i32>,
         Option<Json<BTreeMap<String, i32>>>,
         Option<Json<Vec<InventoryEntry>>>,
+        Option<Json<Vec<HitPointGain>>>,
+        Option<i32>,
     );
     let rows: Vec<Row> = sqlx::query_as(
         "SELECT c.id, p.id, p.nickname, c.sheet,
-                cp.total_xp, cp.damage, cp.resources, cp.inventory
+                cp.total_xp, cp.damage, cp.resources, cp.inventory,
+                cp.hit_point_gains, cp.level_seen
          FROM characters c
          JOIN players p ON p.id = c.player_id
          LEFT JOIN character_play cp ON cp.character_id = c.id
@@ -748,11 +898,18 @@ pub async fn in_play(pool: &PgPool, campaign: Uuid) -> Result<Vec<InPlay>, AppEr
     Ok(rows
         .into_iter()
         .map(
-            |(id, player_id, nickname, sheet, xp, damage, resources, inventory)| {
-                let state = match (xp, damage, resources, inventory) {
-                    (Some(xp), Some(damage), Some(resources), Some(inventory)) => {
-                        Some(state_from_row((xp, damage, resources, inventory)))
-                    }
+            |(id, player_id, nickname, sheet, xp, damage, resources, inventory, gains, seen)| {
+                let state = match (xp, damage, resources, inventory, gains, seen) {
+                    (
+                        Some(xp),
+                        Some(damage),
+                        Some(resources),
+                        Some(inventory),
+                        Some(gains),
+                        Some(seen),
+                    ) => Some(state_from_row((
+                        xp, damage, resources, inventory, gains, seen,
+                    ))),
                     _ => None,
                 };
                 InPlay {

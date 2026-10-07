@@ -7,10 +7,14 @@
 //! - `POST /api/campaigns/{id}/characters/{character}/adjust` → one
 //!   gesture (`players::play::Adjustment`: `{ kind: "xp", delta }`,
 //!   `hitPoints`, `resource`, `giveItem`, `takeItem`): applied, logged,
-//!   both screens told; answers the character as the board shows it.
+//!   both screens told; answers the character as the board shows it;
+//! - `POST /api/campaigns/{id}/characters/{character}/death` → the GM
+//!   decides that a character down at 0 dies (engine/save-against-death,
+//!   `players::fate::declare`); the board lists the dead (`fallen`).
 
 use axum::Json;
 use axum::extract::{Path, State};
+use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use promptus_shared::rules::RuleSystem;
 use serde::Serialize;
@@ -22,6 +26,7 @@ use crate::auth::guard::{CurrentGm, owned_by};
 use crate::campaigns::projection::{PlayView, project_play};
 use crate::campaigns::{self, CampaignRow};
 use crate::error::AppError;
+use crate::players::fate;
 use crate::players::play::{self, Adjustment, InPlay};
 use crate::players::review;
 use crate::state::AppState;
@@ -100,6 +105,14 @@ pub async fn board(
         .map(|c| board_sheet(&row, rules, c))
         .collect();
     let history = play::history(&state.pool, row.id).await?;
+    let fallen: Vec<FallenSheet> = fate::of_campaign(&state.pool, row.id)
+        .await?
+        .into_iter()
+        .map(|f| FallenSheet {
+            nickname: f.nickname.clone(),
+            fallen: crate::campaigns::projection::project_fallen(rules, &f),
+        })
+        .collect();
     let items: Vec<GivableItem> = rules
         .map(|r| {
             r.items
@@ -132,9 +145,37 @@ pub async fn board(
             "items": items,
             "resources": resources,
             "history": history,
+            "fallen": fallen,
         }
     }))
     .into_response())
+}
+
+/// A dead character on the GM's board, with who played them.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct FallenSheet {
+    nickname: String,
+    #[serde(flatten)]
+    fallen: crate::campaigns::projection::FallenView,
+}
+
+/// `POST /api/campaigns/{id}/characters/{character}/death` — the GM
+/// decides that a character down at 0 hit points dies (204).
+///
+/// # Errors
+///
+/// 404 when the campaign is missing or another GM's, or the character
+/// does not sit at its table; the errors of `players::fate::declare`.
+pub async fn death(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path((id, character)): Path<(String, String)>,
+) -> Result<Response, AppError> {
+    let campaign = parse_id(&id)?;
+    let character = parse_id(&character)?;
+    fate::declare(&state.pool, &gm, campaign, character).await?;
+    Ok(StatusCode::NO_CONTENT.into_response())
 }
 
 /// `POST /api/campaigns/{id}/characters/{character}/adjust`

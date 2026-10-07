@@ -183,6 +183,11 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/characters/{character}/adjust",
             post(api::sheets::adjust),
         )
+        // engine/save-against-death: the GM decides a death.
+        .route(
+            "/api/campaigns/{id}/characters/{character}/death",
+            post(api::sheets::death),
+        )
         // The evening (phase 3): lobby, scenes, requests, journal, end.
         .route(
             "/api/campaigns/{id}/session",
@@ -385,6 +390,23 @@ fn player_routes() -> Vec<RouteSpec> {
             "POST",
             "/api/play/{campaign}/character/equip",
             post(api::play::equip),
+        ),
+        // A new level (engine/level-up), and after a death the last
+        // words and what comes next (player/face-death).
+        (
+            "POST",
+            "/api/play/{campaign}/character/level-up",
+            post(api::play::level_up),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/fate/words",
+            post(api::play::last_words),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/fate/next",
+            post(api::play::choose_next),
         ),
         // The evening: the scene, the music, my requests and their rolls,
         // the journal; the lobby; the feedback at the end.
