@@ -223,7 +223,7 @@ interface GmJournalLine {
   createdAt: string
 }
 
-export interface FactionGauge {
+interface FactionGauge {
   id: string
   name: string
   affinity: number
