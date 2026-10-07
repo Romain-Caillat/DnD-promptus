@@ -175,7 +175,16 @@ export function TravelPanel({
               )}
             </div>
           )}
-          {tr.proposal && <Proposal proposal={tr.proposal} onKeep={(event, text) => void send({ kind: 'keep', event, text })} onSkip={() => void send({ kind: 'skip' })} />}
+          {tr.proposal && (
+            // A fresh pick for each portion's draw: an event picked in the
+            // last one is not in this one.
+            <Proposal
+              key={`${tr.proposal.day}-${tr.proposal.portion}`}
+              proposal={tr.proposal}
+              onKeep={(event, text) => void send({ kind: 'keep', event, text })}
+              onSkip={() => void send({ kind: 'skip' })}
+            />
+          )}
           {j.chosen !== null && <GroupCheck data={data} onSend={(c) => void send(c)} />}
           {p.clock.night && j.chosen !== null && <Watches data={data} onSend={(c) => void send(c)} />}
           {j.events.length > 0 && (

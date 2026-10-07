@@ -257,6 +257,22 @@ describe('the journey on the GM screen', () => {
     expect(screen.queryByText('Le co-MJ propose · la haute mer')).toBeNull()
   })
 
+  it('forgets the event picked in a portion when the next portion draws its own', async () => {
+    const NEXT = { ...PROPOSAL, portion: 'Après-midi', events: [{ id: 'calme', title: 'Calme plat', text: 'Plus un souffle.' }] }
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/travel': () => gm(PROPOSAL),
+      'POST /api/campaigns/c1/travel': () => gm(NEXT),
+    })
+    render(<TravelPanel campaignId="c1" map={WORLD} tileset={null} refreshKey={0} />)
+    await userEvent.click(await screen.findByRole('button', { name: /Une voile à l’horizon/ }))
+    expect(screen.getByRole('button', { name: 'Garder' })).toBeEnabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Portion suivante · Après-midi' }))
+    expect(await screen.findByRole('button', { name: /Calme plat/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Garder' })).toBeDisabled()
+    expect(screen.queryByRole('textbox', { name: 'Le texte lu à la table' })).toBeNull()
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/travel')).toEqual([{ kind: 'advance' }])
+  })
+
   it('plays the next portion with the portion’s name on the button', async () => {
     const fetchMock = mockApi({
       'GET /api/campaigns/c1/travel': () => gm(null),
