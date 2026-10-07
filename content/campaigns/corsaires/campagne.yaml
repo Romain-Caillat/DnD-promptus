@@ -149,6 +149,16 @@ acts:
       de la source) comme espion de Gueule-Rouge, l'avance de 50 PO de
       Vaubernier, la table des marées, les deux horloges, et les indices
       ajoutés dans les scènes 1, 2 et au quai.
+  - id: acte_2
+    title: Le Greyhound
+    summary: >-
+      Au large de Belle-Île, La Mâchoire attend le HMS Greyhound derrière
+      la pointe de Kerdonis, l'intercepte malgré son sloop d'escorte et
+      prend ses plans d'attaque.
+    gm_notes: >-
+      INVENTÉ — à valider par Romain. Seule la scène de l'interception est
+      écrite (engine/support-vehicle-combat) ; le reste de l'acte est à
+      préparer dans Promptus.
 
 fronts:
   - id: front_maree
@@ -1047,6 +1057,95 @@ nodes:
       La source avait une transition lue à voix haute ; la scène de bord
       est INVENTÉE — à valider par Romain — pour vérifier avant l'acte 2
       ce que la table sait, l'erreur de la partie jouée.
+
+  - id: sc_interception_greyhound
+    act: acte_2
+    title: L'interception du Greyhound
+    summary: >-
+      La Mâchoire surgit de derrière la pointe de Kerdonis. Combat naval
+      contre le Greyhound et son sloop d'escorte ; à portée de grappin,
+      on aborde le Greyhound pour prendre ses plans.
+    location: lieu_belle_ile
+    map: pont-du-greyhound
+    requires:
+      - rev_route
+    read_aloud: >-
+      L'aube blanchit la côte sauvage. Derrière la pointe de Kerdonis, La
+      Mâchoire tangue, voiles à moitié carguées. Puis la vigie crie : deux
+      voiles à l'ouest. Le Greyhound, fin comme un lévrier, et derrière
+      lui un sloop qui montre ses douze sabords. Le vent est pour eux.
+    ambience:
+      mood: Combat naval à l'aube, vent d'ouest
+      sounds: Canonnade, voiles qui claquent, bois qui éclate, cris des gabiers
+      music:
+        - mood: combat
+          title: Ship Combat | D&D/TTRPG Battle Music | 1 Hour
+          url: https://www.youtube.com/watch?v=YWLllXzFFA8
+        - mood: combat
+          title: Skirmish on the High Seas | 1 Hour Pirate Combat Music
+          url: https://www.youtube.com/watch?v=WOx_2u3EYbU
+    flow: >-
+      Chacun prend son poste à bord : barre, batteries, hune, pompes, pont,
+      gaillard. Le Greyhound file vent arrière ; il faut lui couper la
+      route ou le démâter aux boulets ramés. Le sloop s'interpose. Le
+      Greyhound amène son pavillon si son moral tombe ; à portée de
+      grappin, on peut l'aborder, et le combat passe sur son pont.
+    hook: Deux voiles à l'ouest, et le vent qui tourne pour elles.
+    key_points:
+      - Premier tour expliqué poste par poste, puis tout le monde joue en même temps.
+      - Le Greyhound veut fuir, pas se battre ; il amène son pavillon plutôt que de couler avec les plans.
+      - Les plans sont dans la cabine du capitaine — il faut aborder ou le faire amener.
+    encounter:
+      vehicles:
+        map: large-de-belle-ile
+        ship: la_machoire
+        facing: s
+        ships:
+          - { ship: hms_greyhound, name: HMS Greyhound, facing: e }
+          - { ship: sloop_escorte, facing: e }
+      opponents:
+        - who: adv_garde_royal
+          count: 5
+      tactics:
+        - Le Greyhound fuit vers le nord-est, vent arrière ; il ne présente le flanc que s'il est rattrapé.
+        - Le sloop s'interpose entre le Greyhound et La Mâchoire.
+        - À l'abordage, les fusiliers défendent la poupe et la cabine du capitaine.
+      morale:
+        - when: Le Greyhound perd la moitié de sa coque
+          then: Il amène son pavillon plutôt que de couler avec les plans.
+      on_victory: >-
+        Le Greyhound amène son pavillon, ou ses fusiliers jettent leurs armes
+        sur le pont. Les plans d'attaque sont dans la cabine du capitaine.
+      on_defeat: >-
+        La Mâchoire, démâtée, dérive vers la côte sauvage ; le Greyhound
+        s'éloigne vers le nord. Il reste à le rattraper à la pointe des
+        Poulains, ou à rentrer les mains vides.
+    loot:
+      - item: obj_plans_greyhound
+        found: Dans la cabine du capitaine du Greyhound
+      - coins: 40
+        found: Le coffre du commis du Greyhound
+    player_hooks:
+      - character: pj_navigateur
+        reason: À la barre, il connaît le jusant et la pointe de Kerdonis ; c'est lui qui coupe la route du Greyhound.
+      - character: pj_canonnier
+        reason: Les batteries sont à lui ; une bordée complète bien placée décide du combat.
+      - character: pj_vigie
+        reason: De la hune, elle repère le point faible du Greyhound et tire sur ses officiers.
+      - character: pj_chirurgien
+        reason: Aux pompes et aux charpentiers, il garde La Mâchoire à flot quand les boulets arrivent.
+      - character: pj_quartier_maitre
+        reason: Du gaillard, il somme le Greyhound d'amener son pavillon et répartit l'équipage.
+      - character: pj_bretteur
+        reason: Au pont, mousquet en main, il mène l'abordage dès qu'on est à portée de grappin.
+    art: >-
+      Pixel art, vue de côté : deux bricks bord à bord dans la fumée des
+      canons, grappins lancés, la côte sauvage de Belle-Île en fond.
+    gm_notes: >-
+      INVENTÉ — à valider par Romain : toute la scène, le système naval des
+      Corsaires et la carte « Au large de Belle-Île ». L'équipage du
+      Greyhound prend pour l'instant la fiche des gardes royaux, faute de la
+      sienne.
 
 revelations:
   - id: rev_route

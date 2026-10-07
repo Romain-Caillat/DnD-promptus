@@ -45,11 +45,11 @@ grid:
     - "........................"
 starts:
   - { id: cure-dent, side: party, at: [3, 8] }
-  - { id: chasseur-1, side: foes, at: [20, 4], entity: chasseur_vorr }
-  - { id: chasseur-2, side: foes, at: [21, 7], entity: chasseur_vorr }
-  - { id: chasseur-3, side: foes, at: [20, 9], entity: chasseur_vorr }
-  - { id: chasseur-4, side: foes, at: [22, 13], entity: chasseur_vorr }
-  - { id: chasseur-5, side: foes, at: [22, 2], entity: chasseur_vorr }
+  - { id: chasseur-1, side: foes, at: [20, 4] }
+  - { id: chasseur-2, side: foes, at: [21, 7] }
+  - { id: chasseur-3, side: foes, at: [20, 9] }
+  - { id: chasseur-4, side: foes, at: [22, 13] }
+  - { id: chasseur-5, side: foes, at: [22, 2] }
 labels:
   - { text: Sortie du Toboggan, at: [1, 8] }
   - { text: Ceinture de débris, at: [15, 4] }

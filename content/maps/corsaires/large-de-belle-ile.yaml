@@ -47,8 +47,8 @@ grid:
     - "~~~~~~~~~~~~~~~~~~~~~~~~~~"
 starts:
   - { id: la-machoire, side: party, at: [22, 5] }
-  - { id: greyhound, side: foes, at: [6, 7], entity: hms_greyhound }
-  - { id: sloop, side: foes, at: [5, 9], entity: sloop_escorte }
+  - { id: greyhound, side: foes, at: [6, 7] }
+  - { id: sloop, side: foes, at: [5, 9] }
 labels:
   - { text: Belle-Île, at: [6, 0] }
   - { text: Pointe de Kerdonis, at: [18, 3] }

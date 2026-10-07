@@ -419,6 +419,49 @@ pub struct Encounter {
     pub on_victory: String,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub on_defeat: String,
+    /// A ship battle the scene opens with (engine/support-vehicle-combat).
+    /// The `opponents` are then who fights on the deck when a ship
+    /// boards another, on the scene's `map`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vehicles: Option<VehicleEncounter>,
+}
+
+/// Ships against ships: the battle map, the party's ship and the enemy
+/// ships, all from the rule system's `vehicles` block.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct VehicleEncounter {
+    /// The battle map (a map file's `id`), sea or space.
+    pub map: String,
+    /// The party's ship: an id of the rules' `vehicles.ships`.
+    pub ship: Id,
+    /// Its name in this campaign, when not the ship's.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default = "east")]
+    pub facing: crate::vehicle::Facing,
+    pub ships: Vec<ShipGroup>,
+}
+
+/// Identical enemy ships, on the battle map's foes starts in order.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ShipGroup {
+    pub ship: Id,
+    #[serde(default = "one", skip_serializing_if = "is_one")]
+    pub count: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default = "west")]
+    pub facing: crate::vehicle::Facing,
+}
+
+fn east() -> crate::vehicle::Facing {
+    crate::vehicle::Facing::E
+}
+
+fn west() -> crate::vehicle::Facing {
+    crate::vehicle::Facing::W
 }
 
 /// A group of identical opponents: an adversary or an NPC with stats.

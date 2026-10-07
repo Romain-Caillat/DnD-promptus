@@ -170,6 +170,66 @@ pub struct BattleReport {
 }
 
 impl VehicleScenario {
+    /// The battle a scene of a campaign holds, as a scenario: the
+    /// campaign's party (its members with a class) as the crew, the
+    /// scene's ships as opponents.
+    pub fn from_story(
+        campaign: &crate::story::Campaign,
+        node: &str,
+        v: &crate::story::model::VehicleEncounter,
+    ) -> Self {
+        let mut opponents = Vec::new();
+        for g in &v.ships {
+            for n in 1..=g.count.max(1) {
+                opponents.push(ShipSpec {
+                    id: Some(if g.count > 1 {
+                        format!("{}-{n}", g.ship)
+                    } else {
+                        g.ship.clone()
+                    }),
+                    kind: g.ship.clone(),
+                    name: g.name.as_ref().map(|name| {
+                        if g.count > 1 {
+                            format!("{name} {n}")
+                        } else {
+                            name.clone()
+                        }
+                    }),
+                    facing: g.facing,
+                });
+            }
+        }
+        Self {
+            id: node.into(),
+            name: node.into(),
+            description: String::new(),
+            source: String::new(),
+            rules: campaign.rules.id.clone(),
+            version: campaign.rules.version,
+            map: v.map.clone(),
+            ship: ShipSpec {
+                id: Some(v.ship.clone()),
+                kind: v.ship.clone(),
+                name: v.name.clone(),
+                facing: v.facing,
+            },
+            crew: campaign
+                .party
+                .iter()
+                .filter_map(|p| {
+                    p.class.as_ref().map(|class| CrewSpec {
+                        id: p.id.clone(),
+                        class: class.clone(),
+                        station: None,
+                    })
+                })
+                .collect(),
+            opponents,
+            current: None,
+            simulation: BattleSpec::default(),
+        }
+    }
+
     pub fn from_yaml(text: &str) -> Result<Self, VehicleScenarioError> {
         serde_yaml_ng::from_str(text).map_err(|e| VehicleScenarioError::Yaml(e.to_string()))
     }
