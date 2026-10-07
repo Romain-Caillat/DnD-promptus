@@ -223,7 +223,16 @@ fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> 
 /// answer it gives instead. Fighting needs a fight; the leaks of a fight
 /// are swept in `board_test.rs`.
 fn refused_to_marc(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
-    (method == "POST" && path.ends_with("/fight")).then_some((StatusCode::CONFLICT, "NO_FIGHT"))
+    if method != "POST" {
+        return None;
+    }
+    if path.ends_with("/fight") {
+        return Some((StatusCode::CONFLICT, "NO_FIGHT"));
+    }
+    // Session 2 is live: no upgrade point is spent mid-game (and Borin
+    // has none). Spending one is swept in `between_test.rs`.
+    path.ends_with("/character/upgrade")
+        .then_some((StatusCode::CONFLICT, "SESSION_LIVE"))
 }
 
 /// A route the sweep's table cannot make succeed for anyone: the quay
@@ -261,6 +270,7 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
             Some(json!({ "origin": "Du port.", "loss": "", "quest": "La mer." }))
         }
         ("POST", p) if p.ends_with("/equip") => Some(json!({ "entry": "k1", "equipped": true })),
+        ("POST", p) if p.ends_with("/upgrade") => Some(json!({ "ability": "FOR" })),
         ("POST", p) if p.ends_with("/walk") => Some(json!({ "path": [[1, 5]] })),
         ("POST", p) if p.ends_with("/fight") => Some(json!({ "kind": "endTurn" })),
         ("POST", p) if p.ends_with("/lobby") => Some(json!({ "soundOk": true, "remote": true })),

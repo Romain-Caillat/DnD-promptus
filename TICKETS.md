@@ -1637,7 +1637,7 @@ débloquée, niveau.
 
 **Origine** — Planches « Notifications » et « Objets et butin »
 
-### `player/play-between-sessions` · todo
+### `player/play-between-sessions` · doing — reste les dates (moment 6, avec `session/schedule-sessions`) et un vrai entre-deux-séances sur un téléphone
 
 **Périmètre** — Monter de niveau à la fin de la soirée, lire le récap
 et la chronique, consulter sa fiche hors session, donner ses dates.
@@ -1646,6 +1646,40 @@ et la chronique, consulter sa fiche hors session, donner ses dates.
 faisables dans l'app.
 
 **Origine** — Planche « Entre deux »
+
+**État** — Moments 1 à 5 livrés et testés sur les deux mondes
+(`back/tests/between_test.rs`, vitest `features/play/between`).
+Hors séance, l'onglet Jeu devient l'entre-deux : fin de la séance N
+(durée jouée, scène où elle s'est arrêtée), l'XP gagnée ce soir-là et
+le niveau atteint, ce que le personnage a reçu (le butin donné par le
+MJ porte désormais le personnage dans le journal, migration 032), puis
+« Précédemment… » une fois publié — sinon « le MJ relit » —, ce que la
+table a appris ce soir-là, ce qui reste ouvert (promesses et dettes), et
+les chemins vers la chronique (onglet Journal : une entrée par séance,
+la dernière marquée) et la fiche. Monter de niveau : dans les deux
+mondes, un niveau ne donne pas de PV (10 fixes) mais des points
+d'amélioration (un par 5 XP) et des cartes ; l'onglet Personnage ouvre
+alors « Borin · niveau N » : choisir une caractéristique, +1, un point à
+la fois, et les cartes que le niveau vient d'ouvrir. Le serveur dépense
+le point (refusé pendant une séance en cours : les nombres ne bougent
+pas en pleine partie), les points dépensés sont stockés
+(`character_play.upgrades`) et appliqués par le moteur partagé à chaque
+calcul (jets, combats, fiche du MJ, qui lit « place un point en Force »
+dans l'historique). Points restants = gagnés − dépensés, jamais
+négatifs si le MJ reprend de l'XP. Fiche hors séance : toucher une carte
+montre ce qu'elle fait avec les nombres du serveur (toucher, dégâts,
+recharge, portée). Projection par liste blanche
+(`campaigns/projection/between.rs`) : ni récap MJ, ni lignes MJ, ni
+historique des ajustements (seules des sommes d'XP du joueur en sont
+tirées), balayage joueur vert. « Précédemment… » passe par un seul
+point (`Session::published_previously`) que `session/write-recaps`
+réglera pour les brouillons.
+Hypothèses et limites : les PV au dé ou à la moyenne n'existent dans
+aucun des deux systèmes ; ils viendront avec `engine/level-up` pour un
+système à dés de vie. La chronique n'a pas encore les vignettes des
+images montrées en jeu. Le moment 6 (donner ses dates, le rappel qui
+mène au salon) est `session/schedule-sessions` : aucun bouton ici d'ici
+là. Jamais essayé entre deux vraies séances.
 
 ### `player/face-death` · todo
 
@@ -1740,7 +1774,7 @@ déclarent — les Corsaires ont leurs pièces d'or, **le Brasier n'en
 déclare aucune**, donc pas de bouton d'or sur une table Brasier tant
 que Romain n'en ajoute pas une à ses règles ; PV à 0 n'applique pas
 encore l'état « Inconscient » (avec `gm/run-combat`) ; dépenser un
-point d'amélioration reste à `player/play-between-sessions` ; l'écran
+point d'amélioration se fait entre deux séances (`player/play-between-sessions`) ; l'écran
 MJ en direct complet est `gm/run-live-screen`. Jamais essayé à une
 vraie table.
 

@@ -386,6 +386,19 @@ fn player_routes() -> Vec<RouteSpec> {
             "/api/play/{campaign}/character/equip",
             post(api::play::equip),
         ),
+        // Between sessions: spend an upgrade point (listed after `equip`,
+        // where the sweep validates the character), the last evening,
+        // the level-up moment and the chronicle.
+        (
+            "POST",
+            "/api/play/{campaign}/character/upgrade",
+            post(api::between::upgrade),
+        ),
+        (
+            "GET",
+            "/api/play/{campaign}/between",
+            get(api::between::between),
+        ),
         // The evening: the scene, the music, my requests and their rolls,
         // the journal; the lobby; the feedback at the end.
         (

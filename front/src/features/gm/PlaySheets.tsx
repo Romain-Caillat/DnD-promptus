@@ -334,6 +334,8 @@ function useChangeText() {
         })
       case 'equip':
         return t(e.after ? 'gm.sheets.log.equipped' : 'gm.sheets.log.unequipped', { label: e.label ?? '' })
+      case 'upgrade':
+        return t('gm.sheets.log.upgrade', { label: e.label ?? '', before: e.before, after: e.after })
     }
   }
 }

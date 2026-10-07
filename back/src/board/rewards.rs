@@ -106,7 +106,7 @@ pub async fn give(
         let (sheet, _) =
             play::adjust_in(&mut tx, campaign, rules, g.character, adj, Actor::Gm).await?;
         line.given_to = Some(g.character);
-        knowledge::write(
+        knowledge::write_about(
             &mut tx,
             campaign,
             session,
@@ -114,6 +114,7 @@ pub async fn give(
             line.item.as_deref(),
             &format!("{} — {}", line.name, sheet.name),
             true,
+            Some(g.character),
         )
         .await?;
     }

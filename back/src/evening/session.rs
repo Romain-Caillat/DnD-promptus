@@ -483,6 +483,17 @@ pub async fn world_at_end(
     Ok(world.flatten().map(|w| w.0))
 }
 
+impl Session {
+    /// « Précédemment… » as the players may read it: the one place that
+    /// says whether it is published, for the evening, the between screen
+    /// and the chronicle alike. Today the GM's text is published as soon
+    /// as written; `session/write-recaps` will gate drafts here.
+    #[must_use]
+    pub fn published_previously(&self) -> Option<&str> {
+        Some(self.previously.as_str()).filter(|p| !p.trim().is_empty())
+    }
+}
+
 impl Status {
     /// The status as stored.
     #[must_use]

@@ -231,8 +231,8 @@ pub fn project_evening(input: &EveningInput<'_>) -> EveningView {
     });
     let previously = input
         .last_ended
-        .map(|s| s.previously.clone())
-        .filter(|p| !p.trim().is_empty());
+        .and_then(Session::published_previously)
+        .map(str::to_string);
     EveningView {
         session,
         previously,

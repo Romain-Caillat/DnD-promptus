@@ -20,7 +20,7 @@ use std::collections::BTreeMap;
 
 use chrono::{DateTime, Utc};
 use promptus_shared::rules::RuleSystem;
-use promptus_shared::rules::progression::gain_xp;
+use promptus_shared::rules::progression::{Upgrades, apply_upgrades, gain_xp};
 use promptus_shared::rules::sheet::{Combatant, Progress};
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
@@ -86,6 +86,8 @@ pub struct PlayState {
     /// Amount by resource id; a missing id holds the rules' start.
     pub resources: BTreeMap<String, i32>,
     pub inventory: Vec<InventoryEntry>,
+    /// Upgrade points the player spent, by ability (migration 032).
+    pub upgrades: Upgrades,
 }
 
 impl PlayState {
@@ -113,6 +115,7 @@ impl PlayState {
                         .collect()
                 })
                 .unwrap_or_default(),
+            upgrades: Upgrades::new(),
         }
     }
 
@@ -130,7 +133,8 @@ impl PlayState {
 }
 
 /// The character as the rules engine sees it in play: the class with
-/// the sheet's scores, the XP earned, the hit points left. `None` when
+/// the sheet's scores raised by the upgrade points spent, the XP earned
+/// and the points left, the hit points left. `None` when
 /// the sheet names no class of `rules`.
 #[must_use]
 pub fn combatant(
@@ -148,6 +152,7 @@ pub fn combatant(
     let mut progress = Progress::default();
     gain_xp(rules, &mut progress, state.total_xp);
     c.progress = Some(progress);
+    apply_upgrades(rules, &mut c, &state.upgrades);
     let max = c.max_hit_points(rules).ok()?;
     c.hit_points = (max - state.damage).clamp(0, max.max(0));
     Some(c)
@@ -196,6 +201,8 @@ pub enum Kind {
     Resource,
     Item,
     Equip,
+    /// An upgrade point spent: the ability's score before and after.
+    Upgrade,
 }
 
 impl Kind {
@@ -206,6 +213,7 @@ impl Kind {
             Self::Resource => "resource",
             Self::Item => "item",
             Self::Equip => "equip",
+            Self::Upgrade => "upgrade",
         }
     }
 
@@ -216,6 +224,7 @@ impl Kind {
             "resource" => Self::Resource,
             "item" => Self::Item,
             "equip" => Self::Equip,
+            "upgrade" => Self::Upgrade,
             other => return Err(AppError::Internal(format!("unknown adjustment {other}"))),
         })
     }
@@ -416,14 +425,18 @@ type StateRow = (
     i32,
     Json<BTreeMap<String, i32>>,
     Json<Vec<InventoryEntry>>,
+    Json<Upgrades>,
 );
 
-fn state_from_row((total_xp, damage, resources, inventory): StateRow) -> PlayState {
+const STATE_COLUMNS: &str = "total_xp, damage, resources, inventory, upgrades";
+
+fn state_from_row((total_xp, damage, resources, inventory, upgrades): StateRow) -> PlayState {
     PlayState {
         total_xp: u32::try_from(total_xp).unwrap_or(0),
         damage,
         resources: resources.0,
         inventory: inventory.0,
+        upgrades: upgrades.0,
     }
 }
 
@@ -433,9 +446,9 @@ fn state_from_row((total_xp, damage, resources, inventory): StateRow) -> PlaySta
 ///
 /// Fails on a database error.
 pub async fn stored(pool: &PgPool, id: Uuid) -> Result<Option<PlayState>, AppError> {
-    let row: Option<StateRow> = sqlx::query_as(
-        "SELECT total_xp, damage, resources, inventory FROM character_play WHERE character_id = $1",
-    )
+    let row: Option<StateRow> = sqlx::query_as(&format!(
+        "SELECT {STATE_COLUMNS} FROM character_play WHERE character_id = $1"
+    ))
     .bind(id)
     .fetch_optional(pool)
     .await?;
@@ -449,11 +462,13 @@ async fn save(
     state: &PlayState,
 ) -> Result<(), AppError> {
     sqlx::query(
-        "INSERT INTO character_play (character_id, campaign_id, total_xp, damage, resources, inventory)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        "INSERT INTO character_play
+           (character_id, campaign_id, total_xp, damage, resources, inventory, upgrades)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (character_id) DO UPDATE
            SET total_xp = EXCLUDED.total_xp, damage = EXCLUDED.damage,
-               resources = EXCLUDED.resources, inventory = EXCLUDED.inventory",
+               resources = EXCLUDED.resources, inventory = EXCLUDED.inventory,
+               upgrades = EXCLUDED.upgrades",
     )
     .bind(character)
     .bind(campaign)
@@ -461,6 +476,7 @@ async fn save(
     .bind(state.damage)
     .bind(Json(&state.resources))
     .bind(Json(&state.inventory))
+    .bind(Json(&state.upgrades))
     .execute(&mut **tx)
     .await?;
     Ok(())
@@ -530,10 +546,9 @@ async fn lock_in_play(
         return Err(AppError::Conflict("CHARACTER_NOT_VALIDATED"));
     }
     let sheet = sheet.0;
-    let state: Option<StateRow> = sqlx::query_as(
-        "SELECT total_xp, damage, resources, inventory FROM character_play
-         WHERE character_id = $1 FOR UPDATE",
-    )
+    let state: Option<StateRow> = sqlx::query_as(&format!(
+        "SELECT {STATE_COLUMNS} FROM character_play WHERE character_id = $1 FOR UPDATE"
+    ))
     .bind(id)
     .fetch_optional(&mut **tx)
     .await?;
@@ -648,6 +663,84 @@ pub async fn equip(
     Ok(())
 }
 
+/// The player spends one upgrade point the rules gave them: +1 to
+/// `ability` (player/play-between-sessions). Between sessions only — in
+/// the lobby or with no session open — never while one is live: the
+/// numbers do not move under the table's feet. Logged « par le joueur »,
+/// the GM's board follows. Returns the sheet and the new state.
+///
+/// # Errors
+///
+/// 404 `NO_CHARACTER` for a spectator; 400 `UNKNOWN_ABILITY`; 409
+/// `CHARACTER_NOT_VALIDATED`, `NO_PLAY_SHEET`, `SESSION_LIVE`,
+/// `NO_UPGRADE_POINT`.
+pub async fn upgrade(
+    pool: &PgPool,
+    player: &Player,
+    rules: &RuleSystem,
+    ability: &str,
+) -> Result<(CharacterSheet, PlayState), AppError> {
+    let id: Option<Uuid> = sqlx::query_scalar("SELECT id FROM characters WHERE player_id = $1")
+        .bind(player.id)
+        .fetch_optional(pool)
+        .await?;
+    let id = id.ok_or(AppError::NotFound("NO_CHARACTER"))?;
+    let def = rules
+        .ability(ability)
+        .ok_or(AppError::BadRequest("UNKNOWN_ABILITY"))?;
+    let mut tx = pool.begin().await?;
+    let (sheet, mut state) = lock_in_play(&mut tx, player.campaign_id, id, rules).await?;
+    let live = crate::evening::session::current(&mut *tx, player.campaign_id)
+        .await?
+        .is_some_and(|s| s.status == crate::evening::Status::Live);
+    if live {
+        return Err(AppError::Conflict("SESSION_LIVE"));
+    }
+    let c = combatant(rules, &sheet, &state).ok_or(AppError::Conflict("NO_PLAY_SHEET"))?;
+    if c.progress.is_none_or(|p| p.upgrade_points == 0) {
+        return Err(AppError::Conflict("NO_UPGRADE_POINT"));
+    }
+    let before = c.score(&def.id).unwrap_or(0);
+    *state.upgrades.entry(def.id.clone()).or_insert(0) += 1;
+    let record = Record {
+        kind: Kind::Upgrade,
+        label: Some(def.name.clone()),
+        before,
+        after: before + 1,
+    };
+    save(&mut tx, player.campaign_id, id, &state).await?;
+    log(&mut tx, player.campaign_id, id, Actor::Player, &record).await?;
+    touch_character(&mut tx, player.campaign_id, id).await?;
+    tx.commit().await?;
+    Ok((sheet, state))
+}
+
+/// XP character `id` earned from `from` (until `to`, or now), what the
+/// GM took back counted out: a sum the between screen shows its player.
+/// The history's lines themselves stay GM-side.
+///
+/// # Errors
+///
+/// A database error.
+pub async fn xp_earned(
+    pool: &PgPool,
+    id: Uuid,
+    from: DateTime<Utc>,
+    to: Option<DateTime<Utc>>,
+) -> Result<i64, AppError> {
+    let sum: Option<i64> = sqlx::query_scalar(
+        "SELECT SUM(after_value - before_value)::BIGINT FROM play_adjustments
+         WHERE character_id = $1 AND kind = 'xp' AND created_at >= $2
+           AND ($3::TIMESTAMPTZ IS NULL OR created_at <= $3)",
+    )
+    .bind(id)
+    .bind(from)
+    .bind(to)
+    .fetch_one(pool)
+    .await?;
+    Ok(sum.unwrap_or(0))
+}
+
 /// One line of the history, as the GM reads it.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -732,10 +825,11 @@ pub async fn in_play(pool: &PgPool, campaign: Uuid) -> Result<Vec<InPlay>, AppEr
         Option<i32>,
         Option<Json<BTreeMap<String, i32>>>,
         Option<Json<Vec<InventoryEntry>>>,
+        Option<Json<Upgrades>>,
     );
     let rows: Vec<Row> = sqlx::query_as(
         "SELECT c.id, p.id, p.nickname, c.sheet,
-                cp.total_xp, cp.damage, cp.resources, cp.inventory
+                cp.total_xp, cp.damage, cp.resources, cp.inventory, cp.upgrades
          FROM characters c
          JOIN players p ON p.id = c.player_id
          LEFT JOIN character_play cp ON cp.character_id = c.id
@@ -748,10 +842,10 @@ pub async fn in_play(pool: &PgPool, campaign: Uuid) -> Result<Vec<InPlay>, AppEr
     Ok(rows
         .into_iter()
         .map(
-            |(id, player_id, nickname, sheet, xp, damage, resources, inventory)| {
-                let state = match (xp, damage, resources, inventory) {
-                    (Some(xp), Some(damage), Some(resources), Some(inventory)) => {
-                        Some(state_from_row((xp, damage, resources, inventory)))
+            |(id, player_id, nickname, sheet, xp, damage, resources, inventory, upgrades)| {
+                let state = match (xp, damage, resources, inventory, upgrades) {
+                    (Some(xp), Some(damage), Some(resources), Some(inventory), Some(upgrades)) => {
+                        Some(state_from_row((xp, damage, resources, inventory, upgrades)))
                     }
                     _ => None,
                 };

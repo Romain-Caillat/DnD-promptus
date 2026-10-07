@@ -222,6 +222,23 @@ is computed through the engine, never stored. Writing play state into
 `sheet` would make every adjustment show up as a player edit in the
 review.
 
+### Spent upgrade points are stored, earned ones are derived
+
+The points a character earned come from its XP through the rules; the
+points it spent are stored by ability (`character_play.upgrades`) and
+applied by the shared engine (`progression::apply_upgrades`) inside
+`players::play::combatant`, so every roll, fight and screen reads the
+raised score. Points left = earned − spent, never negative: the GM may
+take XP back, the score keeps the point. A point is spent only outside
+a live session — numbers never move mid-game.
+
+### « Précédemment… » has one gate
+
+Whether a session's « Précédemment… » may reach players is decided in
+one place, `Session::published_previously`: the evening, the between
+screen and the chronicle all read it there. A draft must never be read
+from `game_sessions.previously` directly.
+
 ### Player tokens are hashed
 
 Players join with an invite link, a nickname and a free character —
@@ -276,6 +293,20 @@ against the campaign budget; a batch that would exceed it is refused.
   `<b>{{a}}/{{b}}</b>` with `display:grid` puts each text node on its own
   row (the clock showed 3 / 6 stacked). Wrap mixed text in one `<span>`.
 
+- **A migration that rewrites a CHECK list wins over the others.**
+  `play_adjustments.kind` (and `.actor`) are `CHECK (… IN (…))` lists
+  that a migration drops and re-adds to add a value: two lots built in
+  parallel that each add their kind lose one of them, whichever runs
+  last. When merging, the last migration must list every kind.
+- **Parallel worktrees sharing one `CARGO_TARGET_DIR` build each
+  other's code.** Cargo names workspace crates by their path relative to
+  the workspace, and fingerprints them by mtime: another worktree's
+  newer build of `promptus_shared` is taken as fresh, and the code under
+  test is not yours. Give each worktree its own hashes
+  (`cargo --config 'profile.dev.package.promptus_shared.codegen-units=251'`,
+  same for `promptus_back`) or its own target dir. Likewise one shared
+  test database breaks as soon as two branches carry different
+  migrations (`VersionMissing`): give each its own database.
 - **YouTube player must stay visible** (YouTube terms) and starts muted:
   each player taps "activate sound". Ads can desync a player; playback
   re-syncs on its own.
