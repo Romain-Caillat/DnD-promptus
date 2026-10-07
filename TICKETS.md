@@ -1005,14 +1005,54 @@ adversaire absent des règles) ; l'acte 1 des Corsaires tel que joué
 signale la route du Greyhound seulement dans une scène facultative ;
 l'acte 1 réécrit des Corsaires est prêt.
 
-### `campaign/track-factions-and-goals` · todo · à spécifier
+### `campaign/track-factions-and-goals` · doing — reste une vraie soirée du Brasier où les jauges bougent, et la relecture des règles d'affinité par Romain
 
 **Périmètre** — Jauges d'affinité par faction, où gagner la faveur des
 uns fait baisser celle de leurs rivaux ; objectifs de campagne à cocher
 (les quatre composants du Brasier) ; un PNJ permanent joué par le co-MJ
 (l'IA de bord LUMEN).
 
+**Fini quand** (hypothèse écrite le 7 octobre 2026, à relire par Romain)
+— Pendant une session, le MJ monte ou baisse d'un geste l'affinité d'une
+faction ; un gain fait baisser d'autant chacun des rivaux **déclarés par
+cette faction** (les rivalités ne sont pas forcément réciproques),
+chaque jauge bornée par son `min`/`max` ; une perte ne fait monter
+personne. Les joueurs ne voient que les factions dont ils ont entendu
+parler (nom, description, jauge, rivaux connus ; jamais la `diplomacy`,
+qui est le conseil du MJ, ni ses notes) : une faction devient connue
+quand le MJ la fait connaître ou bouge sa jauge, ou quand l'objectif
+qu'elle détient est atteint. Un objectif de campagne est caché, connu ou
+atteint ; les joueurs voient les connus et les atteints, et qui le
+détient si cette faction est connue. Un PNJ marqué `companion` dans la
+campagne (LUMEN) se fait parler en un geste dans n'importe quelle scène,
+en brouillon du co-MJ que le MJ relit. Vérifié sur les deux mondes : les
+quatre races et les quatre composants du Brasier, la Couronne contre
+Gueule-Rouge et les plans du Greyhound des Corsaires (qui n'ont pas de
+compagnon).
+
 **Origine** — `dnd-save/DnD_07-06-2026/Univers.md`
+
+**État** — Le moteur (`shared/src/story/world.rs`) tient l'affinité, les
+factions connues et l'état des objectifs dans le monde vivant (pas de
+migration : le monde est un document, et un monde d'avant se recharge).
+Côté MJ, l'écran de soirée a un bloc « Factions et objectifs » : jauge en
+cases de part et d'autre du neutre, −1 / +1, « Faire connaître »,
+objectif caché / connu / atteint ; chaque geste passe sous le verrou de
+la campagne et laisse une ligne au journal (partagée pour ce que la
+table voit, MJ seul pour la jauge d'un rival inconnu qui chute). Le
+co-MJ reçoit les jauges, les objectifs et les compagnons dans son
+contexte ; le bouton « Faire parler LUMEN » apparaît dès qu'un
+compagnon existe. Côté joueur, l'onglet Journal montre les objectifs et
+les factions connues avec leur jauge. Tests : le moteur sur les deux
+YAML (bornes, rivaux, perte sans effet, objectif qui fait connaître son
+détenteur), l'API sur les deux mondes (ce que voit Marc, journal
+partagé ou non, gestes refusés, LUMEN sans scène), le balayage des
+fuites avec une faction et un objectif inconnus marqués, et les deux
+écrans en Vitest. **Hypothèses à confirmer par Romain** : les rivalités
+du Brasier sont celles du YAML (inventées, notées dans `gm_notes`) ; un
+point gagné coûte un point à chaque rival ; la `diplomacy` reste au MJ.
+La TV ne montre pas encore les jauges (`tv/show-evening` montre le
+journal partagé, où elles passent en une ligne).
 
 ### `campaign/edit-rule-system` · doing — reste une vraie modification jouée à la soirée suivante
 

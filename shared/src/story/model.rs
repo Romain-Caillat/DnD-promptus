@@ -147,6 +147,22 @@ impl Campaign {
         self.locations.iter().find(|l| l.id == id)
     }
 
+    #[must_use]
+    pub fn faction(&self, id: &str) -> Option<&Faction> {
+        self.factions.iter().find(|f| f.id == id)
+    }
+
+    #[must_use]
+    pub fn goal(&self, id: &str) -> Option<&Goal> {
+        self.goals.iter().find(|g| g.id == id)
+    }
+
+    /// The NPCs who travel with the party for the whole campaign, played
+    /// by the co-GM (the Brasier's LUMEN).
+    pub fn companions(&self) -> impl Iterator<Item = &Npc> {
+        self.npcs.iter().filter(|n| n.companion)
+    }
+
     /// The clues that lead to `revelation`.
     pub fn clues_for<'a>(&'a self, revelation: &'a str) -> impl Iterator<Item = &'a Clue> + 'a {
         self.clues
@@ -562,6 +578,11 @@ pub struct Npc {
     pub faction: Option<Id>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<Id>,
+    /// With the party for the whole campaign, whatever the scene (the
+    /// Brasier's ship AI): the GM can make them speak at any moment,
+    /// through a co-GM draft (`campaign/track-factions-and-goals`).
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub companion: bool,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub gm_notes: String,
 }

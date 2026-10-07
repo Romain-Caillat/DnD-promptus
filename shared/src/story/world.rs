@@ -36,6 +36,35 @@ pub struct WorldState {
     /// Free flags the GM sets (« pont_coupe »).
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub flags: BTreeMap<String, FlagValue>,
+    /// Each faction's affinity with the party once it moved; absent =
+    /// the faction's `affinity.start` ([`WorldState::affinity_of`]).
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub affinity: BTreeMap<Id, i32>,
+    /// Factions the players know of: only these reach their screens.
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub known_factions: BTreeSet<Id>,
+    /// Campaign goals the players know of, and whether they are reached;
+    /// absent = not known to the table yet.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub goals: BTreeMap<Id, GoalStatus>,
+}
+
+/// Where the table stands with a campaign goal.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GoalStatus {
+    /// The players know it is to be done.
+    Known,
+    /// Ticked off.
+    Done,
+}
+
+/// One gauge an affinity shift moved.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AffinityShift {
+    pub faction: Id,
+    pub from: i32,
+    pub to: i32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -60,6 +89,8 @@ pub enum WorldError {
     UnknownClue(Id),
     UnknownFront(Id),
     UnknownEntity(Id),
+    UnknownFaction(Id),
+    UnknownGoal(Id),
 }
 
 impl std::fmt::Display for WorldError {
@@ -69,6 +100,8 @@ impl std::fmt::Display for WorldError {
             Self::UnknownClue(id) => write!(f, "unknown clue `{id}`"),
             Self::UnknownFront(id) => write!(f, "unknown front `{id}`"),
             Self::UnknownEntity(id) => write!(f, "unknown NPC or adversary `{id}`"),
+            Self::UnknownFaction(id) => write!(f, "unknown faction `{id}`"),
+            Self::UnknownGoal(id) => write!(f, "unknown goal `{id}`"),
         }
     }
 }
@@ -202,5 +235,126 @@ impl WorldState {
 
     pub fn set_flag(&mut self, flag: &str, value: FlagValue) {
         self.flags.insert(flag.to_string(), value);
+    }
+
+    /// Where the party stands with `faction` now: its starting affinity
+    /// until something moved it. `None` for an unknown faction.
+    #[must_use]
+    pub fn affinity_of(&self, campaign: &Campaign, faction: &str) -> Option<i32> {
+        let f = campaign.faction(faction)?;
+        Some(
+            self.affinity
+                .get(faction)
+                .copied()
+                .unwrap_or(f.affinity.start)
+                .clamp(f.affinity.min, f.affinity.max),
+        )
+    }
+
+    /// The players learn that `faction` exists (its name, what it is).
+    ///
+    /// # Errors
+    ///
+    /// `UnknownFaction` when the campaign has no such faction.
+    pub fn meet_faction(&mut self, campaign: &Campaign, faction: &str) -> Result<bool, WorldError> {
+        if campaign.faction(faction).is_none() {
+            return Err(WorldError::UnknownFaction(faction.to_string()));
+        }
+        Ok(self.known_factions.insert(faction.to_string()))
+    }
+
+    /// The party's standing with `faction` moves by `delta`, within the
+    /// faction's bounds. The tension rule of the Brasier (`Univers.md`):
+    /// winning favour with a faction **lowers each of its rivals** by as
+    /// much, each within its own bounds; losing favour moves no one
+    /// else. Rivalries are read as declared on `faction` — they need not
+    /// be mutual. The faction becomes known to the players; a rival that
+    /// drops stays as known (or unknown) as it was.
+    ///
+    /// Returns every gauge that moved, the faction first; a gauge already
+    /// at its bound is left out.
+    ///
+    /// # Errors
+    ///
+    /// `UnknownFaction` when the campaign has no such faction.
+    pub fn shift_affinity(
+        &mut self,
+        campaign: &Campaign,
+        faction: &str,
+        delta: i32,
+    ) -> Result<Vec<AffinityShift>, WorldError> {
+        let f = campaign
+            .faction(faction)
+            .ok_or_else(|| WorldError::UnknownFaction(faction.to_string()))?;
+        self.known_factions.insert(faction.to_string());
+        let mut moved = Vec::new();
+        self.move_gauge(campaign, faction, delta, &mut moved);
+        if delta > 0 {
+            for rival in &f.rivals {
+                if rival != faction {
+                    self.move_gauge(campaign, rival, -delta, &mut moved);
+                }
+            }
+        }
+        Ok(moved)
+    }
+
+    fn move_gauge(
+        &mut self,
+        campaign: &Campaign,
+        faction: &str,
+        delta: i32,
+        moved: &mut Vec<AffinityShift>,
+    ) {
+        let (Some(f), Some(from)) = (
+            campaign.faction(faction),
+            self.affinity_of(campaign, faction),
+        ) else {
+            return;
+        };
+        let to = from
+            .saturating_add(delta)
+            .clamp(f.affinity.min, f.affinity.max);
+        if to != from {
+            self.affinity.insert(faction.to_string(), to);
+            moved.push(AffinityShift {
+                faction: faction.to_string(),
+                from,
+                to,
+            });
+        }
+    }
+
+    /// Set what the table knows of `goal`: `None` hides it again (a
+    /// mistake undone), `Known` shows it to do, `Done` ticks it off. A
+    /// goal ticked off makes the faction holding it known.
+    ///
+    /// # Errors
+    ///
+    /// `UnknownGoal` when the campaign has no such goal.
+    pub fn set_goal(
+        &mut self,
+        campaign: &Campaign,
+        goal: &str,
+        status: Option<GoalStatus>,
+    ) -> Result<(), WorldError> {
+        let g = campaign
+            .goal(goal)
+            .ok_or_else(|| WorldError::UnknownGoal(goal.to_string()))?;
+        match status {
+            None => {
+                self.goals.remove(goal);
+            }
+            Some(s) => {
+                self.goals.insert(goal.to_string(), s);
+                if s == GoalStatus::Done
+                    && let Some(holder) = &g.held_by
+                    && campaign.faction(holder).is_some()
+                {
+                    self.known_factions.insert(holder.clone());
+                }
+            }
+        }
+        Ok(())
     }
 }

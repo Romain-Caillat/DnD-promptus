@@ -466,6 +466,7 @@ npcs:
       valider par Romain). Elle traduit les langues aliennes petit à petit,
       un mot de plus à chaque contact.
     location: lieu_cure_dent
+    companion: true
     gm_notes: >-
       Jouée par le MJ ; outil de tutoriel et de narration. Nom de travail
       LUMEN, à valider (source). Tient le poste Capteurs si le Xénologue

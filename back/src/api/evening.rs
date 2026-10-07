@@ -8,7 +8,8 @@
 //! - `POST /api/campaigns/{id}/session/start` → the session goes live;
 //! - `POST /api/campaigns/{id}/session/end` → `{ recap, previously }`;
 //! - `POST /api/campaigns/{id}/session/reveal` → a scene, a clue, an
-//!   NPC, a front's clock, a resolved scene (`evening::scenes::Reveal`);
+//!   NPC, a front's clock, a resolved scene, a faction met, an affinity
+//!   moved, a campaign goal known or reached (`evening::scenes::Reveal`);
 //! - `PUT /api/campaigns/{id}/session/music` → `{ track }` (or null);
 //! - `POST /api/campaigns/{id}/session/journal` → a promise, a debt, a
 //!   key item, a note;
@@ -38,7 +39,7 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use chrono::Utc;
-use promptus_shared::story::{Campaign, Node, WorldState};
+use promptus_shared::story::{Campaign, GoalStatus, Node, WorldState};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -166,6 +167,43 @@ struct FrontView {
     goal: String,
     steps: Vec<String>,
     progress: u32,
+}
+
+/// A faction as the GM moves it: its gauge, its rivals, whether the
+/// players know of it (campaign/track-factions-and-goals).
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GmFaction {
+    id: String,
+    name: String,
+    diplomacy: String,
+    affinity: i32,
+    start: i32,
+    min: i32,
+    max: i32,
+    rivals: Vec<String>,
+    known: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GmGoal {
+    id: String,
+    title: String,
+    held_by: Option<String>,
+    /// `None`: the players do not know it yet.
+    status: Option<GoalStatus>,
+}
+
+/// An NPC with the party whatever the scene: the GM makes them speak in
+/// one gesture (a co-GM draft).
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CompanionView {
+    id: String,
+    name: String,
+    title: String,
+    roleplay: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -301,6 +339,29 @@ pub async fn live_screen(
             goal: f.goal.clone(),
             steps: f.steps.iter().map(|s| s.label.clone()).collect(),
             progress: world.front_progress.get(&f.id).copied().unwrap_or(0),
+        }).collect::<Vec<_>>(),
+        "factions": story.factions.iter().map(|f| GmFaction {
+            id: f.id.clone(),
+            name: f.name.clone(),
+            diplomacy: f.diplomacy.clone(),
+            affinity: world.affinity_of(story, &f.id).unwrap_or(f.affinity.start),
+            start: f.affinity.start,
+            min: f.affinity.min,
+            max: f.affinity.max,
+            rivals: f.rivals.clone(),
+            known: world.known_factions.contains(&f.id),
+        }).collect::<Vec<_>>(),
+        "goals": story.goals.iter().map(|g| GmGoal {
+            id: g.id.clone(),
+            title: g.title.clone(),
+            held_by: g.held_by.clone(),
+            status: world.goals.get(&g.id).copied(),
+        }).collect::<Vec<_>>(),
+        "companions": story.companions().map(|n| CompanionView {
+            id: n.id.clone(),
+            name: n.name.clone(),
+            title: n.title.clone(),
+            roleplay: n.roleplay.clone(),
         }).collect::<Vec<_>>(),
         "requests": gm_requests,
         "journal": knowledge::journal(pool, row.id, false).await?,

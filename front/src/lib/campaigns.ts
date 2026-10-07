@@ -144,6 +144,21 @@ export interface PlayerView {
   } | null
   clues: string[]
   npcs: PlayerNpc[]
+  /** Factions the table knows of, with the party's standing. */
+  factions: PlayerFaction[]
+  /** Campaign goals the table knows of. */
+  goals: { title: string; description: string; done: boolean; heldBy: string | null }[]
+}
+
+interface PlayerFaction {
+  id: string
+  name: string
+  description: string
+  affinity: number
+  min: number
+  max: number
+  /** Its rivals the table knows of, by name. */
+  rivals: string[]
 }
 
 export type PlayerViewResult =

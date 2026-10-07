@@ -154,18 +154,33 @@ pub fn marked() -> Campaign {
         i.gm_notes = m("items.gm_notes");
     }
     for f in &mut c.factions {
-        f.description = m("factions.description");
         f.diplomacy = m("factions.diplomacy");
+        f.art = m("factions.art");
         f.gm_notes = m("factions.gm_notes");
+        if f.id != "fac_douane" {
+            // Not known to the table: even its name is secret.
+            f.name = m("factions.name (unknown)");
+            f.description = m("factions.description (unknown)");
+        }
     }
     for g in &mut c.goals {
-        g.description = m("goals.description");
         g.gm_notes = m("goals.gm_notes");
     }
+    // A second goal the table has not heard of.
+    c.goals.push(promptus_shared::story::Goal {
+        id: "but_secret".into(),
+        title: m("goals.title (unknown)"),
+        description: m("goals.description (unknown)"),
+        held_by: Some("fac_contrebandiers".into()),
+        item: None,
+        gm_notes: m("goals.gm_notes"),
+    });
     c
 }
 
-/// In the crique, Gwen's and the map's clues found, Loïc met.
+/// In the crique, Gwen's and the map's clues found, Loïc met; the
+/// douane known and in favour (the smugglers' gauge dropped out of
+/// sight), the lantern to bring back known.
 pub fn world(c: &Campaign) -> WorldState {
     let mut w = WorldState::default();
     w.enter_node(c, "sc_taverne").unwrap();
@@ -173,6 +188,13 @@ pub fn world(c: &Campaign) -> WorldState {
     w.reveal_clue(c, "cl_gwen").unwrap();
     w.reveal_clue(c, "cl_carte").unwrap();
     w.reveal_entity(c, "pnj_loic").unwrap();
+    w.shift_affinity(c, "fac_douane", 2).unwrap();
+    w.set_goal(
+        c,
+        "but_lumiere",
+        Some(promptus_shared::story::GoalStatus::Known),
+    )
+    .unwrap();
     w
 }
 

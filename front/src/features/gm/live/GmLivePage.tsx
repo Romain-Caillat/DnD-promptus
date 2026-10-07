@@ -35,6 +35,7 @@ import { askImage, decideImage, fetchGmMedia, type MediaList } from '@/lib/media
 import { BoardPanel } from './BoardPanel'
 import { CopilotPanel } from './CopilotPanel'
 import { EndPanel, FeedbackPanel } from './EndPanel'
+import { FactionsPanel } from './FactionsPanel'
 import { JournalPanel } from './JournalPanel'
 import { MediaPanel } from './MediaPanel'
 import { RequestsPanel } from './RequestsPanel'
@@ -214,6 +215,7 @@ export function GmLivePage() {
               onLoot={(index, character) => void boardGesture(() => giveLoot(campaignId, [{ index, character }]))}
             />
           )}
+          {session && <FactionsPanel screen={screen} onReveal={(r) => void act(() => reveal(campaignId, r))} />}
           {!session && screen.lastEnded && (
             <FeedbackPanel
               load={() => fetchFeedback(campaignId, screen.lastEnded!.id)}

@@ -385,6 +385,7 @@
     "gem": "{{name}} : {{value}}",
     "hearts": "Points de vie : {{hp}} sur {{max}}",
     "cells": "{{name}} : {{value}} sur {{max}}",
+    "affinity": "{{name}} : affinité {{value}}",
     "clock": "{{name}} : {{filled}} sur {{parts}}",
     "clockName": "Horloge de menace",
     "clockCount": "{{filled}}/{{parts}}",
@@ -508,6 +509,11 @@
       "scene": "Où vous êtes",
       "clues": "Les indices du groupe",
       "npcs": "Les gens rencontrés",
+      "goals": "Ce que le groupe doit accomplir",
+      "goalDone": "✓ {{title}}",
+      "heldBy": "Détenu par {{name}}",
+      "factions": "Les factions",
+      "rivals": "Rivaux : {{names}}",
       "empty": "Le groupe n'a encore rien découvert."
     }
   },
@@ -1442,6 +1448,7 @@
       },
       "npc": "PNJ",
       "anyNpc": "Le PNJ de la scène",
+      "companion": "Faire parler {{name}}",
       "prompt": "Ce que disent les joueurs, votre question…",
       "ask": "Demander",
       "thinking": "Le co-MJ écrit…",
@@ -1449,6 +1456,23 @@
       "apply": "Faire",
       "show": "Montrer à la table",
       "dismiss": "Écarter"
+    },
+    "factions": {
+      "title": "Factions et objectifs",
+      "known": "connue des joueurs",
+      "unknown": "inconnue des joueurs",
+      "minus": "−1",
+      "plus": "+1",
+      "down": "Baisser l'affinité de {{name}}",
+      "up": "Monter l'affinité de {{name}} (ses rivaux baissent d'autant)",
+      "meet": "Faire connaître",
+      "rivals": "Rivaux : {{names}}",
+      "goals": "Objectifs de campagne",
+      "goal": {
+        "hidden": "Caché",
+        "known": "Connu",
+        "done": "Atteint"
+      }
     },
     "journal": {
       "title": "Journal",

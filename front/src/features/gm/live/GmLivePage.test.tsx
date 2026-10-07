@@ -48,6 +48,12 @@ const SCREEN = {
   startNode: 'sc_taverne',
   gaps: [],
   fronts: [],
+  factions: [
+    { id: 'fac_sereth', name: 'Les Sereth', diplomacy: 'Le respect.', affinity: 0, start: 0, min: -5, max: 5, rivals: ['fac_vorr'], known: false },
+    { id: 'fac_vorr', name: 'Les Vorr', diplomacy: '', affinity: -3, start: -3, min: -5, max: 5, rivals: [], known: true },
+  ],
+  goals: [{ id: 'but_lentille_echo', title: 'Obtenir la Lentille-écho', heldBy: 'fac_sereth', status: 'known' }],
+  companions: [{ id: 'pnj_lumen', name: 'LUMEN', title: 'L’IA de bord', roleplay: '' }],
   requests: [
     {
       id: 'r1',
@@ -151,5 +157,31 @@ describe('GmLivePage', () => {
     expect(sentTo(fetchMock, 'PUT /api/campaigns/c1/session/music')).toEqual([{ track: 0 }])
     expect(sentTo(fetchMock, 'POST /api/campaigns/c1/board')).toEqual([{ map: 'quai' }])
     expect(sentTo(fetchMock, 'POST /api/campaigns/c1/session/spotlight/p1')).toHaveLength(1)
+  })
+
+  it('moves a faction, ticks a goal and makes the companion speak', async () => {
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/session': () => ({ status: 200, body: { data: SCREEN } }),
+      'GET /api/campaigns/c1/board': () => ({ status: 200, body: { data: BOARD } }),
+      'GET /api/campaigns/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
+      'POST /api/campaigns/c1/session/reveal': () => ({ status: 204 }),
+      'POST /api/campaigns/c1/session/copilot': () => ({ status: 201, body: { data: {} } }),
+    })
+    renderPage()
+
+    const factions = await screen.findByRole('region', { name: 'Factions et objectifs' })
+    expect(within(factions).getByRole('img', { name: 'Les Vorr : affinité -3' })).toBeInTheDocument()
+    expect(within(factions).getByText('Rivaux : Les Vorr')).toBeInTheDocument()
+    await userEvent.click(within(factions).getByRole('button', { name: /Monter l'affinité de Les Sereth/ }))
+    await userEvent.click(within(factions).getByRole('button', { name: 'Faire connaître' }))
+    await userEvent.click(within(factions).getByRole('button', { name: 'Atteint' }))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/session/reveal')).toEqual([
+      { kind: 'affinity', faction: 'fac_sereth', delta: 1 },
+      { kind: 'faction', faction: 'fac_sereth' },
+      { kind: 'goal', goal: 'but_lentille_echo', status: 'done' },
+    ])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Faire parler LUMEN' }))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/session/copilot')).toEqual([{ kind: 'npc', prompt: '', npc: 'pnj_lumen' }])
   })
 })

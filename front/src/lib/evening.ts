@@ -248,6 +248,11 @@ export interface LiveScreen {
   /** What the next scenes need that the table does not know yet. */
   gaps: KnowledgeGap[]
   fronts: { id: string; name: string; goal: string; steps: string[]; progress: number }[]
+  /** Every faction, its gauge and whether the table knows of it. */
+  factions: GmFaction[]
+  goals: { id: string; title: string; heldBy: string | null; status: GoalStatus | null }[]
+  /** NPCs with the party whatever the scene, played by the co-GM. */
+  companions: { id: string; name: string; title: string; roleplay: string }[]
   requests: GmRequest[]
   journal: GmJournalLine[]
   spotlight: Spot[]
@@ -257,12 +262,29 @@ export interface LiveScreen {
   ai: { configured: boolean; spending: { budgetMicros: number; spentMicros: number } }
 }
 
+export type GoalStatus = 'known' | 'done'
+
+interface GmFaction {
+  id: string
+  name: string
+  diplomacy: string
+  affinity: number
+  start: number
+  min: number
+  max: number
+  rivals: string[]
+  known: boolean
+}
+
 export type Reveal =
   | { kind: 'scene'; node: string }
   | { kind: 'clue'; clue: string }
   | { kind: 'npc'; npc: string }
   | { kind: 'front'; front: string; delta: number }
   | { kind: 'resolve'; node: string }
+  | { kind: 'faction'; faction: string }
+  | { kind: 'affinity'; faction: string; delta: number }
+  | { kind: 'goal'; goal: string; status: GoalStatus | null }
 
 export type Decision =
   | { kind: 'accept'; reason: string }

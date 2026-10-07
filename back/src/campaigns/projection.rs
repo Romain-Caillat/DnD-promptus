@@ -11,7 +11,9 @@
 //! transition, player hooks, fallback note and notes; what an NPC wants,
 //! hides, their traits, flaw, motivation, stats and inventory; the name
 //! of an NPC or adversary the players have not met, and any hit points
-//! or stat block. Art fields are prompts for the image generator, not
+//! or stat block; a faction the players have not heard of, how to deal
+//! with any faction (`diplomacy`), and a goal they do not know yet. Art
+//! fields are prompts for the image generator, not
 //! player text.
 //!
 //! Every player and shared-screen route (`app::player_routes`,
@@ -45,7 +47,7 @@ use promptus_shared::rules::action::{ActionCard, action_cards};
 use promptus_shared::rules::model::{ActionDef, RollSpec, Tag};
 use promptus_shared::rules::sheet::Combatant;
 use promptus_shared::sprite::CharacterLook;
-use promptus_shared::story::{Campaign, MusicTrack, WorldState};
+use promptus_shared::story::{Campaign, GoalStatus, MusicTrack, WorldState};
 use serde::Serialize;
 use uuid::Uuid;
 
@@ -68,6 +70,36 @@ pub struct PlayerCampaignView {
     pub clues: Vec<String>,
     /// NPCs the players have met.
     pub npcs: Vec<NpcView>,
+    /// Factions the players know of, with the party's standing.
+    pub factions: Vec<FactionView>,
+    /// Campaign goals the players know of.
+    pub goals: Vec<GoalView>,
+}
+
+/// A known faction: what it is and where the party stands — never how
+/// to deal with it (`diplomacy`, the GM's), its art prompt or the GM's
+/// notes.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FactionView {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub affinity: i32,
+    pub min: i32,
+    pub max: i32,
+    /// Its rivals the players know of, by name.
+    pub rivals: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GoalView {
+    pub title: String,
+    pub description: String,
+    pub done: bool,
+    /// The faction holding it, once the players know that faction.
+    pub held_by: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -130,6 +162,7 @@ fn npc_view(campaign: &Campaign, id: &str) -> Option<NpcView> {
 #[must_use]
 pub fn project_for_players(campaign: &Campaign, world: &WorldState) -> PlayerCampaignView {
     let met = |id: &str| world.revealed.contains(id);
+    let knows_faction = |id: &str| world.known_factions.contains(id);
 
     let scene = world
         .current_node
@@ -212,6 +245,45 @@ pub fn project_for_players(campaign: &Campaign, world: &WorldState) -> PlayerCam
             .iter()
             .filter(|n| met(&n.id))
             .filter_map(|n| npc_view(campaign, &n.id))
+            .collect(),
+        factions: campaign
+            .factions
+            .iter()
+            .filter(|f| knows_faction(&f.id))
+            .map(|f| FactionView {
+                id: f.id.clone(),
+                name: f.name.clone(),
+                description: f.description.clone(),
+                affinity: world
+                    .affinity_of(campaign, &f.id)
+                    .unwrap_or(f.affinity.start),
+                min: f.affinity.min,
+                max: f.affinity.max,
+                rivals: f
+                    .rivals
+                    .iter()
+                    .filter(|r| knows_faction(r))
+                    .filter_map(|r| campaign.faction(r).map(|x| x.name.clone()))
+                    .collect(),
+            })
+            .collect(),
+        goals: campaign
+            .goals
+            .iter()
+            .filter_map(|g| {
+                let status = world.goals.get(&g.id)?;
+                Some(GoalView {
+                    title: g.title.clone(),
+                    description: g.description.clone(),
+                    done: *status == GoalStatus::Done,
+                    held_by: g
+                        .held_by
+                        .as_deref()
+                        .filter(|h| knows_faction(h))
+                        .and_then(|h| campaign.faction(h))
+                        .map(|f| f.name.clone()),
+                })
+            })
             .collect(),
     }
 }
