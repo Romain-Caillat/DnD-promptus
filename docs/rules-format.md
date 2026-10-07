@@ -63,6 +63,7 @@ model forced where the source was ambiguous.
 | `conditions`, `classes`, `items`, `adversary_tiers`, `adversaries` | Below |
 | `peoples` | Playable peoples (empty in both drafts) |
 | `house_rules` | Optional: `{ id, name, text }` — the GM's own rulings, in French, shown on the players' rules page and given to the co-GM |
+| `ship_combat` | Optional: ships fighting ships (below) |
 
 ## Formulas
 
@@ -337,8 +338,33 @@ and every variant's comparison, in French; `--world`, `--n`, `--seed`,
 `--json`, `--markdown [file]` (default `docs/rapport-phase-1.md`). It
 exits non-zero only when a file, a scenario or a variant does not load.
 
+## Ship combat
+
+`ship_combat` (`shared/src/ships`, from the Brasier's
+`Combat_Vaisseau.md`) makes a ship a character the crew shares:
+
+| Key | What it is |
+| --- | --- |
+| `ranges` | `{ short, medium, long }`: the last cell of each band (Chebyshev distance); past `long`, out of range |
+| `boarding_range` | Cells within which a ship can be boarded (default 2) |
+| `energy` | `reactor` points a turn; `damaged: [{ hull_at_most, reactor }]`; `reactor_hit` (lost while the `reactor` station is out); `start: { navigation, weapons, shields }`; and one list per channel, entry *n* for *n* points: `{ movement, engines_dead, evade, damage, no_charged, recharge, offline, damage_taken }`, every field optional |
+| `stations` | `{ id, name, ability, reactor?, helm? }` — the helm's DEX gives the ship's initiative |
+| `actions` | `{ id, name, station, cost (1), attack (false), difficulty?, effect }`; `effect` is one of `maneuver: { cells, turns }`, `evade: { armor }`, `brace: { reduction }`, `fire: { charged }`, `recharge_shields`, `reroute`, `repair_hull: { amount }`, `repair_system`, `extinguish`, `patch_breach`, `lock: { bonus }`, `jam: { malus }`, `break_morale: { amount }`, `move` (change station). A shot is an attack; breaking morale may be one |
+| `damage_table` | `{ die, hull_thresholds, results: [{ faces, name, kind: fire \| breach \| system_down \| shake, hull_per_turn }] }` — every face has one result |
+| `ships` | `{ id, name, hull, shields, armor, morale?, resolve (12), speed (3), attack_bonus, initiative_bonus, crewed, weapons: [{ id, name, station?, arcs: [front, port, starboard, rear], range: short \| medium \| long, damage, charged_damage? }], notes }` |
+
+A crew member has two actions and one attack a turn, acts from the
+station they hold, and the whole crew plays its turn together; a turn
+with a refused order changes nothing. A hit (d20 + the station's
+ability, + a lock, − jamming, against armour + evasion; a natural 20
+always hits and rolls on the damage table of a crewed ship, a natural 1
+misses) goes to the shields, then the hull; crossing a hull threshold
+rolls on the damage table. Morale at 0 breaks a ship off: the second
+way to win. Ship fights are rehearsed from `content/ship-scenarios/
+<world>/<id>.yaml` (`ships::simulate`).
+
 ## Not yet in the format
 
-Vehicles (`engine/support-vehicle-combat`) and death saves played out
-(`engine/save-against-death`). Ship combat's action economy is already
-expressible as a turn context.
+Boarding as a switch to the ground fight, and the ship actions the GM
+still rules by hand (risky manoeuvre's flank attack, scanning,
+bluffing, rallying, cutting comms, EVA, overcharging).

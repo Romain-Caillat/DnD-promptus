@@ -1,0 +1,24 @@
+# Le Brasier — le Cure-Dent contre une corvette pirate : la seconde voie
+# de victoire, briser son Moral (Combat_Vaisseau.md §11).
+id: corvette-pirate
+name: La corvette pirate
+description: >-
+  Une corvette pirate barre la route du Cure-Dent ; on peut la couler ou
+  la faire décrocher.
+source: dnd-save/DnD_07-06-2026/Combat_Vaisseau.md (§9, §11)
+rules: brasier
+version: 1
+party:
+  ship: cure_dent
+  key: cure_dent
+  at: [0, 0]
+  facing: north
+  crew:
+    - { id: pilote, class: pilote, station: barre }
+    - { id: canonnier, class: canonnier, station: piece_lourde }
+    - { id: mecano, class: mecano, station: ingenieur }
+    - { id: xenologue, class: xenologue, station: capteurs }
+    - { id: toubib, class: toubib, station: integrite }
+    - { id: quartier_maitre, class: quartier_maitre, station: liaison }
+opposition:
+  - { ship: corvette_pirate, key: corvette, at: [1, -9], facing: south }

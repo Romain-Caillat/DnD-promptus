@@ -641,7 +641,7 @@ les Vorr réels viendront de `campaign/rewrite-two-worlds`.
 
 **Origine** — V1 `combat.ts`, `grid.ts`
 
-### `engine/level-up` · todo
+### `engine/level-up` · doing — reste le passage de Borin au niveau 4 sur un vrai téléphone
 
 **Périmètre** — Niveaux par expérience ; points de vie au dé de vie ou à
 la moyenne, au choix du joueur ; nouvelles cartes de classe.
@@ -651,7 +651,16 @@ nouvelle carte, comme sur la planche.
 
 **Origine** — Planche « Entre deux » (moments 1 et 2)
 
-### `engine/save-against-death` · todo
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). Un système peut dire ce qu'un niveau ajoute aux PV
+(`progression.hit_points_per_level`, `hit_dice` par classe) ; le joueur
+prend chaque niveau atteint une fois, au dé lancé par le serveur ou à la
+moyenne (un niveau pas encore pris compte la moyenne), et dépense ses
+points d'amélioration depuis son téléphone. Les deux choix sont dans
+l'historique du MJ ; le panneau de montée de niveau montre les cartes
+débloquées. Tests : `shared/tests/level_up.rs`, `LevelUpPanel.test`.
+
+### `engine/save-against-death` · doing — reste une vraie mort confirmée à une soirée
 
 **Pourquoi** — Une mort de personnage ne doit jamais être un accident
 de calcul ; le MJ confirme.
@@ -666,6 +675,17 @@ par le moteur et confirmée par le MJ.
 dans les tests du moteur, la confirmation du MJ comprise.
 
 **Origine** — Planche « Mourir »
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). Sous une règle `zero_hp` à jets contre la mort, un
+personnage à 0 PV lance le dé de test à chacun de ses tours : 1 naturel
+= deux échecs, 20 naturel = retour à 1 PV, un coup reçu = un échec (deux
+sur critique), un soin efface les cases. Trois réussites stabilisent ;
+trois échecs proposent la mort, que personne ne voit avant que le MJ la
+confirme ou décide autre chose ; un combat gagné stabilise les mourants.
+La règle « hors combat » du premier brouillon des Corsaires reste
+inchangée. Les moments de la planche « Mourir » se rejouent dans
+`shared/tests/death_saves.rs`.
 
 ### `engine/formalise-house-rules` · todo · à spécifier
 
@@ -745,7 +765,7 @@ le combat de vaisseau attend `engine/support-vehicle-combat`.
 
 **Origine** — Planche « Règles » (moment 7) · `MEMORY.md` §6
 
-### `engine/support-vehicle-combat` · todo
+### `engine/support-vehicle-combat` · doing — reste les écrans, l'abordage et un vrai combat à six
 
 **Pourquoi** — Les deux mondes se battent en vaisseau : le brick des
 Corsaires contre le Greyhound à l'acte 2, le Cure-Dent dans le Brasier.
@@ -770,6 +790,30 @@ quitter l'écran.
 
 **Origine** — `dnd-save/DnD_07-06-2026/Combat_Vaisseau.md`,
 `Fiche_Cure-Dent.md` · Corsaires acte 2 · Romain, 4 octobre 2026
+
+**État** — Moteur livré et vérifié (`cargo test`, clippy) ; rien encore
+à l'écran. Le système de règles porte une section `ship_combat`
+(`docs/rules-format.md`) : portées, réacteur et ses trois canaux avec
+leurs effets par point, postes, actions de poste, table d'avaries,
+fiches de vaisseaux. Le Brasier la remplit depuis `Combat_Vaisseau.md`
+et `Fiche_Cure-Dent.md` (Cure-Dent, chasseur vorr, corvette pirate,
+carapace sereth ; les INTERPRÉTATIONS et valeurs INVENTÉES sont marquées
+dans le fichier). Le moteur (`shared/src/ships`) joue proue et arcs,
+angle mort, portées, deux actions et une attaque par membre d'équipage à
+son poste, verrouillage et brouillage, boucliers puis coque, seuils et
+critiques qui tirent une avarie (incendie qui brûle, brèche, poste hors
+service, secousse), réacteur qui faiblit avec la coque, moral brisé
+comme seconde victoire, escouade à initiative partagée ; un tour refusé
+ne change rien. Simulé (`shared/tests/ship_fights.rs`, scénarios
+`content/ship-scenarios/brasier/`) : contre cinq chasseurs vorr, le
+Cure-Dent gagne 99 fois sur 100 en 8 rounds, environ 22 minutes ; contre
+la corvette, il la coule ou la fait décrocher, environ 12 minutes.
+Reste : les écrans joueur, MJ et TV et le temps réel ; l'abordage qui
+bascule sur la carte du pont ; les actions encore tranchées à la main
+(prise à revers, scanner, bluffer, rallier, couper les comms, EVA,
+surcharge) ; le vent et la gravité comme terrain ; les fiches du brick
+et du Greyhound, que les règles des Corsaires n'ont pas encore (à écrire
+avec Romain).
 
 ---
 
@@ -1450,7 +1494,7 @@ l'histoire s'affiche en trois réponses plus un paragraphe (une histoire
 en texte simple est lue comme le paragraphe). **Reste** : jouer les
 moments 3 à 6 avec de vrais joueurs sur téléphone.
 
-### `session/schedule-sessions` · todo
+### `session/schedule-sessions` · doing — reste le rappel reçu sur le téléphone de Marc
 
 **Périmètre** — Les joueurs donnent leurs disponibilités, le MJ choisit
 la date ; rappel avant la session ; le salon ouvre à l'heure dite.
@@ -1459,6 +1503,13 @@ la date ; rappel avant la session ; le salon ouvre à l'heure dite.
 au salon d'un toucher.
 
 **Origine** — Planches « Inviter » (moment 7) et « Entre deux » (moment 6)
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). Le MJ propose jusqu'à six horaires, les joueurs cochent
+les leurs, le MJ en fixe un ; le salon s'ouvre seul avant l'heure (tâche
+de fond toutes les 30 s). Le rappel est un fichier `.ics`
+(`next-session.ics`) dont l'alarme ramène à la table : pas de
+notification poussée.
 
 ### `session/open-lobby` · doing — reste la soirée du jalon jouée pour de vrai
 
@@ -1530,7 +1581,7 @@ précédente s'est arrêtée.
 
 **Origine** — Planche « Mener » (fin) · V1 `continuity/`
 
-### `session/write-recaps` · todo
+### `session/write-recaps` · doing — reste un « Précédemment… » lu par Marc le lendemain d'une vraie soirée
 
 **Périmètre** — Le co-MJ rédige le récapitulatif MJ, le « Précédemment… »
 des joueurs et l'entrée de chronique ; le MJ relit et publie.
@@ -1540,7 +1591,18 @@ portés ; Marc lit le « Précédemment… » le lendemain.
 
 **Origine** — V1 `continuity/recap.ts` · planches « Mener » et « Entre deux »
 
-### `session/pair-shared-screen` · todo
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). La fin de séance mesure ce qui a changé depuis son
+début (scènes, indices, révélations, fronts, adversaires tombés, groupe,
+promesses ouvertes) et rédige des brouillons factuels : récap MJ,
+« Précédemment… », titre et deux lignes de chronique ; le co-MJ peut les
+réécrire (prompt `recap` v2, appel compté). Le MJ relit et publie ; les
+joueurs ne voient rien avant. Tests : `shared/tests/recap.rs`,
+`between_test.rs`. Les tests V1 `recap.test.ts`/`continuity.test.ts`
+sont portés dans l'intention (faits mesurés, rien d'inventé), pas cas
+pour cas.
+
+### `session/pair-shared-screen` · doing — reste l'appairage d'une vraie TV en moins de 30 secondes
 
 **Périmètre** — La TV ouvre une page qui affiche un code et un QR ; le
 MJ tape le code et la TV rejoint la session avec la projection « tous
@@ -1551,6 +1613,15 @@ Le MJ choisit ce que la TV peut montrer.
 rien de ce que la projection joueur refuse.
 
 **Origine** — Planche « Lancer » (moments 1 à 3)
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). La TV ouvre `/tv`, montre un code de quatre caractères
+et un QR ; le MJ tape le code (ou scanne) et la TV reçoit une place de
+spectateur marquée « écran » : elle n'a jamais que la projection joueur.
+Le MJ peut aussi ouvrir une fenêtre à partager sur Discord, appairée
+d'emblée, et lister ou oublier ses écrans. Ce que la TV peut montrer se
+lit dans le panneau de lancement ; il n'y a pas encore de réglage par
+écran. Tests : `tv_test.rs`, `TvPairPage.test`.
 
 ---
 
@@ -1622,13 +1693,25 @@ phase 3 : un vrai jet en séance affiché par `RollDetail`
 (`ui/roll-faceted-dice`, `player/fight-turn`) — c'est là que le « fini
 quand » se vérifiera.
 
-### `player/buy-and-trade` · todo
+### `player/buy-and-trade` · doing — reste un vrai achat au marché noir de Kerjean
 
 **Périmètre** — L'or ; une boutique ouverte par le MJ (prix, stock,
 objet « sous le comptoir » révélé par un jet ou une discussion) ;
 marchander par un jet ; partager le butin.
 
 **Origine** — Marché noir de Kerjean, Corsaires acte 1
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). Le MJ prépare des boutiques (objets des règles ou
+objets nommés, prix, stock, lignes « sous le comptoir », marchandage
+optionnel : caractéristique, difficulté, remise) et en ouvre une à la
+fois. Les joueurs voient le comptoir par la projection boutique, jamais
+une ligne cachée ; ils achètent à leur prix, marchandent une fois par
+ligne (le serveur lance) et donnent des pièces ou un objet à un autre
+personnage en jeu. Chaque achat, marchandage et don est une ligne du
+journal partagé. Pas encore fait : créer une boutique depuis les `sells`
+d'un PNJ ; l'achat n'est pas limité à une séance en cours. Tests :
+`shop_test.rs`, `ShopPanel.test`, `SharePanel.test`, `ShopsPanel.test`.
 
 ### `player/explore-map` · doing — reste la soirée du jalon jouée pour de vrai
 
@@ -1691,7 +1774,7 @@ débloquée, niveau.
 
 **Origine** — Planches « Notifications » et « Objets et butin »
 
-### `player/play-between-sessions` · todo
+### `player/play-between-sessions` · doing — reste les six moments joués sur un vrai téléphone
 
 **Périmètre** — Monter de niveau à la fin de la soirée, lire le récap
 et la chronique, consulter sa fiche hors session, donner ses dates.
@@ -1701,13 +1784,30 @@ faisables dans l'app.
 
 **Origine** — Planche « Entre deux »
 
-### `player/face-death` · todo
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). L'onglet Jeu entre deux séances montre les gains, le
+« Précédemment… » publié avec ce qui est su et encore ouvert, la
+chronique et la prochaine date ; on y monte de niveau, on y donne ses
+dates, on y consulte sa fiche. Tests : `BetweenPanel.test`,
+`between_test.rs`.
+
+### `player/face-death` · doing — reste une vraie mort à une soirée
 
 **Périmètre** — Jets contre la mort sur le téléphone, derniers mots,
 puis la suite : regarder, créer un nouveau personnage, ou attendre une
 accroche du MJ.
 
 **Origine** — Planche « Mourir »
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). Le joueur lance ses jets contre la mort sur son
+téléphone et voit les cases de tous ; le MJ lance pour un absent et
+confirme ou épargne. Une mort confirmée garde le personnage (marqué
+mort, avec la soirée où il est tombé) ; le joueur dit ses derniers mots
+une fois, lus dans le journal partagé, puis regarde ou crée un nouveau
+personnage qui entre au plus bas niveau du groupe. Pas encore fait :
+léguer ses objets à un autre personnage, et l'accroche du MJ pour
+revenir. Tests : `death_test.rs`, `FallenPanel.test`.
 
 ### `player/play-on-desktop` · todo
 
@@ -1798,12 +1898,19 @@ point d'amélioration reste à `player/play-between-sessions` ; l'écran
 MJ en direct complet est `gm/run-live-screen`. Jamais essayé à une
 vraie table.
 
-### `gm/launch-session` · todo
+### `gm/launch-session` · doing — reste un vrai lancement de soirée
 
 **Périmètre** — Le lancement : salon, TV, « Précédemment… » lu ligne à
 ligne, première scène.
 
 **Origine** — Planche « Lancer » (moments 4 et 5)
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). Le panneau de lancement appaire les écrans, rappelle ce
+qui manque avant de commencer et fait lire le « Précédemment… » ligne à
+ligne : la TV suit la ligne du MJ (salon ou partie en cours). La
+première scène se montre ensuite depuis l'écran de soirée. Tests :
+`tv_test.rs`, `LaunchPanel.test`.
 
 ### `gm/run-on-tablet` · todo
 
@@ -1892,7 +1999,7 @@ proposition à valider.
 
 ## Épic `tv`
 
-### `tv/show-evening` · todo
+### `tv/show-evening` · doing — reste une soirée à six suivie sur une TV
 
 **Périmètre** — L'écran partagé : un point focal à la fois (histoire, dé,
 carte ou butin), lisible d'un canapé ; fil d'une ligne en bas ; grands
@@ -1902,6 +2009,13 @@ moments (dés, coups, butin, niveaux, révélations) ; rien de secret.
 planche, sans action du MJ autre que l'appairage.
 
 **Origine** — Planches « Écran TV » et « TV · la soirée côté TV »
+
+**État** — Livré et vérifié (`cargo test`, clippy, `bun run lint`,
+`bun run test`). La page TV suit la soirée par priorité : la lecture du
+« Précédemment… » ligne à ligne, le combat sur la carte, la scène et son
+image, le salon ; en bas, la dernière ligne partagée du journal ; la
+musique. Les grands moments (dés, butin, niveaux) passent par cette
+ligne, sans animation dédiée pour l'instant. Tests : `TvShowPage.test`.
 
 ---
 

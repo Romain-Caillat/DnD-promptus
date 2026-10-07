@@ -68,6 +68,10 @@ pub struct RuleSystem {
     /// `engine/formalise-house-rules` turns one into data.
     #[serde(default)]
     pub house_rules: Vec<HouseRule>,
+    /// Ships fighting ships (`engine/support-vehicle-combat`):
+    /// stations, energy, arcs, damage table and ship sheets.
+    #[serde(default)]
+    pub ship_combat: Option<crate::ships::ShipCombat>,
 }
 
 /// A house rule as the GM wrote it.
