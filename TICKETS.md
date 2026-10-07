@@ -745,7 +745,7 @@ le combat de vaisseau attend `engine/support-vehicle-combat`.
 
 **Origine** — Planche « Règles » (moment 7) · `MEMORY.md` §6
 
-### `engine/support-vehicle-combat` · todo
+### `engine/support-vehicle-combat` · doing — reste l'essai réel à six (Greyhound et essaim Vorr), la TV (`tv/show-evening`)
 
 **Pourquoi** — Les deux mondes se battent en vaisseau : le brick des
 Corsaires contre le Greyhound à l'acte 2, le Cure-Dent dans le Brasier.
@@ -770,6 +770,49 @@ quitter l'écran.
 
 **Origine** — `dnd-save/DnD_07-06-2026/Combat_Vaisseau.md`,
 `Fiche_Cure-Dent.md` · Corsaires acte 2 · Romain, 4 octobre 2026
+
+**Hypothèses posées (à corriger par Romain)** — L'abordage se tranche
+sur le combat du pont : les assaillants l'emportent si leur camp gagne ce
+combat ; un combat du pont arrêté par le MJ sans vainqueur les
+repousse, et la bataille reprend. Le butin d'une scène de vaisseau se
+distribue par le combat du pont (abordage) ; un navire qui amène son
+pavillon sans abordage ne donne rien d'automatique, le MJ le donne à la
+main. Le MJ peut faire agir n'importe quel membre d'équipage (LUMEN, ou
+un joueur absent), sauf manœuvrer ou répartir l'énergie à sa place : il
+le rassoit à un autre poste.
+
+**État** — Construit de bout en bout :
+- **Moteur** (`shared`) : un seul système de vaisseau, en données dans le
+  bloc `vehicles:` des règles — coque, boucliers ou voilure, énergie ou
+  équipage à répartir, postes, armes avec arc et portée, proue et angle
+  mort, vent ou attraction, avaries au d6, moral, abordage. Le Cure-Dent
+  (transcrit de `Combat_Vaisseau.md`) et le brick des Corsaires
+  (inventé dans le même moule, à valider). L'interception du Greyhound
+  et l'essaim Vorr sont écrits en scénarios et simulés avec des
+  tactiques de référence ; les deux scènes existent dans les campagnes
+  (le départ de l'acte 1 mène maintenant à l'interception).
+- **Serveur** : le MJ ouvre le combat d'une scène ; les personnages
+  validés forment l'équipage, assis par classe ; chaque joueur agit à
+  son poste sur son écran, le serveur tranche tout sous le verrou de la
+  campagne. Le tour ennemi se joue à la main ou se propose par le co-MJ
+  sur une copie, validée telle quelle (refusée si le combat a bougé).
+  L'abordage met le combat en pause et ouvre le combat du pont de la
+  scène ; sa fin fait reprendre la bataille. À la fin, l'XP des jets de
+  l'équipage est versée et l'issue de la scène va au journal du MJ.
+- **Joueur (téléphone)** : l'onglet Carte devient le combat de vaisseau
+  — à qui le tour, chaque vaisseau avec ce que l'équipage en sait (un
+  ennemi reste inconnu tant qu'on ne l'a pas scanné), mon poste et ses
+  actions, chacune visant ce que le serveur accepte (cible dans l'arc,
+  case d'arrivée et proue, répartition de l'énergie, avarie), changer de
+  poste, l'équipage, le journal ; pendant l'abordage, le combat du pont.
+- **MJ** : un panneau « Combat de vaisseau » à côté de la carte — lancer,
+  toutes les jauges, ajuster ou retirer un navire, asseoir l'équipage,
+  faire agir LUMEN, manœuvrer (tap sur la carte) et tirer pour l'ennemi
+  ou valider la proposition du co-MJ, aborder, arrêter.
+
+Reste : jouer les deux combats à six pour de vrai et les chronométrer
+(moins de 45 minutes chacun), et l'affichage TV, qui vient avec
+`tv/show-evening`.
 
 ---
 
