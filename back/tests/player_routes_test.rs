@@ -71,6 +71,7 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
     .await
     .unwrap();
     mark_review(pool, Uuid::parse_str(&campaign).unwrap(), character).await;
+    fallen(pool, Uuid::parse_str(&campaign).unwrap(), marc_id).await;
     let spectator = join(app, &code, "Léa", "spectator").await;
     evening(pool, Uuid::parse_str(&campaign).unwrap()).await;
     board(pool, Uuid::parse_str(&campaign).unwrap(), character).await;
@@ -87,6 +88,32 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
         asset: asset.to_string(),
         date: date.to_string(),
     }
+}
+
+/// Marc's first character, dead before Borin: what the GM noted on it
+/// is marked. Marc has not said its last words nor chosen what next.
+async fn fallen(pool: &PgPool, campaign: Uuid, marc: Uuid) {
+    let dead: Uuid = sqlx::query_scalar(
+        "INSERT INTO characters (campaign_id, player_id, sheet, status, gm_note)
+         VALUES ($1, $2, '{\"name\": \"Gwenaël\", \"classId\": \"bretteur\"}', 'fallen', $3)
+         RETURNING id",
+    )
+    .bind(campaign)
+    .bind(marc)
+    .bind(m("characters.gm_note (fallen)"))
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO character_deaths (character_id, campaign_id, player_id, cause, level, node)
+         VALUES ($1, $2, $3, 'gm', 2, 'n_crique')",
+    )
+    .bind(dead)
+    .bind(campaign)
+    .bind(marc)
+    .execute(pool)
+    .await
+    .unwrap();
 }
 
 /// The next session: a date fixed, another proposed, the table's Discord
@@ -286,6 +313,7 @@ async fn marc_request(pool: &PgPool, campaign: &str, path: &str) -> Uuid {
          FROM game_sessions s JOIN players p ON p.campaign_id = s.campaign_id
               JOIN characters c ON c.player_id = p.id
          WHERE s.campaign_id = $1 AND s.status = 'live' AND p.nickname = 'Marc'
+               AND c.status <> 'fallen'
          RETURNING id",
     )
     .bind(Uuid::parse_str(campaign).unwrap())
@@ -298,6 +326,10 @@ async fn marc_request(pool: &PgPool, campaign: &str, path: &str) -> Uuid {
 /// The evening routes a spectator has no part in: they ask nothing,
 /// roll nothing and answer no feedback.
 fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
+    // Only Marc has a dead character (`fallen`).
+    if method == "POST" && path.ends_with("/fate/words") {
+        return Some((StatusCode::NOT_FOUND, "NO_DEATH"));
+    }
     if method == "PUT" && path.ends_with("/schedule/{date}") {
         return Some((StatusCode::FORBIDDEN, "SPECTATOR"));
     }
@@ -323,8 +355,6 @@ fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> 
 /// battle; their leaks are swept in `board_test.rs` and `battle_test.rs`.
 fn refused_to_marc(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
     match method {
-        // Borin is alive: there is no « after » yet (`fate_test.rs`).
-        "POST" if path.ends_with("/fate/next") => Some((StatusCode::NOT_FOUND, "NO_DEATH")),
         "POST" if path.ends_with("/fight") => Some((StatusCode::CONFLICT, "NO_FIGHT")),
         "POST" if path.ends_with("/battle") => Some((StatusCode::CONFLICT, "NO_BATTLE")),
         // Borin sits alone: nobody to give to. Giving is swept in
@@ -344,9 +374,6 @@ fn refused_to_marc(method: &str, path: &str) -> Option<(StatusCode, &'static str
 /// A route the sweep's table cannot make succeed for anyone: the quay
 /// shown has no imported image behind it (`maps_test.rs` serves one).
 fn refused_to_all(method: &str, path: &str) -> Option<(StatusCode, &'static str)> {
-    if method == "POST" && path.ends_with("/fate/words") {
-        return Some((StatusCode::NOT_FOUND, "NO_DEATH"));
-    }
     (method == "GET" && path.ends_with("/board/backdrop"))
         .then_some((StatusCode::NOT_FOUND, "NO_SUCH_MAP"))
 }
@@ -447,7 +474,8 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
             if path.ends_with("/equip") && who == "Marc" {
                 sqlx::query(
                     "UPDATE characters SET status = 'validated'
-                     WHERE player_id = (SELECT id FROM players WHERE nickname = 'Marc'
+                     WHERE status <> 'fallen'
+                       AND player_id = (SELECT id FROM players WHERE nickname = 'Marc'
                                         AND campaign_id = $1)",
                 )
                 .bind(Uuid::parse_str(&t.campaign).unwrap())
@@ -551,6 +579,10 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
     // Validated for the equip route: in play, his bag reaches him, the
     // GM's note on an item and the history of adjustments do not.
     assert_eq!(r.body["data"]["character"]["status"], "validated");
+    // His dead Gwenaël comes back with the words the sweep sent, never
+    // with what the GM noted on it.
+    assert_eq!(r.body["data"]["fallen"]["name"], "Gwenaël", "{}", r.body);
+    assert_eq!(r.body["data"]["fallen"]["lastWords"], "Adieu.");
     assert_clean("Marc's character in play", &r.body);
     let play = &r.body["data"]["character"]["play"];
     assert_eq!(
@@ -616,6 +648,31 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
             "{method} {uri} showed Marc's sheet on the TV"
         );
     }
+    // The TV sees the approved tileset only; the pending image and the
+    // unmet NPC's do not leave, even by id.
+    let r = common::call_as_screen(&app, Some(&screen), "GET", "/api/tv/media", None).await;
+    let assets = r.body["data"]["assets"].as_array().unwrap();
+    assert_eq!(assets.len(), 1, "{}", r.body);
+    let hidden: Vec<Uuid> =
+        sqlx::query_scalar("SELECT id FROM media_assets WHERE campaign_id = $1 AND id <> $2")
+            .bind(Uuid::parse_str(&t.campaign).unwrap())
+            .bind(Uuid::parse_str(&t.asset).unwrap())
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+    assert_eq!(hidden.len(), 2);
+    for id in hidden {
+        let r = common::call_as_screen(
+            &app,
+            Some(&screen),
+            "GET",
+            &format!("/api/tv/media/{id}/image"),
+            None,
+        )
+        .await;
+        assert_eq!(r.status, StatusCode::NOT_FOUND, "{id}");
+    }
+
     // What the TV is for is there: Borin in the party, the crique, the
     // quay as a spectator sees it.
     let r = common::call_as_screen(&app, Some(&screen), "GET", "/api/tv/show", None).await;
