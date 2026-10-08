@@ -198,6 +198,21 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   passages and lights are objects on the grid, on layers the GM
   reveals; walls are traced on top (or proposed by the AI, then
   validated by the GM).
+- **Thème clair : mêmes jetons, valeurs claires (ui/offer-light-theme,
+  octobre 2026).** La table noire reste le défaut ; chaque appareil peut
+  choisir « Clair » ou « Comme l'appareil ». Le thème clair redéfinit les
+  variables de `tokens.css` sous `:root[data-theme="light"]` — jamais de
+  classe ni de couleur propre à un thème dans un composant. Une couleur
+  d'interface s'écrit donc en jeton ; une ombre aussi, car Tailwind copie
+  la valeur d'une ombre dans son utilitaire et seule une couleur en
+  variable suit le thème. Les couleurs de stats y sont foncées d'un cran
+  (≥ 4,5:1 sur toutes les surfaces claires), et le texte posé sur un
+  aplat de stat utilise `--color-on-stat`. Restent noirs dans les deux
+  thèmes, comme des pièces de jeu : carte noire, dos de carte, cases
+  d'objet, badge d'état néfaste, toast de mauvaise nouvelle, bouton
+  d'arcade sombre, écran TV — ce sont des « îlots noirs » qui
+  redéclarent les valeurs sombres (liste dans `tokens.css`). Le pixel
+  art et l'intérieur des cartes ne changent pas.
 - **Themes are packs.** A theme (fantasy, zombies, space…) swaps
   tilesets, sprite parts, item art and the names of the six stats; the
   UI system, the grid and the rules engine stay the same.
