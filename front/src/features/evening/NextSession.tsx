@@ -50,7 +50,7 @@ export function NextSession({ campaignId, refreshKey }: { campaignId: string; re
           <span className="type-label text-ink-soft">
             {soon ? t('evening.schedule.soon') : t('evening.schedule.next', { number: schedule.number })}
           </span>
-          <b className="type-title text-[20px] first-letter:uppercase">{dayAndTime(next.startsAt)}</b>
+          <b className="type-title text-[16px] first-letter:uppercase">{dayAndTime(next.startsAt)}</b>
           <span className="text-caption">{t('evening.schedule.lobbyAt', { time: clock(next.lobbyOpensAt) })}</span>
           <a
             className="self-start text-caption font-bold underline underline-offset-4"
@@ -68,7 +68,7 @@ export function NextSession({ campaignId, refreshKey }: { campaignId: string; re
             number: next ? schedule.number + 1 : schedule.number,
           })}
         >
-          <h2 className="type-title text-[20px]">
+          <h2 className="type-title text-[16px]">
             {t(schedule.canAnswer ? 'evening.schedule.ask' : 'evening.schedule.askSpectator', {
               number: next ? schedule.number + 1 : schedule.number,
             })}
@@ -93,8 +93,7 @@ export function NextSession({ campaignId, refreshKey }: { campaignId: string; re
                         type="button"
                         aria-pressed={d.mine === yes}
                         className={cn(
-                          'rounded-button py-2.5 text-body font-bold',
-                          d.mine === yes ? 'bg-ivory text-ink shadow-ivory-flat' : 'border border-line text-chalk',
+                          'pixel-choice py-2.5 pr-3 pb-3 text-label type-key',
                         )}
                         onClick={async () => {
                           setError(null)

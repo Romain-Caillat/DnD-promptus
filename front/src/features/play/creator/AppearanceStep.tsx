@@ -90,6 +90,7 @@ export function AppearanceStep({
               key={f}
               type="button"
               aria-pressed={facing === f}
+              className="pixel-choice pr-2 pb-1 [--cursor-room:8px] before:hidden"
               aria-label={t(`creator.look.facing.${f}`)}
               title={t(`creator.look.facing.${f}`)}
               onClick={() => setFacing(f)}
@@ -100,6 +101,7 @@ export function AppearanceStep({
           <button
             type="button"
             aria-pressed={motion === 'marche'}
+            className="pixel-choice pr-2 pb-1 [--cursor-room:8px] before:hidden"
             onClick={() => setMotion(motion === 'marche' ? 'repos' : 'marche')}
           >
             {t('creator.look.walk')}
@@ -108,7 +110,14 @@ export function AppearanceStep({
       </div>
       <div className="cr-tabs" role="tablist">
         {APPEARANCE_TABS.map((k) => (
-          <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => onTab(k)}>
+          <button
+            key={k}
+            type="button"
+            role="tab"
+            aria-selected={tab === k}
+            className="pixel-tab min-h-9 pb-1"
+            onClick={() => onTab(k)}
+          >
             {t(`creator.look.tabs.${k}`)}
           </button>
         ))}
@@ -183,7 +192,7 @@ export function AppearanceStep({
                   <button
                     key={p.id}
                     type="button"
-                    className="cr-chip"
+                    className="cr-chip pixel-choice"
                     aria-pressed={accessories.some((a) => a.piece === p.id)}
                     onClick={() => toggleAccessory(p.id)}
                   >
@@ -232,7 +241,7 @@ export function AppearanceStep({
           <label className="flex flex-col gap-1.5">
             <span className="type-label">{t('creator.look.name')}</span>
             <input
-              className="cr-field"
+              className="cr-field pixel-field"
               value={name}
               maxLength={60}
               autoComplete="off"
@@ -270,7 +279,7 @@ function Pieces({
       <span className="type-label">{label}</span>
       <div className="cr-chips">
         {none && (
-          <button type="button" className="cr-chip" aria-pressed={selected === undefined} onClick={() => onPick(undefined)}>
+          <button type="button" className="cr-chip pixel-choice" aria-pressed={selected === undefined} onClick={() => onPick(undefined)}>
             {none}
           </button>
         )}
@@ -278,7 +287,7 @@ function Pieces({
           <button
             key={p.id}
             type="button"
-            className="cr-chip"
+            className="cr-chip pixel-choice"
             aria-pressed={selected === p.id}
             onClick={() => onPick(p.id)}
           >

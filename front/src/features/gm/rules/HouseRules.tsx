@@ -337,7 +337,7 @@ function FormalSummary({ formal, doc }: { formal: FormalRule; doc: RuleDocument 
     ],
   ]
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded-button border border-line bg-table p-2 text-caption">
+    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 pixel-well p-2 text-caption">
       {rows.map(([label, value]) => (
         <div key={label} className="contents">
           <dt className="type-label text-mute-soft">{label}</dt>

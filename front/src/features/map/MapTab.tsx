@@ -209,7 +209,7 @@ export function MapTab({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between">
-        <h2 className="type-title text-[20px]">{board.map.name}</h2>
+        <h2 className="type-title text-[16px]">{board.map.name}</h2>
         {board.map.ambience.weather && board.map.ambience.weather !== 'clear' && (
           <span className="type-label">{t(`map.weather.${board.map.ambience.weather}`)}</span>
         )}
@@ -268,8 +268,7 @@ export function MapTab({
                 aria-pressed={card === c.id}
                 title={c.description}
                 className={cn(
-                  'flex min-w-28 flex-col items-start gap-0.5 rounded-xl border px-3 py-2 text-left disabled:opacity-40',
-                  card === c.id ? 'border-ivory bg-ivory text-ink' : 'border-line bg-surface',
+                  'pixel-choice flex min-w-28 flex-none flex-col items-start gap-0.5 py-2 pr-3 pb-2.5 text-left',
                 )}
                 onClick={() => {
                   setCard(card === c.id ? null : c.id)
@@ -374,7 +373,7 @@ function DeathSaves({
       aria-label={t('fight.death.title')}
       className="flex flex-col gap-3 rounded-2xl border border-stat-atk bg-foe-deep p-4"
     >
-      <h3 className="type-title text-[20px]">{fight.deathSave ? t('fight.death.turn') : t('fight.death.title')}</h3>
+      <h3 className="type-title text-[16px]">{fight.deathSave ? t('fight.death.turn') : t('fight.death.title')}</h3>
       {!dying.stable && !waiting && <p className="text-body text-chalk-soft">{t('fight.death.lead')}</p>}
       <SaveCircles dying={dying} />
       {dying.stable && <p className="text-body text-chalk-soft">{t('fight.death.stable')}</p>}

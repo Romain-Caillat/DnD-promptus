@@ -171,7 +171,7 @@ export function ReviewPage() {
         <Link className="underline underline-offset-4" to={`/campagnes/${campaignId}`}>
           {t('prep.back')}
         </Link>
-        <h1 className="type-title text-[15px] text-chalk">{story.title}</h1>
+        <h1 className="type-title text-[16px] text-chalk">{story.title}</h1>
         <span className="rounded-md border border-line-strong px-2 py-0.5 text-[11px] font-semibold">
           {campaign.validatedAt ? t('prep.review.validated') : t('prep.review.notValidated')}
         </span>
@@ -182,8 +182,7 @@ export function ReviewPage() {
               type="button"
               aria-current={tab === id ? 'page' : undefined}
               className={cn(
-                'rounded-button px-2.5 py-1.5 text-caption font-semibold',
-                tab === id ? 'bg-ivory text-ink' : 'text-chalk hover:bg-surface',
+                'pixel-tab py-1.5 pb-2',
               )}
               onClick={() => setTab(id)}
             >
@@ -317,12 +316,11 @@ function Graph({
                   type="button"
                   aria-pressed={selected === n.id}
                   className={cn(
-                    'flex flex-col gap-0.5 rounded-xl p-2.5 text-left',
-                    selected === n.id ? 'bg-ivory text-ink shadow-ivory-flat' : 'border border-line bg-surface',
+                    'pixel-choice flex flex-col gap-0.5 py-2.5 pr-2.5 pb-3 text-left',
                   )}
                   onClick={() => onSelect(n.id)}
                 >
-                  <span className="text-[11px] font-semibold uppercase tracking-wide opacity-70">
+                  <span className="type-key text-label opacity-70">
                     {n.optional ? t('prep.review.optional') : t('prep.review.scene')}
                   </span>
                   <b className="text-body">{n.title}</b>
@@ -360,8 +358,7 @@ function Sheets({
                 type="button"
                 aria-pressed={selected === e.id}
                 className={cn(
-                  'rounded-button px-2.5 py-1.5 text-caption font-semibold',
-                  selected === e.id ? 'bg-ivory text-ink' : 'border border-line text-chalk',
+                  'pixel-choice py-1.5 pr-2.5 pb-2 text-caption font-semibold',
                 )}
                 onClick={() => onSelect(e.id)}
               >
@@ -445,7 +442,7 @@ function Validate({
       <ul className="grid grid-cols-2 gap-2 md:grid-cols-5">
         {counts.map(([key, n]) => (
           <li key={key} className="flex flex-col rounded-xl bg-surface p-2.5">
-            <b className="type-title text-[22px]">{n}</b>
+            <b className="type-title text-[24px]">{n}</b>
             <span className="text-caption text-mute-soft">{t(`prep.review.count.${key}`, { count: n })}</span>
           </li>
         ))}

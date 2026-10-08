@@ -103,7 +103,7 @@ export function MediaPage() {
   return (
     <main className="surface-table flex min-h-dvh flex-col gap-4 p-5 text-chalk">
       {back}
-      <h1 className="type-title text-[22px]">{t('prep.media.title')}</h1>
+      <h1 className="type-title text-[24px]">{t('prep.media.title')}</h1>
       {!plan.configured && <StatusBanner tone="warn">{t('prep.generate.errors.AI_NOT_CONFIGURED')}</StatusBanner>}
       {error && (
         <p role="alert" className="text-body text-stat-atk">
@@ -141,7 +141,7 @@ export function MediaPage() {
         if (entities.length === 0) return null
         return (
           <section key={kind} className="flex flex-col gap-2" aria-label={t(`gmLive.media.kinds.${kind}`)}>
-            <h2 className="type-title text-[17px]">{t(`gmLive.media.kinds.${kind}`)}</h2>
+            <h2 className="type-title text-[16px]">{t(`gmLive.media.kinds.${kind}`)}</h2>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {entities.map((e) => (
                 <SubjectCard

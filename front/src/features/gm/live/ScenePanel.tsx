@@ -52,7 +52,7 @@ export function ScenePanel({
         </Btn>
       }
     >
-      <h3 className="type-title text-[22px]">{node.title}</h3>
+      <h3 className="type-title text-[24px]">{node.title}</h3>
       {node.read_aloud && (
         <blockquote className="type-narration border-l-2 border-ivory pl-3 text-[18px] leading-snug">{node.read_aloud}</blockquote>
       )}

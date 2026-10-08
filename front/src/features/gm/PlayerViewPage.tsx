@@ -64,12 +64,12 @@ export function PlayerViewPage() {
       {state.kind === 'ready' && (
         <article className="flex flex-col gap-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{state.view.title}</h1>
+            <h1 className="type-title text-heading">{state.view.title}</h1>
             {state.view.world && <p className="text-sm text-muted-foreground">{state.view.world}</p>}
           </div>
           {state.view.playerHook && <p>{state.view.playerHook}</p>}
           <section aria-labelledby="pv-scene" className="flex flex-col gap-2">
-            <h2 id="pv-scene" className="text-lg font-semibold">
+            <h2 id="pv-scene" className="type-label text-chalk">
               {t('gm.playerView.scene')}
             </h2>
             {state.view.scene ? (
@@ -85,7 +85,7 @@ export function PlayerViewPage() {
             )}
           </section>
           <section aria-labelledby="pv-clues" className="flex flex-col gap-2">
-            <h2 id="pv-clues" className="text-lg font-semibold">
+            <h2 id="pv-clues" className="type-label text-chalk">
               {t('gm.playerView.clues')}
             </h2>
             {state.view.clues.length === 0 ? (
@@ -99,7 +99,7 @@ export function PlayerViewPage() {
             )}
           </section>
           <section aria-labelledby="pv-npcs" className="flex flex-col gap-2">
-            <h2 id="pv-npcs" className="text-lg font-semibold">
+            <h2 id="pv-npcs" className="type-label text-chalk">
               {t('gm.playerView.npcs')}
             </h2>
             {state.view.npcs.length === 0 ? (

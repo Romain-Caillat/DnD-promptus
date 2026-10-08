@@ -531,7 +531,7 @@ relit chaque écran dans les deux thèmes sur son écran.
 
 ---
 
-### `ui/adopt-pixel-menu` · todo
+### `ui/adopt-pixel-menu` · doing — reste la relecture de Romain sur son écran
 
 **Pourquoi** — Romain veut une interface entièrement pixel art : la
 piste « Menu pixel » de la planche des pistes d'interface (écartée au
@@ -557,6 +557,30 @@ la mémoire du projet disait l'inverse (UI noir et blanc, pixel pour le
 jeu seulement) : à mettre à jour.
 
 **Origine** — Demande de Romain, 8 octobre 2026.
+
+**État** — Toute l'interface, MJ et joueur, a pris le dessin du menu
+pixel, dans le thème sombre comme dans le clair. Les titres, les
+boutons, les étiquettes et les onglets s'écrivent dans une police pixel
+servie par l'application elle-même ; la narration, les notes, les fiches
+et le texte courant gardent une police lisible. Boutons, panneaux,
+champs, onglets et listes de choix ont des coins en escalier et un relief
+en aplats : une touche ivoire pour l'action principale, sombre pour les
+autres, et une touche s'enfonce d'un pixel quand on appuie. Un curseur de
+jeu de rôle (▶) pointe le choix en cours et suit le clavier ; il reste
+visible, immobile, quand l'appareil demande moins d'animations. Les
+cartes à jouer, les pièces de jeu déjà en pixel art et la grappe de
+boutons ronds du combat au téléphone n'ont pas bougé. La page de
+référence du design montre le nouveau menu (touches, choix avec curseur,
+onglets, champ, tailles de la police). Vérifié à l'écran : la page de
+référence et la page de connexion, dans les deux thèmes, sur ordinateur
+et au format téléphone, et le curseur au clavier ; le texte sur les
+nouvelles touches et onglets garde un contraste d'au moins 4,6:1 dans
+les deux thèmes (calculé). Pas vérifié : les
+écrans derrière la connexion (MJ et joueur, il faut une passkey) et
+l'écran TV ; c'est la relecture qui reste à faire. Choix pris en route :
+la police pixel ne descend jamais sous 12 px (lisible sur téléphone), et
+les petites étiquettes de caractéristiques des fiches restent dans la
+police lisible, faute de place pour la police pixel, qui est large.
 
 ---
 

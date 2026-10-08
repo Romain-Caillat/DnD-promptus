@@ -14,7 +14,7 @@ export interface ArcadeAction {
  * boutons », piste C, as placed in « Jouer · la soirée de Marc »): one big
  * round button under the thumb plays the selected card, with the item and
  * end-turn buttons smaller on either side. Phone in combat only; elsewhere
- * actions are card buttons. While `busy` (the roll is out), the big
+ * actions are pixel keys. While `busy` (the roll is out), the big
  * button waits.
  */
 export function ArcadeCluster({

@@ -139,7 +139,7 @@ export function CampaignPage() {
         <Link className="underline underline-offset-4" to="/">
           {t('gm.campaign.back')}
         </Link>
-        <h1 className="type-title text-[15px] text-chalk">{campaign.story.title}</h1>
+        <h1 className="type-title text-[16px] text-chalk">{campaign.story.title}</h1>
         <span className="rounded-md border border-line-strong px-2 py-0.5 text-[11px] font-semibold">
           {campaign.archivedAt ? t('gm.campaigns.status.archived') : t('gm.campaigns.status.prep')}
         </span>
@@ -252,7 +252,7 @@ export function CampaignPage() {
               <h2 className="type-label text-chalk">{t('gm.campaign.rules')}</h2>
               {preset ? (
                 <>
-                  <span className="type-title text-[18px]">{preset.name}</span>
+                  <span className="type-title text-[16px]">{preset.name}</span>
                   <PresetStats preset={preset} />
                 </>
               ) : (

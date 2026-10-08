@@ -178,7 +178,7 @@ export function MapEditorPage() {
       {back}
       <div className="flex flex-wrap items-baseline gap-3">
         <input
-          className={`${field} type-title text-[20px]`}
+          className={`${field} type-title text-[16px]`}
           value={map.name}
           maxLength={80}
           onChange={(e) => setMap({ ...map, name: e.target.value })}

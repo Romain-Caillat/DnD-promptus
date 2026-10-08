@@ -143,7 +143,7 @@ export function GmTablePage() {
         <Link className="underline underline-offset-4" to={`/campagnes/${encodeURIComponent(campaignId)}`}>
           {t('gm.table.back')}
         </Link>
-        <span className="type-title text-[15px] text-chalk">{state.preview.title}</span>
+        <span className="type-title text-[16px] text-chalk">{state.preview.title}</span>
         <span className="type-label text-chalk">{t('gm.table.players')}</span>
         <span className="flex-1" />
         {characters.length > 0 && (
@@ -285,7 +285,7 @@ function SeatRow({
     <>
       <span
         className={cn(
-          'grid h-14 w-11 flex-none place-items-end justify-center overflow-hidden rounded-[9px] border-2',
+          'grid h-14 w-11 flex-none place-items-end justify-center overflow-hidden rounded-none border-2',
           c?.look
             ? 'border-line-strong bg-linear-to-b from-surface-raised to-well shadow-[0_3px_0_var(--color-black)]'
             : 'border-dashed border-line-strong',

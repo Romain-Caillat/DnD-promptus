@@ -238,8 +238,7 @@ function VoiceButton({
         disabled={(disabled && !listening) || state.kind === 'sending'}
         onClick={() => void (listening ? finish() : begin())}
         className={cn(
-          'flex min-h-14 items-center gap-3 rounded-button border px-3 text-left disabled:opacity-40',
-          listening ? 'border-ivory bg-ivory text-ink' : 'border-line text-chalk hover:bg-surface',
+          'pixel-choice flex min-h-14 items-center gap-3 pr-3 pb-0.5 text-left',
         )}
       >
         <span
@@ -317,7 +316,7 @@ function DraftCard({
             {s.action && (
               <button
                 type="button"
-                className="min-h-12 rounded-button border border-ink px-4 font-bold"
+                className="pixel-key pixel-cursor min-h-12 pr-4 pb-2 text-label [--px:2px]"
                 onClick={() => onReveal(revealOf(s.action!))}
               >
                 {t('gmLive.copilot.apply')}
@@ -326,13 +325,13 @@ function DraftCard({
           </div>
         ))}
         <div className="grid grid-cols-[2fr_1fr_1fr] gap-2">
-          <BigKey className="bg-ink text-ivory" onClick={show}>
+          <BigKey tone="ink" onClick={show}>
             {t('gmLive.copilot.show')}
           </BigKey>
-          <BigKey className="border-ink/40 bg-white text-ink" onClick={() => setEditing(true)}>
+          <BigKey tone="ivory" onClick={() => setEditing(true)}>
             {t('gmLive.copilot.edit')}
           </BigKey>
-          <BigKey className="border-ink/40 bg-white text-ink" onClick={() => onDismiss(draft.id)}>
+          <BigKey tone="ivory" onClick={() => onDismiss(draft.id)}>
             {t('gmLive.copilot.dismiss')}
           </BigKey>
         </div>

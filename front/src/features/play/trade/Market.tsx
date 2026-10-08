@@ -89,7 +89,7 @@ function Shop({
     <section className="surface-slab flex flex-col gap-3 p-3.5" aria-label={shop.name}>
       <header className="flex flex-col gap-0.5">
         <span className="type-label">{t('trade.title')}</span>
-        <h2 className="type-title text-[22px]">{shop.name}</h2>
+        <h2 className="type-title text-[24px]">{shop.name}</h2>
         {shop.keeper && <span className="text-caption text-mute-soft">{t('trade.keptBy', { keeper: shop.keeper })}</span>}
       </header>
       {purse && seated && (
@@ -104,7 +104,7 @@ function Shop({
         {shop.lines.map((line) => {
           const soldOut = line.stock === 0
           return (
-            <li key={line.key} className="flex flex-col gap-1.5 rounded-button border border-line bg-well px-3 py-2.5">
+            <li key={line.key} className="flex flex-col gap-1.5 pixel-well px-3 py-2.5">
               <span className="flex items-baseline justify-between gap-2">
                 <b className="text-body">{line.name}</b>
                 <span className="flex-none text-body font-bold">
@@ -121,7 +121,7 @@ function Shop({
                 <span className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    className="rounded-button border border-line px-3 py-1.5 text-caption font-bold"
+                    className="pixel-key pixel-key-dark pixel-cursor py-1 pr-3 pb-2 text-label [--px:2px]"
                     aria-label={t('trade.buyAria', { name: line.name })}
                     disabled={busy}
                     onClick={() => onBuy(line.key, false)}
@@ -131,7 +131,7 @@ function Shop({
                   {line.discountedPrice !== null && (
                     <button
                       type="button"
-                      className="rounded-button bg-ivory px-3 py-1.5 text-caption font-bold text-ink shadow-ivory-flat"
+                      className="pixel-key pixel-cursor py-1 pr-3 pb-2 text-label [--px:2px]"
                       disabled={busy}
                       onClick={() => onBuy(line.key, true)}
                     >

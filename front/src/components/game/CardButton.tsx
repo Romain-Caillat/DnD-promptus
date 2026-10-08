@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from 'react'
+import type { ButtonHTMLAttributes, CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 import { LineIcon, UI_ICONS, type UiIcon } from './icons'
 import { StatGem } from './StatGem'
@@ -8,11 +8,14 @@ import type { Stat } from './stats'
 const CHEVRON = '›'
 
 /**
- * A button that is a card (board « Composant — bouton-carte »): inner
- * frame, Cinzel title, the stat gem when the action depends on one, a
- * chevron. Ivory for the screen's main action, black for the rest;
- * pressing tips the card forward. A real `<button>`: every native prop
- * (`onClick`, `disabled`, `type`…) passes through.
+ * A key of the pixel menu (board « Pistes UI », track A,
+ * ui/adopt-pixel-menu): stepped corners, flat relief, a Silkscreen label,
+ * the stat gem when the action depends on one, a chevron. Ivory for the
+ * screen's main action, dark for the rest; pressing sinks it into the
+ * table. Its left padding holds the RPG cursor, shown on keyboard focus
+ * and when `aria-pressed`/`aria-current` mark it as the current choice.
+ * A real `<button>`: every native prop (`onClick`, `disabled`, `type`…)
+ * passes through.
  */
 export function CardButton({
   title,
@@ -42,7 +45,7 @@ export function CardButton({
   width?: number
   /** A light crosses the card from time to time: the action waits for you. */
   sheen?: boolean
-  /** Held down: the card stays tipped (an action being sent). */
+  /** Held down: the key stays sunk (an action being sent). */
   pressed?: boolean
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'title'>) {
   const small = size === 'small'
@@ -50,18 +53,25 @@ export function CardButton({
     <button
       type={type}
       className={cn(
-        'button-card gk-card-button',
+        'button-card gk-card-button pixel-cursor',
         variant === 'dark' && 'button-card-dark',
         sheen && 'gk-sheen',
         pressed && 'gk-pressed',
         className,
       )}
-      style={{ width: width ?? '100%', minHeight: small ? 36 : 56, padding: small ? 3 : 6 }}
+      style={
+        {
+          '--px': small ? '2px' : '3px',
+          width: width ?? '100%',
+          minHeight: small ? 36 : 56,
+          padding: small ? '2px 4px 6px 18px' : '6px 6px 9px 22px',
+        } as CSSProperties
+      }
       {...rest}
     >
       <span
         className="card-frame flex items-center"
-        style={{ padding: small ? '0 10px' : '6px 12px', gap: small ? 8 : 12, minHeight: small ? 30 : 44 }}
+        style={{ padding: small ? '0 6px 0 0' : '4px 8px 4px 0', gap: small ? 8 : 12, minHeight: small ? 28 : 41 }}
       >
         {gem && (
           <span className="grid flex-none place-items-center drop-shadow-[0_2px_0_rgb(0_0_0/0.45)]">
@@ -74,7 +84,7 @@ export function CardButton({
           </span>
         )}
         <span className="min-w-0 flex-1">
-          <span className="type-title block leading-[1.05]" style={{ fontSize: small ? 13 : 18 }}>
+          <span className="type-key block leading-[1.2]" style={{ fontSize: small ? 12 : 16 }}>
             {title}
           </span>
           {subtitle && !small && (
@@ -82,7 +92,7 @@ export function CardButton({
           )}
         </span>
         {!small && (
-          <span aria-hidden className="ml-auto font-title text-[22px] font-extrabold">
+          <span aria-hidden className="ml-auto font-pixel text-[24px] leading-none">
             {CHEVRON}
           </span>
         )}

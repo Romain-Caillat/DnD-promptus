@@ -52,7 +52,7 @@ export function FallenCard({
             <Sprite look={fallen.look} scale={4} label={name} />
           </span>
         )}
-        <span className="type-title text-[22px]">{name}</span>
+        <span className="type-title text-[24px]">{name}</span>
         <span className="type-label">
           {[fallen.className, t('play.fallen.kicker', { level: fallen.level })].filter(Boolean).join(' · ')}
         </span>
@@ -76,7 +76,7 @@ export function FallenCard({
               rows={3}
               value={words}
               onChange={(e) => setWords(e.target.value)}
-              className="rounded-xl border border-line-strong bg-well px-3 py-2 text-body text-chalk focus:border-chalk focus:outline-none"
+              className="pixel-field px-3 py-2 text-body"
             />
             <CardButton
               title={t('play.fallen.say')}
@@ -90,7 +90,7 @@ export function FallenCard({
 
       <div className="flex flex-col gap-2">
         <span className="type-label">{t('play.fallen.next')}</span>
-        <p className="type-title text-[18px]">{t('play.fallen.stay')}</p>
+        <p className="type-title text-[16px]">{t('play.fallen.stay')}</p>
         {CHOICES.map((c) => (
           <button
             key={c}
@@ -99,13 +99,11 @@ export function FallenCard({
             aria-pressed={fallen.next === c}
             onClick={() => void send(() => chooseNext(campaignId, c))}
             className={cn(
-              'flex flex-col gap-1 rounded-[12px] border-[1.5px] p-3.5 text-left text-caption disabled:opacity-60',
-              fallen.next === c
-                ? 'border-ink bg-ivory text-ink-soft shadow-ivory-flat'
-                : 'border-line bg-surface text-chalk-soft',
+              'pixel-choice flex flex-col gap-1 py-3.5 pr-3.5 pb-4 text-left text-caption',
+              fallen.next === c ? 'text-ink-soft' : 'text-chalk-soft',
             )}
           >
-            <b className={cn('type-title text-[17px]', fallen.next === c ? 'text-ink' : 'text-chalk')}>
+            <b className={cn('type-title text-[16px]', fallen.next === c ? 'text-ink' : 'text-chalk')}>
               {t(`play.fallen.${c}`)}
             </b>
             <span>{t(`play.fallen.${c}Sub`, { name })}</span>

@@ -113,7 +113,7 @@ export function RulesPage() {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-2.5">
-      <h2 className="type-title text-[20px]">{title}</h2>
+      <h2 className="type-title text-[16px]">{title}</h2>
       {children}
     </section>
   )
@@ -158,7 +158,7 @@ function Changes({ rules, saving, onRead }: { rules: RulesView; saving: boolean;
   const c = rules.changes!
   return (
     <section className="flex flex-col gap-2.5 rounded-xl bg-ivory p-3.5 text-ink shadow-ivory-flat">
-      <h2 className="type-title text-[20px]">
+      <h2 className="type-title text-[16px]">
         {t('rules.changes.title', { from: c.fromVersion, to: c.toVersion })}
       </h2>
       <p className="text-body">{t('rules.changes.when')}</p>
@@ -438,7 +438,7 @@ function Conditions({ rules }: { rules: RulesView }) {
         <div key={c.name} className="flex items-start gap-2.5 border-b border-line py-1.5 text-body">
           <span
             className={cn(
-              'mt-0.5 flex-none rounded-[4px] px-1.5 text-label font-bold uppercase',
+              'mt-0.5 flex-none rounded-none px-1.5 text-label font-bold uppercase',
               c.kind === 'boon' ? 'bg-ivory text-ink' : 'border border-chalk text-chalk',
             )}
           >
