@@ -557,3 +557,64 @@ async fn a_brasier_trader_once_the_rules_have_a_currency() {
     assert_eq!(r.status, StatusCode::OK, "{}", r.body);
     assert!(t.bag(&kael).await.contains(&"Stim de combat".to_string()));
 }
+
+/// A purse change moves at most a thousand at once (`play::DELTA_MAX`),
+/// yet the GM may price a line far above that: such a line is paid in
+/// full, and a purse short of it pays nothing.
+#[tokio::test]
+async fn a_line_dearer_than_one_purse_change_is_paid_in_full() {
+    let t = Table::new(CORSAIRES).await;
+    let borin = t.seat("Marc", "Borin", "canonnier").await;
+    let screen = t
+        .ok(
+            "POST",
+            "/shops",
+            Some(json!({ "name": "Le chantier naval" })),
+        )
+        .await;
+    let id = screen["shops"][0]["id"].as_str().unwrap().to_string();
+    let path = format!("/shops/{id}");
+    t.ok(
+        "PUT",
+        &path,
+        Some(json!({
+            "name": "Le chantier naval",
+            "lines": [{ "name": "Une goélette", "price": 2500 }],
+        })),
+    )
+    .await;
+    t.ok(
+        "POST",
+        &format!("{path}/open"),
+        Some(json!({ "open": true })),
+    )
+    .await;
+    let start = t.trade(&borin).await["purse"]["amount"].as_i64().unwrap();
+    for _ in 0..2 {
+        t.gold(&borin, 1000, "or").await;
+    }
+    let key = price_of(&t.trade(&borin).await["shops"][0], "Une goélette")["key"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let buy_path = format!("{path}/buy");
+    let buy = || {
+        t.play(
+            &borin.token,
+            "POST",
+            &buy_path,
+            Some(json!({ "line": key })),
+        )
+    };
+    if start + 2000 < 2500 {
+        let r = buy().await;
+        assert_eq!(r.body["error"]["code"], "NOT_ENOUGH", "{}", r.body);
+        assert_eq!(t.trade(&borin).await["purse"]["amount"], start + 2000);
+        assert!(!t.bag(&borin).await.contains(&"Une goélette".to_string()));
+    }
+    t.gold(&borin, 1000, "or").await;
+    let r = buy().await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    assert_eq!(r.body["data"]["purse"]["amount"], start + 3000 - 2500);
+    assert!(t.bag(&borin).await.contains(&"Une goélette".to_string()));
+}

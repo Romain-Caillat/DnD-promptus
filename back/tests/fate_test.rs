@@ -342,10 +342,15 @@ async fn a_death_the_dice_propose_waits_for_the_gm_then_its_player_goes_on() {
         assert_eq!(r.status, StatusCode::OK, "{}", r.body);
         let gm = t.gm("GET", "/board", None).await.body;
         let me = &gm["data"]["encounter"]["fight"]["scene"]["combatants"][&tok];
-        let rolled = me["hit_points"] == 1
-            || me["death_saves"]["successes"].as_u64().unwrap()
-                + me["death_saves"]["failures"].as_u64().unwrap()
-                == 1;
+        // One save: a success or a failure counts one, a natural 1 two
+        // failures (`failures_on_critical_failure`), a natural 20 stands
+        // him up.
+        let (successes, failures) = (
+            me["death_saves"]["successes"].as_u64().unwrap_or(0),
+            me["death_saves"]["failures"].as_u64().unwrap_or(0),
+        );
+        let rolled =
+            me["hit_points"] == 1 || successes + failures == 1 || (successes == 0 && failures == 2);
         assert!(rolled, "{}: {me}", w.name);
         // A natural 20 stood him up with 1 hit point, kept in play too:
         // down again there as well, as a hit would have done.

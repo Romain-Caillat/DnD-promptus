@@ -748,7 +748,12 @@ pub async fn buy(
     let price = trade::price(shop.lines[at].price, shop.surcharge, discount);
     let line = shop.lines[at].clone();
     let (name, _) = line.display(rules, &row.story);
-    if price > 0 {
+    // One purse change moves at most `play::DELTA_MAX`: a dearer line
+    // (a price may reach `PRICE_MAX`, plus the surcharge) is paid in
+    // several, all in this transaction — a short purse undoes them all.
+    let mut due = price;
+    while due > 0 {
+        let step = due.min(play::DELTA_MAX.unsigned_abs());
         play::adjust_in(
             &mut tx,
             player.campaign_id,
@@ -756,11 +761,12 @@ pub async fn buy(
             character,
             Adjustment::Resource {
                 resource: shop.currency.clone(),
-                delta: -i32::try_from(price).unwrap_or(i32::MAX),
+                delta: -i32::try_from(step).unwrap_or(play::DELTA_MAX),
             },
             Actor::Player,
         )
         .await?;
+        due -= step;
     }
     let given = match (&line.item, &line.story_item) {
         (Some(id), _) | (None, Some(id)) => item_adjustment(rules, &row.story, id, &name, 1),
