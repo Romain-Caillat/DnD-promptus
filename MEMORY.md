@@ -388,7 +388,13 @@ read it before designing content formats or rules.
   pixel art. Their rule systems are drafts meant to change.
 - **Vehicle combat is shared.** The brig of the Corsaires (act 2: the
   Greyhound interception) and the Cure-Dent use one vehicle system with
-  two skins, in milestone 2.
+  two skins, in milestone 2. Built (`engine/support-vehicle-combat`):
+  a ship battle is its own table (`battles`), not an encounter; a crew
+  member's id is the character's token (`pc-<uuid>`, as in a fight), so
+  XP and the player's own station need no mapping; the ship's holder
+  (LUMEN) is a crew member played by the GM that never holds the crew's
+  turn; a boarding pauses the battle (`status = 'boarding'`) and opens
+  the scene's own encounter on its deck map, whose end resumes it.
 - **Which world comes next is undecided** (resume the Corsaires, the
   Brasier, or a new one): milestone 1 plays one of the two witness
   worlds and keeps the other playable in tests.

@@ -15,6 +15,7 @@
 //!
 //! Every write takes the campaign lock and touches the `map` topic.
 
+pub mod battle;
 pub mod fight;
 pub mod rewards;
 

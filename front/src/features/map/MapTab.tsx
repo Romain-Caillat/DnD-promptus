@@ -13,15 +13,20 @@ import {
   type Command,
   type FightView,
 } from '@/lib/board'
+import { crewCommand, fetchBattle, type BattleView, type CrewCommand } from '@/lib/battle'
 import { playerBackdropUrl } from '@/lib/maps'
 import { fetchPlayerMedia, playerImageUrl, type MediaList } from '@/lib/media'
 import { cn } from '@/lib/utils'
+import { BattleScreen } from './BattleScreen'
 import { eventLine } from './events'
 import { MapCanvas } from './MapCanvas'
 import { useImage } from './useImage'
 import { useTileset } from './useTileset'
 
-type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; board: BoardView | null }
+type State =
+  | { kind: 'loading' }
+  | { kind: 'error' }
+  | { kind: 'ready'; board: BoardView | null; battle: BattleView | null }
 
 /**
  * The Map tab (player/explore-map, player/fight-turn): the map the GM
@@ -29,7 +34,9 @@ type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; board: B
  * fight, a tap on a highlighted cell walks the character there along
  * the path the server checks again. In a fight: whose turn it is, the
  * order with hearts for the party, and on my turn the hand of cards,
- * the target picked on the map, the arcade buttons and the log.
+ * the target picked on the map, the arcade buttons and the log. In a
+ * ship battle (engine/support-vehicle-combat), the battle at my station
+ * instead; during a boarding, the fight on the deck.
  */
 export function MapTab({ campaignId, refreshKey }: { campaignId: string; refreshKey: number }) {
   const { t } = useTranslation()
@@ -46,8 +53,12 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
     let next: State
     let list: MediaList | null = null
     try {
-      const [board, media] = await Promise.all([fetchBoard(campaignId), fetchPlayerMedia(campaignId)])
-      next = { kind: 'ready', board }
+      const [board, battle, media] = await Promise.all([
+        fetchBoard(campaignId),
+        fetchBattle(campaignId),
+        fetchPlayerMedia(campaignId),
+      ])
+      next = { kind: 'ready', board, battle }
       list = media
     } catch {
       next = { kind: 'error' }
@@ -63,7 +74,9 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
   }, [load, refreshKey])
 
   const board = state.kind === 'ready' ? state.board : null
+  const battle = state.kind === 'ready' && state.battle?.live ? state.battle : null
   const { tileset, atlases } = useTileset(board?.map ?? null, media, (id) => playerImageUrl(campaignId, id))
+  const sea = useTileset(battle?.map ?? null, media, (id) => playerImageUrl(campaignId, id))
   // The board's map id is not the players'; its image is the one shown.
   const backdrop = useImage(board?.map.backdrop?.image ? playerBackdropUrl(campaignId, board.map.id) : null)
 
@@ -71,7 +84,21 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
     setError(null)
     setBusy(true)
     try {
-      setState({ kind: 'ready', board: await call() })
+      const next = await call()
+      setState((s) => ({ kind: 'ready', board: next, battle: s.kind === 'ready' ? s.battle : null }))
+    } catch (err) {
+      setError(err instanceof ApiError ? err.code : 'UNEXPECTED')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function crew(cmd: CrewCommand) {
+    setError(null)
+    setBusy(true)
+    try {
+      const next = await crewCommand(campaignId, cmd)
+      setState((s) => (s.kind === 'ready' ? { ...s, battle: next } : s))
     } catch (err) {
       setError(err instanceof ApiError ? err.code : 'UNEXPECTED')
     } finally {
@@ -81,6 +108,18 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
 
   if (state.kind === 'loading') return <p role="status">{t('play.loading')}</p>
   if (state.kind === 'error') return <p role="alert">{t('play.error')}</p>
+  if (battle && !battle.boarding) {
+    return (
+      <div className="flex flex-col gap-3">
+        {error && (
+          <p role="alert" className="rounded-button border border-stat-atk px-3 py-2 text-body">
+            {t(`battle.errors.${error}`, { defaultValue: t('battle.errors.UNEXPECTED') })}
+          </p>
+        )}
+        <BattleScreen battle={battle} busy={busy} onCommand={(c) => void crew(c)} tileset={sea.tileset} atlases={sea.atlases} />
+      </div>
+    )
+  }
   if (!board) return <p className="text-body text-chalk-soft">{t('map.none')}</p>
 
   const fight = board.fight?.live ? board.fight : null
@@ -124,6 +163,11 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
           <span className="type-label">{t(`map.weather.${board.map.ambience.weather}`)}</span>
         )}
       </div>
+      {battle?.boarding && (
+        <p role="status" className="rounded-button border border-ivory px-3 py-2 text-body font-bold">
+          {t('battle.boarding')}
+        </p>
+      )}
       {fight && <FightHeader fight={fight} />}
       {error && (
         <p role="alert" className="rounded-button border border-stat-atk px-3 py-2 text-body">

@@ -290,7 +290,7 @@ pub struct Spread {
 }
 
 impl Spread {
-    fn of(mut values: Vec<f64>) -> Self {
+    pub(crate) fn of(mut values: Vec<f64>) -> Self {
         if values.is_empty() {
             return Self {
                 mean: 0.0,

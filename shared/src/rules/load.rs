@@ -785,6 +785,7 @@ fn validate(s: &RuleSystem) -> Vec<RuleError> {
         }
     }
     v.unique(action_ids, "actions");
+    v.errors.extend(crate::vehicle::load::validate(s));
     v.errors
 }
 

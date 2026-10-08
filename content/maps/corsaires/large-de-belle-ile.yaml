@@ -1,0 +1,55 @@
+# Corsaires de la Couronne, acte 2 — l'interception du Greyhound.
+# INVENTÉ — à valider par Romain, d'après la campagne : au sud de
+# Belle-Île, le jusant de l'aube porte vers l'est le long de la côte, et
+# un navire caché derrière la pointe de Kerdonis peut surgir dans le dos
+# de qui passe (rev_courants). La Mâchoire attend derrière la pointe ;
+# le Greyhound et son sloop d'escorte arrivent de l'ouest, vent arrière.
+# Une case ≈ une encablure. Carte de combat naval
+# (engine/support-vehicle-combat) : les rochers bloquent la route et le
+# tir, la mer porte les navires.
+version: 1
+id: large-de-belle-ile
+name: Au large de Belle-Île
+scale: place
+theme: port-1718
+ambience:
+  time: dawn
+  weather: cloudy
+  mood: combat-naval
+  wind: { from: w, strength: 3 }
+gm_notes: >-
+  La Mâchoire surgit de derrière la pointe de Kerdonis. Vent d'ouest :
+  le Greyhound file vent arrière vers l'est, il faut lui couper la route
+  ou le démâter. Le sloop s'interpose. À portée de grappin, l'abordage
+  se joue sur le pont du Greyhound.
+grid:
+  legend:
+    "#": { terrain: pierre, wall: true }
+    # Open sea: ships sail on every open cell (no deep-water flag, which
+    # is for walkers and would make the starts unreachable).
+    "~": { terrain: eau }
+  rows:
+    - "##########################"
+    - "##########################"
+    - "~~~~~~~~~~~~~~~~~#########"
+    - "~~~~~~~~~~~~~~~~~####~~~~~"
+    - "~~~~~~~~~~~~~~~~~####~~~~~"
+    - "~~~~~~~~~##~~~~~~###~~~~~~"
+    - "~~~~~~~~~~~~~~~~~###~~~~~~"
+    - "~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    - "~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    - "~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    - "~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    - "~~~~~~~~~~~~#~~~~~~~~~~~~~"
+    - "~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    - "~~~~~#~~~~~~~~~~~~~~~~~~~~"
+    - "~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    - "~~~~~~~~~~~~~~~~~~~~~~~~~~"
+starts:
+  - { id: la-machoire, side: party, at: [22, 5] }
+  - { id: greyhound, side: foes, at: [6, 7] }
+  - { id: sloop, side: foes, at: [5, 9] }
+labels:
+  - { text: Belle-Île, at: [6, 0] }
+  - { text: Pointe de Kerdonis, at: [18, 3] }
+  - { text: Les Galets, at: [9, 5] }

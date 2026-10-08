@@ -430,7 +430,7 @@ async fn append(
 }
 
 /// The character behind a party combatant id.
-fn character_of_combatant(id: &str) -> Option<Uuid> {
+pub(super) fn character_of_combatant(id: &str) -> Option<Uuid> {
     id.strip_prefix("pc-").and_then(|s| Uuid::parse_str(s).ok())
 }
 
@@ -552,6 +552,8 @@ async fn commit_step(
         )
         .await?;
         crate::evening::touch(tx, campaign).await?;
+        // A fight on the deck of a boarding hands back to its battle.
+        super::battle::deck_fight_over(tx, row, rules, enc.id, end.winner).await?;
     }
     live::touch(tx, campaign, &Topic::Fight).await?;
     Ok(())
@@ -572,16 +574,45 @@ pub async fn start(
 ) -> Result<Encounter, AppError> {
     let mut tx = pool.begin().await?;
     let (row, live) = session::lock_for_gm(&mut tx, gm, campaign, &[Status::Live]).await?;
-    if live_id(&mut *tx, campaign).await?.is_some() {
+    if live_id(&mut *tx, campaign).await?.is_some()
+        || super::battle::live_id(&mut *tx, campaign).await?.is_some()
+    {
         return Err(AppError::Conflict("FIGHT_IN_PROGRESS"));
     }
-    let rules = &rules_of(&row)?;
+    if row
+        .story
+        .node(node_id)
+        .and_then(|n| n.encounter.as_ref())
+        .is_some_and(|e| e.vehicles.is_some())
+    {
+        return Err(AppError::BadRequest("BATTLE_SCENE"));
+    }
+    let enc = open_in(&mut tx, &row, live.id, node_id).await?;
+    tx.commit().await?;
+    Ok(enc)
+}
+
+/// Opens the encounter of scene `node_id` inside the caller's
+/// transaction, the campaign already locked: a GM's start, or a ship
+/// battle's boarding (`super::battle`).
+///
+/// # Errors
+///
+/// As [`start`].
+pub async fn open_in(
+    tx: &mut Transaction<'_, Postgres>,
+    row: &CampaignRow,
+    session: Uuid,
+    node_id: &str,
+) -> Result<Encounter, AppError> {
+    let campaign = row.id;
+    let rules = &rules_of(row)?;
     let node = row
         .story
         .node(node_id)
         .ok_or(AppError::BadRequest("UNKNOWN_NODE"))?;
     // The scene's own map, else the one shown at the table.
-    let before = super::current(&mut *tx, campaign).await?;
+    let before = super::current(&mut **tx, campaign).await?;
     let map_id = node
         .map
         .clone()
@@ -590,7 +621,7 @@ pub async fn start(
     let map_id = map_id.as_str();
     let map = match before.as_ref().filter(|b| b.map_id == map_id) {
         Some(b) => b.map.clone(),
-        None => crate::campaign_maps::playable(&mut *tx, campaign, &row.story, map_id)
+        None => crate::campaign_maps::playable(&mut **tx, campaign, &row.story, map_id)
             .await?
             .ok_or(AppError::BadRequest("NO_MAP"))?,
     };
@@ -599,7 +630,7 @@ pub async fn start(
         .filter(|b| b.map_id == map_id)
         .map(|b| b.tokens.clone())
         .unwrap_or_default();
-    let party = super::party_tokens(&mut tx, campaign, &map, &kept).await?;
+    let party = super::party_tokens(tx, campaign, &map, &kept).await?;
     if party.is_empty() {
         return Err(AppError::Conflict("NO_PARTY"));
     }
@@ -608,7 +639,7 @@ pub async fn start(
     for t in &party {
         let character =
             Uuid::parse_str(&t.r#ref).map_err(|e| AppError::internal("token ref", e))?;
-        let (sheet, state) = play::in_play_locked(&mut tx, campaign, character, rules).await?;
+        let (sheet, state) = play::in_play_locked(tx, campaign, character, rules).await?;
         let Some(mut c) = play::combatant(rules, &sheet, &state) else {
             continue;
         };
@@ -636,33 +667,32 @@ pub async fn start(
     });
     board.tokens = party;
     sync_tokens(&mut board, &step.fight);
-    super::save(&mut tx, campaign, &board).await?;
+    super::save(tx, campaign, &board).await?;
     let stored: Row = sqlx::query_as(&format!(
         "INSERT INTO encounters (campaign_id, session_id, node, fight, loot)
          VALUES ($1, $2, $3, $4, $5) RETURNING {COLUMNS}"
     ))
     .bind(campaign)
-    .bind(live.id)
+    .bind(session)
     .bind(node_id)
     .bind(Json(&step.fight))
     .bind(Json(loot_of(&row.story, node, rules)))
-    .fetch_one(&mut *tx)
+    .fetch_one(&mut **tx)
     .await?;
     let enc = encounter(stored);
-    append(&mut tx, enc.id, &step.events).await?;
+    append(tx, enc.id, &step.events).await?;
     knowledge::write(
-        &mut tx,
+        tx,
         campaign,
-        Some(live.id),
+        Some(session),
         JournalKind::Fight,
         Some(node_id),
         &node.title,
         true,
     )
     .await?;
-    crate::evening::touch(&mut tx, campaign).await?;
-    live::touch(&mut tx, campaign, &Topic::Fight).await?;
-    tx.commit().await?;
+    crate::evening::touch(tx, campaign).await?;
+    live::touch(tx, campaign, &Topic::Fight).await?;
     Ok(enc)
 }
 

@@ -1,0 +1,61 @@
+# Corsaires de la Couronne, acte 2 — l'abordage du Greyhound.
+# INVENTÉ — à valider par Romain. La Mâchoire (au nord) et le Greyhound
+# (au sud) bord à bord, reliés par les grappins et deux planches ; la mer
+# entre les coques ne se traverse pas. Six PJ sur le pont de La Mâchoire,
+# l'équipage du Greyhound sur le sien. Carte du combat au sol qui
+# remplace la bataille navale le temps de l'abordage
+# (engine/support-vehicle-combat).
+version: 1
+id: pont-du-greyhound
+name: L'abordage du Greyhound
+scale: encounter
+theme: port-1718
+ambience:
+  time: dawn
+  weather: cloudy
+  mood: abordage
+  wind: { from: w, strength: 3 }
+gm_notes: >-
+  Les plans d'attaque sont dans la cabine du capitaine, à la poupe du
+  Greyhound (à l'est). Si le capitaine tombe, l'équipage se rend.
+layers:
+  - { id: base, name: Les deux ponts, visibility: all }
+grid:
+  legend:
+    "~": { terrain: eau, water: deep }
+    ":": { terrain: pont }
+    "_": { terrain: planches }
+  rows:
+    - "~~~~~~~~~~~~~~~~~~~~~~"
+    - "~~::::::::::::::::::~~"
+    - "~::::::::::::::::::::~"
+    - "~~::::::::::::::::::~~"
+    - "~~~~~__~~~~~~__~~~~~~~"
+    - "~~~~~__~~~~~~__~~~~~~~"
+    - "~~::::::::::::::::::~~"
+    - "~::::::::::::::::::::~"
+    - "~~::::::::::::::::::~~"
+    - "~~~~~~~~~~~~~~~~~~~~~~"
+props:
+  - { id: grand-mat-machoire, kind: mat, label: Grand mât de La Mâchoire, at: [4, 2], blocks_movement: true, cover: half }
+  - { id: misaine-machoire, kind: mat, label: Misaine de La Mâchoire, at: [16, 2], blocks_movement: true, cover: half }
+  - { id: grand-mat-greyhound, kind: mat, label: Grand mât du Greyhound, at: [4, 7], blocks_movement: true, cover: half }
+  - { id: misaine-greyhound, kind: mat, label: Misaine du Greyhound, at: [16, 7], blocks_movement: true, cover: half }
+  - { id: cordages-greyhound, kind: cordages, label: Cordages, at: [10, 8] }
+starts:
+  - { id: pj-1, side: party, at: [7, 2] }
+  - { id: pj-2, side: party, at: [8, 2] }
+  - { id: pj-3, side: party, at: [9, 2] }
+  - { id: pj-4, side: party, at: [10, 2] }
+  - { id: pj-5, side: party, at: [11, 2] }
+  - { id: pj-6, side: party, at: [12, 2] }
+  - { id: fusilier-1, side: foes, at: [7, 7] }
+  - { id: fusilier-2, side: foes, at: [8, 7] }
+  - { id: fusilier-3, side: foes, at: [9, 7] }
+  - { id: fusilier-4, side: foes, at: [11, 7] }
+  - { id: fusilier-5, side: foes, at: [12, 7] }
+  - { id: capitaine, side: foes, at: [18, 7] }
+labels:
+  - { text: La Mâchoire, at: [10, 1] }
+  - { text: HMS Greyhound, at: [10, 8] }
+  - { text: Cabine du capitaine, at: [19, 7] }

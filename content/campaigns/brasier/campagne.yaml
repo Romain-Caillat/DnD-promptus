@@ -118,9 +118,9 @@ acts:
       Le premier contact « à trancher » de la source est tranché ainsi —
       INVENTÉ — à valider par Romain — l'abordage Vorr sert de combat
       d'apprentissage (première scène, écrite), puis une Carapace Sereth
-      arrive, secours ou menace (ébauche, à écrire au jalon 2). Le combat
-      de vaisseau attend engine/support-vehicle-combat ; la première scène
-      se joue au sol, dans la coursive.
+      arrive, secours ou menace (ébauche, à écrire au jalon 2). La première
+      scène se joue au sol, dans la coursive ; l'essaim (facultatif) est le
+      premier combat de vaisseau.
   - id: acte_2
     title: Premiers contacts
     summary: Rencontrer les factions, comprendre la guerre, choisir vers qui se tourner.
@@ -349,6 +349,79 @@ nodes:
       besoin des quatre composants et poser la guerre ; la jauge de
       préparation doit déclarer l'acte 1 non prêt tant qu'elle n'est pas
       écrite.
+
+  - id: sc_essaim_vorr
+    act: acte_1
+    title: L'essaim
+    optional: true
+    summary: >-
+      Guidés par la balise, cinq chasseurs Vorr fondent sur le Cure-Dent à
+      la sortie du Toboggan. Premier combat de vaisseau ; si un chasseur
+      s'arrime, l'abordage se joue dans la coursive.
+    location: lieu_toboggan
+    map: cure-dent-coursive
+    read_aloud: >-
+      LUMEN, d'une voix trop calme : « Cinq signatures. Petites. Rapides.
+      Elles nous ont trouvés. » Sur la verrière, des éclats de chitine verte
+      se détachent de la ceinture de débris, et se mettent à tourner.
+    ambience:
+      mood: Combat spatial, alarme, chasse
+      sounds: Alarme de proximité, tourelles qui pivotent, impacts sur la coque
+      music:
+        - mood: combat
+          title: Combat spatial (à choisir)
+          search: sci-fi space battle combat music
+    flow: >-
+      Chacun prend son poste : barre, pièce lourde, ingénieur, capteurs
+      (LUMEN si le Xénologue est ailleurs), intégrité, liaison ; les
+      tourelles attendent qui court s'y installer. L'essaim agit d'un bloc,
+      à une seule initiative, et cherche l'angle mort arrière. Si un
+      chasseur s'arrime à portée courte, l'abordage passe dans la coursive.
+    hook: L'alarme de proximité, et cinq points verts qui tournent autour du Cure-Dent.
+    key_points:
+      - Premier tour expliqué poste par poste ; l'énergie se répartit au début, gratuitement.
+      - Les Vorr n'ont pas de Moral à briser ; il faut les détruire ou décrocher.
+      - Personne ne couvre l'arrière du Cure-Dent — c'est le pilote qui l'en sort.
+    encounter:
+      vehicles:
+        map: abords-du-toboggan
+        ship: cure_dent
+        facing: e
+        ships:
+          - { ship: chasseur_vorr, count: 5, name: Chasseur, facing: w }
+      opponents:
+        - who: abordeur-vorr
+          count: 3
+        - who: chef-d-escouade-vorr
+      tactics:
+        - L'essaim tourne autour du Cure-Dent et cherche l'angle mort arrière.
+        - Un chasseur qui s'arrime lâche son escouade dans la coursive, droit vers le réacteur.
+      on_victory: >-
+        Le dernier chasseur se disloque dans la ceinture de débris. Les
+        capteurs ne voient plus rien — pour l'instant.
+      on_defeat: >-
+        Le Cure-Dent, réacteur à bout, se laisse dériver ; les chasseurs
+        l'escortent vers la ruche. LUMEN promet de trouver une sortie.
+    player_hooks:
+      - character: pj_pilote
+        reason: Personne ne couvre l'arrière du Cure-Dent ; c'est la barre qui empêche l'essaim de s'y caler.
+      - character: pj_canonnier
+        reason: Le Pic-Vert pulvérise un chasseur d'un tir — à condition qu'il soit devant.
+      - character: pj_mecano
+        reason: Six points d'énergie à répartir, des boucliers à recharger, un moteur à garder en vie.
+      - character: pj_xenologue
+        reason: Aux capteurs, il verrouille les cibles et comprend pourquoi l'essaim les a trouvés.
+      - character: pj_toubib
+        reason: Incendies, brèches — l'intégrité du Cure-Dent est entre ses mains.
+      - character: pj_quartier_maitre
+        reason: Il rallie l'équipage quand la coque craque, et court à une tourelle quand il le faut.
+    art: >-
+      Pixel art, vue de côté : le Cure-Dent, soucoupe et deux nacelles,
+      entouré de cinq petits chasseurs en chitine verte dans une ceinture
+      de débris, tirs de tourelles en traits cyan.
+    gm_notes: >-
+      INVENTÉ — à valider par Romain : la scène et la carte « Les abords du
+      Toboggan ». Les chiffres du combat sont ceux de Combat_Vaisseau.md.
 
 revelations:
   - id: rev_moteur

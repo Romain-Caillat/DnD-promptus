@@ -112,6 +112,9 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/fight"),
     ("POST", "/api/campaigns/{campaign}/fight/command"),
     ("POST", "/api/campaigns/{campaign}/fight/loot"),
+    // The ship battle: open the Greyhound's interception, stop it.
+    ("POST", "/api/campaigns/{campaign}/battle"),
+    ("POST", "/api/campaigns/{campaign}/battle/command"),
     // The campaign's maps: list, create, import, generate, then on the
     // map stored just before.
     ("GET", "/api/campaigns/{campaign}/maps"),
@@ -256,6 +259,10 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         }
         (_, p) if p.ends_with("/fight") => Some(serde_json::json!({ "node": "sc_crique" })),
         (_, p) if p.ends_with("/fight/command") => Some(serde_json::json!({ "kind": "stop" })),
+        (_, p) if p.ends_with("/battle") => {
+            Some(serde_json::json!({ "node": "sc_interception_greyhound" }))
+        }
+        (_, p) if p.ends_with("/battle/command") => Some(serde_json::json!({ "kind": "stop" })),
         (_, p) if p.ends_with("/fight/loot") => Some(serde_json::json!({
             "gives": [{ "index": 0, "character": Uuid::nil() }]
         })),

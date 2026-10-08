@@ -36,14 +36,26 @@ const RULE_FILES: [&str; 2] = [
 
 /// The maps of the two worlds, by rule system id
 /// (`content/maps/<rules>/<map>.yaml`).
-const MAP_FILES: [(&str, &str); 2] = [
+const MAP_FILES: [(&str, &str); 5] = [
     (
         "corsaires",
         include_str!("../../content/maps/corsaires/quai-port-louis.yaml"),
     ),
     (
+        "corsaires",
+        include_str!("../../content/maps/corsaires/large-de-belle-ile.yaml"),
+    ),
+    (
+        "corsaires",
+        include_str!("../../content/maps/corsaires/pont-du-greyhound.yaml"),
+    ),
+    (
         "brasier",
         include_str!("../../content/maps/brasier/cure-dent-coursive.yaml"),
+    ),
+    (
+        "brasier",
+        include_str!("../../content/maps/brasier/abords-du-toboggan.yaml"),
     ),
 ];
 
