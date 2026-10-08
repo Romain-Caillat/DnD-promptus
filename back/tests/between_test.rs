@@ -79,7 +79,7 @@ impl Table {
     }
 
     /// One evening: Marc earns `xp`, the table finds a key item and makes a
-    /// promise, the GM keeps a note; the GM ends it with « Précédemment… ».
+    /// promise, the GM keeps a note; the GM ends it with « Précédemment… » and publishes it.
     async fn evening(&self, xp: i32) {
         self.ok("POST", "/session", None).await;
         self.ok("POST", "/session/start", None).await;
@@ -101,12 +101,15 @@ impl Table {
             )
             .await;
         }
-        self.ok(
-            "POST",
-            "/session/end",
-            Some(json!({ "recap": GM_ONLY, "previously": "Sous l'autel, la page arrachée." })),
-        )
-        .await;
+        let ending = json!({ "recap": GM_ONLY, "previously": "Sous l'autel, la page arrachée." });
+        let r = self.gm("POST", "/session/end", Some(ending.clone())).await;
+        assert!(r.status.is_success(), "POST /session/end: {}", r.body);
+        // « Précédemment… » is a draft until the GM publishes it.
+        let session = r.body["data"]["id"].as_str().unwrap().to_string();
+        let mut publish = ending;
+        publish["publish"] = json!(true);
+        self.ok("PUT", &format!("/sessions/{session}/recap"), Some(publish))
+            .await;
     }
 }
 
