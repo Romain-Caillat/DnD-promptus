@@ -38,7 +38,10 @@ pub(crate) fn edit_error(e: &edit::EditError) -> AppError {
 /// # Errors
 ///
 /// 404 when the campaign is missing or another GM's; 400 `EDIT_*` (the
-/// first edit that does not fit) or `TOO_MANY_EDITS`; a database error.
+/// first edit that does not fit, `EDIT_SCENE_INVALID` when it leaves a
+/// scene's fight, sound, checks, exits or loot naming nothing, checked
+/// against the campaign's rule system) or `TOO_MANY_EDITS`; a database
+/// error.
 pub async fn apply(
     pool: &sqlx::PgPool,
     gm: &CurrentGm,
@@ -50,7 +53,12 @@ pub async fn apply(
     }
     let mut tx = pool.begin().await?;
     let row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
-    let (story, changes) = edit::apply(&row.story, edits).map_err(|e| edit_error(&e))?;
+    let library = Library {
+        rules: row.rules(),
+        maps: None,
+    };
+    let (story, changes) =
+        edit::apply_with(&row.story, edits, &library).map_err(|e| edit_error(&e))?;
     campaigns::save_story(&mut tx, campaign, &story).await?;
     let row = campaigns::find(&mut *tx, campaign)
         .await?
@@ -92,8 +100,9 @@ pub async fn validate_campaign(
 }
 
 /// The readiness gauge of every act, its planned fights simulated with
-/// the campaign's rule system on the world's maps. CPU work: run off
-/// the async runtime.
+/// the campaign's rule system on the maps a scene may be played on: the
+/// campaign's validated maps, then the world's. CPU work: run off the
+/// async runtime.
 ///
 /// # Errors
 ///
@@ -104,7 +113,12 @@ pub async fn act_readiness(
     campaign: Uuid,
 ) -> Result<Vec<ActReadiness>, AppError> {
     let row = owned_by(campaigns::find(pool, campaign).await?, gm)?;
-    let maps: Vec<Map> = crate::content::maps(&row.story).cloned().collect();
+    let mut maps: Vec<Map> = crate::campaign_maps::validated(pool, campaign).await?;
+    let world: Vec<Map> = crate::content::maps(&row.story)
+        .filter(|w| !maps.iter().any(|m| m.id == w.id))
+        .cloned()
+        .collect();
+    maps.extend(world);
     tokio::task::spawn_blocking(move || {
         readiness(
             &row.story,
