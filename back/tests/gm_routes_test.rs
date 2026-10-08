@@ -13,11 +13,13 @@ mod common;
 use axum::Router;
 use axum::http::StatusCode;
 use common::call;
+use promptus_back::auth::api_tokens::TOKEN_ROUTES;
 use serde_json::Value;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 /// Every GM route, `{invite}` standing for an invitation of the caller,
+/// `{token}` for one of their personal access tokens,
 /// `{campaign}` for one of their campaigns, `{player}` for a player at
 /// that campaign's table, `{character}` for that player's character and
 /// `{hook}` for a secret hook drawn from it.
@@ -26,6 +28,9 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/gm-invites"),
     ("POST", "/api/gm-invites"),
     ("DELETE", "/api/gm-invites/{invite}"),
+    ("GET", "/api/gm-tokens"),
+    ("POST", "/api/gm-tokens"),
+    ("DELETE", "/api/gm-tokens/{token}"),
     ("GET", "/api/campaigns"),
     ("POST", "/api/campaigns"),
     ("POST", "/api/campaigns/import"),
@@ -233,6 +238,7 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         ("POST", p) if p.ends_with("/schedule/dates") => Some(serde_json::json!({
             "startsAt": chrono::Utc::now() + chrono::Duration::days(3)
         })),
+        ("POST", "/api/gm-tokens") => Some(serde_json::json!({ "name": "Balayage" })),
         ("POST", "/api/campaigns") => Some(serde_json::json!({
             "title": "Sweep",
             "rules": { "id": "corsaires", "version": 1 }
@@ -363,6 +369,7 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
 /// The ids the routes' placeholders stand for.
 struct Ids {
     invite: String,
+    token: String,
     campaign: String,
     player: String,
     character: String,
@@ -383,6 +390,7 @@ struct Ids {
 
 fn route_uri(path: &str, ids: &Ids) -> String {
     path.replace("{invite}", &ids.invite)
+        .replace("{token}", &ids.token)
         .replace("{campaign}", &ids.campaign)
         .replace("{player}", &ids.player)
         .replace("{character}", &ids.character)
@@ -429,6 +437,7 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
     assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
     Ids {
         invite: invite_of(app, token).await,
+        token: common::api_token(app, token, "Balayage").await.0,
         hook: r.body["data"]["id"].as_str().unwrap().to_string(),
         character: character.to_string(),
         campaign,
@@ -543,9 +552,25 @@ async fn assert_all_refuse_raw(app: &Router, pool: &PgPool, cookie: Option<Strin
         );
         assert_eq!(r.body["error"]["code"], "UNAUTHENTICATED", "{method} {uri}");
     }
+    assert_untouched(pool, ids).await;
+}
+
+/// Whether a token may reach the GM route `path` (as `GM_ROUTES` writes
+/// it), by `auth::api_tokens::TOKEN_ROUTES`.
+fn in_token_scope(method: &str, path: &str) -> bool {
+    let path = path.replace("{campaign}", "{id}");
+    TOKEN_ROUTES.iter().any(|(m, p)| *m == method && *p == path)
+}
+
+/// Nothing a refused sweep could have changed has changed.
+async fn assert_untouched(pool: &PgPool, ids: &Ids) {
     assert!(
         invite_exists(pool, &ids.invite).await,
         "a refused DELETE deleted"
+    );
+    assert!(
+        token_live(pool, &ids.token).await,
+        "a refused DELETE revoked a token"
     );
     assert!(
         player_exists(pool, &ids.player).await,
@@ -561,6 +586,16 @@ async fn assert_all_refuse_raw(app: &Router, pool: &PgPool, cookie: Option<Strin
     .unwrap();
     assert_eq!(status, "draft", "a refused decision changed the sheet");
     assert_eq!(hooks, 1, "a refused hook route added or removed one");
+}
+
+async fn token_live(pool: &PgPool, id: &str) -> bool {
+    sqlx::query_scalar(
+        "SELECT EXISTS (SELECT 1 FROM gm_api_tokens WHERE id = $1 AND revoked_at IS NULL)",
+    )
+    .bind(Uuid::parse_str(id).unwrap())
+    .fetch_one(pool)
+    .await
+    .unwrap()
 }
 
 async fn player_exists(pool: &PgPool, id: &str) -> bool {
@@ -852,6 +887,70 @@ async fn every_gm_route_refuses_without_a_valid_session() {
     let player = player_of(&app, &keeper, &campaign).await.0;
     let ids = ids_of(&app, &pool, &keeper, campaign, player).await;
     assert_all_refuse(&app, &pool, Some(&token), &ids).await;
+}
+
+/// platform/connect-claude-mcp — a personal access token, even a live
+/// one, opens no GM route outside `TOKEN_ROUTES` (403 before any
+/// lookup), whatever the route: the token routes themselves, invites,
+/// the table, the evening, and every route that spends AI budget. The
+/// in-scope routes are exercised in `api_tokens_test.rs`.
+#[tokio::test]
+async fn a_token_opens_no_gm_route_outside_its_scope() {
+    let pool = common::test_pool().await;
+    let app = common::app(pool.clone());
+    let (gm, session) = common::signed_in_gm(&pool, "Romain").await;
+    let campaign = campaign_of(&app, &session).await;
+    let (player, _) = player_of(&app, &session, &campaign).await;
+    let ids = ids_of(&app, &pool, &session, campaign, player).await;
+    let (_, secret) = common::api_token(&app, &session, "Claude").await;
+    let tokens_before: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM gm_api_tokens WHERE gm_id = $1")
+            .bind(gm)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    let campaigns_before = campaign_count(&pool, gm).await;
+
+    let mut refused = 0;
+    for (method, path) in GM_ROUTES {
+        if in_token_scope(method, path) {
+            continue;
+        }
+        let uri = route_uri(path, &ids);
+        let r = common::call_with_token(&app, &secret, method, &uri, body_for(method, path)).await;
+        assert_eq!(
+            r.status,
+            StatusCode::FORBIDDEN,
+            "{method} {uri}: {}",
+            r.body
+        );
+        assert_eq!(
+            r.body["error"]["code"], "TOKEN_NOT_ALLOWED",
+            "{method} {uri}"
+        );
+        refused += 1;
+    }
+    assert!(
+        refused > 100,
+        "the sweep ran over the GM routes ({refused})"
+    );
+    assert_eq!(
+        GM_ROUTES.len() - refused,
+        TOKEN_ROUTES.len(),
+        "every in-scope route is a GM route of the sweep"
+    );
+    assert_untouched(&pool, &ids).await;
+    let tokens_after: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM gm_api_tokens WHERE gm_id = $1")
+            .bind(gm)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(tokens_after, tokens_before, "a token minted a token");
+    assert_eq!(campaign_count(&pool, gm).await, campaigns_before);
+    // The session itself still opens them (the 403 came from the scope).
+    let r = call(&app, Some(&session), "GET", "/api/gm-tokens", None).await;
+    assert_eq!(r.status, StatusCode::OK);
 }
 
 /// A player's device token opens no GM route, whichever cookie name it
