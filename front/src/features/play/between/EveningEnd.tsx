@@ -66,7 +66,7 @@ export function EveningEnd({
           <h3 className="type-label">{t('between.got')}</h3>
           <ul className="flex flex-col gap-1.5">
             {mine.got.map((line, i) => (
-              <li key={i} className="rounded-button border border-line bg-well px-3 py-2 text-body">
+              <li key={i} className="pixel-field px-3 py-2 text-body">
                 {line}
               </li>
             ))}
@@ -87,7 +87,7 @@ export function EveningEnd({
       {last.previously ? (
         <div className="surface-slab flex flex-col gap-2 p-3.5">
           <span className="type-label">{t('between.previouslyOf', { number: last.number })}</span>
-          <span className="type-title text-[22px]">{t('between.previously')}</span>
+          <span className="type-title text-[24px]">{t('between.previously')}</span>
           <p className="type-narration text-[18px] leading-snug">{last.previously}</p>
         </div>
       ) : (
@@ -112,7 +112,7 @@ export function EveningEnd({
           <h3 className="type-label">{t('between.open')}</h3>
           <ul className="flex flex-col gap-1.5">
             {between.openThreads.map((line, i) => (
-              <li key={i} className="rounded-button border border-line bg-well px-3 py-2 text-body">
+              <li key={i} className="pixel-field px-3 py-2 text-body">
                 {line}
               </li>
             ))}

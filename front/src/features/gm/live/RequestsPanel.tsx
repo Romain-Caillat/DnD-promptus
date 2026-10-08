@@ -83,8 +83,9 @@ function PendingRequest({
               role="radio"
               aria-checked={ability === id}
               className={cn(
-                'min-h-12 rounded-button border-2 px-4 text-body font-bold',
-                ability === id ? 'border-ink bg-ink text-ivory' : 'border-ink/30 bg-white text-ink',
+                'pixel-key pixel-cursor min-h-12 pr-4 pb-2 text-label [--px:2px]',
+                ability === id &&
+                  'text-ivory [--pixel-face:var(--color-ink)] [--pixel-hi:var(--color-ink-soft)] [--pixel-low:var(--color-ink-soft)] [--pixel-side:var(--color-ink)]',
               )}
               onClick={() => setAbility(id)}
             >
@@ -99,7 +100,7 @@ function PendingRequest({
               key={id}
               type="button"
               aria-label={t('gmLive.requests.checkAt', { name, value })}
-              className="flex min-h-[72px] flex-col items-center justify-center rounded-xl border-2 border-ink bg-white text-caption font-semibold text-ink-soft"
+              className="pixel-key pixel-cursor flex min-h-[72px] flex-col items-center justify-center pr-2 pb-2 text-label text-ink-soft [--px:2px]"
               onClick={() => onDecide(r.id, { kind: 'check', ability, difficulty: id })}
             >
               <b className="text-[26px] leading-none text-ink">{value}</b>
@@ -108,7 +109,7 @@ function PendingRequest({
           ))}
         </div>
         <input
-          className="min-h-12 rounded-button border border-ink/30 bg-white px-3 text-body text-ink"
+          className="min-h-12 pixel-field px-3 text-body"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           maxLength={300}
@@ -116,11 +117,11 @@ function PendingRequest({
           aria-label={t('gmLive.requests.reason')}
         />
         <div className="grid grid-cols-2 gap-2">
-          <BigKey className="border-dashed border-ink/40 bg-transparent text-ink" onClick={() => onDecide(r.id, { kind: 'accept', reason })}>
+          <BigKey tone="ivory" onClick={() => onDecide(r.id, { kind: 'accept', reason })}>
             {t('gmLive.requests.yesNoRoll')}
           </BigKey>
           <BigKey
-            className="border-dashed border-ink/40 bg-transparent text-ink"
+            tone="ivory"
             // The player reads why; a thumb has no time to write it.
             onClick={() => onDecide(r.id, { kind: 'refuse', reason: reason.trim() || t('gmLive.requests.nothingHere') })}
           >

@@ -125,7 +125,7 @@ export function JoinPage() {
                 <label className="flex flex-col gap-1.5">
                   <span className="type-label">{t('join.nickname')}</span>
                   <input
-                    className="rounded-[10px] border border-line-strong bg-well px-3.5 py-3 text-base text-chalk"
+                    className="pixel-field px-3.5 py-3 text-base"
                     value={nickname}
                     maxLength={40}
                     autoComplete="nickname"
@@ -172,7 +172,7 @@ export function JoinPage() {
   )
 }
 
-/** A card button (`button-card` material): ivory for the main choice. */
+/** A pixel key (`button-card`): ivory for the main choice. */
 function ChoiceButton(props: {
   title: string
   sub: string
@@ -188,7 +188,7 @@ function ChoiceButton(props: {
       onClick={props.onClick}
     >
       <span className="card-frame flex min-h-10 flex-col justify-center px-3 py-2">
-        <span className="type-title text-card-title">{props.title}</span>
+        <span className="type-key text-card-title">{props.title}</span>
         <span className="mt-0.5 text-[11px] font-semibold text-(color:--sub-color)">{props.sub}</span>
       </span>
     </button>

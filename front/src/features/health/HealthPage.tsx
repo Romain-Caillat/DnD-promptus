@@ -30,7 +30,7 @@ export function HealthPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 p-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight">{t('app.name')}</h1>
+        <h1 className="type-title text-heading-lg">{t('app.name')}</h1>
         <p className="text-muted-foreground">{t('app.tagline')}</p>
       </header>
       <section className="flex flex-col items-start gap-3" aria-live="polite">

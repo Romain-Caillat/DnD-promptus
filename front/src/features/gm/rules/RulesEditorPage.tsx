@@ -154,7 +154,7 @@ export function RulesEditorPage() {
         <Link className="underline underline-offset-4" to={`/campagnes/${campaignId}`}>
           {t('prep.back')}
         </Link>
-        <h1 className="type-title text-[15px] text-chalk">{t('prep.rules.title', { name: editor.name })}</h1>
+        <h1 className="type-title text-[16px] text-chalk">{t('prep.rules.title', { name: editor.name })}</h1>
         <span className="rounded-md border border-line-strong px-2 py-0.5 text-[11px] font-semibold">
           {draft
             ? t('prep.rules.draftBadge', { version: draft.version })
@@ -181,8 +181,7 @@ export function RulesEditorPage() {
                 type="button"
                 aria-current={tab === id ? 'page' : undefined}
                 className={cn(
-                  'rounded-button px-2.5 py-2 text-left text-body',
-                  tab === id ? 'bg-ivory text-ink' : 'text-chalk hover:bg-surface',
+                  'pixel-tab py-2 pb-2.5 text-left',
                 )}
                 onClick={() => setTab(id)}
               >
@@ -692,7 +691,7 @@ function HistoryTab({ editor, campaignId }: { editor: RuleEditor; campaignId: st
               </ul>
             )}
             <h3 className="type-label text-chalk">{t('prep.rules.lines')}</h3>
-            <pre className="max-h-[50vh] overflow-auto rounded-button border border-line bg-table p-2 text-[12px]">
+            <pre className="max-h-[50vh] overflow-auto pixel-field p-2 text-[12px]">
               {comparison.lines.map((l, i) => (
                 <div
                   key={i}

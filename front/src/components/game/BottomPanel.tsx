@@ -29,7 +29,7 @@ export function BottomPanel({
         <Drawer.Viewport className="fixed inset-0 flex items-end justify-center">
           <Drawer.Popup className={cn('gk-panel', className)}>
             <span aria-hidden className="gk-panel-grip" />
-            <Drawer.Title className="type-title text-[18px]">{title}</Drawer.Title>
+            <Drawer.Title className="type-title text-[16px]">{title}</Drawer.Title>
             <Drawer.Content className="flex flex-col gap-4">{children}</Drawer.Content>
           </Drawer.Popup>
         </Drawer.Viewport>

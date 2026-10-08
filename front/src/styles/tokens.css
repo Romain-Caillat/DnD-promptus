@@ -1,14 +1,16 @@
 /*
  * Promptus design tokens — the single source for colours, type, materials
- * and motion (MEMORY.md §2). Values come from the design canvas board
- * « Fondations » (docs/design/canvas/Main.dc.html) and the shared journey
- * CSS (docs/design/kit.py); the in-app page /reference shows them all.
+ * and motion (MEMORY.md, visual direction). Values come from the design
+ * canvas board « Fondations » (docs/design/canvas/Main.dc.html), the
+ * shared journey CSS (docs/design/kit.py) and, for the interface chrome,
+ * the pixel menu of « Pistes UI » track A (ui/adopt-pixel-menu); the
+ * in-app page /reference shows them all.
  *
  * - `@theme static` tokens become Tailwind utilities (`bg-ivory`,
  *   `text-stat-atk`, `font-title`, `text-label`, `shadow-ivory`,
  *   `ease-deal`, `animate-deal`…) and are always emitted as CSS variables.
  * - `@utility` blocks are the materials: things a single colour cannot
- *   say (gradients, card buttons, rarity materials).
+ *   say (pixel keys and panels, rarity materials).
  * - The bottom of the file maps shadcn's variables onto these tokens.
  *
  * The black table is the default look. A light theme (ui/offer-light-theme)
@@ -75,6 +77,23 @@
   --color-ink-soft: #5a5a5a;
 
   /*
+   * The pixel menu (board « Pistes UI », track A): flat colour relief. An
+   * ivory key is lit on its top and left cells, shaded on its right and
+   * its bottom edge; a dark key the same in greys. `pixel-rim` lights the
+   * top of a panel.
+   */
+  --color-ivory-hi: #ffffff;
+  --color-ivory-side: #bdbdbd;
+  --color-key: #262626;
+  --color-key-line: #5a5a5a;
+  --color-key-hi: #444444;
+  --color-key-side: #161616;
+  --color-key-low: #050505;
+  --color-pixel-rim: #262626;
+  /* The outline of the control that has the keyboard focus. */
+  --color-focus: #f2f2f2;
+
+  /*
    * The six stat colours. Each stat also has a shape, so colour is never
    * the only cue: HP heart, ATK diamond, AC shield, MAG hexagon,
    * MOVE arrow, INIT round. Dice take the colour of the stat they roll.
@@ -107,15 +126,24 @@
   --color-foe: #3a1512;
   --color-foe-deep: #140b0c;
 
-  /* Type. Chakra Petch is the default sans: every UI word and number. */
+  /*
+   * Type (ui/adopt-pixel-menu). Silkscreen is the menu: titles, buttons,
+   * labels, tabs. Its glyphs sit on a 1/8 em grid, so its sizes are 12,
+   * 16, 24, 32px… (12px is crisp on a 2× phone, never smaller). Chakra
+   * Petch stays the default sans for running text, fields and numbers;
+   * Cormorant for text read aloud; Cinzel only on the playing cards.
+   */
   --font-sans: "Chakra Petch", system-ui, sans-serif;
+  --font-pixel: "Silkscreen", "Chakra Petch", monospace;
   --font-title: "Cinzel", Georgia, serif;
   --font-narration: "Cormorant Garamond", Georgia, serif;
 
-  --text-label: 0.6875rem; /* 11px, uppercase, tracked */
+  --text-label: 0.75rem; /* 12px Silkscreen, the smallest pixel size */
   --text-label--line-height: 1.4;
-  --text-label--letter-spacing: 0.2em;
-  --text-label--font-weight: 600;
+  --text-label--letter-spacing: 0.06em;
+  --text-label--font-weight: 400;
+  --text-pixel: 1rem; /* 16px, a key's label */
+  --text-pixel--line-height: 1.25;
   --text-caption: 0.75rem; /* 12px */
   --text-caption--line-height: 1.5;
   --text-body: 0.875rem; /* 14px */
@@ -123,24 +151,39 @@
   --text-stat: 1.125rem; /* 18px, stat lines « PV 18/22 · CA 16 » */
   --text-stat--line-height: 1.3;
   --text-stat--font-weight: 600;
-  --text-card-title: 1.0625rem; /* 17px, card button title */
-  --text-card-title--line-height: 1.05;
-  --text-heading: 1.625rem; /* 26px */
-  --text-heading--line-height: 1.1;
-  --text-heading-lg: 2.125rem; /* 34px */
-  --text-heading-lg--line-height: 1.1;
-  --text-display: 5.25rem; /* 84px */
-  --text-display--line-height: 0.95;
+  --text-card-title: 1rem; /* 16px, card button title */
+  --text-card-title--line-height: 1.2;
+  --text-heading: 1.5rem; /* 24px */
+  --text-heading--line-height: 1.2;
+  --text-heading-lg: 2rem; /* 32px */
+  --text-heading-lg--line-height: 1.15;
+  --text-display: 5rem; /* 80px */
+  --text-display--line-height: 1;
   --text-narration: 1.5rem; /* 24px */
   --text-narration--line-height: 1.35;
   --text-narration-lg: 1.875rem; /* 30px */
   --text-narration-lg--line-height: 1.2;
 
-  /* Radii. */
-  --radius-frame: 8px; /* inner frame of a card button */
-  --radius-button: 12px;
-  --radius-panel: 14px;
-  --radius-slab: 16px;
+  /*
+   * Radii: none. The pixel menu has square corners; controls cut a stepped
+   * corner (`pixel-corners`) instead of rounding it. Tailwind's own radii
+   * are zeroed too, so a stray `rounded-xl` stays square; `rounded-full`
+   * keeps its circles (arcade buttons, dots). The playing cards round
+   * their corners in their own material (game.css).
+   */
+  --radius-*: initial;
+  --radius-frame: 0px;
+  --radius-button: 0px;
+  --radius-panel: 0px;
+  --radius-slab: 0px;
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
 
   /*
    * Shadows: hard stacked edges, like cardboard, never soft glows. Tailwind
@@ -151,7 +194,8 @@
   --color-card-edge-deep: #6a6a6a;
   --color-rim: rgb(255 255 255 / 0.06);
   --color-drop: rgb(0 0 0 / 0.5);
-  --shadow-slab: inset 0 1px 0 var(--color-rim), 0 12px 30px var(--color-drop);
+  --shadow-slab:
+    inset 0 0 0 2px var(--color-line-strong), inset 0 4px 0 var(--color-pixel-rim), 0 4px 0 var(--color-edge-hard);
   --shadow-ivory: 0 4px 0 var(--color-ivory-edge), 0 7px 0 var(--color-ivory-edge-deep), 0 14px 24px var(--color-drop);
   --shadow-ivory-pressed:
     0 1px 0 var(--color-ivory-edge), 0 2px 0 var(--color-ivory-edge-deep), 0 4px 8px var(--color-drop);
@@ -166,7 +210,7 @@
    * Motion. Every animation has a meaning (MEMORY.md §2). Durations are
    * plain variables: `duration-(--duration-press)`.
    */
-  --duration-press: 100ms; /* a card button tips forward */
+  --duration-press: 100ms; /* a pixel key sinks */
   --duration-flip: 350ms; /* a card lifts or flips */
   --duration-deal: 700ms; /* a card is dealt into the hand */
   --duration-pop: 1200ms; /* a damage number pops and floats away */
@@ -212,7 +256,8 @@
     }
     78%,
     86% {
-      transform: perspective(500px) rotateX(14deg) translateY(4px);
+      /* a pixel key sinks one pixel into the table */
+      transform: translateY(3px);
     }
   }
   @keyframes pop {
@@ -274,7 +319,25 @@
 
 /* --- Type ------------------------------------------------------------ */
 
+/* A title of the menu: Silkscreen, mixed case (its lower case is drawn as small capitals). */
 @utility type-title {
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  font-synthesis: none;
+  letter-spacing: 0.02em;
+}
+
+/* A key's label, as on the board: Silkscreen, upper case, tracked. */
+@utility type-key {
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  font-synthesis: none;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* A playing card's title: Cinzel stays on the cards (game pieces). */
+@utility type-card {
   font-family: var(--font-title);
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -287,6 +350,8 @@
 }
 
 @utility type-label {
+  font-family: var(--font-pixel);
+  font-synthesis: none;
   font-size: var(--text-label);
   line-height: var(--text-label--line-height);
   letter-spacing: var(--text-label--letter-spacing);
@@ -316,55 +381,389 @@
   );
 }
 
-/* A slab of the table: panels, side boards. */
+/*
+ * A slab of the table: panels, side boards. A pixel panel: flat face, a
+ * two-pixel outline, a lit top row and a hard edge under it. Square
+ * corners: a container is never clipped (its popovers, focus rings and
+ * cursors must show); only the controls cut a stepped corner.
+ */
 @utility surface-slab {
-  background: linear-gradient(180deg, var(--color-slab), var(--color-slab-low));
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-slab);
+  background: var(--color-slab);
+  border: 0;
+  border-radius: 0;
   box-shadow: var(--shadow-slab);
 }
 
-/* --- Card buttons ---------------------------------------------------- */
+/* --- Pixel menu ------------------------------------------------------ */
 
 /*
- * Buttons are cards: an inner frame (`card-frame`), Cinzel label, the
- * stat gem when the action depends on one. Ivory for the main action,
- * black for the rest; pressing tips the card forward.
+ * The pixel menu of the board « Pistes UI » (track A), chosen for the
+ * whole interface (ui/adopt-pixel-menu): stepped corners, flat colour
+ * relief, Silkscreen labels, an RPG cursor on the current choice. `--px`
+ * is one pixel of the drawing: 3px on the board's keys, 2px on small
+ * controls (fields, tabs, the GM screen's small actions).
+ *
+ * `pixel-corners` cuts the stepped corner (two cells, then one) with a
+ * clip-path. Only leaf controls use it: a clip hides anything drawn
+ * outside the box, so a control draws its outline, relief and cursor
+ * inside, and containers (panels, sheets) keep square corners.
+ */
+@utility pixel-corners {
+  clip-path: polygon(
+    calc(2 * var(--px, 3px)) 0,
+    calc(100% - 2 * var(--px, 3px)) 0,
+    calc(100% - 2 * var(--px, 3px)) var(--px, 3px),
+    calc(100% - var(--px, 3px)) var(--px, 3px),
+    calc(100% - var(--px, 3px)) calc(2 * var(--px, 3px)),
+    100% calc(2 * var(--px, 3px)),
+    100% calc(100% - 2 * var(--px, 3px)),
+    calc(100% - var(--px, 3px)) calc(100% - 2 * var(--px, 3px)),
+    calc(100% - var(--px, 3px)) calc(100% - var(--px, 3px)),
+    calc(100% - 2 * var(--px, 3px)) calc(100% - var(--px, 3px)),
+    calc(100% - 2 * var(--px, 3px)) 100%,
+    calc(2 * var(--px, 3px)) 100%,
+    calc(2 * var(--px, 3px)) calc(100% - var(--px, 3px)),
+    var(--px, 3px) calc(100% - var(--px, 3px)),
+    var(--px, 3px) calc(100% - 2 * var(--px, 3px)),
+    0 calc(100% - 2 * var(--px, 3px)),
+    0 calc(2 * var(--px, 3px)),
+    var(--px, 3px) calc(2 * var(--px, 3px)),
+    var(--px, 3px) var(--px, 3px),
+    calc(2 * var(--px, 3px)) var(--px, 3px)
+  );
+}
+
+/*
+ * A pixel box: a one-pixel outline (`--pixel-line`) and the flat relief —
+ * lit top and left (`--pixel-hi`), shaded right (`--pixel-side`), a
+ * bottom edge (`--pixel-low`, `--pixel-depth` high). The four cells
+ * inside the stepped corners take the outline colour, so the outline
+ * stays closed around the step. Pair it with `pixel-corners`.
+ */
+@utility pixel-box {
+  --px: 3px;
+  --pixel-depth: calc(2 * var(--px));
+  border: 0;
+  border-radius: 0;
+  background-color: var(--pixel-face, transparent);
+  background-image:
+    linear-gradient(var(--pixel-line), var(--pixel-line)), linear-gradient(var(--pixel-line), var(--pixel-line)),
+    linear-gradient(var(--pixel-line), var(--pixel-line)), linear-gradient(var(--pixel-line), var(--pixel-line));
+  background-size: var(--px) var(--px);
+  background-repeat: no-repeat;
+  background-position:
+    var(--px) var(--px),
+    calc(100% - var(--px)) var(--px),
+    var(--px) calc(100% - var(--px)),
+    calc(100% - var(--px)) calc(100% - var(--px));
+  box-shadow:
+    inset 0 0 0 var(--px) var(--pixel-line),
+    inset 0 calc(-1 * (var(--px) + var(--pixel-depth))) 0 var(--pixel-low, transparent),
+    inset 0 calc(2 * var(--px)) 0 var(--pixel-hi, transparent),
+    inset calc(2 * var(--px)) 0 0 var(--pixel-hi, transparent),
+    inset calc(-2 * var(--px)) 0 0 var(--pixel-side, transparent);
+}
+
+/*
+ * A key of the menu, ivory: the screen's main action. `pixel-key-dark`
+ * for the others, `pixel-key-flat` for a quiet one. Pressing sinks it into
+ * the table (down one pixel, the bottom edge gone). Keyboard focus lights
+ * the outline; add `pixel-cursor` for the RPG cursor.
+ */
+@utility pixel-key {
+  @apply pixel-box pixel-corners;
+  --pixel-face: var(--color-ivory);
+  --pixel-line: var(--color-ink);
+  --pixel-hi: var(--color-ivory-hi);
+  --pixel-side: var(--color-ivory-side);
+  --pixel-low: var(--color-ivory-edge);
+  position: relative;
+  color: var(--color-ink);
+  cursor: pointer;
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  font-synthesis: none;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  &:active:not(:disabled) {
+    --pixel-depth: var(--px);
+    translate: 0 var(--px);
+  }
+  &:disabled {
+    cursor: default;
+    opacity: 0.45;
+  }
+  &:focus-visible {
+    outline: none;
+    --pixel-line: var(--color-focus);
+    --pixel-low: var(--color-focus);
+  }
+}
+
+@utility pixel-key-dark {
+  --pixel-face: var(--color-key);
+  --pixel-line: var(--color-key-line);
+  --pixel-hi: var(--color-key-hi);
+  --pixel-side: var(--color-key-side);
+  --pixel-low: var(--color-key-low);
+  color: var(--color-chalk);
+}
+
+@utility pixel-key-flat {
+  --pixel-face: transparent;
+  --pixel-line: transparent;
+  --pixel-hi: transparent;
+  --pixel-side: transparent;
+  --pixel-low: transparent;
+  --pixel-depth: 0px;
+  color: var(--color-chalk);
+
+  &:hover:not(:disabled) {
+    --pixel-face: var(--color-surface);
+  }
+}
+
+/* The lethal key (a death, a deletion): damage red outline and label. */
+@utility pixel-key-danger {
+  --pixel-face: var(--color-key);
+  --pixel-line: var(--color-damage);
+  --pixel-hi: var(--color-key-hi);
+  --pixel-side: var(--color-key-side);
+  --pixel-low: var(--color-damage-edge);
+  color: var(--color-damage);
+}
+
+/*
+ * The RPG cursor (▶), drawn in cells: Silkscreen has no ▶ and iOS may draw
+ * it as an emoji. It shows on keyboard focus and on the current choice
+ * (`aria-current`, `aria-pressed`, `aria-selected`, `aria-checked`,
+ * `data-active`), sits
+ * in the control's left padding (kept at 18px at least) and nudges left
+ * and back; under reduced motion it stays still, still visible.
+ */
+@utility pixel-cursor {
+  position: relative;
+  padding-left: var(--cursor-room, 18px);
+
+  &:focus-visible::before,
+  &[aria-current]:not([aria-current="false"])::before,
+  &[aria-pressed="true"]::before,
+  &[aria-selected="true"]::before,
+  &[aria-checked="true"]::before,
+  &[data-active]::before {
+    content: "";
+    position: absolute;
+    left: calc(var(--px, 2px) + 3px);
+    top: 50%;
+    /* 4 × 7 cells of 2px; a tab draws the 3 × 5 one (`--cursor-*`). */
+    width: var(--cursor-w, 8px);
+    height: var(--cursor-h, 14px);
+    margin-top: calc(var(--cursor-h, 14px) / -2);
+    background: currentColor;
+    clip-path: var(
+      --cursor-shape,
+      polygon(
+        0 0,
+        25% 0,
+        25% 14.28%,
+        50% 14.28%,
+        50% 28.57%,
+        75% 28.57%,
+        75% 42.85%,
+        100% 42.85%,
+        100% 57.14%,
+        75% 57.14%,
+        75% 71.42%,
+        50% 71.42%,
+        50% 85.71%,
+        25% 85.71%,
+        25% 100%,
+        0 100%
+      )
+    );
+    animation: pixel-nudge 600ms steps(2) infinite;
+    pointer-events: none;
+  }
+}
+
+@keyframes pixel-nudge {
+  to {
+    transform: translateX(-3px);
+  }
+}
+
+/*
+ * A field: a pixel box with no relief, sunk in the table. What is typed
+ * stays in Chakra Petch: it is running text, not a label.
+ */
+@utility pixel-field {
+  @apply pixel-box pixel-corners;
+  --px: 2px;
+  --pixel-depth: 0px;
+  --pixel-face: var(--color-table);
+  --pixel-line: var(--color-line-strong);
+  --pixel-hi: transparent;
+  --pixel-side: transparent;
+  --pixel-low: transparent;
+  color: var(--color-chalk);
+  font-family: var(--font-sans);
+  letter-spacing: normal;
+  text-transform: none;
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    --pixel-line: var(--color-focus);
+    --pixel-low: var(--color-focus);
+  }
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+/*
+ * A tab: a small outlined key; the open tab is ivory and carries the
+ * cursor. Silkscreen 12px upper case, the smallest size the phone reads.
+ */
+@utility pixel-tab {
+  @apply pixel-box pixel-corners pixel-cursor;
+  --px: 2px;
+  --pixel-depth: 2px;
+  --pixel-face: transparent;
+  --pixel-line: var(--color-line-strong);
+  --pixel-hi: transparent;
+  --pixel-side: transparent;
+  --pixel-low: var(--color-line);
+  --cursor-room: 12px;
+  --cursor-w: 6px;
+  --cursor-h: 10px;
+  --cursor-shape: polygon(
+    0 0,
+    33.33% 0,
+    33.33% 20%,
+    66.66% 20%,
+    66.66% 40%,
+    100% 40%,
+    100% 60%,
+    66.66% 60%,
+    66.66% 80%,
+    33.33% 80%,
+    33.33% 100%,
+    0 100%
+  );
+  padding-right: 8px;
+  color: var(--color-mute-soft);
+  font-family: var(--font-pixel);
+  font-size: var(--text-label);
+  font-weight: 400;
+  font-synthesis: none;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &[aria-selected="true"],
+  &[aria-current]:not([aria-current="false"]) {
+    --pixel-face: var(--color-ivory);
+    --pixel-line: var(--color-ink);
+    --pixel-low: var(--color-ivory-edge);
+    color: var(--color-ink);
+  }
+  &:hover:not([aria-selected="true"], [aria-current="page"]) {
+    color: var(--color-chalk);
+  }
+  &:focus-visible {
+    outline: none;
+    --pixel-line: var(--color-focus);
+    --pixel-low: var(--color-focus);
+  }
+}
+
+/*
+ * A choice among several (a target, an answer, a scene in a list): a
+ * small dark pixel box that turns ivory and carries the cursor when it is
+ * the current one (`aria-pressed`, `aria-selected`, `aria-checked`, `aria-current`,
+ * `data-active`). Its content is free: running text stays running text.
+ */
+@utility pixel-choice {
+  @apply pixel-box pixel-corners pixel-cursor;
+  --px: 2px;
+  --pixel-depth: 2px;
+  --pixel-face: var(--color-surface);
+  --pixel-line: var(--color-line-strong);
+  --pixel-hi: transparent;
+  --pixel-side: transparent;
+  --pixel-low: var(--color-edge-hard);
+  color: var(--color-chalk);
+  cursor: pointer;
+
+  &[aria-pressed="true"],
+  &[aria-selected="true"],
+  &[aria-checked="true"],
+  &[aria-current]:not([aria-current="false"]),
+  &[data-active] {
+    --pixel-face: var(--color-ivory);
+    --pixel-line: var(--color-ink);
+    --pixel-hi: var(--color-ivory-hi);
+    --pixel-low: var(--color-ivory-edge);
+    color: var(--color-ink);
+  }
+  &:hover:not(:disabled, [aria-pressed="true"], [aria-selected="true"], [aria-checked="true"], [data-active]) {
+    --pixel-face: var(--color-surface-raised);
+  }
+  &:disabled {
+    cursor: default;
+    opacity: 0.45;
+  }
+  &:focus-visible {
+    outline: none;
+    --pixel-line: var(--color-focus);
+    --pixel-low: var(--color-focus);
+  }
+}
+
+/*
+ * The card buttons became pixel keys: `button-card` is an ivory key,
+ * `button-card-dark` a dark one. `card-frame` inside a key draws nothing
+ * (`--frame-color` is transparent): the pixel key has no inner frame.
  */
 @utility button-card {
-  --frame-color: var(--color-ink);
+  @apply pixel-box pixel-corners pixel-cursor;
+  --frame-color: transparent;
   --sub-color: var(--color-ink-soft);
+  --pixel-face: var(--color-ivory);
+  --pixel-line: var(--color-ink);
+  --pixel-hi: var(--color-ivory-hi);
+  --pixel-side: var(--color-ivory-side);
+  --pixel-low: var(--color-ivory-edge);
   display: block;
   box-sizing: border-box;
-  padding: 6px;
-  border: 0;
-  border-radius: var(--radius-button);
-  background: var(--color-ivory);
+  position: relative;
+  padding: 6px 6px 9px var(--cursor-room, 18px);
   color: var(--color-ink);
   text-align: left;
   cursor: pointer;
-  transform-origin: 50% 100%;
-  box-shadow: var(--shadow-ivory);
-  transition:
-    transform var(--duration-press),
-    box-shadow var(--duration-press);
 
-  &:active {
-    transform: perspective(500px) rotateX(14deg) translateY(4px);
-    box-shadow: var(--shadow-ivory-pressed);
+  &:active:not(:disabled) {
+    --pixel-depth: var(--px);
+    translate: 0 var(--px);
+  }
+  &:focus-visible {
+    outline: none;
+    --pixel-line: var(--color-focus);
+    --pixel-low: var(--color-focus);
   }
 }
 
 @utility button-card-dark {
-  --frame-color: var(--color-ivory-edge-deep);
-  --sub-color: var(--color-mute);
-  background: var(--color-surface);
+  --frame-color: transparent;
+  --sub-color: var(--color-mute-soft);
+  --pixel-face: var(--color-key);
+  --pixel-line: var(--color-key-line);
+  --pixel-hi: var(--color-key-hi);
+  --pixel-side: var(--color-key-side);
+  --pixel-low: var(--color-key-low);
   color: var(--color-chalk);
-  box-shadow: var(--shadow-dark);
-
-  &:active {
-    box-shadow: var(--shadow-dark-pressed);
-  }
 }
 
 @utility card-frame {
@@ -616,6 +1015,15 @@
   --color-ivory: #ffffff;
   --color-ivory-edge: #b9b5ad;
   --color-ivory-edge-deep: #8a857b;
+  --color-ivory-hi: #ffffff;
+  --color-ivory-side: #e1ddd5;
+  --color-key: #e9e6df;
+  --color-key-line: #8a857b;
+  --color-key-hi: #ffffff;
+  --color-key-side: #d6d2ca;
+  --color-key-low: #bdb8ae;
+  --color-pixel-rim: #ffffff;
+  --color-focus: #141414;
 
   --color-stat-hp: #b8142a;
   --color-stat-atk: #924a00;
@@ -690,6 +1098,15 @@
   --color-ivory: #ededed;
   --color-ivory-edge: #8a8a8a;
   --color-ivory-edge-deep: #5a5a5a;
+  --color-ivory-hi: #ffffff;
+  --color-ivory-side: #bdbdbd;
+  --color-key: #262626;
+  --color-key-line: #5a5a5a;
+  --color-key-hi: #444444;
+  --color-key-side: #161616;
+  --color-key-low: #050505;
+  --color-pixel-rim: #262626;
+  --color-focus: #f2f2f2;
 
   --color-stat-hp: #ff4d5e;
   --color-stat-atk: #ff9f1c;

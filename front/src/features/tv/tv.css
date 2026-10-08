@@ -63,7 +63,7 @@
   place-items: center;
   width: 96px;
   height: 120px;
-  border-radius: 14px;
+  border-radius: 0;
   background: var(--color-ivory);
   color: var(--color-ink);
   font-family: var(--font-sans);
@@ -75,7 +75,7 @@
   display: block;
   width: 132px;
   height: 168px;
-  border-radius: 14px;
+  border-radius: 0;
   border: 2px dashed var(--color-line-dashed);
 }
 
@@ -106,7 +106,7 @@
   flex-direction: column;
   gap: 14px;
   padding: 28px 32px;
-  border-radius: 18px;
+  border-radius: 0;
   background: rgb(8 8 8 / 0.78);
 }
 
@@ -120,7 +120,7 @@
   isolation: isolate;
   display: grid;
   place-items: center;
-  border-radius: 20px;
+  border-radius: 0;
   border: 2px solid var(--color-line);
   background: #000;
   box-shadow: 0 40px 90px rgb(0 0 0 / 0.75);
@@ -141,7 +141,7 @@
   align-items: center;
   gap: 20px;
   padding: 14px 20px;
-  border-radius: 18px;
+  border-radius: 0;
   border: 1px solid var(--color-line);
   background: linear-gradient(180deg, #191919, #101010);
 }
@@ -164,7 +164,7 @@
 
 .tv-chip {
   padding: 6px 12px;
-  border-radius: 10px;
+  border-radius: 0;
   border: 2px solid var(--color-line-strong);
   font-size: 18px;
   font-weight: 700;
@@ -191,7 +191,7 @@
   gap: 18px;
   margin: 0;
   padding: 18px 24px;
-  border-radius: 16px;
+  border-radius: 0;
   border: 1px solid var(--color-line);
   background: rgb(8 8 8 / 0.92);
   font-size: 26px;
@@ -231,8 +231,9 @@
   padding: 8px 30px;
   background: var(--color-ivory);
   color: var(--color-ink);
-  font-family: var(--font-title);
-  font-weight: 800;
+  font-family: var(--font-pixel);
+  font-synthesis: none;
+  font-weight: 400;
   transform: rotate(-3deg);
   box-shadow: 0 8px 0 #6e6e6e;
   animation: tv-slam 0.7s cubic-bezier(0.2, 1.4, 0.3, 1) 2.2s both;
@@ -245,7 +246,9 @@
 /* A blow: the number hits the screen at once, the fight goes on. */
 .tv-hit {
   display: inline-block;
-  font-family: var(--font-title);
+  /* a number: Chakra Petch, like every number (Silkscreen has no −) */
+  font-family: var(--font-sans);
+  font-weight: 700;
   animation: tv-slam 0.45s cubic-bezier(0.2, 1.4, 0.3, 1) both;
 }
 

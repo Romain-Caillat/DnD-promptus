@@ -54,7 +54,7 @@ export function JournalTab({ campaignId, refreshKey }: { campaignId: string; ref
       {view.scene && (
         <section className="flex flex-col gap-1.5">
           <h2 className="type-label">{t('play.journal.scene')}</h2>
-          <span className="type-title text-[20px]">{view.scene.title}</span>
+          <span className="type-title text-[16px]">{view.scene.title}</span>
           {view.scene.place && <span className="text-caption text-mute-soft">{view.scene.place.name}</span>}
           {view.scene.readAloud && (
             <p className="type-narration text-[18px] leading-snug text-chalk-soft">{view.scene.readAloud}</p>
@@ -78,7 +78,7 @@ export function JournalTab({ campaignId, refreshKey }: { campaignId: string; ref
           <h2 className="type-label">{t('play.journal.npcs')}</h2>
           <ul className="flex flex-col gap-1.5">
             {view.npcs.map((npc) => (
-              <li key={npc.id} className="flex flex-col rounded-button border border-line bg-well px-3 py-2.5">
+              <li key={npc.id} className="flex flex-col pixel-field px-3 py-2.5">
                 <b className="text-body">{npc.name}</b>
                 {npc.title && <small className="text-caption text-mute-soft">{npc.title}</small>}
                 {npc.appearance && <small className="text-caption text-mute">{npc.appearance}</small>}
@@ -97,7 +97,7 @@ export function JournalTab({ campaignId, refreshKey }: { campaignId: string; ref
                 className={
                   g.done
                     ? 'flex flex-col rounded-button bg-ivory px-3 py-2.5 text-ink shadow-ivory-flat'
-                    : 'flex flex-col rounded-button border border-line bg-well px-3 py-2.5'
+                    : 'flex flex-col pixel-field px-3 py-2.5'
                 }
               >
                 <b className="text-body">
@@ -115,7 +115,7 @@ export function JournalTab({ campaignId, refreshKey }: { campaignId: string; ref
           <h2 className="type-label">{t('play.journal.factions')}</h2>
           <ul className="flex flex-col gap-1.5">
             {view.factions.map((f) => (
-              <li key={f.id} className="flex flex-col gap-1.5 rounded-button border border-line bg-well px-3 py-2.5">
+              <li key={f.id} className="flex flex-col gap-1.5 pixel-field px-3 py-2.5">
                 <b className="text-body">{f.name}</b>
                 <AffinityGauge name={f.name} value={f.affinity} min={f.min} max={f.max} />
                 {f.description && <small className="text-caption text-mute">{f.description}</small>}

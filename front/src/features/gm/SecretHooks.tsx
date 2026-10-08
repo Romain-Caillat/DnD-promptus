@@ -176,7 +176,7 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
           {characters.map(({ seat, character }) => (
             <li
               key={character.id}
-              className="flex h-[190px] min-w-[150px] flex-1 flex-col items-center justify-end gap-1.5 rounded-[14px] border border-line bg-surface pb-3"
+              className="flex h-[190px] min-w-[150px] flex-1 flex-col items-center justify-end gap-1.5 rounded-none border border-line bg-surface pb-3"
             >
               {character.look && <Sprite look={character.look} scale={4} />}
               <span className="type-title text-[16px]">{character.name || seat.nickname}</span>
@@ -197,7 +197,7 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
           {hooks.map((h) => (
             <li
               key={h.id}
-              className="flex flex-col gap-1 rounded-[10px] border border-ink bg-ivory px-3 py-2.5 text-[13px] leading-snug text-ink"
+              className="flex flex-col gap-1 rounded-none border border-ink bg-ivory px-3 py-2.5 text-[13px] leading-snug text-ink"
             >
               <b>{h.title}</b>
               {h.body && <span>{h.body}</span>}
@@ -233,7 +233,7 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
           <label className="flex flex-col gap-1.5">
             <span className="type-label">{t('gm.hooks.character')}</span>
             <select
-              className="rounded-button border border-line-strong bg-well p-2.5 text-body text-chalk"
+              className="pixel-field p-2.5 text-body"
               value={characterId}
               disabled={draft.id !== null}
               onChange={(e) => setDraft({ ...draft, characterId: e.target.value })}
@@ -246,7 +246,7 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
             </select>
           </label>
           {backstory?.id === characterId && (
-            <div className="rounded-xl border border-line-strong bg-well px-4 py-3 text-body leading-relaxed text-chalk-soft">
+            <div className="pixel-field px-4 py-3 text-body leading-relaxed text-chalk-soft">
               <span className="type-label mb-1.5 block">{t('gm.review.backstory')}</span>
               <BackstoryText backstory={backstory.story} />
             </div>
@@ -269,7 +269,7 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
               {proposals.hooks.map((h, i) => (
                 <article
                   key={`${i}-${h.title}`}
-                  className="flex flex-col gap-1 rounded-[10px] border border-dashed border-line-strong bg-well px-3 py-2.5 text-[13px] leading-snug"
+                  className="flex flex-col gap-1 rounded-none border border-dashed border-line-strong bg-well px-3 py-2.5 text-[13px] leading-snug"
                 >
                   <b>{h.title}</b>
                   {h.body && <span>{h.body}</span>}
@@ -305,7 +305,7 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
           <label className="flex flex-col gap-1.5">
             <span className="type-label">{t('gm.hooks.hookTitle')}</span>
             <input
-              className="rounded-button border border-line-strong bg-well p-2.5 text-body text-chalk"
+              className="pixel-field p-2.5 text-body"
               value={draft.title}
               maxLength={120}
               onChange={(e) => setDraft({ ...draft, title: e.target.value })}
@@ -314,7 +314,7 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
           <label className="flex flex-col gap-1.5">
             <span className="type-label">{t('gm.hooks.body')}</span>
             <textarea
-              className="min-h-20 rounded-button border border-line-strong bg-well p-2.5 text-body text-chalk"
+              className="min-h-20 pixel-field p-2.5 text-body"
               value={draft.body}
               maxLength={2000}
               onChange={(e) => setDraft({ ...draft, body: e.target.value })}
@@ -327,7 +327,7 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
                 {targets.map((target) => (
                   <label
                     key={target.id}
-                    className="flex items-center gap-2 rounded-[10px] border border-line bg-well px-2.5 py-1.5 text-caption"
+                    className="flex items-center gap-2 pixel-field px-2.5 py-1.5 text-caption"
                   >
                     <input
                       type="checkbox"

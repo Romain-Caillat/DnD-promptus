@@ -250,7 +250,7 @@ function Creator({
           {character.gmNote}
         </div>
       )}
-      <h1 className="type-title text-[22px]">{t(`creator.titles.${step}`)}</h1>
+      <h1 className="type-title text-[24px]">{t(`creator.titles.${step}`)}</h1>
 
       {step === 'people' && rules && (
         <OptionGrid options={rules.peoples} selected={sheet.peopleId} onPick={(id) => update({ peopleId: id })} />

@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { CardButton } from '@/components/game/CardButton'
 import { cn } from '@/lib/utils'
 import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion'
 import { SpritesSection } from '@/features/sprites/SpritesSection'
@@ -29,6 +30,7 @@ export function ReferencePage() {
           </p>
         </header>
 
+        <MenuSection />
         <div className="grid gap-5 lg:grid-cols-2">
           <PaletteSection />
           <TypeSection />
@@ -65,6 +67,108 @@ function Slab({
       {children}
       {note && <p className="text-caption text-mute">{note}</p>}
     </section>
+  )
+}
+
+// --- Pixel menu ----------------------------------------------------------
+
+const CHOICES = ['attack', 'item', 'endTurn'] as const
+const TABS = ['text', 'combat', 'visuals', 'sound'] as const
+/** The pixel font's crisp sizes (one font pixel = 1/8 of the size). */
+const PIXEL_SIZES = [12, 16, 24, 32] as const
+const PX = ' px'
+
+/**
+ * The interface chrome (board « Pistes UI », track A, ui/adopt-pixel-menu):
+ * keys, the RPG cursor on a choice, tabs, a field, the pixel font's sizes.
+ */
+function MenuSection() {
+  const { t } = useTranslation()
+  const [choice, setChoice] = useState<(typeof CHOICES)[number]>('attack')
+  const [tab, setTab] = useState<(typeof TABS)[number]>('text')
+  return (
+    <Slab title={t('reference.menu.title')} note={t('reference.menu.note')}>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-col gap-3">
+          <h3 className="type-label">{t('reference.menu.keys')}</h3>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button size="lg">{t('reference.menu.main')}</Button>
+            <Button variant="outline" size="lg">
+              {t('reference.menu.other')}
+            </Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button>{t('reference.menu.main')}</Button>
+            <Button variant="outline">{t('reference.menu.other')}</Button>
+            <Button variant="ghost">{t('reference.menu.quiet')}</Button>
+            <Button variant="destructive">{t('reference.menu.danger')}</Button>
+          </div>
+          <p className="text-caption text-mute">{t('reference.menu.keysNote')}</p>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <h3 className="type-label">{t('reference.menu.choice')}</h3>
+          <div className="flex flex-col gap-2.5">
+            {CHOICES.map((c) => (
+              <Button
+                key={c}
+                size="lg"
+                variant={c === choice ? 'default' : 'outline'}
+                aria-pressed={c === choice}
+                className="w-full"
+                onClick={() => setChoice(c)}
+              >
+                {t(`reference.menu.${c}`)}
+              </Button>
+            ))}
+          </div>
+          <p className="text-caption text-mute">{t('reference.menu.choiceNote')}</p>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-3">
+            <h3 className="type-label">{t('reference.menu.tabs')}</h3>
+            <div role="tablist" aria-label={t('reference.menu.tabs')} className="grid grid-cols-2 gap-1 sm:grid-cols-4 md:grid-cols-2">
+              {TABS.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === id}
+                  className="pixel-tab min-h-9 pb-1"
+                  onClick={() => setTab(id)}
+                >
+                  {t(`reference.menu.tabNames.${id}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="flex flex-col gap-1.5">
+            <span className="type-label">{t('reference.menu.fieldLabel')}</span>
+            <input className="pixel-field px-2.5 py-2 text-body" defaultValue={t('reference.menu.fieldValue')} />
+            <span className="text-caption text-mute">{t('reference.menu.fieldNote')}</span>
+          </label>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2 border-t border-line pt-4">
+        <h3 className="type-label">{t('reference.menu.sizes')}</h3>
+        <ul className="flex flex-col gap-1.5">
+          {PIXEL_SIZES.map((size) => (
+            <li key={size} className="flex items-baseline gap-4">
+              <span className="w-12 flex-none text-caption text-mute tabular-nums">
+                {size}
+                {PX}
+              </span>
+              <span className="type-title min-w-0 truncate" style={{ fontSize: size }}>
+                {t('reference.menu.sample')}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="text-caption text-mute">{t('reference.menu.sizesNote')}</p>
+      </div>
+    </Slab>
   )
 }
 
@@ -204,46 +308,6 @@ function TypeSection() {
 
 // --- Materials -----------------------------------------------------------
 
-function ButtonCardSample({
-  title,
-  sub,
-  dark,
-  gem,
-  small,
-  className,
-}: {
-  title: string
-  sub?: string
-  dark?: boolean
-  gem?: { stat: Stat; value: string }
-  small?: boolean
-  className?: string
-}) {
-  return (
-    <div className={cn('button-card', dark && 'button-card-dark', small && 'p-[3px]', className)}>
-      <div
-        className={cn(
-          'card-frame flex items-center',
-          small ? 'min-h-[30px] gap-2 px-2.5' : 'min-h-11 gap-3 px-3 py-1.5',
-        )}
-      >
-        {gem && (
-          <span className="relative grid place-items-center">
-            <StatShape stat={gem.stat} size={34} />
-            <span className="absolute text-caption font-bold text-ink">{gem.value}</span>
-          </span>
-        )}
-        <span className="min-w-0 flex-1">
-          <span className={cn('type-title block', small ? 'text-[13px]' : 'text-[18px] leading-[1.05]')}>
-            {title}
-          </span>
-          {sub && <span className="mt-0.5 block text-[11px] font-semibold text-(color:--sub-color)">{sub}</span>}
-        </span>
-      </div>
-    </div>
-  )
-}
-
 const ATTACK_GEM = { stat: 'atk', value: '+5' } as const
 
 function RarityCard({ tier, rank }: { tier: Rarity; rank: number }) {
@@ -252,7 +316,7 @@ function RarityCard({ tier, rank }: { tier: Rarity; rank: number }) {
     <figure className="flex flex-col items-center gap-3">
       <div className={cn('relative aspect-[5/7] w-full max-w-30 rounded-[9%/6.4%]', RARITY_MATERIAL[tier])}>
         <div className="card-frame absolute inset-[5.5%] flex flex-col items-center justify-between rounded-[6%/4.2%] [background:var(--frame-bg)] px-1 py-3 text-center">
-          <span className="type-title text-[13px] leading-tight">{t(`reference.materials.tiers.${tier}.name`)}</span>
+          <span className="type-card text-[13px] leading-tight">{t(`reference.materials.tiers.${tier}.name`)}</span>
           <span
             className="flex gap-1.5"
             role="img"
@@ -276,20 +340,21 @@ function MaterialsSection() {
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
       <Slab title={t('reference.materials.buttons')} note={t('reference.materials.buttonsNote')}>
-        <div className="flex max-w-[268px] flex-col gap-4">
-          <ButtonCardSample
+        <div className="flex max-w-[300px] flex-col gap-4">
+          <CardButton
             title={t('reference.materials.attack')}
-            sub={t('reference.materials.attackSub')}
+            subtitle={t('reference.materials.attackSub')}
             gem={ATTACK_GEM}
           />
-          <ButtonCardSample
+          <CardButton
             title={t('reference.materials.endTurn')}
-            sub={t('reference.materials.endTurnSub')}
-            dark
+            subtitle={t('reference.materials.endTurnSub')}
+            variant="dark"
+            icon="hourglass"
           />
           <div className="grid grid-cols-2 gap-2.5">
-            <ButtonCardSample title={t('reference.materials.accept')} small />
-            <ButtonCardSample title={t('reference.materials.refuse')} small dark />
+            <CardButton title={t('reference.materials.accept')} size="small" />
+            <CardButton title={t('reference.materials.refuse')} size="small" variant="dark" />
           </div>
         </div>
       </Slab>

@@ -87,7 +87,7 @@ export function TableInvite({
         <h1 className="type-title text-heading">{t('gm.table.inviteTitle')}</h1>
         <div className="flex flex-col gap-2">
           <span className="type-label">{t('gm.table.linkLabel')}</span>
-          <div className="flex flex-wrap items-center gap-3 rounded-button border border-line-strong bg-well p-3">
+          <div className="flex flex-wrap items-center gap-3 pixel-field p-3">
             {link ? (
               <input
                 className="min-w-0 flex-1 bg-transparent text-body text-chalk"
@@ -123,7 +123,7 @@ export function TableInvite({
           <label className="flex flex-col gap-2">
             <span className="type-label">{t('gm.table.messageLabel')}</span>
             <textarea
-              className="min-h-36 rounded-button border border-line-strong bg-well p-3.5 text-body leading-relaxed text-chalk-soft"
+              className="min-h-36 pixel-field p-3.5 text-body leading-relaxed text-chalk-soft"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
@@ -153,7 +153,7 @@ export function TableInvite({
           onClick={() => void copy()}
         >
           <span className="card-frame flex min-h-10 flex-col justify-center px-3.5 py-1.5">
-            <span className="type-title text-card-title">{t('gm.table.copy')}</span>
+            <span className="type-key text-card-title">{t('gm.table.copy')}</span>
             <span className="mt-0.5 text-[11px] font-semibold text-(color:--sub-color)">{t('gm.table.copySub')}</span>
           </span>
         </button>

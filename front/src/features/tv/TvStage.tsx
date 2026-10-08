@@ -34,7 +34,7 @@ export function TvStage({ view, media, highlight }: { view: ScreenView; media: M
   return (
     <div className="tv-screen">
       <header className="tv-top">
-        <span className="type-title text-[30px]">{view.title}</span>
+        <span className="type-title text-[32px]">{view.title}</span>
         {view.session && <span className="type-label text-[16px]">{t('tv.session', { number: view.session.number })}</span>}
       </header>
       {view.music && (
@@ -76,7 +76,7 @@ function Seat({ seat, size = 6 }: { seat: ScreenSeat; size?: number }) {
   return (
     <div className={cn('flex flex-col items-center gap-3', !seat.here && 'opacity-45')}>
       {seat.look ? <Sprite look={seat.look} scale={size} label={seat.name} /> : <span className="tv-noportrait" />}
-      <span className="type-title text-[30px]">{seat.name}</span>
+      <span className="type-title text-[32px]">{seat.name}</span>
       <span className="text-[18px] text-mute-soft">{seat.nickname}</span>
     </div>
   )
@@ -88,7 +88,7 @@ function Lobby({ view, live = false }: { view: ScreenView; live?: boolean }) {
   return (
     <div className="tv-center gap-8">
       <span className="type-label text-[18px]">{t('tv.tonight')}</span>
-      <h1 className="type-title text-[110px] leading-none">{view.title}</h1>
+      <h1 className="type-title text-[112px] leading-none">{view.title}</h1>
       {view.session && <span className="type-label text-[18px]">{t('tv.session', { number: view.session.number })}</span>}
       {view.party.length > 0 && (
         <div className="mt-8 flex flex-wrap items-end justify-center gap-16">
@@ -199,7 +199,7 @@ function MapFocus({ view, media, fight }: { view: ScreenView; media: MediaList |
               {s.look ? <Sprite look={s.look} scale={2} /> : <span className="tv-noportrait tv-noportrait-sm" />}
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="type-title truncate text-[28px]">{s.name}</span>
+                  <span className="type-title truncate text-[24px]">{s.name}</span>
                   <span className="text-[18px] text-mute-soft">{s.nickname}</span>
                 </div>
                 {hp !== null && max !== null && (

@@ -129,11 +129,10 @@ function ChoiceButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'flex flex-col items-center gap-1 rounded-[12px] border-[1.5px] border-line bg-surface px-2 py-3 text-center text-caption text-chalk-soft',
-        'disabled:opacity-40',
+        'pixel-choice flex flex-col items-center gap-1 py-3 pr-2 pb-3.5 text-center text-caption text-chalk-soft',
       )}
     >
-      <b className="type-title text-[15px] text-chalk">{title}</b>
+      <b className="type-title text-[16px] text-chalk">{title}</b>
       <span>{sub}</span>
     </button>
   )

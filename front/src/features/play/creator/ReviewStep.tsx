@@ -45,10 +45,10 @@ export function CharacterSummary({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-end gap-3.5 rounded-[14px] border border-line bg-surface p-3.5">
+      <div className="flex items-end gap-3.5 rounded-none border border-line bg-surface p-3.5">
         <Sprite look={look} scale={4} label={name} />
         <div className="flex flex-col gap-1">
-          <span className="type-title text-[22px]">{name}</span>
+          <span className="type-title text-[24px]">{name}</span>
           <span className="text-caption text-mute-soft">{subtitle}</span>
         </div>
       </div>
@@ -69,7 +69,7 @@ export function CharacterSummary({
         </div>
       )}
       {story && (
-        <p className="line-clamp-3 rounded-xl border border-line-strong bg-table px-3.5 py-3 text-caption text-chalk-soft">
+        <p className="line-clamp-3 pixel-field px-3.5 py-3 text-caption text-chalk-soft">
           {story}
         </p>
       )}

@@ -86,7 +86,7 @@ export function BattleScreen({
 
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="type-title text-[20px]">{t('battle.title')}</h2>
+      <h2 className="type-title text-[16px]">{t('battle.title')}</h2>
       <p
         role="status"
         className={cn(
@@ -126,8 +126,7 @@ export function BattleScreen({
                 aria-pressed={picked === o.id}
                 title={o.description}
                 className={cn(
-                  'flex min-w-32 flex-col items-start gap-0.5 rounded-xl border px-3 py-2 text-left disabled:opacity-40',
-                  picked === o.id ? 'border-ivory bg-ivory text-ink' : 'border-line bg-surface',
+                  'pixel-choice flex min-w-32 flex-none flex-col items-start gap-0.5 py-2 pr-3 pb-2.5 text-left',
                 )}
                 onClick={() => pick(o)}
               >
@@ -154,7 +153,7 @@ export function BattleScreen({
           )}
           {me.myTurn && me.actions >= me.stationCost && (
             <select
-              className="rounded-button border border-line bg-table px-2 py-1.5 text-body text-chalk"
+              className="pixel-field px-2 py-1.5 text-body"
               value=""
               aria-label={t('battle.changeStation', { cost: me.stationCost })}
               onChange={(e) => e.target.value && send({ kind: 'station', station: e.target.value === '-' ? null : e.target.value })}
@@ -258,7 +257,7 @@ function AimPicker({
 }) {
   const { t } = useTranslation()
   const chip = (on: boolean) =>
-    cn('rounded-button border px-3 py-1.5 text-body', on ? 'border-ivory bg-ivory text-ink' : 'border-line')
+    cn('pixel-choice py-1.5 pr-3 pb-2 text-body', on && 'text-ink')
   switch (action.aim) {
     case 'ship':
       return action.targets.length === 0 ? (

@@ -297,8 +297,7 @@ function Proposal({
           type="button"
           aria-pressed={picked === e.id}
           className={cn(
-            'flex flex-col gap-0.5 rounded-md border px-2.5 py-2 text-left text-caption',
-            picked === e.id ? 'border-ivory bg-ivory text-ink' : 'border-line',
+            'pixel-choice flex flex-col gap-0.5 py-2 pr-2.5 pb-2.5 text-left text-caption',
           )}
           onClick={() => {
             setPicked(e.id)

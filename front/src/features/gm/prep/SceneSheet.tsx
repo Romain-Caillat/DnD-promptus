@@ -134,9 +134,9 @@ export function SceneSheet({
           {t('prep.scene.kicker', { act: act?.title ?? node.act })}
           {node.optional && ` · ${t('prep.review.optional')}`}
         </span>
-        <h2 className="type-title text-[17px] text-chalk">{node.title}</h2>
+        <h2 className="type-title text-[16px] text-chalk">{node.title}</h2>
       </header>
-      <div role="tablist" aria-label={t('prep.scene.tabs')} className="flex gap-1 border-b border-line pb-2">
+      <div role="tablist" aria-label={t('prep.scene.tabs')} className="flex flex-wrap gap-1">
         {SHEET_TABS.map((id) => (
           <button
             key={id}
@@ -144,8 +144,7 @@ export function SceneSheet({
             role="tab"
             aria-selected={tab === id}
             className={cn(
-              'flex-1 rounded-button px-2 py-1.5 text-caption font-semibold',
-              tab === id ? 'bg-ivory text-ink' : 'text-chalk hover:bg-surface',
+              'pixel-tab min-h-9 flex-1 pb-1',
             )}
             onClick={() => setTab(id)}
           >
@@ -774,7 +773,7 @@ function VisualsTab({
                 </Btn>
               )}
               <Link
-                className="rounded-button border border-line px-2.5 py-1.5 text-caption font-bold text-chalk"
+                className="pixel-key pixel-key-dark pixel-cursor inline-flex min-h-8 items-center py-1 pr-2.5 pb-2 text-label [--px:2px]"
                 to={`/campagnes/${campaignId}/cartes/${own.map.id}`}
               >
                 {t('prep.scene.visuals.editMap')}
@@ -922,7 +921,7 @@ function SoundTab({ node, busy, onSave }: { node: StoryNode; busy: boolean; onSa
               <div className="flex flex-wrap gap-1.5">
                 {query && (
                   <a
-                    className="rounded-button border border-line px-2.5 py-1.5 text-caption font-bold text-chalk"
+                    className="pixel-key pixel-key-dark pixel-cursor inline-flex min-h-8 items-center py-1 pr-2.5 pb-2 text-label [--px:2px]"
                     href={`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`}
                     target="_blank"
                     rel="noreferrer"

@@ -2,264 +2,259 @@
  * The character creator, phone first (board « Créer · le personnage de
  * Marc », docs/design/player-create-play.py). Black and white; colour
  * only in the swatches, the character and the stat gems.
+ *
+ * In the `components` layer: the pixel menu utilities (`pixel-choice`,
+ * `pixel-tab`, `pixel-field`, ui/adopt-pixel-menu) set on the same
+ * elements win over these layout rules.
  */
-.cr-dots {
-  display: flex;
-  gap: 6px;
-}
-.cr-dots > i {
-  flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--color-line);
-}
-.cr-dots > i[data-on] {
-  background: var(--color-chalk);
-}
-
-.cr-stage {
-  position: relative;
-  display: grid;
-  place-items: start center;
-  padding-top: 12px;
-  flex: none;
-  height: 284px;
-  border-radius: 16px;
-  border: 1px solid var(--color-line);
-  background:
-    radial-gradient(50% 22% at 50% 88%, rgb(255 255 255 / 0.12), transparent),
-    var(--color-surface);
-}
-.cr-stage > .cr-stage-label {
-  position: absolute;
-  left: 10px;
-  top: 10px;
-}
-.cr-stage > .cr-turn {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
-  display: flex;
-  justify-content: center;
-  gap: 4px;
-}
-.cr-turn > button {
-  min-width: 36px;
-  height: 32px;
-  padding: 0 8px;
-  border-radius: 8px;
-  border: 1px solid var(--color-line);
-  background: var(--color-surface);
-  color: var(--color-chalk);
-  font-size: 13px;
-}
-.cr-turn > button[aria-pressed='true'] {
-  background: var(--color-ivory);
-  color: var(--color-ink);
-}
-
-.cr-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 3px;
-  border-radius: 10px;
-  background: var(--color-table);
-  border: 1px solid var(--color-line);
-}
-.cr-tabs > button {
-  flex: 1;
-  padding: 7px 0;
-  border-radius: 7px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--color-mute);
-}
-.cr-tabs > button[aria-selected="true"] {
-  background: var(--color-ivory);
-  color: var(--color-ink);
-}
-
-.cr-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.cr-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 40px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: var(--color-surface);
-  border: 1.5px solid var(--color-line);
-  font-size: 13px;
-  color: var(--color-chalk-soft);
-}
-.cr-chip[aria-pressed="true"] {
-  background: var(--color-ivory);
-  border-color: var(--color-ink);
-  color: var(--color-ink);
-  box-shadow: 0 3px 0 var(--color-ivory-edge);
-}
-
-.cr-swatch {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border-radius: 10px;
-  border: 2px solid var(--color-line);
-  box-shadow: 0 3px 0 var(--color-black);
-}
-.cr-swatch[aria-pressed="true"] {
-  border-color: var(--color-chalk);
-  box-shadow:
-    0 0 0 2px var(--color-ink),
-    0 0 0 4px var(--color-chalk);
-}
-
-/* A choice card: a people or a class. */
-.cr-option {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px;
-  border-radius: 12px;
-  background: var(--color-surface);
-  border: 1.5px solid var(--color-line);
-  font-size: 12px;
-  text-align: left;
-  color: var(--color-mute-soft);
-}
-.cr-option > b {
-  font-family: var(--font-title);
-  font-size: 15px;
-  color: var(--color-chalk);
-}
-.cr-option[aria-pressed="true"] {
-  background: var(--color-ivory);
-  border-color: var(--color-ink);
-  color: var(--color-ink-soft);
-  box-shadow: 0 3px 0 var(--color-ivory-edge);
-}
-.cr-option[aria-pressed="true"] > b {
-  color: var(--color-ink);
-}
-
-.cr-dice {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 44px;
-  flex: none;
-  border-radius: 12px;
-  border: 1.5px dashed var(--color-mute);
-  background: var(--color-table);
-  color: var(--color-chalk);
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.cr-field {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: var(--color-table);
-  border: 1px solid var(--color-line-strong);
-  font-size: 16px;
-  color: var(--color-chalk);
-}
-textarea.cr-field {
-  font-size: 15px;
-  line-height: 1.45;
-  resize: vertical;
-}
-
-/* One ability: label, −, score, +. Over the spread, it turns orange. */
-.cr-ability {
-  display: grid;
-  grid-template-columns: 44px 1fr 40px 34px 40px;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 10px;
-  background: var(--color-well);
-  border: 1.5px solid transparent;
-  font-size: 12px;
-  color: var(--color-mute-soft);
-}
-.cr-ability > b {
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  color: var(--color-chalk);
-}
-.cr-ability > strong {
-  font-size: 18px;
-  text-align: center;
-  color: var(--color-chalk);
-}
-.cr-ability > button {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-line-strong);
-  color: var(--color-chalk);
-  font-weight: 800;
-}
-.cr-ability[data-over] {
-  border-color: var(--color-stat-atk);
-}
-.cr-ability[data-over] > strong {
-  color: var(--color-stat-atk);
-}
-
-.cr-warn {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1.5px solid var(--color-stat-atk);
-  background: var(--color-table);
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--color-chalk-soft);
-}
-.cr-warn > b {
-  color: var(--color-stat-atk);
-}
-
-.cr-sent {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: var(--color-surface);
-  border: 1.5px dashed var(--color-line-dashed);
-  font-size: 13px;
-  color: var(--color-chalk-soft);
-}
-.cr-spin {
-  flex: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 2px solid var(--color-line-strong);
-  border-top-color: var(--color-chalk);
-  animation: cr-spin 1s linear infinite;
-}
-@keyframes cr-spin {
-  to {
-    transform: rotate(360deg);
+@layer components {
+  .cr-dots {
+    display: flex;
+    gap: 6px;
   }
-}
-@media (prefers-reduced-motion: reduce) {
+  .cr-dots > i {
+    flex: 1;
+    height: 4px;
+    border-radius: 0;
+    background: var(--color-line);
+  }
+  .cr-dots > i[data-on] {
+    background: var(--color-chalk);
+  }
+
+  .cr-stage {
+    position: relative;
+    display: grid;
+    place-items: start center;
+    padding-top: 12px;
+    flex: none;
+    height: 284px;
+    border-radius: 0;
+    border: 1px solid var(--color-line);
+    background:
+      radial-gradient(50% 22% at 50% 88%, rgb(255 255 255 / 0.12), transparent),
+      var(--color-surface);
+  }
+  .cr-stage > .cr-stage-label {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+  }
+  .cr-stage > .cr-turn {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+  }
+  .cr-turn > button {
+    min-width: 36px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 0;
+    border: 1px solid var(--color-line);
+    background: var(--color-surface);
+    color: var(--color-chalk);
+    font-size: 13px;
+  }
+  .cr-turn > button[aria-pressed='true'] {
+    background: var(--color-ivory);
+    color: var(--color-ink);
+  }
+
+  .cr-tabs {
+    display: flex;
+    gap: 4px;
+  }
+  .cr-tabs > button {
+    flex: 1;
+  }
+
+  .cr-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .cr-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 8px 12px;
+    border-radius: 0;
+    background: var(--color-surface);
+    border: 1.5px solid var(--color-line);
+    font-size: 13px;
+    color: var(--color-chalk-soft);
+  }
+  .cr-chip[aria-pressed="true"] {
+    background: var(--color-ivory);
+    border-color: var(--color-ink);
+    color: var(--color-ink);
+    box-shadow: 0 3px 0 var(--color-ivory-edge);
+  }
+
+  .cr-swatch {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 0;
+    border: 2px solid var(--color-line);
+    box-shadow: 0 3px 0 var(--color-black);
+  }
+  .cr-swatch[aria-pressed="true"] {
+    border-color: var(--color-chalk);
+    box-shadow:
+      0 0 0 2px var(--color-ink),
+      0 0 0 4px var(--color-chalk);
+  }
+
+  /* A choice card: a people or a class. */
+  .cr-option {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px;
+    border-radius: 0;
+    background: var(--color-surface);
+    border: 1.5px solid var(--color-line);
+    font-size: 12px;
+    text-align: left;
+    color: var(--color-mute-soft);
+  }
+  .cr-option > b {
+    font-family: var(--font-pixel);
+    font-weight: 400;
+    font-synthesis: none;
+    font-size: 16px;
+    color: var(--color-chalk);
+  }
+  .cr-option[aria-pressed="true"] {
+    background: var(--color-ivory);
+    border-color: var(--color-ink);
+    color: var(--color-ink-soft);
+    box-shadow: 0 3px 0 var(--color-ivory-edge);
+  }
+  .cr-option[aria-pressed="true"] > b {
+    color: var(--color-ink);
+  }
+
+  .cr-dice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 44px;
+    flex: none;
+    border-radius: 0;
+    border: 1.5px dashed var(--color-mute);
+    background: var(--color-table);
+    color: var(--color-chalk);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .cr-field {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 0;
+    background: var(--color-table);
+    border: 1px solid var(--color-line-strong);
+    font-size: 16px;
+    color: var(--color-chalk);
+  }
+  textarea.cr-field {
+    font-size: 15px;
+    line-height: 1.45;
+    resize: vertical;
+  }
+
+  /* One ability: label, −, score, +. Over the spread, it turns orange. */
+  .cr-ability {
+    display: grid;
+    grid-template-columns: 44px 1fr 40px 34px 40px;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 0;
+    background: var(--color-well);
+    border: 1.5px solid transparent;
+    font-size: 12px;
+    color: var(--color-mute-soft);
+  }
+  .cr-ability > b {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--color-chalk);
+  }
+  .cr-ability > strong {
+    font-size: 18px;
+    text-align: center;
+    color: var(--color-chalk);
+  }
+  .cr-ability > button {
+    width: 40px;
+    height: 40px;
+    border-radius: 0;
+    display: grid;
+    place-items: center;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-line-strong);
+    color: var(--color-chalk);
+    font-weight: 800;
+  }
+  .cr-ability[data-over] {
+    border-color: var(--color-stat-atk);
+  }
+  .cr-ability[data-over] > strong {
+    color: var(--color-stat-atk);
+  }
+
+  .cr-warn {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border-radius: 0;
+    border: 1.5px solid var(--color-stat-atk);
+    background: var(--color-table);
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--color-chalk-soft);
+  }
+  .cr-warn > b {
+    color: var(--color-stat-atk);
+  }
+
+  .cr-sent {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 0;
+    background: var(--color-surface);
+    border: 1.5px dashed var(--color-line-dashed);
+    font-size: 13px;
+    color: var(--color-chalk-soft);
+  }
   .cr-spin {
-    animation: none;
+    flex: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--color-line-strong);
+    border-top-color: var(--color-chalk);
+    animation: cr-spin 1s linear infinite;
+  }
+  @keyframes cr-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cr-spin {
+      animation: none;
+    }
   }
 }

@@ -24,7 +24,7 @@ export function Chronicle({ campaignId, refreshKey }: { campaignId: string; refr
             key={entry.number}
             className={cn(
               'relative flex flex-col gap-1 pb-3.5 pl-4.5 text-body',
-              'before:absolute before:top-1 before:-left-[7px] before:size-3 before:rounded-[3px] before:shadow-[0_0_0_3px_var(--color-table)]',
+              'before:absolute before:top-1 before:-left-[7px] before:size-3 before:rounded-none before:shadow-[0_0_0_3px_var(--color-table)]',
               i === chronicle.length - 1 ? 'before:bg-chalk' : 'before:bg-line',
             )}
           >
@@ -48,7 +48,7 @@ export function Chronicle({ campaignId, refreshKey }: { campaignId: string; refr
           <h3 className="type-label">{t('between.open')}</h3>
           <ul className="flex flex-col gap-1.5">
             {openThreads.map((line, i) => (
-              <li key={i} className="rounded-button border border-line bg-well px-3 py-2 text-body">
+              <li key={i} className="pixel-field px-3 py-2 text-body">
                 {line}
               </li>
             ))}

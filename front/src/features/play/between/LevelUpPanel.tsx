@@ -61,7 +61,7 @@ export function LevelUpPanel({
     <section className="flex flex-col gap-3" aria-label={t('between.level.title', { name, level: play.level })}>
       <div className="flex flex-col items-center gap-2 rounded-2xl bg-ivory p-4 text-center text-ink shadow-ivory-flat">
         {character.sheet.look && <Sprite look={character.sheet.look} scale={5} label={name} />}
-        <span className="type-title text-[22px]">{t('between.level.title', { name, level: play.level })}</span>
+        <span className="type-title text-[24px]">{t('between.level.title', { name, level: play.level })}</span>
         <span className="text-caption text-ink-soft">{t('between.level.points', { count: play.upgradePoints })}</span>
       </div>
 
@@ -78,13 +78,12 @@ export function LevelUpPanel({
                 role="radio"
                 aria-checked={picked === a.id}
                 className={cn(
-                  'flex flex-col items-center rounded-xl border-[1.5px] px-2 py-2',
-                  picked === a.id ? 'border-ink bg-ivory text-ink shadow-ivory-flat' : 'border-line bg-well',
+                  'pixel-choice flex flex-col items-center py-2 pr-1.5 pb-2.5 [--cursor-room:10px] before:hidden',
                 )}
                 onClick={() => setPicked(a.id)}
               >
                 <span className="text-[10px] font-semibold tracking-[0.12em] uppercase">{a.name}</span>
-                <b className="type-title text-[20px]">{a.score}</b>
+                <b className="type-title text-[16px]">{a.score}</b>
                 <span className="text-caption">{signed(a.modifier)}</span>
               </button>
             ))}

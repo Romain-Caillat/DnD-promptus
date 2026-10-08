@@ -102,7 +102,7 @@ export function SchedulePanel({ campaignId, refreshKey }: { campaignId: string; 
       {chosen && (
         <div className="flex flex-col gap-1.5 rounded-button bg-ivory px-3.5 py-3 text-ink shadow-ivory-flat">
           <span className="type-label text-ink-soft">{t('gm.schedule.fixed')}</span>
-          <b className="type-title text-[20px] first-letter:uppercase">{dayAndTime(chosen.startsAt)}</b>
+          <b className="type-title text-[16px] first-letter:uppercase">{dayAndTime(chosen.startsAt)}</b>
           <span className="text-caption">{t('gm.schedule.lobbyAt', { time: clock(chosen.lobbyOpensAt) })}</span>
           <span className="text-caption">{t('gm.schedule.reminders')}</span>
           {chosen.log.length > 0 && (
@@ -143,7 +143,7 @@ export function SchedulePanel({ campaignId, refreshKey }: { campaignId: string; 
             <input
               type="datetime-local"
               required
-              className="rounded-button border border-line bg-table px-2 py-1.5 text-body text-chalk"
+              className="pixel-field px-2 py-1.5 text-body"
               value={when}
               onChange={(e) => setWhen(e.target.value)}
             />
@@ -151,7 +151,7 @@ export function SchedulePanel({ campaignId, refreshKey }: { campaignId: string; 
           <label className="flex flex-col gap-1 text-caption">
             {t('gm.schedule.length')}
             <select
-              className="rounded-button border border-line bg-table px-2 py-1.5 text-body text-chalk"
+              className="pixel-field px-2 py-1.5 text-body"
               value={minutes}
               onChange={(e) => setMinutes(Number(e.target.value))}
             >
@@ -186,7 +186,7 @@ export function SchedulePanel({ campaignId, refreshKey }: { campaignId: string; 
           <input
             type="url"
             aria-label={t('gm.schedule.discord')}
-            className="min-w-0 flex-1 rounded-button border border-line bg-table px-2 py-1.5 text-body text-chalk"
+            className="min-w-0 flex-1 pixel-field px-2 py-1.5 text-body"
             value={webhook}
             onChange={(e) => setWebhook(e.target.value)}
           />

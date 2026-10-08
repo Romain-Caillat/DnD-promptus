@@ -251,7 +251,7 @@ function CardsSlab() {
             />
             <figcaption className="flex flex-col items-center gap-1.5 text-center">
               <RarityPips rarity={r} size={8} className="[--pip-color:var(--color-chalk)] [--pip-rim:transparent]" />
-              <span className="type-title text-body">{t(`reference.materials.tiers.${r}.name`)}</span>
+              <span className="type-title text-label">{t(`reference.materials.tiers.${r}.name`)}</span>
               <span className="text-caption text-mute">{t(`reference.materials.tiers.${r}.how`)}</span>
             </figcaption>
           </figure>
@@ -314,7 +314,7 @@ function ItemsSlab() {
               rarity={r}
               size={88}
             />
-            <figcaption className="type-title text-caption">{t(`reference.game.items.names.${TIER_ITEMS[r]}`)}</figcaption>
+            <figcaption className="type-title text-label">{t(`reference.game.items.names.${TIER_ITEMS[r]}`)}</figcaption>
           </figure>
         ))}
       </div>
@@ -371,7 +371,7 @@ function ConditionsSlab() {
               turns={CONDITIONS[icon].turns}
               size={30}
             />
-            <span className="type-title text-body">{t(`reference.game.conditions.names.${icon}`)}</span>
+            <span className="type-title text-label">{t(`reference.game.conditions.names.${icon}`)}</span>
           </li>
         ))}
       </ul>

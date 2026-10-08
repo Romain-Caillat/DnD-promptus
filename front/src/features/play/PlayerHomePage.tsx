@@ -243,8 +243,7 @@ export function PlayerHomePage() {
               type="button"
               aria-current={tab === id ? 'page' : undefined}
               className={cn(
-                'rounded-button py-2.5 text-caption font-bold tracking-[0.12em] uppercase',
-                tab === id ? 'bg-ivory text-ink shadow-ivory-flat' : 'text-mute-soft',
+                'pixel-tab min-h-11 pb-1',
               )}
               onClick={() => setParams(id === tabs[0] ? {} : { onglet: id }, { replace: true })}
             >
@@ -284,7 +283,7 @@ function CharacterCard({
             gmName={gmName}
           />
         ) : (
-          <span className="type-title text-[22px]">{character.sheet.name || t('play.unnamed')}</span>
+          <span className="type-title text-[24px]">{character.sheet.name || t('play.unnamed')}</span>
         )}
         <p className="text-body text-chalk-soft">{t(`play.status.${character.status}`)}</p>
         {character.gmNote && (

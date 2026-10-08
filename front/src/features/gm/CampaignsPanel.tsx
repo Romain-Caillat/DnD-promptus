@@ -87,16 +87,16 @@ export function CampaignsPanel({ gmName }: { gmName: string }) {
             to="/campagnes/nouvelle"
             className="flex min-h-56 flex-1 flex-col items-center justify-center gap-2 rounded-panel border-2 border-dashed border-line-dashed p-4 text-center text-chalk-soft transition-colors hover:border-chalk hover:text-chalk"
           >
-            <span aria-hidden className="type-title text-[54px] leading-none">
+            <span aria-hidden className="type-title text-[56px] leading-none">
               +
             </span>
-            <span className="type-title text-[20px]">{t('gm.campaigns.new')}</span>
+            <span className="type-title text-[16px]">{t('gm.campaigns.new')}</span>
             <span className="max-w-56 text-caption text-mute">{t('gm.campaigns.newHint')}</span>
           </Link>
         </li>
         <li className="flex">
           <label className="flex min-h-56 flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-panel border border-line p-4 text-center text-mute-soft focus-within:border-chalk">
-            <span className="type-title text-[17px] text-chalk-soft">
+            <span className="type-title text-[16px] text-chalk-soft">
               {importing ? t('gm.campaigns.importing') : t('gm.campaigns.import')}
             </span>
             <span className="max-w-56 text-caption text-mute">{t('gm.campaigns.importHint')}</span>
@@ -154,7 +154,7 @@ function CampaignCard({
       {/* `button-card` sets `display: block`: the frame carries the layout. */}
       <span className="card-frame flex min-h-52 flex-col gap-2 px-3 py-2.5">
         <span className="type-label line-clamp-2 text-(--sub-color)">{kicker}</span>
-        <span className="type-title text-[20px] leading-tight">{campaign.title}</span>
+        <span className="type-title text-[16px] leading-tight">{campaign.title}</span>
         <span className="mt-auto flex flex-col text-caption text-(--sub-color)">
           <span>{preset ? preset.name : t('gm.campaigns.rulesRef', { ...campaign.rules })}</span>
           <span>

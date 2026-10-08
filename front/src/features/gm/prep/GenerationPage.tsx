@@ -125,7 +125,7 @@ export function GenerationPage() {
   return (
     <main className="surface-table flex min-h-dvh flex-col gap-4 p-5 text-chalk">
       {back}
-      <h1 className="type-title text-[22px]">{t('prep.generate.title')}</h1>
+      <h1 className="type-title text-[24px]">{t('prep.generate.title')}</h1>
       {desk.validated && <StatusBanner tone="warn">{t('prep.generate.validated')}</StatusBanner>}
       {error && (
         <p role="alert" className="text-body text-stat-atk">

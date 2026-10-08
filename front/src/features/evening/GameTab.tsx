@@ -188,7 +188,7 @@ export function GameTab({
                 />
               )}
               <span className="type-label">{scene.place?.name ?? t('evening.scene')}</span>
-              <h2 className="type-title text-[22px]">{scene.title}</h2>
+              <h2 className="type-title text-[24px]">{scene.title}</h2>
               {scene.readAloud && (
                 <p className="type-narration text-[18px] leading-snug text-chalk-soft">{scene.readAloud}</p>
               )}
@@ -315,7 +315,7 @@ function Lobby({ view, seated, onArrive }: { view: EveningView; seated: boolean;
   const [heard, setHeard] = useState(false)
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="type-title text-[22px]">{t('evening.lobby.title', { number: view.session?.number })}</h2>
+      <h2 className="type-title text-[24px]">{t('evening.lobby.title', { number: view.session?.number })}</h2>
       {view.previously && (
         <div className="surface-slab flex flex-col gap-1 p-3.5">
           <span className="type-label">{t('evening.previously')}</span>
@@ -334,7 +334,7 @@ function Lobby({ view, seated, onArrive }: { view: EveningView; seated: boolean;
         <>
           <button
             type="button"
-            className="self-start rounded-button border border-line px-3 py-2 text-body"
+            className="pixel-key pixel-key-dark pixel-cursor self-start py-1.5 pr-3 pb-2.5 text-label [--px:2px]"
             onClick={() => {
               beep()
               setHeard(true)
@@ -428,8 +428,7 @@ function Hand({
               aria-pressed={on}
               title={card?.description}
               className={cn(
-                'flex min-w-24 flex-col items-start gap-0.5 rounded-xl border px-3 py-2 text-left',
-                on ? 'border-ivory bg-ivory text-ink' : 'border-line bg-surface',
+                'pixel-choice flex min-w-24 flex-none flex-col items-start gap-0.5 py-2 pr-3 pb-2.5 text-left',
               )}
               onClick={() => setPicked(on ? null : c)}
             >
@@ -464,7 +463,7 @@ function Hand({
             rows={2}
             placeholder={t('evening.hand.placeholder')}
             aria-label={t('evening.hand.what', { card: name(picked) })}
-            className="rounded-button border border-line bg-table p-2 text-body"
+            className="pixel-field p-2 text-body"
           />
           <CardButton type="submit" title={t('evening.hand.send', { card: name(picked) })} />
         </form>
@@ -540,7 +539,7 @@ function RequestCard({
         <div className="flex items-center gap-3">
           <FacetedDie key={r.id} faces={facesOf(r.roll.die)} value={r.roll.natural} />
           <div className="flex flex-col">
-            {r.outcome && <span className="type-title text-[20px]">{r.outcome}</span>}
+            {r.outcome && <span className="type-title text-[16px]">{r.outcome}</span>}
           </div>
         </div>
       )}
@@ -609,8 +608,7 @@ function Feedback({
                 type="button"
                 aria-pressed={answers[q] === a}
                 className={cn(
-                  'flex-1 rounded-button border px-2 py-2 text-body',
-                  answers[q] === a ? 'border-ivory bg-ivory text-ink' : 'border-line',
+                  'pixel-choice flex-1 py-2 pr-2 pb-2.5 text-body',
                 )}
                 onClick={() => setAnswers((s) => ({ ...s, [q]: a }))}
               >
@@ -627,7 +625,7 @@ function Feedback({
         maxLength={500}
         aria-label={t('evening.feedback.comment')}
         placeholder={t('evening.feedback.comment')}
-        className="rounded-button border border-line bg-table p-2 text-body"
+        className="pixel-field p-2 text-body"
       />
       <CardButton type="submit" disabled={!complete} title={t('evening.feedback.send')} />
     </form>
