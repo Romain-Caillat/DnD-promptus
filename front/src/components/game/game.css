@@ -686,7 +686,8 @@
     --pip-rim: #e6e8eb;
   }
   [data-rarity="epic"] {
-    --pip-color: var(--color-chalk);
+    /* Chalk on the black card in both themes (it is a black island). */
+    --pip-color: #f2f2f2;
     --pip-rim: #111111;
   }
   [data-rarity="legendary"] {
