@@ -9,9 +9,11 @@
 //! button only when every id it names exists in the campaign — invented
 //! ids are dropped, the suggestion stays as text.
 //!
-//! Port of V1 `copilot.ts` (`tests/unit/copilot.test.ts`).
+//! Port of V1 `copilot.ts` (`tests/unit/copilot.test.ts`). The GM may
+//! also dictate instead of typing ([`voice`], `copilot/listen-by-voice`).
 
 pub mod drafts;
+pub mod voice;
 
 use std::collections::BTreeMap;
 
@@ -242,6 +244,57 @@ pub fn context(input: &ContextInput<'_>) -> String {
                 f.name,
                 cut(&f.goal, 150),
                 f.steps.len()
+            ));
+        }
+    }
+
+    // campaign/track-factions-and-goals: where the party stands, what it
+    // is after, and who travels with it whatever the scene.
+    if !story.factions.is_empty() {
+        l.push(String::new());
+        l.push("# Factions (affinité avec le groupe)".into());
+        for f in &story.factions {
+            let at = world.affinity_of(story, &f.id).unwrap_or(f.affinity.start);
+            let known = if world.known_factions.contains(&f.id) {
+                "connue des joueurs"
+            } else {
+                "inconnue des joueurs"
+            };
+            l.push(format!(
+                "- faction {} « {} » : {at} ({}..{}) ; {known} ; {}",
+                f.id,
+                f.name,
+                f.affinity.min,
+                f.affinity.max,
+                cut(&f.diplomacy, 160)
+            ));
+        }
+    }
+    if !story.goals.is_empty() {
+        l.push(String::new());
+        l.push("# Objectifs de campagne".into());
+        for g in &story.goals {
+            let state = match world.goals.get(&g.id) {
+                Some(promptus_shared::story::GoalStatus::Done) => "atteint",
+                Some(promptus_shared::story::GoalStatus::Known) => "connu, à atteindre",
+                None => "pas encore connu des joueurs",
+            };
+            l.push(format!("- objectif {} « {} » : {state}", g.id, g.title));
+        }
+    }
+    let companions: Vec<_> = story.companions().collect();
+    if !companions.is_empty() {
+        l.push(String::new());
+        l.push("# Compagnons (toujours avec le groupe)".into());
+        for npc in companions {
+            l.push(format!(
+                "- pnj {} {} [voix : {} ; veut : {} ; cache : {} ; défaut : {}]",
+                npc.id,
+                npc.name,
+                cut(&npc.roleplay, 160),
+                cut(&npc.wants, 160),
+                cut(&npc.hides, 200),
+                cut(&npc.flaw, 160)
             ));
         }
     }

@@ -2,6 +2,13 @@
 //! recoloured, three-tone shading, a 1-px outline around the silhouette
 //! and a drop shadow, into an RGBA buffer.
 //!
+//! A look moves through four frames ([`Frame`], board « Sprite »: `repos`
+//! and `marche`), made from the same layers by moving cells by depth: the
+//! breath lowers everything above the legs by one pixel, a step spreads
+//! the legs (profile) or lifts one foot (front and back). [`render_sheet`]
+//! lays the four side by side, so a screen animates a character from one
+//! image per direction and never draws a pixel of it itself.
+//!
 //! Every step is integer or bit-exact float work with a fixed order, so
 //! the server, the Tauri shell and the tests produce the same pixels.
 
@@ -82,7 +89,27 @@ pub struct Composite {
     mirrored: bool,
 }
 
-/// Draw a look facing `direction`.
+/// One frame of a character's motion (characters/walk-in-four-directions).
+/// At rest a character alternates `Rest` and `Breath`; walking, `StepA`
+/// and `StepB`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Frame {
+    Rest,
+    /// Everything above the legs one pixel lower.
+    Breath,
+    /// Profile: legs spread in a stride. Front and back: the left foot up.
+    StepA,
+    /// Profile: legs together, the body low (the breath). Front and back:
+    /// the right foot up.
+    StepB,
+}
+
+impl Frame {
+    /// The frames of a sheet, left to right.
+    pub const SHEET: [Frame; 4] = [Frame::Rest, Frame::Breath, Frame::StepA, Frame::StepB];
+}
+
+/// Draw a look facing `direction`, at rest.
 ///
 /// # Errors
 ///
@@ -97,7 +124,38 @@ pub fn render(
     Ok(compose(packs, look, direction)?.to_image())
 }
 
-/// The composited grid, outline included (see `Composite`).
+/// The four frames of `Frame::SHEET` side by side, each as wide as one
+/// `render`: what the map and the creator animate.
+///
+/// # Errors
+///
+/// As `render`.
+pub fn render_sheet(
+    packs: &Packs,
+    look: &CharacterLook,
+    direction: Direction,
+) -> Result<Image, SpriteError> {
+    let frames = Frame::SHEET
+        .iter()
+        .map(|&f| Ok(compose_frame(packs, look, direction, f)?.to_image()))
+        .collect::<Result<Vec<_>, SpriteError>>()?;
+    let (w, h) = (frames[0].width, frames[0].height);
+    let count = u32::try_from(frames.len()).unwrap_or(1);
+    let mut rgba = Vec::with_capacity((w * h * count * 4) as usize);
+    for y in 0..h {
+        for f in &frames {
+            let row = (y * w * 4) as usize;
+            rgba.extend_from_slice(&f.rgba[row..row + (w * 4) as usize]);
+        }
+    }
+    Ok(Image {
+        width: w * count,
+        height: h,
+        rgba,
+    })
+}
+
+/// The composited grid at rest, outline included (see `Composite`).
 ///
 /// # Errors
 ///
@@ -107,12 +165,74 @@ pub fn compose(
     look: &CharacterLook,
     direction: Direction,
 ) -> Result<Composite, SpriteError> {
+    compose_frame(packs, look, direction, Frame::Rest)
+}
+
+/// Where the legs are, read from the body: what a step moves.
+struct Legs {
+    /// Twice the column between the two legs (it may fall between two).
+    split2: i64,
+    /// The first row of the legs.
+    hip: i64,
+}
+
+impl Legs {
+    fn of(body: &[super::pack::Layer]) -> Self {
+        let cells = body
+            .iter()
+            .filter(|l| l.depth == Depth::Legs)
+            .flat_map(|l| &l.cells);
+        let (mut lo, mut hi, mut top) = (i64::MAX, i64::MIN, i64::MAX);
+        for c in cells {
+            lo = lo.min(i64::from(c.x));
+            hi = hi.max(i64::from(c.x));
+            top = top.min(i64::from(c.y));
+        }
+        if top == i64::MAX {
+            return Self {
+                split2: 0,
+                hip: i64::MAX,
+            };
+        }
+        Self {
+            split2: lo + hi,
+            hip: top,
+        }
+    }
+
+    /// Where a cell of `depth` goes in `frame`, in the drawn direction
+    /// (before the west mirror).
+    fn move_cell(&self, frame: Frame, profile: bool, depth: Depth, x: i64, y: i64) -> (i64, i64) {
+        let leg = matches!(depth, Depth::Legs | Depth::Feet);
+        let side = (2 * x - self.split2).signum();
+        match (frame, profile) {
+            (Frame::Rest, _) => (x, y),
+            (Frame::Breath, _) | (Frame::StepB, true) => (x, if leg { y } else { y + 1 }),
+            (Frame::StepA, true) if leg && y >= self.hip => (x + side * ((y - self.hip) / 2), y),
+            (Frame::StepA, false) if leg && side < 0 => (x, y - 1),
+            (Frame::StepB, false) if leg && side > 0 => (x, y - 1),
+            _ => (x, y),
+        }
+    }
+}
+
+/// The composited grid of one frame (see `Composite`).
+///
+/// # Errors
+///
+/// As `render`.
+pub fn compose_frame(
+    packs: &Packs,
+    look: &CharacterLook,
+    direction: Direction,
+    frame: Frame,
+) -> Result<Composite, SpriteError> {
     let pack = packs
         .get(&look.pack)
         .ok_or_else(|| SpriteError::UnknownPack(look.pack.clone()))?;
     let worn = resolve(pack, look)?;
 
-    // Only east frames exist today: west is drawn as east, then mirrored.
+    // West is drawn as east, then mirrored, unless every piece draws it.
     let (drawn, mirrored) = match direction {
         Direction::West
             if worn
@@ -142,6 +262,18 @@ pub fn compose(
         }
     }
     layers.sort_by_key(|&(depth, order, i, _, _)| (depth, order, i));
+    // The body is the first piece worn: its legs say what a step moves.
+    let legs = worn
+        .first()
+        .and_then(|b| b.piece.frames_for(&look.body).get(drawn))
+        .map_or(
+            Legs {
+                split2: 0,
+                hip: i64::MAX,
+            },
+            |f| Legs::of(f),
+        );
+    let profile = matches!(drawn, Direction::East | Direction::West);
 
     let (gw, gh) = (pack.width, pack.height);
     let (width, height) = (gw + 2 * MARGIN, gh + 2 * MARGIN);
@@ -149,7 +281,16 @@ pub fn compose(
     let mut face = vec![false; cells.len()];
     for (depth, _, _, w, layer) in layers {
         for c in &layer.cells {
-            let i = ((c.y + MARGIN) * width + c.x + MARGIN) as usize;
+            let (x, y) = legs.move_cell(frame, profile, depth, i64::from(c.x), i64::from(c.y));
+            // A step never leaves the grid on the starter packs; a cell
+            // that would is dropped, not wrapped.
+            let (Ok(x), Ok(y)) = (u32::try_from(x), u32::try_from(y)) else {
+                continue;
+            };
+            if x >= gw || y >= gh {
+                continue;
+            }
+            let i = ((y + MARGIN) * width + x + MARGIN) as usize;
             cells[i] = Some(w.paint(c.paint));
             if w.slot == Slot::Body && depth == Depth::Head {
                 face[i] = true;

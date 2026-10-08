@@ -5,7 +5,7 @@
 //! (`session` topic), and the players' screens refetch their projection.
 
 use chrono::Utc;
-use promptus_shared::story::{Campaign, MusicMood, MusicTrack, WorldState};
+use promptus_shared::story::{Campaign, GoalStatus, MusicMood, MusicTrack, WorldState};
 use serde::Deserialize;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -30,6 +30,17 @@ pub enum Reveal {
     Front { front: String, delta: i32 },
     /// The scene is resolved.
     Resolve { node: String },
+    /// The players learn of a faction (campaign/track-factions-and-goals).
+    Faction { faction: String },
+    /// The party's standing with a faction moves; its rivals pay for a
+    /// gain (`WorldState::shift_affinity`).
+    Affinity { faction: String, delta: i32 },
+    /// A campaign goal becomes known, is ticked off, or is hidden again
+    /// (`status: null`).
+    Goal {
+        goal: String,
+        status: Option<GoalStatus>,
+    },
 }
 
 /// Apply `reveal` to the live session of `campaign`.
@@ -52,29 +63,7 @@ pub async fn reveal(
     let sid = Some(live.id);
     match reveal {
         Reveal::Scene { node } => {
-            world
-                .enter_node(story, node)
-                .map_err(|_| AppError::BadRequest("UNKNOWN_NODE"))?;
-            let n = story
-                .node(node)
-                .ok_or(AppError::BadRequest("UNKNOWN_NODE"))?;
-            knowledge::write(
-                &mut tx,
-                campaign,
-                sid,
-                JournalKind::Scene,
-                Some(node),
-                &n.title,
-                true,
-            )
-            .await?;
-            let music = first_track(&n.ambience.music).map(|t| Music {
-                url: t.url.clone(),
-                title: t.title.clone(),
-                mood: t.mood,
-                started_at: Utc::now(),
-            });
-            session::set_music(&mut tx, live.id, music.as_ref()).await?;
+            open_scene(&mut tx, story, world, live.id, campaign, node).await?;
         }
         Reveal::Clue { clue } => {
             let found = world
@@ -143,12 +132,146 @@ pub async fn reveal(
                 .resolve_node(story, node)
                 .map_err(|_| AppError::BadRequest("UNKNOWN_NODE"))?;
         }
+        Reveal::Faction { faction } => {
+            let first = world
+                .meet_faction(story, faction)
+                .map_err(|_| AppError::BadRequest("UNKNOWN_FACTION"))?;
+            if first {
+                let name = story.faction(faction).map(|f| f.name.clone());
+                knowledge::write(
+                    &mut tx,
+                    campaign,
+                    sid,
+                    JournalKind::Note,
+                    Some(faction),
+                    &name.unwrap_or_default(),
+                    true,
+                )
+                .await?;
+            }
+        }
+        Reveal::Affinity { faction, delta } => {
+            if *delta == 0 || delta.abs() > 10 {
+                return Err(AppError::BadRequest("INVALID_DELTA"));
+            }
+            let moved = world
+                .shift_affinity(story, faction, *delta)
+                .map_err(|_| AppError::BadRequest("UNKNOWN_FACTION"))?;
+            // What the table sees move: the gauges of factions it knows
+            // (a rival it has never heard of drops out of its sight); the
+            // GM's journal keeps every gauge.
+            for shift in &moved {
+                let name = story
+                    .faction(&shift.faction)
+                    .map(|f| f.name.clone())
+                    .unwrap_or_default();
+                let text = format!("{name} : {:+} ({})", shift.to - shift.from, shift.to);
+                knowledge::write(
+                    &mut tx,
+                    campaign,
+                    sid,
+                    JournalKind::Note,
+                    Some(&shift.faction),
+                    &text,
+                    world.known_factions.contains(&shift.faction),
+                )
+                .await?;
+            }
+        }
+        Reveal::Goal { goal, status } => {
+            let before = world.goals.get(goal).copied();
+            world
+                .set_goal(story, goal, *status)
+                .map_err(|_| AppError::BadRequest("UNKNOWN_GOAL"))?;
+            let title = story
+                .goal(goal)
+                .map(|g| g.title.clone())
+                .unwrap_or_default();
+            let text = match status {
+                Some(GoalStatus::Done) => format!("✓ {title}"),
+                _ => title,
+            };
+            // Known or reached: a shared line once; hidden again: the
+            // GM's own trace.
+            if before != *status {
+                knowledge::write(
+                    &mut tx,
+                    campaign,
+                    sid,
+                    if status.is_some() {
+                        JournalKind::Item
+                    } else {
+                        JournalKind::Note
+                    },
+                    Some(goal),
+                    &text,
+                    status.is_some(),
+                )
+                .await?;
+            }
+        }
     }
     let world = row.world.clone();
     campaigns::save_world(&mut tx, campaign, &world).await?;
     super::touch(&mut tx, campaign).await?;
     tx.commit().await?;
     Ok(world)
+}
+
+/// Make `node` the current scene of `world`: the journal says it, its
+/// first track plays. The caller saves the world.
+async fn open_scene(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    story: &Campaign,
+    world: &mut WorldState,
+    session_id: Uuid,
+    campaign: Uuid,
+    node: &str,
+) -> Result<(), AppError> {
+    world
+        .enter_node(story, node)
+        .map_err(|_| AppError::BadRequest("UNKNOWN_NODE"))?;
+    // gm/launch-session: the first scene ends « Précédemment… ».
+    session::end_reading(tx, session_id).await?;
+    let n = story
+        .node(node)
+        .ok_or(AppError::BadRequest("UNKNOWN_NODE"))?;
+    knowledge::write(
+        tx,
+        campaign,
+        Some(session_id),
+        JournalKind::Scene,
+        Some(node),
+        &n.title,
+        true,
+    )
+    .await?;
+    let music = first_track(&n.ambience.music).map(|t| Music {
+        url: t.url.clone(),
+        title: t.title.clone(),
+        mood: t.mood,
+        started_at: Utc::now(),
+    });
+    session::set_music(tx, session_id, music.as_ref()).await?;
+    Ok(())
+}
+
+/// maps/travel-hex-world: the party enters a place whose label names a
+/// scene. Inside the caller's locked transaction; saves the world.
+///
+/// # Errors
+///
+/// 400 `UNKNOWN_NODE`; a database error.
+pub(crate) async fn enter(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    row: &mut campaigns::CampaignRow,
+    session_id: Uuid,
+    node: &str,
+) -> Result<(), AppError> {
+    let story = row.story.clone();
+    open_scene(tx, &story, &mut row.world, session_id, row.id, node).await?;
+    campaigns::save_world(tx, row.id, &row.world).await?;
+    Ok(())
 }
 
 /// « Vous avez rencontré Morel, le cartographe » — the name and title,

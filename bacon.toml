@@ -1,5 +1,5 @@
 [jobs.run]
-command = ["cargo", "run", "--package", "promptus_back"]
+command = ["cargo", "run", "--package", "promptus_back", "--bin", "promptus_back"]
 need_stdout = true
 watch = ["back/src", "back/migrations", "shared/src"]
 background = true

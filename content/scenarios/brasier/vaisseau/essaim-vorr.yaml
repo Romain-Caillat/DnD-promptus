@@ -1,0 +1,28 @@
+# Le Brasier — combat de vaisseau : le Cure-Dent contre un essaim de
+# chasseurs vorr (Combat_Vaisseau.md §9 : « attaque en essaim, 3-5,
+# initiative partagée »). Le Cure-Dent sort du Toboggan ; cinq chasseurs
+# arrivent de l'est. Rejoué par shared/tests/vehicle_battles.rs.
+id: essaim-vorr
+name: L'essaim vorr
+description: >-
+  Six membres d'équipage de niveau 1 à leurs postes sur le Cure-Dent,
+  contre cinq chasseurs vorr qui partagent une initiative.
+source: dnd-save/DnD_07-06-2026/Combat_Vaisseau.md (§9, §11) · campagne, front de la ruche
+rules: brasier
+version: 1
+map: abords-du-toboggan
+ship: { kind: cure_dent, facing: e }
+crew:
+  - { id: pilote, class: pilote }
+  - { id: canonnier, class: canonnier }
+  - { id: mecano, class: mecano }
+  - { id: xenologue, class: xenologue }
+  - { id: toubib, class: toubib }
+  - { id: quartier_maitre, class: quartier_maitre }
+opponents:
+  - { id: chasseur_1, kind: chasseur_vorr, name: Chasseur 1, facing: w }
+  - { id: chasseur_2, kind: chasseur_vorr, name: Chasseur 2, facing: w }
+  - { id: chasseur_3, kind: chasseur_vorr, name: Chasseur 3, facing: w }
+  - { id: chasseur_4, kind: chasseur_vorr, name: Chasseur 4, facing: w }
+  - { id: chasseur_5, kind: chasseur_vorr, name: Chasseur 5, facing: w }
+simulation: { battles: 200, seed: 1 }

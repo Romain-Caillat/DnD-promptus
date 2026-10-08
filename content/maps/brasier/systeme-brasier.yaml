@@ -1,0 +1,54 @@
+# Le Brasier — la carte du système (maps/travel-hex-world) : la même
+# mécanique que la carte du monde, dans l'espace. Le groupe est un seul
+# pion : le Cure-Dent. L'étoile orange au centre, le champ de débris au
+# nord-ouest, la ceinture d'astéroïdes à l'est. La vitesse, les vivres et
+# les événements sont dans le guide (content/travel/brasier/systeme-brasier.yaml).
+# INVENTÉ — à valider par Romain : le tracé, les lieux, les distances.
+version: 1
+id: systeme-brasier
+name: Le système du Brasier
+scale: world
+theme: systeme-brasier
+ambience:
+  light: dim
+gm_notes: >-
+  La balise Vorr émet tant qu'elle n'est pas trouvée : par la route du
+  nord, l'essaim les rattrape plus vite. Les Sereth surveillent la
+  ceinture depuis le Reliquaire.
+layers:
+  - { id: base, name: Système, visibility: all }
+  - { id: secrets, name: Secrets, visibility: gm }
+grid:
+  legend:
+    ".": { terrain: vide }
+    ":": { terrain: débris }
+    "*": { terrain: astéroïdes }
+    "O": { terrain: étoile }
+    "p": { terrain: planète }
+    "s": { terrain: station }
+    "T": { terrain: toboggan }
+  rows:
+    - "..::::........."
+    - "T.::::....p...."
+    - "..::::........."
+    - "...::.....***.."
+    - "........*****.."
+    - ".....OO...***.."
+    - "....OOO........"
+    - ".....OO....s..."
+    - "...p..........."
+    - ".......:::....."
+    - "..s....:::....."
+exits:
+  - { id: vers-reliquaire, cells: [[11, 7]], to: reliquaire-sereth, label: Le Reliquaire }
+  - { id: vers-coursive, cells: [[0, 1]], to: cure-dent-coursive, label: La coursive du Cure-Dent }
+labels:
+  - { text: Le Toboggan, at: [0, 1] }
+  - { text: Le Brasier, at: [5, 6] }
+  - { text: Le champ de débris, at: [3, 1] }
+  - { text: La ceinture, at: [10, 4] }
+  - { text: "Le Reliquaire · station sereth", at: [11, 7], scene: sc_carapace_sereth }
+  - { text: Le marché flottant, at: [2, 10] }
+  - { text: Avant-poste Vorr, at: [10, 1], layer: secrets }
+starts:
+  - { id: cure-dent, side: party, at: [0, 1] }

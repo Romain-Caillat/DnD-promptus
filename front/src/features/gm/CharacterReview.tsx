@@ -355,6 +355,8 @@ function bannerFor(review: Review, name: string, resubmitted: boolean, t: T): { 
       return { tone: 'wait', text: t('gm.review.banner.returned', { nickname }) }
     case 'validated':
       return { tone: 'you', text: t('gm.review.banner.validated', { name }) }
+    case 'fallen':
+      return { tone: 'wait', text: t('gm.review.banner.fallen', { name }) }
     case 'submitted':
       if (review.checks.length > 0) {
         return { tone: 'warn', text: t('gm.review.banner.flagged', { name, count: review.checks.length }) }

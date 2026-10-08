@@ -1,6 +1,6 @@
 import type { CharacterLook } from '@/features/sprites/look'
 import { apiRequest } from './api'
-import type { PlayView } from './play'
+import type { FallenView, PlayView } from './play'
 
 /** One character in play on the GM's board (`api::sheets`). */
 export interface BoardSheet {
@@ -22,13 +22,13 @@ interface GivableItem {
   consumable: boolean
 }
 
-type HistoryKind = 'xp' | 'hit_points' | 'resource' | 'item' | 'equip'
+type HistoryKind = 'xp' | 'hit_points' | 'resource' | 'item' | 'equip' | 'level' | 'death' | 'upgrade'
 
 /** One change to a character in play, as the history keeps it. */
 export interface HistoryEntry {
   id: string
   characterId: string
-  actor: 'gm' | 'player'
+  actor: 'gm' | 'player' | 'rules'
   kind: HistoryKind
   /** The resource's or the item's name. */
   label: string | null
@@ -45,6 +45,8 @@ export interface Board {
   resources: { id: string; name: string; abbr: string }[]
   /** Newest first. */
   history: HistoryEntry[]
+  /** The dead, oldest first, with who played them. */
+  fallen: (FallenView & { nickname: string })[]
 }
 
 /** One gesture of the GM (`players::play::Adjustment`). */
@@ -59,6 +61,11 @@ const campaignPath = (campaignId: string) => `/campaigns/${encodeURIComponent(ca
 
 export function fetchBoard(campaignId: string): Promise<Board> {
   return apiRequest<Board>('GET', `${campaignPath(campaignId)}/sheets`)
+}
+
+/** The GM decides that a character down at 0 dies. */
+export function declareDeath(campaignId: string, characterId: string): Promise<void> {
+  return apiRequest<void>('POST', `${campaignPath(campaignId)}/characters/${encodeURIComponent(characterId)}/death`)
 }
 
 /** Apply one gesture; answers the character as the board shows it. */

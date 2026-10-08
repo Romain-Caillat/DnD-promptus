@@ -8,13 +8,18 @@
 //! - `POST /api/campaigns/{id}/board/edit` → `board::Edit`;
 //! - `POST /api/campaigns/{id}/fight` → `{ node }`: open its encounter;
 //! - `POST /api/campaigns/{id}/fight/command` → `board::fight::GmCommand`;
-//! - `POST /api/campaigns/{id}/fight/loot` → `{ gives: [{ index, character }] }`.
+//! - `POST /api/campaigns/{id}/fight/loot` → `{ gives: [{ index, character }] }`;
+//! - `POST /api/campaigns/{id}/battle` → `{ node }`: open its ship battle;
+//! - `POST /api/campaigns/{id}/battle/command` → `board::battle::GmCommand`.
 //!
 //! Player (behind `require_player`, built by
 //! `campaigns::projection::board`):
 //! - `GET  /api/play/{campaign}/board` → the grid as I may see it;
 //! - `POST /api/play/{campaign}/board/walk` → `{ path }`;
-//! - `POST /api/play/{campaign}/fight` → `board::fight::Command`.
+//! - `POST /api/play/{campaign}/fight` → `board::fight::Command`;
+//! - `GET  /api/play/{campaign}/battle` → the ship battle as I may see it
+//!   (`campaigns::projection::battle`);
+//! - `POST /api/play/{campaign}/battle` → `board::battle::CrewCommand`.
 
 use axum::Json;
 use axum::extract::{Path, State};
@@ -28,10 +33,12 @@ use uuid::Uuid;
 use super::body::Body;
 use crate::auth::guard::{CurrentGm, owned_by};
 use crate::auth::player::CurrentPlayer;
+use crate::board::battle::{self, CrewCommand, GmCommand as BattleCommand};
 use crate::board::fight::{self, Command, GmCommand};
 use crate::board::rewards::{self, Give};
 use crate::board::{self, Edit};
-use crate::campaigns::projection::board::{Looker, project_board};
+use crate::campaigns::projection::battle::{options, project_battle};
+use crate::campaigns::projection::board::{BoardView, Looker, project_board};
 use crate::campaigns::{self, CampaignRow};
 use crate::error::AppError;
 use crate::players::{self, CharacterStatus};
@@ -96,15 +103,82 @@ async fn gm_json(state: &AppState, row: &CampaignRow) -> Result<serde_json::Valu
         .story
         .nodes
         .iter()
-        .filter(|n| n.encounter.is_some())
+        // A ship battle opens from its own panel; its deck fight only by
+        // boarding.
+        .filter(|n| n.encounter.as_ref().is_some_and(|e| e.vehicles.is_none()))
         .map(|n| json!({ "node": n.id, "title": n.title, "map": n.map }))
+        .collect();
+    let battles: Vec<_> = row
+        .story
+        .nodes
+        .iter()
+        .filter(|n| n.encounter.as_ref().is_some_and(|e| e.vehicles.is_some()))
+        .map(|n| json!({ "node": n.id, "title": n.title }))
         .collect();
     Ok(json!({
         "board": b,
         "maps": board::choices(&state.pool, row).await?,
         "encounters": encounters,
         "encounter": fight_json,
+        "battles": battles,
+        "battle": battle_json(state, row, rules).await?,
         "conditions": rules.map(|r| r.conditions.iter().map(|c| json!({ "id": c.id, "name": c.name })).collect::<Vec<_>>()),
+    }))
+}
+
+/// The ship battle from the GM's side: the whole state, every ship's
+/// gauges, the co-GM's proposal, what each crew member can do (to play
+/// the ship's holder), where the active enemy ships may go and what
+/// they can fire at.
+async fn battle_json(
+    state: &AppState,
+    row: &CampaignRow,
+    rules: Option<&promptus_shared::rules::RuleSystem>,
+) -> Result<serde_json::Value, AppError> {
+    let Some(b) = battle::latest(&state.pool, row.id).await? else {
+        return Ok(serde_json::Value::Null);
+    };
+    let events = battle::events(&state.pool, b.id, EVENTS).await?;
+    let view = project_battle(&b, &[], rules, None);
+    let crew_options: serde_json::Map<String, serde_json::Value> = match rules {
+        Some(r) => b
+            .battle
+            .crew
+            .iter()
+            .map(|c| (c.id.clone(), json!(options(r, &b.battle, &c.id))))
+            .collect(),
+        None => serde_json::Map::new(),
+    };
+    let enemy_reach: serde_json::Map<String, serde_json::Value> = rules
+        .map(|r| battle::enemy_reach(r, &b.battle))
+        .unwrap_or_default()
+        .into_iter()
+        .map(|(ship, cells)| {
+            let cells: Vec<_> = cells.into_iter().map(|(at, _)| at).collect();
+            (ship, json!(cells))
+        })
+        .collect();
+    let enemy_fire = rules.map(|r| battle::enemy_fire_options(r, &b.battle));
+    Ok(json!({
+        "id": b.id,
+        "node": b.node,
+        "status": b.status,
+        "version": b.version,
+        "battle": b.battle,
+        "view": view,
+        "proposal": b.proposal.as_ref().map(|p| json!({
+            "unit": p.unit,
+            "version": p.version,
+            "orders": p.orders,
+            "events": p.events,
+        })),
+        "events": events,
+        "crewOptions": crew_options,
+        "enemyReach": enemy_reach,
+        "enemyFire": enemy_fire,
+        "boardingEncounter": b.boarding_encounter,
+        "startedAt": b.started_at,
+        "endedAt": b.ended_at,
     }))
 }
 
@@ -227,31 +301,46 @@ pub async fn give_loot(
 
 /// The grid as player `p` may see it (`null` when no map is shown).
 async fn player_json(state: &AppState, p: &CurrentPlayer) -> Result<serde_json::Value, AppError> {
-    let pool = &state.pool;
-    let row = campaigns::find(pool, p.0.campaign_id)
-        .await?
-        .ok_or(AppError::Unauthorized("NOT_JOINED"))?;
-    let Some(b) = board::current(pool, row.id).await? else {
-        return Ok(serde_json::Value::Null);
-    };
-    let character = players::character_of(pool, &p.0)
+    let character = players::character_of(&state.pool, &p.0)
         .await?
         .filter(|c| c.status == CharacterStatus::Validated)
         .map(|c| c.id);
+    let view = seen_by(state, p.0.campaign_id, character).await?;
+    serde_json::to_value(view).map_err(|e| AppError::internal("board view", e))
+}
+
+/// The grid of `campaign` as the holder of `character` sees it — or, with
+/// no character, as a spectator and the shared screen do. `None` when no
+/// map is shown.
+///
+/// # Errors
+///
+/// 401 `NOT_JOINED` when the campaign is gone; a database error.
+pub async fn seen_by(
+    state: &AppState,
+    campaign: Uuid,
+    character: Option<Uuid>,
+) -> Result<Option<BoardView>, AppError> {
+    let pool = &state.pool;
+    let row = campaigns::find(pool, campaign)
+        .await?
+        .ok_or(AppError::Unauthorized("NOT_JOINED"))?;
+    let Some(b) = board::current(pool, row.id).await? else {
+        return Ok(None);
+    };
     let enc = fight::latest(pool, row.id).await?;
     let events = match &enc {
         Some(e) => fight::events(pool, e.id, EVENTS).await?,
         None => Vec::new(),
     };
-    let view = project_board(
+    Ok(Some(project_board(
         &b,
         enc.as_ref().map(|e| (e, events.as_slice())),
         &Looker {
             character,
             rules: row.rules(),
         },
-    );
-    serde_json::to_value(view).map_err(|e| AppError::internal("board view", e))
+    )))
 }
 
 /// `GET /api/play/{campaign}/board`
@@ -298,4 +387,89 @@ pub async fn command(
 ) -> Result<Response, AppError> {
     fight::command(&state.pool, &p.0, &cmd).await?;
     Ok(Json(json!({ "data": player_json(&state, &p).await? })).into_response())
+}
+
+/// `POST /api/campaigns/{id}/battle` — answers the GM board (201).
+///
+/// # Errors
+///
+/// The codes of `board::battle::start`.
+pub async fn start_battle(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path(id): Path<String>,
+    Body(body): Body<StartBody>,
+) -> Result<Response, AppError> {
+    battle::start(&state.pool, &gm, parse_id(&id)?, &body.node).await?;
+    let row = owned_row(&state, &gm, &id).await?;
+    Ok((
+        StatusCode::CREATED,
+        Json(json!({ "data": gm_json(&state, &row).await? })),
+    )
+        .into_response())
+}
+
+/// `POST /api/campaigns/{id}/battle/command` — answers the GM board.
+///
+/// # Errors
+///
+/// The codes of `board::battle::gm_command`.
+pub async fn battle_command(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path(id): Path<String>,
+    Body(cmd): Body<BattleCommand>,
+) -> Result<Response, AppError> {
+    battle::gm_command(&state.pool, &gm, parse_id(&id)?, &cmd).await?;
+    let row = owned_row(&state, &gm, &id).await?;
+    Ok(Json(json!({ "data": gm_json(&state, &row).await? })).into_response())
+}
+
+/// The ship battle as player `p` may see it (`null` when none was
+/// fought).
+async fn player_battle_json(
+    state: &AppState,
+    p: &CurrentPlayer,
+) -> Result<serde_json::Value, AppError> {
+    let pool = &state.pool;
+    let row = campaigns::find(pool, p.0.campaign_id)
+        .await?
+        .ok_or(AppError::Unauthorized("NOT_JOINED"))?;
+    let Some(b) = battle::latest(pool, row.id).await? else {
+        return Ok(serde_json::Value::Null);
+    };
+    let me = players::character_of(pool, &p.0)
+        .await?
+        .filter(|c| c.status == CharacterStatus::Validated && p.0.role == players::Role::Player)
+        .map(|c| board::character_token(c.id));
+    let events = battle::events(pool, b.id, EVENTS).await?;
+    let rules = fight::rules_of(&row).ok();
+    let view = project_battle(&b, &events, rules.as_ref(), me.as_deref());
+    serde_json::to_value(view).map_err(|e| AppError::internal("battle view", e))
+}
+
+/// `GET /api/play/{campaign}/battle`
+///
+/// # Errors
+///
+/// 401 `NOT_JOINED`.
+pub async fn player_battle(
+    State(state): State<AppState>,
+    p: CurrentPlayer,
+) -> Result<Response, AppError> {
+    Ok(Json(json!({ "data": player_battle_json(&state, &p).await? })).into_response())
+}
+
+/// `POST /api/play/{campaign}/battle` — answers the battle.
+///
+/// # Errors
+///
+/// The codes of `board::battle::command`.
+pub async fn crew_command(
+    State(state): State<AppState>,
+    p: CurrentPlayer,
+    Body(cmd): Body<CrewCommand>,
+) -> Result<Response, AppError> {
+    battle::command(&state.pool, &p.0, &cmd).await?;
+    Ok(Json(json!({ "data": player_battle_json(&state, &p).await? })).into_response())
 }

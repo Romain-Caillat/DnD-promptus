@@ -220,7 +220,20 @@ async fn visible(
     state: &AppState,
     p: &CurrentPlayer,
 ) -> Result<(CampaignRow, Vec<media::Asset>), AppError> {
-    let row = campaigns::find(&state.pool, p.0.campaign_id)
+    visible_in(state, p.0.campaign_id).await
+}
+
+/// The images of `campaign` every player may see, the shared screen
+/// included.
+///
+/// # Errors
+///
+/// 401 `NOT_JOINED` when the campaign is gone; a database error.
+pub async fn visible_in(
+    state: &AppState,
+    campaign: Uuid,
+) -> Result<(CampaignRow, Vec<media::Asset>), AppError> {
+    let row = campaigns::find(&state.pool, campaign)
         .await?
         .ok_or(AppError::Unauthorized("NOT_JOINED"))?;
     let given = media::given_items(&state.pool, row.id).await?;

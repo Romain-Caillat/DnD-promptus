@@ -1,0 +1,44 @@
+# Le Brasier — le Reliquaire, station sereth, à l'arrivée du voyage
+# (maps/travel-hex-world). Carte de lieu : cases de 5 m, le quai
+# d'amarrage, la galerie des mémoires, la salle du conseil.
+# INVENTÉ — à valider par Romain : la station est une ébauche.
+version: 1
+id: reliquaire-sereth
+name: Le Reliquaire
+scale: place
+theme: vaisseau-confederation
+ambience:
+  light: dim
+  mood: reliquaire-silence
+gm_notes: >-
+  Les Sereth accueillent lentement. Le gardien des mémoires ne parle
+  qu'après le rite de l'eau ; qui le presse perd leur confiance.
+layers:
+  - { id: base, name: Station, visibility: all }
+grid:
+  legend:
+    "#": { terrain: cloison, wall: true }
+    ".": { terrain: métal }
+    "g": { terrain: grille }
+  rows:
+    - "################"
+    - "#......##......#"
+    - "#......##......#"
+    - "#..............#"
+    - "####gggggggg####"
+    - "#..............#"
+    - "#..............#"
+    - "################"
+props:
+  - { id: console-quai, kind: console, label: Console d'amarrage, at: [2, 5], cover: half, blocks_movement: true }
+labels:
+  - { text: Galerie des mémoires, at: [3, 1] }
+  - { text: Salle du conseil, at: [11, 1] }
+  - { text: Quai d'amarrage, at: [7, 6] }
+starts:
+  - { id: pj-1, side: party, at: [5, 6] }
+  - { id: pj-2, side: party, at: [6, 6] }
+  - { id: pj-3, side: party, at: [7, 6] }
+  - { id: pj-4, side: party, at: [8, 6] }
+  - { id: pj-5, side: party, at: [9, 6] }
+  - { id: pj-6, side: party, at: [10, 6] }

@@ -50,6 +50,13 @@ pub struct RuleSystem {
     pub combat: CombatRule,
     #[serde(default)]
     pub situations: Vec<Situation>,
+    /// Labels a class or an adversary carries (`mort_vivant`, `chef`):
+    /// what a house rule's trigger or exception can name.
+    #[serde(default)]
+    pub traits: Vec<TraitDef>,
+    /// Kinds of damage an action's `damage` tag may name (`feu`).
+    #[serde(default)]
+    pub damage_types: Vec<DamageTypeDef>,
     #[serde(default)]
     pub resources: Vec<ResourceDef>,
     pub conditions: Vec<ConditionDef>,
@@ -63,14 +70,19 @@ pub struct RuleSystem {
     #[serde(default)]
     pub adversaries: Vec<AdversaryDef>,
     /// The GM's own rules, written in French (`campaign/edit-rule-system`).
-    /// Players read them on the rules page and the co-GM reads them; the
-    /// server does not apply them — the GM does, at the table — until
-    /// `engine/formalise-house-rules` turns one into data.
+    /// The co-GM reads them. One with a `formal` form is applied by the
+    /// engine (`super::house`); one without is the GM's to apply at the
+    /// table.
     #[serde(default)]
     pub house_rules: Vec<HouseRule>,
+    /// Ship combat (engine/support-vehicle-combat): stations, ships,
+    /// arcs, power, damage. Absent: the world has no ship battles.
+    #[serde(default)]
+    pub vehicles: Option<crate::vehicle::VehicleRules>,
 }
 
-/// A house rule as the GM wrote it.
+/// A house rule as the GM wrote it, and as the server applies it once
+/// formalised (`engine/formalise-house-rules`).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct HouseRule {
@@ -79,6 +91,35 @@ pub struct HouseRule {
     pub name: String,
     /// The rule, as the GM would say it at the table.
     pub text: String,
+    /// The rule as the engine judges it, once the GM validated it.
+    #[serde(default)]
+    pub formal: Option<super::house::FormalRule>,
+}
+
+impl HouseRule {
+    /// Whether players may read this rule (its name and text). A
+    /// formalised rule can show only its effect.
+    pub fn shown_to_players(&self) -> bool {
+        self.formal
+            .as_ref()
+            .is_none_or(|f| f.players == super::house::PlayersSee::Rule)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TraitDef {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub description: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DamageTypeDef {
+    pub id: String,
+    pub name: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -156,11 +197,20 @@ pub struct NaturalBand {
     pub description: String,
     /// Natural faces that land in this band (`[20]`, `[19, 20]`).
     pub natural: Vec<u32>,
+    /// The rolls the natural faces decide (`all` when absent). D&D 5e
+    /// gives a natural 20 or 1 its weight on attacks only: a check or a
+    /// save is then judged by its total.
+    #[serde(default = "every_roll")]
+    pub rolls: RollScope,
     #[serde(default)]
     pub grants: Grants,
     /// Damage multiplier when this band is an attack (critical hit).
     #[serde(default)]
     pub damage_multiplier: Option<i32>,
+}
+
+fn every_roll() -> RollScope {
+    RollScope::All
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -187,6 +237,19 @@ pub enum GroupThreshold {
     Any,
 }
 
+impl GroupThreshold {
+    /// Successes a group of `n` needs.
+    #[must_use]
+    pub fn needed(self, n: usize) -> usize {
+        match self {
+            Self::AtLeastHalf => n.div_ceil(2),
+            Self::Majority => n / 2 + 1,
+            Self::All => n,
+            Self::Any => 1,
+        }
+    }
+}
+
 /// How an attack roll is built.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -195,8 +258,21 @@ pub struct AttackRule {
     pub ability: AttackAbility,
     /// Whether an action's or condition's "precision" adds to the roll.
     pub precision: PrecisionRule,
+    /// A bonus added to every attack roll, growing with `level` (D&D's
+    /// proficiency bonus). Adversaries count as level 1.
+    #[serde(default)]
+    pub bonus: Option<AttackBonus>,
     #[serde(default)]
     pub note: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AttackBonus {
+    /// What the roll breakdown calls it (« Maîtrise »).
+    pub name: String,
+    /// Over `level`.
+    pub formula: Formula,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -306,6 +382,22 @@ pub struct Progression {
     pub upgrade_points: u32,
     /// Level thresholds on total XP, from level 1 at 0 XP.
     pub levels: Vec<LevelThreshold>,
+    /// Hit points each level above the first adds, rolled or taken at
+    /// the average — the player's choice (engine/level-up). Absent, the
+    /// maximum is `stats.hit_points` alone (both witness worlds: 10).
+    #[serde(default)]
+    pub hit_points_per_level: Option<LevelHitPoints>,
+}
+
+/// What a new level adds to the maximum hit points: `dice` rolled, or
+/// `average` taken, plus the modifier of `ability` either way.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LevelHitPoints {
+    pub dice: DiceExpr,
+    pub average: i32,
+    #[serde(default)]
+    pub ability: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -328,15 +420,54 @@ pub enum ZeroHpRule {
         #[serde(default)]
         note: String,
     },
-    /// Death saves (engine/save-against-death plays them; modelled here).
+    /// Down and dying: at each of their turns the character rolls the
+    /// check die against `difficulty` (engine/save-against-death).
+    /// `successes` of them and they are stable; `failures` and the engine
+    /// proposes their death, which the GM confirms or overrules. The
+    /// natural faces of the system's critical bands count: a critical
+    /// failure is `failures_on_critical_failure` failures, a critical
+    /// success brings them back with 1 hit point when
+    /// `critical_success_revives`. Hit while down: `failures_on_hit`
+    /// (`failures_on_critical_hit` on a critical). A heal lifts it all.
     DeathSaves {
         condition: String,
         difficulty: i32,
         successes: u32,
         failures: u32,
+        #[serde(default = "one")]
+        failures_on_hit: u32,
+        #[serde(default = "two")]
+        failures_on_critical_hit: u32,
+        #[serde(default = "two")]
+        failures_on_critical_failure: u32,
+        #[serde(default = "yes")]
+        critical_success_revives: bool,
+        /// An ally may try to stabilise a dying character.
+        #[serde(default)]
+        stabilize: Option<StabilizeRule>,
         #[serde(default)]
         note: String,
     },
+}
+
+fn one() -> u32 {
+    1
+}
+fn two() -> u32 {
+    2
+}
+fn yes() -> bool {
+    true
+}
+
+/// An ally's attempt to stabilise someone dying: next to them, it spends
+/// an action of `kind` and rolls `ability` against `difficulty`.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct StabilizeRule {
+    pub kind: String,
+    pub ability: String,
+    pub difficulty: i32,
 }
 
 impl ZeroHpRule {
@@ -597,6 +728,17 @@ pub struct ClassDef {
     #[serde(default)]
     pub secondary_abilities: Vec<String>,
     pub abilities: BTreeMap<String, i32>,
+    /// This class's own hit point formula, in place of
+    /// `stats.hit_points` (a hit die per class).
+    #[serde(default)]
+    pub hit_points: Option<Formula>,
+    /// This class's own armour class formula, in place of
+    /// `stats.armor_class` (the armour it starts in).
+    #[serde(default)]
+    pub armor_class: Option<Formula>,
+    /// Ids of `traits` this class's characters carry.
+    #[serde(default)]
+    pub traits: Vec<String>,
     #[serde(default)]
     pub items: Vec<StartingItem>,
     pub actions: Vec<ActionDef>,
@@ -649,6 +791,9 @@ pub struct AdversaryDef {
     pub description: String,
     #[serde(default)]
     pub tier: Option<String>,
+    /// Ids of `traits` (`mort_vivant`, `chef`).
+    #[serde(default)]
+    pub traits: Vec<String>,
     pub abilities: BTreeMap<String, i32>,
     pub armor_class: i32,
     pub hit_points: i32,
@@ -782,6 +927,9 @@ pub enum Tag {
 #[serde(deny_unknown_fields)]
 pub struct DamageTag {
     pub amount: DiceExpr,
+    /// Id of a `damage_types` entry (`feu`), when the system types damage.
+    #[serde(default, rename = "type", skip_serializing_if = "Option::is_none")]
+    pub damage_type: Option<String>,
     #[serde(default)]
     pub note: String,
 }
@@ -859,6 +1007,12 @@ impl RuleSystem {
     pub fn item(&self, id: &str) -> Option<&ItemDef> {
         self.items.iter().find(|i| i.id == id)
     }
+    /// The money of the system: its first resource (the Corsaires' gold).
+    /// Loot coins and shop prices are counted in it; `None` when the
+    /// system declares no resource.
+    pub fn currency(&self) -> Option<&ResourceDef> {
+        self.resources.first()
+    }
     pub fn condition(&self, id: &str) -> Option<&ConditionDef> {
         self.conditions.iter().find(|c| c.id == id)
     }
@@ -870,6 +1024,29 @@ impl RuleSystem {
     }
     pub fn situation(&self, id: &str) -> Option<&Situation> {
         self.situations.iter().find(|s| s.id == id)
+    }
+    pub fn trait_def(&self, id: &str) -> Option<&TraitDef> {
+        self.traits.iter().find(|t| t.id == id)
+    }
+    pub fn damage_type(&self, id: &str) -> Option<&DamageTypeDef> {
+        self.damage_types.iter().find(|t| t.id == id)
+    }
+    pub fn house_rule(&self, id: &str) -> Option<&HouseRule> {
+        self.house_rules.iter().find(|h| h.id == id)
+    }
+    /// The hit point formula of a character of `class`: the class's
+    /// own, else the system's.
+    pub fn hit_points_formula<'a>(&'a self, class: Option<&'a ClassDef>) -> &'a Formula {
+        class
+            .and_then(|c| c.hit_points.as_ref())
+            .unwrap_or(&self.stats.hit_points.formula)
+    }
+    /// The armour class formula of a character of `class`: the class's
+    /// own, else the system's.
+    pub fn armor_class_formula<'a>(&'a self, class: Option<&'a ClassDef>) -> &'a Formula {
+        class
+            .and_then(|c| c.armor_class.as_ref())
+            .unwrap_or(&self.stats.armor_class.formula)
     }
     /// The movement rule of one map scale, if the system has one.
     pub fn movement(&self, scale: MapScale) -> Option<&MovementRule> {

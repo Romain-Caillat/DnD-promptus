@@ -15,6 +15,13 @@
 //! (`players::play`, logged by the rules); at the end the XP of their
 //! rolls is granted and the scene's loot waits for the GM
 //! ([`super::rewards`]).
+//!
+//! engine/save-against-death: under the `death_saves` rule a dying
+//! character's turn is their save (`Command::DeathSave`), an ally next
+//! to them may stabilise them (`Command::Stabilize`); when the dice
+//! propose a death the GM confirms it (`GmCommand::ConfirmDeath`, the
+//! character then falls: `players::fate::fall`) or decides another
+//! outcome (`GmCommand::Spare`).
 
 use std::collections::BTreeMap;
 
@@ -379,8 +386,30 @@ fn opposition(
     Ok(out)
 }
 
+/// Walk the board's tokens along the fight's moves and turn them toward
+/// their targets (characters/walk-in-four-directions), before
+/// `sync_tokens` sets them on their cells.
+fn follow_events(board: &mut Board, fight: &Fight, events: &[FightEvent]) {
+    for e in events {
+        match e {
+            FightEvent::Moved { who, path, .. } => {
+                if let Some(t) = board.tokens.iter_mut().find(|t| &t.id == who) {
+                    t.walk(path);
+                }
+            }
+            FightEvent::Acted { who, targets, .. } => {
+                let aim = targets.first().and_then(|target| fight.position(target));
+                if let (Some(at), Some(t)) = (aim, board.tokens.iter_mut().find(|t| &t.id == who)) {
+                    t.face(at);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
 /// Put the fight's positions back on the board's tokens.
-fn sync_tokens(board: &mut Board, fight: &Fight) {
+fn sync_tokens(board: &mut Board, story: &Campaign, fight: &Fight) {
     board.tokens.retain(|t| {
         t.kind == TokenKind::Character
             || !fight.scene.combatants.contains_key(&t.id)
@@ -390,24 +419,26 @@ fn sync_tokens(board: &mut Board, fight: &Fight) {
         if let Some(t) = board.tokens.iter_mut().find(|t| &t.id == id) {
             t.at = *at;
         } else if let Some(c) = fight.combatant(id) {
-            board.tokens.push(Token {
-                id: id.clone(),
-                kind: match c.side {
-                    Side::Party => TokenKind::Character,
-                    Side::Opposition => TokenKind::Npc,
-                },
-                r#ref: id.clone(),
-                name: c.name.clone(),
-                at: *at,
-                hidden: false,
-                invisible: false,
-            });
+            let kind = match c.side {
+                Side::Party => TokenKind::Character,
+                Side::Opposition => TokenKind::Npc,
+            };
+            let look = (kind == TokenKind::Npc).then(|| crate::content::npc_look(story, id));
+            board.tokens.push(Token::new(
+                id.clone(),
+                kind,
+                id.clone(),
+                c.name.clone(),
+                *at,
+                look,
+            ));
         }
     }
-    // The fallen and the fled leave the board.
-    board
-        .tokens
-        .retain(|t| t.kind == TokenKind::Character || fight.positions.contains_key(&t.id));
+    // The fallen and the fled leave the board; so does a dead character.
+    board.tokens.retain(|t| {
+        (t.kind == TokenKind::Character || fight.positions.contains_key(&t.id))
+            && fight.standing.get(&t.id) != Some(&Standing::Dead)
+    });
     board.reveal_from_party();
 }
 
@@ -430,7 +461,7 @@ async fn append(
 }
 
 /// The character behind a party combatant id.
-fn character_of_combatant(id: &str) -> Option<Uuid> {
+pub(super) fn character_of_combatant(id: &str) -> Option<Uuid> {
     id.strip_prefix("pc-").and_then(|s| Uuid::parse_str(s).ok())
 }
 
@@ -445,6 +476,10 @@ async fn sync_hit_points(
         let Some(character) = character_of_combatant(id) else {
             continue;
         };
+        // A dead character is out of play: nothing of theirs moves.
+        if fight.standing.get(id) == Some(&Standing::Dead) {
+            continue;
+        }
         let (sheet, state) = play::in_play_locked(tx, campaign, character, rules).await?;
         let Some(now) = play::combatant(rules, &sheet, &state) else {
             continue;
@@ -481,7 +516,8 @@ async fn commit_step(
     let mut board = super::current(&mut **tx, campaign)
         .await?
         .ok_or(AppError::Conflict("NO_MAP_SHOWN"))?;
-    sync_tokens(&mut board, fight);
+    follow_events(&mut board, fight, events);
+    sync_tokens(&mut board, &row.story, fight);
     super::save(tx, campaign, &board).await?;
     let ended = fight.is_over();
     sqlx::query(
@@ -497,6 +533,9 @@ async fn commit_step(
     .await?;
     if let (true, Some(end)) = (ended, &fight.end) {
         for (id, xp) in &end.xp {
+            if end.dead.contains(id) {
+                continue;
+            }
             if let (Some(character), true) = (character_of_combatant(id), *xp > 0) {
                 play::adjust_in(
                     tx,
@@ -552,6 +591,8 @@ async fn commit_step(
         )
         .await?;
         crate::evening::touch(tx, campaign).await?;
+        // A fight on the deck of a boarding hands back to its battle.
+        super::battle::deck_fight_over(tx, row, rules, enc.id, end.winner).await?;
     }
     live::touch(tx, campaign, &Topic::Fight).await?;
     Ok(())
@@ -572,16 +613,45 @@ pub async fn start(
 ) -> Result<Encounter, AppError> {
     let mut tx = pool.begin().await?;
     let (row, live) = session::lock_for_gm(&mut tx, gm, campaign, &[Status::Live]).await?;
-    if live_id(&mut *tx, campaign).await?.is_some() {
+    if live_id(&mut *tx, campaign).await?.is_some()
+        || super::battle::live_id(&mut *tx, campaign).await?.is_some()
+    {
         return Err(AppError::Conflict("FIGHT_IN_PROGRESS"));
     }
-    let rules = &rules_of(&row)?;
+    if row
+        .story
+        .node(node_id)
+        .and_then(|n| n.encounter.as_ref())
+        .is_some_and(|e| e.vehicles.is_some())
+    {
+        return Err(AppError::BadRequest("BATTLE_SCENE"));
+    }
+    let enc = open_in(&mut tx, &row, live.id, node_id).await?;
+    tx.commit().await?;
+    Ok(enc)
+}
+
+/// Opens the encounter of scene `node_id` inside the caller's
+/// transaction, the campaign already locked: a GM's start, or a ship
+/// battle's boarding (`super::battle`).
+///
+/// # Errors
+///
+/// As [`start`].
+pub async fn open_in(
+    tx: &mut Transaction<'_, Postgres>,
+    row: &CampaignRow,
+    session: Uuid,
+    node_id: &str,
+) -> Result<Encounter, AppError> {
+    let campaign = row.id;
+    let rules = &rules_of(row)?;
     let node = row
         .story
         .node(node_id)
         .ok_or(AppError::BadRequest("UNKNOWN_NODE"))?;
     // The scene's own map, else the one shown at the table.
-    let before = super::current(&mut *tx, campaign).await?;
+    let before = super::current(&mut **tx, campaign).await?;
     let map_id = node
         .map
         .clone()
@@ -590,7 +660,7 @@ pub async fn start(
     let map_id = map_id.as_str();
     let map = match before.as_ref().filter(|b| b.map_id == map_id) {
         Some(b) => b.map.clone(),
-        None => crate::campaign_maps::playable(&mut *tx, campaign, &row.story, map_id)
+        None => crate::campaign_maps::playable(&mut **tx, campaign, &row.story, map_id)
             .await?
             .ok_or(AppError::BadRequest("NO_MAP"))?,
     };
@@ -599,7 +669,7 @@ pub async fn start(
         .filter(|b| b.map_id == map_id)
         .map(|b| b.tokens.clone())
         .unwrap_or_default();
-    let party = super::party_tokens(&mut tx, campaign, &map, &kept).await?;
+    let party = super::party_tokens(tx, campaign, &map, &kept).await?;
     if party.is_empty() {
         return Err(AppError::Conflict("NO_PARTY"));
     }
@@ -608,7 +678,7 @@ pub async fn start(
     for t in &party {
         let character =
             Uuid::parse_str(&t.r#ref).map_err(|e| AppError::internal("token ref", e))?;
-        let (sheet, state) = play::in_play_locked(&mut tx, campaign, character, rules).await?;
+        let (sheet, state) = play::in_play_locked(tx, campaign, character, rules).await?;
         let Some(mut c) = play::combatant(rules, &sheet, &state) else {
             continue;
         };
@@ -635,34 +705,33 @@ pub async fn start(
         tokens: Vec::new(),
     });
     board.tokens = party;
-    sync_tokens(&mut board, &step.fight);
-    super::save(&mut tx, campaign, &board).await?;
+    sync_tokens(&mut board, &row.story, &step.fight);
+    super::save(tx, campaign, &board).await?;
     let stored: Row = sqlx::query_as(&format!(
         "INSERT INTO encounters (campaign_id, session_id, node, fight, loot)
          VALUES ($1, $2, $3, $4, $5) RETURNING {COLUMNS}"
     ))
     .bind(campaign)
-    .bind(live.id)
+    .bind(session)
     .bind(node_id)
     .bind(Json(&step.fight))
     .bind(Json(loot_of(&row.story, node, rules)))
-    .fetch_one(&mut *tx)
+    .fetch_one(&mut **tx)
     .await?;
     let enc = encounter(stored);
-    append(&mut tx, enc.id, &step.events).await?;
+    append(tx, enc.id, &step.events).await?;
     knowledge::write(
-        &mut tx,
+        tx,
         campaign,
-        Some(live.id),
+        Some(session),
         JournalKind::Fight,
         Some(node_id),
         &node.title,
         true,
     )
     .await?;
-    crate::evening::touch(&mut tx, campaign).await?;
-    live::touch(&mut tx, campaign, &Topic::Fight).await?;
-    tx.commit().await?;
+    crate::evening::touch(tx, campaign).await?;
+    live::touch(tx, campaign, &Topic::Fight).await?;
     Ok(enc)
 }
 
@@ -694,6 +763,12 @@ pub enum Command {
     },
     Flee,
     EndTurn,
+    /// Dying: roll against death (the whole turn).
+    DeathSave,
+    /// Try to stabilise a dying ally next to the combatant.
+    Stabilize {
+        target: String,
+    },
 }
 
 /// The save difficulty the GM gives when the rules leave it open
@@ -754,6 +829,8 @@ fn run(
         }
         Command::Flee => fight.flee(rules, who, None, &mut dice),
         Command::EndTurn => fight.end_turn(rules, who, &mut dice),
+        Command::DeathSave => fight.death_save(rules, who, &mut dice),
+        Command::Stabilize { target } => fight.stabilize(rules, who, target, &mut dice),
     }
     .map_err(|r| refused(&r))?;
     Ok((step.fight, step.events))
@@ -816,6 +893,11 @@ pub enum GmCommand {
     },
     /// End the fight now.
     Stop,
+    /// The character `who` (a combatant id) dies: the death the dice
+    /// proposed, or the GM's own decision for someone down at 0.
+    ConfirmDeath { who: String },
+    /// Another outcome than the death the dice proposed: `who` is stable.
+    Spare { who: String },
 }
 
 /// Apply `cmd` of the GM to the live fight.
@@ -898,9 +980,87 @@ pub async fn gm_command(
             let step = enc.fight.stop();
             commit_step(&mut tx, &row, rules, &enc, &step.fight, &step.events).await?;
         }
+        GmCommand::ConfirmDeath { who } => {
+            let character =
+                character_of_combatant(who).ok_or(AppError::BadRequest("NOT_A_CHARACTER"))?;
+            confirm_in(&mut tx, &row, rules, &enc, who, character).await?;
+        }
+        GmCommand::Spare { who } => {
+            let step = enc
+                .fight
+                .spare(rules, who, &mut SeededDice::from_os())
+                .map_err(|r| refused(&r))?;
+            commit_step(&mut tx, &row, rules, &enc, &step.fight, &step.events).await?;
+        }
     }
     tx.commit().await?;
     Ok(proposal)
+}
+
+/// The GM confirms the death of `character` in fight `enc`: the fight
+/// takes them out for good, then the character falls.
+async fn confirm_in(
+    tx: &mut Transaction<'_, Postgres>,
+    row: &CampaignRow,
+    rules: &RuleSystem,
+    enc: &Encounter,
+    who: &str,
+    character: Uuid,
+) -> Result<(), AppError> {
+    let proposed = enc
+        .fight
+        .combatant(who)
+        .and_then(|c| c.death_saves)
+        .is_some_and(|d| d.death_due);
+    let step = enc
+        .fight
+        .confirm_death(rules, who, &mut SeededDice::from_os())
+        .map_err(|r| refused(&r))?;
+    commit_step(tx, row, rules, enc, &step.fight, &step.events).await?;
+    crate::players::fate::fall(
+        tx,
+        row.id,
+        rules,
+        character,
+        if proposed {
+            crate::players::fate::Cause::Rules
+        } else {
+            crate::players::fate::Cause::Gm
+        },
+        enc.session_id,
+        Some(&enc.node),
+    )
+    .await
+}
+
+/// When the live fight of `row` holds `character` (in it, or put out of
+/// the scene), the GM's decision of their death goes through the fight:
+/// returns whether it did. The caller holds the campaign lock.
+///
+/// # Errors
+///
+/// 409 `REFUSED` with the engine's reason (not down at 0); the errors of
+/// `players::fate::fall`.
+pub async fn confirm_death_of(
+    tx: &mut Transaction<'_, Postgres>,
+    row: &CampaignRow,
+    rules: &RuleSystem,
+    character: Uuid,
+) -> Result<bool, AppError> {
+    if live_id(&mut **tx, row.id).await?.is_none() {
+        return Ok(false);
+    }
+    let enc = locked_live(tx, row.id).await?;
+    let who = character_token(character);
+    let present = matches!(
+        enc.fight.standing.get(&who),
+        Some(Standing::InFight | Standing::OutOfScene)
+    );
+    if !present {
+        return Ok(false);
+    }
+    confirm_in(tx, row, rules, &enc, &who, character).await?;
+    Ok(true)
 }
 
 /// How many commands a proposed turn may take.

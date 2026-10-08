@@ -523,6 +523,7 @@ pub fn import_v1(
                     sells: Vec::new(),
                     faction,
                     location: None,
+                    companion: false,
                     gm_notes: String::new(),
                 });
             }
@@ -634,6 +635,7 @@ pub fn import_v1(
             morale: Vec::new(),
             on_victory: String::new(),
             on_defeat: String::new(),
+            vehicles: None,
         });
         c.nodes.push(Node {
             id: s.id,

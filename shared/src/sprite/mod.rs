@@ -7,10 +7,13 @@
 //! show (`GET /api/sprites/render.png`), so there is one implementation.
 //!
 //! Style ported from `docs/design/sprite-prototype.py` and `avatar.py`:
-//! a 20 x 26 grid in right profile, three-tone shading (lit top edges,
+//! a 20 x 26 grid drawn in four directions (right profile, front, back;
+//! the left profile is the mirror), three-tone shading (lit top edges,
 //! dark back and bottom edges), a dark 1-px outline around the whole
-//! silhouette — never over the face — and a drop shadow. Heroes face
-//! east, enemies west (the mirror).
+//! silhouette — never over the face — and a drop shadow. At rest heroes
+//! face east, enemies west; on a map a character turns toward where it
+//! walks or what it acts on ([`Direction::toward`]), and moves through
+//! the frames of [`render_sheet`].
 //!
 //! Conditions show on the character as an effect drawn over the sprite
 //! ([`ConditionVisual`]); which condition shows which effect is data in
@@ -27,7 +30,7 @@ use serde::{Deserialize, Serialize};
 
 pub use look::{CharacterLook, Hair, LookBook, NamedLook, Worn};
 pub use pack::{Catalogue, CataloguePiece, Direction, Pack, Slot};
-pub use render::{Composite, Image, compose, render};
+pub use render::{Composite, Frame, Image, compose, compose_frame, render, render_sheet};
 
 /// The packs a server knows, by id.
 #[derive(Debug, Clone, Default)]

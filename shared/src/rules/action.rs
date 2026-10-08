@@ -13,6 +13,7 @@ use super::check::{
 use super::conditions::{self, gain_hp, lose_hp, put_on};
 use super::dice::DiceSource;
 use super::events::{DamageBreakdown, Event, RollPurpose};
+use super::house;
 use super::model::*;
 use super::progression::award_band;
 use super::sheet::{Combatant, Scene, SheetError};
@@ -147,14 +148,13 @@ pub fn action_cards<'a>(system: &'a RuleSystem, actor: &'a Combatant) -> Vec<Act
         .into_iter()
         .map(|action| {
             let attack_bonus = (action.roll == RollSpec::Attack)
-                .then(|| attack_ability(system, actor, action).ok())
+                .then(|| attack_modifiers(system, actor, action).ok())
                 .flatten()
-                .and_then(|ab| actor.modifier(system, &ab).ok())
-                .map(|m| {
-                    m + match system.attack.precision {
-                        PrecisionRule::AddedToAttackRoll => action.precision(),
-                        PrecisionRule::NotApplied => 0,
-                    }
+                .map(|(mods, _, _)| {
+                    mods.iter()
+                        .filter(|m| !matches!(m.source, ModifierSource::Condition(_)))
+                        .map(|m| m.value)
+                        .sum()
                 });
             ActionCard {
                 action,
@@ -286,7 +286,12 @@ fn resolve_targets(
             let mut seen = Vec::new();
             for t in asked {
                 side(t, false)?;
-                if scene.get(t).is_some_and(|c| c.hit_points == 0) {
+                // A dying character can still be hit (each hit is a
+                // failed death save); anyone else down is out of reach.
+                if scene
+                    .get(t)
+                    .is_some_and(|c| c.hit_points == 0 && c.death_saves.is_none_or(|d| d.death_due))
+                {
                     return Err(Refusal::TargetDown { target: t.clone() });
                 }
                 if !seen.contains(t) {
@@ -506,6 +511,14 @@ pub fn attack_modifiers(
     let ability = attack_ability(system, actor, action)?;
     let (mut mods, adv, dis) =
         check::ability_modifiers(system, actor, &ability, RollScope::Attacks)?;
+    if let Some((name, value)) = actor.attack_bonus(system)?
+        && value != 0
+    {
+        mods.push(Modifier {
+            source: ModifierSource::AttackBonus(name),
+            value,
+        });
+    }
     if system.attack.precision == PrecisionRule::AddedToAttackRoll && action.precision() != 0 {
         mods.push(Modifier {
             source: ModifierSource::Precision(action.id.clone()),
@@ -562,6 +575,7 @@ fn attack_roll(
     }
     Ok(check::roll(
         system,
+        RollScope::Attacks,
         mods,
         Advantage::combine(adv, dis),
         Some(RollTarget::ArmorClass {
@@ -569,6 +583,70 @@ fn attack_roll(
         }),
         dice,
     )?)
+}
+
+/// Applies the house rules `moment` triggers between `actor` and
+/// `target`, each announced by an [`Event::HouseRule`].
+fn apply_house_rules(
+    system: &RuleSystem,
+    scene: &mut Scene,
+    moment: &house::Moment<'_>,
+    actor_id: &str,
+    target_id: &str,
+    dice: &mut dyn DiceSource,
+    events: &mut Vec<Event>,
+) -> Result<(), Refusal> {
+    let (Some(actor), Some(target)) = (scene.get(actor_id), scene.get(target_id)) else {
+        return Ok(());
+    };
+    let rules = house::triggered(system, moment, actor, target);
+    for (rule, formal) in rules {
+        events.push(Event::HouseRule {
+            rule: rule.id.clone(),
+            name: rule.name.clone(),
+            target: target_id.into(),
+            shown: formal.players == house::PlayersSee::Rule,
+        });
+        let to = |r: Recipient| match r {
+            Recipient::Targets => target_id,
+            Recipient::Myself => actor_id,
+        };
+        for effect in &formal.effects {
+            match effect {
+                house::HouseEffect::Apply(spec) => deliver(
+                    system,
+                    scene,
+                    spec,
+                    &rule.name,
+                    actor_id,
+                    to(spec.to),
+                    None,
+                    dice,
+                    events,
+                )?,
+                house::HouseEffect::Damage(a) => {
+                    let r = a.amount.roll(dice);
+                    let total = r.total.max(0);
+                    let breakdown = DamageBreakdown {
+                        amount: a.amount.to_string(),
+                        faces: r.faces,
+                        rolled: r.total,
+                        bonus: 0,
+                        multiplier: 1,
+                        taken_modifier: 0,
+                        ignored: false,
+                        total,
+                    };
+                    lose_hp(system, scene, to(a.to), breakdown, events);
+                }
+                house::HouseEffect::Heal(a) => {
+                    let r = a.amount.roll(dice);
+                    gain_hp(system, scene, to(a.to), r.total, events);
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Resolves one action. On a refusal nothing has happened; on success the
@@ -620,6 +698,14 @@ pub fn resolve_action(
         }
     }
 
+    let damage_types: Vec<&str> = tags
+        .iter()
+        .filter_map(|t| match t {
+            Tag::Damage(d) => d.damage_type.as_deref(),
+            _ => None,
+        })
+        .collect();
+
     let situational: Vec<&SituationalBonus> = tags
         .iter()
         .filter_map(|t| match t {
@@ -634,9 +720,9 @@ pub fn resolve_action(
             continue;
         };
 
-        let (landed, critical) = match &action.roll {
-            RollSpec::None | RollSpec::AutoHit => (true, false),
-            RollSpec::AutoCritical => (true, true),
+        let (landed, critical, fumble) = match &action.roll {
+            RollSpec::None | RollSpec::AutoHit => (true, false, false),
+            RollSpec::AutoCritical => (true, true, false),
             RollSpec::Attack => {
                 let roll = attack_roll(
                     system,
@@ -658,6 +744,7 @@ pub fn resolve_action(
                 (
                     band.is_some_and(OutcomeBand::is_success),
                     band == Some(OutcomeBand::CriticalSuccess),
+                    band == Some(OutcomeBand::CriticalFailure),
                 )
             }
             RollSpec::Contest {
@@ -685,8 +772,13 @@ pub fn resolve_action(
                 attack.target = Some(RollTarget::Opposed {
                     value: defence.total,
                 });
-                attack.band =
-                    check::band_for(system, attack.natural, attack.total, Some(defence.total));
+                attack.band = check::band_for(
+                    system,
+                    RollScope::Checks,
+                    attack.natural,
+                    attack.total,
+                    Some(defence.total),
+                );
                 let band = attack.band;
                 events.push(Event::Roll {
                     roller: target_id.clone(),
@@ -701,7 +793,11 @@ pub fn resolve_action(
                     breakdown: attack,
                 });
                 award(system, &mut next, actor_id, band, &mut events);
-                (band.is_some_and(OutcomeBand::is_success), false)
+                (
+                    band.is_some_and(OutcomeBand::is_success),
+                    false,
+                    band == Some(OutcomeBand::CriticalFailure),
+                )
             }
         };
 
@@ -801,6 +897,29 @@ pub fn resolve_action(
             events.push(Event::Missed {
                 target: target_id.clone(),
             });
+        }
+
+        // House rules: once per target, on the attack as it went (their
+        // own effects never trigger another).
+        if action.roll != RollSpec::None {
+            let moment = house::Moment {
+                trigger: if landed {
+                    house::Trigger::Hit
+                } else {
+                    house::Trigger::Miss
+                },
+                critical: if landed { critical } else { fumble },
+                damage_types: &damage_types,
+            };
+            apply_house_rules(
+                system,
+                &mut next,
+                &moment,
+                actor_id,
+                target_id,
+                dice,
+                &mut events,
+            )?;
         }
 
         if is_attack(&action.roll)

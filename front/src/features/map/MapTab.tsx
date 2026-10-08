@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArcadeCluster } from '@/components/game/ArcadeCluster'
+import { CardButton } from '@/components/game/CardButton'
 import { Hearts } from '@/components/game/Hearts'
+import { Kbd } from '@/components/game/Kbd'
 import { ApiError } from '@/lib/api'
 import {
   fetchBoard,
@@ -11,17 +13,25 @@ import {
   type BoardView,
   type Cell,
   type Command,
+  type Dying,
   type FightView,
 } from '@/lib/board'
+import { crewCommand, fetchBattle, type BattleView, type CrewCommand } from '@/lib/battle'
 import { playerBackdropUrl } from '@/lib/maps'
 import { fetchPlayerMedia, playerImageUrl, type MediaList } from '@/lib/media'
+import { cardIndex, cardKey, useShortcuts } from '@/lib/useShortcuts'
 import { cn } from '@/lib/utils'
+import { BattleScreen } from './BattleScreen'
+import { WorldMapTab } from '@/features/travel/PlayerTravel'
 import { eventLine } from './events'
 import { MapCanvas } from './MapCanvas'
 import { useImage } from './useImage'
 import { useTileset } from './useTileset'
 
-type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; board: BoardView | null }
+type State =
+  | { kind: 'loading' }
+  | { kind: 'error' }
+  | { kind: 'ready'; board: BoardView | null; battle: BattleView | null }
 
 /**
  * The Map tab (player/explore-map, player/fight-turn): the map the GM
@@ -29,9 +39,25 @@ type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; board: B
  * fight, a tap on a highlighted cell walks the character there along
  * the path the server checks again. In a fight: whose turn it is, the
  * order with hearts for the party, and on my turn the hand of cards,
- * the target picked on the map, the arcade buttons and the log.
+ * the target picked on the map, the arcade buttons and the log. In a
+ * ship battle (engine/support-vehicle-combat), the battle at my station
+ * instead; during a boarding, the fight on the deck. On a computer
+ * (player/play-on-desktop) a digit picks a card, Enter plays it, Escape
+ * puts it back; `onTurn` tells the page when the keys are the fight's.
  */
-export function MapTab({ campaignId, refreshKey }: { campaignId: string; refreshKey: number }) {
+export function MapTab({
+  campaignId,
+  refreshKey,
+  keyboard = false,
+  onTurn,
+}: {
+  campaignId: string
+  refreshKey: number
+  /** Shortcuts on and their hints shown, while it is my turn. */
+  keyboard?: boolean
+  /** Whether it is my turn in a live fight, each time it changes. */
+  onTurn?: (mine: boolean) => void
+}) {
   const { t } = useTranslation()
   const [state, setState] = useState<State>({ kind: 'loading' })
   const [media, setMedia] = useState<MediaList | null>(null)
@@ -46,8 +72,12 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
     let next: State
     let list: MediaList | null = null
     try {
-      const [board, media] = await Promise.all([fetchBoard(campaignId), fetchPlayerMedia(campaignId)])
-      next = { kind: 'ready', board }
+      const [board, battle, media] = await Promise.all([
+        fetchBoard(campaignId),
+        fetchBattle(campaignId),
+        fetchPlayerMedia(campaignId),
+      ])
+      next = { kind: 'ready', board, battle }
       list = media
     } catch {
       next = { kind: 'error' }
@@ -63,7 +93,31 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
   }, [load, refreshKey])
 
   const board = state.kind === 'ready' ? state.board : null
+  const battle = state.kind === 'ready' && state.battle?.live ? state.battle : null
+  const myTurn = Boolean(board?.fight?.live && board.fight.myTurn)
+  useEffect(() => {
+    onTurn?.(myTurn)
+  }, [myTurn, onTurn])
+  const playable = myTurn ? (board?.fight?.cards ?? []) : []
+  useShortcuts(keyboard && myTurn, (key) => {
+    if (key === 'Escape' && card) {
+      setCard(null)
+      setTargets([])
+      return true
+    }
+    if (key === 'Enter' && card && !busy) {
+      play({ kind: 'act', action: card, targets })
+      return true
+    }
+    const index = cardIndex(key)
+    const picked = index === null ? undefined : playable[index]
+    if (!picked || picked.locked) return false
+    setCard(picked.id)
+    setTargets([])
+    return true
+  })
   const { tileset, atlases } = useTileset(board?.map ?? null, media, (id) => playerImageUrl(campaignId, id))
+  const sea = useTileset(battle?.map ?? null, media, (id) => playerImageUrl(campaignId, id))
   // The board's map id is not the players'; its image is the one shown.
   const backdrop = useImage(board?.map.backdrop?.image ? playerBackdropUrl(campaignId, board.map.id) : null)
 
@@ -71,7 +125,21 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
     setError(null)
     setBusy(true)
     try {
-      setState({ kind: 'ready', board: await call() })
+      const next = await call()
+      setState((s) => ({ kind: 'ready', board: next, battle: s.kind === 'ready' ? s.battle : null }))
+    } catch (err) {
+      setError(err instanceof ApiError ? err.code : 'UNEXPECTED')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function crew(cmd: CrewCommand) {
+    setError(null)
+    setBusy(true)
+    try {
+      const next = await crewCommand(campaignId, cmd)
+      setState((s) => (s.kind === 'ready' ? { ...s, battle: next } : s))
     } catch (err) {
       setError(err instanceof ApiError ? err.code : 'UNEXPECTED')
     } finally {
@@ -81,13 +149,35 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
 
   if (state.kind === 'loading') return <p role="status">{t('play.loading')}</p>
   if (state.kind === 'error') return <p role="alert">{t('play.error')}</p>
+  if (battle && !battle.boarding) {
+    return (
+      <div className="flex flex-col gap-3">
+        {error && (
+          <p role="alert" className="rounded-button border border-stat-atk px-3 py-2 text-body">
+            {t(`battle.errors.${error}`, { defaultValue: t('battle.errors.UNEXPECTED') })}
+          </p>
+        )}
+        <BattleScreen battle={battle} busy={busy} onCommand={(c) => void crew(c)} tileset={sea.tileset} atlases={sea.atlases} />
+      </div>
+    )
+  }
   if (!board) return <p className="text-body text-chalk-soft">{t('map.none')}</p>
+  if (board.map.scale === 'world') {
+    return <WorldMapTab campaignId={campaignId} board={board} tileset={tileset} refreshKey={refreshKey} />
+  }
 
   const fight = board.fight?.live ? board.fight : null
   const me = board.tokens.find((tk) => tk.mine)
   const mineId = fight?.order.find((f) => f.mine)?.id
   const myCell: Cell | undefined = (mineId && fight?.order.find((f) => f.id === mineId)?.at) || me?.at
-  const canMove = fight ? fight.myTurn : Boolean(me)
+  const myFighter = fight?.order.find((f) => f.mine)
+  const dying = myFighter?.dying ?? null
+  const canMove = fight ? fight.myTurn && !fight.deathSave : Boolean(me)
+  // Allies dying and not yet stable, whom I may try to stabilise on my turn.
+  const toStabilize =
+    fight?.myTurn && !fight.deathSave && fight.stabilize
+      ? fight.order.filter((f) => !f.mine && f.party && f.dying && !f.dying.stable && f.standing === 'in_fight')
+      : []
   const nameOf = (id: string) =>
     fight?.order.find((f) => f.id === id)?.name ??
     board.fight?.order.find((f) => f.id === id)?.name ??
@@ -124,6 +214,11 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
           <span className="type-label">{t(`map.weather.${board.map.ambience.weather}`)}</span>
         )}
       </div>
+      {battle?.boarding && (
+        <p role="status" className="rounded-button border border-ivory px-3 py-2 text-body font-bold">
+          {t('battle.boarding')}
+        </p>
+      )}
       {fight && <FightHeader fight={fight} />}
       {error && (
         <p role="alert" className="rounded-button border border-stat-atk px-3 py-2 text-body">
@@ -141,15 +236,31 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
           selected: targets[0] ?? null,
           highlight: fight?.order.filter((f) => targets.includes(f.id) && f.at).map((f) => f.at!) ?? [],
         }}
+        fightEvents={board.fight?.events}
         className="max-h-[55dvh]"
         onCell={tapCell}
       />
       {!fight && me && <p className="text-caption text-mute">{t('map.walkHint')}</p>}
       {me?.ghost && <p className="text-caption text-mute">{t('map.ghost')}</p>}
-      {fight?.myTurn && (
+      {fight && dying && <DeathSaves fight={fight} dying={dying} busy={busy} onRoll={() => play({ kind: 'deathSave' })} />}
+      {toStabilize.length > 0 && fight?.stabilize && (
+        <div className="flex flex-col gap-2">
+          {toStabilize.map((f) => (
+            <CardButton
+              key={f.id}
+              variant="dark"
+              title={t('fight.death.stabilize', { name: f.name })}
+              subtitle={t('fight.death.stabilizeSub', fight.stabilize!)}
+              disabled={busy}
+              onClick={() => play({ kind: 'stabilize', target: f.id })}
+            />
+          ))}
+        </div>
+      )}
+      {fight?.myTurn && !fight.deathSave && (
         <>
           <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label={t('fight.hand')}>
-            {fight.cards.map((c) => (
+            {fight.cards.map((c, i) => (
               <button
                 key={c.id}
                 type="button"
@@ -170,10 +281,12 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
                   {t('fight.range', { range: c.range })}
                   {c.attackBonus !== null ? ` · ${t('fight.bonus', { value: c.attackBonus })}` : ''}
                 </span>
+                {keyboard && cardKey(i) && <Kbd>{cardKey(i)!}</Kbd>}
               </button>
             ))}
           </div>
           {card && <p className="text-caption text-mute">{t('fight.pickTarget', { count: targets.length })}</p>}
+          {keyboard && <p className="text-caption text-mute">{t('fight.keys')}</p>}
           <ArcadeCluster
             busy={busy}
             main={{
@@ -199,6 +312,77 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
         </section>
       )}
     </div>
+  )
+}
+
+/** Three circles of each kind, filled as the server counts them. */
+function SaveCircles({ dying }: { dying: Dying }) {
+  const { t } = useTranslation()
+  const { successes, failures, successesNeeded, failuresNeeded } = dying
+  const row = (label: string, n: number, of: number, good: boolean) => (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="w-20 text-caption font-bold">{label}</span>
+      {Array.from({ length: of }, (_, i) => (
+        <span
+          key={i}
+          aria-hidden
+          className={cn(
+            'size-7 rounded-full',
+            i < n
+              ? good
+                ? 'bg-ivory shadow-ivory-flat'
+                : 'bg-stat-atk'
+              : 'border-2 border-dashed border-line-strong',
+          )}
+        />
+      ))}
+    </div>
+  )
+  return (
+    <div
+      className="flex flex-col gap-1.5"
+      role="img"
+      aria-label={`${t('fight.death.successes')} ${successes}/${successesNeeded}, ${t('fight.death.failures')} ${failures}/${failuresNeeded}`}
+    >
+      {row(t('fight.death.successes'), successes, successesNeeded, true)}
+      {row(t('fight.death.failures'), failures, failuresNeeded, false)}
+    </div>
+  )
+}
+
+/**
+ * engine/save-against-death on the phone (planche « Mourir »): down at 0
+ * but not dead; on my turn the whole turn is the save, the server rolls
+ * and keeps the count. Three failures wait for the GM: nothing is said
+ * before they decide.
+ */
+function DeathSaves({
+  fight,
+  dying,
+  busy,
+  onRoll,
+}: {
+  fight: FightView
+  dying: Dying
+  busy: boolean
+  onRoll: () => void
+}) {
+  const { t } = useTranslation()
+  const waiting = !dying.stable && dying.failures >= dying.failuresNeeded
+  return (
+    <section
+      aria-label={t('fight.death.title')}
+      className="flex flex-col gap-3 rounded-2xl border border-stat-atk bg-[#140b0c] p-4"
+    >
+      <h3 className="type-title text-[20px]">{fight.deathSave ? t('fight.death.turn') : t('fight.death.title')}</h3>
+      {!dying.stable && !waiting && <p className="text-body text-chalk-soft">{t('fight.death.lead')}</p>}
+      <SaveCircles dying={dying} />
+      {dying.stable && <p className="text-body text-chalk-soft">{t('fight.death.stable')}</p>}
+      {waiting && <p role="status" className="text-body text-chalk-soft">{t('fight.death.waiting')}</p>}
+      {fight.deathSave && !waiting && (
+        <CardButton title={t('fight.death.roll')} subtitle={t('fight.death.rollSub')} disabled={busy} onClick={onRoll} />
+      )}
+    </section>
   )
 }
 
@@ -234,6 +418,13 @@ function FightHeader({ fight }: { fight: FightView }) {
               <Hearts hp={f.hitPoints} max={f.maxHitPoints} count={4} px={2} animated={false} />
             )}
             {f.conditions.length > 0 && <span className="text-mute-soft">{f.conditions.join(', ')}</span>}
+            {f.dying && (
+              <span className="text-stat-atk tabular-nums">
+                {f.dying.stable
+                  ? t('fight.death.stableShort')
+                  : t('fight.death.short', { successes: f.dying.successes, failures: f.dying.failures })}
+              </span>
+            )}
           </li>
         ))}
       </ol>

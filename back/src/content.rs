@@ -1,5 +1,9 @@
-//! Content compiled into the binary: the rule systems, the maps and the
-//! sprite packs of the two witness worlds (`content/`).
+//! Content compiled into the binary: the rule systems, the maps, their
+//! travel guides and the sprite packs of the two witness worlds
+//! (`content/`), and the D&D 5e SRD preset (`engine/add-srd-preset`),
+//! which has rules, a map and a scenario but no theme or sprite pack of
+//! its own yet: its campaigns fall back to the first pack and the plain
+//! map tiles.
 //!
 //! The rule systems here are the presets a campaign starts from; a
 //! campaign's own versions are stored in the database and resolved by
@@ -19,6 +23,7 @@ use promptus_shared::rules::RuleSystem;
 use promptus_shared::sprite::{CharacterLook, LookBook, Pack, Packs};
 use promptus_shared::story::{Campaign, RuleSystemRef};
 use promptus_shared::theme::Theme;
+use promptus_shared::travel::Guide;
 
 /// The pack files, in a fixed order: their hash versions the renders.
 pub const PACK_FILES: [&str; 2] = [
@@ -29,23 +34,82 @@ const LOOK_FILES: [&str; 2] = [
     include_str!("../../content/sprites/looks/corsaires.yaml"),
     include_str!("../../content/sprites/looks/brasier.yaml"),
 ];
-const RULE_FILES: [&str; 2] = [
+const RULE_FILES: [&str; 3] = [
     include_str!("../../content/rules/corsaires/v1.yaml"),
     include_str!("../../content/rules/brasier/v1.yaml"),
+    include_str!("../../content/rules/srd/v1.yaml"),
 ];
 
-/// The maps of the two worlds, by rule system id
-/// (`content/maps/<rules>/<map>.yaml`).
-const MAP_FILES: [(&str, &str); 2] = [
+/// The maps of the two worlds and the SRD, by rule system id
+/// (`content/maps/<rules>/<map>.yaml`): encounter and place maps, and
+/// each world's map in hexes (maps/travel-hex-world).
+const MAP_FILES: [(&str, &str); 10] = [
     (
         "corsaires",
         include_str!("../../content/maps/corsaires/quai-port-louis.yaml"),
     ),
     (
+        "corsaires",
+        include_str!("../../content/maps/corsaires/large-de-belle-ile.yaml"),
+    ),
+    (
+        "corsaires",
+        include_str!("../../content/maps/corsaires/pont-du-greyhound.yaml"),
+    ),
+    (
         "brasier",
         include_str!("../../content/maps/brasier/cure-dent-coursive.yaml"),
     ),
+    (
+        "brasier",
+        include_str!("../../content/maps/brasier/abords-du-toboggan.yaml"),
+    ),
+    (
+        "corsaires",
+        include_str!("../../content/maps/corsaires/cotes-bretagne-sud.yaml"),
+    ),
+    (
+        "corsaires",
+        include_str!("../../content/maps/corsaires/le-palais.yaml"),
+    ),
+    (
+        "brasier",
+        include_str!("../../content/maps/brasier/systeme-brasier.yaml"),
+    ),
+    (
+        "brasier",
+        include_str!("../../content/maps/brasier/reliquaire-sereth.yaml"),
+    ),
+    (
+        "srd",
+        include_str!("../../content/maps/srd/route-des-gobelins.yaml"),
+    ),
 ];
+
+/// The travel guides of the worlds' maps in hexes
+/// (`content/travel/<rules>/<map>.yaml`).
+const GUIDE_FILES: [&str; 2] = [
+    include_str!("../../content/travel/corsaires/cotes-bretagne-sud.yaml"),
+    include_str!("../../content/travel/brasier/systeme-brasier.yaml"),
+];
+
+static GUIDES: LazyLock<Vec<Guide>> = LazyLock::new(|| {
+    GUIDE_FILES
+        .iter()
+        .map(|t| Guide::from_yaml(t).expect("the embedded travel guides load"))
+        .collect()
+});
+
+/// How `map` is travelled: its written guide, or the default one read
+/// from its cells (a world map the GM drew).
+#[must_use]
+pub fn guide(map: &Map) -> Guide {
+    GUIDES
+        .iter()
+        .find(|g| g.map == map.id && g.issues(map).is_empty())
+        .cloned()
+        .unwrap_or_else(|| Guide::default_for(map))
+}
 
 static MAPS: LazyLock<Vec<(&'static str, Map)>> = LazyLock::new(|| {
     MAP_FILES
@@ -109,9 +173,10 @@ static RULES: LazyLock<Vec<(&'static str, Arc<RuleSystem>)>> = LazyLock::new(|| 
 
 /// The fight scenarios of the two worlds (`content/scenarios/`): the
 /// rule system editor plays them on every saved draft.
-const SCENARIO_FILES: [&str; 2] = [
+const SCENARIO_FILES: [&str; 3] = [
     include_str!("../../content/scenarios/corsaires/bagarre-du-quai.yaml"),
     include_str!("../../content/scenarios/brasier/abordage-coursive.yaml"),
+    include_str!("../../content/scenarios/srd/embuscade-des-gobelins.yaml"),
 ];
 
 static SCENARIOS: LazyLock<Vec<Scenario>> = LazyLock::new(|| {
@@ -186,6 +251,70 @@ pub fn start_look(campaign: &Campaign) -> CharacterLook {
         .unwrap_or_else(|| plain_look(pack))
 }
 
+/// How NPC or adversary `id` of `campaign` looks on the map
+/// (characters/walk-in-four-directions): its look in the world's book —
+/// a numbered copy of a fight, `who-2`, reads as `who` — or else a look
+/// picked from its id in the campaign's pack (a generated campaign's
+/// smuggler), the same on every screen and at every fight.
+pub fn npc_look(campaign: &Campaign, id: &str) -> CharacterLook {
+    let base = id
+        .rsplit_once('-')
+        .filter(|(_, n)| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
+        .map_or(id, |(who, _)| who);
+    let book = look_book(campaign);
+    let known = book.and_then(|b| {
+        b.foes
+            .iter()
+            .chain(&b.party)
+            .find(|l| l.id == id || l.id == base)
+    });
+    if let Some(l) = known {
+        return l.look.clone();
+    }
+    picked_look(pack_for(campaign), base)
+}
+
+/// A look chosen piece by piece from a hash of `seed`: the body, the skin,
+/// the hair and its colour, the outfit and its dye.
+fn picked_look(pack: &Pack, seed: &str) -> CharacterLook {
+    use promptus_shared::sprite::{Slot, Worn};
+    // FNV-1a: stable across builds and platforms, unlike the std hasher.
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+    for b in seed.bytes() {
+        h = (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3);
+    }
+    let mut pick = |n: usize| -> usize {
+        if n == 0 {
+            return 0;
+        }
+        let i = usize::try_from(h % (n as u64)).unwrap_or(0);
+        h = h.rotate_right(13).wrapping_mul(0x0100_0000_01b3);
+        i
+    };
+    let mut look = plain_look(pack);
+    let id_of = |slot: Slot, i: usize| pack.pieces(slot).get(i).map(|p| p.id.clone());
+    if let Some(body) = id_of(Slot::Body, pick(pack.pieces(Slot::Body).len())) {
+        look.body = body;
+    }
+    let p = &pack.palettes;
+    if let Some(s) = p.skin.get(pick(p.skin.len())) {
+        look.skin = s.id.clone();
+    }
+    look.hair.style = id_of(Slot::Hair, pick(pack.pieces(Slot::Hair).len()));
+    if let Some(c) = p.hair.get(pick(p.hair.len())) {
+        look.hair.colour = c.id.clone();
+    }
+    if let Some(outfit) = id_of(Slot::Outfit, pick(pack.pieces(Slot::Outfit).len())) {
+        let dye = p.cloth.get(pick(p.cloth.len())).map(|c| c.id.clone());
+        look.outfit = Some(Worn {
+            piece: outfit,
+            dye,
+            accent: None,
+        });
+    }
+    look
+}
+
 fn plain_look(pack: &Pack) -> CharacterLook {
     use promptus_shared::sprite::{Hair, Slot};
     let first = |slot| pack.pieces(slot).first().map(|p| p.id.clone());
@@ -223,7 +352,7 @@ mod tests {
 
     #[test]
     fn every_campaign_world_gets_a_pack_and_a_start_look_that_draws() {
-        for rules in ["corsaires", "brasier", "unknown-system"] {
+        for rules in ["corsaires", "brasier", "srd", "unknown-system"] {
             let campaign = Campaign::empty(
                 "c",
                 "C",
@@ -236,6 +365,12 @@ mod tests {
             let look = start_look(&campaign);
             assert_eq!(look.pack, pack_for(&campaign).id, "{rules}");
             render(packs(), &look, Direction::East).unwrap_or_else(|e| panic!("{rules}: {e}"));
+            // An NPC no look book knows still gets one, every time the same.
+            let smuggler = npc_look(&campaign, "contrebandier-3");
+            assert_eq!(smuggler, npc_look(&campaign, "contrebandier-1"));
+            for d in [Direction::South, Direction::North, Direction::West] {
+                render(packs(), &smuggler, d).unwrap_or_else(|e| panic!("{rules} {d:?}: {e}"));
+            }
         }
         let brasier = Campaign::empty(
             "c",

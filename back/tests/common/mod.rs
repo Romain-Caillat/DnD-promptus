@@ -17,6 +17,7 @@ use axum::http::{Request, StatusCode, header};
 use promptus_back::ai::Ai;
 use promptus_back::auth::setup::SetupState;
 use promptus_back::live::{LiveConfig, LiveHub};
+use promptus_back::schedule::Notifier;
 use promptus_back::state::{AppState, Auth};
 use serde_json::Value;
 use sqlx::PgPool;
@@ -131,12 +132,25 @@ fn router_with(pool: PgPool, setup: SetupState, live: LiveHub) -> Router {
 /// elsewhere): tests of the co-GM and of the budget pass their own to
 /// count its calls.
 pub fn app_with_ai(pool: PgPool, setup: SetupState, live: LiveHub, ai: Ai) -> Router {
+    app_with_notifier(pool, setup, live, ai, Notifier::recorder(ORIGIN).0)
+}
+
+/// The real router with a chosen notifier: tests of the reminders pass a
+/// recorder and read what would have reached the table's channel.
+pub fn app_with_notifier(
+    pool: PgPool,
+    setup: SetupState,
+    live: LiveHub,
+    ai: Ai,
+    notifier: Notifier,
+) -> Router {
     promptus_back::app::router(
         AppState {
             pool,
             auth: auth(setup),
             live,
             ai,
+            notifier,
         },
         &[],
     )
@@ -155,6 +169,8 @@ pub struct Reply {
     pub status: StatusCode,
     pub body: Value,
     pub set_cookie: Option<String>,
+    /// The body as text, for the answers that are not JSON (a calendar).
+    pub text: String,
 }
 
 impl Reply {
@@ -162,6 +178,13 @@ impl Reply {
     pub fn session_token(&self) -> Option<String> {
         let cookie = self.set_cookie.as_deref()?;
         let value = cookie.strip_prefix("promptus_gm=")?.split(';').next()?;
+        (!value.is_empty()).then(|| value.to_string())
+    }
+
+    /// The shared-screen device token the response stored, if it set one.
+    pub fn screen_token(&self) -> Option<String> {
+        let cookie = self.set_cookie.as_deref()?;
+        let value = cookie.strip_prefix("promptus_screen=")?.split(';').next()?;
         (!value.is_empty()).then(|| value.to_string())
     }
 
@@ -197,6 +220,18 @@ pub async fn call_as_player(
     send(app, cookie.as_deref(), method, uri, body).await
 }
 
+/// Send one request as the shared screen holding `token`.
+pub async fn call_as_screen(
+    app: &Router,
+    token: Option<&str>,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> Reply {
+    let cookie = token.map(|token| format!("promptus_screen={token}"));
+    send(app, cookie.as_deref(), method, uri, body).await
+}
+
 /// Send one request with `cookie` as its whole `Cookie` header.
 pub async fn send(
     app: &Router,
@@ -229,6 +264,7 @@ pub async fn send(
         status,
         body: serde_json::from_slice(&bytes).unwrap_or(Value::Null),
         set_cookie,
+        text: String::from_utf8_lossy(&bytes).into_owned(),
     }
 }
 
@@ -289,4 +325,28 @@ pub async fn signed_in_gm(pool: &PgPool, name: &str) -> (Uuid, String) {
         .unwrap();
     tx.commit().await.unwrap();
     (id, token)
+}
+
+/// A one-second 16 kHz mono 16-bit WAV, base64, whose samples are
+/// `text` (padded with spaces): the fake provider hears that text
+/// (`copilot/listen-by-voice`). An empty `text` is a second of silence.
+pub fn wav_saying(text: &str) -> String {
+    use base64::Engine;
+    let pad = if text.is_empty() { 0 } else { b' ' };
+    let mut samples = text.as_bytes().to_vec();
+    samples.resize(samples.len().max(32_000), pad);
+    let mut w = Vec::new();
+    w.extend_from_slice(b"RIFF");
+    w.extend_from_slice(&(36 + samples.len() as u32).to_le_bytes());
+    w.extend_from_slice(b"WAVEfmt ");
+    w.extend_from_slice(&16u32.to_le_bytes());
+    // PCM, mono, 16 kHz, 32 000 bytes a second, 2-byte frames, 16 bits.
+    w.extend_from_slice(&[1, 0, 1, 0]);
+    w.extend_from_slice(&16_000u32.to_le_bytes());
+    w.extend_from_slice(&32_000u32.to_le_bytes());
+    w.extend_from_slice(&[2, 0, 16, 0]);
+    w.extend_from_slice(b"data");
+    w.extend_from_slice(&(samples.len() as u32).to_le_bytes());
+    w.extend_from_slice(&samples);
+    base64::engine::general_purpose::STANDARD.encode(w)
 }

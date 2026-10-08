@@ -14,6 +14,7 @@ use tower_http::trace::TraceLayer;
 use crate::api;
 use crate::auth::guard::require_gm;
 use crate::auth::player::require_player;
+use crate::auth::screen::require_screen;
 use crate::error::AppError;
 use crate::state::AppState;
 
@@ -53,8 +54,13 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         .route("/api/auth/sign-in", post(api::auth::sign_in))
         // Sprites: a description is drawn the same for GM, players and TV.
         .route("/api/sprites/render.png", get(api::sprites::render_png))
+        .route("/api/sprites/sheet.png", get(api::sprites::sheet_png))
         .route("/api/sprites/looks", get(api::sprites::looks))
-        .route("/api/sprites/packs/{pack}", get(api::sprites::pack));
+        .route("/api/sprites/packs/{pack}", get(api::sprites::pack))
+        // A shared screen says hello before any GM paired it: a token and
+        // a code, then the QR of the pairing page for that code only.
+        .route("/api/tv", post(api::screens::hello))
+        .route("/api/tv/qr.svg", get(api::screens::qr));
     let public = invitation_routes()
         .into_iter()
         .fold(public, |r, (_, path, handler)| r.route(path, handler))
@@ -111,6 +117,14 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         .route(
             "/api/campaigns/{id}/rules/compare",
             get(api::rule_versions::compare),
+        )
+        .route(
+            "/api/campaigns/{id}/rules/house-rules/formalise",
+            post(api::rule_versions::formalise_house_rule),
+        )
+        .route(
+            "/api/campaigns/{id}/rules/house-rules/try",
+            post(api::rule_versions::try_house_rule),
         )
         .route("/api/campaigns/{id}/story/edits", post(api::prep::edits))
         .route("/api/campaigns/{id}/readiness", get(api::prep::readiness))
@@ -183,6 +197,11 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/characters/{character}/adjust",
             post(api::sheets::adjust),
         )
+        // engine/save-against-death: the GM decides a death.
+        .route(
+            "/api/campaigns/{id}/characters/{character}/death",
+            post(api::sheets::death),
+        )
         // The evening (phase 3): lobby, scenes, requests, journal, end.
         .route(
             "/api/campaigns/{id}/session",
@@ -193,6 +212,10 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             post(api::evening::start),
         )
         .route("/api/campaigns/{id}/session/end", post(api::evening::end))
+        .route(
+            "/api/campaigns/{id}/session/previously/next",
+            post(api::evening::read_next),
+        )
         .route(
             "/api/campaigns/{id}/session/reveal",
             post(api::evening::reveal),
@@ -239,6 +262,26 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             put(api::evening::note_changes),
         )
         .route("/api/campaigns/{id}/ai", get(api::evening::ai_usage))
+        .route(
+            "/api/campaigns/{id}/schedule",
+            get(api::schedule::gm_schedule),
+        )
+        .route(
+            "/api/campaigns/{id}/schedule/dates",
+            post(api::schedule::propose),
+        )
+        .route(
+            "/api/campaigns/{id}/schedule/dates/{date}",
+            delete(api::schedule::drop_date),
+        )
+        .route(
+            "/api/campaigns/{id}/schedule/dates/{date}/choose",
+            post(api::schedule::choose),
+        )
+        .route(
+            "/api/campaigns/{id}/schedule/discord",
+            put(api::schedule::set_discord),
+        )
         // The grid and the fights.
         .route(
             "/api/campaigns/{id}/board",
@@ -253,6 +296,33 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         .route(
             "/api/campaigns/{id}/fight/loot",
             post(api::board::give_loot),
+        )
+        .route("/api/campaigns/{id}/battle", post(api::board::start_battle))
+        .route(
+            "/api/campaigns/{id}/battle/command",
+            post(api::board::battle_command),
+        )
+        // Shops (player/buy-and-trade).
+        .route(
+            "/api/campaigns/{id}/shops",
+            get(api::trade::gm_shops).post(api::trade::create),
+        )
+        .route(
+            "/api/campaigns/{id}/shops/{shop}",
+            put(api::trade::edit).delete(api::trade::delete),
+        )
+        .route(
+            "/api/campaigns/{id}/shops/{shop}/open",
+            post(api::trade::set_open),
+        )
+        .route(
+            "/api/campaigns/{id}/shops/{shop}/reveal",
+            post(api::trade::reveal),
+        )
+        // The journey on the world map (maps/travel-hex-world).
+        .route(
+            "/api/campaigns/{id}/travel",
+            get(api::travel::gm_travel).post(api::travel::gm_command),
         )
         // The campaign's own maps (maps/edit-map-gm, maps/import-image-map,
         // maps/generate-map-llm).
@@ -306,12 +376,36 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             post(api::evening::copilot_ask),
         )
         .route(
+            "/api/campaigns/{id}/session/copilot/voice",
+            // The dictation travels as base64 in the JSON body.
+            post(api::evening::copilot_voice).layer(DefaultBodyLimit::max(
+                crate::copilot::voice::MAX_WAV_BYTES * 4 / 3 + 64 * 1024,
+            )),
+        )
+        .route(
             "/api/campaigns/{id}/session/copilot/{draft}/show",
             post(api::evening::copilot_show),
         )
         .route(
             "/api/campaigns/{id}/session/copilot/{draft}/dismiss",
             post(api::evening::copilot_dismiss),
+        )
+        // session/pair-shared-screen: the TVs of the table.
+        .route(
+            "/api/campaigns/{id}/screens",
+            get(api::screens::list).post(api::screens::pair),
+        )
+        .route(
+            "/api/campaigns/{id}/screens/window",
+            post(api::screens::window),
+        )
+        .route(
+            "/api/campaigns/{id}/screens/shows",
+            put(api::screens::set_shows),
+        )
+        .route(
+            "/api/campaigns/{id}/screens/{screen}",
+            delete(api::screens::forget),
         )
         .route("/api/campaigns/{id}/live", get(api::live::gm_socket))
         .route_layer(middleware::from_fn_with_state(state.clone(), require_gm));
@@ -328,9 +422,22 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             require_player,
         ));
 
+    // Every paired-screen route: `require_screen` refuses a request
+    // without the token of a screen paired with a campaign.
+    let screen = screen_routes()
+        .into_iter()
+        .fold(Router::new(), |r, (_, path, handler)| {
+            r.route(path, handler)
+        })
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            require_screen,
+        ));
+
     public
         .merge(gm)
         .merge(player)
+        .merge(screen)
         .with_state(state)
         .layer(cors)
         .layer(TraceLayer::new_for_http())
@@ -386,6 +493,54 @@ fn player_routes() -> Vec<RouteSpec> {
             "/api/play/{campaign}/character/equip",
             post(api::play::equip),
         ),
+        // A new level (engine/level-up), and after a death the last
+        // words and what comes next (player/face-death).
+        (
+            "POST",
+            "/api/play/{campaign}/character/level-up",
+            post(api::play::level_up),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/fate/words",
+            post(api::play::last_words),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/fate/next",
+            post(api::play::choose_next),
+        ),
+        // Between sessions: spend an upgrade point (listed after `equip`,
+        // where the sweep validates the character), the last evening,
+        // the level-up moment and the chronicle.
+        (
+            "POST",
+            "/api/play/{campaign}/character/upgrade",
+            post(api::between::upgrade),
+        ),
+        (
+            "GET",
+            "/api/play/{campaign}/between",
+            get(api::between::between),
+        ),
+        // Trading: hand an item or money to a companion, the open shops,
+        // buy one unit, haggle once.
+        (
+            "POST",
+            "/api/play/{campaign}/character/give",
+            post(api::trade::give),
+        ),
+        ("GET", "/api/play/{campaign}/trade", get(api::trade::trade)),
+        (
+            "POST",
+            "/api/play/{campaign}/shops/{shop}/haggle",
+            post(api::trade::haggle),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/shops/{shop}/buy",
+            post(api::trade::buy),
+        ),
         // The evening: the scene, the music, my requests and their rolls,
         // the journal; the lobby; the feedback at the end.
         (
@@ -423,6 +578,26 @@ fn player_routes() -> Vec<RouteSpec> {
             "/api/play/{campaign}/feedback",
             post(api::play_evening::answer_feedback),
         ),
+        (
+            "GET",
+            "/api/play/{campaign}/chronicle",
+            get(api::play_evening::chronicle),
+        ),
+        (
+            "GET",
+            "/api/play/{campaign}/schedule",
+            get(api::schedule::play_schedule),
+        ),
+        (
+            "PUT",
+            "/api/play/{campaign}/schedule/{date}",
+            put(api::schedule::answer),
+        ),
+        (
+            "GET",
+            "/api/play/{campaign}/schedule.ics",
+            get(api::schedule::calendar),
+        ),
         // The grid: the map as I may see it, my walk, my fight turn.
         (
             "GET",
@@ -443,6 +618,28 @@ fn player_routes() -> Vec<RouteSpec> {
             "POST",
             "/api/play/{campaign}/fight",
             post(api::board::command),
+        ),
+        // The ship battle as I may see it, my station's command.
+        (
+            "GET",
+            "/api/play/{campaign}/battle",
+            get(api::board::player_battle),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/battle",
+            post(api::board::crew_command),
+        ),
+        // The journey on the world map: my vote, my roll, my watch.
+        (
+            "GET",
+            "/api/play/{campaign}/travel",
+            get(api::travel::player_travel),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/travel",
+            post(api::travel::player_command),
         ),
         // The images the table may see, and the world's theme.
         (
@@ -471,6 +668,33 @@ fn invitation_routes() -> Vec<RouteSpec> {
         ("GET", "/api/join/{code}", get(api::play::invitation)),
         ("POST", "/api/join/{code}", post(api::play::join)),
     ]
+}
+
+/// Every route a paired shared screen calls, mounted behind
+/// `require_screen`: the campaign is the screen's own, named by no path.
+/// Each builds its answer with `campaigns::projection` (the screen view
+/// is `projection::screen`); `tests/screens_test.rs` sweeps them all for
+/// GM-only markers, like the player routes.
+fn screen_routes() -> Vec<RouteSpec> {
+    vec![
+        ("GET", "/api/tv/show", get(api::screens::show)),
+        ("GET", "/api/tv/media", get(api::screens::media_list)),
+        (
+            "GET",
+            "/api/tv/media/{asset}/image",
+            get(api::screens::image),
+        ),
+        ("GET", "/api/tv/board/backdrop", get(api::screens::backdrop)),
+        ("GET", "/api/tv/live", get(api::screens::live)),
+    ]
+}
+
+/// Method and path of every paired-screen route, for the sweep.
+pub fn screen_facing_routes() -> Vec<(&'static str, &'static str)> {
+    screen_routes()
+        .into_iter()
+        .map(|(method, path, _)| (method, path))
+        .collect()
 }
 
 /// Method and path of every player and invitation route, for the sweep.

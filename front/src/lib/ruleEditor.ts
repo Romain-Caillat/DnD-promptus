@@ -27,6 +27,33 @@ interface FightCheck {
   error: string | null
 }
 
+/** One case of a formal house rule, replayed by the server (`house::CaseResult`). */
+export interface CaseResult {
+  name: string
+  expect: 'applies' | 'nothing'
+  natural: number | null
+  fired: boolean
+  passed: boolean
+  /** What the rule did: engine events (a condition put on, damage…). */
+  effects: {
+    event: string
+    target?: string
+    name?: string
+    turns?: number | null
+    amount?: number
+    hp_before?: number
+    hp_after?: number
+  }[]
+  error: string | null
+}
+
+/** A formal house rule of the draft, its cases replayed. */
+interface HouseRuleCheck {
+  id: string
+  name: string
+  cases: CaseResult[]
+}
+
 /** What a draft touches (`rules::report::Report`). */
 export interface RuleReport {
   lint: Issue[]
@@ -35,6 +62,58 @@ export interface RuleReport {
   changes: RuleChange[]
   story: Issue[]
   fights: FightCheck[]
+  houseRules: HouseRuleCheck[]
+}
+
+/** Who a formal rule looks at (`house::Who`). */
+interface Who {
+  side?: 'party' | 'opposition'
+  traits?: string[]
+  except_traits?: string[]
+  except?: string[]
+}
+
+/** A condition put on, as in an action's tags (`ApplySpec`). */
+interface Apply {
+  condition?: string
+  turns: number
+  to: 'targets' | 'self'
+  save?: { ability: string; difficulty?: string }
+}
+
+type HouseEffect =
+  | { apply: Apply }
+  | { damage: { amount: string | number; to: 'targets' | 'self' } }
+  | { heal: { amount: string | number; to: 'targets' | 'self' } }
+
+/** A house rule the server judges (`house::FormalRule`), in the file's shape. */
+export interface FormalRule {
+  when: 'hit' | 'miss'
+  critical?: boolean
+  damage_type?: string
+  actor?: Who
+  target?: Who
+  effects: HouseEffect[]
+  players?: 'rule' | 'effect'
+  cases?: unknown[]
+}
+
+/** The house rule as the editor holds it. */
+export interface HouseRuleDoc {
+  id: string
+  name: string
+  text: string
+  formal?: FormalRule
+}
+
+/** A formal form checked against the draft (`rules::house::Proposal`). */
+export interface Proposal {
+  id: string
+  formal: FormalRule
+  problems: { code: string; path: string; detail: string }[]
+  cases: CaseResult[]
+  dropped: { kind: 'trait' | 'damage_type' | 'condition' | 'origin' | 'case'; id: string }[]
+  remark: string
 }
 
 interface VersionInfo {
@@ -102,6 +181,19 @@ export function discardRuleDraft(campaignId: string): Promise<RuleEditor> {
 
 export function lockRuleDraft(campaignId: string): Promise<RuleEditor> {
   return apiRequest<RuleEditor>('POST', `${base(campaignId)}/draft/lock`)
+}
+
+/** The co-GM's formal form of a house rule, checked against the draft; nothing is stored. */
+export function formaliseHouseRule(
+  campaignId: string,
+  rule: { id: string; name: string; text: string },
+): Promise<Proposal> {
+  return apiRequest<Proposal>('POST', `${base(campaignId)}/house-rules/formalise`, rule)
+}
+
+/** Replays the cases of a formal form the GM edited. */
+export function tryHouseRule(campaignId: string, rule: HouseRuleDoc): Promise<Proposal> {
+  return apiRequest<Proposal>('POST', `${base(campaignId)}/house-rules/try`, rule)
 }
 
 export function compareRules(campaignId: string, from: number, to: number): Promise<Comparison> {

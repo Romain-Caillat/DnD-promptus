@@ -53,6 +53,22 @@ fn what_players_are_entitled_to_is_there() {
         .map(|o| (o.label.as_str(), o.count))
         .collect();
     assert_eq!(opp, vec![(UNKNOWN_OPPONENT, 1), (UNKNOWN_OPPONENT, 4)]);
+    // campaign/track-factions-and-goals: the douane, known, at +2 after
+    // the party's favour; the smugglers it cost are neither listed nor
+    // named as its rival. The lantern to bring back; the second goal,
+    // unknown, is not there.
+    let factions: Vec<(&str, i32, usize)> = view
+        .factions
+        .iter()
+        .map(|f| (f.name.as_str(), f.affinity, f.rivals.len()))
+        .collect();
+    assert_eq!(factions, vec![("La douane royale", 2, 0)]);
+    let goals: Vec<(&str, bool)> = view
+        .goals
+        .iter()
+        .map(|g| (g.title.as_str(), g.done))
+        .collect();
+    assert_eq!(goals, vec![("Rallumer le phare", false)]);
 }
 
 #[test]

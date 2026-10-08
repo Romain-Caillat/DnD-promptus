@@ -10,7 +10,7 @@
 //! does not load (or a variant or a scenario cannot be built); lint
 //! findings never change it.
 //!
-//! Usage: `rules_report [--world corsaires|brasier] [--n N] [--seed S]
+//! Usage: `rules_report [--world corsaires|brasier|srd] [--n N] [--seed S]
 //! [--json] [--markdown [FILE]] [--content DIR]`. `--markdown` also
 //! writes the report to FILE (default `docs/rapport-phase-1.md`).
 
@@ -756,12 +756,14 @@ mod tests {
     }
 
     #[test]
-    fn the_report_covers_both_worlds_end_to_end() {
+    fn the_report_covers_both_worlds_and_the_srd_end_to_end() {
         let report = build(&options(&[])).unwrap();
         let worlds: Vec<&str> = report.worlds.iter().map(|w| w.world.as_str()).collect();
-        assert_eq!(worlds, ["brasier", "corsaires"]);
+        assert_eq!(worlds, ["brasier", "corsaires", "srd"]);
         for w in &report.worlds {
-            assert!(!w.lint.is_empty(), "both drafts have known defects");
+            if w.world != "srd" {
+                assert!(!w.lint.is_empty(), "both drafts have known defects");
+            }
             assert!(!w.scenarios.is_empty(), "{}", w.world);
             for s in &w.scenarios {
                 assert!(!s.comparisons.is_empty(), "{}", s.id);
@@ -775,6 +777,7 @@ mod tests {
         for needle in [
             "La bagarre du quai",
             "L'abordage de la coursive",
+            "L'embuscade des gobelins",
             "DAMAGE_MODEL_MIXED",
             "REFERENCE_MISSING",
             "La précision compte au jet d'attaque",

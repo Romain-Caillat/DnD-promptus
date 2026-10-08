@@ -106,6 +106,15 @@ turn_contexts:
     actions_per_turn: 2
     # "Vous pouvez faire 2 fois la même action (2 attaques…)": no limit.
     limits: []
+  # INVENTED (engine/support-vehicle-combat): the source has no ship
+  # rules. Aboard, each crew member keeps the ground economy — two free
+  # actions, two attacks allowed — so the brig's rules read like the
+  # rest. Must stay after `sol`: ground fights play the first context.
+  - id: navire
+    name: Combat naval
+    actions_per_turn: 2
+    limits: []
+    note: "Chacun à son poste : deux actions, comme au sol."
 
 cooldowns:
   # INTERPRETATION: "CD 1 tour" reads as "unusable during your next
@@ -754,3 +763,194 @@ adversaries:
     hit_points: 7
     actions:
       - { id: thomas_maillet, name: Maillet de charpentier, description: Lourd., kind: attaque, target: enemy, roll: attack, ability: FOR, tags: [{ damage: { amount: 1d6+2 } }] }
+
+# INVENTED (engine/support-vehicle-combat) — the brig's naval combat,
+# for act 2: the Greyhound interception off Belle-Île. The source has no
+# ship rules at all; this is the Brasier's ship system
+# (dnd-save/DnD_07-06-2026/Combat_Vaisseau.md) in 1718 dress, every
+# number to be validated by Romain:
+#   - the second gauge is the rigging (« Voilure »): it does not absorb
+#     hits, it moves the ship — only chain shot aims at it;
+#   - the power to split is the crew's hands (« Équipage »), between
+#     sails, guns and pumps;
+#   - the wind is terrain: bow with the wind +2 cells, into it -2;
+#   - a brig fires broadsides: its blind spots are bow and stern (the
+#     Cure-Dent's is the stern only), covered by muskets at close range;
+#   - the helm rolls SAG (the Navigateur reads the wind).
+vehicles:
+  name: Combat naval
+  description: >-
+    Le brick est un personnage partagé : chacun tient un poste, deux
+    actions par tour. On coule un navire (Coque à 0) ou on brise son
+    moral (il amène son pavillon) ; à portée de grappin, on l'aborde.
+  context: navire
+  attack_kind: attaque
+  hull: { name: Coque, abbr: COQ }
+  screen: { name: Voilure, abbr: VOI, role: propulsion }
+  armor: { name: Bordé, abbr: BOR }
+  morale: { name: Moral, abbr: MOR }
+  power:
+    name: Équipage
+    abbr: ÉQU
+    points: 6
+    reduced:
+      - { hull_at_most: 16, points: 5 }
+      - { hull_at_most: 8, points: 4 }
+    channels:
+      - id: voiles
+        name: Aux voiles
+        start: 2
+        levels:
+          - { note: "Voiles carguées : le brick dérive, ni manœuvre ni esquive.", immobile: true, no_evade: true }
+          - { note: "Peu de bras : -1 case.", speed: -1 }
+          - { note: "Équipage nominal." }
+          - { note: "Toute la toile : +1 case.", speed: 1 }
+          - { note: "Bonnettes dehors : +2 cases, +1 à l'esquive.", speed: 2, evade: 1 }
+      - id: canons
+        name: Aux canons
+        start: 2
+        levels:
+          - { note: "Pièces sans servants : -2 dégâts, pas de bordée complète.", damage: -2, no_heavy: true }
+          - { note: "Servants trop peu nombreux : -1 dégât.", damage: -1 }
+          - { note: "Servants au complet." }
+          - { note: "Chargement rapide : +1 dégât par tir.", damage: 1 }
+          - { note: "Double charge : +2 dégâts par tir.", damage: 2 }
+      - id: pompes
+        name: Aux pompes
+        start: 2
+        levels:
+          - { note: "Personne aux pompes : réparations -1.", repair: -1 }
+          - { note: "Une équipe aux pompes." }
+          - { note: "Charpentiers prêts : réparations +1.", repair: 1 }
+          - { note: "Tous les charpentiers : réparations +2.", repair: 2 }
+          - { note: "Pompes et matelas de fortune : réparations +2, -1 dégât subi.", repair: 2, damage_taken: -1 }
+  ranges:
+    - { id: grappin, name: À portée de grappin, max: 2 }
+    - { id: demi_portee, name: Demi-portée, max: 5 }
+    - { id: longue_portee, name: Longue portée, max: 8 }
+  boarding_range: 2
+  current: { name: Vent, with: 2, against: 2 }
+  initiative_station: barre
+  station_change_cost: 1
+  stations:
+    - id: barre
+      name: Barre
+      description: "Le navigateur lit le vent et place le brick."
+      ability: SAG
+      suits: [navigateur]
+      actions:
+        - { id: manoeuvrer, name: Manœuvrer, description: "Avancer de la vitesse du brick et virer d'un quart.", effect: { maneuver: {} } }
+        - { id: prendre_le_vent, name: Prendre le vent, description: "+2 au bordé jusqu'au prochain tour du brick.", effect: { evade: { armor: 2 } } }
+        - { id: couper_la_route, name: Couper la route, description: "Jet de SAG (12) : double déplacement et jusqu'à un demi-tour.", cost: 2, check: 12, effect: { maneuver: { multiplier: 2, turns: 2 } } }
+        - { id: prendre_le_large, name: Prendre le large, description: "Jet de SAG (12), à longue portée de tout ennemi : le brick s'échappe.", cost: 2, check: 12, effect: { disengage: { min_distance: 6 } } }
+    - id: batterie_babord
+      name: Batterie bâbord
+      description: "Les canons du flanc gauche."
+      ability: INT
+      suits: [canonnier]
+      actions:
+        - { id: bordee_babord, name: Bordée bâbord, attack: true, effect: { fire: {} } }
+        - { id: bordee_complete_babord, name: Bordée complète bâbord, description: "Toutes les pièces d'un coup : 10 dégâts.", cost: 2, attack: true, effect: { fire: { damage: 10 } } }
+    - id: batterie_tribord
+      name: Batterie tribord
+      description: "Les canons du flanc droit."
+      ability: INT
+      actions:
+        - { id: bordee_tribord, name: Bordée tribord, attack: true, effect: { fire: {} } }
+        - { id: bordee_complete_tribord, name: Bordée complète tribord, description: "Toutes les pièces d'un coup : 10 dégâts.", cost: 2, attack: true, effect: { fire: { damage: 10 } } }
+    - id: chasse
+      name: Canons à boulets ramés
+      description: "Deux pièces chargées de boulets ramés, pour démâter l'ennemi."
+      ability: DEX
+      actions:
+        - { id: tirer_a_demater, name: Tirer à démâter, description: "Vise la voilure : l'ennemi ralentit.", attack: true, effect: { fire: {} } }
+    - id: pont
+      name: Pont et mousqueterie
+      description: "Les mousquets, les grappins, la défense du pont."
+      ability: DEX
+      suits: [bretteur, boucanier, flibustier]
+      actions:
+        - { id: feu_de_mousqueterie, name: Feu de mousqueterie, attack: true, effect: { fire: {} } }
+        - { id: preparer_les_grappins, name: Préparer les grappins, description: "Le MJ dit qui est prêt à sauter.", effect: narrative }
+    - id: charpentier
+      name: Pompes et charpentiers
+      description: "Boucher, pomper, réparer."
+      ability: CON
+      suits: [chirurgien]
+      actions:
+        - { id: reparer_la_coque, name: Réparer la coque, description: "Jet de CON (10) : +3 Coque.", check: 10, effect: { repair: { amount: 3 } } }
+        - { id: reparer_le_greement, name: Réparer le gréement, description: "+3 Voilure.", effect: { repair: { amount: 3, screen: true } } }
+        - { id: eteindre_le_feu, name: Éteindre le feu, effect: { fix: { damages: [incendie] } } }
+        - { id: aveugler_la_voie_d_eau, name: Aveugler la voie d'eau, effect: { fix: { damages: [voie_d_eau] } } }
+        - { id: remettre_en_etat, name: Remettre un poste en état, effect: { fix: { damages: [poste_touche] } } }
+        - { id: tous_a_couvert, name: Tous à couvert !, description: "-3 dégâts par coup jusqu'au prochain tour du brick.", effect: { brace: { damage_taken: -3 } } }
+    - id: hune
+      name: Hune de vigie
+      description: "Voir avant les autres, et viser juste."
+      ability: SAG
+      suits: [vigie]
+      actions:
+        - { id: reperer_le_point_faible, name: Repérer le point faible, description: "Le prochain tir allié sur ce navire : +3.", effect: { lock: { bonus: 3 } } }
+        - { id: lire_le_navire, name: Lire le navire, description: "Révèle sa coque et son moral.", effect: scan }
+        - { id: tirer_sur_les_officiers, name: Tirer sur les officiers, description: "Ses tirs : -2 jusqu'à la fin de son prochain tour.", effect: { jam: { malus: -2 } } }
+    - id: gaillard
+      name: Gaillard d'arrière
+      description: "Le quartier-maître commande l'équipage et parle à l'ennemi."
+      ability: CHA
+      suits: [quartier_maitre]
+      actions:
+        - { id: sommer_d_amener, name: Sommer d'amener le pavillon, description: "CHA contre la résolution ennemie : -3 Moral.", attack: true, effect: { break_morale: { amount: 3 } } }
+        - { id: repartir_l_equipage, name: Répartir l'équipage, description: "Change les bras entre voiles, canons et pompes.", effect: reroute }
+        - { id: encourager, name: Encourager, description: "Le prochain jet de l'équipage : +2.", effect: { rally: { bonus: 2 } } }
+        - { id: faux_pavillon, name: Hisser un faux pavillon, description: "Ruse : le MJ dit ce que l'ennemi croit.", effect: narrative }
+  damage:
+    dice: 1d6
+    on_critical: true
+    hull_thresholds: [16, 8]
+    entries:
+      - { from: 1, to: 2, id: incendie, name: Incendie, description: "2 Coque au début de chaque tour du brick.", effect: { burn: { hull: 2 } }, fix: { ability: CON, difficulty: 10 } }
+      - { from: 3, to: 4, id: voie_d_eau, name: Voie d'eau, description: "La cale embarque : 1 Coque par tour.", effect: { burn: { hull: 1 } }, fix: { ability: CON, difficulty: 12 } }
+      - { from: 5, to: 5, id: poste_touche, name: Poste touché, description: "Un poste tiré au sort est hors service.", effect: station_down, fix: { ability: CON, difficulty: 12 } }
+      - { from: 6, to: 6, id: volee_sur_le_pont, name: Volée sur le pont, description: "Un membre d'équipage perd une action au prochain tour.", effect: jolt }
+  ships:
+    - id: la_machoire
+      name: La Mâchoire
+      description: "Le brick de l'équipage : solide mais fatigué."
+      hull: 24
+      screen: 10
+      armor: 13
+      speed: 3
+      weapons:
+        - { id: batterie_babord, name: Batterie bâbord, station: batterie_babord, arcs: [port], range: demi_portee, damage: 6 }
+        - { id: batterie_tribord, name: Batterie tribord, station: batterie_tribord, arcs: [starboard], range: demi_portee, damage: 6 }
+        - { id: boulets_rames, name: Boulets ramés, station: chasse, arcs: [front, port, starboard], range: demi_portee, damage: 3, at_screen: true }
+        - { id: mousquets, name: Mousquets, station: pont, arcs: [front, rear, port, starboard], range: grappin, damage: 2 }
+    - id: hms_greyhound
+      name: HMS Greyhound
+      description: "Navire espion anglais, fin et rapide ; il porte les plans d'attaque."
+      hull: 20
+      screen: 8
+      armor: 13
+      morale: 8
+      resolve: 13
+      speed: 4
+      initiative: 2
+      tactics: "Il fuit vers le nord ; il ne combat que s'il est rattrapé, et amène son pavillon plutôt que de couler avec les plans."
+      weapons:
+        - { id: bordee_babord, name: Bordée bâbord, arcs: [port], range: demi_portee, damage: 5, attack_bonus: 3 }
+        - { id: bordee_tribord, name: Bordée tribord, arcs: [starboard], range: demi_portee, damage: 5, attack_bonus: 3 }
+        - { id: canon_de_retraite, name: Canon de retraite, arcs: [rear], range: longue_portee, damage: 3, attack_bonus: 2 }
+    - id: sloop_escorte
+      name: Sloop d'escorte
+      description: "Sloop armé de douze canons, l'escorte que Vaubernier a tue."
+      hull: 14
+      screen: 6
+      armor: 12
+      morale: 6
+      resolve: 12
+      speed: 4
+      initiative: 1
+      tactics: "Il s'interpose entre le Greyhound et ses poursuivants."
+      weapons:
+        - { id: bordee_babord, name: Bordée bâbord, arcs: [port], range: demi_portee, damage: 4, attack_bonus: 3 }
+        - { id: bordee_tribord, name: Bordée tribord, arcs: [starboard], range: demi_portee, damage: 4, attack_bonus: 3 }

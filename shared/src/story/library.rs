@@ -195,9 +195,40 @@ fn check_rules(issues: &mut Vec<Issue>, c: &Campaign, rules: &RuleSystem) {
             );
         }
     }
+    // Ship battles name ships of the rules (engine/support-vehicle-combat).
+    for (i, n) in c.nodes.iter().enumerate() {
+        let Some(v) = n.encounter.as_ref().and_then(|e| e.vehicles.as_ref()) else {
+            continue;
+        };
+        let path = format!("nodes[{i}].encounter.vehicles");
+        let ships = rules.vehicles.as_ref();
+        let mut check = |id: &str, path: String| {
+            if ships.is_none_or(|s| s.ship(id).is_none()) {
+                unknown(issues, "RULES_UNKNOWN_SHIP", "a ship", id, path);
+            }
+        };
+        check(&v.ship, format!("{path}.ship"));
+        for (j, g) in v.ships.iter().enumerate() {
+            check(&g.ship, format!("{path}.ships[{j}].ship"));
+        }
+    }
 }
 
 fn check_maps(issues: &mut Vec<Issue>, c: &Campaign, maps: &[Map]) {
+    for (i, n) in c.nodes.iter().enumerate() {
+        let Some(v) = n.encounter.as_ref().and_then(|e| e.vehicles.as_ref()) else {
+            continue;
+        };
+        if !maps.iter().any(|m| m.id == v.map) {
+            push(
+                issues,
+                Severity::Error,
+                "MAP_UNKNOWN",
+                format!("nodes[{i}].encounter.vehicles.map"),
+                format!("`{}` is not a known map", v.map),
+            );
+        }
+    }
     for (i, n) in c.nodes.iter().enumerate() {
         let Some(id) = &n.map else { continue };
         let path = format!("nodes[{i}].map");

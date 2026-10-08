@@ -147,6 +147,22 @@ impl Campaign {
         self.locations.iter().find(|l| l.id == id)
     }
 
+    #[must_use]
+    pub fn faction(&self, id: &str) -> Option<&Faction> {
+        self.factions.iter().find(|f| f.id == id)
+    }
+
+    #[must_use]
+    pub fn goal(&self, id: &str) -> Option<&Goal> {
+        self.goals.iter().find(|g| g.id == id)
+    }
+
+    /// The NPCs who travel with the party for the whole campaign, played
+    /// by the co-GM (the Brasier's LUMEN).
+    pub fn companions(&self) -> impl Iterator<Item = &Npc> {
+        self.npcs.iter().filter(|n| n.companion)
+    }
+
     /// The clues that lead to `revelation`.
     pub fn clues_for<'a>(&'a self, revelation: &'a str) -> impl Iterator<Item = &'a Clue> + 'a {
         self.clues
@@ -419,6 +435,49 @@ pub struct Encounter {
     pub on_victory: String,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub on_defeat: String,
+    /// A ship battle the scene opens with (engine/support-vehicle-combat).
+    /// The `opponents` are then who fights on the deck when a ship
+    /// boards another, on the scene's `map`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vehicles: Option<VehicleEncounter>,
+}
+
+/// Ships against ships: the battle map, the party's ship and the enemy
+/// ships, all from the rule system's `vehicles` block.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct VehicleEncounter {
+    /// The battle map (a map file's `id`), sea or space.
+    pub map: String,
+    /// The party's ship: an id of the rules' `vehicles.ships`.
+    pub ship: Id,
+    /// Its name in this campaign, when not the ship's.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default = "east")]
+    pub facing: crate::vehicle::Facing,
+    pub ships: Vec<ShipGroup>,
+}
+
+/// Identical enemy ships, on the battle map's foes starts in order.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ShipGroup {
+    pub ship: Id,
+    #[serde(default = "one", skip_serializing_if = "is_one")]
+    pub count: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default = "west")]
+    pub facing: crate::vehicle::Facing,
+}
+
+fn east() -> crate::vehicle::Facing {
+    crate::vehicle::Facing::E
+}
+
+fn west() -> crate::vehicle::Facing {
+    crate::vehicle::Facing::W
 }
 
 /// A group of identical opponents: an adversary or an NPC with stats.
@@ -562,6 +621,11 @@ pub struct Npc {
     pub faction: Option<Id>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<Id>,
+    /// With the party for the whole campaign, whatever the scene (the
+    /// Brasier's ship AI): the GM can make them speak at any moment,
+    /// through a co-GM draft (`campaign/track-factions-and-goals`).
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub companion: bool,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub gm_notes: String,
 }

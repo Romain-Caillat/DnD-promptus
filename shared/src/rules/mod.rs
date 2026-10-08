@@ -8,11 +8,16 @@
 //! - [`sheet`] — combatants and the scene they are in
 //! - [`action`] — resolving an action (to-hit, damage, effects, cooldown, XP)
 //! - [`conditions`] — conditions and the turn boundaries
-//! - [`progression`] — XP, upgrade points, levels
+//! - [`progression`] — XP, upgrade points (earned and spent), levels
+//! - [`level_up`] — what a new level brings: hit points (die or
+//!   average), cards unlocked
+//! - [`death`] — death saves, stabilising, the death the GM confirms
+//! - [`trade`] — a shop's prices after a haggle
 //! - [`lint`] — whether the rules are good: coherence and balance checks
 //!   that report and never block (`lint::lint`, `lint::balance_report`)
 //! - [`character`] — whether a player's character follows the rules
 //!   (reports, never blocks)
+//! - [`house`] — the GM's house rules, formalised: triggers, effects, cases
 //! - [`changes`] — what changed between two versions, as players read it
 //! - [`variant`] — "what if" edits applied to a draft before it loads
 
@@ -21,14 +26,18 @@ pub mod changes;
 pub mod character;
 pub mod check;
 pub mod conditions;
+pub mod death;
 pub mod dice;
 pub mod events;
 pub mod formula;
+pub mod house;
+pub mod level_up;
 pub mod lint;
 pub mod load;
 pub mod model;
 pub mod progression;
 pub mod sheet;
+pub mod trade;
 pub mod variant;
 
 pub use character::{CharacterInput, check_character};

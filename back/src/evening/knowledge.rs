@@ -119,9 +119,29 @@ pub async fn write(
     text: &str,
     shared: bool,
 ) -> Result<(), AppError> {
+    write_about(tx, campaign, session, kind, r#ref, text, shared, None).await
+}
+
+/// [`write`], naming the character the line is about (loot handed to
+/// them, a purchase, a gift): their end-of-evening screen lists it.
+///
+/// # Errors
+///
+/// A database error.
+#[allow(clippy::too_many_arguments)]
+pub async fn write_about(
+    tx: &mut Transaction<'_, Postgres>,
+    campaign: Uuid,
+    session: Option<Uuid>,
+    kind: JournalKind,
+    r#ref: Option<&str>,
+    text: &str,
+    shared: bool,
+    character: Option<Uuid>,
+) -> Result<(), AppError> {
     sqlx::query(
-        "INSERT INTO table_journal (campaign_id, session_id, kind, ref, text, shared)
-         VALUES ($1, $2, $3, $4, $5, $6)",
+        "INSERT INTO table_journal (campaign_id, session_id, kind, ref, text, shared, character_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)",
     )
     .bind(campaign)
     .bind(session)
@@ -129,9 +149,30 @@ pub async fn write(
     .bind(r#ref)
     .bind(text)
     .bind(shared)
+    .bind(character)
     .execute(&mut **tx)
     .await?;
     Ok(())
+}
+
+/// The shared lines of `session` about `character`, oldest first.
+///
+/// # Errors
+///
+/// A database error.
+pub async fn shared_about_character(
+    db: impl PgExecutor<'_>,
+    session: Uuid,
+    character: Uuid,
+) -> Result<Vec<String>, AppError> {
+    Ok(sqlx::query_scalar(
+        "SELECT text FROM table_journal
+         WHERE session_id = $1 AND character_id = $2 AND shared ORDER BY created_at, id",
+    )
+    .bind(session)
+    .bind(character)
+    .fetch_all(db)
+    .await?)
 }
 
 /// The journal of `campaign`, oldest first: every line for the GM, the

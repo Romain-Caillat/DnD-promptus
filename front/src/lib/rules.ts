@@ -12,6 +12,7 @@ export type ModifierSource =
   | { from: 'situation'; id: string }
   | { from: 'cover'; id: string }
   | { from: 'long_range' }
+  | { from: 'attack_bonus'; id: string }
 
 interface Modifier {
   source: ModifierSource
@@ -106,7 +107,13 @@ export interface RulesView {
   abilities: AbilityView[]
   difficulties: DifficultyView[]
   outcomes: OutcomeView[]
-  attack: { ability: 'first_primary' | 'best_primary'; precisionApplies: boolean; armorClass: StatView }
+  attack: {
+    ability: 'first_primary' | 'best_primary'
+    precisionApplies: boolean
+    /** Added to every attack with the level (the SRD's proficiency). */
+    bonus: { name: string; formula: string } | null
+    armorClass: StatView
+  }
   hitPoints: StatView
   turns: { name: string; actionsPerTurn: number; limits: { kind: string; maxPerTurn: number }[] }[]
   actionKinds: KindView[]
@@ -115,8 +122,22 @@ export interface RulesView {
   conditions: { name: string; description: string; kind: 'boon' | 'bane' }[]
   zeroHp:
     | { rule: 'knockedOut'; condition: string; outAfterTurns: number; outCondition: string }
-    | { rule: 'deathSaves'; difficulty: number; successes: number; failures: number }
-  progression: { upgradeEveryXp: number; upgradePoints: number; levels: { level: number; xp: number }[] }
+    | {
+        rule: 'deathSaves'
+        difficulty: number
+        successes: number
+        failures: number
+        failuresOnHit: number
+        failuresOnCriticalFailure: number
+        criticalSuccessRevives: boolean
+        stabilize: { kind: string; ability: string; difficulty: number } | null
+      }
+  progression: {
+    upgradeEveryXp: number
+    upgradePoints: number
+    levels: { level: number; xp: number }[]
+    hitPointsPerLevel: { dice: string; average: number; ability: string | null } | null
+  }
   combat: {
     moveKind: KindView | null
     flee: { kind: KindView; ability: string | null } | null

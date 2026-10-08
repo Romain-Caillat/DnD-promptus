@@ -104,6 +104,20 @@ pub async fn open_player(
         .map(|(ws, _)| ws)
 }
 
+/// Open a paired shared screen's live socket with its device `token`.
+pub async fn open_screen(addr: SocketAddr, token: &str) -> Result<Socket, tungstenite::Error> {
+    let mut req = format!("ws://{addr}/api/tv/live")
+        .into_client_request()
+        .unwrap();
+    req.headers_mut().insert(
+        header::COOKIE,
+        format!("promptus_screen={token}").parse().unwrap(),
+    );
+    tokio_tungstenite::connect_async(req)
+        .await
+        .map(|(ws, _)| ws)
+}
+
 impl Table {
     /// Seat `nickname` at the table; returns the player id and token.
     pub async fn seat(&self, nickname: &str) -> (Uuid, String) {

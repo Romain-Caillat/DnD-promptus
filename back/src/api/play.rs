@@ -19,7 +19,14 @@
 //! - `POST /api/play/{campaign}/character/submit` → send it to the GM;
 //! - `POST /api/play/{campaign}/character/equip` → `{ entry, equipped }`:
 //!   carry a bag line on the character, or put it back in the bag, once
-//!   in play (`players::play::equip`).
+//!   in play (`players::play::equip`);
+//! - `POST /api/play/{campaign}/character/level-up` → `{ kind: hitPoints,
+//!   level, method }` or `{ kind: seen }`: go through a new level
+//!   (`players::play::level_up`, engine/level-up);
+//! - `POST /api/play/{campaign}/fate/words` → `{ text }`: the last words
+//!   of my dead character; `POST /api/play/{campaign}/fate/next` →
+//!   `{ next: watch | new | hook }`: what I do now (`players::fate`,
+//!   player/face-death). Both answer my home, as `me`.
 
 use axum::Json;
 use axum::extract::{Path, State};
@@ -100,6 +107,7 @@ pub async fn join(
         &gm_name,
         &joined,
         character.as_ref(),
+        None,
         row.rules(),
     );
     Ok((
@@ -119,12 +127,92 @@ pub async fn join(
 ///
 /// 401 `NOT_JOINED` (from the guard); a database error.
 pub async fn me(State(state): State<AppState>, p: CurrentPlayer) -> Result<Response, AppError> {
-    let row = campaign_of(&state, &p).await?;
+    home(&state, &p).await
+}
+
+/// The player's home, as `me` answers it.
+async fn home(state: &AppState, p: &CurrentPlayer) -> Result<Response, AppError> {
+    let row = campaign_of(state, p).await?;
     let gm_name = campaigns::gm_name(&state.pool, &row).await?;
     let character = players::character_of(&state.pool, &p.0).await?;
-    let view =
-        projection::project_home(&row.story, &gm_name, &p.0, character.as_ref(), row.rules());
+    let fallen = players::fate::latest_of(&state.pool, p.0.id).await?;
+    let view = projection::project_home(
+        &row.story,
+        &gm_name,
+        &p.0,
+        character.as_ref(),
+        fallen.as_ref(),
+        row.rules(),
+    );
     Ok(Json(json!({ "data": view })).into_response())
+}
+
+/// `POST /api/play/{campaign}/character/level-up` — answers the
+/// character as `me` shows it.
+///
+/// # Errors
+///
+/// 401 `NOT_JOINED`; 409 `RULES_UNKNOWN`; the errors of
+/// `players::play::level_up`; 400 `INVALID_BODY`.
+pub async fn level_up(
+    State(state): State<AppState>,
+    p: CurrentPlayer,
+    Body(choice): Body<players::play::LevelUpChoice>,
+) -> Result<Response, AppError> {
+    let row = campaign_of(&state, &p).await?;
+    let rules = row.rules();
+    let Some(system) = rules else {
+        players::character_of(&state.pool, &p.0)
+            .await?
+            .ok_or(AppError::NotFound("NO_CHARACTER"))?;
+        return Err(AppError::Conflict("RULES_UNKNOWN"));
+    };
+    players::play::level_up(&state.pool, &p.0, system, choice).await?;
+    let character = players::character_of(&state.pool, &p.0)
+        .await?
+        .ok_or(AppError::NotFound("NO_CHARACTER"))?;
+    let view = projection::project_character(rules, &character);
+    Ok(Json(json!({ "data": view })).into_response())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WordsBody {
+    text: String,
+}
+
+/// `POST /api/play/{campaign}/fate/words`
+///
+/// # Errors
+///
+/// 401 `NOT_JOINED`; the errors of `players::fate::last_words`.
+pub async fn last_words(
+    State(state): State<AppState>,
+    p: CurrentPlayer,
+    Body(body): Body<WordsBody>,
+) -> Result<Response, AppError> {
+    players::fate::last_words(&state.pool, &p.0, &body.text).await?;
+    home(&state, &p).await
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NextBody {
+    next: players::fate::Next,
+}
+
+/// `POST /api/play/{campaign}/fate/next`
+///
+/// # Errors
+///
+/// 401 `NOT_JOINED`; the errors of `players::fate::choose_next`.
+pub async fn choose_next(
+    State(state): State<AppState>,
+    p: CurrentPlayer,
+    Body(body): Body<NextBody>,
+) -> Result<Response, AppError> {
+    players::fate::choose_next(&state.pool, &p.0, body.next).await?;
+    home(&state, &p).await
 }
 
 /// `GET /api/play/{campaign}/view`

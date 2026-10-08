@@ -11,20 +11,29 @@
 //!   `Map::fogged`, and no token on a fogged cell or hidden from them
 //!   (`campaigns::projection::board`);
 //! - maps/blend-outdoor-terrain: the GM changes the time, the weather or
-//!   the light live.
+//!   the light live;
+//! - characters/walk-in-four-directions: each token carries its look, the
+//!   way it faces and its last move (`trail`, numbered by `moves`), so
+//!   every screen shows the character walk that path and turn toward
+//!   where it went or what it acted on;
+//! - maps/travel-hex-world: on a world map in hexes the party is one
+//!   token, moved only by the journey (`crate::travel`); nobody drags
+//!   it, and the fog lifts around the hexes it entered, not by sight.
 //!
 //! Every write takes the campaign lock and touches the `map` topic.
 
+pub mod battle;
 pub mod fight;
 pub mod rewards;
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use promptus_shared::maps::{
-    Cell, DoorState, LightLevel, Map, MovementRules, Occupancy, Side as MapSide, TimeOfDay,
-    Visibility, Weather, check_path, reachable, visible_cells,
+    Cell, DoorState, Geometry, LightLevel, Map, MovementRules, Occupancy, Scale, Side as MapSide,
+    TimeOfDay, Visibility, Weather, check_path, neighbours, reachable, visible_cells,
 };
 use promptus_shared::rules::RuleSystem;
+use promptus_shared::sprite::{CharacterLook, Direction};
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
 use sqlx::{PgExecutor, PgPool, Postgres, Transaction};
@@ -68,6 +77,80 @@ pub struct Token {
     /// ghost.
     #[serde(default)]
     pub invisible: bool,
+    /// What its sprite draws, set when it is put on the map: the
+    /// character's sheet, or the NPC's look (`content::npc_look`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub look: Option<CharacterLook>,
+    /// Where it faces; none until it first moves or acts (see
+    /// `Token::facing`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub facing: Option<Direction>,
+    /// Its last move: the cell it left, then every cell it entered.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub trail: Vec<Cell>,
+    /// How many moves it made: a screen walks a trail it has not shown
+    /// yet, and only that one.
+    #[serde(default)]
+    pub moves: u32,
+}
+
+impl Token {
+    /// A token as it is first put on the map, facing its side's way.
+    #[must_use]
+    pub fn new(
+        id: String,
+        kind: TokenKind,
+        r#ref: String,
+        name: String,
+        at: Cell,
+        look: Option<CharacterLook>,
+    ) -> Self {
+        Self {
+            id,
+            kind,
+            r#ref,
+            name,
+            at,
+            hidden: false,
+            invisible: false,
+            look,
+            facing: None,
+            trail: Vec::new(),
+            moves: 0,
+        }
+    }
+
+    /// Where it faces: the way it last turned, else its side's rest —
+    /// heroes east, foes west (`MEMORY.md` §2).
+    #[must_use]
+    pub fn facing(&self) -> Direction {
+        self.facing.unwrap_or(match self.kind {
+            TokenKind::Character => Direction::East,
+            TokenKind::Npc => Direction::West,
+        })
+    }
+
+    /// Walk along `path`, the cells entered in order (already checked):
+    /// it ends on the last one, facing its last step.
+    pub fn walk(&mut self, path: &[Cell]) {
+        let Some(&to) = path.last() else { return };
+        let mut trail = Vec::with_capacity(path.len() + 1);
+        trail.push(self.at);
+        trail.extend_from_slice(path);
+        if let Some(d) = Direction::toward(trail[trail.len() - 2], to) {
+            self.facing = Some(d);
+        }
+        self.at = to;
+        self.trail = trail;
+        self.moves += 1;
+    }
+
+    /// Turn toward `cell` (a target), staying where it stands.
+    pub fn face(&mut self, cell: Cell) {
+        if let Some(d) = Direction::toward(self.at, cell) {
+            self.facing = Some(d);
+        }
+    }
 }
 
 /// The map at the table, as the server holds it.
@@ -149,7 +232,8 @@ pub fn movement(rules: Option<&RuleSystem>, map: &Map) -> MovementRules {
 }
 
 impl Board {
-    /// Lift the fog from every cell a character token sees.
+    /// Lift the fog from every cell a character token sees — on a world
+    /// map, from the hexes around the party.
     pub fn reveal_from_party(&mut self) {
         let limit = self.map.ambience.sight_limit;
         let from: Vec<Cell> = self
@@ -159,7 +243,15 @@ impl Board {
             .map(|t| t.at)
             .collect();
         for at in from {
-            self.revealed.extend(visible_cells(&self.map, at, limit));
+            if self.map.geometry() == Geometry::Hex {
+                self.revealed.insert(at);
+                let around = neighbours(Geometry::Hex, at);
+                let grid = &self.map.grid;
+                self.revealed
+                    .extend(around.into_iter().filter(|c| grid.contains(*c)));
+            } else {
+                self.revealed.extend(visible_cells(&self.map, at, limit));
+            }
         }
     }
 
@@ -204,8 +296,8 @@ async fn party_tokens(
     map: &Map,
     before: &[Token],
 ) -> Result<Vec<Token>, AppError> {
-    let rows: Vec<(Uuid, String)> = sqlx::query_as(
-        "SELECT c.id, COALESCE(c.sheet->>'name', p.nickname)
+    let rows: Vec<(Uuid, String, Option<Json<CharacterLook>>)> = sqlx::query_as(
+        "SELECT c.id, COALESCE(c.sheet->>'name', p.nickname), c.sheet->'look'
          FROM characters c JOIN players p ON p.id = c.player_id
          WHERE p.campaign_id = $1 AND p.role = 'player' AND c.status = 'validated'
          ORDER BY p.created_at",
@@ -219,25 +311,30 @@ async fn party_tokens(
         .filter(|s| s.side == Some(MapSide::Party))
         .map(|s| s.at);
     let mut tokens = Vec::new();
-    for (id, name) in rows {
+    for (id, name, look) in rows {
         let tid = character_token(id);
         let kept = before
             .iter()
             .find(|t| t.id == tid)
-            .map(|t| t.at)
-            .filter(|at| map.grid.contains(*at));
-        let Some(at) = kept.or_else(|| starts.next()) else {
+            .filter(|t| map.grid.contains(t.at));
+        let Some(at) = kept.map(|t| t.at).or_else(|| starts.next()) else {
             break;
         };
-        tokens.push(Token {
-            id: tid,
-            kind: TokenKind::Character,
-            r#ref: id.to_string(),
+        let mut token = Token::new(
+            tid,
+            TokenKind::Character,
+            id.to_string(),
             name,
             at,
-            hidden: false,
-            invisible: false,
-        });
+            look.map(|Json(l)| l),
+        );
+        // A token that stays keeps the way it faced and its last move.
+        if let Some(k) = kept {
+            token.facing = k.facing;
+            token.trail.clone_from(&k.trail);
+            token.moves = k.moves;
+        }
+        tokens.push(token);
     }
     Ok(tokens)
 }
@@ -298,28 +395,54 @@ pub async fn show(
 ) -> Result<Board, AppError> {
     let mut tx = pool.begin().await?;
     let (row, _) = session::lock_for_gm(&mut tx, gm, campaign, &[Status::Live]).await?;
-    if fight::live_id(&mut *tx, campaign).await?.is_some() {
+    let b = show_in(&mut tx, &row, map_id).await?;
+    tx.commit().await?;
+    Ok(b)
+}
+
+/// [`show`] inside the caller's transaction, the campaign lock held and
+/// the session checked live (maps/travel-hex-world enters a place this
+/// way). A world map in hexes comes back with the party where it stands
+/// and the hexes it has seen (`crate::travel`).
+///
+/// # Errors
+///
+/// 409 `FIGHT_IN_PROGRESS`; 400 `UNKNOWN_MAP`.
+pub(crate) async fn show_in(
+    tx: &mut Transaction<'_, Postgres>,
+    row: &CampaignRow,
+    map_id: &str,
+) -> Result<Board, AppError> {
+    let campaign = row.id;
+    if fight::live_id(&mut **tx, campaign).await?.is_some() {
         return Err(AppError::Conflict("FIGHT_IN_PROGRESS"));
     }
-    let before = current(&mut *tx, campaign).await?;
+    let before = current(&mut **tx, campaign).await?;
     if let Some(b) = before.as_ref().filter(|b| b.map_id == map_id) {
-        tx.commit().await?;
         return Ok(b.clone());
     }
-    let map = crate::campaign_maps::playable(&mut *tx, campaign, &row.story, map_id)
+    let map = crate::campaign_maps::playable(&mut **tx, campaign, &row.story, map_id)
         .await?
         .ok_or(AppError::BadRequest("UNKNOWN_MAP"))?;
-    let tokens = party_tokens(&mut tx, campaign, &map, &[]).await?;
+    let (tokens, revealed) = if map.scale == Scale::World {
+        crate::travel::board_parts(tx, campaign, &map)
+            .await?
+            .unwrap_or_default()
+    } else {
+        (
+            party_tokens(tx, campaign, &map, &[]).await?,
+            BTreeSet::new(),
+        )
+    };
     let mut b = Board {
         map_id: map_id.to_string(),
         map,
         fog: true,
-        revealed: BTreeSet::new(),
+        revealed,
         tokens,
     };
     b.reveal_from_party();
-    save(&mut tx, campaign, &b).await?;
-    tx.commit().await?;
+    save(tx, campaign, &b).await?;
     Ok(b)
 }
 
@@ -415,7 +538,8 @@ fn first_visible_layer(map: &Map) -> String {
 ///
 /// # Errors
 ///
-/// 404; 409 `NO_MAP_SHOWN`; 400 `UNKNOWN_LAYER`, `UNKNOWN_THING`,
+/// 404; 409 `NO_MAP_SHOWN`, `TRAVEL_MAP` (the party token of a world
+/// map moves by the journey only); 400 `UNKNOWN_LAYER`, `UNKNOWN_THING`,
 /// `UNKNOWN_DOOR`, `UNKNOWN_TOKEN`, `UNKNOWN_NPC`, `CELL_OUTSIDE`,
 /// `CANNOT_STAND`.
 pub async fn edit(
@@ -495,6 +619,9 @@ pub async fn edit(
             }
         }
         Edit::MoveToken { token, at } => {
+            if token == crate::travel::PARTY_TOKEN && b.map.scale == Scale::World {
+                return Err(AppError::Conflict("TRAVEL_MAP"));
+            }
             inside(&b, at)?;
             let rules = movement(row.rules(), &b.map);
             promptus_shared::maps::standable(&b.map, &rules, *at)
@@ -504,7 +631,10 @@ pub async fn edit(
                 .iter_mut()
                 .find(|t| &t.id == token)
                 .ok_or(AppError::BadRequest("UNKNOWN_TOKEN"))?;
-            t.at = *at;
+            // The GM lifts the token and sets it down: it glides there.
+            if t.at != *at {
+                t.walk(&[*at]);
+            }
             b.reveal_from_party();
         }
         Edit::PlaceNpc { npc, at, hidden } => {
@@ -516,15 +646,16 @@ pub async fn edit(
                 .or_else(|| row.story.adversary(npc).map(|a| a.name.clone()))
                 .ok_or(AppError::BadRequest("UNKNOWN_NPC"))?;
             let n = b.tokens.iter().filter(|t| t.r#ref == *npc).count();
-            b.tokens.push(Token {
-                id: format!("{npc}-{}", n + 1),
-                kind: TokenKind::Npc,
-                r#ref: npc.clone(),
+            let mut t = Token::new(
+                format!("{npc}-{}", n + 1),
+                TokenKind::Npc,
+                npc.clone(),
                 name,
-                at: *at,
-                hidden: *hidden,
-                invisible: false,
-            });
+                *at,
+                Some(content::npc_look(&row.story, npc)),
+            );
+            t.hidden = *hidden;
+            b.tokens.push(t);
         }
         Edit::RemoveToken { token } => {
             let before = b.tokens.len();
@@ -551,6 +682,14 @@ pub async fn edit(
             }
         }
     }
+    if b.map.scale == Scale::World
+        && matches!(
+            edit,
+            Edit::RevealCells { .. } | Edit::HideCells { .. } | Edit::MoveToken { .. }
+        )
+    {
+        crate::travel::mirror_fog(&mut tx, campaign, &b.map_id, &b.revealed).await?;
+    }
     save(&mut tx, campaign, &b).await?;
     tx.commit().await?;
     Ok(b)
@@ -563,8 +702,8 @@ pub async fn edit(
 /// # Errors
 ///
 /// 403 `SPECTATOR`; 404 `NO_CHARACTER`; 409 `NO_MAP_SHOWN`,
-/// `NOT_ON_MAP`, `FIGHT_IN_PROGRESS`, `SESSION_NOT_LIVE`; 400
-/// `INVALID_PATH`.
+/// `NOT_ON_MAP`, `FIGHT_IN_PROGRESS`, `SESSION_NOT_LIVE`, `TRAVEL_MAP`
+/// (a world map: the party travels by the journey); 400 `INVALID_PATH`.
 pub async fn walk(pool: &PgPool, player: &Player, path: &[Cell]) -> Result<Board, AppError> {
     if player.role != Role::Player {
         return Err(AppError::Forbidden("SPECTATOR"));
@@ -582,6 +721,9 @@ pub async fn walk(pool: &PgPool, player: &Player, path: &[Cell]) -> Result<Board
         return Err(AppError::Conflict("FIGHT_IN_PROGRESS"));
     }
     let mut b = locked(&mut tx, player.campaign_id).await?;
+    if b.map.scale == Scale::World {
+        return Err(AppError::Conflict("TRAVEL_MAP"));
+    }
     let tid = character_token(character.id);
     let from = b
         .tokens
@@ -599,8 +741,8 @@ pub async fn walk(pool: &PgPool, player: &Player, path: &[Cell]) -> Result<Board
         EXPLORE_BUDGET,
     )
     .map_err(|_| AppError::BadRequest("INVALID_PATH"))?;
-    if let (Some(to), Some(t)) = (path.last(), b.tokens.iter_mut().find(|t| t.id == tid)) {
-        t.at = *to;
+    if let Some(t) = b.tokens.iter_mut().find(|t| t.id == tid) {
+        t.walk(path);
     }
     b.reveal_from_party();
     save(&mut tx, player.campaign_id, &b).await?;

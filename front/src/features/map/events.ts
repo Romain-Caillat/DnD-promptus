@@ -23,6 +23,8 @@ export function eventLine(e: FightEvent, name: (id: string) => string, t: TFunct
       return t('fight.log.fled', { who: name(e.who) })
     case 'defeated':
       return t('fight.log.defeated', { who: name(e.who) })
+    case 'died':
+      return t('fight.log.died', { who: name(e.who) })
     case 'ended':
       return e.end.winner === 'party'
         ? t('fight.log.won')
@@ -48,6 +50,12 @@ export function eventLine(e: FightEvent, name: (id: string) => string, t: TFunct
           return t('fight.log.knockedOut', { target: name(r.target) })
         case 'item_used':
           return t('fight.log.item', { who: name(r.who), item: r.item })
+        case 'death_saves':
+          return t('fight.log.deathSaves', { target: name(r.target), successes: r.successes, failures: r.failures })
+        case 'stabilized':
+          return t('fight.log.stabilized', { target: name(r.target) })
+        case 'house_rule':
+          return t('fight.log.houseRule', { name: r.name })
         default:
           return null
       }

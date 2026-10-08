@@ -41,6 +41,12 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/campaigns/{campaign}/rules"),
     ("POST", "/api/campaigns/{campaign}/rules/draft"),
     ("PUT", "/api/campaigns/{campaign}/rules/draft"),
+    // On the draft just saved (a house rule needs one).
+    (
+        "POST",
+        "/api/campaigns/{campaign}/rules/house-rules/formalise",
+    ),
+    ("POST", "/api/campaigns/{campaign}/rules/house-rules/try"),
     ("GET", "/api/campaigns/{campaign}/rules/compare?from=1&to=2"),
     ("POST", "/api/campaigns/{campaign}/rules/draft/lock"),
     ("DELETE", "/api/campaigns/{campaign}/rules/draft"),
@@ -103,6 +109,8 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/session/reveal"),
     ("PUT", "/api/campaigns/{campaign}/session/music"),
     ("POST", "/api/campaigns/{campaign}/session/journal"),
+    // On a reading of « Précédemment… » set under way just before.
+    ("POST", "/api/campaigns/{campaign}/session/previously/next"),
     // The grid: show the quay, edit it, fight on it, hand out the loot.
     ("GET", "/api/campaigns/{campaign}/board"),
     ("POST", "/api/campaigns/{campaign}/board"),
@@ -110,6 +118,20 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/fight"),
     ("POST", "/api/campaigns/{campaign}/fight/command"),
     ("POST", "/api/campaigns/{campaign}/fight/loot"),
+    // The ship battle: open the Greyhound's interception, stop it.
+    ("POST", "/api/campaigns/{campaign}/battle"),
+    ("POST", "/api/campaigns/{campaign}/battle/command"),
+    // Shops: list, open one, then on a shop with a line under the
+    // counter stored just before.
+    ("GET", "/api/campaigns/{campaign}/shops"),
+    ("POST", "/api/campaigns/{campaign}/shops"),
+    ("PUT", "/api/campaigns/{campaign}/shops/{shop}"),
+    ("POST", "/api/campaigns/{campaign}/shops/{shop}/open"),
+    ("POST", "/api/campaigns/{campaign}/shops/{shop}/reveal"),
+    ("DELETE", "/api/campaigns/{campaign}/shops/{shop}"),
+    // The journey on the world map, shown just before the gesture.
+    ("GET", "/api/campaigns/{campaign}/travel"),
+    ("POST", "/api/campaigns/{campaign}/travel"),
     // The campaign's maps: list, create, import, generate, then on the
     // map stored just before.
     ("GET", "/api/campaigns/{campaign}/maps"),
@@ -129,6 +151,7 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/media/{asset}/decision"),
     // Each on a draft of the co-GM written just before.
     ("POST", "/api/campaigns/{campaign}/session/copilot"),
+    ("POST", "/api/campaigns/{campaign}/session/copilot/voice"),
     (
         "POST",
         "/api/campaigns/{campaign}/session/copilot/{draft}/show",
@@ -165,10 +188,33 @@ const GM_ROUTES: &[(&str, &str)] = &[
         "/api/campaigns/{campaign}/sessions/{session}/changes",
     ),
     ("GET", "/api/campaigns/{campaign}/ai"),
+    // The next session's date: the channel set, a date proposed, then
+    // fixed (`{date}` the one just proposed), another dropped.
+    ("PUT", "/api/campaigns/{campaign}/schedule/discord"),
+    ("GET", "/api/campaigns/{campaign}/schedule"),
+    ("POST", "/api/campaigns/{campaign}/schedule/dates"),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/schedule/dates/{date}/choose",
+    ),
+    ("DELETE", "/api/campaigns/{campaign}/schedule/dates/{date}"),
     ("DELETE", "/api/campaigns/{campaign}/hooks/{hook}"),
+    // The character dies (down at 0, put there just before): last of the
+    // routes that need it in play.
+    (
+        "POST",
+        "/api/campaigns/{campaign}/characters/{character}/death",
+    ),
     // After the character routes: removing the player removes them.
     ("DELETE", "/api/campaigns/{campaign}/players/{player}"),
     ("DELETE", "/api/campaigns/{campaign}/invite"),
+    // The shared screens: the list, a TV paired with the code it shows
+    // just before, a window, what they show, then one forgotten.
+    ("GET", "/api/campaigns/{campaign}/screens"),
+    ("POST", "/api/campaigns/{campaign}/screens"),
+    ("POST", "/api/campaigns/{campaign}/screens/window"),
+    ("PUT", "/api/campaigns/{campaign}/screens/shows"),
+    ("DELETE", "/api/campaigns/{campaign}/screens/{screen}"),
     ("GET", "/api/campaigns/{campaign}/live"),
     // Last: it ends the session the control sweep uses.
     ("POST", "/api/auth/sign-out"),
@@ -181,6 +227,12 @@ const CORSAIRES_RULES: &str = include_str!("../../content/rules/corsaires/v1.yam
 /// route works and the refusals come from the guard.
 fn body_for(method: &str, path: &str) -> Option<Value> {
     match (method, path) {
+        ("PUT", p) if p.ends_with("/schedule/discord") => Some(serde_json::json!({
+            "webhook": "https://discord.com/api/webhooks/1/balayage"
+        })),
+        ("POST", p) if p.ends_with("/schedule/dates") => Some(serde_json::json!({
+            "startsAt": chrono::Utc::now() + chrono::Duration::days(3)
+        })),
         ("POST", "/api/campaigns") => Some(serde_json::json!({
             "title": "Sweep",
             "rules": { "id": "corsaires", "version": 1 }
@@ -206,6 +258,16 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         ("POST", p) if p.ends_with("/workshop") => {
             Some(serde_json::json!({ "prompt": "Rends le gardien plus ambigu." }))
         }
+        (_, p) if p.contains("/rules/house-rules/") => Some(serde_json::json!({
+            "id": "pied_qui_glisse",
+            "name": "Le pied qui glisse",
+            "text": "Sur un 1 naturel, le corsaire glisse.",
+            "formal": {
+                "when": "miss",
+                "critical": true,
+                "effects": [{ "apply": { "condition": "renverse", "turns": 1, "to": "self" } }]
+            }
+        })),
         ("PUT", p) if p.ends_with("/rules/draft") => Some(serde_json::json!({
             "yaml": CORSAIRES_RULES.replacen("\nversion: 1\n", "\nversion: 2\n", 1),
             "note": "Facile à 12."
@@ -223,6 +285,16 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             Some(serde_json::json!({ "title": "Sweep", "body": "Réécrite." }))
         }
         (_, p) if p.ends_with("/played") => Some(serde_json::json!({ "played": true })),
+        ("POST", p) if p.ends_with("/shops") => Some(serde_json::json!({ "name": "Le marché" })),
+        ("PUT", p) if p.ends_with("/shops/{shop}") => Some(serde_json::json!({
+            "name": "Le marché",
+            "lines": [{ "key": "under", "name": "Une boussole", "price": 25, "hidden": true }],
+            "haggle": { "ability": "CHA", "difficulty": 10 }
+        })),
+        (_, p) if p.ends_with("/shops/{shop}/open") => Some(serde_json::json!({ "open": true })),
+        (_, p) if p.ends_with("/shops/{shop}/reveal") => {
+            Some(serde_json::json!({ "line": "under" }))
+        }
         (_, p) if p.ends_with("/reveal") => {
             Some(serde_json::json!({ "kind": "scene", "node": "sc_taverne" }))
         }
@@ -238,6 +310,13 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         }
         (_, p) if p.ends_with("/fight") => Some(serde_json::json!({ "node": "sc_crique" })),
         (_, p) if p.ends_with("/fight/command") => Some(serde_json::json!({ "kind": "stop" })),
+        (_, p) if p.ends_with("/battle") => {
+            Some(serde_json::json!({ "node": "sc_interception_greyhound" }))
+        }
+        (_, p) if p.ends_with("/battle/command") => Some(serde_json::json!({ "kind": "stop" })),
+        ("POST", p) if p.ends_with("/travel") => {
+            Some(serde_json::json!({ "kind": "supplies", "value": 12 }))
+        }
         (_, p) if p.ends_with("/fight/loot") => Some(serde_json::json!({
             "gives": [{ "index": 0, "character": Uuid::nil() }]
         })),
@@ -254,6 +333,9 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         (_, p) if p.ends_with("/maps/generate") => Some(serde_json::json!({ "node": "sc_crique" })),
         (_, p) if p.ends_with("/media/batch") => Some(serde_json::json!({ "videos": false })),
         (_, p) if p.ends_with("/decision") => Some(serde_json::json!({ "approve": true })),
+        (_, p) if p.ends_with("/copilot/voice") => Some(serde_json::json!({
+            "audio": common::wav_saying("Que fait le gardien du phare ?")
+        })),
         (_, p) if p.ends_with("/copilot") => {
             Some(serde_json::json!({ "kind": "describe", "prompt": "Ils entrent." }))
         }
@@ -266,6 +348,10 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         (_, p) if p.ends_with("/end") || p.ends_with("/recap") => Some(serde_json::json!({
             "recap": "Ils ont trouvé la lanterne.",
             "previously": "La tempête approche."
+        })),
+        ("POST", p) if p.ends_with("/screens") => Some(serde_json::json!({ "code": "ZZZZ" })),
+        (_, p) if p.ends_with("/screens/shows") => Some(serde_json::json!({
+            "scene": true, "map": false, "party": true, "moments": true
         })),
         (_, p) if p.ends_with("/changes") => {
             Some(serde_json::json!({ "text": "Plus de scènes pour Marc." }))
@@ -289,6 +375,10 @@ struct Ids {
     proposal: String,
     job: String,
     map: String,
+    date: String,
+    /// A shop of the campaign, stored on first use; empty before.
+    shop: String,
+    screen: String,
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
@@ -304,6 +394,16 @@ fn route_uri(path: &str, ids: &Ids) -> String {
         .replace("{proposal}", &ids.proposal)
         .replace("{job}", &ids.job)
         .replace("{map}", &ids.map)
+        .replace("{date}", &ids.date)
+        .replace(
+            "{shop}",
+            if ids.shop.is_empty() {
+                "00000000-0000-0000-0000-000000000000"
+            } else {
+                &ids.shop
+            },
+        )
+        .replace("{screen}", &ids.screen)
 }
 
 /// Every placeholder filled for `player` of `campaign`: an invitation of
@@ -339,7 +439,10 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         asset: Uuid::new_v4().to_string(),
         proposal: Uuid::new_v4().to_string(),
         job: Uuid::new_v4().to_string(),
+        date: Uuid::new_v4().to_string(),
         map: "carte-inconnue".to_string(),
+        shop: String::new(),
+        screen: Uuid::new_v4().to_string(),
     }
 }
 
@@ -581,10 +684,40 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .await
             .unwrap();
         }
+        if path.contains("{shop}") && ids.shop.is_empty() {
+            ids.shop = sqlx::query_scalar::<_, Uuid>(
+                "SELECT id FROM shops WHERE campaign_id = $1 ORDER BY created_at LIMIT 1",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
+        }
         if path.contains("{asset}") {
             ids.asset = sqlx::query_scalar::<_, Uuid>(
                 "INSERT INTO media_assets (campaign_id, kind, subject, mime, image)
                  VALUES ($1, 'scene', 'sc_crique', 'image/png', '\\x89504e47') RETURNING id",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
+        }
+        if path.ends_with("/previously/next") {
+            sqlx::query(
+                "UPDATE game_sessions SET previously_shown = 1
+                 WHERE campaign_id = $1 AND status = 'live'",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .execute(&pool)
+            .await
+            .unwrap();
+        }
+        if path.contains("{date}") {
+            ids.date = sqlx::query_scalar::<_, Uuid>(
+                "SELECT id FROM session_dates WHERE campaign_id = $1 ORDER BY created_at DESC LIMIT 1",
             )
             .bind(Uuid::parse_str(&ids.campaign).unwrap())
             .fetch_one(&pool)
@@ -602,11 +735,37 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .unwrap()
             .to_string();
         }
+        if path.contains("{screen}") {
+            ids.screen = sqlx::query_scalar::<_, Uuid>(
+                "SELECT id FROM shared_screens WHERE campaign_id = $1 LIMIT 1",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
+        }
         let uri = route_uri(path, &ids);
         let decision = path.contains("/characters/")
             && (path.ends_with("/validate")
                 || path.ends_with("/return")
                 || path.ends_with("/note-draft"));
+        if path.ends_with("/death") {
+            sqlx::query("UPDATE characters SET status = 'validated' WHERE id = $1")
+                .bind(Uuid::parse_str(&ids.character).unwrap())
+                .execute(&pool)
+                .await
+                .unwrap();
+            sqlx::query(
+                "INSERT INTO character_play (character_id, campaign_id, damage)
+                 SELECT id, campaign_id, 10 FROM characters WHERE id = $1
+                 ON CONFLICT (character_id) DO UPDATE SET damage = 10",
+            )
+            .bind(Uuid::parse_str(&ids.character).unwrap())
+            .execute(&pool)
+            .await
+            .unwrap();
+        }
         if path.ends_with("/hooks/propose") {
             sqlx::query(
                 r#"UPDATE characters
@@ -638,8 +797,19 @@ async fn every_gm_route_refuses_without_a_valid_session() {
                 b["gives"][0]["character"] = Value::String(ids.character.clone());
                 Some(b)
             }
+            // A TV shows a code just before the GM types it.
+            (&"POST", Some(_)) if path.ends_with("/screens") => {
+                let tv = common::call_as_screen(&app, None, "POST", "/api/tv", None).await;
+                Some(serde_json::json!({ "code": tv.body["data"]["code"] }))
+            }
             (_, b) => b,
         };
+        if *method == "POST" && path.ends_with("/travel") {
+            let board = format!("/api/campaigns/{}/board", ids.campaign);
+            let world = serde_json::json!({ "map": "cotes-bretagne-sud" });
+            let r = call(&app, Some(&token), "POST", &board, Some(world)).await;
+            assert!(r.status.is_success(), "the world map shows: {}", r.body);
+        }
         let r = call(&app, Some(&token), method, &uri, body).await;
         if path.ends_with("/apply") {
             sqlx::query("UPDATE campaigns SET validated_at = now() WHERE id = $1")
@@ -652,6 +822,19 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             // Past the guard and the ownership check, a plain request
             // (not a WebSocket upgrade) is refused by the route itself.
             assert_eq!(r.body["error"]["code"], "WEBSOCKET_REQUIRED", "{uri}");
+            continue;
+        }
+        // The Kerbrume fixture has no ship battle (the Greyhound's
+        // interception lives in the corsairs campaign, played through
+        // in `battle_test.rs`): past the guard and the ownership check,
+        // the route itself refuses the scene, then the missing battle.
+        if path.ends_with("/battle") || path.ends_with("/battle/command") {
+            let code = if path.ends_with("/battle") {
+                "UNKNOWN_NODE"
+            } else {
+                "NO_BATTLE"
+            };
+            assert_eq!(r.body["error"]["code"], code, "{uri}: {}", r.body);
             continue;
         }
         assert!(

@@ -5,8 +5,11 @@ import { Hearts } from '@/components/game/Hearts'
 import { StatGem } from '@/components/game/StatGem'
 import { Button } from '@/components/ui/button'
 import { Sprite } from '@/features/sprites/Sprite'
-import { equipItem, type BagItem, type CharacterView, type PlayView } from '@/lib/play'
+import { equipItem, type ActionCardView, type BagItem, type CharacterView, type PlayView } from '@/lib/play'
+import { CardDetail } from './between/CardDetail'
+import { GiveForm } from './trade/GiveForm'
 import { ActionCard, signed } from './creator/RuleSteps'
+import { LevelUpCard } from './LevelUpCard'
 
 /**
  * The Character tab once in play (planche « Jouer », onglet Personnage):
@@ -31,6 +34,7 @@ export function CharacterTab({
   const { t } = useTranslation()
   const [busy, setBusy] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
+  const [shown, setShown] = useState<ActionCardView | null>(null)
   const name = character.sheet.name || t('play.unnamed')
   const attack = play.cards
     .filter((c) => c.level <= play.level && c.attackBonus !== null)
@@ -52,6 +56,15 @@ export function CharacterTab({
 
   return (
     <div className="flex flex-col gap-4">
+      {play.levelUp && (
+        <LevelUpCard
+          campaignId={campaignId}
+          name={name}
+          up={play.levelUp}
+          maxHitPoints={play.maxHitPoints}
+          onChanged={onChanged}
+        />
+      )}
       <div className="flex items-end gap-3.5 rounded-[14px] border border-line bg-surface p-3.5">
         {character.sheet.look && <Sprite look={character.sheet.look} scale={4} label={name} />}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -102,14 +115,26 @@ export function CharacterTab({
         <h2 className="type-label">{t('play.sheet.cards')}</h2>
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2">
           {play.cards.map((c) => (
-            <div key={c.id} className="flex flex-none flex-col items-center gap-1">
+            <button
+              key={c.id}
+              type="button"
+              aria-pressed={shown?.id === c.id}
+              aria-label={c.name}
+              className="flex flex-none flex-col items-center gap-1"
+              onClick={() => setShown(shown?.id === c.id ? null : c)}
+            >
               <ActionCard card={c} width={96} level={play.level} />
               {c.level > play.level && (
                 <span className="text-caption text-mute">{t('play.sheet.locked', { level: c.level })}</span>
               )}
-            </div>
+            </button>
           ))}
         </div>
+        {shown ? (
+          <CardDetail card={shown} onClose={() => setShown(null)} />
+        ) : (
+          <p className="text-caption text-mute">{t('between.card.tapHint')}</p>
+        )}
       </section>
 
       {play.resources.length > 0 && (
@@ -144,6 +169,7 @@ export function CharacterTab({
         )}
       </section>
       {failed && <p role="alert">{t('play.error')}</p>}
+      <GiveForm campaignId={campaignId} play={play} />
     </div>
   )
 }

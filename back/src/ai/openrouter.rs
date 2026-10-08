@@ -2,7 +2,9 @@
 //! for text, and the same endpoint with `modalities: ["image", "text"]`
 //! for images, which come back as base64 data URLs. Video has its own
 //! asynchronous API (`/videos`): a job is submitted, polled until it is
-//! `completed` or `failed`, and its file downloaded.
+//! `completed` or `failed`, and its file downloaded. A transcription is a
+//! chat call whose user message carries the WAV as an `input_audio` part
+//! (base64), sent to a model that hears audio.
 //!
 //! OpenRouter reports the real cost of each call when asked
 //! (`usage: { include: true }`), in dollars; it is stored in millionths.
@@ -15,14 +17,16 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 use super::{
-    AiError, BoxFuture, ImageRequest, ImageResponse, LlmRequest, LlmResponse, Provider, Usage,
-    VideoRequest, VideoResponse,
+    AiError, BoxFuture, ImageRequest, ImageResponse, LlmRequest, LlmResponse, Provider, Role,
+    TranscribeRequest, TranscribeResponse, Usage, VideoRequest, VideoResponse,
 };
 
 pub const BASE_URL: &str = "https://openrouter.ai/api/v1";
 pub const DEFAULT_MODEL: &str = "anthropic/claude-sonnet-4.5";
 pub const DEFAULT_IMAGE_MODEL: &str = "google/gemini-2.5-flash-image";
 pub const DEFAULT_VIDEO_MODEL: &str = "google/veo-3.1";
+/// A model that takes audio in and is cheap per minute.
+pub const DEFAULT_AUDIO_MODEL: &str = "google/gemini-2.5-flash";
 
 /// How long a call may take before it is given up.
 const TIMEOUT: Duration = Duration::from_secs(180);
@@ -36,6 +40,7 @@ pub struct Settings {
     pub model: String,
     pub image_model: String,
     pub video_model: String,
+    pub audio_model: String,
     /// Sent as `HTTP-Referer`, OpenRouter's app attribution.
     pub app_url: Option<String>,
 }
@@ -327,6 +332,69 @@ impl Provider for OpenRouter {
     fn video<'a>(&'a self, req: &'a VideoRequest) -> BoxFuture<'a, Result<VideoResponse, AiError>> {
         Box::pin(self.generate_video(req))
     }
+
+    fn transcribe<'a>(
+        &'a self,
+        req: &'a TranscribeRequest,
+    ) -> BoxFuture<'a, Result<TranscribeResponse, AiError>> {
+        Box::pin(async move {
+            let model = req
+                .model
+                .clone()
+                .unwrap_or_else(|| self.settings.audio_model.clone());
+            let body = json!({
+                "model": model,
+                "messages": audio_messages(req),
+                "temperature": 0,
+                "max_tokens": TRANSCRIPT_TOKENS,
+                "response_format": { "type": "json_object" },
+                "usage": { "include": true },
+            });
+            let completion = self.chat(body).await?;
+            let text = completion
+                .choices
+                .first()
+                .and_then(|c| c.message.as_ref())
+                .and_then(|m| m.content.clone())
+                .unwrap_or_default();
+            if text.trim().is_empty() {
+                return Err(AiError::Schema("transcription vide".into()));
+            }
+            Ok(TranscribeResponse {
+                text,
+                model: completion.model.clone().unwrap_or(model),
+                usage: usage(completion.usage.as_ref()),
+            })
+        })
+    }
+}
+
+/// The most a transcription may answer, in tokens: a minute of speech
+/// is about 150 words.
+pub const TRANSCRIPT_TOKENS: u32 = 600;
+
+/// The template's messages, the recording appended to the last user
+/// message as an `input_audio` part (OpenRouter's multimodal format).
+fn audio_messages(req: &TranscribeRequest) -> Vec<Value> {
+    let last_user = req.messages.iter().rposition(|m| m.role == Role::User);
+    req.messages
+        .iter()
+        .enumerate()
+        .map(|(i, m)| {
+            if Some(i) == last_user {
+                json!({
+                    "role": m.role,
+                    "content": [
+                        { "type": "text", "text": m.content },
+                        { "type": "input_audio",
+                          "input_audio": { "data": STANDARD.encode(&req.wav), "format": "wav" } },
+                    ],
+                })
+            } else {
+                json!({ "role": m.role, "content": m.content })
+            }
+        })
+        .collect()
 }
 
 impl OpenRouter {
@@ -421,6 +489,28 @@ mod tests {
         assert_eq!(failed.error_text().as_deref(), Some("contenu refusé"));
         let plain: VideoJob = serde_json::from_str(r#"{"error":"clé invalide"}"#).unwrap();
         assert_eq!(plain.error_text().as_deref(), Some("clé invalide"));
+    }
+
+    #[test]
+    fn the_recording_rides_with_the_last_user_message_as_base64_wav() {
+        let req = TranscribeRequest {
+            messages: vec![
+                super::super::Message::system("Tu transcris."),
+                super::super::Message::user("Noms : Vaubernier"),
+            ],
+            wav: b"RIFF".to_vec(),
+            seconds: 1.0,
+            model: None,
+        };
+        let m = audio_messages(&req);
+        assert_eq!(
+            m[0],
+            json!({ "role": "system", "content": "Tu transcris." })
+        );
+        assert_eq!(m[1]["content"][0]["text"], "Noms : Vaubernier");
+        assert_eq!(m[1]["content"][1]["type"], "input_audio");
+        assert_eq!(m[1]["content"][1]["input_audio"]["format"], "wav");
+        assert_eq!(m[1]["content"][1]["input_audio"]["data"], "UklGRg==");
     }
 
     #[test]

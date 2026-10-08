@@ -302,6 +302,36 @@ fn encounters(c: &Campaign, scenes: &[&Node]) -> Check {
     check(CheckKind::Encounters, total, gaps)
 }
 
+/// A scene's ship battle played a few times with the reference tactics:
+/// it must start (ships and map known) and end.
+fn try_battle(
+    c: &Campaign,
+    v: &super::model::VehicleEncounter,
+    rules: &crate::rules::RuleSystem,
+    library: &Library<'_>,
+) -> Result<(), String> {
+    use crate::vehicle::scenario::{BattleSpec, BattleTime, VehicleScenario};
+    let map = library
+        .maps
+        .unwrap_or(&[])
+        .iter()
+        .find(|m| m.id == v.map)
+        .ok_or_else(|| "the battle's map is not known".to_string())?;
+    let sc = VehicleScenario::from_story(c, &v.map, v);
+    sc.battle(rules, map, 1).map_err(|e| e.to_string())?;
+    let spec = BattleSpec {
+        battles: FIGHTS,
+        seed: 1,
+    };
+    let r = sc
+        .simulate(rules, map, Some(spec), BattleTime::default())
+        .map_err(|e| format!("simulation: {e}"))?;
+    if r.stalemates == r.battles {
+        return Err("simulation: no battle ends".into());
+    }
+    Ok(())
+}
+
 fn fights(c: &Campaign, scenes: &[&Node], library: &Library<'_>) -> Check {
     let planned: Vec<&&Node> = scenes.iter().filter(|n| n.encounter.is_some()).collect();
     let mut gaps = Vec::new();
@@ -315,6 +345,19 @@ fn fights(c: &Campaign, scenes: &[&Node], library: &Library<'_>) -> Check {
             ));
             continue;
         };
+        if let Some(v) = n.encounter.as_ref().and_then(|e| e.vehicles.as_ref()) {
+            // A ship battle is tried as a battle; its deck fight only
+            // happens if someone boards.
+            if let Err(detail) = try_battle(c, v, rules, library) {
+                let code = if detail.starts_with("simulation:") {
+                    "SIMULATION_FAILED"
+                } else {
+                    "NOT_STAGED"
+                };
+                gaps.push(gap(&n.id, &n.title, code, detail));
+            }
+            continue;
+        }
         let staged = encounter_scenario(c, n, rules).map_err(|e| e.to_string());
         let map = n
             .map
@@ -361,9 +404,17 @@ mod tests {
     const BRASIER_RULES: &str = include_str!("../../../content/rules/brasier/v1.yaml");
     const CORRIDOR: &str = include_str!("../../../content/maps/brasier/cure-dent-coursive.yaml");
 
+    const SPACE: &str = include_str!("../../../content/maps/brasier/abords-du-toboggan.yaml");
+    const SEA: &str = include_str!("../../../content/maps/corsaires/large-de-belle-ile.yaml");
+    const DECK: &str = include_str!("../../../content/maps/corsaires/pont-du-greyhound.yaml");
+
     fn gauge(yaml: &str, rules: &str, map: &str) -> Vec<ActReadiness> {
+        gauge_with(yaml, rules, &[map])
+    }
+
+    fn gauge_with(yaml: &str, rules: &str, maps: &[&str]) -> Vec<ActReadiness> {
         let rules = RuleSystem::from_yaml(rules).unwrap();
-        let maps = [Map::from_yaml(map).unwrap()];
+        let maps: Vec<Map> = maps.iter().map(|m| Map::from_yaml(m).unwrap()).collect();
         readiness(
             &from_yaml(yaml).unwrap(),
             &Library {
@@ -413,7 +464,7 @@ mod tests {
 
     #[test]
     fn the_brasier_act_one_is_not_ready_and_says_why() {
-        let acts = gauge(BRASIER, BRASIER_RULES, CORRIDOR);
+        let acts = gauge_with(BRASIER, BRASIER_RULES, &[CORRIDOR, SPACE]);
         let act = &acts[0];
         assert!(!act.ready);
         assert!(act.done < act.total);
@@ -430,5 +481,20 @@ mod tests {
         );
         // Acts with no scene yet are not ready either.
         assert!(acts[1..].iter().all(|a| !a.ready));
+    }
+
+    #[test]
+    fn a_ship_battle_is_tried_as_a_battle_on_its_own_map() {
+        // Without the sea map the interception cannot be staged…
+        let acts = gauge_with(CORSAIRES, CORSAIRES_RULES, &[QUAY, DECK]);
+        assert_eq!(
+            gaps(&acts[1], CheckKind::Fights),
+            [("NOT_STAGED", "sc_interception_greyhound")]
+        );
+        // …with it, the battle is simulated and plays out.
+        let acts = gauge_with(CORSAIRES, CORSAIRES_RULES, &[QUAY, DECK, SEA]);
+        assert_eq!(gaps(&acts[1], CheckKind::Fights), []);
+        let acts = gauge_with(BRASIER, BRASIER_RULES, &[CORRIDOR, SPACE]);
+        assert!(!gaps(&acts[0], CheckKind::Fights).contains(&("NOT_STAGED", "sc_essaim_vorr")));
     }
 }

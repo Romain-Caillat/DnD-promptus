@@ -299,6 +299,9 @@ function Attack({ rules }: { rules: RulesView }) {
       <Row label={t('rules.attack.precision')}>
         {t(rules.attack.precisionApplies ? 'rules.codes.added_to_attack_roll' : 'rules.codes.not_applied')}
       </Row>
+      {rules.attack.bonus && (
+        <Row label={t('rules.attack.bonus', { name: rules.attack.bonus.name })}>{rules.attack.bonus.formula}</Row>
+      )}
       <Row label={t('rules.attack.armorClass', { name: ac.name, abbr: ac.abbr })}>{ac.formula}</Row>
       <Row label={t('rules.attack.hitPoints', { name: rules.hitPoints.name, abbr: rules.hitPoints.abbr })}>
         {rules.hitPoints.formula}
@@ -463,11 +466,30 @@ function Between({ rules }: { rules: RulesView }) {
             ? t('rules.zeroHp.knockedOut', { condition: z.condition, count: z.outAfterTurns, out: z.outCondition })
             : t('rules.zeroHp.deathSaves', { difficulty: z.difficulty, successes: z.successes, failures: z.failures })}
         </p>
+        {z.rule === 'deathSaves' && (
+          <p className="text-body text-chalk-soft">
+            {t('rules.zeroHp.criticals', { count: z.failuresOnCriticalFailure })}
+            {z.criticalSuccessRevives && ` ${t('rules.zeroHp.revives')}`}{' '}
+            {t('rules.zeroHp.hit', { count: z.failuresOnHit })}
+            {z.stabilize &&
+              ` ${t('rules.zeroHp.stabilize', { kind: z.stabilize.kind, ability: z.stabilize.ability, difficulty: z.stabilize.difficulty })}`}
+          </p>
+        )}
+        <p className="text-caption text-mute">{t('rules.zeroHp.gm')}</p>
       </Section>
       <Section title={t('rules.progression.title')}>
         <p className="text-body text-chalk-soft">
           {t('rules.progression.upgrade', { xp: p.upgradeEveryXp, count: p.upgradePoints })}
         </p>
+        {p.hitPointsPerLevel && (
+          <p className="text-body text-chalk-soft">
+            {t(p.hitPointsPerLevel.ability ? 'rules.progression.hitPoints' : 'rules.progression.hitPointsPlain', {
+              dice: p.hitPointsPerLevel.dice,
+              average: p.hitPointsPerLevel.average,
+              ability: p.hitPointsPerLevel.ability,
+            })}
+          </p>
+        )}
         <div className="flex flex-wrap gap-1.5">
           {p.levels.map((l) => (
             <span key={l.level} className="rounded-button border border-line bg-surface px-2 py-1 text-caption">

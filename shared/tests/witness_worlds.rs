@@ -26,7 +26,10 @@ fn rules(world: &str) -> RuleSystem {
 fn maps() -> Vec<Map> {
     [
         "maps/corsaires/quai-port-louis.yaml",
+        "maps/corsaires/large-de-belle-ile.yaml",
+        "maps/corsaires/pont-du-greyhound.yaml",
         "maps/brasier/cure-dent-coursive.yaml",
+        "maps/brasier/abords-du-toboggan.yaml",
     ]
     .iter()
     .map(|rel| Map::from_yaml(&read(rel)).unwrap())
@@ -148,12 +151,13 @@ fn rule_and_map_references_are_checked_against_the_library() {
         ["RULES_MISMATCH"]
     );
 
-    // A map token naming no one of the campaign is reported.
+    // A map token naming no one of the campaign is reported, on each
+    // scene played on that map (the corridor and the swarm's boarding).
     let mut c = campaign("campaigns/brasier/campagne.yaml");
     c.adversaries.retain(|a| a.id != "chef-d-escouade-vorr");
-    if let Some(e) = c.nodes[0].encounter.as_mut() {
+    for e in c.nodes.iter_mut().filter_map(|n| n.encounter.as_mut()) {
         e.opponents.retain(|o| o.who != "chef-d-escouade-vorr");
     }
     let issues = check(&c, "brasier");
-    assert_eq!(count(&issues, "MAP_ENTITY_UNKNOWN"), 1, "{issues:#?}");
+    assert_eq!(count(&issues, "MAP_ENTITY_UNKNOWN"), 2, "{issues:#?}");
 }

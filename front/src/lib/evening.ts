@@ -59,7 +59,10 @@ export interface SceneCard {
 /** The evening on a player's phone (`projection::evening::EveningView`). */
 export interface EveningView {
   session: { number: number; status: SessionStatus; startedAt: string | null } | null
+  /** « Précédemment… » once the GM published it; `null` during the launch reading. */
   previously: string | null
+  /** gm/launch-session: the sentences of « Précédemment… » the GM has shown so far. */
+  launch: { number: number; lines: string[]; total: number } | null
   music: Music | null
   lobby: { playerId: string; nickname: string; soundOk: boolean; remote: boolean }[]
   campaign: PlayerView
@@ -124,8 +127,31 @@ export interface SessionInfo {
   endedAt: string | null
   recap: string
   previously: string
+  chronicleTitle: string
+  chronicle: string
+  /** When « Précédemment… » and the chronicle entry reached the players; `null` while drafts. */
+  publishedAt: string | null
   gmChanges: string
   music: Music | null
+  /** Sentences of « Précédemment… » shown while launching; `null` outside the reading. */
+  previouslyShown: number | null
+}
+
+/** A name a player text should not hold: a front, or someone the table has not met. */
+export interface RecapWarning {
+  name: string
+  kind: 'front' | 'unmet'
+}
+
+/** A session in the GM's chronicle, with the names flagged in its player texts. */
+export type ChronicleSession = SessionInfo & { warnings: RecapWarning[] }
+
+/** The recaps of a session, as the GM edits them. */
+export interface RecapTexts {
+  recap: string
+  previously: string
+  chronicleTitle: string
+  chronicle: string
 }
 
 interface MusicTrack {
@@ -227,6 +253,13 @@ interface KnowledgeGap {
 export interface LiveScreen {
   session: SessionInfo | null
   lastEnded: SessionInfo | null
+  /** gm/launch-session: « Précédemment… » whole, how far the table read, the scene to send. */
+  launch: {
+    number: number
+    lines: string[]
+    shown: number
+    firstScene: { node: string; title: string } | null
+  } | null
   lobby: {
     playerId: string
     nickname: string
@@ -248,6 +281,11 @@ export interface LiveScreen {
   /** What the next scenes need that the table does not know yet. */
   gaps: KnowledgeGap[]
   fronts: { id: string; name: string; goal: string; steps: string[]; progress: number }[]
+  /** Every faction, its gauge and whether the table knows of it. */
+  factions: GmFaction[]
+  goals: { id: string; title: string; heldBy: string | null; status: GoalStatus | null }[]
+  /** NPCs with the party whatever the scene, played by the co-GM. */
+  companions: { id: string; name: string; title: string; roleplay: string }[]
   requests: GmRequest[]
   journal: GmJournalLine[]
   spotlight: Spot[]
@@ -257,12 +295,29 @@ export interface LiveScreen {
   ai: { configured: boolean; spending: { budgetMicros: number; spentMicros: number } }
 }
 
+export type GoalStatus = 'known' | 'done'
+
+interface GmFaction {
+  id: string
+  name: string
+  diplomacy: string
+  affinity: number
+  start: number
+  min: number
+  max: number
+  rivals: string[]
+  known: boolean
+}
+
 export type Reveal =
   | { kind: 'scene'; node: string }
   | { kind: 'clue'; clue: string }
   | { kind: 'npc'; npc: string }
   | { kind: 'front'; front: string; delta: number }
   | { kind: 'resolve'; node: string }
+  | { kind: 'faction'; faction: string }
+  | { kind: 'affinity'; faction: string; delta: number }
+  | { kind: 'goal'; goal: string; status: GoalStatus | null }
 
 export type Decision =
   | { kind: 'accept'; reason: string }
@@ -325,13 +380,37 @@ export function dismissDraft(campaignId: string, draft: string): Promise<void> {
   return apiRequest<void>('POST', `${gm(campaignId)}/session/copilot/${encodeURIComponent(draft)}/dismiss`)
 }
 
-/** The co-GM's draft of both recaps (a counted AI call; nothing saved). */
-export async function draftRecap(campaignId: string, session: string): Promise<{ recap: string; previously: string }> {
-  const d = await apiRequest<{ players: string; gm: string }>(
-    'POST',
-    `${gm(campaignId)}/sessions/${encodeURIComponent(session)}/recap-draft`,
-  )
-  return { recap: d.gm, previously: d.players }
+/** The co-GM's draft of the recaps (a counted AI call; nothing saved), with the names it should not have written. */
+export async function draftRecap(
+  campaignId: string,
+  session: string,
+): Promise<RecapTexts & { warnings: RecapWarning[] }> {
+  const d = await apiRequest<{
+    players: string
+    gm: string
+    chronicleTitle: string
+    chronicle: string
+    warnings: RecapWarning[]
+  }>('POST', `${gm(campaignId)}/sessions/${encodeURIComponent(session)}/recap-draft`)
+  return { recap: d.gm, previously: d.players, chronicleTitle: d.chronicleTitle, chronicle: d.chronicle, warnings: d.warnings }
+}
+
+/** The GM's chronicle: every session, the latest first, drafts included. */
+export function fetchSessions(campaignId: string): Promise<ChronicleSession[]> {
+  return apiRequest<ChronicleSession[]>('GET', `${gm(campaignId)}/sessions`)
+}
+
+/** Save the recaps of an ended session; `publish` gives them to the players. */
+export function saveRecap(campaignId: string, session: string, texts: RecapTexts, publish: boolean): Promise<SessionInfo> {
+  return apiRequest<SessionInfo>('PUT', `${gm(campaignId)}/sessions/${encodeURIComponent(session)}/recap`, {
+    ...texts,
+    publish,
+  })
+}
+
+/** gm/launch-session: the next sentence of « Précédemment… » reaches the table. */
+export function readNext(campaignId: string): Promise<SessionInfo> {
+  return apiRequest<SessionInfo>('POST', `${gm(campaignId)}/session/previously/next`)
 }
 
 export interface FeedbackReport {

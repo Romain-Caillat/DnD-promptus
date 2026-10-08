@@ -24,3 +24,26 @@ tilesets:
       reacteur: { name: Réacteur, shape: reactor, color: "#3b4450", accent: "#ff8a3c" }
       conduites: { name: Conduites, shape: pipes, color: "#6f7a86", accent: "#c0582c" }
       balise: { name: Balise, shape: beacon, color: "#3a4047", accent: "#ff4d5e" }
+  # Space around the ship (engine/support-vehicle-combat): the void and
+  # its asteroids, drawn as walls.
+  - id: espace-brasier
+    name: Les abords du Brasier
+    void: "#020308"
+    walls: { cap: "#6a5a4c", face: "#3f342b", joint: "#1c1712", pattern: stones }
+    materials:
+      vide: { name: Vide spatial, base: "#0a0d16", dark: "#05070c", light: "#1a2030", pattern: plain }
+    props: {}
+  # maps/travel-hex-world — the star system's hexes, crossed by the Cure-Dent.
+  - id: systeme-brasier
+    name: Le système du Brasier
+    void: "#020306"
+    walls: { cap: "#3a3f48", face: "#23272e", joint: "#121418", pattern: plates }
+    materials:
+      vide: { name: Espace libre, base: "#0b0f1a", dark: "#05070d", light: "#1a2133", pattern: plain }
+      débris: { name: Champ de débris, base: "#2a2c33", dark: "#17181c", light: "#44474f", pattern: rock }
+      astéroïdes: { name: Ceinture d'astéroïdes, base: "#3b3530", dark: "#24201c", light: "#5a5048", pattern: rock }
+      étoile: { name: L'étoile, base: "#b8682a", dark: "#7a3f16", light: "#e0944a", pattern: plain }
+      planète: { name: Planète, base: "#3c4a5a", dark: "#26303b", light: "#56687c", pattern: plain }
+      station: { name: Station, base: "#56606b", dark: "#30363c", light: "#7a8692", pattern: plates }
+      toboggan: { name: Le Toboggan, base: "#4a3a6a", dark: "#2c2242", light: "#7058a0", pattern: plain }
+    props: {}

@@ -171,12 +171,18 @@ pub(crate) fn lose_hp(
     let before = bearer.hit_points;
     let after = (before - breakdown.total).max(0);
     bearer.hit_points = after;
+    let critical = breakdown.multiplier > 1;
+    let hurt = breakdown.total > 0;
     events.push(Event::Damaged {
         target: target.into(),
         breakdown,
         hp_before: before,
         hp_after: after,
     });
+    if before == 0 && hurt {
+        super::death::hit_while_down(system, bearer, critical, events);
+        return;
+    }
     let ko = system.zero_hp.condition();
     if after == 0 && before > 0 && bearer.condition_named(ko).is_none() {
         let out = match &system.zero_hp {
@@ -191,6 +197,9 @@ pub(crate) fn lose_hp(
                 target: target.into(),
             });
             put_on(system, scene, target, cond, events);
+        }
+        if let Some(bearer) = scene.get_mut(target) {
+            super::death::start_dying(system, bearer);
         }
     }
 }
@@ -218,6 +227,9 @@ pub(crate) fn gain_hp(
         hp_after: after,
     });
     let ko = system.zero_hp.condition();
+    if after > 0 {
+        bearer.death_saves = None;
+    }
     if after > 0 && bearer.condition_named(ko).is_some() {
         remove_where(bearer, events, |c| c.id.as_deref() == Some(ko));
         events.push(Event::Revived {
