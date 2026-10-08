@@ -2319,6 +2319,7 @@
         "count": "Nombre",
         "adversaries": "Adversaires",
         "npcs": "PNJ",
+        "noStats": "{{name}} (sans caractéristiques)",
         "how": "Tactique",
         "tactics": "Comment ils se battent (une idée par ligne)",
         "morale": "Moral et issue",

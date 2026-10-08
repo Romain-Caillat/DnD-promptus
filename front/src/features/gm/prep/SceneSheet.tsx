@@ -511,7 +511,14 @@ function CombatTab({ story, node, busy, onSave }: { story: Story; node: StoryNod
                     onChange={(v) => setOpponents((cur) => patch(cur, i, { who: v }))}
                   >
                     {!known.some((k) => k.id === o.who) && (
-                      <option value={o.who}>{t('prep.scene.unknown', { id: o.who })}</option>
+                      <option value={o.who}>
+                        {(() => {
+                          const npc = (story.npcs ?? []).find((n) => n.id === o.who)
+                          return npc
+                            ? t('prep.scene.combat.noStats', { name: nameOf(npc) })
+                            : t('prep.scene.unknown', { id: o.who })
+                        })()}
+                      </option>
                     )}
                     {adversaries.length > 0 && (
                       <optgroup label={t('prep.scene.combat.adversaries')}>

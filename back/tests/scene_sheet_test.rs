@@ -93,6 +93,15 @@ async fn the_gm_prepares_a_fight_and_its_sound_and_the_server_refuses_what_names
     .await;
     assert_eq!(r.status, StatusCode::BAD_REQUEST, "{}", r.body);
     assert_eq!(r.body["error"]["code"], "EDIT_SCENE_INVALID");
+    // The GM reads which id is at fault.
+    assert!(
+        r.body["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("adv_kraken"),
+        "{}",
+        r.body
+    );
     let r = gm(&app, &token, "GET", &format!("/api/campaigns/{id}"), None).await;
     assert_eq!(node(&r.body["data"], "sc_quai")["summary"], quay["summary"]);
 
