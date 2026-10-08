@@ -305,7 +305,7 @@ tourner sans conteneur cible.
 
 ---
 
-### `platform/connect-claude-mcp` · todo
+### `platform/connect-claude-mcp` · doing — reste l'essai réel depuis Claude Desktop
 
 **Pourquoi** — Romain veut préparer sa campagne en parlant à son propre
 Claude (Claude Desktop ou Claude Code sur son Mac), qui modifie
@@ -340,6 +340,27 @@ limitée à la préparation, révocation immédiate, jamais affiché deux
 fois.
 
 **Origine** — Demande de Romain, 8 octobre 2026.
+
+*État* — Depuis son accueil MJ, Romain crée un jeton nommé « pour
+Claude », le copie (il n'est montré qu'une fois), voit quand chaque
+jeton a servi pour la dernière fois et le révoque d'un clic ; un jeton
+révoqué est refusé à l'appel suivant. Un jeton ne sert qu'à la
+préparation : lister les campagnes, lire une campagne, exporter,
+réimporter par-dessus une campagne existante, appliquer des
+modifications ciblées, lire la jauge des actes. Il ne peut ni créer de
+jeton, ni inviter, ni toucher à la table, à la soirée ou à quoi que ce
+soit qui dépense le budget IA, ni déclarer la campagne jouable : ce
+geste reste celui du MJ dans Promptus (les alertes du validateur
+reviennent à chaque lecture et chaque modification). Le serveur MCP
+local donne à Claude sept outils décrits en français (lister, lire une
+campagne, lire une scène, alertes de cohérence, modifier l'histoire,
+exporter, importer) ; une modification refusée n'applique rien et Claude
+lit pourquoi. Le même panneau montre la configuration à coller dans
+Claude Desktop et la commande pour Claude Code, jeton compris juste
+après sa création. Testé de bout en bout côté serveur et côté outils
+(appels simulés) ; pas encore essayé depuis le vrai Claude Desktop.
+*Décision ouverte* — faut-il refuser les écritures par jeton pendant une
+soirée en cours ?
 
 ---
 

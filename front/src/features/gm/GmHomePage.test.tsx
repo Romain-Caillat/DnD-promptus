@@ -47,6 +47,7 @@ describe('GmHomePage', () => {
       'GET /api/campaigns': () => ({ status: 200, body: { data: [] } }),
       'GET /api/rule-systems': () => ({ status: 200, body: { data: [] } }),
       'GET /api/gm-invites': () => ({ status: 200, body: { data: pending } }),
+      'GET /api/gm-tokens': () => ({ status: 200, body: { data: [] } }),
       'POST /api/gm-invites': () => {
         pending = [INVITE]
         return { status: 201, body: { data: { ...INVITE, code: 'secret code' } } }
@@ -77,6 +78,7 @@ describe('GmHomePage', () => {
     mockApi({
       'GET /api/me': () => ME,
       'GET /api/gm-invites': () => ({ status: 200, body: { data: [] } }),
+      'GET /api/gm-tokens': () => ({ status: 200, body: { data: [] } }),
       'GET /api/rule-systems': () => ({
         status: 200,
         body: {
@@ -143,6 +145,7 @@ describe('GmHomePage', () => {
       'GET /api/campaigns': () => ({ status: 200, body: { data: [] } }),
       'GET /api/rule-systems': () => ({ status: 200, body: { data: [] } }),
       'GET /api/gm-invites': () => ({ status: 200, body: { data: [] } }),
+      'GET /api/gm-tokens': () => ({ status: 200, body: { data: [] } }),
       'POST /api/auth/sign-out': () => ({ status: 204 }),
     })
     renderHome()

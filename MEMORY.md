@@ -362,6 +362,24 @@ confirm it exists. The first GM is created with the setup code from
 the server log, every other one through an invitation: registration is
 never open to whoever reaches the server first.
 
+### A GM's personal token reaches campaign preparation only
+
+A program on the GM's own machine (the MCP server Claude launches,
+`mcp/`, `docs/claude-mcp.md`) calls the API with a personal access
+token (`Authorization: Bearer`, hashed in `gm_api_tokens`, shown once,
+revoked at once). `require_gm` lets a token through only on the routes
+of `auth::api_tokens::TOKEN_ROUTES` — list campaigns, read one, export,
+import over an existing one, story edits, readiness — checked on the
+matched path before any lookup (403 `TOKEN_NOT_ALLOWED` elsewhere).
+Never on sign-in, accounts, invitations, the tokens themselves (their
+handlers also take `SessionOnly`), creating or setting a campaign,
+`story/validate` (declaring playable is the GM's act, in Promptus), the
+table, the live session, player or screen routes, nor any route that
+spends AI budget. Widening the list is a decision, not a fix: the sweep
+in `gm_routes_test.rs` sends a token to every other GM route. A token
+write is the GM's own write (same edits, lock, all or nothing), so
+players see it as they would the same edit made on the review screen.
+
 ### Recaps reach the table only once published
 
 « Précédemment… » and the chronicle entry are drafts until the GM
@@ -527,6 +545,11 @@ condition or damage it causes still reaches them as its own event.
   database that holds a migration the branch does not know ("previously
   applied but missing"). Lots that add migrations side by side must each
   run their tests on their own `TEST_DATABASE_URL` database.
+- **A new migration and a stale test binary.** `sqlx::migrate!` embeds
+  `back/migrations` at compile time; `back/build.rs` reruns the build
+  when the folder changes. Without it, a shared `CARGO_TARGET_DIR`
+  kept a binary that missed the new migration ("relation does not
+  exist").
 - **YouTube player must stay visible** also applies to the phone design:
   the scene screen currently hides music behind a button — needs a
   visible mini-player before it ships.
