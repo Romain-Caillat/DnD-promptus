@@ -928,16 +928,16 @@ pub async fn give(
             check_qty(qty)?;
             let name = line.display_name(rules);
             (
-                Adjustment::TakeItem {
+                vec![Adjustment::TakeItem {
                     entry: key.clone(),
                     qty,
-                },
-                Adjustment::GiveItem {
+                }],
+                vec![Adjustment::GiveItem {
                     item: line.item.clone(),
                     name: line.name.clone(),
                     description: line.description.clone(),
                     qty,
-                },
+                }],
                 if qty > 1 {
                     format!("{name} ×{qty}")
                 } else {
@@ -947,39 +947,49 @@ pub async fn give(
         }
         (None, Some(amount)) => {
             let currency = rules.currency().ok_or(AppError::Conflict("NO_CURRENCY"))?;
-            let delta = i32::try_from(amount).unwrap_or(i32::MAX);
+            // One purse change moves at most `DELTA_MAX`: a larger sum
+            // goes in several, all in this transaction.
+            let mut steps = Vec::new();
+            let mut left = amount;
+            while left > 0 {
+                let step = left.min(DELTA_MAX.unsigned_abs());
+                steps.push(i32::try_from(step).unwrap_or(DELTA_MAX));
+                left -= step;
+            }
+            let change = |delta: i32| Adjustment::Resource {
+                resource: currency.id.clone(),
+                delta,
+            };
             (
-                Adjustment::Resource {
-                    resource: currency.id.clone(),
-                    delta: -delta,
-                },
-                Adjustment::Resource {
-                    resource: currency.id.clone(),
-                    delta,
-                },
+                steps.iter().map(|d| change(-d)).collect(),
+                steps.iter().map(|d| change(*d)).collect(),
                 format!("{amount} {}", currency.name),
             )
         }
         _ => return Err(AppError::BadRequest("INVALID_GIFT")),
     };
-    adjust_in(
-        &mut tx,
-        player.campaign_id,
-        rules,
-        from,
-        take,
-        Actor::Player,
-    )
-    .await?;
-    adjust_in(
-        &mut tx,
-        player.campaign_id,
-        rules,
-        gift.to,
-        put,
-        Actor::Player,
-    )
-    .await?;
+    for change in take {
+        adjust_in(
+            &mut tx,
+            player.campaign_id,
+            rules,
+            from,
+            change,
+            Actor::Player,
+        )
+        .await?;
+    }
+    for change in put {
+        adjust_in(
+            &mut tx,
+            player.campaign_id,
+            rules,
+            gift.to,
+            change,
+            Actor::Player,
+        )
+        .await?;
+    }
     let session = crate::evening::session::current(&mut *tx, player.campaign_id)
         .await?
         .map(|s| s.id);

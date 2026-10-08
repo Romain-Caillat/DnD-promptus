@@ -2573,6 +2573,7 @@
       "NO_SUCH_LINE": "Cet objet n'est plus sur le comptoir.",
       "NO_SUCH_CHARACTER": "Ce compagnon n'est plus à la table.",
       "INVALID_GIFT": "Choisis quoi donner, et à qui.",
+      "INVALID_QUANTITY": "Donne-en moins à la fois (99 au plus).",
       "UNEXPECTED": "Ça n'a pas marché. Réessaie."
     }
   },

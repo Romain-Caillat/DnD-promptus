@@ -617,4 +617,21 @@ async fn a_line_dearer_than_one_purse_change_is_paid_in_full() {
     assert_eq!(r.status, StatusCode::OK, "{}", r.body);
     assert_eq!(r.body["data"]["purse"]["amount"], start + 3000 - 2500);
     assert!(t.bag(&borin).await.contains(&"Une goélette".to_string()));
+
+    // A gift of more than a thousand goes through the same way.
+    let lyra = t.seat("Camille", "Lyra", "bretteur").await;
+    let lyra_start = t.trade(&lyra).await["purse"]["amount"].as_i64().unwrap();
+    t.gold(&borin, 1000, "or").await;
+    let sum = start + 1500;
+    let r = t
+        .play(
+            &borin.token,
+            "POST",
+            "/character/give",
+            Some(json!({ "to": lyra.character, "amount": sum })),
+        )
+        .await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    assert_eq!(t.trade(&borin).await["purse"]["amount"], 0);
+    assert_eq!(t.trade(&lyra).await["purse"]["amount"], lyra_start + sum);
 }
