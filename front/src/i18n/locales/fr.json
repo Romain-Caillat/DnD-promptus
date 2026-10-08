@@ -1164,7 +1164,8 @@
       "clueTitle": "Un indice",
       "loot": "Butin",
       "item": "Objectif",
-      "npc": "Rencontre"
+      "npc": "Rencontre",
+      "down": "Hors de combat !"
     }
   },
   "pairScreen": {

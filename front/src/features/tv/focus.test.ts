@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ScreenView } from '@/lib/screens'
-import { freshHighlights, pickFocus } from './focus'
+import { freshHighlights, newHits, pickFocus } from './focus'
 
 const NOW = Date.parse('2026-10-10T20:30:00Z')
 const ago = (s: number) => new Date(NOW - s * 1000).toISOString()
@@ -71,5 +71,57 @@ describe('freshHighlights', () => {
     expect(freshHighlights(v, new Set(), NOW).map((h) => h.id)).toEqual(['m-clue', 'r-new', 'm-loot'])
     // A moment already played is not played again.
     expect(freshHighlights(v, new Set(['m-clue', 'r-new']), NOW).map((h) => h.id)).toEqual(['m-loot'])
+  })
+})
+
+const damaged = (target: string, before: number, after: number, total: number) => ({
+  kind: 'rules' as const,
+  event: { event: 'damaged' as const, target, breakdown: { total }, hp_before: before, hp_after: after },
+})
+
+const fightOf = (events: unknown[]) =>
+  view({
+    board: {
+      map: {},
+      fog: false,
+      tokens: [],
+      reachable: [],
+      fight: {
+        live: true,
+        order: [
+          { id: 'pc_kael', name: 'Kaël' },
+          { id: 'foe_1', name: 'Pillard' },
+        ],
+        events,
+      },
+    } as unknown as ScreenView['board'],
+  })
+
+describe('newHits', () => {
+  it('plays each blow once, from the first view on, and starts over with a new fight', () => {
+    const opening = [{ kind: 'round_started', round: 1 }, damaged('foe_1', 0, 0, 6)]
+    // A TV opening mid-fight replays nothing.
+    const first = newHits(fightOf(opening), null, NOW)
+    expect(first.hits).toEqual([])
+    // A blow on a foe reads the damage rolled (its hit points are hidden);
+    // one on the party reads what was lost, and says when it goes down.
+    const log = [
+      ...opening,
+      damaged('foe_1', 0, 0, 4),
+      damaged('pc_kael', 3, 0, 9),
+      { kind: 'rules', event: { event: 'knocked_out', target: 'pc_kael' } },
+      { kind: 'rules', event: { event: 'missed', target: 'foe_1' } },
+    ]
+    const next = newHits(fightOf(log), first.mark, NOW)
+    expect(next.hits.map((h) => (h.kind === 'hit' ? [h.target, h.amount, h.down] : null))).toEqual([
+      ['Pillard', 4, false],
+      ['Kaël', 3, true],
+    ])
+    // Nothing new, nothing played.
+    const again = newHits(fightOf(log), next.mark, NOW)
+    expect(again.hits).toEqual([])
+    // A shorter log is a new fight, read from its start.
+    const fresh = newHits(fightOf([damaged('pc_kael', 10, 8, 2)]), next.mark, NOW)
+    expect(fresh.hits.map((h) => h.kind === 'hit' && h.amount)).toEqual([2])
   })
 })

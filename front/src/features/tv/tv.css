@@ -238,6 +238,17 @@
   animation: tv-slam 0.7s cubic-bezier(0.2, 1.4, 0.3, 1) 2.2s both;
 }
 
+.tv-slam-now {
+  animation-delay: 0.4s;
+}
+
+/* A blow: the number hits the screen at once, the fight goes on. */
+.tv-hit {
+  display: inline-block;
+  font-family: var(--font-title);
+  animation: tv-slam 0.45s cubic-bezier(0.2, 1.4, 0.3, 1) both;
+}
+
 .tv-flip {
   animation: tv-flip 1.4s cubic-bezier(0.2, 0.9, 0.25, 1.1) both;
 }
@@ -300,6 +311,7 @@
   .tv-moment,
   .tv-rays::before,
   .tv-slam,
+  .tv-hit,
   .tv-flip,
   .tv-line,
   .tv-pulse {

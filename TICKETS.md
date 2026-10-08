@@ -1928,15 +1928,17 @@ avec son image approuvée, la carte et le groupe en cœurs, le combat avec
 l'ordre du tour et la dernière ligne du combat ; par-dessus, un grand
 moment à la fois pendant six secondes (dé coloré qui roule puis l'issue,
 indice en carte qui se retourne, butin, objectif atteint, rencontre),
-jamais rejoué après une reconnexion de plus de 30 s. Scène 1920 × 1080
+jamais rejoué après une reconnexion de plus de 30 s ; en combat, chaque
+coup porté s'affiche en grand chiffre rouge deux secondes et demie
+(« Hors de combat ! » s'il fait tomber), les dégâts lancés pour un
+adversaire dont les PV restent cachés, une TV ouverte en plein combat
+ne rejouant aucun coup déjà porté. Scène 1920 × 1080
 mise à l'échelle de la fenêtre, lecteur YouTube visible, mouvement réduit
 respecté. Testé : sur les deux mondes (fixture Corsaires/Kerbrume au
 balayage, Brasier à l'API) ; le choix du point focal et des moments en
 Vitest. **Écarts** : les niveaux n'ont pas de grand moment (le passage de
 niveau est `engine/level-up`, d'un autre lot ; le jour où il écrit une
-ligne partagée au journal, l'ajouter aux genres de `tv/focus.ts`) ; les
-dégâts en gros chiffres sur la carte ne sont pas animés (la dernière
-ligne du combat les dit) ; jamais essayé à six sur une vraie TV.
+ligne partagée au journal, l'ajouter aux genres de `tv/focus.ts`) ; jamais essayé à six sur une vraie TV.
 
 ---
 

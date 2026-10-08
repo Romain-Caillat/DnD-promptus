@@ -241,6 +241,15 @@ function HighlightOverlay({ highlight }: { highlight: Highlight }) {
       </div>
     )
   }
+  if (highlight.kind === 'hit') {
+    return (
+      <div className="tv-moment" role="status">
+        <span className="type-title text-[64px]">{highlight.target}</span>
+        <span className="tv-hit text-[180px] font-bold leading-none tabular-nums text-destructive">− {highlight.amount}</span>
+        {highlight.down && <span className="tv-slam tv-slam-now text-[56px]">{t('tv.moment.down')}</span>}
+      </div>
+    )
+  }
   if (highlight.kind === 'clue') {
     return (
       <div className="tv-moment tv-rays" role="status">

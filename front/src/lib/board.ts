@@ -124,7 +124,7 @@ export type FightEvent =
 type RulesEvent =
   | { event: 'roll'; roller: string; against: string | null; purpose: unknown; breakdown: RollBreakdown }
   | { event: 'missed'; target: string }
-  | { event: 'damaged'; target: string; hp_before: number; hp_after: number }
+  | { event: 'damaged'; target: string; breakdown: { total: number }; hp_before: number; hp_after: number }
   | { event: 'healed'; target: string; amount: number; hp_before: number; hp_after: number }
   | { event: 'condition_applied'; target: string; name: string; turns: number | null }
   | { event: 'condition_resisted' | 'condition_ended'; target: string; name: string }

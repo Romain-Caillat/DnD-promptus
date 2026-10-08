@@ -4,7 +4,7 @@ import { useLiveChanges } from '@/features/live/useLiveChanges'
 import { ApiError } from '@/lib/api'
 import type { MediaList } from '@/lib/media'
 import { fetchScreenMedia, fetchScreenView, pairingQrUrl, sayHello, type Hello, type ScreenView } from '@/lib/screens'
-import { freshHighlights, type Highlight } from './focus'
+import { freshHighlights, newHits, type FightMark, type Highlight } from './focus'
 import { TvStage } from './TvStage'
 import './tv.css'
 
@@ -12,6 +12,10 @@ import './tv.css'
 export const PAIR_POLL_MS = 2_000
 /** How long a big moment holds the screen. */
 const HIGHLIGHT_MS = 6_000
+/** A blow is shorter: a fight lands several in a row. */
+const HIT_MS = 2_500
+/** A blow still waiting after this long is dropped: the fight moved on. */
+const HIT_STALE_MS = 15_000
 
 type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'pairing'; hello: Hello } | { kind: 'paired' }
 
@@ -127,6 +131,8 @@ function PairedScreen({ onUnpaired }: { onUnpaired: () => void }) {
   const media = shown?.media ?? null
   const [highlight, setHighlight] = useState<Highlight | null>(null)
   const seen = useRef<Set<string>>(new Set())
+  const fightMark = useRef<FightMark>(null)
+  const hits = useRef<Highlight[]>([])
   const latest = useRef(0)
   const gone = useRef(onUnpaired)
   useEffect(() => {
@@ -158,18 +164,31 @@ function PairedScreen({ onUnpaired }: { onUnpaired: () => void }) {
 
   useLiveChanges('', () => void load(), 'screen')
 
+  // The blows landed since the last view, queued once each.
+  useEffect(() => {
+    if (!view) return
+    const read = newHits(view, fightMark.current)
+    fightMark.current = read.mark
+    hits.current.push(...read.hits)
+  }, [view])
+
   // One big moment at a time, oldest first, each for a few seconds.
   useEffect(() => {
     if (highlight || !view) return
-    const next = freshHighlights(view, seen.current)[0]
+    const now = Date.now()
+    hits.current = hits.current.filter((h) => !seen.current.has(h.id) && now - h.at <= HIT_STALE_MS)
+    const next = [...freshHighlights(view, seen.current, now), ...hits.current].sort((a, b) => a.at - b.at)[0]
     if (next) setHighlight(next)
   }, [view, highlight])
   useEffect(() => {
     if (!highlight) return
-    const timer = window.setTimeout(() => {
-      seen.current.add(highlight.id)
-      setHighlight(null)
-    }, HIGHLIGHT_MS)
+    const timer = window.setTimeout(
+      () => {
+        seen.current.add(highlight.id)
+        setHighlight(null)
+      },
+      highlight.kind === 'hit' ? HIT_MS : HIGHLIGHT_MS,
+    )
     return () => window.clearTimeout(timer)
   }, [highlight])
 
