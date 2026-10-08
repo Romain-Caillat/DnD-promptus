@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { fetchMe, signOut, type Gm } from '@/lib/auth'
 import { ThemeSetting } from '@/features/theme/ThemeSetting'
 import { CampaignsPanel } from './CampaignsPanel'
+import { ClaudeAccessPanel } from './ClaudeAccessPanel'
 import { InvitesPanel } from './InvitesPanel'
 
 type MeState = { kind: 'loading' } | { kind: 'signed-out' } | { kind: 'error' } | { kind: 'ready'; gm: Gm }
@@ -70,6 +71,9 @@ export function GmHomePage() {
             <CampaignsPanel gmName={me.gm.displayName} />
             <div className="surface-slab max-w-2xl p-4">
               <InvitesPanel />
+            </div>
+            <div className="surface-slab max-w-2xl p-4">
+              <ClaudeAccessPanel />
             </div>
           </div>
         </>

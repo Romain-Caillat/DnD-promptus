@@ -68,6 +68,36 @@
       "revoke": "Révoquer",
       "error": "L'action n'a pas abouti. Réessayez."
     },
+    "claude": {
+      "title": "Accès pour Claude",
+      "intro": "Prépare ta campagne en parlant à Claude sur ton ordinateur (Claude Desktop ou Claude Code) : il lit la campagne, ses alertes de cohérence, et y applique des modifications que Promptus vérifie. Un jeton ne sert qu’à la préparation : ni invitations, ni comptes, ni soirée. Rien n’atteint tes joueurs sans toi.",
+      "nameLabel": "Nom du jeton",
+      "namePlaceholder": "Par ex. Claude sur mon Mac",
+      "nameRequired": "Donne un nom au jeton (60 caractères au plus).",
+      "create": "Créer un jeton",
+      "created": "Copie ce jeton maintenant : il ne sera plus jamais affiché. Les exemples ci-dessous le contiennent déjà.",
+      "tokenLabel": "Jeton pour Claude",
+      "copy": "Copier",
+      "copied": "Copié",
+      "list": "Jetons actifs",
+      "none": "Aucun jeton pour l’instant.",
+      "meta": "Créé le {{created}} · {{used}}",
+      "lastUsed": "dernière utilisation le {{date}}",
+      "neverUsed": "jamais utilisé",
+      "revoke": "Révoquer",
+      "revokeLabel": "Révoquer le jeton {{name}}",
+      "error": "L’action n’a pas abouti. Réessaie.",
+      "help": {
+        "title": "Comment le déclarer dans Claude",
+        "install": "Une fois sur l’ordinateur : dans le dossier mcp de Promptus, lance « bun install ».",
+        "desktop": "Claude Desktop : dans le fichier ~/Library/Application Support/Claude/claude_desktop_config.json, ajoute l’entrée « promptus » à la liste mcpServers (garde les serveurs déjà présents), puis redémarre Claude.",
+        "desktopLabel": "Configuration de Claude Desktop",
+        "code": "Claude Code : lance cette commande dans un terminal.",
+        "codeLabel": "Commande pour Claude Code",
+        "paths": "Remplace /CHEMIN/VERS par l’emplacement de Promptus sur ton ordinateur. Si Claude ne trouve pas bun, mets son chemin complet (la commande « which bun » le donne).",
+        "scope": "Un jeton qui fuit donne la main sur la préparation de tes campagnes : révoque-le ici, il est refusé aussitôt."
+      }
+    },
     "campaigns": {
       "title": "Mes campagnes",
       "kicker": "{{name}} · MJ",
