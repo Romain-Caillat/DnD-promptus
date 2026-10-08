@@ -87,11 +87,11 @@ function Pairing({ hello }: { hello: Hello }) {
   const letters = Array.from(hello.code ?? '····')
   return (
     <div className="tv-center gap-10">
-      <span className="type-label text-[20px] tracking-[0.3em]">{t('tv.brand')}</span>
+      <span className="type-label text-[24px] tracking-[0.12em]">{t('tv.brand')}</span>
       <div className="flex items-center gap-16">
         {hello.code && <img src={pairingQrUrl()} alt={t('tv.qr')} className="size-[300px] rounded-xl bg-ivory p-3" />}
         <div className="flex flex-col items-start gap-5">
-          <span className="type-label text-[18px]">{t('tv.codeLabel')}</span>
+          <span className="type-label text-[16px]">{t('tv.codeLabel')}</span>
           <div className="flex gap-3" aria-label={t('tv.code', { code: hello.code ?? '' })} role="img">
             {letters.map((c, i) => (
               <b key={i} className="tv-letter">

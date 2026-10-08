@@ -69,7 +69,7 @@ export function CharacterSummary({
         </div>
       )}
       {story && (
-        <p className="line-clamp-3 pixel-field px-3.5 py-3 text-caption text-chalk-soft">
+        <p className="line-clamp-3 pixel-well px-3.5 py-3 text-caption text-chalk-soft">
           {story}
         </p>
       )}

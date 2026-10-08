@@ -104,7 +104,7 @@ function Shop({
         {shop.lines.map((line) => {
           const soldOut = line.stock === 0
           return (
-            <li key={line.key} className="flex flex-col gap-1.5 pixel-field px-3 py-2.5">
+            <li key={line.key} className="flex flex-col gap-1.5 pixel-well px-3 py-2.5">
               <span className="flex items-baseline justify-between gap-2">
                 <b className="text-body">{line.name}</b>
                 <span className="flex-none text-body font-bold">

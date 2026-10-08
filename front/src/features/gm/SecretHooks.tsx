@@ -246,7 +246,7 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
             </select>
           </label>
           {backstory?.id === characterId && (
-            <div className="pixel-field px-4 py-3 text-body leading-relaxed text-chalk-soft">
+            <div className="pixel-well px-4 py-3 text-body leading-relaxed text-chalk-soft">
               <span className="type-label mb-1.5 block">{t('gm.review.backstory')}</span>
               <BackstoryText backstory={backstory.story} />
             </div>
@@ -327,7 +327,7 @@ export function SecretHooks({ campaignId, seats }: { campaignId: string; seats: 
                 {targets.map((target) => (
                   <label
                     key={target.id}
-                    className="flex items-center gap-2 pixel-field px-2.5 py-1.5 text-caption"
+                    className="flex items-center gap-2 pixel-well px-2.5 py-1.5 text-caption"
                   >
                     <input
                       type="checkbox"

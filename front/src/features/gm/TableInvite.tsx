@@ -87,7 +87,7 @@ export function TableInvite({
         <h1 className="type-title text-heading">{t('gm.table.inviteTitle')}</h1>
         <div className="flex flex-col gap-2">
           <span className="type-label">{t('gm.table.linkLabel')}</span>
-          <div className="flex flex-wrap items-center gap-3 pixel-field p-3">
+          <div className="flex flex-wrap items-center gap-3 pixel-well p-3">
             {link ? (
               <input
                 className="min-w-0 flex-1 bg-transparent text-body text-chalk"

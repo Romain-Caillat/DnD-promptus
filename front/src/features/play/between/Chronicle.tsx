@@ -48,7 +48,7 @@ export function Chronicle({ campaignId, refreshKey }: { campaignId: string; refr
           <h3 className="type-label">{t('between.open')}</h3>
           <ul className="flex flex-col gap-1.5">
             {openThreads.map((line, i) => (
-              <li key={i} className="pixel-field px-3 py-2 text-body">
+              <li key={i} className="pixel-well px-3 py-2 text-body">
                 {line}
               </li>
             ))}

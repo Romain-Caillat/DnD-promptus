@@ -171,7 +171,7 @@ export function CharacterReview({
                         title={a.name}
                         data-flag={flagged.has(path) ? 'bad' : moved.has(path) ? 'fix' : undefined}
                         className={cn(
-                          'flex flex-col items-center gap-0.5 pixel-field py-2',
+                          'flex flex-col items-center gap-0.5 pixel-well py-2',
                           flagged.has(path) && 'border-[1.5px] border-stat-atk text-stat-atk',
                           !flagged.has(path) && moved.has(path) && 'border-[1.5px] border-chalk bg-surface-raised',
                         )}
@@ -306,7 +306,7 @@ export function CharacterReview({
 
 function Writing({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="pixel-field px-4 py-3.5 text-body leading-relaxed text-chalk-soft">
+    <div className="pixel-well px-4 py-3.5 text-body leading-relaxed text-chalk-soft">
       <span className="type-label mb-2 block">{label}</span>
       {children}
     </div>

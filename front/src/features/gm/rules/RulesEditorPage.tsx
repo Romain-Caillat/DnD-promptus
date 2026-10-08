@@ -691,7 +691,7 @@ function HistoryTab({ editor, campaignId }: { editor: RuleEditor; campaignId: st
               </ul>
             )}
             <h3 className="type-label text-chalk">{t('prep.rules.lines')}</h3>
-            <pre className="max-h-[50vh] overflow-auto pixel-field p-2 text-[12px]">
+            <pre className="max-h-[50vh] overflow-auto pixel-well p-2 text-[12px]">
               {comparison.lines.map((l, i) => (
                 <div
                   key={i}

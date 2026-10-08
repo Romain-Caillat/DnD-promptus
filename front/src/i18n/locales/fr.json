@@ -809,8 +809,8 @@
         "clockNote": "Un anneau de cases, pas une tarte : la part suivante clignote quand le MJ s’apprête à la cocher."
       },
       "buttons": {
-        "title": "Boutons-cartes",
-        "note": "Ivoire pour l’action principale, noir pour le reste. Enfoncé, le bouton bascule vers l’avant.",
+        "title": "Touches pixel",
+        "note": "Ivoire pour l’action principale, sombre pour le reste. Enfoncée, la touche s’enfonce d’un pixel ; le curseur pointe le choix en cours.",
         "attack": "Attaquer",
         "attackSub": "Hache d’armes · 1d12+3",
         "endTurn": "Fin du tour",

@@ -151,7 +151,7 @@ function CampaignCard({
       to={`/campagnes/${encodeURIComponent(campaign.id)}`}
       className={cn('button-card w-full', !ivory && 'button-card-dark', campaign.archivedAt && 'opacity-70')}
     >
-      {/* `button-card` sets `display: block`: the frame carries the layout. */}
+      {/* `button-card` (a pixel key) sets `display: block`: the inner span carries the layout. */}
       <span className="card-frame flex min-h-52 flex-col gap-2 px-3 py-2.5">
         <span className="type-label line-clamp-2 text-(--sub-color)">{kicker}</span>
         <span className="type-title text-[16px] leading-tight">{campaign.title}</span>

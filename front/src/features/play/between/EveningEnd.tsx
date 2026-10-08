@@ -66,7 +66,7 @@ export function EveningEnd({
           <h3 className="type-label">{t('between.got')}</h3>
           <ul className="flex flex-col gap-1.5">
             {mine.got.map((line, i) => (
-              <li key={i} className="pixel-field px-3 py-2 text-body">
+              <li key={i} className="pixel-well px-3 py-2 text-body">
                 {line}
               </li>
             ))}
@@ -112,7 +112,7 @@ export function EveningEnd({
           <h3 className="type-label">{t('between.open')}</h3>
           <ul className="flex flex-col gap-1.5">
             {between.openThreads.map((line, i) => (
-              <li key={i} className="pixel-field px-3 py-2 text-body">
+              <li key={i} className="pixel-well px-3 py-2 text-body">
                 {line}
               </li>
             ))}

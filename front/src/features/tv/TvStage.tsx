@@ -87,9 +87,9 @@ function Lobby({ view, live = false }: { view: ScreenView; live?: boolean }) {
   const here = view.party.filter((s) => s.here).length
   return (
     <div className="tv-center gap-8">
-      <span className="type-label text-[18px]">{t('tv.tonight')}</span>
+      <span className="type-label text-[16px]">{t('tv.tonight')}</span>
       <h1 className="type-title text-[112px] leading-none">{view.title}</h1>
-      {view.session && <span className="type-label text-[18px]">{t('tv.session', { number: view.session.number })}</span>}
+      {view.session && <span className="type-label text-[16px]">{t('tv.session', { number: view.session.number })}</span>}
       {view.party.length > 0 && (
         <div className="mt-8 flex flex-wrap items-end justify-center gap-16">
           {view.party.map((s) => (
@@ -153,7 +153,7 @@ function SceneFocus({ view, media }: { view: ScreenView; media: MediaList | null
       <div className="tv-art">{art && <img src={screenImageUrl(art.id)} alt="" className="size-full object-cover [image-rendering:pixelated]" />}</div>
       <div className="tv-lower">
         <h1 className="type-title text-[64px]">{scene.title}</h1>
-        {scene.place && <span className="type-label text-[18px]">{scene.place.name}</span>}
+        {scene.place && <span className="type-label text-[16px]">{scene.place.name}</span>}
         {scene.readAloud && <p className="type-narration m-0 text-[40px] text-chalk-soft">{scene.readAloud}</p>}
       </div>
     </>
@@ -230,7 +230,7 @@ function HighlightOverlay({ highlight }: { highlight: Highlight }) {
     const r = highlight.roll
     return (
       <div className="tv-moment" role="status">
-        <span className="type-label text-[20px]">{r.character}</span>
+        <span className="type-label text-[24px]">{r.character}</span>
         <span className="type-title text-[64px]">{r.ability}</span>
         <span className="text-[32px] text-chalk-soft">{t('tv.roll.against', { difficulty: r.difficulty })}</span>
         <FacetedDie faces={facesOf(r.roll.die)} value={r.roll.natural} className="size-[300px] [&_span]:text-[96px]" />
@@ -253,7 +253,7 @@ function HighlightOverlay({ highlight }: { highlight: Highlight }) {
   if (highlight.kind === 'clue') {
     return (
       <div className="tv-moment tv-rays" role="status">
-        <span className="type-label text-[20px]">{t('tv.moment.clue')}</span>
+        <span className="type-label text-[24px]">{t('tv.moment.clue')}</span>
         <div className="tv-flip">
           <GameCard kind="clue" title={t('tv.moment.clueTitle')} text={highlight.text} width={420} deal={false} />
         </div>
@@ -262,7 +262,7 @@ function HighlightOverlay({ highlight }: { highlight: Highlight }) {
   }
   return (
     <div className="tv-moment tv-rays" role="status">
-      <span className="type-label text-[20px]">{t(`tv.moment.${highlight.kind}`)}</span>
+      <span className="type-label text-[24px]">{t(`tv.moment.${highlight.kind}`)}</span>
       <span className="type-title max-w-[1400px] text-[72px] leading-tight">{highlight.text}</span>
     </div>
   )

@@ -235,7 +235,7 @@ export function PlayerHomePage() {
       {tabs.length > 1 ? (
         <nav
           aria-label={t('play.tabs.label')}
-          className="sticky bottom-0 grid auto-cols-fr grid-flow-col gap-1 border-t border-line bg-table px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+          className="sticky bottom-0 flex gap-1 border-t border-line bg-table px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
         >
           {tabs.map((id) => (
             <button
@@ -243,7 +243,7 @@ export function PlayerHomePage() {
               type="button"
               aria-current={tab === id ? 'page' : undefined}
               className={cn(
-                'pixel-tab min-h-11 pb-1',
+                'pixel-tab min-h-11 flex-auto pb-1',
               )}
               onClick={() => setParams(id === tabs[0] ? {} : { onglet: id }, { replace: true })}
             >
