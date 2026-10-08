@@ -45,6 +45,17 @@ describe('Sprite', () => {
     expect(spriteUrl({ ...BRETTEUR, skin: 'brun' })).not.toBe(spriteUrl(BRETTEUR))
   })
 
+  it('turns and walks with the server sheet of the way it faces', () => {
+    render(<Sprite look={BRETTEUR} scale={2} facing="north" motion="marche" label="Le Bretteur" />)
+    const sprite = screen.getByRole('img', { name: 'Le Bretteur' })
+    expect(sprite).toHaveClass('sprite-sheet-marche')
+    const url = /url\("(.+)"\)/.exec(sprite.style.backgroundImage)?.[1] ?? ''
+    expect(url).toContain('/api/sprites/sheet.png?')
+    expect(lookOf(url)).toEqual({ look: { ...BRETTEUR, weapon: { piece: 'sabre' } }, facing: 'north' })
+    // Four frames side by side, each the size of the sprite.
+    expect(sprite.style.backgroundSize).toBe(`${4 * 22 * 2}px ${28 * 2}px`)
+  })
+
   it('draws each condition effect over the character', () => {
     const { container } = render(<Sprite look={BRETTEUR} effects={['etourdi', 'beni']} />)
     const root = container.firstElementChild

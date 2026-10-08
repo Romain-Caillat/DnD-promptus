@@ -1,0 +1,49 @@
+# D&D 5e · SRD — the V1 demo's first fight (« Le Donjon des gobelins ») :
+# a goblin ambush on the forest road below the old mine. Four heroes
+# arrive from the west; the goblins wait behind the trees and the rocks,
+# their chief on the ridge. Played by content/scenarios/srd/.
+# No theme pack exists yet for the SRD (engine/add-srd-preset): the map
+# draws with the plain fallback tiles.
+version: 1
+id: route-des-gobelins
+name: La route des gobelins
+scale: encounter
+theme: srd-foret
+ambience:
+  time: day
+  weather: clear
+gm_notes: >-
+  Embuscade : les gobelins tirent d'abord depuis les arbres, puis viennent
+  au contact. Le chef reste sur la crête ; si la moitié de la bande tombe,
+  il fuit vers la mine.
+layers:
+  - { id: base, name: Route, visibility: all }
+  - { id: embuscade, name: Embuscade, visibility: gm }
+grid:
+  legend:
+    "#": { terrain: rocher, wall: true }
+    "T": { terrain: herbe, wall: true }
+    ".": { terrain: herbe }
+    ":": { terrain: terre }
+    ",": { terrain: broussailles, difficult: true }
+    "^": { terrain: rocher, elevation: 1 }
+  rows:
+    - "################"
+    - "#..T....,,..^^^#"
+    - "#.....T.....^^^#"
+    - "#::::::::::::..#"
+    - "#::::::::::::::#"
+    - "#..,...T....,..#"
+    - "#....,....T....#"
+    - "#..T.......,...#"
+    - "################"
+starts:
+  - { id: pj-1, side: party, at: [1, 3] }
+  - { id: pj-2, side: party, at: [1, 4] }
+  - { id: pj-3, side: party, at: [2, 3] }
+  - { id: pj-4, side: party, at: [2, 4] }
+  - { id: chef, side: foes, at: [13, 1], entity: chef_gobelin, layer: embuscade }
+  - { id: gobelin-1, side: foes, at: [9, 1], entity: gobelin, layer: embuscade }
+  - { id: gobelin-2, side: foes, at: [8, 6], entity: gobelin, layer: embuscade }
+  - { id: gobelin-3, side: foes, at: [11, 5], entity: gobelin, layer: embuscade }
+  - { id: gobelin-4, side: foes, at: [6, 1], entity: gobelin, layer: embuscade }

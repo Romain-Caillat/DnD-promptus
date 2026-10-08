@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { battleEventLine, battleNames } from '@/features/map/battleEvents'
 import { MapCanvas } from '@/features/map/MapCanvas'
-import { FACINGS, type BattleCommand, type Facing, type ShipStanding } from '@/lib/battle'
+import { FACINGS, SPRITE_FACING, type BattleCommand, type Facing, type ShipStanding } from '@/lib/battle'
 import type { Cell, GmBoard, TokenView } from '@/lib/board'
 import { cn } from '@/lib/utils'
 import { Btn, Panel, field } from './ui'
@@ -74,7 +74,10 @@ export function BattlePanel({
     at: s.at,
     party: s.side === 'party',
     mine: false,
-    ghost: false,
+    ghost: false,    look: null,
+    facing: SPRITE_FACING[s.facing],
+    trail: [],
+    moves: 0,
   }))
   const reach = moving ? (b.enemyReach[moving] ?? []) : []
   const enemyTurn = !view.crewTurn && b.status === 'live'

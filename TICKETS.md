@@ -157,6 +157,15 @@ puis les relectures de Romain (affinités, monnaie du Brasier).
 `maps/travel-hex-world` · `characters/walk-in-four-directions` ·
 `player/play-on-desktop` · `gm/run-on-tablet` · `copilot/listen-by-voice`
 
+*État* : les sept tickets sont codés et intégrés sur une branche
+(fmt, clippy, tsc, eslint, knip et Vitest sous Bun au vert, tests sans
+base au vert) ; les tests serveur qui passent par la base n'ont pas tourné
+après intégration (Postgres de dev hors service). Restent ces tests, puis
+les essais réels : une règle maison et une dictée avec la clé OpenRouter,
+une campagne SRD jouée, un voyage et des déplacements vus sur de vrais
+téléphones et à la TV, une soirée jouée sur ordinateur et une menée
+depuis un iPad.
+
 Plus tard, sans jalon : `maps/support-hex-combat`.
 
 ---
@@ -596,8 +605,8 @@ combattant qui perd son tour ; `end_turn` applique les dégâts par tour,
 décompte les durées du porteur et passe en hors combat un KO resté 3
 tours sans soin. Chaque état garde ce que montre le badge (nom, bienfait
 ou malus, tours restants). Intentions de `conditions.test.ts` portées
-sur les états des deux mondes ; le catalogue des 14 états du SRD viendra
-avec `engine/add-srd-preset`.
+sur les états des deux mondes ; les 14 états du SRD sont dans le
+préréglage `srd` (`engine/add-srd-preset`).
 
 **Origine** — V1 `conditions.ts` · planche « États des personnages »
 
@@ -641,8 +650,8 @@ sur 20 en fonçant un par un dans le sas). À valider par Romain, marqué
 (D&D 5e), les portées en cases ajoutées aux actions des deux mondes
 d'après leur description, couvert et longue portée par défaut, un
 adversaire à 0 PV vaincu sur-le-champ, un corps au sol enjambable.
-Reste : le combat de démo gobelins du V1 n'est pas porté (il demande le
-SRD, `engine/add-srd-preset`) ; aucune XP de victoire séparée (les deux
+Le combat de démo gobelins du V1 est porté sur le préréglage SRD
+(`engine/add-srd-preset`). Reste : aucune XP de victoire séparée (les deux
 mondes n'en donnent pas) ; la lumière (nuit) ne gêne pas encore la vue ;
 les Vorr réels viendront de `campaign/rewrite-two-worlds`.
 
@@ -711,7 +720,7 @@ serveur dans `back/tests/fate_test.rs`, qui passe par l'éditeur de règles
 réussites et d'échecs vient des règles, le téléphone dessine autant de
 cases.
 
-### `engine/formalise-house-rules` · todo · à spécifier
+### `engine/formalise-house-rules` · doing — reste une vraie règle maison formalisée avec la clé OpenRouter, puis jouée à une soirée
 
 **Pourquoi** — Un MJ écrit sa règle en français ; le serveur doit
 pouvoir la juger.
@@ -721,15 +730,127 @@ pouvoir la juger.
 cas de test ; le MJ relit et valide. Format formel à définir sur les
 effets primitifs existants.
 
+**Fini quand** *(hypothèse de spécification, octobre 2026 : la lecture
+la plus probable de la planche « Règles », moment 5, et des deux mondes ;
+à corriger par Romain)* —
+- une règle maison peut porter, à côté de son texte, une **forme
+  formelle** dans le fichier de règles : un déclencheur pris parmi ce que
+  le moteur sait déjà voir (une attaque qui touche, éventuellement en
+  critique ou avec un type de dégâts ; une attaque ratée, éventuellement
+  sur un 1 naturel), qui est concerné (camp, étiquettes de créature,
+  exceptions), un effet fait des primitives existantes (un état posé à
+  la cible ou à l'attaquant, des dégâts, un soin), ce que voient les
+  joueurs (la règle, ou seulement son effet) et des cas de test ;
+- le serveur l'applique en combat comme les autres règles, une seule
+  fois par attaque (l'effet d'une règle maison ne redéclenche aucune
+  règle maison), et le journal de combat le dit ; une règle « effet
+  seulement » n'est jamais nommée aux joueurs, ni sur leur page des
+  règles ni dans leur journal ;
+- dans l'éditeur, le MJ écrit sa règle en français et demande au co-MJ
+  de la formaliser : le co-MJ propose déclencheur, effet, exception et
+  visibilité avec trois cas de test, que le serveur rejoue tout de suite
+  (✓ ou —) ; un identifiant inventé par le modèle est retiré et signalé ;
+  rien n'est enregistré avant que le MJ ajoute la règle au brouillon ;
+- chaque enregistrement du brouillon rejoue les cas de chaque règle
+  formalisée, et les combats simulés tiennent compte des règles ;
+- cela marche sur les trois systèmes : « les morts-vivants craignent le
+  feu » sur le SRD (moment 5 de la planche), « le pied qui glisse » sur
+  les Corsaires et « l'arme qui s'enraye » au Brasier (le 1 naturel en
+  attaque, que les deux mondes laissent aujourd'hui à l'improvisation).
+
+**État** — Construit et testé, pas encore essayé avec un vrai modèle.
+Une règle maison peut porter une forme `formal` dans le fichier de
+règles (`shared/src/rules/house.rs`, format dans `docs/rules-format.md`
+§ House rules) : quand (une attaque qui touche, en critique ou non, avec
+un type de dégâts ; ou qui rate, sur un 1 naturel ou non), qui (camp,
+étiquettes exigées, étiquettes et classes/adversaires exceptés), des
+effets (un état sur la cible ou l'attaquant, des dégâts, un soin), ce
+que voient les joueurs (`rule` ou `effect`) et des cas de test. Le
+moteur l'applique dans `resolve_action`, une seule fois par cible, et
+l'annonce par un événement « règle maison » ; une règle « effet
+seulement » est coupée à la projection (page des règles, changements à
+lire, journal de combat), son état ou ses dégâts restent visibles. Le
+chargement refuse une forme qui nomme ce que le système n'a pas. Dans
+l'éditeur, onglet « Règles maison » : « Formaliser avec le co-MJ »
+(gabarit `house-rule.v1`, appel compté `rules.house_rule`) rend le
+tableau Quand / Effet / Exception / Joueurs, le mot du co-MJ, les
+identifiants inventés retirés et nommés, et les cas rejoués par le
+serveur (✓ ou —, conforme ou non) ; le MJ peut montrer ou cacher la règle
+aux joueurs, rejouer les cas, puis « Ajouter la règle » au brouillon.
+Rien n'est stocké avant. Chaque enregistrement du brouillon rejoue les
+cas de chaque règle formalisée (`report.houseRules`), et les combats
+simulés tiennent compte des règles (le moteur les applique). Essayé sur
+les trois systèmes dans les tests : « les morts-vivants craignent le
+feu » (SRD, livrée avec le préréglage), « le pied qui glisse »
+(Corsaires, renversé sur un 1 naturel) et « l'arme qui s'enraye »
+(Brasier, étourdi sur un 1 naturel). Écarts : les déclencheurs se
+limitent à l'attaque qui touche ou rate (pas de début ou fin de tour, de
+mise à 0 PV, de test hors combat) ; le MJ corrige une proposition par la
+case de visibilité ou dans l'onglet « Texte », pas encore champ par
+champ ; le Brasier n'ayant pas d'adversaire, ses cas opposent deux
+classes.
+
 **Origine** — Planche « Règles » (moment 5)
 
-### `engine/add-srd-preset` · todo · à spécifier
+### `engine/add-srd-preset` · doing — reste une campagne SRD préparée et jouée pour de vrai, et la relecture du fichier par Romain
 
 **Pourquoi** — Beaucoup de MJ jouent à D&D 5e ; le SRD 5.1 est la partie
 libre de ses règles, publiable sous licence Creative Commons.
 
 **Périmètre** — Le SRD comme troisième système de règles, à côté des
 deux mondes ; vérifier que le modèle le porte sans cas particulier.
+
+**Fini quand** *(hypothèse de spécification, octobre 2026, d'après la
+planche « Règles » (moments 1 et 6) et le combat de démo du V1 ; à
+corriger par Romain)* —
+- un préréglage `srd` (« D&D 5e · SRD 5.1 », attribution CC-BY-4.0)
+  se charge et se propose à la création d'une campagne, à côté des deux
+  mondes, puis s'édite comme eux (brouillon, version, verrou) ;
+- il contient les six caractéristiques, la maîtrise qui grandit avec le
+  niveau, l'avantage et le désavantage, les quatre classes de la planche
+  (guerrier, rôdeur, roublard, magicien) avec leurs PV et leur CA
+  propres, les peuples (nain, elfe, halfelin, humain), les 14 états du
+  SRD, les jets contre la mort comme règle du 0 PV, les types de dégâts
+  et des créatures étiquetées (gobelins, squelette, zombie…) ;
+- tout cela passe par des champs **génériques** du format (aucun
+  `if srd` dans le code), que les deux mondes peuvent aussi employer ;
+- le combat de démo des gobelins du V1 se rejoue jusqu'au bout dans
+  les tests du moteur et dans le rapport (`bun run rules-report`), et
+  le contrôle des règles ne trouve aucune erreur dans le préréglage ;
+- ce que le modèle **ne porte pas** du SRD est écrit noir sur blanc
+  (dans le fichier et ici), plutôt qu'approché en silence.
+
+**État** — Construit et testé. `content/rules/srd/v1.yaml` (« D&D 5e ·
+SRD 5.1 », attribution CC-BY-4.0 en tête et dans `sources`, texte
+français réécrit) est proposé à la création d'une campagne, s'édite et se
+verrouille comme les deux mondes. Il apporte au format quatre champs
+génériques et facultatifs, aucun cas particulier dans le moteur : un
+bonus d'attaque qui suit le niveau (la maîtrise, `attack.bonus`, montrée
+sur les cartes, la page des règles et le détail du jet), des PV et une
+CA propres à une classe (dé de vie, armure de départ), des étiquettes de
+créature et des types de dégâts. Contenu : six caractéristiques,
+difficultés 5 à 30, avantage et désavantage, une action + une action
+bonus + un déplacement par tour, longue portée en désavantage, les 14
+états, les jets contre la mort comme règle du 0 PV, quatre classes
+(guerrier, rôdeur, roublard, magicien), quatre peuples, trois objets
+(torche, potion de soins, feu grégeois), six adversaires étiquetés
+(gobelin, chef gobelin, squelette, zombie, loup, bandit). Le combat de
+démo du V1 est porté : `content/scenarios/srd/embuscade-des-gobelins.yaml`
+sur la carte `route-des-gobelins`, joué jusqu'au bout dans
+`shared/tests/srd_preset.rs` et dans `bun run rules-report` (200 combats :
+69 % de victoires des PJ en bagarreurs, 78 % en concentrés, 5 à 6
+rounds) ; le contrôle des règles ne trouve aucune erreur ni
+avertissement. **Pas porté** (écrit en tête du fichier et dans
+`docs/rules-format.md`) : maîtrises de compétences et de sauvegardes,
+achat de points et bonus des peuples (les caractéristiques viennent de
+la classe), emplacements de sorts et repos (approchés par des
+recharges), résistances et vulnérabilités (une règle maison peut en
+exprimer une), sauvegarde pour moitié, modificateur ajouté aux dégâts
+(écrit dans le montant), critique qui double tout, réactions,
+concentration ; les jets contre la mort se jouent avec
+`engine/save-against-death`. Pas de pack de thème ni de sprites SRD :
+la carte se dessine avec les tuiles par défaut et les personnages avec
+le premier pack.
 
 **Origine** — Romain, 4 octobre 2026 (sorti du jalon 1)
 
@@ -1955,13 +2076,39 @@ avec leurs derniers mots et le choix du joueur. Hypothèse posée : la TV
 (silence, portrait) et « Léguer ses objets » de la planche ne sont pas
 dans ce lot (`tv/show-evening`, `player/buy-and-trade`).
 
-### `player/play-on-desktop` · todo
+### `player/play-on-desktop` · doing — reste une soirée jouée par un joueur sur son ordinateur
 
 **Périmètre** — La même partie dépliée sur un grand écran : scène, main,
 carte et combat côte à côte ; raccourcis clavier (chiffres pour les
 cartes, espace pour le dé).
 
+**Fini quand** — Un joueur suit une soirée entière depuis son
+ordinateur sans jamais changer d'onglet, et joue ses cartes, lance ses
+dés et mène ses tours de combat au clavier, sur une table Corsaires
+comme sur une table Brasier.
+
 **Origine** — Planche « Jouer sur ordinateur »
+
+**État** — Livré et testé (Vitest), sans changement serveur : c'est la
+même projection joueur, mise en page autrement. Sur un écran large
+avec une souris (1100 px et plus), la page de partie quitte ses onglets
+: la fiche à gauche (cœurs, gemmes, cartes, sac, ou le personnage en
+cours de création), la scène, la musique, les demandes et la main au
+centre, la carte, le combat et le journal à droite ; chaque partie
+n'est chargée qu'une fois. Clavier : 1 à 9 choisissent les cartes de
+la main dans l'ordre, 0 « Autre… », Échap repose la carte, Entrée
+envoie ce qui est écrit (Maj+Entrée : une ligne), Espace lance le dé
+que le MJ a demandé (le plus ancien) ; en combat, à mon tour, les
+chiffres prennent les cartes de combat et Entrée joue. Les touches se
+taisent quand on écrit dans un champ, avec une touche de modification,
+et Espace ou Entrée ne doublent jamais un bouton qui a le focus. La
+carte se fait glisser à la souris. Une tablette garde la mise en page
+du téléphone. Les deux mondes ont six caractéristiques plus les cartes
+de classe : au-delà de neuf cartes, les suivantes n'ont pas de touche
+(on les clique). Pas encore : le panneau « le groupe » de la planche
+(les PV des autres joueurs hors combat ne sont pas dans la projection
+joueur). Jamais essayé par un vrai joueur, ni vu rendu dans un vrai
+navigateur.
 
 ---
 
@@ -2072,7 +2219,7 @@ le jumelage de la TV (`session/pair-shared-screen`) et son affichage
 (`tv/show-evening`) — aucun bouton TV n'est montré d'ici là ; la lecture
 par la voix du co-MJ n'est pas faite ; un vrai lancement à la table.
 
-### `gm/run-on-tablet` · todo
+### `gm/run-on-tablet` · doing — reste une soirée entière menée depuis un iPad
 
 **Périmètre** — L'écran MJ sur tablette : rail de grosses cibles à la
 place des onglets, demandes au pouce, carte au doigt (un doigt peint le
@@ -2082,6 +2229,36 @@ trois grosses touches.
 **Fini quand** — Romain mène une soirée entière depuis un iPad.
 
 **Origine** — Planche « Tablette »
+
+**État** — Livré et testé (Vitest), sans changement serveur : chaque
+geste passe par les routes de l'écran MJ existantes. L'écran de soirée
+passe en mode tablette sur un appareil tactile de 768 px et plus, ou
+avec `?ecran=tablette` (`?ecran=ordinateur` force l'ordinateur ; un
+bouton de l'en-tête bascule). Un rail de cinq grosses cibles remplace
+les trois colonnes : Scène (les demandes en attente, la scène, les
+images), Table, Carte (la carte et le combat), Journal (avec la fin de
+soirée et les retours) et Co-MJ, qui glisse en tiroir par-dessus sans
+quitter la section. Un point sur une cible dit qu'une chose y attend
+(une demande, un joueur oublié, le tour d'un adversaire, un brouillon
+du co-MJ). À droite, dès 1000 px, les places en grand : qui est là,
+depuis quand il n'a rien fait, qui demande ; un appui ouvre la Table,
+où seul « Donner la main » compte un moment (un pouce égaré sur une
+tablette tenue en main ne doit rien écrire). Tous les boutons prennent la taille d'un doigt. Une demande se
+juge au pouce : la caractéristique en grosses touches, puis une touche
+par difficulté des règles (quatre aux Corsaires) envoie le test ; « Oui,
+sans jet » ; « Non » part avec « Non, rien ici. » si le MJ n'a rien
+écrit (le serveur exige un mot). La carte : un doigt touche ou peint le
+brouillard (outils Révéler, Cacher), un second doigt annule le trait,
+deux doigts la font glisser, pincer zoome, rien ne part avant le
+relâcher. Au tour d'un adversaire, trois grosses touches : « Valider »
+la proposition du co-MJ (ou la demander), « Il fuit », « Il passe son
+tour » — la planche disait « Changer », mais le MJ ne peut pas encore
+choisir à la main l'action d'un adversaire, donc la touche dit ce
+qu'elle fait. Un brouillon du co-MJ se lit en entier, avec « Montrer »,
+« Modifier », « Écarter ». Pas de micro : parler au co-MJ est
+`copilot/listen-by-voice` ; le tiroir est l'endroit où il se branchera.
+Jamais essayé sur un vrai iPad : le zoom au pincement, en particulier,
+n'a été vérifié que par sa logique, pas sous les doigts.
 
 ---
 
@@ -2148,10 +2325,54 @@ encore adaptées à la campagne).
 
 **Origine** — Planche « Créer » (moment 7)
 
-### `copilot/listen-by-voice` · todo · à spécifier
+### `copilot/listen-by-voice` · doing — reste une vraie dictée transcrite avec la clé OpenRouter, sur une tablette en HTTPS
 
 **Périmètre** — Dicter au co-MJ (tablette surtout) ; transcription et
 proposition à valider.
+
+**Hypothèse retenue** — C'est le MJ qui parle au co-MJ, micro tenu
+(« touche pour parler », planche « Tablette », moment 5) ; le co-MJ
+n'écoute pas la table en continu : la voix des joueurs reste sur
+Discord (`MEMORY.md` §1), et écouter six joueurs en permanence coûterait
+cher et poserait la question de leur accord. Ce qu'il entend remplace ce
+que le MJ aurait tapé : la réponse est un brouillon comme les autres.
+
+**Fini quand** —
+- Sur l'écran MJ en direct, le MJ touche « Parler au co-MJ », parle,
+  touche à nouveau : ce qu'il a dit s'affiche (« Vous avez dit : … »)
+  et le co-MJ répond avec le type choisi (Décrire, Faire parler un PNJ,
+  Conséquence, Et ensuite ?, Libre par défaut).
+- La réponse est un brouillon ordinaire : le MJ le modifie, le montre
+  ou l'écarte ; ni ses mots ni le brouillon n'atteignent un téléphone
+  sans ce geste. « Changer » remet ce qui a été entendu dans le champ
+  texte pour le corriger et redemander.
+- La transcription passe par le trait de fournisseur (faux fournisseur
+  en test, OpenRouter en vrai), avec un gabarit versionné qui donne au
+  modèle les noms propres de la campagne (Vaubernier, LUMEN, le
+  Cure-Dent…) ; elle est comptée sur le budget IA, refusée avant
+  l'envoi si le budget ne suffit pas ou si la partie n'est pas lancée.
+- Un silence ne coûte qu'une écoute (« Le co-MJ n'a rien entendu ») ;
+  une minute au plus par dictée.
+- Testé sur les deux mondes, Corsaires et Brasier.
+
+**État** — Livré et vérifié (`cargo test`, Vitest). Le bouton micro est
+dans le panneau co-MJ de l'écran en direct, grand pour le doigt ; le
+tiroir de la tablette qui l'accueillera est à `gm/run-on-tablet`. Le
+navigateur enregistre et envoie un WAV 16 kHz (même format sur Chrome et
+Safari) ; le serveur l'écrit (gabarit `transcribe.v1`, appel compté
+`copilot.voice`) puis demande au co-MJ (`copilot.<type>`) : deux appels
+par dictée. Sans micro possible (page en HTTP hors de l'ordinateur
+local), le panneau le dit au lieu d'afficher un bouton. Écarts : aucune
+transcription réelle n'a encore tourné (modèle par défaut
+`google/gemini-2.5-flash`, `OPENROUTER_AUDIO_MODEL`) ; l'autorisation
+micro de l'app iOS (`src-tauri/Info.ios.plist`) n'a pas été essayée dans
+le simulateur, et Android (`RECORD_AUDIO`, manifeste généré par
+`tauri android init`) comme le bureau macOS (sa propre phrase
+d'autorisation micro) restent à faire ; l'enregistrement sur un vrai
+iPad n'est pas mesuré ; un budget qui couvre l'écoute mais pas la
+réponse paie l'écoute et perd ce qui a été dit ; la proposition « Faire fuir le gobelin » de la planche
+n'a pas de bouton : les gestes proposés restent ceux du co-MJ écrit
+(indice, menace, scène, PNJ).
 
 **Origine** — Planche « Tablette » (moment 5)
 
@@ -2246,7 +2467,7 @@ humanoïdes en carapace, casque fermé, recolorés chitine et ambre : le
 pack ne dessine que des humains. Images de référence :
 `shared/tests/golden/<monde>/planche.png`. Reste pour Romain : regarder
 les douze personnages et les adversaires sur `/reference` et dire ce qui
-cloche ; les directions nord et sud viennent avec
+cloche ; les vues de face et de dos sont arrivées avec
 `characters/walk-in-four-directions`.
 
 ### `characters/build-character-creator` · doing — reste l'essai sur un vrai téléphone
@@ -2290,12 +2511,13 @@ dessiné et propose « Créer / Reprendre / Corriger » tant que la fiche
 est en brouillon ou renvoyée. Un test suit Marc sur les huit moments.
 **Limites** : aucun des deux mondes témoins ne définit encore de
 peuples, l'étape « peuple » n'apparaît donc qu'avec un système qui en a ;
-le personnage sur la carte et la TV attend ces écrans ; le même
+le personnage est sur la carte depuis
+`characters/walk-in-four-directions`, la TV attend `tv/show-evening` ; le même
 créateur côté MJ pour les PNJ et monstres reste à faire. **Reste** : un
 joueur crée son personnage sur un vrai téléphone en moins de deux
 minutes.
 
-### `characters/walk-in-four-directions` · todo
+### `characters/walk-in-four-directions` · doing — reste un vrai déplacement vu sur plusieurs téléphones, la TV, et la relecture des vues de face et de dos par Romain
 
 **Pourquoi** — Sur la carte, un personnage qui se tourne vers là où il
 va rend le déplacement lisible et vivant.
@@ -2308,6 +2530,47 @@ direction ; le pion se tourne vers sa case d'arrivée ou sa cible.
 marcher dans la bonne direction, chez tous les joueurs et sur la TV.
 
 **Origine** — Romain, session de design du 3 octobre 2026
+
+**État** — Chaque pièce des deux packs se dessine maintenant de profil,
+de face et de dos (la gauche reste le miroir du profil) : les corps,
+cheveux, barbes et coiffes de face et de dos sont dessinés à la main,
+le reste (tenues, armures, armes, accessoires) a été tourné une fois
+depuis le profil par une règle par profondeur
+(`docs/design/sprite-turn.py`), et les packs sont redevenus la source
+qu'on édite à la main. Un pack qui oublie une direction est refusé ; une
+liste vide dit « on ne la voit pas de ce côté » (une barbe de dos). Le
+serveur dessine, pour chaque allure et chaque direction, une planche de
+quatre images (`GET /api/sprites/sheet.png`) : repos, respiration et
+deux pas — jambes écartées de profil, un pied levé de face et de dos
+(planche « Sprite » du canevas : `repos`, `marche`). Sur la carte, les
+pions sont ces personnages (et plus des disques) : ils respirent au
+repos, marchent case par case le chemin de leur dernier déplacement en
+se tournant à chaque pas, se fendent vers la cible qu'ils frappent et
+clignotent quand ils sont touchés ; immobiles si l'appareil demande
+moins d'animations. Le serveur tient l'orientation et le dernier
+déplacement de chaque pion (déplacement du joueur, pion posé par le MJ,
+pas et coups du combat), si bien que chaque écran rejoue le même
+déplacement ; ce qu'un écran voit en s'ouvrant n'est jamais rejoué, et
+un déplacement passé par le brouillard n'est montré aux joueurs que sur
+les cases qu'ils voient. Les PNJ prennent l'allure de leur monde (un
+« marin 2 » est un marin), et un PNJ sans allure (campagne générée) en
+reçoit une tirée de son identifiant, la même partout. Le créateur montre
+l'aperçu en mouvement, tournable dans les quatre directions, avec un
+bouton « Marcher » ; `/reference` montre chaque personnage des deux
+mondes marchant dans les quatre directions. Testé sur les deux mondes
+(le quai de Port-Louis, la coursive du Cure-Dent) jusqu'au combat, et
+essayé dans un navigateur au format téléphone sur le quai. Aucune
+migration : l'orientation et le dernier déplacement vivent dans les
+pions déjà stockés en JSON.
+**Hypothèse** : l'attaque et le touché sont des mouvements du sprite
+entier (fente, clignotement, recul), comme sur la planche « Sprite », et
+pas des images dessinées par pièce. **Limite** : la TV
+(`tv/show-evening`, phase 5) n'existe pas encore ; elle reprendra le
+même dessin de carte et les mêmes planches, et c'est là qu'il faudra
+voir la marche. **Reste** : un déplacement joué pour de vrai, vu en même
+temps sur plusieurs téléphones ; la TV ; Romain regarde les vues de face
+et de dos (`shared/tests/golden/<monde>/marche.png`, ou `/reference`) et
+dit ce qui cloche.
 
 ---
 
@@ -2544,7 +2807,7 @@ révélée ou d'un objet caché n'atteint un client joueur.
 
 **Origine** — `MEMORY.md` §3 (projection joueur)
 
-### `maps/travel-hex-world` · todo
+### `maps/travel-hex-world` · doing — reste un vrai voyage joué à une table, sur un téléphone, avec la TV
 
 **Pourquoi** — Le voyage entre les lieux est une partie du jeu, pas un
 écran de chargement.
@@ -2561,6 +2824,52 @@ garde de nuit, arrivée qui ouvre la carte du lieu.
 **Fini quand** — Le groupe voyage de Valombre à Morneval sur la carte
 du monde puis entre dans l'abbaye sans quitter l'écran de jeu ; les sept
 moments de la planche « Voyager » sont faisables dans l'app.
+
+*Hypothèse retenue* — Valombre et Morneval sont l'exemple de la planche,
+pas un monde à construire : le même voyage se joue sur les deux mondes
+témoins. Les Corsaires vont de Port-Louis au Palais (Belle-Île) sur la
+carte des côtes de Bretagne sud, La Mâchoire en pion ; le Brasier va du
+Toboggan au Reliquaire, station sereth, sur la carte du système, le
+Cure-Dent en pion.
+
+**État** — Moteur dans `shared/src/travel/` : routes vers un lieu (la
+moins chère et une seconde qui s'en écarte), portions de journée au pas
+de chaque terrain (le reste se reporte, un hexagone cher prend plusieurs
+portions), nuit après la dernière portion, vivres mangés à l'aube, tables
+d'événements par terrain tirées sans répétition. La vitesse, les
+portions, les vivres, les tours de garde et les tables vivent dans un
+guide de voyage à côté de la carte (`content/travel/`, format dans
+`docs/map-format.md`) ; une carte du monde sans guide se parcourt selon
+ses cases. Deux cartes du monde et deux cartes de lieu écrites
+(`cotes-bretagne-sud`, `le-palais`, `systeme-brasier`,
+`reliquaire-sereth`, INVENTÉ — à valider par Romain). Serveur : table
+`travels` (migration 044) par campagne et carte du monde : le pion du
+groupe, les hexagones vus, le jour, les vivres et le voyage en cours,
+recopiés sur le plateau dans la même transaction ; revenir sur la carte
+du monde la retrouve telle qu'on l'a laissée. Personne ne traîne le pion
+(`TRAVEL_MAP`) ; le brouillard s'y lève autour des hexagones traversés.
+Les sept moments : le MJ touche un lieu, le serveur propose deux routes
+que le MJ renomme et décrit ; chaque joueur vote sur son téléphone, le
+MJ voit qui veut quoi et choisit (le vote conseille, il ne décide pas) ;
+« Portion suivante » avance le pion, « Perdre une portion » fait passer
+le temps sans bouger ; après chaque portion, trois événements de la
+table du terrain arrivent au seul MJ, qui en garde un (texte retouché)
+ou aucun ; jet de groupe lancé par le MJ, chaque joueur lance sur son
+téléphone, le serveur applique le seuil du système (au moins la moitié
+pour les deux mondes) et l'XP ; la nuit, le MJ fixe les tours de garde
+et parle au seul veilleur, qui peut réveiller les autres ; à l'arrivée,
+« Entrer » ouvre la carte du lieu (la sortie posée sur son hexagone) et
+sa scène (sur le Brasier, `sc_carapace_sereth`). Les routes proposées
+sont montrées entières aux joueurs, brouillard compris ; un lieu secret
+visé par le MJ reste sans nom pour eux. Tests : 11 dans `shared`, 3 sur
+l'API pour les deux mondes (y compris l'absence de fuite des notes MJ,
+des événements non gardés et du mot au veilleur), 6 à l'écran. Écarts :
+« le co-MJ propose » tire dans les tables écrites, sans appel au modèle
+(pas d'événement inventé à partir des fronts) ; pas d'écran TV
+(`tv/show-evening`, phase 5) ; le pion est un losange, pas encore le
+sprite du groupe ; les tables d'événements d'une carte du monde faite
+par le MJ ne s'éditent pas encore dans l'app ; aucune horloge de front
+n'avance seule avec les jours. Pas encore joué pour de vrai.
 
 **Origine** — Planches « Cartes · trois échelles » et « Voyager »
 

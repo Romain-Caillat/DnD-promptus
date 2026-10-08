@@ -1,3 +1,4 @@
+import type { CharacterLook, Facing } from '@/features/sprites/look'
 import { apiRequest } from './api'
 import type { GmBattle } from './battle'
 import type { RollBreakdown } from './rules'
@@ -26,6 +27,8 @@ type DoorState = 'open' | 'closed' | 'locked'
 export interface MapData {
   id: string
   name: string
+  /** `world` is a map in hexes, travelled by the party as one token. */
+  scale?: 'world' | 'place' | 'encounter'
   theme: string
   ambience: {
     time?: TimeOfDay
@@ -60,7 +63,7 @@ export interface MapData {
   }[]
   lights?: { id: string; at: Cell; bright: number; dim: number; color?: string | null; flicker?: boolean; layer?: string }[]
   exits?: { id: string; cells: Cell[]; to: string; label?: string | null }[]
-  labels?: { text: string; at: Cell }[]
+  labels?: { text: string; at: Cell; scene?: string | null }[]
   starts?: { id: string; at: Cell; side?: string | null; entity?: string | null; layer?: string }[]
   /** An imported image behind the grid: decor only. */
   backdrop?: { image?: string | null; cell_px?: number | null; offset?: [number, number] | null } | null
@@ -80,6 +83,13 @@ export interface TokenView {
   mine: boolean
   /** Invisible: only its owner sees it. */
   ghost: boolean
+  /** What its sprite draws; none on a token put down before looks were stored (a disc). */
+  look: CharacterLook | null
+  facing: Facing
+  /** Its last move — the cell it left, then each cell entered — cut to what this player sees. */
+  trail: Cell[]
+  /** How many moves it made: a screen walks only a trail it has not shown yet. */
+  moves: number
 }
 
 type Standing = 'in_fight' | 'defeated' | 'out_of_scene' | 'fled' | 'dead'
@@ -144,6 +154,7 @@ type RulesEvent =
   | { event: 'death_saves'; target: string; successes: number; failures: number }
   | { event: 'turn_lost'; who: string; because: string }
   | { event: 'item_used'; who: string; item: string; left: number }
+  | { event: 'house_rule'; rule: string; name: string; target: string; shown: boolean }
   | { event: 'cooldown_started' | 'progress' | 'for_the_gm'; [k: string]: unknown }
 
 export interface FightView {
@@ -203,6 +214,11 @@ interface Token {
   at: Cell
   hidden: boolean
   invisible: boolean
+  look?: CharacterLook
+  /** Absent until it first turns: its side's rest (heroes east, foes west). */
+  facing?: Facing
+  trail?: Cell[]
+  moves?: number
 }
 
 interface Board {

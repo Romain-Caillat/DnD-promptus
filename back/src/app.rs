@@ -54,6 +54,7 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         .route("/api/auth/sign-in", post(api::auth::sign_in))
         // Sprites: a description is drawn the same for GM, players and TV.
         .route("/api/sprites/render.png", get(api::sprites::render_png))
+        .route("/api/sprites/sheet.png", get(api::sprites::sheet_png))
         .route("/api/sprites/looks", get(api::sprites::looks))
         .route("/api/sprites/packs/{pack}", get(api::sprites::pack))
         // A shared screen says hello before any GM paired it: a token and
@@ -116,6 +117,14 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         .route(
             "/api/campaigns/{id}/rules/compare",
             get(api::rule_versions::compare),
+        )
+        .route(
+            "/api/campaigns/{id}/rules/house-rules/formalise",
+            post(api::rule_versions::formalise_house_rule),
+        )
+        .route(
+            "/api/campaigns/{id}/rules/house-rules/try",
+            post(api::rule_versions::try_house_rule),
         )
         .route("/api/campaigns/{id}/story/edits", post(api::prep::edits))
         .route("/api/campaigns/{id}/readiness", get(api::prep::readiness))
@@ -310,6 +319,11 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/shops/{shop}/reveal",
             post(api::trade::reveal),
         )
+        // The journey on the world map (maps/travel-hex-world).
+        .route(
+            "/api/campaigns/{id}/travel",
+            get(api::travel::gm_travel).post(api::travel::gm_command),
+        )
         // The campaign's own maps (maps/edit-map-gm, maps/import-image-map,
         // maps/generate-map-llm).
         .route(
@@ -360,6 +374,13 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         .route(
             "/api/campaigns/{id}/session/copilot",
             post(api::evening::copilot_ask),
+        )
+        .route(
+            "/api/campaigns/{id}/session/copilot/voice",
+            // The dictation travels as base64 in the JSON body.
+            post(api::evening::copilot_voice).layer(DefaultBodyLimit::max(
+                crate::copilot::voice::MAX_WAV_BYTES * 4 / 3 + 64 * 1024,
+            )),
         )
         .route(
             "/api/campaigns/{id}/session/copilot/{draft}/show",
@@ -608,6 +629,17 @@ fn player_routes() -> Vec<RouteSpec> {
             "POST",
             "/api/play/{campaign}/battle",
             post(api::board::crew_command),
+        ),
+        // The journey on the world map: my vote, my roll, my watch.
+        (
+            "GET",
+            "/api/play/{campaign}/travel",
+            get(api::travel::player_travel),
+        ),
+        (
+            "POST",
+            "/api/play/{campaign}/travel",
+            post(api::travel::player_command),
         ),
         // The images the table may see, and the world's theme.
         (

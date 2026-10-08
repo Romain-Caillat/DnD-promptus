@@ -17,7 +17,7 @@ use axum::extract::{Path, Query};
 use axum::http::header::{CACHE_CONTROL, CONTENT_TYPE, ETAG, IF_NONE_MATCH};
 use axum::http::{HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
-use promptus_shared::sprite::{CharacterLook, Direction, render};
+use promptus_shared::sprite::{CharacterLook, Direction, render, render_sheet};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -57,8 +57,9 @@ pub struct RenderQuery {
     facing: Direction,
 }
 
-/// `GET /api/sprites/render.png?look=<json>&facing=east|west` — the PNG
-/// of a description, unscaled (the client enlarges it pixelated).
+/// `GET /api/sprites/render.png?look=<json>&facing=east|west|north|south`
+/// — the PNG of a description at rest, unscaled (the client enlarges it
+/// pixelated).
 ///
 /// 400 `SPRITE_LOOK_INVALID` when `look` is not a description, and the
 /// renderer's code (`SPRITE_UNKNOWN_PIECE`, `SPRITE_UNKNOWN_COLOUR`…)
@@ -67,9 +68,31 @@ pub struct RenderQuery {
 /// # Errors
 ///
 /// `AppError::Invalid` as above.
-pub async fn render_png(
+pub async fn render_png(q: Query<RenderQuery>, headers: HeaderMap) -> Result<Response, AppError> {
+    png(q, &headers, Drawing::Still)
+}
+
+/// `GET /api/sprites/sheet.png?look=<json>&facing=…` — the four frames
+/// a screen animates (characters/walk-in-four-directions), side by side:
+/// rest, breath, then the two steps of a walk. Errors as `render.png`.
+///
+/// # Errors
+///
+/// As `render_png`.
+pub async fn sheet_png(q: Query<RenderQuery>, headers: HeaderMap) -> Result<Response, AppError> {
+    png(q, &headers, Drawing::Sheet)
+}
+
+#[derive(Clone, Copy)]
+enum Drawing {
+    Still,
+    Sheet,
+}
+
+fn png(
     Query(q): Query<RenderQuery>,
-    headers: HeaderMap,
+    headers: &HeaderMap,
+    drawing: Drawing,
 ) -> Result<Response, AppError> {
     let look: CharacterLook = serde_json::from_str(&q.look).map_err(|e| AppError::Invalid {
         code: "SPRITE_LOOK_INVALID",
@@ -82,6 +105,10 @@ pub async fn render_png(
     let mut hash = Sha256::new();
     hash.update(sprites.version.as_bytes());
     hash.update(q.facing.as_str().as_bytes());
+    hash.update(match drawing {
+        Drawing::Still => b"still".as_slice(),
+        Drawing::Sheet => b"sheet".as_slice(),
+    });
     hash.update(canonical.as_bytes());
     let key = hex(&hash.finalize()[..16]);
     let etag = format!("\"{key}\"");
@@ -97,7 +124,11 @@ pub async fn render_png(
     let png = if let Some(png) = cached {
         png
     } else {
-        let image = render(content::packs(), &look, q.facing).map_err(|e| AppError::Invalid {
+        let draw = match drawing {
+            Drawing::Still => render,
+            Drawing::Sheet => render_sheet,
+        };
+        let image = draw(content::packs(), &look, q.facing).map_err(|e| AppError::Invalid {
             code: e.code(),
             detail: e.to_string(),
         })?;

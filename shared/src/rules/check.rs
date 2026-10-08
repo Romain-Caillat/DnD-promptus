@@ -6,7 +6,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::dice::DiceSource;
-use super::model::{ConditionEffect, GroupThreshold, RollScope, RuleSystem};
+use super::model::{ConditionEffect, RollScope, RuleSystem};
 use super::sheet::{Combatant, SheetError};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -78,6 +78,8 @@ pub enum ModifierSource {
     Cover(crate::maps::Cover),
     /// Beyond the action's range, within its long range.
     LongRange,
+    /// The system's attack bonus (`attack.bonus`), by its name.
+    AttackBonus(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -147,18 +149,22 @@ impl From<SheetError> for CheckError {
     }
 }
 
-/// The band of a roll: natural faces first, then the target.
+/// The band of a roll of kind `scope`: natural faces first (on the
+/// rolls each critical band covers), then the target.
 pub fn band_for(
     system: &RuleSystem,
+    scope: RollScope,
     natural: u32,
     total: i32,
     target: Option<i32>,
 ) -> Option<OutcomeBand> {
     let o = &system.outcomes;
-    if o.critical_failure.natural.contains(&natural) {
+    let fumble = &o.critical_failure;
+    if fumble.rolls.covers(scope) && fumble.natural.contains(&natural) {
         return Some(OutcomeBand::CriticalFailure);
     }
-    if o.critical_success.natural.contains(&natural) {
+    let critical = &o.critical_success;
+    if critical.rolls.covers(scope) && critical.natural.contains(&natural) {
         return Some(OutcomeBand::CriticalSuccess);
     }
     target.map(|t| {
@@ -170,9 +176,11 @@ pub fn band_for(
     })
 }
 
-/// Rolls the system's check die with these modifiers.
+/// Rolls the system's check die with these modifiers, for a roll of
+/// kind `scope`.
 pub fn roll(
     system: &RuleSystem,
+    scope: RollScope,
     modifiers: Vec<Modifier>,
     advantage: Advantage,
     target: Option<RollTarget>,
@@ -194,6 +202,7 @@ pub fn roll(
     let total = natural as i32 + modifiers.iter().map(|m| m.value).sum::<i32>();
     let band = band_for(
         system,
+        scope,
         natural,
         total,
         target.as_ref().map(RollTarget::value),
@@ -278,7 +287,7 @@ pub fn ability_check(
         adv || requested == Advantage::Advantage,
         dis || requested == Advantage::Disadvantage,
     );
-    roll(system, mods, advantage, target, dice)
+    roll(system, scope, mods, advantage, target, dice)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -324,12 +333,7 @@ pub fn group_check(
         .iter()
         .filter(|(_, r)| r.band.is_some_and(OutcomeBand::is_success))
         .count();
-    let needed = match rule.succeeds_when {
-        GroupThreshold::AtLeastHalf => n.div_ceil(2),
-        GroupThreshold::Majority => n / 2 + 1,
-        GroupThreshold::All => n,
-        GroupThreshold::Any => 1,
-    };
+    let needed = rule.succeeds_when.needed(n);
     Ok(GroupCheck {
         rolls,
         successes,

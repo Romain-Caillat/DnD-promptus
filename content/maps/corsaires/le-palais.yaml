@@ -1,0 +1,50 @@
+# Corsaires de la Couronne — Le Palais, le port de Belle-Île, à
+# l'arrivée du voyage (maps/travel-hex-world). Carte de lieu : cases de
+# 5 m, la citadelle au nord, les quais et la jetée.
+# INVENTÉ — à valider par Romain : la disposition est une ébauche.
+version: 1
+id: le-palais
+name: Le port du Palais
+scale: place
+theme: port-1718
+ambience:
+  time: dawn
+  weather: fog
+  mood: arrivee-belle-ile
+gm_notes: >-
+  Le Palais vit au rythme de la garnison. Un sergent de la citadelle
+  demande les papiers de tout navire qui accoste : les lettres de marque
+  suffisent, si l'on sait les montrer.
+layers:
+  - { id: base, name: Port, visibility: all }
+grid:
+  legend:
+    "#": { terrain: pierre, wall: true }
+    ".": { terrain: pavés }
+    "_": { terrain: planches }
+    "~": { terrain: eau, water: deep }
+  rows:
+    - "##################"
+    - "#................#"
+    - "#................#"
+    - "#######....#######"
+    - ".................."
+    - ".................."
+    - "~~~~~~~~___~~~~~~~"
+    - "~~~~~~~~___~~~~~~~"
+    - "~~~~~~~~___~~~~~~~"
+    - "~~~~~~~~~~~~~~~~~~"
+props:
+  - { id: caisses-quai, kind: caisses, label: Caisses de la garnison, at: [3, 4], size: [2, 1], cover: total, blocks_movement: true }
+  - { id: bitte-quai, kind: bitte, label: Bitte d'amarrage, at: [12, 5], cover: half, blocks_movement: true }
+labels:
+  - { text: La citadelle, at: [8, 1] }
+  - { text: Le quai, at: [8, 4] }
+  - { text: La jetée, at: [9, 7] }
+starts:
+  - { id: pj-1, side: party, at: [8, 8] }
+  - { id: pj-2, side: party, at: [9, 8] }
+  - { id: pj-3, side: party, at: [10, 8] }
+  - { id: pj-4, side: party, at: [8, 7] }
+  - { id: pj-5, side: party, at: [9, 7] }
+  - { id: pj-6, side: party, at: [10, 7] }

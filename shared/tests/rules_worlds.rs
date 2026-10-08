@@ -296,14 +296,32 @@ fn advantage_keeps_the_best_die_only_in_a_system_that_has_it() {
         "check: { dice: 1d20, advantage: false }",
         "check: { dice: 1d20, advantage: true }",
     );
-    let roll = |adv| check::roll(&s, vec![], adv, None, &mut ScriptedDice::new([3, 17])).unwrap();
+    let roll = |adv| {
+        check::roll(
+            &s,
+            RollScope::Checks,
+            vec![],
+            adv,
+            None,
+            &mut ScriptedDice::new([3, 17]),
+        )
+        .unwrap()
+    };
     let best = roll(Advantage::Advantage);
     assert_eq!((best.faces.clone(), best.natural), (vec![3, 17], 17));
     assert_eq!(roll(Advantage::Disadvantage).natural, 3);
     assert_eq!(Advantage::combine(true, true), Advantage::Normal);
     // One die only when they cancel out.
     let mut dice = ScriptedDice::new([11]);
-    let normal = check::roll(&s, vec![], Advantage::combine(true, true), None, &mut dice).unwrap();
+    let normal = check::roll(
+        &s,
+        RollScope::Checks,
+        vec![],
+        Advantage::combine(true, true),
+        None,
+        &mut dice,
+    )
+    .unwrap();
     assert_eq!(normal.faces, vec![11]);
 }
 

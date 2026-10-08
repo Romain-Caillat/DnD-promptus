@@ -14,7 +14,6 @@ import {
   lockRuleDraft,
   saveRuleDraft,
   setAt,
-  slugId,
   startRuleDraft,
   type Comparison,
   type RuleDocument,
@@ -23,6 +22,7 @@ import {
 } from '@/lib/ruleEditor'
 import { cn } from '@/lib/utils'
 import { NumberField, TextField } from '../fields'
+import { HouseTab } from './HouseRules'
 import { RuleChangeLine } from '@/components/game/RuleChangeLine'
 
 const TABS = ['preset', 'stats', 'rolls', 'actions', 'house', 'creation', 'test', 'text', 'history'] as const
@@ -210,7 +210,9 @@ export function RulesEditorPage() {
             {draft && doc && tab === 'stats' && <StatsTab doc={doc} edit={edit} />}
             {draft && doc && tab === 'rolls' && <RollsTab doc={doc} edit={edit} />}
             {draft && doc && tab === 'actions' && <ActionsTab doc={doc} edit={edit} />}
-            {draft && doc && tab === 'house' && <HouseTab doc={doc} edit={edit} />}
+            {draft && doc && tab === 'house' && (
+              <HouseTab doc={doc} edit={edit} campaignId={campaignId} report={draft.report} />
+            )}
             {draft && doc && tab === 'creation' && <CreationTab doc={doc} edit={edit} />}
             {draft && tab === 'test' && <TestTab report={draft.report} />}
             {draft && tab === 'text' && (
@@ -456,63 +458,6 @@ function ActionsTab({ doc, edit }: { doc: RuleDocument; edit: Edit }) {
           })}
         </Panel>
       ))}
-    </>
-  )
-}
-
-function HouseTab({ doc, edit }: { doc: RuleDocument; edit: Edit }) {
-  const { t } = useTranslation()
-  const rules = listOf<{ id: string; name: string; text: string }>(doc, 'house_rules')
-  const [name, setName] = useState('')
-  const [text, setText] = useState('')
-  return (
-    <>
-      <Panel title={t('prep.rules.tab.house')}>
-        <p className="text-caption text-mute-soft">{t('prep.rules.houseHint')}</p>
-        {rules.length === 0 && <p className="text-body text-chalk-soft">{t('prep.rules.houseNone')}</p>}
-        {rules.map((h, i) => (
-          <div key={h.id} className="flex flex-col gap-2 border-t border-line pt-2">
-            <TextField label={t('prep.rules.name')} value={h.name} onChange={(v) => edit(['house_rules', i, 'name'], v)} />
-            <TextField
-              label={t('prep.rules.houseText')}
-              multiline
-              value={h.text}
-              onChange={(v) => edit(['house_rules', i, 'text'], v)}
-            />
-            <Btn
-              className="self-end"
-              onClick={() =>
-                edit(
-                  ['house_rules'],
-                  rules.filter((_, j) => j !== i),
-                )
-              }
-            >
-              {t('prep.rules.remove')}
-            </Btn>
-          </div>
-        ))}
-      </Panel>
-      <Panel title={t('prep.rules.houseNew')}>
-        <TextField label={t('prep.rules.name')} value={name} onChange={setName} />
-        <TextField label={t('prep.rules.houseText')} multiline value={text} onChange={setText} />
-        <Btn
-          main
-          className="self-end"
-          disabled={!name.trim() || !text.trim()}
-          onClick={() => {
-            const id = slugId(
-              name,
-              rules.map((r) => r.id),
-            )
-            edit(['house_rules'], [...rules, { id, name: name.trim(), text: text.trim() }])
-            setName('')
-            setText('')
-          }}
-        >
-          {t('prep.rules.houseAdd')}
-        </Btn>
-      </Panel>
     </>
   )
 }

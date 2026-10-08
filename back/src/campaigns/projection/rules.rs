@@ -130,7 +130,16 @@ pub struct AttackView {
     /// Which ability an attack adds: `first_primary`, `best_primary`.
     pub ability: &'static str,
     pub precision_applies: bool,
+    /// The bonus every attack adds with the level (the SRD's
+    /// proficiency), when the system has one.
+    pub bonus: Option<BonusView>,
     pub armor_class: StatView,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct BonusView {
+    pub name: String,
+    pub formula: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -330,7 +339,8 @@ fn condition_name(system: &RuleSystem, id: &str) -> String {
 /// `bonus`, as the engine bands it.
 fn from_face(system: &RuleSystem, bonus: i32, target: i32) -> Option<u32> {
     (1..=system.check.dice.faces).find(|&f| {
-        band_for(system, f, f as i32 + bonus, Some(target)).is_some_and(OutcomeBand::is_success)
+        band_for(system, RollScope::Checks, f, f as i32 + bonus, Some(target))
+            .is_some_and(OutcomeBand::is_success)
     })
 }
 
@@ -353,7 +363,15 @@ fn examples(system: &RuleSystem, sheet: &Combatant, ability: &str) -> Option<Vec
     let (mods, _, _) = ability_modifiers(system, sheet, ability, RollScope::Checks).ok()?;
     let bonus = sum(&mods);
     let faces = system.check.dice.faces;
-    let band = |f: u32| band_for(system, f, f as i32 + bonus, Some(target.value()));
+    let band = |f: u32| {
+        band_for(
+            system,
+            RollScope::Checks,
+            f,
+            f as i32 + bonus,
+            Some(target.value()),
+        )
+    };
     let pick = [
         (1..=faces).find(|&f| band(f) == Some(OutcomeBand::CriticalFailure)),
         (1..=faces)
@@ -413,10 +431,14 @@ pub fn project_rules(
     changes: Option<ChangesView>,
 ) -> RulesView {
     let me = sheet.and_then(|s| level_one(system, s.class_id.as_deref()?, &s.abilities));
-    let stat = |s: &promptus_shared::rules::model::StatDef| StatView {
+    // A class may have its own formula (a hit die, its armour): the
+    // player reads the one of their class.
+    let class = sheet.and_then(|s| system.class(s.class_id.as_deref()?));
+    let stat = |s: &promptus_shared::rules::model::StatDef,
+                f: &promptus_shared::rules::formula::Formula| StatView {
         name: s.name.clone(),
         abbr: s.abbr.clone(),
-        formula: s.formula.to_string(),
+        formula: f.to_string(),
     };
     let o = &system.outcomes;
     let outcome = |band: OutcomeBand, desc: &str, natural: &[u32], mult: Option<i32>| OutcomeView {
@@ -495,9 +517,13 @@ pub fn project_rules(
         attack: AttackView {
             ability: attack_ability_code(system.attack.ability),
             precision_applies: system.attack.precision == PrecisionRule::AddedToAttackRoll,
-            armor_class: stat(&system.stats.armor_class),
+            bonus: system.attack.bonus.as_ref().map(|b| BonusView {
+                name: b.name.clone(),
+                formula: b.formula.to_string(),
+            }),
+            armor_class: stat(&system.stats.armor_class, system.armor_class_formula(class)),
         },
-        hit_points: stat(&system.stats.hit_points),
+        hit_points: stat(&system.stats.hit_points, system.hit_points_formula(class)),
         turns: system
             .turn_contexts
             .iter()
@@ -620,9 +646,11 @@ pub fn project_rules(
             .group_check
             .as_ref()
             .map(|g| group_code(g.succeeds_when)),
+        // A rule that shows only its effect is never named to players.
         house_rules: system
             .house_rules
             .iter()
+            .filter(|h| h.shown_to_players())
             .map(|h| HouseRuleView {
                 name: h.name.clone(),
                 text: h.text.clone(),

@@ -159,8 +159,9 @@ pub fn death_save(
     let rule = rule(system).ok_or(DeathRefusal::NoDeathSaves)?;
     let mut next = scene.clone();
     let c = rolling(&mut next, who)?;
-    let roll = check::roll(
+    let mut roll = check::roll(
         system,
+        RollScope::Saves,
         Vec::new(),
         Advantage::Normal,
         Some(RollTarget::Difficulty {
@@ -170,6 +171,15 @@ pub fn death_save(
         dice,
     )
     .map_err(|e| DeathRefusal::Engine(format!("{e:?}")))?;
+    // The death-save rule reads the natural faces itself ("a 20 brings
+    // back, a 1 counts twice"), even where the system's critical bands
+    // only cover attacks (the SRD's `rolls: attacks`).
+    let o = &system.outcomes;
+    if o.critical_failure.natural.contains(&roll.natural) {
+        roll.band = Some(OutcomeBand::CriticalFailure);
+    } else if o.critical_success.natural.contains(&roll.natural) {
+        roll.band = Some(OutcomeBand::CriticalSuccess);
+    }
     let band = roll.band.unwrap_or(OutcomeBand::Failure);
     let mut events = vec![Event::Roll {
         roller: who.into(),

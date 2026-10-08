@@ -253,7 +253,7 @@ impl Combatant {
                 .adversary(id)
                 .map(|a| a.armor_class)
                 .ok_or_else(|| SheetError::UnknownAdversary(id.clone())),
-            Origin::Class(_) => self.eval(system, &system.stats.armor_class.formula),
+            Origin::Class(_) => self.eval(system, system.armor_class_formula(self.class(system))),
         }
     }
 
@@ -263,14 +263,42 @@ impl Combatant {
                 .adversary(id)
                 .map(|a| a.hit_points)
                 .ok_or_else(|| SheetError::UnknownAdversary(id.clone())),
-            Origin::Class(_) => {
-                Ok(self.eval(system, &system.stats.hit_points.formula)? + self.hit_point_bonus)
-            }
+            Origin::Class(_) => Ok(self
+                .eval(system, system.hit_points_formula(self.class(system)))?
+                + self.hit_point_bonus),
         }
     }
 
     pub fn initiative_bonus(&self, system: &RuleSystem) -> Result<i32, SheetError> {
         self.eval(system, &system.initiative.bonus)
+    }
+
+    /// The system's attack bonus at this combatant's level (adversaries
+    /// count as level 1), with its name; `None` when the system has none.
+    pub fn attack_bonus(&self, system: &RuleSystem) -> Result<Option<(String, i32)>, SheetError> {
+        system
+            .attack
+            .bonus
+            .as_ref()
+            .map(|b| Ok((b.name.clone(), self.eval(system, &b.formula)?)))
+            .transpose()
+    }
+
+    /// The traits this combatant carries: its class's or its stat
+    /// block's (read through its origin, never stored on the sheet).
+    pub fn traits<'s>(&self, system: &'s RuleSystem) -> &'s [String] {
+        match &self.origin {
+            Origin::Class(id) => system.class(id).map(|c| c.traits.as_slice()),
+            Origin::Adversary(id) => system.adversary(id).map(|a| a.traits.as_slice()),
+        }
+        .unwrap_or(&[])
+    }
+
+    /// The class or stat block id this combatant comes from.
+    pub fn origin_id(&self) -> &str {
+        match &self.origin {
+            Origin::Class(id) | Origin::Adversary(id) => id,
+        }
     }
 
     /// Every action this combatant owns: class actions (locked or not),

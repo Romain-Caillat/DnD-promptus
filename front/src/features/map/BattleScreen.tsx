@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArcadeCluster } from '@/components/game/ArcadeCluster'
-import { FACINGS, type ActionView, type Aim, type BattleView, type CrewCommand, type Facing, type ShipView } from '@/lib/battle'
+import { FACINGS, SPRITE_FACING, type ActionView, type Aim, type BattleView, type CrewCommand, type Facing, type ShipView } from '@/lib/battle'
 import type { Cell, TokenView } from '@/lib/board'
 import { cn } from '@/lib/utils'
 import { battleEventLine, battleNames } from './battleEvents'
@@ -46,7 +46,10 @@ export function BattleScreen({
     at: s.at,
     party: s.party,
     mine: s.party,
-    ghost: false,
+    ghost: false,    look: null,
+    facing: SPRITE_FACING[s.facing],
+    trail: [],
+    moves: 0,
   }))
 
   function pick(o: ActionView) {

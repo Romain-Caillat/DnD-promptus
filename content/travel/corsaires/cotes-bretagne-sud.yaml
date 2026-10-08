@@ -1,0 +1,54 @@
+# Corsaires de la Couronne — le guide de voyage des côtes de Bretagne
+# sud (maps/travel-hex-world) : La Mâchoire navigue, la terre l'arrête.
+# Les tables d'événements sont pour le MJ : le co-MJ en tire trois par
+# portion, le MJ en garde un ou aucun.
+# INVENTÉ — à valider par Romain : allures, vivres et événements. Les
+# règles jouées le 16 mai ne disent rien du voyage.
+map: cotes-bretagne-sud
+portions: [Matin, Après-midi, Soir]
+steps_per_portion: 2
+supplies: { name: Vivres, per_person_per_day: 1 }
+watches: [Premier quart, Quart de minuit, Quart du matin]
+terrains:
+  mer:
+    name: la haute mer
+    cost: 1
+    events:
+      - id: voile-anglaise
+        title: Une voile à l'horizon
+        text: La vigie crie « Voile ! ». Une frégate au pavillon rouge tire des bords au large, trop loin encore pour lire son nom.
+        gm_notes: L'escorte du Greyhound. Si elle les voit, elle signale leur présence à Belle-Île.
+      - id: grain
+        title: Un grain soudain
+        text: Le ciel noircit en dix minutes. La pluie fouette le pont, la Mâchoire gîte et le gréement fatigué gémit.
+        gm_notes: Jet de groupe de FOR, DD 10, pour réduire la toile à temps ; raté, une portion perdue à réparer.
+      - id: dauphins
+        title: Des dauphins à l'étrave
+        text: Une bande de dauphins nage devant la proue. Les vieux marins y voient un bon présage.
+        gm_notes: Rien d'autre qu'un moment calme ; un bon instant pour un dialogue entre personnages.
+      - id: epave
+        title: Une épave à la dérive
+        text: Un canot retourné flotte, des barriques encore attachées sous la coque.
+        gm_notes: Deux barriques de vivres (+4 vivres) et une lettre détrempée signée « G. » — le capitaine du Greyhound.
+  côte:
+    name: les eaux côtières
+    cost: 2
+    events:
+      - id: recifs
+        title: Les récifs de la Teignouse
+        text: Des têtes de roche affleurent entre deux vagues. Il faut sonder et virer au bon moment.
+        gm_notes: Jet de groupe de SAG, DD 12. Raté, la coque touche — une portion perdue à colmater.
+      - id: pecheurs
+        title: Des pêcheurs de Quiberon
+        text: Une chaloupe de pêche s'approche, curieuse. Le patron offre du poisson contre des nouvelles.
+        gm_notes: Ils ont vu le Greyhound mouiller au Palais il y a deux jours ; son escorte repart à la marée.
+      - id: brume
+        title: La brume se lève
+        text: Une brume épaisse monte de l'eau et avale la côte. On n'entend plus que le ressac.
+        gm_notes: Cache la Mâchoire de la frégate ; mais avancer à l'aveugle près des roches demande un jet de SAG DD 10.
+  port:
+    name: un port
+    cost: 1
+  terre:
+    name: la terre
+    impassable: true

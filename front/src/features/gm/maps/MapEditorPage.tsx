@@ -164,6 +164,11 @@ export function MapEditorPage() {
     party: s.side !== 'foes',
     mine: false,
     ghost: s.layer === 'secrets',
+    // Starts are places, not characters: drawn as discs.
+    look: null,
+    facing: s.side === 'foes' ? 'west' : 'east',
+    trail: [],
+    moves: 0,
   }))
   const setAmbience = (patch: Partial<MapData['ambience']>) =>
     setMap((m) => (m ? { ...m, ambience: { ...m.ambience, ...patch } } : m))

@@ -386,8 +386,30 @@ fn opposition(
     Ok(out)
 }
 
+/// Walk the board's tokens along the fight's moves and turn them toward
+/// their targets (characters/walk-in-four-directions), before
+/// `sync_tokens` sets them on their cells.
+fn follow_events(board: &mut Board, fight: &Fight, events: &[FightEvent]) {
+    for e in events {
+        match e {
+            FightEvent::Moved { who, path, .. } => {
+                if let Some(t) = board.tokens.iter_mut().find(|t| &t.id == who) {
+                    t.walk(path);
+                }
+            }
+            FightEvent::Acted { who, targets, .. } => {
+                let aim = targets.first().and_then(|target| fight.position(target));
+                if let (Some(at), Some(t)) = (aim, board.tokens.iter_mut().find(|t| &t.id == who)) {
+                    t.face(at);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
 /// Put the fight's positions back on the board's tokens.
-fn sync_tokens(board: &mut Board, fight: &Fight) {
+fn sync_tokens(board: &mut Board, story: &Campaign, fight: &Fight) {
     board.tokens.retain(|t| {
         t.kind == TokenKind::Character
             || !fight.scene.combatants.contains_key(&t.id)
@@ -397,18 +419,19 @@ fn sync_tokens(board: &mut Board, fight: &Fight) {
         if let Some(t) = board.tokens.iter_mut().find(|t| &t.id == id) {
             t.at = *at;
         } else if let Some(c) = fight.combatant(id) {
-            board.tokens.push(Token {
-                id: id.clone(),
-                kind: match c.side {
-                    Side::Party => TokenKind::Character,
-                    Side::Opposition => TokenKind::Npc,
-                },
-                r#ref: id.clone(),
-                name: c.name.clone(),
-                at: *at,
-                hidden: false,
-                invisible: false,
-            });
+            let kind = match c.side {
+                Side::Party => TokenKind::Character,
+                Side::Opposition => TokenKind::Npc,
+            };
+            let look = (kind == TokenKind::Npc).then(|| crate::content::npc_look(story, id));
+            board.tokens.push(Token::new(
+                id.clone(),
+                kind,
+                id.clone(),
+                c.name.clone(),
+                *at,
+                look,
+            ));
         }
     }
     // The fallen and the fled leave the board; so does a dead character.
@@ -493,7 +516,8 @@ async fn commit_step(
     let mut board = super::current(&mut **tx, campaign)
         .await?
         .ok_or(AppError::Conflict("NO_MAP_SHOWN"))?;
-    sync_tokens(&mut board, fight);
+    follow_events(&mut board, fight, events);
+    sync_tokens(&mut board, &row.story, fight);
     super::save(tx, campaign, &board).await?;
     let ended = fight.is_over();
     sqlx::query(
@@ -681,7 +705,7 @@ pub async fn open_in(
         tokens: Vec::new(),
     });
     board.tokens = party;
-    sync_tokens(&mut board, &step.fight);
+    sync_tokens(&mut board, &row.story, &step.fight);
     super::save(tx, campaign, &board).await?;
     let stored: Row = sqlx::query_as(&format!(
         "INSERT INTO encounters (campaign_id, session_id, node, fight, loot)

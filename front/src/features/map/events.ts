@@ -54,6 +54,8 @@ export function eventLine(e: FightEvent, name: (id: string) => string, t: TFunct
           return t('fight.log.deathSaves', { target: name(r.target), successes: r.successes, failures: r.failures })
         case 'stabilized':
           return t('fight.log.stabilized', { target: name(r.target) })
+        case 'house_rule':
+          return t('fight.log.houseRule', { name: r.name })
         default:
           return null
       }

@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Decision, GmRequest, LiveScreen } from '@/lib/evening'
-import { Btn, Panel, field } from './ui'
+import { cn } from '@/lib/utils'
+import { BigKey, Btn, Panel, field, useTouchScreen } from './ui'
 
 /**
  * The players' requests as cards (gm/run-live-screen): what they play
  * and say, past rulings for the same situation, and the three answers —
  * yes, no with a word, or a check (ability and difficulty) the player
  * then rolls on their phone. Answered ones show the server's roll.
+ * On a tablet the request is answered with the thumb: the ability in big
+ * keys, then one key per difficulty of the rules sends the check.
  */
 export function RequestsPanel({
   screen,
@@ -55,6 +58,78 @@ function PendingRequest({
   const [reason, setReason] = useState('')
   const [ability, setAbility] = useState(r.card.kind === 'ability' ? r.card.ability : (abilities[0]?.[0] ?? ''))
   const [difficulty, setDifficulty] = useState(difficulties[Math.floor(difficulties.length / 2)]?.[0] ?? '')
+  const touch = useTouchScreen()
+  if (touch) {
+    return (
+      <article className="flex flex-col gap-3 rounded-2xl bg-ivory p-4 text-ink shadow-ivory-flat">
+        <span className="type-label text-ink-soft">
+          {t('gmLive.requests.asks', { who: r.characterName || r.nickname, card: r.cardName ?? t('evening.hand.other') })}
+        </span>
+        {r.text && <q className="type-narration text-[22px] leading-snug [quotes:none]">{r.text}</q>}
+        {r.rulings.length > 0 && (
+          <p className="text-caption text-ink-soft">
+            {t('gmLive.requests.ruling', {
+              situation: r.rulings[0].situation,
+              ability: abilities.find((a) => a[0] === r.rulings[0].ability)?.[1] ?? r.rulings[0].ability,
+              difficulty: r.rulings[0].difficulty,
+            })}
+          </p>
+        )}
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('gmLive.requests.ability')}>
+          {abilities.map(([id, name]) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={ability === id}
+              className={cn(
+                'min-h-12 rounded-button border-2 px-4 text-body font-bold',
+                ability === id ? 'border-ink bg-ink text-chalk' : 'border-ink/30 bg-white text-ink',
+              )}
+              onClick={() => setAbility(id)}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+        <span className="type-label text-ink-soft">{t('gmLive.requests.thumbDifficulty')}</span>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-2">
+          {difficulties.map(([id, name, value]) => (
+            <button
+              key={id}
+              type="button"
+              aria-label={t('gmLive.requests.checkAt', { name, value })}
+              className="flex min-h-[72px] flex-col items-center justify-center rounded-xl border-2 border-ink bg-white text-caption font-semibold text-ink-soft"
+              onClick={() => onDecide(r.id, { kind: 'check', ability, difficulty: id })}
+            >
+              <b className="text-[26px] leading-none text-ink">{value}</b>
+              {name}
+            </button>
+          ))}
+        </div>
+        <input
+          className="min-h-12 rounded-button border border-ink/30 bg-white px-3 text-body text-ink"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          maxLength={300}
+          placeholder={t('gmLive.requests.reason')}
+          aria-label={t('gmLive.requests.reason')}
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <BigKey className="border-dashed border-ink/40 bg-transparent text-ink" onClick={() => onDecide(r.id, { kind: 'accept', reason })}>
+            {t('gmLive.requests.yesNoRoll')}
+          </BigKey>
+          <BigKey
+            className="border-dashed border-ink/40 bg-transparent text-ink"
+            // The player reads why; a thumb has no time to write it.
+            onClick={() => onDecide(r.id, { kind: 'refuse', reason: reason.trim() || t('gmLive.requests.nothingHere') })}
+          >
+            {t('gmLive.requests.no')}
+          </BigKey>
+        </div>
+      </article>
+    )
+  }
   return (
     <article className="flex flex-col gap-2 rounded-lg border border-ivory/60 p-2.5">
       <div className="flex items-baseline justify-between gap-2">

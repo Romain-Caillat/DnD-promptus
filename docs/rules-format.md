@@ -34,6 +34,16 @@ faithful transcriptions of Romain's games, defects included; read them
 as worked examples. Comments marked `INTERPRETATION` are readings the
 model forced where the source was ambiguous.
 
+The third preset, `srd/v1.yaml` (`engine/add-srd-preset`), is D&D 5e
+from the **System Reference Document 5.1** by Wizards of the Coast LLC,
+used under the Creative Commons Attribution 4.0 International License
+(https://creativecommons.org/licenses/by/4.0/legalcode); its French text
+is our own wording, and only SRD content is used. It needs no case of
+its own in the engine: everything it uses is a generic field below
+(`attack.bonus`, a class's `hit_points` / `armor_class`, `traits`,
+`damage_types`). What the format does not carry of the SRD is listed at
+the top of the file (`NOT MODELLED`) and in *Not yet in the format*.
+
 ## Top level
 
 | Key | What it is |
@@ -47,7 +57,7 @@ model forced where the source was ambiguous.
 | `difficulties` | Named thresholds `{ id, name, value }` |
 | `outcomes` | The four bands (below) |
 | `group_check` | Optional: `{ succeeds_when: at_least_half \| majority \| all \| any }` |
-| `attack` | `{ ability: first_primary \| best_primary, precision: added_to_attack_roll \| not_applied }` |
+| `attack` | `{ ability: first_primary \| best_primary, precision: added_to_attack_roll \| not_applied, bonus?: { name, formula } }` — `bonus` is added to every attack roll, a formula over `level` (the SRD's proficiency, `2 + (level - 1) / 4`); adversaries count as level 1 |
 | `initiative` | `{ dice, bonus: formula, ties: party_first \| reroll }` |
 | `action_kinds` | What a turn spends: `{ id, name, cost }` |
 | `turn_contexts` | Action economy per setting (below) |
@@ -59,10 +69,12 @@ model forced where the source was ambiguous.
 | `movement` | Per map scale (`world`, `place`, `encounter`): `cells_per_move` (`null` when unstated) and optional `grid: { diagonal: chebyshev\|alternate, difficult_factor, climb_cost, max_step, swim_factor }` — the `maps::MovementRules` the grid reads |
 | `combat` | Optional: fighting on a grid — move and flight actions, cover, long range, zone size (below) |
 | `situations` | Circumstances the GM declares (`furtif`, `en_hauteur`) |
+| `traits` | Optional: labels `{ id, name, description? }` a class or an adversary carries (`traits: [mort_vivant]`), which house rules can name |
+| `damage_types` | Optional: `{ id, name }`; a `damage` tag may name one (`type: feu`) |
 | `resources` | `{ id, name, abbr, start }` (gold…) |
 | `conditions`, `classes`, `items`, `adversary_tiers`, `adversaries` | Below |
 | `peoples` | Playable peoples (empty in both drafts) |
-| `house_rules` | Optional: `{ id, name, text }` — the GM's own rulings, in French, shown on the players' rules page and given to the co-GM |
+| `house_rules` | Optional: `{ id, name, text, formal? }` — the GM's own rulings, in French, given to the co-GM; with `formal`, the server applies them (see *House rules*) |
 
 ## Formulas
 
@@ -79,6 +91,11 @@ an armour class, or the other side's total in a contest). The band:
 1. a natural face listed in `critical_failure.natural` → critical failure;
 2. a natural face listed in `critical_success.natural` → critical success;
 3. otherwise total ≥ target → success, else failure; no target → no band.
+
+Steps 1 and 2 apply to the rolls the band's optional `rolls` names:
+`all` (the default), `attacks`, `checks` or `saves`. D&D 5e sets
+`rolls: attacks` on both: a natural 20 on a check against a difficulty
+of 25 is still a failure, a natural 1 on an easy save still a success.
 
 Each band has a `name`, a `description` and `grants: { xp }`.
 `critical_success.damage_multiplier` multiplies an attack's damage.
@@ -242,8 +259,9 @@ Class actions, adversary attacks and item uses share one shape:
 
 Tags — they are the card's chips, and the engine's data:
 
-- `damage: { amount, note? }`, `heal: { amount, note? }` — on each
-  target the action lands on; a critical multiplies damage.
+- `damage: { amount, type?, note? }`, `heal: { amount, note? }` — on
+  each target the action lands on; a critical multiplies damage. `type`
+  is a `damage_types` id.
 - `buff` / `control`: an apply — `{ condition: id }` or inline
   `{ effects: [...], kind: boon|bane }`, plus `turns`, `to: targets|self`,
   optional `save: { ability, difficulty? }` (no difficulty = the GM sets
@@ -268,14 +286,20 @@ missing, or the targets do not fit.
 ```yaml
 classes:
   - { id, name, description, primary_abilities: [FOR, DEX], secondary_abilities: [],
-      abilities: { FOR: 13, … }, items: [{ item, qty }], actions: [...], notes: [] }
+      abilities: { FOR: 13, … }, hit_points?: formula, armor_class?: formula, traits?: [id],
+      items: [{ item, qty }], actions: [...], notes: [] }
 items:
   - { id, name, description, price?, consumable?, action?, note? }
 adversary_tiers:
   - { id: soldat_entraine, name: Soldat entraîné, armor_class: 12 }
 adversaries:
-  - { id, name, description, tier?, abilities, armor_class, hit_points, actions, tactics, note, exception? }
+  - { id, name, description, tier?, traits?, abilities, armor_class, hit_points, actions, tactics, note, exception? }
 ```
+
+A class's `hit_points` and `armor_class` replace the system's
+`stats` formulas for its characters (a hit die per class, the armour it
+starts in); the sheet, the lint, the players' rules page and the change
+list all read the class's formula when it has one.
 
 A class must give a score for every ability. An adversary's armour class
 and hit points are stated, not derived. The lint compares a tiered
@@ -368,7 +392,73 @@ and every variant's comparison, in French; `--world`, `--n`, `--seed`,
 `--json`, `--markdown [file]` (default `docs/rapport-phase-1.md`). It
 exits non-zero only when a file, a scenario or a variant does not load.
 
+## House rules
+
+A house rule is first what the GM wrote (`name`, `text`), which the GM
+applies at the table. Its optional `formal` form is what the server
+applies itself, in every fight (`rules::house`,
+`engine/formalise-house-rules`). The co-GM proposes it from the text
+(`POST /api/campaigns/{id}/rules/house-rules/formalise`), the GM edits
+it and adds it to the draft; nothing is applied before that.
+
+```yaml
+house_rules:
+  - id: morts_vivants_feu
+    name: Les morts-vivants craignent le feu
+    text: "Les morts-vivants ont peur du feu : …"
+    formal:
+      when: hit                  # hit | miss
+      critical: true             # optional: only a critical hit / a natural fumble (false: never then)
+      damage_type: feu           # optional, hit only: the action deals this type
+      actor: { side: party }     # optional filters: side, traits, except_traits, except (class or adversary ids)
+      target: { traits: [mort_vivant], except_traits: [chef] }
+      effects:                   # at least one
+        - { apply: { condition: effraye, turns: 1, to: targets } }   # an apply, as on a card; `to: self` = the attacker
+        - { damage: { amount: 1d4, to: targets } }
+        - { heal: { amount: 2, to: self } }
+      players: effect            # rule (default): players read it | effect: they only see what it does
+      cases:
+        - { name: Torche contre zombie, actor: { class: guerrier }, action: torche,
+            target: { adversary: zombie }, roll: hit, expect: applies }
+```
+
+- **When.** After an action that rolls against a foe (`attack`,
+  `auto_hit`, `auto_critical`, `contest`; never `roll: none`) lands
+  (`hit`) or misses (`miss`) on a target. The rule then puts its effects
+  on that target or on the attacker. A save in a house rule names its
+  difficulty: nobody is asked mid-attack.
+- **One pass.** A house rule's own effects never trigger a house rule:
+  a rule dealing fire damage to the undead does not fire again on that
+  damage.
+- **What players see.** The engine announces each rule that fires with
+  an event (`house_rule`, carrying `shown`). A rule with
+  `players: effect` is left off the players' rules page, out of the
+  change list they read, and out of their fight log; the condition or
+  the damage it causes still shows, as its own event.
+- **Cases.** Each case stages a level-1 character of a class (raised to
+  the action's level) or an adversary, facing a target put on the other
+  side; `action` is one the attacker has, or an item of the system. The
+  attacker's die is set to the first face that gives the `roll` asked
+  (`hit`, `critical`, `miss`, `fumble`); every other die shows 1, so a
+  save the rule allows fails. `expect: applies` passes when the rule
+  fired, `nothing` when it did not. Every save of a draft replays them
+  (`report.houseRules`), and so do the co-GM's proposals.
+
+The loader refuses a formal form that names a trait, damage type,
+condition, class, adversary or action the system does not have
+(`unknown_trait`, `unknown_damage_type`, `unknown_condition`,
+`unknown_origin`, `unknown_action`), a `damage_type` with `miss`, an
+open save, or no effect.
+
 ## Not yet in the format
 
 Vehicles (`engine/support-vehicle-combat`). Ship combat's action economy is already
 expressible as a turn context.
+
+Of the SRD: skill and saving-throw proficiencies, point buy and peoples'
+ability bonuses, spell slots and rests (approached by cooldowns),
+resistance and vulnerability (a house rule can express one), saves for
+half damage, the ability modifier on damage (written into the amount),
+reactions and concentration. House-rule triggers beyond an attack that
+lands or misses (a turn's start or end, a knock-out, a check out of
+combat) are not in the format either.

@@ -9,15 +9,28 @@
 //! BLESS=1 cargo test -p promptus_shared --test sprites
 //! ```
 //!
-//! Blessing also writes `planche.png` per world: every look, enlarged.
+//! Blessing also writes `planche.png` per world: every look, enlarged,
+//! and `marche.png`: every look at rest facing south, east, north and
+//! west (characters/walk-in-four-directions). Each look's
+//! `<id>.marche.png` holds its four sheets, one row per direction.
 
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use promptus_shared::maps::Cell;
 use promptus_shared::sprite::{
-    CharacterLook, Direction, Image, LookBook, Packs, SpriteError, Worn, compose, render,
+    CharacterLook, Direction, Frame, Image, LookBook, Packs, SpriteError, Worn, compose,
+    compose_frame, render, render_sheet,
 };
+
+/// The order of the rows of a `.marche.png` and of the columns of `marche.png`.
+const TURN: [Direction; 4] = [
+    Direction::South,
+    Direction::East,
+    Direction::North,
+    Direction::West,
+];
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..")
@@ -82,6 +95,7 @@ fn every_look_matches_its_golden_image() {
     for book in books() {
         let dir = root().join("shared/tests/golden").join(&book.world);
         let mut drawn = Vec::new();
+        let mut turned = Vec::new();
         let sides = [
             (&book.party, Direction::East),
             (&book.foes, Direction::West),
@@ -102,10 +116,33 @@ fn every_look_matches_its_golden_image() {
                     }
                 }
                 drawn.push(image);
+                // Four sheets, one row per direction.
+                let rows: Vec<Image> = TURN
+                    .iter()
+                    .map(|&d| {
+                        render_sheet(&packs, &named.look, d)
+                            .unwrap_or_else(|e| panic!("{} {} {d:?}: {e}", book.world, named.id))
+                    })
+                    .collect();
+                let walk = stack(&rows);
+                let path = dir.join(format!("{}.marche.png", named.id));
+                if bless {
+                    fs::write(&path, walk.to_png()).unwrap();
+                } else {
+                    match fs::read(&path) {
+                        Ok(bytes) if decode(&bytes) == walk => {}
+                        Ok(_) => failures.push(format!("{} differs", path.display())),
+                        Err(_) => failures.push(format!("{} is missing", path.display())),
+                    }
+                }
+                for d in TURN {
+                    turned.push(render(&packs, &named.look, d).unwrap());
+                }
             }
         }
         if bless {
             fs::write(dir.join("planche.png"), sheet(&drawn, 6).to_png()).unwrap();
+            fs::write(dir.join("marche.png"), sheet(&turned, 4).to_png()).unwrap();
         }
     }
     assert!(
@@ -113,6 +150,15 @@ fn every_look_matches_its_golden_image() {
         "golden sprites (BLESS=1 to regenerate, then look at them):\n{}",
         failures.join("\n")
     );
+}
+
+/// Images of one width, one above the other.
+fn stack(images: &[Image]) -> Image {
+    Image {
+        width: images[0].width,
+        height: images.iter().map(|i| i.height).sum(),
+        rgba: images.iter().flat_map(|i| i.rgba.iter().copied()).collect(),
+    }
 }
 
 /// The looks side by side, enlarged, on the table's dark background.
@@ -343,12 +389,6 @@ fn an_unknown_piece_or_colour_is_a_typed_error() {
         render(&packs, &l, Direction::East),
         Err(SpriteError::UnknownPack("zombies".into()))
     );
-    // No north frame yet: said, not drawn wrong.
-    let l = look(&books, "pj_bretteur");
-    assert!(matches!(
-        render(&packs, l, Direction::North),
-        Err(SpriteError::MissingFrame { .. })
-    ));
 }
 
 #[test]
@@ -381,4 +421,165 @@ fn a_broken_pack_is_refused_with_its_reason() {
     assert_ne!(bad, text, "the fixture piece moved");
     let err = Packs::from_yaml([bad.as_str()]).unwrap_err().to_string();
     assert!(err.contains("no default dye"), "{err}");
+    // A piece that does not say how it looks from the back.
+    let bad = text.replacen("        north:\n", "        west:\n", 1);
+    assert_ne!(bad, text, "the fixture frame moved");
+    let err = Packs::from_yaml([bad.as_str()]).unwrap_err().to_string();
+    assert!(err.contains("no north frame"), "{err}");
+}
+
+// --- characters/walk-in-four-directions -----------------------------------
+
+/// Opaque pixels of an image, by row.
+fn opaque_rows(img: &Image) -> Vec<Vec<u32>> {
+    (0..img.height)
+        .map(|y| {
+            (0..img.width)
+                .filter(|&x| img.pixel(x, y)[3] == 0xFF)
+                .collect()
+        })
+        .collect()
+}
+
+#[test]
+fn every_look_turns_four_ways_without_covering_its_face() {
+    let packs = packs();
+    for book in books() {
+        for named in book.party.iter().chain(&book.foes) {
+            let mut seen = Vec::new();
+            for d in TURN {
+                let c = compose(&packs, &named.look, d).unwrap();
+                let covered = c
+                    .face
+                    .iter()
+                    .zip(&c.outline)
+                    .filter(|&(&f, &o)| f && o)
+                    .count();
+                assert_eq!(covered, 0, "{} {d:?}: outline over the face", named.id);
+                seen.push(render(&packs, &named.look, d).unwrap());
+            }
+            // The front, the back and the profile are three drawings.
+            assert_ne!(seen[0], seen[1], "{}: front = profile", named.id);
+            assert_ne!(seen[0], seen[2], "{}: front = back", named.id);
+            assert_ne!(seen[1], seen[2], "{}: profile = back", named.id);
+        }
+    }
+}
+
+#[test]
+fn the_front_shows_the_eyes_and_the_back_hides_them() {
+    let packs = packs();
+    let books = books();
+    let eye = [0x1B, 0x14, 0x26, 0xFF];
+    // A bare head: the eyes are the only ink inside the face.
+    let mut l = look(&books, "pj_vigie").clone();
+    l.headwear = None;
+    l.beard = None;
+    for (d, eyes) in [(Direction::South, 2), (Direction::North, 0)] {
+        let c = compose(&packs, &l, d).unwrap();
+        let img = c.to_image();
+        let inked = (0..img.height)
+            .flat_map(|y| (0..img.width).map(move |x| (x, y)))
+            .filter(|&(x, y)| c.face[(y * c.width + x) as usize] && img.pixel(x, y) == eye)
+            .count();
+        assert_eq!(inked, eyes, "{d:?}");
+    }
+}
+
+#[test]
+fn a_sheet_holds_rest_breath_and_two_steps() {
+    let packs = packs();
+    let books = books();
+    let l = look(&books, "pj_canonnier");
+    for d in TURN {
+        let sheet = render_sheet(&packs, l, d).unwrap();
+        let one = render(&packs, l, d).unwrap();
+        assert_eq!((sheet.width, sheet.height), (4 * one.width, one.height));
+        for (i, frame) in Frame::SHEET.iter().enumerate() {
+            let drawn = compose_frame(&packs, l, d, *frame).unwrap().to_image();
+            let left = u32::try_from(i).unwrap() * one.width;
+            for y in 0..one.height {
+                for x in 0..one.width {
+                    assert_eq!(
+                        sheet.pixel(left + x, y),
+                        drawn.pixel(x, y),
+                        "{d:?} {frame:?}"
+                    );
+                }
+            }
+        }
+        assert_eq!(
+            compose_frame(&packs, l, d, Frame::Rest).unwrap().to_image(),
+            one
+        );
+    }
+}
+
+#[test]
+fn breathing_lowers_the_body_and_keeps_the_feet() {
+    let packs = packs();
+    let books = books();
+    let l = look(&books, "pj_bretteur");
+    for d in TURN {
+        let rest = opaque_rows(&compose_frame(&packs, l, d, Frame::Rest).unwrap().to_image());
+        let breath = opaque_rows(
+            &compose_frame(&packs, l, d, Frame::Breath)
+                .unwrap()
+                .to_image(),
+        );
+        let top = |rows: &[Vec<u32>]| rows.iter().position(|r| !r.is_empty()).unwrap();
+        assert_eq!(top(&breath), top(&rest) + 1, "{d:?}: the head did not drop");
+        let last = rest.len() - 2;
+        assert_eq!(breath[last], rest[last], "{d:?}: the feet moved");
+    }
+}
+
+#[test]
+fn a_step_spreads_the_legs_in_profile_and_lifts_a_foot_from_the_front() {
+    let packs = packs();
+    let books = books();
+    let l = look(&books, "pj_navigateur");
+    let width =
+        |rows: &[Vec<u32>], y: usize| rows[y].last().unwrap_or(&0) - rows[y].first().unwrap_or(&0);
+    // Profile: the soles are further apart in the stride.
+    let rest = opaque_rows(
+        &compose_frame(&packs, l, Direction::East, Frame::Rest)
+            .unwrap()
+            .to_image(),
+    );
+    let step = opaque_rows(
+        &compose_frame(&packs, l, Direction::East, Frame::StepA)
+            .unwrap()
+            .to_image(),
+    );
+    let sole = rest.len() - 2;
+    assert!(width(&step, sole) > width(&rest, sole) + 2, "no stride");
+    // Front: one foot leaves the ground in each step, not the same one.
+    let soles = |f: Frame| {
+        opaque_rows(
+            &compose_frame(&packs, l, Direction::South, f)
+                .unwrap()
+                .to_image(),
+        )[sole]
+            .clone()
+    };
+    let (a, b, still) = (soles(Frame::StepA), soles(Frame::StepB), soles(Frame::Rest));
+    assert!(
+        a.len() < still.len() && b.len() < still.len(),
+        "no foot lifted"
+    );
+    let centre = |r: &[u32]| r.iter().sum::<u32>() / u32::try_from(r.len()).unwrap();
+    assert!(centre(&a) > centre(&b), "both steps lift the same foot");
+}
+
+#[test]
+fn a_character_turns_toward_where_it_goes() {
+    let c = |x, y| Cell::new(x, y);
+    assert_eq!(Direction::toward(c(3, 3), c(5, 3)), Some(Direction::East));
+    assert_eq!(Direction::toward(c(3, 3), c(1, 4)), Some(Direction::West));
+    assert_eq!(Direction::toward(c(3, 3), c(3, 1)), Some(Direction::North));
+    assert_eq!(Direction::toward(c(3, 3), c(4, 6)), Some(Direction::South));
+    // A perfect diagonal keeps the profile.
+    assert_eq!(Direction::toward(c(3, 3), c(2, 2)), Some(Direction::West));
+    assert_eq!(Direction::toward(c(3, 3), c(3, 3)), None);
 }

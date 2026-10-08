@@ -1,5 +1,6 @@
 import { apiRequest } from './api'
 import type { Cell, GmBoard, MapData } from './board'
+import type { Facing as SpriteFacing } from '@/features/sprites/look'
 import type { RollBreakdown } from './rules'
 
 const play = (campaignId: string) => `/play/${encodeURIComponent(campaignId)}`
@@ -8,6 +9,8 @@ const gm = (campaignId: string) => `/campaigns/${encodeURIComponent(campaignId)}
 /** A ship's bow (`vehicle::Facing`), north being row 0. */
 export type Facing = 'n' | 'e' | 's' | 'w'
 export const FACINGS: Facing[] = ['n', 'e', 's', 'w']
+/** The way a ship's token sprite looks, from its bow. */
+export const SPRITE_FACING: Record<Facing, SpriteFacing> = { n: 'north', e: 'east', s: 'south', w: 'west' }
 type Direction = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw'
 export type ShipStanding = 'afloat' | 'destroyed' | 'struck' | 'captured' | 'fled'
 type EndReason = 'victory' | 'defeat' | 'disengaged' | 'stopped_by_gm' | 'stalemate'

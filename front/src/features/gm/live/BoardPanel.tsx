@@ -10,7 +10,8 @@ import type { Cell, Edit, GmBoard, GmCommand, TokenView, Weather, TimeOfDay } fr
 import { gmBackdropUrl } from '@/lib/maps'
 import { gmImageUrl, type MediaList } from '@/lib/media'
 import { cn } from '@/lib/utils'
-import { Btn, Panel, field } from './ui'
+import { TravelPanel } from '@/features/travel/TravelPanel'
+import { BigKey, Btn, Panel, field, useTouchScreen } from './ui'
 
 const TOOLS = ['move', 'reveal', 'hide'] as const
 type Tool = (typeof TOOLS)[number]
@@ -25,7 +26,10 @@ const TIMES: TimeOfDay[] = ['dawn', 'day', 'dusk', 'night']
  * moved by tap, hidden or made invisible; doors, weather and time. Then
  * the fight: start an encounter of the story, the order with every hit
  * point, the co-GM's proposal for the adversary's turn (played on a copy,
- * accepted as is), conditions, stop — and the loot to hand out.
+ * accepted as is), conditions, stop — and the loot to hand out. On a
+ * tablet (gm/run-on-tablet) the map is handled by finger — one paints the
+ * fog, two slide it, a pinch zooms — and the adversary's turn is three
+ * big keys: validate the proposal, it flees, it passes.
  */
 export function BoardPanel({
   campaignId,
@@ -51,6 +55,7 @@ export function BoardPanel({
   const { t } = useTranslation()
   const [tool, setTool] = useState<Tool>('move')
   const [selected, setSelected] = useState<string | null>(null)
+  const touch = useTouchScreen()
   const board = data.board
   const { tileset, atlases } = useTileset(board?.map ?? null, media, (id) => gmImageUrl(campaignId, id))
   const backdrop = useImage(board?.map.backdrop?.image ? gmBackdropUrl(campaignId, board.mapId) : null)
@@ -62,6 +67,17 @@ export function BoardPanel({
       <Panel title={t('gmLive.board.title')}>
         <p className="text-caption text-mute">{t('gmLive.board.none')}</p>
         <MapPicker data={data} live={live} onShow={onShow} />
+      </Panel>
+    )
+  }
+
+  if (board.map.scale === 'world') {
+    return (
+      <Panel
+        title={t('gmLive.board.title')}
+        actions={<MapPicker data={data} live={live && !fighting} onShow={onShow} current={board.mapId} />}
+      >
+        <TravelPanel campaignId={campaignId} map={board.map} tileset={tileset} refreshKey={data} />
       </Panel>
     )
   }
@@ -79,6 +95,10 @@ export function BoardPanel({
     party: tk.kind === 'character',
     mine: false,
     ghost: tk.hidden || tk.invisible,
+    look: tk.look ?? null,
+    facing: tk.facing ?? (tk.kind === 'character' ? 'east' : 'west'),
+    trail: tk.trail ?? [],
+    moves: tk.moves ?? 0,
   }))
   const sel = board.tokens.find((tk) => tk.id === selected)
 
@@ -145,7 +165,9 @@ export function BoardPanel({
           selected,
           reachable: fighting ? (enc?.reachable ?? []) : [],
         }}
+        fightEvents={enc?.events}
         className="max-h-[60vh]"
+        touch={touch}
         onCell={tool === 'move' ? tap : undefined}
         onPaint={
           tool === 'move'
@@ -153,6 +175,7 @@ export function BoardPanel({
             : (cells) => onEdit(tool === 'reveal' ? { kind: 'revealCells', cells } : { kind: 'hideCells', cells })
         }
       />
+      {touch && <p className="text-caption text-mute-soft">{t('gmLive.board.fingers')}</p>}
       {board.map.gm_notes && <p className="text-caption text-mute-soft">{board.map.gm_notes}</p>}
       {sel && (
         <div className="flex flex-wrap items-center gap-1.5 text-caption">
@@ -239,6 +262,7 @@ function FightBlock({
   const [who, setWho] = useState('')
   const [condition, setCondition] = useState('')
   const [deathOf, setDeathOf] = useState<string | null>(null)
+  const touch = useTouchScreen()
   const characters = (data.board?.tokens ?? []).filter((tk) => tk.kind === 'character')
 
   if (!enc?.live) {
@@ -365,7 +389,34 @@ function FightBlock({
           </div>
         </div>
       ))}
-      {foeTurn && (
+      {foeTurn && touch && (
+        <div className="flex flex-col gap-2.5 rounded-2xl border-[1.5px] border-chalk p-3.5">
+          <span className="type-label">{t(enc.proposal ? 'gmLive.fight.proposes' : 'gmLive.fight.foeTurn', { who: name(active) })}</span>
+          {enc.proposal && (
+            <ul className="flex flex-col gap-0.5 text-body text-chalk-soft">
+              {lines.map((l, i) => (
+                <li key={i}>{l}</li>
+              ))}
+            </ul>
+          )}
+          <div className="grid grid-cols-[2fr_1fr_1fr] gap-2.5">
+            {enc.proposal ? (
+              <BigKey main onClick={() => onCommand({ kind: 'accept' })}>
+                {t('gmLive.fight.validate')}
+              </BigKey>
+            ) : (
+              <BigKey main onClick={() => onCommand({ kind: 'propose' })}>
+                {t('gmLive.fight.propose')}
+              </BigKey>
+            )}
+            <BigKey onClick={() => onCommand({ kind: 'adversary', command: { kind: 'flee' } })}>{t('gmLive.fight.flees')}</BigKey>
+            <BigKey onClick={() => onCommand({ kind: 'adversary', command: { kind: 'endTurn' } })}>
+              {t('gmLive.fight.passes')}
+            </BigKey>
+          </div>
+        </div>
+      )}
+      {foeTurn && !touch && (
         <div className="flex flex-wrap gap-1.5">
           <Btn main={!enc.proposal} onClick={() => onCommand({ kind: 'propose' })}>
             {t('gmLive.fight.propose')}
@@ -380,12 +431,16 @@ function FightBlock({
           </Btn>
         </div>
       )}
-      {enc.proposal && <p className="type-label">{t('gmLive.fight.proposal')}</p>}
-      <ul className="flex flex-col gap-0.5 text-caption text-chalk-soft">
-        {lines.map((l, i) => (
-          <li key={i}>{l}</li>
-        ))}
-      </ul>
+      {!(foeTurn && touch && enc.proposal) && (
+        <>
+          {enc.proposal && <p className="type-label">{t('gmLive.fight.proposal')}</p>}
+          <ul className="flex flex-col gap-0.5 text-caption text-chalk-soft">
+            {lines.map((l, i) => (
+              <li key={i}>{l}</li>
+            ))}
+          </ul>
+        </>
+      )}
       {data.conditions && data.conditions.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
           <select className={field} value={who} onChange={(e) => setWho(e.target.value)} aria-label={t('gmLive.fight.who')}>

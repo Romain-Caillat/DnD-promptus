@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { DESKTOP_QUERY } from '@/lib/useMediaQuery'
 import { mockApi, sentTo, stubReducedMotion } from '@/test-utils'
 import { PlayerHomePage } from './PlayerHomePage'
 
@@ -302,8 +303,8 @@ describe('PlayerHomePage', () => {
     })
     renderHome()
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Ton personnage est tombé')
-    expect(screen.getByText('Bretteur · Tombé · niveau 3')).toBeInTheDocument()
+    expect(await screen.findByText('Bretteur · Tombé · niveau 3')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Ton personnage est tombé')
     await userEvent.type(screen.getByRole('textbox', { name: 'Ses derniers mots' }), words)
     await userEvent.click(screen.getByRole('button', { name: /Dire ses derniers mots/ }))
     expect(await screen.findByText(`« ${words} »`)).toBeInTheDocument()
@@ -317,5 +318,28 @@ describe('PlayerHomePage', () => {
       await screen.findByText('Brouillon. Ta place est gardée : crée-le quand tu veux, en deux minutes.'),
     ).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Attendre une accroche/ })).not.toBeInTheDocument()
+  })
+
+  it('unfolds the game side by side on a computer: sheet, scene, map and journal at once, no tabs', async () => {
+    stubReducedMotion(true, [DESKTOP_QUERY])
+    const fetchMock = mockApi({
+      ...EVENING,
+      'GET /api/play/c1/me': () => home(inPlay(false)),
+      'GET /api/play/c1/board': () => ({ status: 200, body: { data: null } }),
+      'GET /api/play/c1/battle': () => ({ status: 200, body: { data: null } }),
+      'GET /api/play/c1/view': () => ({
+        status: 200,
+        body: { data: { ...CAMPAIGN, party: [], scene: null, clues: ['Gwen a vu une lanterne.'], npcs: [], factions: [], goals: [] } },
+      }),
+    })
+    renderHome()
+
+    expect(await screen.findByText('Les corsaires ont accosté.')).toBeInTheDocument()
+    expect(screen.getByRole('complementary', { name: 'Personnage' })).toHaveTextContent('7 / 10 PV')
+    expect(await screen.findByText('Gwen a vu une lanterne.')).toBeInTheDocument()
+    expect(await within(screen.getByRole('region', { name: 'Carte' })).findByText(/pas encore montré de carte/)).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Onglets' })).not.toBeInTheDocument()
+    // Each part is fetched once: nothing is mounted twice behind the layout.
+    expect(fetchMock.mock.calls.filter(([url]) => String(url) === '/api/play/c1/evening')).toHaveLength(1)
   })
 })

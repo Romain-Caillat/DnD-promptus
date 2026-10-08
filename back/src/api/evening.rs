@@ -37,6 +37,9 @@
 //! - `POST /api/campaigns/{id}/session/copilot` → a co-GM draft (counted
 //!   AI call), then `…/copilot/{draft}/show` (the GM's edited text to the
 //!   table) or `…/copilot/{draft}/dismiss`.
+//! - `POST /api/campaigns/{id}/session/copilot/voice` → what the GM
+//!   dictated, written down, and the co-GM's draft for it (two counted
+//!   AI calls, `copilot/listen-by-voice`).
 
 use std::collections::BTreeMap;
 
@@ -896,6 +899,24 @@ pub async fn copilot_ask(
 ) -> Result<Response, AppError> {
     let d = drafts::ask(&state.pool, &state.ai, &gm, parse_id(&id)?, &ask).await?;
     Ok((StatusCode::CREATED, Json(json!({ "data": d }))).into_response())
+}
+
+/// `POST /api/campaigns/{id}/session/copilot/voice` → `{ audio, kind?,
+/// npc? }` (a base64 16-bit PCM WAV): `{ transcript, seconds, draft }`
+/// (201), for the GM only.
+///
+/// # Errors
+///
+/// The codes of `copilot::voice::listen`.
+pub async fn copilot_voice(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path(id): Path<String>,
+    Body(dictation): Body<copilot::voice::Dictation>,
+) -> Result<Response, AppError> {
+    let heard =
+        copilot::voice::listen(&state.pool, &state.ai, &gm, parse_id(&id)?, &dictation).await?;
+    Ok((StatusCode::CREATED, Json(json!({ "data": heard }))).into_response())
 }
 
 /// `POST /api/campaigns/{id}/session/copilot/{draft}/show` →

@@ -1,0 +1,46 @@
+# D&D 5e · SRD — the V1 demo's goblin fight (« Le Donjon des gobelins »,
+# promptus-V1/scripts/seed-demo.ts), ported for engine/add-srd-preset:
+# four level-1 heroes against four goblins and their chief on the forest
+# road. Replayed by `bun run rules-report` and by shared/tests/srd_preset.rs.
+id: embuscade-des-gobelins
+name: L'embuscade des gobelins
+description: >-
+  Le premier combat de la démo du V1 : un guerrier, une rôdeuse, un
+  roublard et une magicienne tombent sur quatre gobelins et leur chef.
+source: promptus-V1/scripts/seed-demo.ts (monstres gobelins)
+rules: srd
+version: 1
+map: route-des-gobelins
+context: combat
+
+party:
+  policies: [brawler, focus]
+  fighters:
+    - { id: guerrier, class: guerrier }
+    - { id: rodeur, class: rodeur }
+    - { id: roublard, class: roublard }
+    - { id: magicien, class: magicien }
+
+opposition:
+  policies: [brawler]
+  # The chief's tactics (adversaries[chef_gobelin].tactics): he runs once
+  # half the band is down.
+  morale: { leader: chef, flee_when_fallen: 2 }
+  fighters:
+    - { id: chef, adversary: chef_gobelin, name: Chef gobelin }
+    - { id: gobelin_1, adversary: gobelin, name: Gobelin 1 }
+    - { id: gobelin_2, adversary: gobelin, name: Gobelin 2 }
+    - { id: gobelin_3, adversary: gobelin, name: Gobelin 3 }
+    - { id: gobelin_4, adversary: gobelin, name: Gobelin 4 }
+
+simulation: { fights: 200, seed: 1 }
+
+variants:
+  - id: maitrise-plate
+    name: Une maîtrise qui ne grandit pas
+    description: >-
+      La maîtrise reste à +2 quel que soit le niveau. Au niveau 1, rien ne
+      change : la variante montre qu'une règle du préréglage se compare
+      comme celles des deux mondes.
+    set:
+      attack.bonus.formula: "2"

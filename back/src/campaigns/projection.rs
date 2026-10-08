@@ -43,6 +43,7 @@ pub mod rules;
 pub mod schedule;
 pub mod screen;
 pub mod trade;
+pub mod travel;
 
 use std::collections::BTreeMap;
 

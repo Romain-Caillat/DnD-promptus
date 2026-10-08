@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ArcadeCluster } from '@/components/game/ArcadeCluster'
 import { CardButton } from '@/components/game/CardButton'
 import { Hearts } from '@/components/game/Hearts'
+import { Kbd } from '@/components/game/Kbd'
 import { ApiError } from '@/lib/api'
 import {
   fetchBoard,
@@ -18,8 +19,10 @@ import {
 import { crewCommand, fetchBattle, type BattleView, type CrewCommand } from '@/lib/battle'
 import { playerBackdropUrl } from '@/lib/maps'
 import { fetchPlayerMedia, playerImageUrl, type MediaList } from '@/lib/media'
+import { cardIndex, cardKey, useShortcuts } from '@/lib/useShortcuts'
 import { cn } from '@/lib/utils'
 import { BattleScreen } from './BattleScreen'
+import { WorldMapTab } from '@/features/travel/PlayerTravel'
 import { eventLine } from './events'
 import { MapCanvas } from './MapCanvas'
 import { useImage } from './useImage'
@@ -38,9 +41,23 @@ type State =
  * order with hearts for the party, and on my turn the hand of cards,
  * the target picked on the map, the arcade buttons and the log. In a
  * ship battle (engine/support-vehicle-combat), the battle at my station
- * instead; during a boarding, the fight on the deck.
+ * instead; during a boarding, the fight on the deck. On a computer
+ * (player/play-on-desktop) a digit picks a card, Enter plays it, Escape
+ * puts it back; `onTurn` tells the page when the keys are the fight's.
  */
-export function MapTab({ campaignId, refreshKey }: { campaignId: string; refreshKey: number }) {
+export function MapTab({
+  campaignId,
+  refreshKey,
+  keyboard = false,
+  onTurn,
+}: {
+  campaignId: string
+  refreshKey: number
+  /** Shortcuts on and their hints shown, while it is my turn. */
+  keyboard?: boolean
+  /** Whether it is my turn in a live fight, each time it changes. */
+  onTurn?: (mine: boolean) => void
+}) {
   const { t } = useTranslation()
   const [state, setState] = useState<State>({ kind: 'loading' })
   const [media, setMedia] = useState<MediaList | null>(null)
@@ -77,6 +94,28 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
 
   const board = state.kind === 'ready' ? state.board : null
   const battle = state.kind === 'ready' && state.battle?.live ? state.battle : null
+  const myTurn = Boolean(board?.fight?.live && board.fight.myTurn)
+  useEffect(() => {
+    onTurn?.(myTurn)
+  }, [myTurn, onTurn])
+  const playable = myTurn ? (board?.fight?.cards ?? []) : []
+  useShortcuts(keyboard && myTurn, (key) => {
+    if (key === 'Escape' && card) {
+      setCard(null)
+      setTargets([])
+      return true
+    }
+    if (key === 'Enter' && card && !busy) {
+      play({ kind: 'act', action: card, targets })
+      return true
+    }
+    const index = cardIndex(key)
+    const picked = index === null ? undefined : playable[index]
+    if (!picked || picked.locked) return false
+    setCard(picked.id)
+    setTargets([])
+    return true
+  })
   const { tileset, atlases } = useTileset(board?.map ?? null, media, (id) => playerImageUrl(campaignId, id))
   const sea = useTileset(battle?.map ?? null, media, (id) => playerImageUrl(campaignId, id))
   // The board's map id is not the players'; its image is the one shown.
@@ -123,6 +162,9 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
     )
   }
   if (!board) return <p className="text-body text-chalk-soft">{t('map.none')}</p>
+  if (board.map.scale === 'world') {
+    return <WorldMapTab campaignId={campaignId} board={board} tileset={tileset} refreshKey={refreshKey} />
+  }
 
   const fight = board.fight?.live ? board.fight : null
   const me = board.tokens.find((tk) => tk.mine)
@@ -194,6 +236,7 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
           selected: targets[0] ?? null,
           highlight: fight?.order.filter((f) => targets.includes(f.id) && f.at).map((f) => f.at!) ?? [],
         }}
+        fightEvents={board.fight?.events}
         className="max-h-[55dvh]"
         onCell={tapCell}
       />
@@ -217,7 +260,7 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
       {fight?.myTurn && !fight.deathSave && (
         <>
           <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label={t('fight.hand')}>
-            {fight.cards.map((c) => (
+            {fight.cards.map((c, i) => (
               <button
                 key={c.id}
                 type="button"
@@ -238,10 +281,12 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
                   {t('fight.range', { range: c.range })}
                   {c.attackBonus !== null ? ` · ${t('fight.bonus', { value: c.attackBonus })}` : ''}
                 </span>
+                {keyboard && cardKey(i) && <Kbd>{cardKey(i)!}</Kbd>}
               </button>
             ))}
           </div>
           {card && <p className="text-caption text-mute">{t('fight.pickTarget', { count: targets.length })}</p>}
+          {keyboard && <p className="text-caption text-mute">{t('fight.keys')}</p>}
           <ArcadeCluster
             busy={busy}
             main={{

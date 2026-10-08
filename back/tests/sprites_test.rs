@@ -123,3 +123,52 @@ async fn the_looks_of_both_worlds_are_listed_and_all_draw() {
         }
     }
 }
+
+/// characters/walk-in-four-directions: every look of both worlds has a
+/// sheet of four frames in each direction, and the sheet is not the still.
+#[tokio::test]
+async fn every_look_walks_in_four_directions_as_a_sheet() {
+    let app = common::app(common::test_pool().await);
+    let json = common::read_json(
+        app.clone()
+            .oneshot(get("/api/sprites/looks", None))
+            .await
+            .unwrap(),
+    )
+    .await;
+    for world in json["data"]["worlds"].as_array().unwrap() {
+        for entry in world["party"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .chain(world["foes"].as_array().unwrap())
+        {
+            let look = serde_json::to_string(&entry["look"]).unwrap();
+            for facing in ["south", "east", "north", "west"] {
+                let uri = render_uri(&look, facing).replace("render.png", "sheet.png");
+                let response = app.clone().oneshot(get(&uri, None)).await.unwrap();
+                assert_eq!(
+                    response.status(),
+                    StatusCode::OK,
+                    "{} {facing}",
+                    entry["id"]
+                );
+                let still = app
+                    .clone()
+                    .oneshot(get(&render_uri(&look, facing), None))
+                    .await
+                    .unwrap();
+                assert_ne!(
+                    still.headers()[header::ETAG],
+                    response.headers()[header::ETAG],
+                    "{} {facing}",
+                    entry["id"]
+                );
+                let png = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+                // The IHDR width: four frames of 22 pixels.
+                let width = u32::from_be_bytes([png[16], png[17], png[18], png[19]]);
+                assert_eq!(width, 4 * 22, "{} {facing}", entry["id"]);
+            }
+        }
+    }
+}

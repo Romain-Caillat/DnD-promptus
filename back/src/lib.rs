@@ -22,3 +22,4 @@ pub mod schedule;
 pub mod screens;
 pub mod shops;
 pub mod state;
+pub mod travel;

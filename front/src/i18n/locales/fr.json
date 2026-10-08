@@ -508,6 +508,7 @@
     }
   },
   "play": {
+    "spectatorPane": "La partie",
     "loading": "Chargement…",
     "notJoined": "Ce navigateur n'a pas de place à cette table. Ouvre le lien d'invitation envoyé par le MJ.",
     "error": "La partie n'a pas pu être chargée. Réessaie.",
@@ -646,6 +647,14 @@
     },
     "look": {
       "yours": "Ton personnage",
+      "turn": "Tourner le personnage",
+      "facing": {
+        "south": "De face",
+        "west": "Vers la gauche",
+        "north": "De dos",
+        "east": "Vers la droite"
+      },
+      "walk": "Marcher",
       "tabs": {
         "body": "Corps",
         "outfit": "Tenue",
@@ -753,6 +762,7 @@
         "brasier": "Le Brasier"
       },
       "effects": "Effets d'état sur le personnage",
+      "walk": "En marche, de face, vers la gauche, de dos, vers la droite",
       "visuals": {
         "poison": "Empoisonné",
         "etourdi": "Étourdi",
@@ -765,7 +775,7 @@
         "ko": "Hors de combat",
         "cible": "Ciblé"
       },
-      "note": "Chaque personnage est une description (pièces et couleurs) que le serveur dessine : le même dessin sur le téléphone, l'écran MJ et la TV. Le groupe regarde à droite, les adversaires à gauche."
+      "note": "Chaque personnage est une description (pièces et couleurs) que le serveur dessine : le même dessin sur le téléphone, l'écran MJ et la TV. Au repos, le groupe regarde à droite, les adversaires à gauche ; sur la carte, chacun se tourne vers là où il va."
     },
     "game": {
       "kicker": "Composants du jeu",
@@ -1148,7 +1158,10 @@
       "turn_of_use_counts": "Une carte avec une recharge de N tours se rejoue N tours après, le tour où tu la joues compris.",
       "knocked_out": "inconscient, puis hors combat",
       "death_saves": "jets contre la mort",
-      "disadvantage": "désavantage"
+      "disadvantage": "désavantage",
+      "house_by_gm": "appliquée par le MJ à la table",
+      "house_judged": "appliquée par le serveur",
+      "house_judged_new": "appliquée par le serveur, autrement"
     },
     "roll": {
       "title": "Un jet de dé",
@@ -1181,6 +1194,7 @@
       "how": "Une attaque, c'est {{die}} plus ton bonus d'attaque, contre la {{ac}} de la cible : au moins autant, tu touches et les dégâts de la carte s'appliquent. La {{ac}} de la cible, seul le MJ la connaît avant ton jet.",
       "ability": "Ton bonus d'attaque vient de",
       "precision": "La précision d'une carte",
+      "bonus": "{{name}}, ajoutée à chaque attaque (selon ton niveau)",
       "armorClass": "{{name}} ({{abbr}})",
       "hitPoints": "{{name}} ({{abbr}})",
       "fumble": "Sur le dé {{faces}} : raté, même si le total dépasse la classe d'armure.",
@@ -1350,6 +1364,7 @@
       "send": "Proposer au MJ : {{card}}"
     },
     "requests": {
+      "spaceToo": "Espace marche aussi",
       "title": "Mes demandes",
       "roll": "Lancer le dé",
       "against": "{{ability}}, difficulté {{difficulty}}",
@@ -1429,6 +1444,7 @@
     }
   },
   "fight": {
+    "keys": "Clavier : un chiffre choisit une carte, Entrée la joue, Échap la repose.",
     "yourTurn": "À toi, {{name}} !",
     "theirTurn": "Tour {{round}} : {{name}} joue",
     "order": "Ordre du tour",
@@ -1464,6 +1480,7 @@
       "conditionEnded": "{{target}} n'est plus {{name}}",
       "knockedOut": "{{target}} tombe à terre",
       "item": "{{who}} utilise {{item}}",
+      "houseRule": "Règle maison : {{name}}",
       "deathSaves": "{{target}} : {{successes}} réussite(s), {{failures}} échec(s) contre la mort",
       "stabilized": "{{target}} est stabilisé",
       "died": "{{who}} est mort"
@@ -1492,7 +1509,8 @@
       "PATH_BLOCKED": "Ce chemin est bloqué.",
       "TOO_FAR": "C'est trop loin pour ce tour.",
       "SPECTATOR": "Tu regardes la partie : tu ne joues pas.",
-      "FIGHT_IN_PROGRESS": "Un combat est en cours : joue ton tour."
+      "FIGHT_IN_PROGRESS": "Un combat est en cours : joue ton tour.",
+      "TRAVEL_MAP": "Sur la carte du monde, le groupe voyage avec le MJ."
     }
   },
   "battle": {
@@ -1603,6 +1621,21 @@
     }
   },
   "gmLive": {
+    "tablet": {
+      "rail": "Sections",
+      "scene": "Scène",
+      "table": "Table",
+      "map": "Carte",
+      "journal": "Journal",
+      "copilot": "Co-MJ",
+      "close": "Fermer",
+      "seats": "Les places",
+      "here": "{{here}} sur {{all}}",
+      "see": "Voir la table",
+      "toLaptop": "Écran ordinateur",
+      "toTablet": "Écran tablette",
+      "noCopilot": "Le co-MJ s'ouvre avec la soirée."
+    },
     "loading": "Chargement de la soirée…",
     "notFound": "Cette campagne n'existe pas, ou elle n'est pas à vous.",
     "error": "La soirée n'a pas pu être chargée. Réessayez.",
@@ -1644,7 +1677,15 @@
       "CELL_BLOCKED": "Personne ne peut se tenir là.",
       "NOT_READING": "La lecture du « Précédemment… » est déjà finie.",
       "NOTHING_TO_PUBLISH": "Écrivez d'abord le « Précédemment… ».",
-      "PUBLISH_AFTER_THE_END": "On publie après avoir relu, une fois la séance terminée."
+      "PUBLISH_AFTER_THE_END": "On publie après avoir relu, une fois la séance terminée.",
+      "TRAVEL_MAP": "Sur la carte du monde, le groupe se déplace par le voyage.",
+      "NOTHING_HEARD": "Le co-MJ n'a rien entendu : reparlez plus près du micro.",
+      "AUDIO_INVALID": "L'enregistrement est illisible : recommencez.",
+      "RECORDING_TOO_SHORT": "Trop court : touchez une fois pour parler, une fois pour envoyer.",
+      "RECORDING_TOO_LONG": "Plus d'une minute : dites-le en plus court.",
+      "UNKNOWN_NPC": "Ce PNJ n'existe pas dans la campagne.",
+      "AI_UNAVAILABLE": "Le fournisseur d'IA ne répond pas : réessayez.",
+      "AI_OUTPUT_INVALID": "La réponse de l'IA était illisible : réessayez."
     },
     "launch": {
       "title": "Avant de lancer",
@@ -1698,6 +1739,12 @@
       "hooks": "Accroches : {{hooks}}"
     },
     "requests": {
+      "asks": "{{who}} demande · {{card}}",
+      "thumbDifficulty": "Un test, difficulté :",
+      "checkAt": "Test {{name}} ({{value}})",
+      "yesNoRoll": "Oui, sans jet",
+      "no": "Non",
+      "nothingHere": "Non, rien ici.",
       "title": "Demandes ({{count}})",
       "none": "Aucune demande en attente.",
       "done": "{{who}} · {{card}} · {{status}}",
@@ -1735,6 +1782,7 @@
       "back": "−1"
     },
     "board": {
+      "fingers": "Un doigt touche, ou peint le brouillard avec Révéler et Cacher · deux doigts déplacent · pincer zoome. Rien ne part avant le relâcher.",
       "title": "La carte",
       "none": "Aucune carte montrée.",
       "noMaps": "Pas de carte pour ce monde.",
@@ -1764,6 +1812,11 @@
       "revealLayer": "Révéler : {{layer}}"
     },
     "fight": {
+      "proposes": "Le co-MJ propose le tour de {{who}}",
+      "foeTurn": "Tour de {{who}}",
+      "validate": "Valider",
+      "flees": "Il fuit",
+      "passes": "Il passe son tour",
       "title": "Combat",
       "start": "Lancer : {{title}}",
       "loot": "Butin",
@@ -1820,6 +1873,7 @@
       "ended": "Dernier combat : {{result}}"
     },
     "copilot": {
+      "edit": "Modifier",
       "title": "Co-MJ",
       "budget": "IA : {{spent}} $ sur {{budget}} $",
       "notConfigured": "Aucun fournisseur d'IA configuré : le co-MJ est muet.",
@@ -1839,7 +1893,18 @@
       "narration": "Narration",
       "apply": "Faire",
       "show": "Montrer à la table",
-      "dismiss": "Écarter"
+      "dismiss": "Écarter",
+      "voice": {
+        "speak": "Parler au co-MJ",
+        "touchToTalk": "Touche pour parler",
+        "listening": "J'écoute… {{seconds}} s",
+        "touchToSend": "Touche pour envoyer (une minute au plus)",
+        "sending": "Le co-MJ écoute ce que vous avez dit…",
+        "heard": "Vous avez dit :",
+        "change": "Changer",
+        "denied": "Le micro est refusé : autorisez-le pour cette page dans le navigateur.",
+        "unsupported": "Pas de micro ici : la dictée demande une page en HTTPS (ou sur cet ordinateur)."
+      }
     },
     "screens": {
       "title": "Écran partagé",
@@ -2322,12 +2387,87 @@
       "card": "Carte niv. {{level}}",
       "damage": "Dégâts",
       "cooldown": "Recharge",
-      "houseHint": "Une règle maison s'affiche aux joueurs sur leur page des règles, et le co-MJ la connaît.",
+      "houseHint": "Une règle maison s'affiche aux joueurs sur leur page des règles, et le co-MJ la connaît. Formalisée, le serveur l'applique lui-même en combat.",
       "houseNone": "Aucune règle maison.",
       "houseText": "Texte lu par les joueurs",
       "remove": "Retirer",
       "houseNew": "Nouvelle règle maison",
       "houseAdd": "Ajouter",
+      "formal": {
+        "none": "Pas encore formalisée : tu l'appliques toi-même à la table.",
+        "judged": "Formalisée : le serveur l'applique en combat.",
+        "ask": "Formaliser avec le co-MJ",
+        "askSub": "Il propose déclencheur, effet et cas de test",
+        "reading": "Le co-MJ traduit ta règle…",
+        "proposal": "La règle formalisée",
+        "when": "Quand",
+        "effect": "Effet",
+        "except": "Exception",
+        "players": "Joueurs",
+        "trigger": {
+          "hit": "une attaque touche",
+          "hitCritical": "un coup critique touche",
+          "hitNotCritical": "une attaque touche, sans critique",
+          "miss": "une attaque rate",
+          "missCritical": "une attaque rate sur un échec critique",
+          "missNotCritical": "une attaque rate, sans échec critique"
+        },
+        "damageType": "avec des dégâts de type {{type}}",
+        "actorIs": "l'attaquant : {{who}}",
+        "targetIs": "la cible : {{who}}",
+        "side": {
+          "party": "un personnage des joueurs",
+          "opposition": "un adversaire"
+        },
+        "traits": "avec l'étiquette {{traits}}",
+        "noException": "aucune",
+        "exceptTraits": "sauf {{traits}}",
+        "exceptIds": "sauf {{ids}}",
+        "apply": "{{condition}} pendant {{count}} tour(s), {{to}}",
+        "damage": "{{amount}} dégâts, {{to}}",
+        "heal": "{{amount}} PV rendus, {{to}}",
+        "to": {
+          "targets": "à la cible",
+          "self": "à l'attaquant"
+        },
+        "save": "(jet de {{ability}} contre « {{difficulty}} » pour l'éviter)",
+        "whoActor": "l'attaquant",
+        "whoTarget": "la cible",
+        "seeRule": "lisent la règle",
+        "seeEffect": "voient l'effet, pas la règle",
+        "showRule": "Montrer la règle aux joueurs",
+        "cases": "Cas de test",
+        "casesNone": "Aucun cas de test.",
+        "natural": "dé {{face}}",
+        "expectApplies": "doit s'appliquer",
+        "expectNothing": "ne doit rien faire",
+        "casePassed": "conforme",
+        "caseFailed": "contraire à l'attendu",
+        "caseError": "injouable : {{detail}}",
+        "dropped": "Retiré, inconnu de tes règles : {{items}}",
+        "droppedKind": {
+          "trait": "l'étiquette « {{id}} »",
+          "damage_type": "le type de dégâts « {{id}} »",
+          "condition": "l'état « {{id}} »",
+          "origin": "« {{id}} »",
+          "case": "le cas « {{id}} »"
+        },
+        "problems": "Cette forme ne se charge pas :",
+        "add": "Ajouter la règle",
+        "addSub": "Dans le brouillon, avec ses cas de test",
+        "retry": "Rejouer les cas",
+        "dismiss": "Écarter",
+        "unformalise": "Revenir au texte seul",
+        "errors": {
+          "AI_NOT_CONFIGURED": "Aucun fournisseur d'IA n'est configuré sur ce serveur.",
+          "AI_BUDGET_EXCEEDED": "Le budget IA de la campagne est atteint.",
+          "AI_UNAVAILABLE": "Le co-MJ ne répond pas. Réessaie.",
+          "AI_OUTPUT_INVALID": "Le co-MJ a répondu à côté. Réessaie.",
+          "FORMAL_INVALID": "Cette forme n'a pas le bon format.",
+          "NO_DRAFT": "Il n'y a plus de brouillon.",
+          "action": "Ça n'a pas marché. Réessaie."
+        }
+      },
       "creationHint": "Ce que les joueurs choisissent en créant leur personnage.",
       "freeSlots": "Actions libres au départ",
       "creationNote": "Note de création",
@@ -2628,6 +2768,117 @@
       "INVALID_DIFFICULTY": "Difficulté hors limites.",
       "NOTHING_TO_SELL": "Ce PNJ ne vend ni ne cache rien.",
       "UNEXPECTED": "Ça n'a pas marché ({{code}})."
+    }
+  },
+  "travel": {
+    "title": "Le voyage",
+    "day": "Jour {{day}} · {{portion}}",
+    "night": "Nuit du jour {{day}}",
+    "supplies": "{{name}} : {{value}} (−{{perDay}} par jour)",
+    "towards": "Vers {{place}}",
+    "towardsUnknown": "Vers un lieu inconnu",
+    "days_one": "{{count}} jour",
+    "days_other": "{{count}} jours",
+    "progress": "{{route}} : {{done}} sur {{total}} hexagones",
+    "arrived": "Le groupe est arrivé. Le MJ ouvre le lieu.",
+    "onTheRoad": "Sur la route",
+    "vote": {
+      "title": "Par où passer ?",
+      "voters": "Pour : {{names}}",
+      "hint": "Ton vote se change tant que le MJ n'a pas choisi. Le MJ tranche."
+    },
+    "check": {
+      "title": "Jet de groupe : {{label}}",
+      "need": "{{ability}}, {{difficulty}} ou plus. Il faut {{needed}} réussite(s) dans le groupe.",
+      "roll": "Lancer le dé",
+      "rolls": "Les jets du groupe",
+      "waiting": "attend",
+      "success": "Le groupe réussit.",
+      "failure": "Le groupe échoue."
+    },
+    "watch": {
+      "title": "Les tours de garde",
+      "yours": "Ton tour de garde",
+      "awake": "Le groupe dort. {{name}} veille.",
+      "wake": "Réveiller les autres",
+      "wakeHint": "Ou les laisser dormir",
+      "woken": "Le groupe est réveillé."
+    },
+    "gm": {
+      "noParty": "Cette carte n'a pas de départ pour le groupe : place un départ du groupe dans l'éditeur.",
+      "pickHint": "Touche un hexagone ou un lieu : le serveur propose les deux routes pour y aller.",
+      "towards": "Vers {{place}}",
+      "towardsSecret": "Vers {{place}} (secret)",
+      "abandon": "Abandonner le voyage",
+      "routeName": "Nom de la route",
+      "routeDescription": "Ce que les joueurs savent de la route",
+      "portions_one": "{{count}} portion",
+      "portions_other": "{{count}} portions",
+      "noVote": "Pas encore de vote",
+      "save": "Enregistrer",
+      "choose": "Prendre cette route",
+      "advance": "Portion suivante · {{portion}}",
+      "dawn": "Lever le camp · jour {{day}}",
+      "hold": "Perdre une portion",
+      "enter": "Entrer : {{place}}",
+      "noPlaceMap": "Ce lieu n'ouvre pas de carte : continue la scène avec les outils habituels.",
+      "kept": "Événements gardés",
+      "proposal": "Le co-MJ propose · {{terrain}}",
+      "eventText": "Le texte lu à la table",
+      "keep": "Garder",
+      "skip": "Aucun",
+      "groupCheck": "Jet de groupe",
+      "checkLabel": "Ne pas se perdre",
+      "checkWhat": "Ce qui est en jeu",
+      "ability": "Caractéristique",
+      "difficulty": "Difficulté",
+      "launchCheck": "Lancer le jet de groupe",
+      "closeCheck": "Clore avec les jets faits",
+      "needed": "{{needed}} sur {{count}} requis",
+      "nobody": "Personne",
+      "setWatches": "Fixer les tours de garde",
+      "playWatch": "Jouer ce tour",
+      "watchMessage": "Ce que voit celui qui veille (lui seul le lira)",
+      "less": "Retirer une unité de {{name}}",
+      "more": "Ajouter une unité de {{name}}"
+    },
+    "errors": {
+      "UNEXPECTED": "Quelque chose a échoué. Réessaie.",
+      "NO_WORLD_MAP": "Aucune carte du monde n'est montrée.",
+      "NO_PARTY_START": "Cette carte n'a pas de départ pour le groupe.",
+      "NO_JOURNEY": "Aucun voyage en cours.",
+      "JOURNEY_UNDER_WAY": "Un voyage est en cours : abandonne-le d'abord.",
+      "NOT_CHOSEN": "Choisis d'abord une route.",
+      "ALREADY_ARRIVED": "Le groupe est déjà arrivé.",
+      "NOT_ARRIVED": "Le groupe n'est pas encore arrivé.",
+      "NO_PROPOSAL": "Plus d'événement à garder pour cette portion.",
+      "NO_CHECK": "Aucun jet de groupe en cours.",
+      "CHECK_OPEN": "Un jet de groupe est déjà en cours.",
+      "NOT_NIGHT": "Les tours de garde se fixent la nuit.",
+      "NO_WATCH": "Fixe d'abord les tours de garde.",
+      "NO_MEMBERS": "Aucun personnage validé à la table.",
+      "RULES_UNKNOWN": "Le système de règles de la campagne est introuvable.",
+      "FIGHT_IN_PROGRESS": "Un combat est en cours.",
+      "CELL_OUTSIDE": "Cet hexagone est hors de la carte.",
+      "NO_ROUTE": "Aucune route n'y mène.",
+      "UNKNOWN_ROUTE": "Route inconnue.",
+      "UNKNOWN_EVENT": "Événement inconnu.",
+      "UNKNOWN_ABILITY": "Caractéristique inconnue.",
+      "INVALID_DIFFICULTY": "La difficulté va de 1 à 40.",
+      "INVALID_WATCH": "Tour de garde invalide.",
+      "NOT_A_MEMBER": "Ce personnage n'est pas du groupe.",
+      "INVALID_SUPPLIES": "Quantité invalide.",
+      "CANNOT_STAND": "Le groupe ne peut pas aller là.",
+      "NO_PLACE_MAP": "Ce lieu n'ouvre pas de carte.",
+      "TEXT_TOO_LONG": "Texte trop long.",
+      "VOTE_CLOSED": "Le MJ a déjà choisi la route.",
+      "ALREADY_ROLLED": "Tu as déjà lancé.",
+      "NOT_IN_CHECK": "Tu n'es pas dans ce jet.",
+      "NOT_YOUR_WATCH": "Ce n'est pas ton tour de garde.",
+      "NO_PLAY_SHEET": "Ta fiche n'est pas encore en jeu.",
+      "SPECTATOR": "Les spectateurs regardent sans jouer.",
+      "SESSION_NOT_LIVE": "La session n'est pas en cours.",
+      "NO_SESSION": "Aucune session ouverte."
     }
   }
 }

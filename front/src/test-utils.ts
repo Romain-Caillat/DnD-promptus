@@ -43,10 +43,13 @@ export function stubPasskeys(credentials: { create?: unknown; get?: unknown }) {
 
 export const bytes = (...b: number[]) => new Uint8Array(b).buffer
 
-/** A device that does, or does not, ask for reduced motion. */
-export function stubReducedMotion(reduce: boolean) {
+/**
+ * A device that does, or does not, ask for reduced motion; `matching`
+ * lists the other media queries it answers (a computer, a tablet).
+ */
+export function stubReducedMotion(reduce: boolean, matching: string[] = []) {
   vi.stubGlobal('matchMedia', (query: string) => ({
-    matches: reduce && query === '(prefers-reduced-motion: reduce)',
+    matches: (reduce && query === '(prefers-reduced-motion: reduce)') || matching.includes(query),
     media: query,
     addEventListener: () => {},
     removeEventListener: () => {},

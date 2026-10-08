@@ -1,8 +1,10 @@
 import type { CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 import {
+  SHEET_FRAMES,
   SPRITE_HEIGHT,
   SPRITE_WIDTH,
+  sheetUrl,
   spriteUrl,
   type CharacterLook,
   type ConditionVisual,
@@ -66,15 +68,22 @@ const PARTICLES: Partial<Record<ConditionVisual, Particle[]>> = {
 /** Effects whose particles orbit together (the stars of a stunned character). */
 const RING: ConditionVisual[] = ['etourdi']
 
+/** How a sprite moves (board « Sprite »): `repos` breathes, `marche` walks on the spot. */
+export type SpriteMotion = 'repos' | 'marche'
+
 /**
  * A character drawn from its description. The server renders the PNG
  * (one renderer everywhere); this enlarges it by a whole number, pixel
- * crisp, and draws each condition's effect over it.
+ * crisp, and draws each condition's effect over it. With `motion` it
+ * plays the server's sheet (characters/walk-in-four-directions): two
+ * frames of breath at rest, two steps walking — the first frame, still,
+ * under reduced motion.
  */
 export function Sprite({
   look,
   scale = 4,
   facing = 'east',
+  motion,
   effects = [],
   label,
   className,
@@ -83,6 +92,7 @@ export function Sprite({
   /** Screen pixels per sprite pixel. */
   scale?: number
   facing?: Facing
+  motion?: SpriteMotion
   /** Condition effects shown on the character, from the rule system. */
   effects?: readonly ConditionVisual[]
   /** Who it is, for screen readers; without it the sprite is decorative. */
@@ -97,14 +107,31 @@ export function Sprite({
       style={{ width, height }}
       data-effects={effects.join(' ') || undefined}
     >
-      <img
-        className="sprite-body"
-        src={spriteUrl(look, facing)}
-        width={width}
-        height={height}
-        alt={label ?? ''}
-        draggable={false}
-      />
+      {motion ? (
+        <span
+          className={`sprite-body sprite-sheet sprite-sheet-${motion}`}
+          role={label ? 'img' : undefined}
+          aria-label={label}
+          aria-hidden={label ? undefined : true}
+          data-facing={facing}
+          style={
+            {
+              backgroundImage: `url("${sheetUrl(look, facing)}")`,
+              backgroundSize: `${SHEET_FRAMES * width}px ${height}px`,
+              '--sprite-w': `${width}px`,
+            } as CSSProperties
+          }
+        />
+      ) : (
+        <img
+          className="sprite-body"
+          src={spriteUrl(look, facing)}
+          width={width}
+          height={height}
+          alt={label ?? ''}
+          draggable={false}
+        />
+      )}
       {effects.includes('beni') && <span className="sprite-halo" aria-hidden />}
       {effects.map((effect) => (
         <Particles key={effect} effect={effect} scale={scale} />

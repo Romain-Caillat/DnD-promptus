@@ -33,7 +33,7 @@ use crate::rules::check::{
     self, Advantage, Modifier, ModifierSource, OutcomeBand, RollBreakdown, RollTarget,
 };
 use crate::rules::dice::DiceSource;
-use crate::rules::model::InitiativeTies;
+use crate::rules::model::{InitiativeTies, RollScope};
 use crate::rules::sheet::{Combatant, Side};
 
 use super::geometry::{Facing, arc_of, distance};
@@ -891,6 +891,7 @@ impl Battle {
         let armor = t.armor + evading;
         let roll = check::roll(
             system,
+            RollScope::Attacks,
             mods,
             Advantage::Normal,
             Some(RollTarget::ArmorClass { value: armor }),
@@ -1482,8 +1483,15 @@ impl Battle {
             });
             self.rally = 0;
         }
-        let roll = check::roll(system, mods, Advantage::Normal, Some(target), dice)
-            .expect("a plain roll never fails");
+        let roll = check::roll(
+            system,
+            RollScope::Checks,
+            mods,
+            Advantage::Normal,
+            Some(target),
+            dice,
+        )
+        .expect("a plain roll never fails");
         let id = self.crew[ci].id.clone();
         self.award(system, &id, roll.band);
         roll

@@ -10,9 +10,12 @@
 # couleur fixe du pack, ou un emplacement que la description recolore —
 # `skin` (peau), `hair` (cheveux et barbe), `dye` et `accent` (couleurs de la
 # pièce, palette `cloth`). Une pièce qui se pose sur le corps a une variante
-# par corps (`per_body`). Seule la direction `east` (profil droit) existe ;
-# `west` est son miroir, `north` et `south` viendront avec
-# characters/walk-in-four-directions.
+# par corps (`per_body`). Chaque pièce se dessine dans trois directions :
+# `east` (profil droit), `south` (de face) et `north` (de dos) ; `west` est
+# le miroir de `east`. Une liste vide (`north: []`) dit qu'on ne voit pas la
+# pièce de ce côté. Les vues de face et de dos ont été tirées une fois du
+# profil par docs/design/sprite-turn.py (characters/walk-in-four-directions)
+# et s'éditent maintenant à la main, comme le reste.
 format: 1
 id: equipage-spatial
 name: Équipage spatial
@@ -145,6 +148,102 @@ pieces:
             rows:
               - "ss"
               - "ss"
+        south:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "ss..ss"
+              - "ss..ss"
+              - "ss..ss"
+              - "ss..ss"
+              - "ss..ss"
+          - depth: feet
+            at: [6, 24]
+            rows:
+              - "sss..sss"
+              - "sss..sss"
+          - depth: torso
+            at: [7, 12]
+            rows:
+              - "ssssss"
+              - "ssssss"
+              - "ssssss"
+              - "ssssss"
+              - "ssssss"
+              - "ssssss"
+              - "ssssss"
+              - "ssssss"
+          - depth: head
+            at: [6, 5]
+            rows:
+              - "..ssss.."
+              - ".ssssss."
+              - "ssssssss"
+              - "ssessess"
+              - "ssssssss"
+              - "ssssssss"
+              - ".ssssss."
+              - "..ssss.."
+          - depth: front_arm
+            at: [4, 13]
+            rows:
+              - "ss........ss"
+              - "ss........ss"
+              - "ss........ss"
+              - "ss........ss"
+          - depth: hand
+            at: [4, 17]
+            rows:
+              - "ss........ss"
+              - "ss........ss"
+        north:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "ss..ss"
+              - "ss..ss"
+              - "ss..ss"
+              - "ss..ss"
+              - "ss..ss"
+          - depth: feet
+            at: [6, 24]
+            rows:
+              - "sss..sss"
+              - "sss..sss"
+          - depth: torso
+            at: [7, 12]
+            rows:
+              - "ssssss"
+              - "ssssss"
+              - "ssssss"
+              - "ssssss"
+              - "ssssss"
+              - "ssssss"
+              - "ssssss"
+              - "ssssss"
+          - depth: head
+            at: [6, 5]
+            rows:
+              - "..ssss.."
+              - ".ssssss."
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+              - ".ssssss."
+              - "..ssss.."
+          - depth: front_arm
+            at: [4, 13]
+            rows:
+              - "ss........ss"
+              - "ss........ss"
+              - "ss........ss"
+              - "ss........ss"
+          - depth: hand
+            at: [4, 17]
+            rows:
+              - "ss........ss"
+              - "ss........ss"
     - id: robuste
       name: Robuste
       frames:
@@ -205,6 +304,102 @@ pieces:
             rows:
               - "ss"
               - "ss"
+        south:
+          - depth: legs
+            at: [6, 19]
+            rows:
+              - "sss..sss"
+              - "sss..sss"
+              - "sss..sss"
+              - "sss..sss"
+              - "sss..sss"
+          - depth: feet
+            at: [5, 24]
+            rows:
+              - "ssss..ssss"
+              - "ssss..ssss"
+          - depth: torso
+            at: [6, 12]
+            rows:
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+          - depth: head
+            at: [6, 5]
+            rows:
+              - "..ssss.."
+              - ".ssssss."
+              - "ssssssss"
+              - "ssessess"
+              - "ssssssss"
+              - "ssssssss"
+              - ".ssssss."
+              - "..ssss.."
+          - depth: front_arm
+            at: [4, 13]
+            rows:
+              - "ss........ss"
+              - "ss........ss"
+              - "ss........ss"
+              - "ss........ss"
+          - depth: hand
+            at: [4, 17]
+            rows:
+              - "ss........ss"
+              - "ss........ss"
+        north:
+          - depth: legs
+            at: [6, 19]
+            rows:
+              - "sss..sss"
+              - "sss..sss"
+              - "sss..sss"
+              - "sss..sss"
+              - "sss..sss"
+          - depth: feet
+            at: [5, 24]
+            rows:
+              - "ssss..ssss"
+              - "ssss..ssss"
+          - depth: torso
+            at: [6, 12]
+            rows:
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+          - depth: head
+            at: [6, 5]
+            rows:
+              - "..ssss.."
+              - ".ssssss."
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+              - "ssssssss"
+              - ".ssssss."
+              - "..ssss.."
+          - depth: front_arm
+            at: [4, 13]
+            rows:
+              - "ss........ss"
+              - "ss........ss"
+              - "ss........ss"
+              - "ss........ss"
+          - depth: hand
+            at: [4, 17]
+            rows:
+              - "ss........ss"
+              - "ss........ss"
   hair:
     - id: court
       name: Courts
@@ -219,6 +414,25 @@ pieces:
               - "hh......"
               - "hh......"
               - "hh......"
+        south:
+          - depth: hair
+            at: [6, 4]
+            rows:
+              - "..hhhh.."
+              - ".hhhhhh."
+              - "hhhhhhhh"
+              - "h......h"
+        north:
+          - depth: hair
+            at: [6, 4]
+            rows:
+              - "..hhhh.."
+              - ".hhhhhh."
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - ".hhhhhh."
     - id: longue
       name: Longs
       frames:
@@ -237,6 +451,36 @@ pieces:
               - "hhh......"
               - "hhh......"
               - ".h......."
+        south:
+          - depth: hair
+            at: [5, 4]
+            rows:
+              - "..hhhhhh.."
+              - ".hhhhhhhh."
+              - "hhhhhhhhhh"
+              - "hhh....hhh"
+              - "hh......hh"
+              - "hh......hh"
+              - "hh......hh"
+              - "hh......hh"
+              - "hh......hh"
+              - "hh......hh"
+              - "h........h"
+        north:
+          - depth: hair
+            at: [5, 4]
+            rows:
+              - "..hhhhhh.."
+              - ".hhhhhhhh."
+              - "hhhhhhhhhh"
+              - "hhhhhhhhhh"
+              - "hhhhhhhhhh"
+              - "hhhhhhhhhh"
+              - "hhhhhhhhhh"
+              - "hhhhhhhhhh"
+              - "hhhhhhhhhh"
+              - "hhhhhhhhhh"
+              - ".hhhhhhhh."
     - id: catogan
       name: Catogan
       frames:
@@ -259,6 +503,30 @@ pieces:
               - "hh......"
               - "hh......"
               - "hh......"
+        south:
+          - depth: hair
+            at: [6, 4]
+            rows:
+              - "..hhhh.."
+              - ".hhhhhh."
+              - "hhhhhhhh"
+              - "h......h"
+        north:
+          - depth: hair
+            at: [6, 4]
+            rows:
+              - "..hhhh.."
+              - ".hhhhhh."
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - ".hhhhhh."
+              - "...BB..."
+              - "...hh..."
+              - "...hh..."
+              - "...hh..."
+              - "...hh..."
     - id: tresses
       name: Tresses
       frames:
@@ -283,6 +551,38 @@ pieces:
               - "hhh......"
               - "hhh......"
               - "hhh......"
+        south:
+          - depth: hair
+            at: [5, 4]
+            rows:
+              - "...hhhh..."
+              - "..hhhhhh.."
+              - ".hhhhhhhh."
+              - ".h......h."
+              - "h........h"
+              - "h........h"
+              - "h........h"
+              - "g........g"
+              - "h........h"
+              - "h........h"
+              - "g........g"
+        north:
+          - depth: hair
+            at: [6, 4]
+            rows:
+              - "..hhhh.."
+              - ".hhhhhh."
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - ".hhhhhh."
+              - "..h..h.."
+              - "..h..h.."
+              - "..g..g.."
+              - "..h..h.."
+              - "..h..h.."
+              - "..g..g.."
     - id: rase
       name: Rasés
       frames:
@@ -295,6 +595,21 @@ pieces:
               - "hh..."
               - "hh..."
               - "hh..."
+        south:
+          - depth: hair
+            at: [6, 5]
+            rows:
+              - "..hhhh.."
+              - ".h....h."
+        north:
+          - depth: hair
+            at: [6, 5]
+            rows:
+              - "..hhhh.."
+              - ".hhhhhh."
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - ".hhhhhh."
     - id: chignon
       name: Chignon
       frames:
@@ -308,6 +623,29 @@ pieces:
               - "..hh......"
               - "..hh......"
               - "..hh......"
+        south:
+          - depth: hair
+            at: [6, 3]
+            rows:
+              - "...hh..."
+              - "..hhhh.."
+              - ".hhhhhh."
+              - "hhhhhhhh"
+              - "h......h"
+        north:
+          - depth: hair
+            at: [6, 2]
+            rows:
+              - "...hh..."
+              - "..hhhh.."
+              - "..hhhh.."
+              - "..hhhh.."
+              - ".hhhhhh."
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - "hhhhhhhh"
+              - ".hhhhhh."
   beard:
     - id: courte
       name: Courte
@@ -319,6 +657,14 @@ pieces:
               - ".hhhhhhh"
               - "hhhhhhhh"
               - ".hhhhhh."
+        south:
+          - depth: beard
+            at: [6, 10]
+            rows:
+              - "hh....hh"
+              - ".hhhhhh."
+              - "..hhhh.."
+        north: []
     - id: longue
       name: Longue
       frames:
@@ -333,6 +679,17 @@ pieces:
               - "hhhhhhhh"
               - ".hhhhhh."
               - "...hh..."
+        south:
+          - depth: beard
+            at: [6, 10]
+            rows:
+              - "hh....hh"
+              - "hhhhhhhh"
+              - ".hhhhhh."
+              - ".hhhhhh."
+              - "..hhhh.."
+              - "...hh..."
+        north: []
     - id: bouc
       name: Bouc
       frames:
@@ -343,6 +700,13 @@ pieces:
               - "hhh"
               - "hh."
               - "hh."
+        south:
+          - depth: beard
+            at: [6, 11]
+            rows:
+              - "...hh..."
+              - "...hh..."
+        north: []
     - id: moustache
       name: Moustache
       frames:
@@ -352,6 +716,13 @@ pieces:
             rows:
               - "hhhh"
               - "...h"
+        south:
+          - depth: beard
+            at: [6, 10]
+            rows:
+              - "..hhhh.."
+              - ".h....h."
+        north: []
   headwear:
     - id: lunettes
       name: Lunettes
@@ -362,6 +733,17 @@ pieces:
             rows:
               - ".....mvv"
               - "lllllmmm"
+        south:
+          - depth: headwear
+            at: [6, 5]
+            rows:
+              - "mvvmmvvm"
+              - "lmmllmml"
+        north:
+          - depth: headwear
+            at: [6, 6]
+            rows:
+              - "llllllll"
     - id: oreillette
       name: Oreillette
       frames:
@@ -380,6 +762,35 @@ pieces:
               - ".uu...."
               - "..uu..."
               - "....uuv"
+        south:
+          - depth: headwear
+            at: [4, 1]
+            rows:
+              - "v...."
+              - "m...."
+              - "m...."
+              - "m...."
+              - ".m..."
+              - ".m..."
+              - ".m..."
+              - "uu..."
+              - "uu..."
+              - ".uu.."
+              - "..uuv"
+        north:
+          - depth: headwear
+            at: [14, 1]
+            rows:
+              - "...v"
+              - "...m"
+              - "...m"
+              - "...m"
+              - "..m."
+              - "..m."
+              - "..m."
+              - "..uu"
+              - "..uu"
+              - ".uu."
     - id: bandana
       name: Bandana
       dye: orange
@@ -395,6 +806,23 @@ pieces:
               - ".d........"
               - "dd........"
               - "d........."
+        south:
+          - depth: headwear
+            at: [6, 4]
+            rows:
+              - "..dddd.."
+              - ".ddaddd."
+              - "dddddadd"
+        north:
+          - depth: headwear
+            at: [6, 4]
+            rows:
+              - "..dddd.."
+              - ".dddddd."
+              - "dddddddd"
+              - "...dd..."
+              - "..d..d.."
+              - "..d..d.."
     - id: casque-vorr
       name: Casque Vorr
       dye: chitine
@@ -418,6 +846,42 @@ pieces:
               - "..ddaddddddo"
               - "...dddddddoo"
               - ".....dd...o."
+        south:
+          - depth: headwear
+            at: [5, 0]
+            rows:
+              - "c........c"
+              - ".c......c."
+              - "..c....c.."
+              - "..c....c.."
+              - "..dcddcd.."
+              - ".dddddddd."
+              - ".dddddddd."
+              - "dxxddddxxd"
+              - "ddxddddxdd"
+              - "daddddddad"
+              - "dddddddddd"
+              - ".ddaddadd."
+              - "..dddddd.."
+              - ".o..dd..o."
+        north:
+          - depth: headwear
+            at: [5, 0]
+            rows:
+              - "c........c"
+              - ".c......c."
+              - "..c....c.."
+              - "..c....c.."
+              - "..dcddcd.."
+              - ".dddddddd."
+              - ".dddddddd."
+              - "dddddddddd"
+              - "dddddddddd"
+              - "dadddddddd"
+              - "dddddddddd"
+              - ".ddaddadd."
+              - "..dddddd.."
+              - "....dd...."
     - id: casque-vorr-chef
       name: Casque Vorr à crête
       dye: chitine
@@ -441,6 +905,42 @@ pieces:
               - "...ddaddddddo"
               - "....dddddddoo"
               - "......dd...o."
+        south:
+          - depth: headwear
+            at: [5, 0]
+            rows:
+              - "c...aa...c"
+              - ".c..aa..c."
+              - "..c.aa.c.."
+              - "..c.aa.c.."
+              - "..dcaacd.."
+              - ".dddddddd."
+              - ".dddddddd."
+              - "dxxddddxxd"
+              - "ddxddddxdd"
+              - "daddddddad"
+              - "dddddddddd"
+              - ".ddaddadd."
+              - "..dddddd.."
+              - ".o..dd..o."
+        north:
+          - depth: headwear
+            at: [5, 0]
+            rows:
+              - "c...aa...c"
+              - ".c..aa..c."
+              - "..c.aa.c.."
+              - "..c.aa.c.."
+              - "..dcaacd.."
+              - ".dddddddd."
+              - ".dddddddd."
+              - "dddddddddd"
+              - "dddddddddd"
+              - "dadddddddd"
+              - "dddddddddd"
+              - ".ddaddadd."
+              - "..dddddd.."
+              - "....dd...."
   outfit:
     - id: combinaison
       name: Combinaison
@@ -484,6 +984,80 @@ pieces:
               - "dd"
               - "dd"
               - "aa"
+        south:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "dd..dd"
+              - "dd..dd"
+              - "aa..aa"
+              - "dd..dd"
+              - "dd..dd"
+          - depth: feet
+            at: [6, 23]
+            rows:
+              - "uuu..uuu"
+              - "uuu..uuu"
+              - "uuu..uuu"
+          - depth: torso
+            at: [7, 12]
+            rows:
+              - "ddaadd"
+              - "dddddd"
+              - "adddda"
+              - "adddda"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+          - depth: belt
+            at: [7, 18]
+            rows:
+              - "aaaaaa"
+          - depth: front_arm
+            at: [4, 13]
+            rows:
+              - "dd........dd"
+              - "dd........dd"
+              - "dd........dd"
+              - "aa........aa"
+        north:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "dd..dd"
+              - "dd..dd"
+              - "aa..aa"
+              - "dd..dd"
+              - "dd..dd"
+          - depth: feet
+            at: [6, 23]
+            rows:
+              - "uuu..uuu"
+              - "uuu..uuu"
+              - "uuu..uuu"
+          - depth: torso
+            at: [7, 12]
+            rows:
+              - "dddddd"
+              - "dddddd"
+              - "aaddaa"
+              - "aaddaa"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+          - depth: belt
+            at: [7, 18]
+            rows:
+              - "aaaaaa"
+          - depth: front_arm
+            at: [4, 13]
+            rows:
+              - "dd........dd"
+              - "dd........dd"
+              - "dd........dd"
+              - "aa........aa"
       per_body:
         robuste:
           east:
@@ -531,6 +1105,80 @@ pieces:
                 - "dd"
                 - "dd"
                 - "aa"
+          south:
+            - depth: legs
+              at: [6, 19]
+              rows:
+                - "ddd..ddd"
+                - "ddd..ddd"
+                - "aaa..aaa"
+                - "ddd..ddd"
+                - "ddd..ddd"
+            - depth: feet
+              at: [5, 23]
+              rows:
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+            - depth: torso
+              at: [6, 12]
+              rows:
+                - "ddaaaadd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+            - depth: belt
+              at: [6, 18]
+              rows:
+                - "aamaamaa"
+            - depth: front_arm
+              at: [4, 13]
+              rows:
+                - "dd........dd"
+                - "dd........dd"
+                - "dd........dd"
+                - "aa........aa"
+          north:
+            - depth: legs
+              at: [6, 19]
+              rows:
+                - "ddd..ddd"
+                - "ddd..ddd"
+                - "aaa..aaa"
+                - "ddd..ddd"
+                - "ddd..ddd"
+            - depth: feet
+              at: [5, 23]
+              rows:
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+            - depth: torso
+              at: [6, 12]
+              rows:
+                - "dddddddd"
+                - "dddddddd"
+                - "daddddad"
+                - "daddddad"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+            - depth: belt
+              at: [6, 18]
+              rows:
+                - "aaaaaaaa"
+            - depth: front_arm
+              at: [4, 13]
+              rows:
+                - "dd........dd"
+                - "dd........dd"
+                - "dd........dd"
+                - "aa........aa"
     - id: bleu-de-travail
       name: Bleu de travail
       dye: bleu
@@ -574,6 +1222,81 @@ pieces:
               - "aa"
               - "aa"
               - "aa"
+        south:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "dd..dd"
+              - "dd..dd"
+              - "dd..dd"
+              - "dd..dd"
+              - "dd..dd"
+          - depth: feet
+            at: [6, 23]
+            rows:
+              - "uuu..uuu"
+              - "uuu..uuu"
+              - "uuu..uuu"
+          - depth: torso
+            at: [7, 12]
+            rows:
+              - "aaaaaa"
+              - "aaaaaa"
+              - "aaddaa"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+          - depth: belt
+            at: [7, 18]
+            rows:
+              - "llllll"
+          - depth: front_arm
+            at: [4, 13]
+            rows:
+              - "aa........aa"
+              - "aa........aa"
+              - "aa........aa"
+              - "aa........aa"
+        north:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "dd..dd"
+              - "dd..dd"
+              - "dd..dd"
+              - "dd..dd"
+              - "dd..dd"
+          - depth: feet
+            at: [6, 23]
+            rows:
+              - "uuu..uuu"
+              - "uuu..uuu"
+              - "uuu..uuu"
+          - depth: torso
+            at: [7, 12]
+            rows:
+              - "adaada"
+              - "adaada"
+              - "aaaaaa"
+              - "ddaadd"
+              - "ddaadd"
+              - "ddaadd"
+              - "ddaadd"
+              - "ddaadd"
+          - depth: belt
+            at: [7, 18]
+            rows:
+              - "llllll"
+              - ".m..m"
+          - depth: front_arm
+            at: [4, 13]
+            rows:
+              - "aa........aa"
+              - "aa........aa"
+              - "aa........aa"
+              - "aa........aa"
       per_body:
         robuste:
           east:
@@ -622,6 +1345,81 @@ pieces:
                 - "aa"
                 - "aa"
                 - "aa"
+          south:
+            - depth: legs
+              at: [6, 19]
+              rows:
+                - "ddd..ddd"
+                - "ddd..ddd"
+                - "ddd..ddd"
+                - "ddd..ddd"
+                - "ddd..ddd"
+            - depth: feet
+              at: [5, 23]
+              rows:
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+            - depth: torso
+              at: [6, 12]
+              rows:
+                - "aadaadaa"
+                - "aadaadaa"
+                - "aaaddaaa"
+                - "ddmddmdd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+            - depth: belt
+              at: [6, 18]
+              rows:
+                - "llllllll"
+            - depth: front_arm
+              at: [4, 13]
+              rows:
+                - "aa........aa"
+                - "aa........aa"
+                - "aa........aa"
+                - "aa........aa"
+          north:
+            - depth: legs
+              at: [6, 19]
+              rows:
+                - "ddd..ddd"
+                - "ddd..ddd"
+                - "ddd..ddd"
+                - "ddd..ddd"
+                - "ddd..ddd"
+            - depth: feet
+              at: [5, 23]
+              rows:
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+            - depth: torso
+              at: [6, 12]
+              rows:
+                - "aaaaaaaa"
+                - "aaaaaaaa"
+                - "aadaadaa"
+                - "dddaaddd"
+                - "dddaaddd"
+                - "dddaaddd"
+                - "dddaaddd"
+                - "dddaaddd"
+            - depth: belt
+              at: [6, 18]
+              rows:
+                - "llllllll"
+                - "..m..m"
+            - depth: front_arm
+              at: [4, 13]
+              rows:
+                - "aa........aa"
+                - "aa........aa"
+                - "aa........aa"
+                - "aa........aa"
     - id: blouse
       name: Blouse
       dye: blanc-casse
@@ -659,6 +1457,70 @@ pieces:
               - "dd"
               - "dd"
               - "dd"
+        south:
+          - depth: legs
+            at: [7, 22]
+            rows:
+              - "uu..uu"
+              - "uu..uu"
+          - depth: feet
+            at: [6, 24]
+            rows:
+              - "uuu..uuu"
+              - "uuu..uuu"
+          - depth: torso
+            at: [7, 12]
+            rows:
+              - "ddaadd"
+              - "ddaadd"
+              - "dddddd"
+              - "daddad"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+          - depth: front_arm
+            at: [4, 13]
+            rows:
+              - "dd........dd"
+              - "dd........dd"
+              - "dd........dd"
+              - "dd........dd"
+        north:
+          - depth: legs
+            at: [7, 22]
+            rows:
+              - "uu..uu"
+              - "uu..uu"
+          - depth: feet
+            at: [6, 24]
+            rows:
+              - "uuu..uuu"
+              - "uuu..uuu"
+          - depth: torso
+            at: [7, 12]
+            rows:
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+          - depth: front_arm
+            at: [4, 13]
+            rows:
+              - "dd........dd"
+              - "dd........dd"
+              - "dd........dd"
+              - "dd........dd"
       per_body:
         robuste:
           east:
@@ -701,6 +1563,70 @@ pieces:
                 - "dd"
                 - "dd"
                 - "dd"
+          south:
+            - depth: legs
+              at: [6, 22]
+              rows:
+                - "uuu..uuu"
+                - "uuu..uuu"
+            - depth: feet
+              at: [5, 24]
+              rows:
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+            - depth: torso
+              at: [6, 12]
+              rows:
+                - "ddaaaadd"
+                - "ddaaaadd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+            - depth: front_arm
+              at: [4, 13]
+              rows:
+                - "dd........dd"
+                - "dd........dd"
+                - "dd........dd"
+                - "dd........dd"
+          north:
+            - depth: legs
+              at: [6, 22]
+              rows:
+                - "uuu..uuu"
+                - "uuu..uuu"
+            - depth: feet
+              at: [5, 24]
+              rows:
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+            - depth: torso
+              at: [6, 12]
+              rows:
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+            - depth: front_arm
+              at: [4, 13]
+              rows:
+                - "dd........dd"
+                - "dd........dd"
+                - "dd........dd"
+                - "dd........dd"
     - id: veste-longue
       name: Veste longue
       dye: violet
@@ -744,6 +1670,82 @@ pieces:
               - "dd"
               - "dd"
               - "aa"
+        south:
+          - depth: legs
+            at: [7, 21]
+            rows:
+              - "uu..uu"
+              - "uu..uu"
+              - "uu..uu"
+          - depth: feet
+            at: [6, 22]
+            rows:
+              - "uuu..uuu"
+              - "uuu..uuu"
+              - "uuu..uuu"
+              - "uuu..uuu"
+          - depth: torso
+            at: [7, 12]
+            rows:
+              - "ddaadd"
+              - "ddaadd"
+              - "ddaadd"
+              - "ddaadd"
+              - "ddaadd"
+              - "ddaadd"
+              - "ddaadd"
+              - "ddaadd"
+              - "ddaadd"
+              - "ddaadd"
+          - depth: belt
+            at: [7, 17]
+            rows:
+              - "llllll"
+          - depth: front_arm
+            at: [4, 13]
+            rows:
+              - "dd........dd"
+              - "dd........dd"
+              - "dd........dd"
+              - "aa........aa"
+        north:
+          - depth: legs
+            at: [7, 21]
+            rows:
+              - "uu..uu"
+              - "uu..uu"
+              - "uu..uu"
+          - depth: feet
+            at: [6, 22]
+            rows:
+              - "uuu..uuu"
+              - "uuu..uuu"
+              - "uuu..uuu"
+              - "uuu..uuu"
+          - depth: torso
+            at: [7, 12]
+            rows:
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+          - depth: belt
+            at: [7, 17]
+            rows:
+              - "llllll"
+          - depth: front_arm
+            at: [4, 13]
+            rows:
+              - "dd........dd"
+              - "dd........dd"
+              - "dd........dd"
+              - "aa........aa"
       per_body:
         robuste:
           east:
@@ -792,6 +1794,82 @@ pieces:
                 - "dd"
                 - "dd"
                 - "aa"
+          south:
+            - depth: legs
+              at: [6, 21]
+              rows:
+                - "uuu..uuu"
+                - "uuu..uuu"
+                - "uuu..uuu"
+            - depth: feet
+              at: [5, 22]
+              rows:
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+            - depth: torso
+              at: [6, 12]
+              rows:
+                - "dddaaddd"
+                - "dddaaddd"
+                - "dddaaddd"
+                - "dddaaddd"
+                - "dddaaddd"
+                - "dddaaddd"
+                - "dddaaddd"
+                - "dddaaddd"
+                - "dddaaddd"
+                - "dddaaddd"
+            - depth: belt
+              at: [6, 17]
+              rows:
+                - "llgllgll"
+            - depth: front_arm
+              at: [4, 13]
+              rows:
+                - "dd........dd"
+                - "dd........dd"
+                - "dd........dd"
+                - "aa........aa"
+          north:
+            - depth: legs
+              at: [6, 21]
+              rows:
+                - "uuu..uuu"
+                - "uuu..uuu"
+                - "uuu..uuu"
+            - depth: feet
+              at: [5, 22]
+              rows:
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+                - "uuuu..uuuu"
+            - depth: torso
+              at: [6, 12]
+              rows:
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+            - depth: belt
+              at: [6, 17]
+              rows:
+                - "llllllll"
+            - depth: front_arm
+              at: [4, 13]
+              rows:
+                - "dd........dd"
+                - "dd........dd"
+                - "dd........dd"
+                - "aa........aa"
   armour:
     - id: plastron
       name: Plastron
@@ -808,6 +1886,26 @@ pieces:
               - "ddddddd"
               - "ddddddd"
               - "ddddddd"
+        south:
+          - depth: armour
+            at: [7, 12]
+            rows:
+              - "dddddd"
+              - "dddddd"
+              - "aaddaa"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+        north:
+          - depth: armour
+            at: [7, 12]
+            rows:
+              - "dddddd"
+              - "dddddd"
+              - "aaddaa"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
       per_body:
         robuste:
           east:
@@ -820,6 +1918,26 @@ pieces:
                 - "ddddddddd"
                 - "ddddddddd"
                 - "ddddddddd"
+          south:
+            - depth: armour
+              at: [6, 12]
+              rows:
+                - "dddddddd"
+                - "dddddddd"
+                - "aaaddaaa"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+          north:
+            - depth: armour
+              at: [6, 12]
+              rows:
+                - "dddddddd"
+                - "dddddddd"
+                - "aaaddaaa"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
     - id: carapace
       name: Carapace
       dye: chitine
@@ -864,6 +1982,84 @@ pieces:
             rows:
               - "cc."
               - "cco"
+        south:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "dd..dd"
+              - "dd..dd"
+              - "da..da"
+              - "dd..dd"
+              - "dd..dd"
+          - depth: feet
+            at: [6, 24]
+            rows:
+              - "ccc..ccc"
+              - "ccc..ccco"
+          - depth: armour
+            at: [7, 11]
+            rows:
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "adddda"
+              - "dddddd"
+              - "dddddd"
+              - "daaaad"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+          - depth: front_arm
+            at: [4, 13]
+            rows:
+              - "dd........dd"
+              - "da........da"
+              - "dd........dd"
+              - "dd........dd"
+          - depth: hand
+            at: [4, 17]
+            rows:
+              - "cc........cc"
+              - "cco.......cco"
+        north:
+          - depth: legs
+            at: [7, 19]
+            rows:
+              - "dd..dd"
+              - "dd..dd"
+              - "da..da"
+              - "dd..dd"
+              - "dd..dd"
+          - depth: feet
+            at: [6, 24]
+            rows:
+              - "ccc..ccc"
+              - "ccc..ccco"
+          - depth: armour
+            at: [7, 11]
+            rows:
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+              - "adddda"
+              - "dddddd"
+              - "dddddd"
+              - "daddad"
+              - "dddddd"
+              - "dddddd"
+              - "dddddd"
+          - depth: front_arm
+            at: [4, 13]
+            rows:
+              - "dd........dd"
+              - "da........da"
+              - "dd........dd"
+              - "dd........dd"
+          - depth: hand
+            at: [4, 17]
+            rows:
+              - "cc........cc"
+              - "cco.......cco"
       per_body:
         robuste:
           east:
@@ -914,6 +2110,84 @@ pieces:
               rows:
                 - "cc."
                 - "cco"
+          south:
+            - depth: legs
+              at: [6, 19]
+              rows:
+                - "ddd..ddd"
+                - "ddd..ddd"
+                - "dda..dda"
+                - "ddd..ddd"
+                - "ddd..ddd"
+            - depth: feet
+              at: [5, 24]
+              rows:
+                - "cccc..cccc"
+                - "cccc..cccco"
+            - depth: armour
+              at: [6, 11]
+              rows:
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "daaddaad"
+                - "dddddddd"
+                - "dddddddd"
+                - "addaadda"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+            - depth: front_arm
+              at: [4, 13]
+              rows:
+                - "dd........dd"
+                - "da........da"
+                - "dd........dd"
+                - "dd........dd"
+            - depth: hand
+              at: [4, 17]
+              rows:
+                - "cc........cc"
+                - "cco.......cco"
+          north:
+            - depth: legs
+              at: [6, 19]
+              rows:
+                - "ddd..ddd"
+                - "ddd..ddd"
+                - "dda..dda"
+                - "ddd..ddd"
+                - "ddd..ddd"
+            - depth: feet
+              at: [5, 24]
+              rows:
+                - "cccc..cccc"
+                - "cccc..cccco"
+            - depth: armour
+              at: [6, 11]
+              rows:
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+                - "daaddaad"
+                - "dddddddd"
+                - "dddddddd"
+                - "adddddda"
+                - "dddddddd"
+                - "dddddddd"
+                - "dddddddd"
+            - depth: front_arm
+              at: [4, 13]
+              rows:
+                - "dd........dd"
+                - "da........da"
+                - "dd........dd"
+                - "dd........dd"
+            - depth: hand
+              at: [4, 17]
+              rows:
+                - "cc........cc"
+                - "cco.......cco"
   weapon:
     - id: pistolet-laser
       name: Pistolet laser
@@ -925,6 +2199,20 @@ pieces:
               - "...v..."
               - "uuuuuuv"
               - "uu....."
+        south:
+          - depth: weapon
+            at: [14, 15]
+            rows:
+              - "...v"
+              - "uuuuuu"
+              - "uu"
+        north:
+          - depth: back
+            at: [0, 15]
+            rows:
+              - "..v"
+              - "uuuuuu"
+              - "....uu"
     - id: fusil-plasma
       name: Fusil à plasma
       frames:
@@ -935,6 +2223,20 @@ pieces:
               - "......uu..v"
               - "uuuvuuuuuuu"
               - "uuuuuuuuuuu"
+        south:
+          - depth: front
+            at: [10, 16]
+            rows:
+              - "......uu"
+              - "uuuvuuuuuu"
+              - "uuuuuuuuuu"
+        north:
+          - depth: back
+            at: [0, 16]
+            rows:
+              - "..uu"
+              - "uuuuuuvuuu"
+              - "uuuuuuuuuu"
     - id: cle
       name: Clé
       frames:
@@ -948,6 +2250,26 @@ pieces:
               - ".m.."
               - ".m.."
               - "m..."
+        south:
+          - depth: weapon
+            at: [16, 11]
+            rows:
+              - ".m.m"
+              - "..mm"
+              - "..m"
+              - ".m"
+              - ".m"
+              - "m"
+        north:
+          - depth: back
+            at: [0, 11]
+            rows:
+              - "m.m"
+              - "mm"
+              - ".m"
+              - "..m"
+              - "..m"
+              - "...m"
     - id: scanner
       name: Scanner
       frames:
@@ -959,6 +2281,22 @@ pieces:
               - "uvvu"
               - "uvvu"
               - "uuuu"
+        south:
+          - depth: front
+            at: [15, 14]
+            rows:
+              - "...u"
+              - "uvvu"
+              - "uvvu"
+              - "uuuu"
+        north:
+          - depth: back
+            at: [1, 14]
+            rows:
+              - "u"
+              - "uvvu"
+              - "uvvu"
+              - "uuuu"
     - id: injecteur
       name: Injecteur
       frames:
@@ -967,6 +2305,16 @@ pieces:
             at: [14, 15]
             rows:
               - "ppxpmm"
+        south:
+          - depth: weapon
+            at: [15, 16]
+            rows:
+              - "ppxpm"
+        north:
+          - depth: back
+            at: [0, 16]
+            rows:
+              - "mpxpp"
     - id: terminal
       name: Terminal
       frames:
@@ -975,6 +2323,24 @@ pieces:
             at: [14, 13]
             rows:
               - "uuuv"
+              - "uvvu"
+              - "uvvu"
+              - "uvvu"
+              - "uuuu"
+        south:
+          - depth: front
+            at: [15, 14]
+            rows:
+              - "uuuv"
+              - "uvvu"
+              - "uvvu"
+              - "uvvu"
+              - "uuuu"
+        north:
+          - depth: back
+            at: [1, 14]
+            rows:
+              - "vuuu"
               - "uvvu"
               - "uvvu"
               - "uvvu"
@@ -995,6 +2361,32 @@ pieces:
               - ".c..."
               - "c...."
               - "c...."
+        south:
+          - depth: weapon
+            at: [16, 8]
+            rows:
+              - "..o"
+              - "...o"
+              - "...o"
+              - "..c"
+              - "..c"
+              - ".c"
+              - ".c"
+              - "c"
+              - "c"
+        north:
+          - depth: back
+            at: [0, 8]
+            rows:
+              - ".o"
+              - "o"
+              - "o"
+              - ".c"
+              - ".c"
+              - "..c"
+              - "..c"
+              - "...c"
+              - "...c"
   accessory:
     - id: propulseur
       name: Propulseur
@@ -1012,6 +2404,30 @@ pieces:
               - "ppp"
               - "ppp"
               - "uu."
+        south:
+          - depth: back
+            at: [9, 12]
+            rows:
+              - "ppp"
+              - "ppp"
+              - "ddd"
+              - "ppp"
+              - "ppp"
+              - "ppp"
+              - "ppp"
+              - "uu"
+        north:
+          - depth: front
+            at: [9, 12]
+            rows:
+              - "ppp"
+              - "ppp"
+              - "ddd"
+              - "ppp"
+              - "ppp"
+              - "ppp"
+              - "ppp"
+              - "uu"
       per_body:
         robuste:
           east:
@@ -1026,6 +2442,30 @@ pieces:
                 - "ppp"
                 - "ppp"
                 - "uu."
+          south:
+            - depth: back
+              at: [8, 12]
+              rows:
+                - "ppp"
+                - "ppp"
+                - "ddd"
+                - "ppp"
+                - "ppp"
+                - "ppp"
+                - "ppp"
+                - "uu"
+          north:
+            - depth: front
+              at: [8, 12]
+              rows:
+                - "ppp"
+                - "ppp"
+                - "ddd"
+                - "ppp"
+                - "ppp"
+                - "ppp"
+                - "ppp"
+                - "uu"
     - id: drone
       name: Drone
       frames:
@@ -1037,6 +2477,22 @@ pieces:
               - "..u.."
               - ".ppv."
               - "..p.."
+        south:
+          - depth: back
+            at: [7, 2]
+            rows:
+              - "uuuuu"
+              - "..u"
+              - ".ppv"
+              - "..p"
+        north:
+          - depth: front
+            at: [7, 2]
+            rows:
+              - "uuuuu"
+              - "..u"
+              - ".ppv"
+              - "..p"
     - id: sacoche
       name: Sacoche
       dye: gris
@@ -1058,6 +2514,34 @@ pieces:
               - "..l.."
               - "...l."
               - "....l"
+        south:
+          - depth: back
+            at: [8, 16]
+            rows:
+              - "ddd"
+              - "dgd"
+              - "ddd"
+              - "ddd"
+          - depth: belt
+            at: [7, 14]
+            rows:
+              - "l....l"
+              - "l....l"
+              - ".l..l"
+        north:
+          - depth: front
+            at: [8, 16]
+            rows:
+              - "ddd"
+              - "dgd"
+              - "ddd"
+              - "ddd"
+          - depth: belt
+            at: [7, 13]
+            rows:
+              - ".l..l"
+              - "l....l"
+              - "l....l"
       per_body:
         robuste:
           east:
@@ -1077,6 +2561,35 @@ pieces:
                 - "....l.."
                 - ".....l."
                 - "......l"
+          south:
+            - depth: back
+              at: [9, 16]
+              rows:
+                - "ddd"
+                - "dgd"
+                - "ddd"
+                - "ddd"
+            - depth: belt
+              at: [6, 14]
+              rows:
+                - "l......l"
+                - ".l....l"
+                - "."
+                - "..l..l"
+          north:
+            - depth: front
+              at: [9, 16]
+              rows:
+                - "ddd"
+                - "dgd"
+                - "ddd"
+                - "ddd"
+            - depth: belt
+              at: [6, 12]
+              rows:
+                - "..l..l"
+                - "."
+                - "ll....ll"
     - id: crete
       name: Crête
       dye: ambre
@@ -1092,6 +2605,28 @@ pieces:
               - "d."
               - ".."
               - ".d"
+        south:
+          - depth: back
+            at: [9, 11]
+            rows:
+              - ".d"
+              - "d"
+              - "."
+              - ".d"
+              - "d"
+              - "."
+              - ".d"
+        north:
+          - depth: front
+            at: [9, 11]
+            rows:
+              - ".d"
+              - "d"
+              - "."
+              - ".d"
+              - "d"
+              - "."
+              - ".d"
       per_body:
         robuste:
           east:
@@ -1104,4 +2639,26 @@ pieces:
                 - ".d"
                 - "d."
                 - ".."
+                - ".d"
+          south:
+            - depth: back
+              at: [9, 11]
+              rows:
+                - ".d"
+                - "d"
+                - "."
+                - ".d"
+                - "d"
+                - "."
+                - ".d"
+          north:
+            - depth: front
+              at: [9, 11]
+              rows:
+                - ".d"
+                - "d"
+                - "."
+                - ".d"
+                - "d"
+                - "."
                 - ".d"

@@ -173,6 +173,31 @@ Parameters come from the campaign's rule system (`MovementRules`:
   layers and all they hold, `gm_notes`, object checks and notes, and the
   backdrop prompt. Fog of war is cut on top of it.
 
+## World maps and their travel guide
+
+A `world` map is travelled by the party as **one token**
+(`maps/travel-hex-world`, `shared/src/travel/`). The map stays the grid
+above; how it is crossed lives next to it, in a travel guide
+(`content/travel/<world>/<map>.yaml`, `travel::Guide`), so the same hexes
+could be sailed with one guide and walked with another:
+
+- `portions` — the portions of a travelling day (`[Matin, Après-midi,
+  Soir]` by default); night follows the last one;
+- `steps_per_portion` (2) — steps covered per portion; entering a hex
+  costs its terrain's steps, the leftover carries over;
+- `supplies` — `{ name, per_person_per_day }`, eaten at each dawn;
+- `watches` — the night's watches, in order;
+- `terrains` — by legend `terrain` id: `name` (for people), `cost`
+  (steps), `impassable`, and `events` (`id`, `title`, `text` read to the
+  table, `gm_notes` never sent to players);
+- `events` — a table for any terrain.
+
+Without a guide a world map travels by its cell flags: 1 step, 2 through
+difficult terrain or shallow water, nothing through walls, voids and
+deep water. Places are the map's `labels` (`scene` = the story node the
+place opens); an `exit` on a label's hex is the map the place opens on
+arrival. The party starts on the map's first `party` start.
+
 ## Universal VTT import
 
 `maps::from_uvtt` reads a Universal VTT export (`.dd2vtt`, `.uvtt`,

@@ -1,7 +1,7 @@
 //! The rule systems a new campaign can start from, as the GM's campaign
 //! screens list them. The presets themselves are the files of the two
-//! witness worlds (`content`); a campaign's own versions are
-//! `crate::rules`.
+//! witness worlds and the D&D 5e SRD (`content`); a campaign's own
+//! versions are `crate::rules`.
 
 use promptus_shared::rules::RuleSystem;
 use serde::Serialize;
@@ -68,7 +68,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn both_witness_systems_are_offered_with_their_stat_names() {
+    fn both_witness_systems_and_the_srd_are_offered_with_their_stat_names() {
         let ids: Vec<_> = summaries()
             .iter()
             .map(|s| (s.id.clone(), s.version, s.abilities.len()))
@@ -77,7 +77,8 @@ mod tests {
             ids,
             [
                 ("corsaires".to_string(), 1, 6),
-                ("brasier".to_string(), 1, 6)
+                ("brasier".to_string(), 1, 6),
+                ("srd".to_string(), 1, 6)
             ]
         );
     }

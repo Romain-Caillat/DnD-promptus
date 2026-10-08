@@ -9,9 +9,11 @@
 //! button only when every id it names exists in the campaign — invented
 //! ids are dropped, the suggestion stays as text.
 //!
-//! Port of V1 `copilot.ts` (`tests/unit/copilot.test.ts`).
+//! Port of V1 `copilot.ts` (`tests/unit/copilot.test.ts`). The GM may
+//! also dictate instead of typing ([`voice`], `copilot/listen-by-voice`).
 
 pub mod drafts;
+pub mod voice;
 
 use std::collections::BTreeMap;
 

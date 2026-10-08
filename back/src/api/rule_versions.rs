@@ -8,7 +8,12 @@
 //! - `DELETE /api/campaigns/{id}/rules/draft` → drop it;
 //! - `POST   /api/campaigns/{id}/rules/draft/lock` → lock it for the
 //!   next session;
-//! - `GET    /api/campaigns/{id}/rules/compare?from=&to=` → two versions.
+//! - `GET    /api/campaigns/{id}/rules/compare?from=&to=` → two versions;
+//! - `POST   /api/campaigns/{id}/rules/house-rules/formalise` → the co-GM's
+//!   formal form of a house rule, checked against the draft
+//!   (`engine/formalise-house-rules`), not stored;
+//! - `POST   /api/campaigns/{id}/rules/house-rules/try` → the same check
+//!   on a form the GM edited.
 
 use axum::Json;
 use axum::extract::{Path, Query, State};
@@ -20,6 +25,7 @@ use uuid::Uuid;
 use super::body::Body;
 use crate::auth::guard::CurrentGm;
 use crate::error::AppError;
+use crate::rules::house::{self, RuleInput};
 use crate::rules::versions::{self, Save};
 use crate::state::AppState;
 
@@ -124,5 +130,37 @@ pub async fn compare(
 ) -> Result<Response, AppError> {
     Ok(data(
         versions::compare(&state.pool, &gm, parse_id(&id)?, v.from, v.to).await?,
+    ))
+}
+
+/// `POST /api/campaigns/{id}/rules/house-rules/formalise`
+///
+/// # Errors
+///
+/// As `house::formalise`.
+pub async fn formalise_house_rule(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path(id): Path<String>,
+    Body(input): Body<RuleInput>,
+) -> Result<Response, AppError> {
+    Ok(data(
+        house::formalise(&state.pool, &state.ai, &gm, parse_id(&id)?, &input).await?,
+    ))
+}
+
+/// `POST /api/campaigns/{id}/rules/house-rules/try`
+///
+/// # Errors
+///
+/// As `house::try_rule`.
+pub async fn try_house_rule(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path(id): Path<String>,
+    Body(input): Body<RuleInput>,
+) -> Result<Response, AppError> {
+    Ok(data(
+        house::try_rule(&state.pool, &gm, parse_id(&id)?, &input).await?,
     ))
 }

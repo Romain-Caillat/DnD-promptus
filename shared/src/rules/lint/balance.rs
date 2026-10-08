@@ -160,7 +160,7 @@ fn targets(s: &RuleSystem) -> Vec<Target> {
     let acs: Vec<i32> = s
         .classes
         .iter()
-        .filter_map(|c| class_stat(s, c, &s.stats.armor_class.formula, 1))
+        .filter_map(|c| class_stat(s, c, s.armor_class_formula(Some(c)), 1))
         .collect();
     vec![Target {
         label: "CA médiane des classes".into(),
@@ -212,8 +212,9 @@ fn modifier(s: &RuleSystem, c: &ClassDef, ability: &str) -> i32 {
         .unwrap_or(0)
 }
 
-/// The attack bonus of a class action, as `action::action_cards` computes it.
-fn attack_bonus(s: &RuleSystem, c: &ClassDef, a: &ActionDef) -> i32 {
+/// The attack bonus of a class action at `level`, as
+/// `action::action_cards` computes it.
+fn attack_bonus(s: &RuleSystem, c: &ClassDef, a: &ActionDef, level: u32) -> i32 {
     let ability = a.ability.clone().or_else(|| match s.attack.ability {
         AttackAbility::FirstPrimary => c.primary_abilities.first().cloned(),
         AttackAbility::BestPrimary => c
@@ -223,19 +224,26 @@ fn attack_bonus(s: &RuleSystem, c: &ClassDef, a: &ActionDef) -> i32 {
             .cloned(),
     });
     let m = ability.map(|ab| modifier(s, c, &ab)).unwrap_or(0);
-    m + match s.attack.precision {
-        PrecisionRule::AddedToAttackRoll => a.precision(),
-        PrecisionRule::NotApplied => 0,
-    }
+    let bonus = s
+        .attack
+        .bonus
+        .as_ref()
+        .and_then(|b| class_stat(s, c, &b.formula, level))
+        .unwrap_or(0);
+    m + bonus
+        + match s.attack.precision {
+            PrecisionRule::AddedToAttackRoll => a.precision(),
+            PrecisionRule::NotApplied => 0,
+        }
 }
 
 /// Chances of (success, critical success) of a check die + `bonus`
-/// against `target`, from the system's bands.
-fn odds(s: &RuleSystem, bonus: i32, target: i32) -> (f64, f64) {
+/// against `target`, for a roll of kind `scope`, from the system's bands.
+fn odds(s: &RuleSystem, scope: RollScope, bonus: i32, target: i32) -> (f64, f64) {
     let faces = s.check.dice.faces.max(1);
     let (mut hit, mut crit) = (0u32, 0u32);
     for n in 1..=faces {
-        match band_for(s, n, n as i32 + bonus, Some(target)) {
+        match band_for(s, scope, n, n as i32 + bonus, Some(target)) {
             Some(OutcomeBand::Success) => hit += 1,
             Some(OutcomeBand::CriticalSuccess) => crit += 1,
             _ => {}
@@ -249,7 +257,7 @@ fn average(d: &DiceExpr) -> f64 {
 }
 
 /// Expected damage of one use against one target of armour class `ac`.
-fn expected_damage(s: &RuleSystem, c: &ClassDef, a: &ActionDef, ac: i32) -> f64 {
+fn expected_damage(s: &RuleSystem, c: &ClassDef, a: &ActionDef, ac: i32, level: u32) -> f64 {
     let base: f64 = a
         .tags
         .iter()
@@ -266,26 +274,26 @@ fn expected_damage(s: &RuleSystem, c: &ClassDef, a: &ActionDef, ac: i32) -> f64 
         RollSpec::None | RollSpec::AutoHit => base,
         RollSpec::AutoCritical => base * mult,
         RollSpec::Attack => {
-            let (hit, crit) = odds(s, attack_bonus(s, c, a), ac);
+            let (hit, crit) = odds(s, RollScope::Attacks, attack_bonus(s, c, a, level), ac);
             base * (hit + crit * mult)
         }
         // Both sides roll the same die: even odds before modifiers.
         RollSpec::Contest { actor, target: _ } => {
-            let (hit, crit) = odds(s, modifier(s, c, actor), 11);
+            let (hit, crit) = odds(s, RollScope::Checks, modifier(s, c, actor), 11);
             base * (hit + crit)
         }
     }
 }
 
 /// Expected XP of one use: rolls grant what their band grants.
-fn expected_xp(s: &RuleSystem, c: &ClassDef, a: &ActionDef, ac: i32) -> f64 {
+fn expected_xp(s: &RuleSystem, c: &ClassDef, a: &ActionDef, ac: i32, level: u32) -> f64 {
     let o = &s.outcomes;
-    let (bonus, target) = match &a.roll {
-        RollSpec::Attack => (attack_bonus(s, c, a), ac),
-        RollSpec::Contest { actor, .. } => (modifier(s, c, actor), 11),
+    let (scope, bonus, target) = match &a.roll {
+        RollSpec::Attack => (RollScope::Attacks, attack_bonus(s, c, a, level), ac),
+        RollSpec::Contest { actor, .. } => (RollScope::Checks, modifier(s, c, actor), 11),
         _ => return 0.0,
     };
-    let (hit, crit) = odds(s, bonus, target);
+    let (hit, crit) = odds(s, scope, bonus, target);
     hit * o.success.grants.xp as f64 + crit * o.critical_success.grants.xp as f64
 }
 
@@ -352,7 +360,7 @@ fn class_balance(
                 .iter()
                 .map(|t| {
                     let values: Vec<_> = unlocked(c, level)
-                        .map(|a| (a, expected_damage(s, c, a, t.armor_class)))
+                        .map(|a| (a, expected_damage(s, c, a, t.armor_class, level)))
                         .collect();
                     round2(best_per_turn(s, ctx, &values))
                 })
@@ -368,7 +376,7 @@ fn class_balance(
         .max()
         .unwrap_or(0);
     let xp_per_check = {
-        let (hit, crit) = odds(s, check_bonus, check_difficulty);
+        let (hit, crit) = odds(s, RollScope::Checks, check_bonus, check_difficulty);
         hit * s.outcomes.success.grants.xp as f64
             + crit * s.outcomes.critical_success.grants.xp as f64
     };
@@ -378,7 +386,7 @@ fn class_balance(
     for session in 1..=p.sessions {
         let level = level_for(s, total as u32);
         let values: Vec<_> = unlocked(c, level)
-            .map(|a| (a, expected_xp(s, c, a, xp_target)))
+            .map(|a| (a, expected_xp(s, c, a, xp_target, level)))
             .collect();
         let per_turn = best_per_turn(s, ctx, &values);
         let from_fights = per_turn * (p.fights_per_session * p.rounds_per_fight) as f64;

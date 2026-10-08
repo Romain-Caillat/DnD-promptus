@@ -41,6 +41,12 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/campaigns/{campaign}/rules"),
     ("POST", "/api/campaigns/{campaign}/rules/draft"),
     ("PUT", "/api/campaigns/{campaign}/rules/draft"),
+    // On the draft just saved (a house rule needs one).
+    (
+        "POST",
+        "/api/campaigns/{campaign}/rules/house-rules/formalise",
+    ),
+    ("POST", "/api/campaigns/{campaign}/rules/house-rules/try"),
     ("GET", "/api/campaigns/{campaign}/rules/compare?from=1&to=2"),
     ("POST", "/api/campaigns/{campaign}/rules/draft/lock"),
     ("DELETE", "/api/campaigns/{campaign}/rules/draft"),
@@ -123,6 +129,9 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/shops/{shop}/open"),
     ("POST", "/api/campaigns/{campaign}/shops/{shop}/reveal"),
     ("DELETE", "/api/campaigns/{campaign}/shops/{shop}"),
+    // The journey on the world map, shown just before the gesture.
+    ("GET", "/api/campaigns/{campaign}/travel"),
+    ("POST", "/api/campaigns/{campaign}/travel"),
     // The campaign's maps: list, create, import, generate, then on the
     // map stored just before.
     ("GET", "/api/campaigns/{campaign}/maps"),
@@ -142,6 +151,7 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/media/{asset}/decision"),
     // Each on a draft of the co-GM written just before.
     ("POST", "/api/campaigns/{campaign}/session/copilot"),
+    ("POST", "/api/campaigns/{campaign}/session/copilot/voice"),
     (
         "POST",
         "/api/campaigns/{campaign}/session/copilot/{draft}/show",
@@ -248,6 +258,16 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         ("POST", p) if p.ends_with("/workshop") => {
             Some(serde_json::json!({ "prompt": "Rends le gardien plus ambigu." }))
         }
+        (_, p) if p.contains("/rules/house-rules/") => Some(serde_json::json!({
+            "id": "pied_qui_glisse",
+            "name": "Le pied qui glisse",
+            "text": "Sur un 1 naturel, le corsaire glisse.",
+            "formal": {
+                "when": "miss",
+                "critical": true,
+                "effects": [{ "apply": { "condition": "renverse", "turns": 1, "to": "self" } }]
+            }
+        })),
         ("PUT", p) if p.ends_with("/rules/draft") => Some(serde_json::json!({
             "yaml": CORSAIRES_RULES.replacen("\nversion: 1\n", "\nversion: 2\n", 1),
             "note": "Facile à 12."
@@ -294,6 +314,9 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             Some(serde_json::json!({ "node": "sc_interception_greyhound" }))
         }
         (_, p) if p.ends_with("/battle/command") => Some(serde_json::json!({ "kind": "stop" })),
+        ("POST", p) if p.ends_with("/travel") => {
+            Some(serde_json::json!({ "kind": "supplies", "value": 12 }))
+        }
         (_, p) if p.ends_with("/fight/loot") => Some(serde_json::json!({
             "gives": [{ "index": 0, "character": Uuid::nil() }]
         })),
@@ -310,6 +333,9 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         (_, p) if p.ends_with("/maps/generate") => Some(serde_json::json!({ "node": "sc_crique" })),
         (_, p) if p.ends_with("/media/batch") => Some(serde_json::json!({ "videos": false })),
         (_, p) if p.ends_with("/decision") => Some(serde_json::json!({ "approve": true })),
+        (_, p) if p.ends_with("/copilot/voice") => Some(serde_json::json!({
+            "audio": common::wav_saying("Que fait le gardien du phare ?")
+        })),
         (_, p) if p.ends_with("/copilot") => {
             Some(serde_json::json!({ "kind": "describe", "prompt": "Ils entrent." }))
         }
@@ -778,6 +804,12 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             }
             (_, b) => b,
         };
+        if *method == "POST" && path.ends_with("/travel") {
+            let board = format!("/api/campaigns/{}/board", ids.campaign);
+            let world = serde_json::json!({ "map": "cotes-bretagne-sud" });
+            let r = call(&app, Some(&token), "POST", &board, Some(world)).await;
+            assert!(r.status.is_success(), "the world map shows: {}", r.body);
+        }
         let r = call(&app, Some(&token), method, &uri, body).await;
         if path.ends_with("/apply") {
             sqlx::query("UPDATE campaigns SET validated_at = now() WHERE id = $1")

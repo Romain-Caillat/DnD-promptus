@@ -20,3 +20,4 @@ pub mod sheets;
 pub mod sprites;
 pub mod table;
 pub mod trade;
+pub mod travel;

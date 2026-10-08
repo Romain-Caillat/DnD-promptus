@@ -83,7 +83,8 @@ pub async fn of_session(pool: &PgPool, session: Uuid) -> Result<Vec<Draft>, AppE
     rows.into_iter().map(draft).collect()
 }
 
-const PROMPT_MAX: usize = 1_000;
+/// The longest prompt the GM may give the co-GM, typed or dictated.
+pub const PROMPT_MAX: usize = 1_000;
 
 /// Ask the co-GM. The session must be live; the call is counted
 /// against the campaign's AI budget before it leaves.

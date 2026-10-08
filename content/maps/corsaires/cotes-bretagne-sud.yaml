@@ -1,0 +1,55 @@
+# Corsaires de la Couronne — la carte du monde : les côtes de Bretagne
+# sud, de Port-Louis à Belle-Île (maps/travel-hex-world). Hexagones de
+# 5 km, dessin stylisé, pas un relevé : Groix à l'ouest, la presqu'île
+# de Quiberon à l'est, Belle-Île au sud. Le groupe y est un seul pion :
+# La Mâchoire. La vitesse, les vivres et les événements sont dans le
+# guide de voyage (content/travel/corsaires/cotes-bretagne-sud.yaml).
+# INVENTÉ — à valider par Romain : le tracé, les étapes, les distances.
+version: 1
+id: cotes-bretagne-sud
+name: Les côtes de Bretagne sud
+scale: world
+cell_meters: 5000
+theme: cotes-1718
+ambience:
+  time: day
+  weather: cloudy
+  wind: { from: w, strength: 3 }
+gm_notes: >-
+  Le Greyhound quitte Belle-Île par la pointe des Poulains. Une frégate
+  anglaise croise au large de Groix : la route du large est la plus
+  courte et la plus exposée.
+layers:
+  - { id: base, name: Côtes, visibility: all }
+  - { id: secrets, name: Secrets, visibility: gm }
+grid:
+  legend:
+    "~": { terrain: mer }
+    "-": { terrain: côte }
+    "#": { terrain: terre }
+    "o": { terrain: port }
+  rows:
+    - "#####o########"
+    - "##--~--#######"
+    - "-~~~~~~-######"
+    - "##~~~~~~-#####"
+    - "##-~~~~~~-####"
+    - "~--~~~~~~~-###"
+    - "~~~~~~~~~~~-#-"
+    - "~~~~~~~~~~~-#~"
+    - "~~~~~~~~~~~~~-"
+    - "~~~~~~---o--~~"
+    - "~~~~~-#####-~~"
+    - "~~~~~~-####-~~"
+exits:
+  - { id: vers-port-louis, cells: [[5, 0]], to: quai-port-louis, label: Le quai de Port-Louis }
+  - { id: vers-le-palais, cells: [[9, 9]], to: le-palais, label: Le port du Palais }
+labels:
+  - { text: Port-Louis, at: [5, 0], scene: sc_port_nuit }
+  - { text: Île de Groix, at: [0, 3] }
+  - { text: Presqu'île de Quiberon, at: [12, 4] }
+  - { text: "Belle-Île · Le Palais", at: [9, 9] }
+  - { text: Pointe des Poulains, at: [6, 10] }
+  - { text: Mouillage de la frégate anglaise, at: [2, 7], layer: secrets }
+starts:
+  - { id: la-machoire, side: party, at: [5, 0] }

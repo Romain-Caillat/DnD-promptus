@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CardButton } from '@/components/game/CardButton'
 import { FacetedDie, facesOf } from '@/components/game/FacetedDie'
+import { Kbd } from '@/components/game/Kbd'
 import { RollDetail } from '@/components/game/RollDetail'
 import { Toast, ToastStack } from '@/components/game/Toast'
 import { ApiError } from '@/lib/api'
@@ -21,11 +22,13 @@ import {
 } from '@/lib/evening'
 import { fetchPlayerMedia, imageOf, playerImageUrl, type MediaList } from '@/lib/media'
 import type { ModifierSource } from '@/lib/rules'
+import { cardIndex, cardKey, useShortcuts } from '@/lib/useShortcuts'
 import { cn } from '@/lib/utils'
 import { EveningEnd } from '@/features/play/between/EveningEnd'
 import { useBetween } from '@/features/play/between/useBetween'
 import { Market } from '@/features/play/trade/Market'
 import type { PlayerTab } from '@/lib/between'
+import { TravelMoments } from '@/features/travel/PlayerTravel'
 import { MusicPlayer } from './MusicPlayer'
 import { NextSession } from './NextSession'
 
@@ -41,12 +44,15 @@ const TOASTED = new Set<JournalKind>(['clue', 'npc', 'loot', 'item', 'narration'
  * asks for a check, and the answer. After the session, « Précédemment… »
  * and the three questions. What happens to the group drops as toasts.
  * Everything comes from the server's projection; nothing is decided here.
+ * On a computer (player/play-on-desktop) the keyboard plays too: a digit
+ * picks a card, Space rolls the die the GM asked for.
  */
 export function GameTab({
   campaignId,
   refreshKey,
   seated,
   onTab,
+  keyboard = false,
 }: {
   campaignId: string
   refreshKey: number
@@ -54,6 +60,8 @@ export function GameTab({
   seated: boolean
   /** Opens another tab of the player's page (between sessions). */
   onTab?: (tab: PlayerTab) => void
+  /** The keys are this tab's: shortcuts on, their hints shown. */
+  keyboard?: boolean
 }) {
   const { t } = useTranslation()
   const [state, setState] = useState<State>({ kind: 'loading' })
@@ -103,6 +111,17 @@ export function GameTab({
     }
   }
 
+  // Space rolls the oldest die the GM asked of me.
+  const toRoll =
+    state.kind === 'ready' && state.view.session?.status === 'live'
+      ? state.view.requests.find((r) => r.status === 'check' && r.check)
+      : undefined
+  useShortcuts(keyboard && Boolean(toRoll), (key) => {
+    if (key !== ' ' || !toRoll) return false
+    void act(() => rollRequest(campaignId, toRoll.id))
+    return true
+  })
+
   if (state.kind === 'loading') return <p role="status">{t('play.loading')}</p>
   if (state.kind === 'error') return <p role="alert">{t('play.error')}</p>
   const { view } = state
@@ -148,6 +167,7 @@ export function GameTab({
       {session?.status === 'live' && !view.launch && (
         <>
           {view.music && <MusicPlayer music={view.music} />}
+          <TravelMoments campaignId={campaignId} refreshKey={refreshKey} />
           {scene ? (
             <section className="flex flex-col gap-2">
               {intro && (
@@ -197,8 +217,15 @@ export function GameTab({
             view={view}
             onRoll={(id) => act(() => rollRequest(campaignId, id))}
             onFollow={(id, f) => act(() => followRequest(campaignId, id, f))}
+            keyboard={keyboard}
           />
-          {seated && <Hand cards={view.cards} onAsk={(card, text) => act(() => askGm(campaignId, card, text))} />}
+          {seated && (
+            <Hand
+              cards={view.cards}
+              keyboard={keyboard}
+              onAsk={(card, text) => act(() => askGm(campaignId, card, text))}
+            />
+          )}
         </>
       )}
     </div>
@@ -347,8 +374,20 @@ function cardOf(c: SceneCard): Card {
   return c.kind === 'ability' ? { kind: 'ability', ability: c.id } : { kind: 'action', action: c.id }
 }
 
-/** The cards a player plays to ask the GM, and « Autre… ». */
-function Hand({ cards, onAsk }: { cards: SceneCard[]; onAsk: (card: Card, text: string) => void }) {
+/**
+ * The cards a player plays to ask the GM, and « Autre… ». With the
+ * keyboard, 1 to 9 pick the cards in order, 0 « Autre… », Escape puts
+ * the card back, and Enter sends what is written (Shift+Enter: a line).
+ */
+function Hand({
+  cards,
+  keyboard,
+  onAsk,
+}: {
+  cards: SceneCard[]
+  keyboard: boolean
+  onAsk: (card: Card, text: string) => void
+}) {
   const { t } = useTranslation()
   const [picked, setPicked] = useState<Card | null>(null)
   const [text, setText] = useState('')
@@ -356,12 +395,30 @@ function Hand({ cards, onAsk }: { cards: SceneCard[]; onAsk: (card: Card, text: 
     c.kind === 'other'
       ? t('evening.hand.other')
       : (cards.find((x) => x.kind === c.kind && x.id === (c.kind === 'ability' ? c.ability : c.action))?.name ?? '')
+  const hand = [...cards.map(cardOf), OTHER]
+  useShortcuts(keyboard, (key) => {
+    if (key === 'Escape' && picked) {
+      setPicked(null)
+      return true
+    }
+    const index = key === '0' ? hand.length - 1 : cardIndex(key)
+    if (index === null || index >= cards.length + (key === '0' ? 1 : 0)) return false
+    setPicked(hand[index])
+    return true
+  })
+  function send() {
+    if (!picked) return
+    onAsk(picked, text.trim())
+    setPicked(null)
+    setText('')
+  }
   return (
     <section className="flex flex-col gap-2">
       <h3 className="type-label">{t('evening.hand.title')}</h3>
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {[...cards.map(cardOf), OTHER].map((c) => {
+        {hand.map((c, i) => {
           const label = name(c)
+          const shortcut = c.kind === 'other' ? '0' : cardKey(i)
           const card = cards.find((x) => x.kind === c.kind && x.id === (c.kind === 'ability' ? c.ability : c.kind === 'action' ? c.action : ''))
           const on = picked !== null && JSON.stringify(picked) === JSON.stringify(c)
           return (
@@ -380,6 +437,7 @@ function Hand({ cards, onAsk }: { cards: SceneCard[]; onAsk: (card: Card, text: 
               {card?.modifier !== null && card?.modifier !== undefined && (
                 <span className="text-caption tabular-nums">{t('evening.hand.modifier', { value: card.modifier })}</span>
               )}
+              {keyboard && shortcut && <Kbd>{shortcut}</Kbd>}
             </button>
           )
         })}
@@ -389,14 +447,19 @@ function Hand({ cards, onAsk }: { cards: SceneCard[]; onAsk: (card: Card, text: 
           className="flex flex-col gap-2"
           onSubmit={(e) => {
             e.preventDefault()
-            onAsk(picked, text.trim())
-            setPicked(null)
-            setText('')
+            send()
           }}
         >
           <textarea
             value={text}
+            autoFocus={keyboard}
             onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (keyboard && e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                send()
+              }
+            }}
             maxLength={500}
             rows={2}
             placeholder={t('evening.hand.placeholder')}
@@ -414,10 +477,12 @@ function Requests({
   view,
   onRoll,
   onFollow,
+  keyboard,
 }: {
   view: EveningView
   onRoll: (id: string) => void
   onFollow: (id: string, f: 'withdraw' | 'contest') => void
+  keyboard: boolean
 }) {
   const { t } = useTranslation()
   const mine = view.requests.filter((r) => r.status !== 'withdrawn').slice(-4).reverse()
@@ -426,7 +491,7 @@ function Requests({
     <section className="flex flex-col gap-2">
       <h3 className="type-label">{t('evening.requests.title')}</h3>
       {mine.map((r) => (
-        <RequestCard key={r.id} r={r} view={view} onRoll={onRoll} onFollow={onFollow} />
+        <RequestCard key={r.id} r={r} view={view} onRoll={onRoll} onFollow={onFollow} keyboard={keyboard} />
       ))}
     </section>
   )
@@ -437,11 +502,13 @@ function RequestCard({
   view,
   onRoll,
   onFollow,
+  keyboard,
 }: {
   r: RequestView
   view: EveningView
   onRoll: (id: string) => void
   onFollow: (id: string, f: 'withdraw' | 'contest') => void
+  keyboard: boolean
 }) {
   const { t } = useTranslation()
   const abilityName = (id: string) => view.cards.find((c) => c.kind === 'ability' && c.id === id)?.name ?? id
@@ -457,10 +524,15 @@ function RequestCard({
       {r.status === 'check' && r.check && (
         <CardButton
           title={t('evening.requests.roll')}
-          subtitle={t('evening.requests.against', {
-            ability: r.check.abilityName,
-            difficulty: r.check.label ?? r.check.difficulty,
-          })}
+          subtitle={[
+            t('evening.requests.against', {
+              ability: r.check.abilityName,
+              difficulty: r.check.label ?? r.check.difficulty,
+            }),
+            keyboard ? t('evening.requests.spaceToo') : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
           onClick={() => onRoll(r.id)}
         />
       )}
