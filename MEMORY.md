@@ -163,7 +163,7 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   iOS may draw it as an emoji) points at keyboard focus and at the
   current choice (`aria-pressed` / `-selected` / `-checked` / `-current`).
   It all lives in `tokens.css` utilities (`pixel-key`, `pixel-choice`,
-  `pixel-tab`, `pixel-field`, `pixel-cursor`; `button-card` and
+  `pixel-tab`, `pixel-field`, `pixel-well`, `pixel-cursor`; `button-card` and
   `surface-slab` redrawn) — a screen picks a utility, never draws its own.
   Only leaf controls are clipped: a container (panel, sheet) keeps square
   corners, since a clip would hide its popovers, focus and cursors.
