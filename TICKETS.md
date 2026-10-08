@@ -305,6 +305,44 @@ tourner sans conteneur cible.
 
 ---
 
+### `platform/connect-claude-mcp` · todo
+
+**Pourquoi** — Romain veut préparer sa campagne en parlant à son propre
+Claude (Claude Desktop ou Claude Code sur son Mac), qui modifie
+directement la campagne dans Promptus.
+
+**Périmètre** — Jetons personnels du MJ : créés, nommés, listés et
+révoqués depuis son espace, montrés une seule fois, stockés hachés,
+acceptés par le serveur en en-tête `Authorization` sur les routes de
+préparation seulement (pas d'invitation, pas de compte, pas de soirée).
+Un serveur MCP local (lancé par Claude sur le Mac, il parle à Promptus
+avec le jeton) : lister les campagnes, lire une campagne ou une scène,
+lire les alertes de cohérence, appliquer des modifications ciblées,
+exporter et importer le fichier de campagne. Mêmes garde-fous que
+l'écran : modifications validées par le serveur, tout ou rien ; rien
+n'atteint les joueurs sans la validation du MJ dans Promptus. Une page
+d'aide dit comment le déclarer dans Claude.
+
+*Hypothèse* — Claude tourne sur le Mac de Romain. Claude sur le web
+demanderait un serveur joignable depuis internet avec OAuth : hors
+périmètre.
+
+**Étapes** — Jetons (table, création, révocation, garde) → serveur MCP
+et ses outils → page d'aide et réglage dans l'espace MJ → essai réel
+depuis Claude Desktop.
+
+**Fini quand** — Depuis Claude Desktop, Romain demande « ajoute un
+indice vers le quai dans la scène de l'auberge », la scène change dans
+Promptus, et un jeton révoqué est refusé.
+
+**Risques** — Un jeton qui fuit donne la main sur les campagnes : portée
+limitée à la préparation, révocation immédiate, jamais affiché deux
+fois.
+
+**Origine** — Demande de Romain, 8 octobre 2026.
+
+---
+
 ## Épic `ui`
 
 Le design system dessiné sur le canevas (`MEMORY.md` §2), en composants
@@ -469,6 +507,35 @@ Le pixel art et l’intérieur des cartes ne changent pas. Typecheck,
 lint, knip et tests passent (sauf les 9 tests connus de la table du MJ
 qui échouent sous Node faute de `localStorage`). **Reste** : Romain
 relit chaque écran dans les deux thèmes sur son écran.
+
+---
+
+### `ui/adopt-pixel-menu` · todo
+
+**Pourquoi** — Romain veut une interface entièrement pixel art : la
+piste « Menu pixel » de la planche des pistes d'interface (écartée au
+départ) devient la direction retenue.
+
+**Périmètre** — Toute l'interface, MJ et joueur, dans les deux thèmes :
+police pixel pour les titres, boutons et étiquettes (Silkscreen ou
+équivalent), coins en escalier, relief en aplats, curseur façon jeu de
+rôle rétro sur le choix actif, panneaux et champs au même dessin. Le
+texte long (narration, notes, fiches) garde une police lisible. Les
+pièces de jeu déjà en pixel art restent telles quelles.
+
+**Étapes** — Jetons et composants de base (bouton, panneau, champ,
+onglet) → écrans MJ → écrans joueur (téléphone d'abord) → page de
+référence du design → vérification écran par écran dans les deux thèmes.
+
+**Fini quand** — Chaque écran suit la piste Menu pixel dans les deux
+thèmes, le texte courant garde un contraste d'au moins 4,5:1, et Romain
+le confirme sur son écran.
+
+**Risques** — Une police pixel est illisible en petit sur téléphone ;
+la mémoire du projet disait l'inverse (UI noir et blanc, pixel pour le
+jeu seulement) : à mettre à jour.
+
+**Origine** — Demande de Romain, 8 octobre 2026.
 
 ---
 
@@ -1204,6 +1271,42 @@ qui demande zéro erreur ; un import est validé d'office (le MJ l'a
 écrit), une campagne créée depuis un pitch ou générée attend le MJ.
 Vérifié sur l'acte 1 joué des Corsaires : le co-MJ place les indices
 manquants de la route du Greyhound et l'alerte disparaît.
+
+### `campaign/edit-scenes-in-one-place` · todo
+
+**Pourquoi** — Romain se perd dans la préparation : une scène est
+éclatée entre Préparer (texte), Cartes, Médias, et le combat, le son et
+la musique n'ont aucun éditeur hors du fichier de campagne. Une scène
+doit se préparer d'un seul endroit.
+
+**Périmètre** — Dans Préparer, la scène choisie dans le graphe s'ouvre
+en fiche à quatre onglets : **Texte** (titre, résumé, à lire à voix
+haute, déroulé, notes MJ, indices, jets, sorties), **Combat**
+(adversaires et nombre, tactique, moral, butin, XP ; « pas de combat »
+possible), **Visuels** (image de la scène, carte de combat, vidéo
+d'acte si c'est la première scène de l'acte : voir, générer, valider ou
+refuser, comme dans Médias et Cartes), **Son** (humeur, bruits
+d'ambiance, musique YouTube : titre, lien, recherche, écoute d'essai).
+Chaque modification passe par les mêmes modifications ciblées que
+l'atelier du co-MJ (tout ou rien, validées par le serveur). Les pages
+Médias et Cartes restent pour la vue d'ensemble.
+
+**Étapes** — Opérations de modification manquantes côté serveur
+(combat, ambiance, musique) → fiche Scène et ses quatre onglets →
+visuels branchés sur les médias et cartes existants → essai sur les
+deux mondes.
+
+**Fini quand** — Sur les Corsaires et le Brasier, le MJ prépare une
+scène de bout en bout (texte, combat, image, carte, musique) sans
+quitter la fiche, et la soirée en direct montre ce qu'il a réglé.
+
+**Risques** — Un éditeur de combat trop libre laisse passer un
+adversaire inconnu (le serveur doit refuser) ; la fiche devient trop
+longue sur tablette.
+
+**Origine** — Demande de Romain, 8 octobre 2026.
+
+---
 
 ### `campaign/check-player-knowledge` · doing — reste une fin de soirée jouée pour de vrai
 
