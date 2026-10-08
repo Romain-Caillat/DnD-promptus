@@ -39,12 +39,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let live = LiveHub::new(LiveConfig::default());
     live::listener::spawn(pool.clone(), live.clone());
 
+    // session/schedule-sessions: reminders and the lobby at the time fixed.
+    let notifier = promptus_back::schedule::Notifier::discord(&config.public_origin);
+    promptus_back::schedule::spawn(pool.clone(), notifier.clone());
+
     let mut router = app::router(
         AppState {
             pool,
             auth,
             live,
             ai: promptus_back::ai::Ai::from_env(),
+            notifier,
         },
         &config.allowed_origins,
     );

@@ -23,6 +23,7 @@ import { fetchPlayerMedia, imageOf, playerImageUrl, type MediaList } from '@/lib
 import type { ModifierSource } from '@/lib/rules'
 import { cn } from '@/lib/utils'
 import { MusicPlayer } from './MusicPlayer'
+import { NextSession } from './NextSession'
 
 type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; view: EveningView }
 
@@ -122,11 +123,14 @@ export function GameTab({
           {t(`evening.errors.${error}`, { defaultValue: t('evening.errors.UNEXPECTED') })}
         </p>
       )}
-      {!session && <NoSession view={view} campaignId={campaignId} seated={seated} onView={show} />}
+      {!session && (
+        <NoSession view={view} campaignId={campaignId} refreshKey={refreshKey} seated={seated} onView={show} />
+      )}
       {session?.status === 'lobby' && (
         <Lobby view={view} seated={seated} onArrive={(soundOk) => act(() => arrive(campaignId, soundOk, true))} />
       )}
-      {session?.status === 'live' && (
+      {session?.status === 'live' && view.launch && <Launch launch={view.launch} />}
+      {session?.status === 'live' && !view.launch && (
         <>
           {view.music && <MusicPlayer music={view.music} />}
           {scene ? (
@@ -186,14 +190,44 @@ export function GameTab({
   )
 }
 
+/**
+ * gm/launch-session: « Précédemment… » arrives on the phone sentence by
+ * sentence, as the GM reads it; the newest one is the bright one. The
+ * scene follows when the GM sends it.
+ */
+function Launch({ launch }: { launch: NonNullable<EveningView['launch']> }) {
+  const { t } = useTranslation()
+  return (
+    <section className="flex flex-col gap-3" aria-label={t('evening.previously')}>
+      <span className="type-label">{t('evening.previously')}</span>
+      <ol className="flex flex-col gap-2">
+        {launch.lines.map((line, i) => (
+          <li
+            key={`${i}-${line}`}
+            className={cn(
+              'type-narration text-[22px] leading-snug motion-safe:animate-pop',
+              i === launch.lines.length - 1 ? 'text-chalk' : 'text-chalk-soft',
+            )}
+          >
+            {line}
+          </li>
+        ))}
+      </ol>
+      {launch.lines.length < launch.total && <p className="text-caption text-mute">{t('evening.launchWait')}</p>}
+    </section>
+  )
+}
+
 function NoSession({
   view,
   campaignId,
+  refreshKey,
   seated,
   onView,
 }: {
   view: EveningView
   campaignId: string
+  refreshKey: number
   seated: boolean
   onView: (v: EveningView) => void
 }) {
@@ -201,6 +235,7 @@ function NoSession({
   return (
     <section className="flex flex-col gap-3">
       <p className="text-body text-chalk-soft">{t('evening.noSession')}</p>
+      <NextSession campaignId={campaignId} refreshKey={refreshKey} />
       {view.previously && (
         <div className="surface-slab flex flex-col gap-1 p-3.5">
           <span className="type-label">{t('evening.previously')}</span>

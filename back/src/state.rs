@@ -5,6 +5,7 @@ use crate::ai::Ai;
 use crate::auth::passkeys::Passkeys;
 use crate::auth::setup::SetupState;
 use crate::live::LiveHub;
+use crate::schedule::Notifier;
 
 /// Everything a handler can reach.
 #[derive(Clone)]
@@ -15,6 +16,8 @@ pub struct AppState {
     pub live: LiveHub,
     /// The model provider and its prices (`ai`).
     pub ai: Ai,
+    /// Where the table's reminders go (`schedule`).
+    pub notifier: Notifier,
 }
 
 /// GM authentication: the relying party, the setup code, and how the

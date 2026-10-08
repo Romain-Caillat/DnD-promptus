@@ -6,7 +6,11 @@
 //!   (hidden lines included), what the next scenes need, the spotlight;
 //! - `POST /api/campaigns/{id}/session` → open the lobby (201);
 //! - `POST /api/campaigns/{id}/session/start` → the session goes live;
-//! - `POST /api/campaigns/{id}/session/end` → `{ recap, previously }`;
+//! - `POST /api/campaigns/{id}/session/end` → `{ recap, previously,
+//!   chronicleTitle, chronicle }`, kept as drafts (what is empty is
+//!   drafted from the session's facts);
+//! - `POST /api/campaigns/{id}/session/previously/next` → the next
+//!   sentence of « Précédemment… » reaches the table (gm/launch-session);
 //! - `POST /api/campaigns/{id}/session/reveal` → a scene, a clue, an
 //!   NPC, a front's clock, a resolved scene (`evening::scenes::Reveal`);
 //! - `PUT /api/campaigns/{id}/session/music` → `{ track }` (or null);
@@ -19,10 +23,12 @@
 //! - `PUT  /api/campaigns/{id}/hooks/{hook}/played` → `{ played }`;
 //! - `GET  /api/campaigns/{id}/knowledge?ref=…&situation=…` → what the
 //!   table knows about a story id, and past rulings like a situation;
-//! - `GET  /api/campaigns/{id}/sessions` → the chronicle;
-//! - `PUT  /api/campaigns/{id}/sessions/{session}/recap` → edit the recap;
+//! - `GET  /api/campaigns/{id}/sessions` → the chronicle, drafts
+//!   included, each with the names its player texts should not hold;
+//! - `PUT  /api/campaigns/{id}/sessions/{session}/recap` → edit the
+//!   recaps, `publish` to give them to the players;
 //! - `POST /api/campaigns/{id}/sessions/{session}/recap-draft` → the
-//!   co-GM's draft of both recaps (counted AI call; nothing saved);
+//!   co-GM's draft of the recaps (counted AI call; nothing saved);
 //! - `GET  /api/campaigns/{id}/sessions/{session}/feedback` → answers and
 //!   measures on one screen;
 //! - `PUT  /api/campaigns/{id}/sessions/{session}/changes` → `{ text }`;
@@ -38,6 +44,7 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use chrono::Utc;
+use promptus_shared::story::recap;
 use promptus_shared::story::{Campaign, Node, WorldState};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -281,9 +288,32 @@ pub async fn live_screen(
     }
     let story = &row.story;
     let world = &row.world;
+    // gm/launch-session: « Précédemment… » whole for the GM, how far the
+    // table has read, and the scene to send next — where the table
+    // stopped, or the campaign's first.
+    let launch = match current.as_ref().and_then(|s| s.previously_shown) {
+        Some(shown) => session::published_previously(pool, row.id)
+            .await?
+            .map(|(number, text)| {
+                let first = world
+                    .current_node
+                    .as_deref()
+                    .or(story.bible.start_node.as_deref())
+                    .and_then(|n| story.node(n))
+                    .or_else(|| story.nodes.first());
+                json!({
+                    "number": number,
+                    "lines": recap::lines(&text),
+                    "shown": shown,
+                    "firstScene": first.map(|n| json!({ "node": n.id, "title": n.title })),
+                })
+            }),
+        None => None,
+    };
     let data = json!({
         "session": current,
         "lastEnded": last,
+        "launch": launch,
         "presence": presence,
         "lobby": lobby,
         "scene": gm_scene(story, world),
@@ -525,8 +555,31 @@ pub async fn chronicle(
     Path(id): Path<String>,
 ) -> Result<Response, AppError> {
     let row = owned_row(&state, &gm, &id).await?;
-    let all = session::all(&state.pool, row.id).await?;
-    Ok(Json(json!({ "data": all })).into_response())
+    let mut entries = Vec::new();
+    for s in session::all(&state.pool, row.id).await? {
+        let world = world_of(&state, &row, &s).await?;
+        let warnings = leaks_of(&row, &world, &s);
+        let mut entry = serde_json::to_value(&s).map_err(|e| AppError::internal("session", e))?;
+        entry["warnings"] = json!(warnings);
+        entries.push(entry);
+    }
+    Ok(Json(json!({ "data": entries })).into_response())
+}
+
+/// `POST /api/campaigns/{id}/session/previously/next` — the next
+/// sentence of « Précédemment… » reaches the table (gm/launch-session).
+///
+/// # Errors
+///
+/// 404; 409 `NO_SESSION`, `SESSION_NOT_LIVE`, `NOT_READING`.
+pub async fn read_next(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path(id): Path<String>,
+) -> Result<Response, AppError> {
+    Ok(session_json(
+        &session::read_next(&state.pool, &gm, parse_id(&id)?).await?,
+    ))
 }
 
 /// `PUT /api/campaigns/{id}/sessions/{session}/recap`
@@ -545,16 +598,48 @@ pub async fn edit_recap(
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct RecapDraft {
     players: String,
     gm: String,
+    #[serde(default)]
+    chronicle_title: String,
+    #[serde(default)]
+    chronicle: String,
+}
+
+/// The world `s` ended on — the campaign's world while it runs.
+async fn world_of(
+    state: &AppState,
+    row: &CampaignRow,
+    s: &Session,
+) -> Result<WorldState, AppError> {
+    Ok(session::world_at_end(&state.pool, s.id)
+        .await?
+        .unwrap_or_else(|| row.world.clone()))
+}
+
+/// The names a player text of `s` must not hold, and why — flagged to
+/// the GM next to the text, never blocking.
+fn leaks_of(row: &CampaignRow, world: &WorldState, s: &Session) -> Vec<recap::Leak> {
+    let mut found = recap::leaks(&row.story, world, &s.previously);
+    for l in recap::leaks(
+        &row.story,
+        world,
+        &format!("{}\n{}", s.chronicle_title, s.chronicle),
+    ) {
+        if !found.iter().any(|x| x.name == l.name) {
+            found.push(l);
+        }
+    }
+    found
 }
 
 /// `POST /api/campaigns/{id}/sessions/{session}/recap-draft` — the
-/// co-GM drafts « Précédemment… » from the shared journal of the session
-/// and the GM's recap from everything; nothing is saved, the GM edits
-/// and publishes.
+/// co-GM drafts « Précédemment… » and the chronicle entry from what the
+/// table saw (the shared journal and the session's facts), and the GM's
+/// recap from everything; nothing is saved, the GM edits and publishes.
+/// Names the table does not know are flagged in `warnings`.
 ///
 /// # Errors
 ///
@@ -567,6 +652,7 @@ pub async fn recap_draft(
 ) -> Result<Response, AppError> {
     let row = owned_row(&state, &gm, &id).await?;
     let s = session::by_id(&state.pool, row.id, parse_id(&sid)?).await?;
+    let world = world_of(&state, &row, &s).await?;
     let lines: Vec<_> = knowledge::journal(&state.pool, row.id, false)
         .await?
         .into_iter()
@@ -577,21 +663,67 @@ pub async fn recap_draft(
         .filter(|l| l.shared && l.kind != JournalKind::Roll)
         .map(|l| format!("- {}", l.text))
         .collect();
+    let mut conn = state.pool.acquire().await?;
+    let before = session::world_at_start(&mut conn, &s).await?;
+    drop(conn);
+    let facts = recap::session_facts(&row.story, &before, &world);
+    let told: Vec<String> = facts
+        .scenes
+        .iter()
+        .map(|x| format!("- Scène : {}", x.title))
+        .chain(facts.clues.iter().map(|c| format!("- Indice : {}", c.text)))
+        .chain(facts.met.iter().map(|m| format!("- Rencontré : {m}")))
+        .collect();
     let hidden: Vec<String> = lines
         .iter()
         .filter(|l| !l.shared)
         .map(|l| format!("- {}", l.text))
         .chain(
-            knowledge::gaps(&row.story, &row.world)
+            facts
+                .revelations
+                .iter()
+                .map(|r| format!("- Désormais à leur portée : {}", r.statement)),
+        )
+        .chain(facts.fronts.iter().map(|f| {
+            format!(
+                "- Menace « {} » : {}/{} — {}",
+                f.name, f.to, f.total, f.step
+            )
+        }))
+        .chain(
+            knowledge::gaps(&row.story, &world)
                 .iter()
                 .map(|g| format!("- À savoir pour « {} » : {}", g.node_title, g.statement)),
         )
+        .collect();
+    let secret_names: Vec<String> = row
+        .story
+        .fronts
+        .iter()
+        .map(|f| f.name.clone())
+        .chain(
+            row.story
+                .npcs
+                .iter()
+                .filter(|n| !world.revealed.contains(&n.id))
+                .map(|n| n.name.clone()),
+        )
+        .chain(
+            row.story
+                .adversaries
+                .iter()
+                .filter(|a| !world.revealed.contains(&a.id))
+                .map(|a| a.name.clone()),
+        )
+        .map(|n| format!("- {n}"))
         .collect();
     let vars: BTreeMap<&str, String> = [
         ("title", row.story.title.clone()),
         ("number", s.number.to_string()),
         ("journal", shared.join("\n")),
+        ("facts", told.join("\n")),
         ("gm", hidden.join("\n")),
+        ("secret_names", secret_names.join("\n")),
     ]
     .into_iter()
     .collect();
@@ -609,7 +741,20 @@ pub async fn recap_draft(
         )
         .await?;
     let draft: RecapDraft = ai::parse_json(&answer.text).map_err(|e| ledger::app_error(&e))?;
-    Ok(Json(json!({ "data": { "players": draft.players, "gm": draft.gm } })).into_response())
+    let drafted = Session {
+        previously: draft.players.clone(),
+        chronicle_title: draft.chronicle_title.clone(),
+        chronicle: draft.chronicle.clone(),
+        ..s
+    };
+    Ok(Json(json!({ "data": {
+        "players": draft.players,
+        "gm": draft.gm,
+        "chronicleTitle": draft.chronicle_title,
+        "chronicle": draft.chronicle,
+        "warnings": leaks_of(&row, &world, &drafted),
+    } }))
+    .into_response())
 }
 
 /// `GET /api/campaigns/{id}/sessions/{session}/feedback`

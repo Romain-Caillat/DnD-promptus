@@ -2,20 +2,23 @@
 //! allow-list, like the rest of the projection (`MEMORY.md` §3).
 //!
 //! Reaches players: the session's number and state, « Précédemment… » of
-//! the last ended session, the music playing and when it started, who
+//! the last ended session once the GM published it — while launching
+//! the next session, only the sentences the GM has shown — the music playing and when it started, who
 //! is in the lobby (nicknames), the campaign view of the current scene
 //! (`project_for_players`), the shared lines of the journal (no story
 //! ids, no GM line), the player's **own** requests with the GM's answer
 //! and the server's roll, the cards they can play, and whether the last
 //! session waits for their feedback.
 //!
-//! Never: the GM's recap and their note of changes, the gaps of
+//! Never: the GM's recap and their note of changes, an unpublished
+//! « Précédemment… » or chronicle entry, the sentences not read yet, the gaps of
 //! knowledge, the rulings, other players' requests, GM-only journal
 //! lines, the spotlight.
 
 use chrono::{DateTime, Utc};
 use promptus_shared::rules::RuleSystem;
 use promptus_shared::rules::check::RollBreakdown;
+use promptus_shared::story::recap;
 use promptus_shared::story::{Campaign, WorldState};
 use serde::Serialize;
 use uuid::Uuid;
@@ -29,8 +32,11 @@ use crate::evening::session::{Attendance, Music, Session, Status};
 #[serde(rename_all = "camelCase")]
 pub struct EveningView {
     pub session: Option<SessionView>,
-    /// « Précédemment… » of the last ended session, when the GM wrote one.
+    /// « Précédemment… » of the last ended session, once the GM published
+    /// it; `None` during the launch reading (see `launch`).
     pub previously: Option<String>,
+    /// gm/launch-session: the sentences of « Précédemment… » read so far.
+    pub launch: Option<LaunchView>,
     pub music: Option<Music>,
     pub lobby: Vec<LobbySeatView>,
     pub campaign: PlayerCampaignView,
@@ -50,6 +56,46 @@ pub struct SessionView {
     pub number: i32,
     pub status: Status,
     pub started_at: Option<DateTime<Utc>>,
+}
+
+/// The launch of a session: « Précédemment… » read sentence by sentence.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LaunchView {
+    /// The session the text tells.
+    pub number: i32,
+    /// The sentences the GM has shown, in order — never the next ones.
+    pub lines: Vec<String>,
+    /// How many there are in all.
+    pub total: usize,
+}
+
+/// One entry of the campaign's chronicle, as the table may read it.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChronicleEntryView {
+    pub number: i32,
+    pub played_on: Option<DateTime<Utc>>,
+    pub title: String,
+    pub text: String,
+    pub previously: String,
+}
+
+/// The chronicle for the table: only the published entries, the latest
+/// first. Never a GM recap, never a draft.
+#[must_use]
+pub fn project_chronicle(sessions: &[Session]) -> Vec<ChronicleEntryView> {
+    sessions
+        .iter()
+        .filter(|s| s.status == Status::Ended && s.published_at.is_some())
+        .map(|s| ChronicleEntryView {
+            number: s.number,
+            played_on: s.started_at.or(s.ended_at),
+            title: s.chronicle_title.clone(),
+            text: s.chronicle.clone(),
+            previously: s.previously.clone(),
+        })
+        .collect()
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -229,13 +275,32 @@ pub fn project_evening(input: &EveningInput<'_>) -> EveningView {
         status: s.status,
         started_at: s.started_at,
     });
-    let previously = input
+    let published = input
         .last_ended
-        .map(|s| s.previously.clone())
-        .filter(|p| !p.trim().is_empty());
+        .filter(|s| s.published_at.is_some())
+        .filter(|s| !s.previously.trim().is_empty());
+    let reading = input.current.and_then(|s| s.previously_shown);
+    let launch = match (reading, published) {
+        (Some(shown), Some(last)) => {
+            let all = recap::lines(&last.previously);
+            Some(LaunchView {
+                number: last.number,
+                total: all.len(),
+                lines: all
+                    .into_iter()
+                    .take(usize::try_from(shown).unwrap_or(0))
+                    .collect(),
+            })
+        }
+        _ => None,
+    };
+    let previously = published
+        .filter(|_| launch.is_none())
+        .map(|s| s.previously.clone());
     EveningView {
         session,
         previously,
+        launch,
         music: input.current.and_then(|s| s.music.clone()),
         lobby: input
             .lobby

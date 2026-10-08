@@ -21,11 +21,14 @@ import {
   endSession,
   fetchFeedback,
   fetchLiveScreen,
+  fetchSessions,
   giveSpotlight,
   openSession,
   playTrack,
+  readNext,
   reveal,
   saveChanges,
+  saveRecap,
   showDraft,
   startSession,
   writeNote,
@@ -36,7 +39,9 @@ import { BoardPanel } from './BoardPanel'
 import { CopilotPanel } from './CopilotPanel'
 import { EndPanel, FeedbackPanel } from './EndPanel'
 import { JournalPanel } from './JournalPanel'
+import { LaunchPanel } from './LaunchPanel'
 import { MediaPanel } from './MediaPanel'
+import { RecapPanel } from './RecapPanel'
 import { RequestsPanel } from './RequestsPanel'
 import { ScenePanel } from './ScenePanel'
 import { TablePanel } from './TablePanel'
@@ -188,6 +193,11 @@ export function GmLivePage() {
       )}
       <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_minmax(420px,2fr)_minmax(280px,1fr)]">
         <div className="flex flex-col gap-3">
+          <LaunchPanel
+            screen={screen}
+            onNext={() => void act(() => readNext(campaignId))}
+            onScene={(node) => void act(() => reveal(campaignId, { kind: 'scene', node }))}
+          />
           <TablePanel screen={screen} onSpotlight={(p) => void act(() => giveSpotlight(campaignId, p))} />
           {session?.status === 'live' && (
             <RequestsPanel screen={screen} onDecide={(id, d) => void act(() => decide(campaignId, id, d))} />
@@ -212,6 +222,18 @@ export function GmLivePage() {
               onStart={(n) => void boardGesture(() => startFight(campaignId, n))}
               onCommand={(c) => void boardGesture(() => gmFightCommand(campaignId, c))}
               onLoot={(index, character) => void boardGesture(() => giveLoot(campaignId, [{ index, character }]))}
+            />
+          )}
+          {!session && screen.lastEnded && (
+            <RecapPanel
+              key={screen.lastEnded.id}
+              session={screen.lastEnded}
+              aiConfigured={screen.ai.configured}
+              load={() => fetchSessions(campaignId)}
+              onDraft={() => act(() => draftRecap(campaignId, screen.lastEnded!.id))}
+              onSave={async (texts, publish) =>
+                (await act(() => saveRecap(campaignId, screen.lastEnded!.id, texts, publish))) !== null
+              }
             />
           )}
           {!session && screen.lastEnded && (

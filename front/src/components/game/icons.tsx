@@ -27,6 +27,7 @@ export const UI_ICONS = {
   arrow: ['M5 12h14M13 6l6 6-6 6'],
   image: ['M3 5h18v14H3z', 'M3 16l5-5 4 4 3-3 6 6', circle(15.5, 9, 1.5)],
   map: ['M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z', 'M9 3v15M15 6v15'],
+  calendar: ['M4 5h16v16H4z', 'M4 10h16M8 3v4M16 3v4'],
 } as const satisfies Record<string, readonly string[]>
 
 export type UiIcon = keyof typeof UI_ICONS

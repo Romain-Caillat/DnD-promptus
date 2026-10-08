@@ -239,6 +239,24 @@ confirm it exists. The first GM is created with the setup code from
 the server log, every other one through an invitation: registration is
 never open to whoever reaches the server first.
 
+### Recaps reach the table only once published
+
+« Précédemment… » and the chronicle entry are drafts until the GM
+publishes them (`game_sessions.published_at`): ending a session never
+publishes, whoever wrote the text (the GM, the facts, the co-GM). The
+projection reads only published text; during the launch it sends only
+the sentences the GM has shown. A player text naming a front or someone
+not met is flagged to the GM (`story::recap::leaks`), never blocked.
+
+### The server's clock acts once, and only like the GM would
+
+The schedule's clock (`schedule::tick`) claims each step of a date with
+`UPDATE … WHERE step IS NULL RETURNING`: a restart or a second server
+never sends a reminder twice, and after downtime only the current step
+fires. Opening the lobby on its own goes through the same code as the
+GM's (`session::open_locked`: lock, validated campaign, newest rules).
+Tests call `tick` with a time and a campaign; only `main.rs` spawns it.
+
 ### Every AI call is counted
 
 Each LLM, image or video call is recorded with its cost and counted
@@ -285,6 +303,16 @@ against the campaign budget; a batch that would exceed it is refused.
   docs; no live call has run yet — check the first real one.
 - **A phone's video player needs `Range`**: iOS Safari plays nothing
   served whole. Media bytes are served with 206 partial answers.
+- **Reminders go through Discord, not the browser** (`session/schedule-sessions`).
+  Web Push on iOS only works for an app added to the home screen; the
+  table already lives on Discord, so the server posts to the channel's
+  webhook. Only `https://discord.com/api/webhooks/…` (and discordapp,
+  ptb, canary) is accepted, or the GM could make the server call any
+  address; the URL is a secret, shown back by its last four characters.
+  Discord's `<t:unix:F>` puts each reader in their own time zone.
+- **Vitest under Node 26 has no `localStorage`**: Node's own experimental
+  global shadows jsdom's. Run the front tests with
+  `bun --bun node_modules/.bin/vitest run` (as in PCT 105).
 - **V1 GM pages had no authentication.** The rewrite has a GM account
   from day one (passkeys, `platform/sign-in-gm`, see §3 "GM routes");
   `/play/*` stays accountless.

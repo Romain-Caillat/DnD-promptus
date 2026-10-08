@@ -103,6 +103,8 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/session/reveal"),
     ("PUT", "/api/campaigns/{campaign}/session/music"),
     ("POST", "/api/campaigns/{campaign}/session/journal"),
+    // On a reading of « Précédemment… » set under way just before.
+    ("POST", "/api/campaigns/{campaign}/session/previously/next"),
     // The grid: show the quay, edit it, fight on it, hand out the loot.
     ("GET", "/api/campaigns/{campaign}/board"),
     ("POST", "/api/campaigns/{campaign}/board"),
@@ -165,6 +167,16 @@ const GM_ROUTES: &[(&str, &str)] = &[
         "/api/campaigns/{campaign}/sessions/{session}/changes",
     ),
     ("GET", "/api/campaigns/{campaign}/ai"),
+    // The next session's date: the channel set, a date proposed, then
+    // fixed (`{date}` the one just proposed), another dropped.
+    ("PUT", "/api/campaigns/{campaign}/schedule/discord"),
+    ("GET", "/api/campaigns/{campaign}/schedule"),
+    ("POST", "/api/campaigns/{campaign}/schedule/dates"),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/schedule/dates/{date}/choose",
+    ),
+    ("DELETE", "/api/campaigns/{campaign}/schedule/dates/{date}"),
     ("DELETE", "/api/campaigns/{campaign}/hooks/{hook}"),
     // After the character routes: removing the player removes them.
     ("DELETE", "/api/campaigns/{campaign}/players/{player}"),
@@ -181,6 +193,12 @@ const CORSAIRES_RULES: &str = include_str!("../../content/rules/corsaires/v1.yam
 /// route works and the refusals come from the guard.
 fn body_for(method: &str, path: &str) -> Option<Value> {
     match (method, path) {
+        ("PUT", p) if p.ends_with("/schedule/discord") => Some(serde_json::json!({
+            "webhook": "https://discord.com/api/webhooks/1/balayage"
+        })),
+        ("POST", p) if p.ends_with("/schedule/dates") => Some(serde_json::json!({
+            "startsAt": chrono::Utc::now() + chrono::Duration::days(3)
+        })),
         ("POST", "/api/campaigns") => Some(serde_json::json!({
             "title": "Sweep",
             "rules": { "id": "corsaires", "version": 1 }
@@ -289,6 +307,7 @@ struct Ids {
     proposal: String,
     job: String,
     map: String,
+    date: String,
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
@@ -304,6 +323,7 @@ fn route_uri(path: &str, ids: &Ids) -> String {
         .replace("{proposal}", &ids.proposal)
         .replace("{job}", &ids.job)
         .replace("{map}", &ids.map)
+        .replace("{date}", &ids.date)
 }
 
 /// Every placeholder filled for `player` of `campaign`: an invitation of
@@ -339,6 +359,7 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         asset: Uuid::new_v4().to_string(),
         proposal: Uuid::new_v4().to_string(),
         job: Uuid::new_v4().to_string(),
+        date: Uuid::new_v4().to_string(),
         map: "carte-inconnue".to_string(),
     }
 }
@@ -585,6 +606,26 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             ids.asset = sqlx::query_scalar::<_, Uuid>(
                 "INSERT INTO media_assets (campaign_id, kind, subject, mime, image)
                  VALUES ($1, 'scene', 'sc_crique', 'image/png', '\\x89504e47') RETURNING id",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .to_string();
+        }
+        if path.ends_with("/previously/next") {
+            sqlx::query(
+                "UPDATE game_sessions SET previously_shown = 1
+                 WHERE campaign_id = $1 AND status = 'live'",
+            )
+            .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .execute(&pool)
+            .await
+            .unwrap();
+        }
+        if path.contains("{date}") {
+            ids.date = sqlx::query_scalar::<_, Uuid>(
+                "SELECT id FROM session_dates WHERE campaign_id = $1 ORDER BY created_at DESC LIMIT 1",
             )
             .bind(Uuid::parse_str(&ids.campaign).unwrap())
             .fetch_one(&pool)

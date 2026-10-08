@@ -17,6 +17,7 @@ use axum::http::{Request, StatusCode, header};
 use promptus_back::ai::Ai;
 use promptus_back::auth::setup::SetupState;
 use promptus_back::live::{LiveConfig, LiveHub};
+use promptus_back::schedule::Notifier;
 use promptus_back::state::{AppState, Auth};
 use serde_json::Value;
 use sqlx::PgPool;
@@ -131,12 +132,25 @@ fn router_with(pool: PgPool, setup: SetupState, live: LiveHub) -> Router {
 /// elsewhere): tests of the co-GM and of the budget pass their own to
 /// count its calls.
 pub fn app_with_ai(pool: PgPool, setup: SetupState, live: LiveHub, ai: Ai) -> Router {
+    app_with_notifier(pool, setup, live, ai, Notifier::recorder(ORIGIN).0)
+}
+
+/// The real router with a chosen notifier: tests of the reminders pass a
+/// recorder and read what would have reached the table's channel.
+pub fn app_with_notifier(
+    pool: PgPool,
+    setup: SetupState,
+    live: LiveHub,
+    ai: Ai,
+    notifier: Notifier,
+) -> Router {
     promptus_back::app::router(
         AppState {
             pool,
             auth: auth(setup),
             live,
             ai,
+            notifier,
         },
         &[],
     )
@@ -155,6 +169,8 @@ pub struct Reply {
     pub status: StatusCode,
     pub body: Value,
     pub set_cookie: Option<String>,
+    /// The body as text, for the answers that are not JSON (a calendar).
+    pub text: String,
 }
 
 impl Reply {
@@ -229,6 +245,7 @@ pub async fn send(
         status,
         body: serde_json::from_slice(&bytes).unwrap_or(Value::Null),
         set_cookie,
+        text: String::from_utf8_lossy(&bytes).into_owned(),
     }
 }
 

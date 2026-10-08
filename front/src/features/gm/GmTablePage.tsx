@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils'
 import { CharacterReview } from './CharacterReview'
 import { PlaySheets } from './PlaySheets'
+import { SchedulePanel } from './SchedulePanel'
 import { SecretHooks } from './SecretHooks'
 import { TableInvite } from './TableInvite'
 
@@ -37,6 +38,7 @@ type View =
   | { kind: 'review'; characterId: string }
   | { kind: 'hooks' }
   | { kind: 'sheets' }
+  | { kind: 'schedule' }
 
 /** How a seat's status reads on the table (board « Inviter »). */
 type SeatTone = 'ok' | 'todo' | 'wait' | 'off'
@@ -44,8 +46,9 @@ type SeatTone = 'ok' | 'todo' | 'wait' | 'off'
 /**
  * `/campagnes/:campaignId/table` — the GM's table (board « Inviter »): the
  * invitation, the table filling up live, the review of each sheet, the
- * secret hooks drawn from the backstories, and the characters in play
- * with their one-gesture adjustments. The seat list and the sheets in
+ * secret hooks drawn from the backstories, the characters in play
+ * with their one-gesture adjustments, and the next session's date
+ * (moment 7). The seat list and the sheets in
  * play follow the live channel's `table` topic; the open review follows
  * its character's topic.
  */
@@ -57,6 +60,7 @@ export function GmTablePage() {
   const [view, setView] = useState<View>({ kind: 'invite' })
   const [reviewVersion, setReviewVersion] = useState(0)
   const [tableVersion, setTableVersion] = useState(0)
+  const [scheduleVersion, setScheduleVersion] = useState(0)
   const [actionError, setActionError] = useState(false)
   const [confirming, setConfirming] = useState<string | null>(null)
   const latestSeats = useRef(0)
@@ -102,6 +106,7 @@ export function GmTablePage() {
       setTableVersion((v) => v + 1)
     }
     if (reviewing && topics.includes(`character:${reviewing}`)) setReviewVersion((v) => v + 1)
+    if (topics.includes('session')) setScheduleVersion((v) => v + 1)
   })
 
   if (state.kind === 'signed-out') return <Navigate to="/connexion" replace />
@@ -196,6 +201,14 @@ export function GmTablePage() {
               aria-pressed={view.kind === 'hooks'}
               onClick={() => setView({ kind: 'hooks' })}
             />
+            <CardButton
+              variant="dark"
+              size="small"
+              icon="calendar"
+              title={t('gm.schedule.button')}
+              aria-pressed={view.kind === 'schedule'}
+              onClick={() => setView({ kind: 'schedule' })}
+            />
           </div>
         </section>
 
@@ -219,6 +232,7 @@ export function GmTablePage() {
           )}
           {view.kind === 'hooks' && <SecretHooks campaignId={campaignId} seats={seats} />}
           {view.kind === 'sheets' && <PlaySheets campaignId={campaignId} refreshKey={tableVersion} />}
+          {view.kind === 'schedule' && <SchedulePanel campaignId={campaignId} refreshKey={scheduleVersion} />}
         </div>
       </div>
     </main>

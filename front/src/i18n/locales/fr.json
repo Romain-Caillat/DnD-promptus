@@ -352,6 +352,53 @@
         "notValidated": "Ce personnage n'est pas encore validé."
       }
     },
+    "schedule": {
+      "title": "La prochaine séance",
+      "session": "Séance {{number}}",
+      "button": "Prochaine séance",
+      "loading": "Chargement des dates…",
+      "error": "Les dates n'ont pas pu être chargées. Réessayez.",
+      "fixed": "Date fixée",
+      "lobbyAt": "Le salon ouvrira à {{time}}, tout seul.",
+      "reminders": "Rappels la veille et une heure avant, dans le salon Discord de la table. Chacun peut aussi ajouter la date à son agenda.",
+      "proposed": "Dates proposées à la table",
+      "none": "Aucune date proposée. Proposez-en une ou plusieurs : chacun dira lesquelles lui vont.",
+      "yes": "{{count}} sur {{total}} peuvent",
+      "answers": "Réponses",
+      "available": "peut",
+      "unavailable": "ne peut pas",
+      "noAnswer": "pas encore répondu",
+      "choose": "Fixer cette date",
+      "drop": "Retirer",
+      "add": "Proposer cette date",
+      "when": "Date et heure",
+      "length": "Durée",
+      "hours": "{{count}} h",
+      "sent": "Envoyés à la table",
+      "log": {
+        "chosen": "La date annoncée",
+        "eve": "Le rappel de la veille",
+        "hour": "Le rappel d'une heure avant",
+        "lobby": "Le salon ouvert"
+      },
+      "logLine": "{{what}} · {{time}}",
+      "logFailed": "{{what}} · {{time}} · pas parti : {{detail}}",
+      "answerOf": "{{name}} · {{answer}}",
+      "discord": "Le salon Discord de la table",
+      "discordHelp": "Collez l'adresse d'un webhook Discord (Paramètres du salon → Intégrations → Webhooks). Les rappels y partent avec le lien vers le salon de jeu ; chacun les reçoit sur son téléphone.",
+      "discordSet": "Branché ({{hint}})",
+      "discordNone": "Aucun salon Discord : la date reste visible dans l'app et dans l'agenda de chacun, sans rappel.",
+      "discordSave": "Brancher",
+      "discordClear": "Débrancher",
+      "errors": {
+        "UNEXPECTED": "Le serveur a refusé ({{code}}).",
+        "DATE_IN_PAST": "Cette date est déjà passée.",
+        "INVALID_DURATION": "Une séance dure entre 30 minutes et 12 heures.",
+        "TOO_MANY_DATES": "Dix dates proposées, c'est le maximum.",
+        "DATE_CLOSED": "Cette date n'est plus proposée.",
+        "INVALID_WEBHOOK": "Ce n'est pas une adresse de webhook Discord (https://discord.com/api/webhooks/…)."
+      }
+    },
     "playerView": {
       "kicker": "Ce que voient les joueurs",
       "notFound": "Cette campagne est introuvable.",
@@ -508,7 +555,11 @@
       "scene": "Où vous êtes",
       "clues": "Les indices du groupe",
       "npcs": "Les gens rencontrés",
-      "empty": "Le groupe n'a encore rien découvert."
+      "empty": "Le groupe n'a encore rien découvert.",
+      "chronicle": "La chronique",
+      "chronicleEntry": "Séance {{number}}",
+      "chronicleEntryOn": "Séance {{number}} · {{date}}",
+      "chronicleNote": "La chronique ne garde que ce que toute la table a vu."
     }
   },
   "creator": {
@@ -1137,6 +1188,7 @@
     "clues": "Indices",
     "noSession": "Pas de soirée en cours. Le MJ ouvrira la salle d'attente le jour venu.",
     "previously": "Précédemment…",
+    "launchWait": "Le MJ lit la suite…",
     "music": {
       "label": "Musique",
       "unmute": "Activer le son",
@@ -1149,6 +1201,19 @@
         "combat": "Combat",
         "epic": "Épique"
       }
+    },
+    "schedule": {
+      "next": "Séance {{number}}",
+      "lobbyAt": "Le salon ouvre à {{time}}. Prépare tes écouteurs.",
+      "soon": "Dans moins d'une heure",
+      "calendar": "Ajouter à mon agenda",
+      "ask": "Séance {{number}} : tu es libre quand ?",
+      "askSpectator": "Séance {{number}} : dates proposées",
+      "yes": "Je peux",
+      "no": "Je ne peux pas",
+      "who": "Peuvent : {{names}}",
+      "nobody": "Personne n'a encore dit oui.",
+      "gmPicks": "Le MJ fixe la date quand tout le monde a répondu."
     },
     "lobby": {
       "title": "Séance {{number}} : salle d'attente",
@@ -1228,7 +1293,8 @@
       "TEXT_TOO_LONG": "Trop long : fais plus court.",
       "SPECTATOR": "Tu regardes la partie : tu ne joues pas de carte.",
       "NO_PLAY_SHEET": "Ton personnage n'est pas encore en jeu.",
-      "ALREADY_ANSWERED": "Tu as déjà répondu."
+      "ALREADY_ANSWERED": "Tu as déjà répondu.",
+      "DATE_CLOSED": "Cette date n'est plus proposée."
     }
   },
   "map": {
@@ -1329,7 +1395,47 @@
       "NO_CURRENCY": "Les règles n'ont pas de monnaie.",
       "TEXT_TOO_LONG": "Texte trop long.",
       "EMPTY_TEXT": "Le texte est vide.",
-      "CELL_BLOCKED": "Personne ne peut se tenir là."
+      "CELL_BLOCKED": "Personne ne peut se tenir là.",
+      "NOT_READING": "La lecture du « Précédemment… » est déjà finie.",
+      "NOTHING_TO_PUBLISH": "Écrivez d'abord le « Précédemment… ».",
+      "PUBLISH_AFTER_THE_END": "On publie après avoir relu, une fois la séance terminée."
+    },
+    "launch": {
+      "title": "Avant de lancer",
+      "recapPublished": "Le récap de la séance {{number}} est publié : il sera lu phrase par phrase.",
+      "recapDraft": "Le récap de la séance {{number}} n'est pas publié : rien ne sera lu.",
+      "firstSession": "Première séance : rien à lire, la partie commence sur sa première scène.",
+      "here": "{{here}} joueurs sur {{total}} sont là, {{sound}} avec le son.",
+      "allHere": "Toute la table est là.",
+      "reading": "Précédemment… · séance {{number}}",
+      "pace": "Chaque phrase part sur les téléphones quand vous la montrez.",
+      "forYou": "Pour vous seul",
+      "next": "Phrase suivante",
+      "allRead": "Tout est lu",
+      "firstScene": "Envoyer la première scène : {{title}}",
+      "done": "✓",
+      "todo": "·"
+    },
+    "recaps": {
+      "title": "Récapitulatifs de la séance {{number}}",
+      "draftState": "Brouillon : les joueurs ne le voient pas encore.",
+      "publishedState": "Publié : les joueurs le lisent.",
+      "recap": "Votre récap (pour vous)",
+      "previously": "« Précédemment… » (pour les joueurs)",
+      "chronicleTitle": "Titre de l'entrée de chronique",
+      "chronicle": "Entrée de chronique (pour les joueurs)",
+      "draft": "Réécrire avec le co-MJ",
+      "save": "Enregistrer",
+      "saved": "Enregistré",
+      "publish": "Publier aux joueurs",
+      "warnings": "À vérifier avant de publier",
+      "warning": {
+        "front": "« {{name}} » est une menace : les joueurs ne la voient pas.",
+        "unmet": "« {{name}} » : la table ne l'a pas encore rencontré."
+      },
+      "chronicleList": "La chronique",
+      "entry": "Séance {{number}} · {{title}}",
+      "entryDraft": "brouillon"
     },
     "table": {
       "title": "La table",
@@ -1483,7 +1589,8 @@
     "end": {
       "title": "Fin de soirée",
       "recap": "Votre récap (pour vous)",
-      "previously": "« Précédemment… » (pour les joueurs)",
+      "previously": "« Précédemment… » (pour les joueurs, après relecture)",
+      "hint": "Ce que vous laissez vide, le serveur le rédige à partir de ce qui s'est passé. Rien ne part aux joueurs avant que vous publiiez.",
       "draft": "Brouillon du co-MJ",
       "end": "Terminer la séance",
       "gaps": "Ce qui manque à la table pour la suite",

@@ -71,7 +71,7 @@ export function PlayerHomePage() {
       const mine = characterId.current
       if (mine && topics.includes(`character:${mine}`)) void load()
       const world = topics.includes('world') || topics.includes('story')
-      if (world) setViewVersion((v) => v + 1)
+      if (world || topics.includes('session')) setViewVersion((v) => v + 1)
       if (world || topics.includes('session') || (mine && topics.includes(`character:${mine}`))) {
         setEveningVersion((v) => v + 1)
       }

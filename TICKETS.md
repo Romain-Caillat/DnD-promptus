@@ -1396,7 +1396,7 @@ l'histoire s'affiche en trois réponses plus un paragraphe (une histoire
 en texte simple est lue comme le paragraphe). **Reste** : jouer les
 moments 3 à 6 avec de vrais joueurs sur téléphone.
 
-### `session/schedule-sessions` · todo
+### `session/schedule-sessions` · doing — reste un vrai rappel reçu sur le téléphone de Marc, par le vrai salon Discord de la table
 
 **Périmètre** — Les joueurs donnent leurs disponibilités, le MJ choisit
 la date ; rappel avant la session ; le salon ouvre à l'heure dite.
@@ -1405,6 +1405,39 @@ la date ; rappel avant la session ; le salon ouvre à l'heure dite.
 au salon d'un toucher.
 
 **Origine** — Planches « Inviter » (moment 7) et « Entre deux » (moment 6)
+
+**État** — Migration `029_schedule.sql`. Sur la page de table du MJ,
+« Prochaine séance » : il propose des dates (jour, heure, durée), voit
+pour chacune qui peut, qui ne peut pas, qui n'a pas répondu, et fixe
+l'une d'elles (les autres se ferment). Côté joueur, onglet Jeu entre deux
+séances : « Séance N : tu es libre quand ? », un toucher par date (« Je
+peux » / « Je ne peux pas »), qui a déjà dit oui ; un spectateur voit les
+dates sans répondre. Une fois la date fixée : la carte « Séance N · jeudi
+10 octobre · 20 h 30 », l'heure d'ouverture du salon et « Ajouter à mon
+agenda » (un fichier calendrier avec deux alarmes, la veille et une heure
+avant, et le lien du salon). **Hypothèse retenue pour « le rappel arrive
+sur le téléphone »** : la table de Romain vit déjà sur Discord, donc le
+rappel part dans le salon Discord de la table par un webhook que le MJ
+colle une fois (seule une adresse `https://discord.com/api/webhooks/…`
+est acceptée ; elle reste côté MJ, qui n'en revoit que la fin). Discord
+le pousse sur le téléphone de Marc ; le lien du message ouvre
+`/partie/<campagne>`, dont l'onglet Jeu est le salon dès qu'il est
+ouvert : un toucher. Une horloge du serveur (toutes les 30 s) envoie
+l'annonce de la date, le rappel de la veille, celui d'une heure avant,
+et **ouvre le salon tout seul un quart d'heure avant** (la même ouverture
+que celle du MJ : campagne validée, nouvelle version des règles adoptée) ;
+chaque étape n'est prise qu'une fois, même après un redémarrage, et un
+serveur arrêté pendant la veille n'envoie au réveil que l'étape du
+moment. Le MJ voit sous la date ce qui est parti et ce qui a échoué
+(« pas parti : … »). Testé sur les deux mondes (proposition, réponses,
+spectateur refusé, choix annoncé, calendrier, rappels un par un jusqu'au
+salon ouvert, date close une fois jouée), plus le rattrapage, l'échec
+du salon Discord et une campagne non validée qui garde son salon fermé ;
+le webhook et le journal des rappels sont marqués dans le balayage des
+routes joueur. **Reste** : brancher le vrai salon Discord de la table et
+recevoir un vrai rappel sur le téléphone de Marc ; les notifications
+Web Push de l'app (qui demandent l'app installée sur l'écran d'accueil
+sous iOS) ne sont pas faites.
 
 ### `session/open-lobby` · doing — reste la soirée du jalon jouée pour de vrai
 
@@ -1476,7 +1509,7 @@ précédente s'est arrêtée.
 
 **Origine** — Planche « Mener » (fin) · V1 `continuity/`
 
-### `session/write-recaps` · todo
+### `session/write-recaps` · doing — reste un vrai récap relu et publié par Romain, lu par Marc le lendemain
 
 **Périmètre** — Le co-MJ rédige le récapitulatif MJ, le « Précédemment… »
 des joueurs et l'entrée de chronique ; le MJ relit et publie.
@@ -1485,6 +1518,32 @@ des joueurs et l'entrée de chronique ; le MJ relit et publie.
 portés ; Marc lit le « Précédemment… » le lendemain.
 
 **Origine** — V1 `continuity/recap.ts` · planches « Mener » et « Entre deux »
+
+**État** — Migration `028_recaps_and_launch.sql`. Le serveur photographie
+le monde quand la séance démarre ; à la fin, il compare : scènes jouées,
+indices trouvés, révélations désormais à portée, menaces qui avancent,
+noms appris, plus les lignes du journal de la table (combats, butin,
+promesses, dettes). « Terminer la séance » garde ce que le MJ a écrit et
+rédige le reste à partir de ces faits (V1 `recap.test.ts` porté dans
+`shared`) : le récap MJ (menaces et révélations comprises, et ce que la
+suite demande), le « Précédemment… » et l'entrée de chronique (titre et
+une ou deux lignes), ces deux-là sans aucune menace ni nom que la table
+ne connaît pas. **Rien ne part aux joueurs avant que le MJ publie** :
+après la séance, le panneau « Récapitulatifs » de l'écran du soir montre
+les trois textes en brouillon, « Réécrire avec le co-MJ » (gabarit
+`recap` v2, un appel compté), « Enregistrer », « Publier aux joueurs » ;
+un texte joueur qui nomme une menace ou quelqu'un pas encore rencontré
+est **signalé, jamais bloqué**, quel qu'en soit l'auteur. Publié, le
+« Précédemment… » s'affiche sur le téléphone entre deux séances et dans
+le salon, et la chronique (onglet Journal) gagne l'entrée de la séance ;
+le récap du MJ ne sort jamais (balayage des routes joueur : brouillon et
+récap marqués). Testé sur les deux mondes (V1 `continuity.test.ts`
+porté : séance mesurée, brouillon factuel, réécriture, publication, la
+séance suivante le retrouve et ne compte que le nouveau). **Reste** :
+une vraie réécriture par OpenRouter relue par Romain ; que Marc la lise
+le lendemain sur son téléphone. L'écran « Entre deux » complet (niveau,
+fiche hors séance) est `player/play-between-sessions`, qui reprend la
+chronique et le « Précédemment… » publiés tels quels.
 
 ### `session/pair-shared-screen` · todo
 
@@ -1744,12 +1803,33 @@ point d'amélioration reste à `player/play-between-sessions` ; l'écran
 MJ en direct complet est `gm/run-live-screen`. Jamais essayé à une
 vraie table.
 
-### `gm/launch-session` · todo
+### `gm/launch-session` · doing — reste un vrai lancement à la table, et la TV quand elle existera
 
 **Périmètre** — Le lancement : salon, TV, « Précédemment… » lu ligne à
 ligne, première scène.
 
 **Origine** — Planche « Lancer » (moments 4 et 5)
+
+**État** — Dans le salon, l'écran du soir du MJ montre « Avant de
+lancer » : le récap de la séance précédente publié ou non (sinon rien
+ne sera lu), combien de joueurs sont là et avec le son. « Lancer la
+partie » démarre la séance ; si le dernier « Précédemment… » est publié,
+sa lecture commence : la première phrase part sur tous les téléphones,
+le MJ voit le texte entier, ce qui est déjà lu, son propre récap « pour
+vous seul », et envoie « Phrase suivante » à son rythme (jamais au-delà
+de la dernière). Le texte est coupé en phrases par le serveur (retours à
+la ligne et fins de phrase, guillemets français compris). Sur le
+téléphone, l'onglet Jeu affiche les phrases reçues, la dernière en clair,
+et « Le MJ lit la suite… » ; la scène attend. « Envoyer la première
+scène : … » (là où la table s'était arrêtée, sinon la première scène de
+la campagne) termine la lecture partout — comme n'importe quelle scène
+montrée. Les phrases pas encore lues ne quittent pas le serveur ; la
+lecture passe par la projection joueur, donc la TV la recevra sans code
+neuf. Testé sur les deux mondes (lecture phrase par phrase, plafond,
+fin de lecture par la scène, rien à lire sans récap publié). **Reste** :
+le jumelage de la TV (`session/pair-shared-screen`) et son affichage
+(`tv/show-evening`) — aucun bouton TV n'est montré d'ici là ; la lecture
+par la voix du co-MJ n'est pas faite ; un vrai lancement à la table.
 
 ### `gm/run-on-tablet` · todo
 
