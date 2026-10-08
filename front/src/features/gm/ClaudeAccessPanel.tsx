@@ -104,7 +104,7 @@ export function ClaudeAccessPanel() {
       </div>
       <form className="flex flex-wrap gap-2" onSubmit={(e) => void create(e)}>
         <input
-          className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm"
+          className="h-9 min-w-0 flex-1 pixel-field px-3 text-sm"
           value={name}
           maxLength={60}
           onChange={(e) => setName(e.currentTarget.value)}
@@ -118,7 +118,7 @@ export function ClaudeAccessPanel() {
           <p className="text-sm">{t('gm.claude.created')}</p>
           <div className="flex flex-wrap gap-2">
             <input
-              className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 font-mono text-sm"
+              className="h-9 min-w-0 flex-1 pixel-field px-3 font-mono text-sm"
               value={secret}
               readOnly
               aria-label={t('gm.claude.tokenLabel')}
@@ -170,7 +170,7 @@ export function ClaudeAccessPanel() {
           <li className="flex flex-col gap-2">
             <span>{t('gm.claude.help.desktop')}</span>
             <pre
-              className="overflow-auto rounded-button border border-line bg-table p-2 text-[12px]"
+              className="overflow-auto pixel-well p-2 text-[12px]"
               aria-label={t('gm.claude.help.desktopLabel')}
             >
               {desktop}
@@ -182,7 +182,7 @@ export function ClaudeAccessPanel() {
           <li className="flex flex-col gap-2">
             <span>{t('gm.claude.help.code')}</span>
             <pre
-              className="overflow-auto rounded-button border border-line bg-table p-2 text-[12px]"
+              className="overflow-auto pixel-well p-2 text-[12px]"
               aria-label={t('gm.claude.help.codeLabel')}
             >
               {code}
