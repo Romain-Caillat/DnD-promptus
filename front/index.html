@@ -1,9 +1,23 @@
 <!doctype html>
-<html lang="fr" class="dark">
+<html lang="fr" class="dark" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Promptus</title>
+    <script>
+      // The theme setting, before the first paint (src/lib/theme.ts keeps it
+      // in step afterwards). The TV always stays on the black table.
+      try {
+        var c = localStorage.getItem('promptus.theme')
+        var light =
+          location.pathname !== '/tv' &&
+          (c === 'light' || (c === 'system' && matchMedia('(prefers-color-scheme: light)').matches))
+        if (light) {
+          document.documentElement.dataset.theme = 'light'
+          document.documentElement.classList.remove('dark')
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

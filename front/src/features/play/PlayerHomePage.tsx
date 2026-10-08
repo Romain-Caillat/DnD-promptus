@@ -17,6 +17,7 @@ import { CharacterSummary } from './creator/ReviewStep'
 import { FallenCard } from './FallenCard'
 import { JournalTab } from './JournalTab'
 import { RulesEntry } from './rules/RulesEntry'
+import { ThemeSetting } from '@/features/theme/ThemeSetting'
 
 type HomeState =
   | { kind: 'loading' }
@@ -187,6 +188,7 @@ export function PlayerHomePage() {
           <aside className="flex flex-col gap-3" aria-label={t(seated || fallen ? 'play.tabs.perso' : 'play.spectatorPane')}>
             {characterPane ?? <p className="text-body text-chalk-soft">{t('play.spectator')}</p>}
             <RulesEntry campaignId={campaignId} />
+            <ThemeSetting />
           </aside>
           <section className="flex flex-col gap-3" aria-label={t('play.tabs.jeu')}>
             <GameTab campaignId={campaignId} refreshKey={eveningVersion} seated={Boolean(play)} keyboard={!fightTurn} />
@@ -223,7 +225,12 @@ export function PlayerHomePage() {
           </>
         )}
         {tab === 'perso' && characterPane}
-        {(tab === 'perso' || tab === 'journal') && <RulesEntry campaignId={campaignId} />}
+        {(tab === 'perso' || tab === 'journal') && (
+          <>
+            <RulesEntry campaignId={campaignId} />
+            <ThemeSetting />
+          </>
+        )}
       </section>
       {tabs.length > 1 ? (
         <nav
