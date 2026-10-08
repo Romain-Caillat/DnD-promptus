@@ -206,8 +206,9 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   d'interface s'écrit donc en jeton ; une ombre aussi, car Tailwind copie
   la valeur d'une ombre dans son utilitaire et seule une couleur en
   variable suit le thème. Les couleurs de stats y sont foncées d'un cran
-  (≥ 4,5:1 sur toutes les surfaces claires), et le texte posé sur un
-  aplat de stat utilise `--color-on-stat`. Restent noirs dans les deux
+  (≥ 4,5:1 sur toutes les surfaces claires) ; une pièce pleine portant
+  un chiffre encre (gemme, dé, bandeau « à toi ») garde la couleur vive
+  `--color-stat-*-fill`. Restent noirs dans les deux
   thèmes, comme des pièces de jeu : carte noire, dos de carte, cases
   d'objet, badge d'état néfaste, toast de mauvaise nouvelle, bouton
   d'arcade sombre, écran TV — ce sont des « îlots noirs » qui

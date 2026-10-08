@@ -457,9 +457,9 @@ défaut, appliqué avant le premier affichage (pas d’éclair noir) ;
 « Comme l’appareil » suit le réglage du téléphone en direct. Palette
 claire : table blanc cassé, texte encre, panneaux blancs, cartes
 blanches à tranche grise, ombres légères ; couleurs des stats foncées
-d’un cran, toutes au-dessus de 4,5:1 sur chaque surface claire, et le
-chiffre posé sur un aplat de stat (dé, bandeau « à toi ») passe en
-blanc. Suivent le thème : tables, panneaux, jauges vides (cœurs,
+d’un cran, toutes au-dessus de 4,5:1 sur chaque surface claire ; les
+gemmes, les dés et le bandeau « à toi » gardent leur couleur vive et
+leur chiffre encre. Suivent le thème : tables, panneaux, jauges vides (cœurs,
 cellules, horloges), bandeaux, toasts d’information, la marge autour de
 la carte de combat, le fond et le brouillard de la carte du monde, les
 lignes des ennemis en combat. Restent noirs, comme des pièces de jeu :

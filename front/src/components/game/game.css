@@ -1013,8 +1013,8 @@
     animation: gk-banner-pulse 1.6s ease-in-out infinite;
   }
   .gk-banner[data-tone="turn"] {
-    background: var(--color-stat-init);
-    color: var(--color-on-stat);
+    background: var(--color-stat-init-fill);
+    color: var(--color-ink);
     box-shadow: var(--shadow-turn);
     font-family: var(--font-title);
     font-size: 18px;

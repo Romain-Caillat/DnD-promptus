@@ -325,7 +325,7 @@ function Check({ ok, children }: { ok: boolean; children: ReactNode }) {
         aria-hidden
         className={cn(
           'mt-px grid size-[18px] flex-none place-items-center rounded-[5px] text-[11px] font-extrabold not-italic',
-          ok ? 'bg-ivory text-ink' : 'bg-stat-atk text-on-stat',
+          ok ? 'bg-ivory text-ink' : 'bg-stat-atk-fill text-ink',
         )}
       >
         {ok ? OK_MARK : FLAG_MARK}

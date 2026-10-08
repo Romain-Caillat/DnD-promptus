@@ -36,8 +36,12 @@ function deviceLight(): boolean {
   return typeof window.matchMedia === 'function' && window.matchMedia(LIGHT_QUERY).matches
 }
 
+/** The TV (`/tv`) stays on the black table, whatever this device chose. */
+const TV_PATH = '/tv'
+
 /** The theme actually drawn for a choice. */
 function resolveTheme(choice: ThemeChoice): 'dark' | 'light' {
+  if (window.location.pathname === TV_PATH) return 'dark'
   if (choice === 'system') return deviceLight() ? 'light' : 'dark'
   return choice
 }

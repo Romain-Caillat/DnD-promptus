@@ -6,14 +6,27 @@
 export const STATS = ['hp', 'atk', 'ac', 'mag', 'move', 'init'] as const
 export type Stat = (typeof STATS)[number]
 
-/** Literal class names, so Tailwind sees them in the source. */
+/**
+ * Literal class names, so Tailwind sees them in the source. A filled
+ * piece with an ink number (`STAT_BG`, `STAT_FILL_TEXT` for a die's
+ * `currentColor`) uses the bright fill, kept in the light theme.
+ */
 export const STAT_BG: Record<Stat, string> = {
-  hp: 'bg-stat-hp',
-  atk: 'bg-stat-atk',
-  ac: 'bg-stat-ac',
-  mag: 'bg-stat-mag',
-  move: 'bg-stat-move',
-  init: 'bg-stat-init',
+  hp: 'bg-stat-hp-fill',
+  atk: 'bg-stat-atk-fill',
+  ac: 'bg-stat-ac-fill',
+  mag: 'bg-stat-mag-fill',
+  move: 'bg-stat-move-fill',
+  init: 'bg-stat-init-fill',
+}
+
+export const STAT_FILL_TEXT: Record<Stat, string> = {
+  hp: 'text-stat-hp-fill',
+  atk: 'text-stat-atk-fill',
+  ac: 'text-stat-ac-fill',
+  mag: 'text-stat-mag-fill',
+  move: 'text-stat-move-fill',
+  init: 'text-stat-init-fill',
 }
 
 export const STAT_TEXT: Record<Stat, string> = {
@@ -56,4 +69,9 @@ export function shapeMask(stat: Stat, n: number): boolean[] {
 /** The stat colour as a CSS value: the token itself, never a copied hex. */
 export function statColor(stat: Stat): string {
   return `var(--color-stat-${stat})`
+}
+
+/** The bright fill under an ink number (a gem), the same in both themes. */
+export function statFill(stat: Stat): string {
+  return `var(--color-stat-${stat}-fill)`
 }

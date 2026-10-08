@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion'
-import { STAT_TEXT, type Stat } from './stats'
+import { STAT_FILL_TEXT, type Stat } from './stats'
 
 /** The dice the rules roll; d100 is two d10s read together. */
 export const DICE = [4, 6, 8, 10, 12, 20, 100] as const
@@ -80,7 +80,7 @@ export function FacetedDie({
       data-rolling={rolling}
       className={cn(
         'relative grid size-21 place-items-center',
-        stat ? STAT_TEXT[stat] : 'text-ivory',
+        stat ? STAT_FILL_TEXT[stat] : 'text-ivory',
         rolling && 'animate-tumble',
         !rolling && !reduced && 'animate-pop',
         className,
@@ -93,11 +93,7 @@ export function FacetedDie({
         ))}
         <polygon points={shape.outline} fill="white" fillOpacity="0.14" clipPath="inset(0 50% 50% 0)" />
       </svg>
-      <span
-        aria-hidden
-        className={cn('relative text-2xl font-bold tabular-nums', stat ? 'text-on-stat' : 'text-ink')}
-        data-testid="die-face"
-      >
+      <span aria-hidden className="relative text-2xl font-bold text-ink tabular-nums" data-testid="die-face">
         {faces === 100 ? String(shown).padStart(2, '0') : shown}
       </span>
     </div>

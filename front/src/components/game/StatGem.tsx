@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { pixelShadow, shade, type Cell } from './pixels'
-import { shapeMask, statColor, type Stat } from './stats'
+import { shapeMask, statFill, type Stat } from './stats'
 
 /** Light bands in a wave: each lights up in turn, then fades. */
 const BANDS = 8
@@ -35,7 +35,7 @@ function drawGem(stat: Stat, size: number) {
   const off = Math.floor((size - c * n) / 2)
   const mask = shapeMask(stat, n)
   const on = (x: number, y: number) => x >= 0 && y >= 0 && x < n && y < n && mask[y * n + x]
-  const base = statColor(stat)
+  const base = statFill(stat)
 
   const cells: [number, number][] = []
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (on(x, y)) cells.push([x, y])

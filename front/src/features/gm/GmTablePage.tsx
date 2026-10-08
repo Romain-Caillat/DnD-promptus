@@ -303,7 +303,7 @@ function SeatRow({
         className={cn(
           'flex-none rounded-md px-1.5 py-1 text-[10px] font-bold tracking-[0.08em] whitespace-nowrap uppercase',
           tone === 'ok' && 'bg-ivory text-ink',
-          tone === 'todo' && 'bg-stat-init text-on-stat',
+          tone === 'todo' && 'bg-stat-init-fill text-ink',
           tone === 'wait' && 'border-[1.5px] border-dashed border-line-dashed text-mute-soft',
           tone === 'off' && 'border border-line text-mute',
         )}

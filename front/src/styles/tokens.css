@@ -87,8 +87,17 @@
   --color-stat-init: #ffd60a;
   /* Bottom edge of the yellow "your turn" banner. */
   --color-stat-init-edge: #8a6f00;
-  /* Text on a stat-coloured fill (a die, the "your turn" banner). */
-  --color-on-stat: #0a0a0a;
+  /*
+   * A stat as a filled piece with an ink number on it (a gem, a die, the
+   * "your turn" banner): the bright colour in both themes, so the ink
+   * number keeps its contrast. Text in a stat colour uses the plain token.
+   */
+  --color-stat-hp-fill: #ff4d5e;
+  --color-stat-atk-fill: #ff9f1c;
+  --color-stat-ac-fill: #3d9bff;
+  --color-stat-mag-fill: #b28cff;
+  --color-stat-move-fill: #2ee6a6;
+  --color-stat-init-fill: #ffd60a;
 
   /* Damage: numbers that hit, damage dice, the lethal button. */
   --color-damage: #ff4d5e;
@@ -568,8 +577,9 @@
  * The light table (ui/offer-light-theme): off-white table, ink text, white
  * cards with grey stacked edges, lighter shadows. Stat colours are a step
  * darker so text in a stat colour keeps at least 4.5:1 on every light
- * surface (table, slab, surface, well, raised); text on a stat fill turns
- * white (`--color-on-stat`). `src/lib/theme.ts` sets `data-theme` on
+ * surface (table, slab, surface, well, raised); a stat drawn as a filled
+ * piece with an ink number (gem, die, banner) keeps its bright
+ * `--color-stat-*-fill`. `src/lib/theme.ts` sets `data-theme` on
  * `<html>` per device, before the first paint (index.html).
  */
 :root[data-theme="light"] {
@@ -614,7 +624,6 @@
   --color-stat-move: #006b51;
   --color-stat-init: #705800;
   --color-stat-init-edge: #3d3000;
-  --color-on-stat: #ffffff;
 
   --color-damage: #b8142a;
   --color-damage-edge: #7a0d1c;
@@ -689,7 +698,6 @@
   --color-stat-move: #2ee6a6;
   --color-stat-init: #ffd60a;
   --color-stat-init-edge: #8a6f00;
-  --color-on-stat: #0a0a0a;
 
   --color-damage: #ff4d5e;
   --color-damage-edge: #8a2a33;
