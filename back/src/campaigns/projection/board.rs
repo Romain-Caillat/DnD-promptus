@@ -25,7 +25,7 @@ use promptus_shared::rules::RuleSystem;
 use promptus_shared::rules::action::action_cards;
 use promptus_shared::rules::death;
 use promptus_shared::rules::events::Event;
-use promptus_shared::rules::model::{AreaShape, Targeting};
+use promptus_shared::rules::model::{AreaShape, Targeting, ZeroHpRule};
 use promptus_shared::rules::sheet::Side;
 use serde::Serialize;
 use uuid::Uuid;
@@ -100,6 +100,9 @@ pub struct DyingView {
     pub successes: u32,
     pub failures: u32,
     pub stable: bool,
+    /// How many of each the rules ask (stable / death proposed).
+    pub successes_needed: u32,
+    pub failures_needed: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -241,10 +244,23 @@ fn fight_view(
                 dying: c
                     .death_saves
                     .filter(|_| party && c.hit_points <= 0)
-                    .map(|d| DyingView {
-                        successes: d.successes,
-                        failures: d.failures,
-                        stable: d.stable,
+                    .map(|d| {
+                        let (successes_needed, failures_needed) =
+                            match looker.rules.map(|r| &r.zero_hp) {
+                                Some(ZeroHpRule::DeathSaves {
+                                    successes,
+                                    failures,
+                                    ..
+                                }) => (*successes, *failures),
+                                _ => (3, 3),
+                            };
+                        DyingView {
+                            successes: d.successes,
+                            failures: d.failures,
+                            stable: d.stable,
+                            successes_needed,
+                            failures_needed,
+                        }
                     }),
             })
         })

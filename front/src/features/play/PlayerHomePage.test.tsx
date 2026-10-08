@@ -284,7 +284,10 @@ describe('PlayerHomePage', () => {
     await userEvent.click(screen.getByRole('button', { name: /Créer un nouveau personnage/ }))
     expect(sentTo(fetchMock, 'POST /api/play/c1/fate/words')).toEqual([{ text: words }])
     expect(sentTo(fetchMock, 'POST /api/play/c1/fate/next')).toEqual([{ next: 'new' }])
-    // The new character is a draft: the way into the creator.
-    expect(await screen.findByRole('button', { name: /Créer mon personnage|Créer/ })).toBeInTheDocument()
+    // The new character is a draft: the death screen gives way to the creator.
+    expect(
+      await screen.findByText('Brouillon. Ta place est gardée : crée-le quand tu veux, en deux minutes.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Attendre une accroche/ })).not.toBeInTheDocument()
   })
 })

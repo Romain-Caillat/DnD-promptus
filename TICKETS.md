@@ -699,7 +699,10 @@ reste pour la chronique, son jeton quitte la carte, le journal de la
 table le dit, il ne reçoit plus d'XP du combat. Les sept moments de la
 planche se rejouent dans `shared/tests/character_fate.rs` sur les deux
 mondes (sous `death_saves` écrit par le MJ dans ses règles), le parcours
-serveur dans `back/tests/fate_test.rs`.
+serveur dans `back/tests/fate_test.rs`, qui passe par l'éditeur de règles
+(brouillon, texte, verrouillage) avant de jouer le combat. Le nombre de
+réussites et d'échecs vient des règles, le téléphone dessine autant de
+cases.
 
 ### `engine/formalise-house-rules` · todo · à spécifier
 

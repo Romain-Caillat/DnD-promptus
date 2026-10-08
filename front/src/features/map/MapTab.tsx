@@ -12,6 +12,7 @@ import {
   type BoardView,
   type Cell,
   type Command,
+  type Dying,
   type FightView,
 } from '@/lib/board'
 import { playerBackdropUrl } from '@/lib/maps'
@@ -226,10 +227,11 @@ export function MapTab({ campaignId, refreshKey }: { campaignId: string; refresh
 }
 
 /** Three circles of each kind, filled as the server counts them. */
-function SaveCircles({ successes, failures, of = 3 }: { successes: number; failures: number; of?: number }) {
+function SaveCircles({ dying }: { dying: Dying }) {
   const { t } = useTranslation()
-  const row = (label: string, n: number, good: boolean) => (
-    <div className="flex items-center gap-2">
+  const { successes, failures, successesNeeded, failuresNeeded } = dying
+  const row = (label: string, n: number, of: number, good: boolean) => (
+    <div className="flex flex-wrap items-center gap-2">
       <span className="w-20 text-caption font-bold">{label}</span>
       {Array.from({ length: of }, (_, i) => (
         <span
@@ -251,10 +253,10 @@ function SaveCircles({ successes, failures, of = 3 }: { successes: number; failu
     <div
       className="flex flex-col gap-1.5"
       role="img"
-      aria-label={`${t('fight.death.successes')} ${successes}/${of}, ${t('fight.death.failures')} ${failures}/${of}`}
+      aria-label={`${t('fight.death.successes')} ${successes}/${successesNeeded}, ${t('fight.death.failures')} ${failures}/${failuresNeeded}`}
     >
-      {row(t('fight.death.successes'), successes, true)}
-      {row(t('fight.death.failures'), failures, false)}
+      {row(t('fight.death.successes'), successes, successesNeeded, true)}
+      {row(t('fight.death.failures'), failures, failuresNeeded, false)}
     </div>
   )
 }
@@ -272,12 +274,12 @@ function DeathSaves({
   onRoll,
 }: {
   fight: FightView
-  dying: { successes: number; failures: number; stable: boolean }
+  dying: Dying
   busy: boolean
   onRoll: () => void
 }) {
   const { t } = useTranslation()
-  const waiting = !dying.stable && dying.failures >= 3
+  const waiting = !dying.stable && dying.failures >= dying.failuresNeeded
   return (
     <section
       aria-label={t('fight.death.title')}
@@ -285,10 +287,10 @@ function DeathSaves({
     >
       <h3 className="type-title text-[20px]">{fight.deathSave ? t('fight.death.turn') : t('fight.death.title')}</h3>
       {!dying.stable && !waiting && <p className="text-body text-chalk-soft">{t('fight.death.lead')}</p>}
-      <SaveCircles successes={dying.successes} failures={dying.failures} />
+      <SaveCircles dying={dying} />
       {dying.stable && <p className="text-body text-chalk-soft">{t('fight.death.stable')}</p>}
       {waiting && <p role="status" className="text-body text-chalk-soft">{t('fight.death.waiting')}</p>}
-      {fight.deathSave && (
+      {fight.deathSave && !waiting && (
         <CardButton title={t('fight.death.roll')} subtitle={t('fight.death.rollSub')} disabled={busy} onClick={onRoll} />
       )}
     </section>

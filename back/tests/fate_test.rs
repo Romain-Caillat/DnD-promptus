@@ -347,6 +347,15 @@ async fn a_death_the_dice_propose_waits_for_the_gm_then_its_player_goes_on() {
                 + me["death_saves"]["failures"].as_u64().unwrap()
                 == 1;
         assert!(rolled, "{}: {me}", w.name);
+        // A natural 20 stood him up with 1 hit point, kept in play too:
+        // down again there as well, as a hit would have done.
+        if me["hit_points"] == 1 {
+            sqlx::query("UPDATE character_play SET damage = damage + 1 WHERE character_id = $1")
+                .bind(t.borin)
+                .execute(&t.pool)
+                .await
+                .unwrap();
+        }
 
         // The dice propose his death: the GM sees it, the table does not.
         patch_fighter(&t.pool, &t.campaign, &tok, "hit_points", json!(0)).await;

@@ -83,6 +83,15 @@ export interface TokenView {
 
 type Standing = 'in_fight' | 'defeated' | 'out_of_scene' | 'fled' | 'dead'
 
+/** A dying party member's saves, and how many of each the rules ask. */
+export interface Dying {
+  successes: number
+  failures: number
+  stable: boolean
+  successesNeeded: number
+  failuresNeeded: number
+}
+
 interface FighterView {
   id: string
   name: string
@@ -95,7 +104,7 @@ interface FighterView {
   conditions: string[]
   mine: boolean
   /** Down and dying under the death-saves rule (party members). */
-  dying: { successes: number; failures: number; stable: boolean } | null
+  dying: Dying | null
 }
 
 interface FightCardView {
