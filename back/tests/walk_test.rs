@@ -357,7 +357,7 @@ async fn walks_and_turns(w: World) {
                 .iter()
                 .any(|n| n["kind"] == "moved" && n["who"] == e["who"]);
             if e["kind"] == "acted" && !moved_after {
-                let (Some(me), Some(target)) = (at(who), e["targets"][0].as_str().and_then(&at))
+                let (Some(me), Some(target)) = (at(who), e["targets"][0].as_str().and_then(at))
                 else {
                     continue;
                 };

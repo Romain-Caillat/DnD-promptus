@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockApi, sentTo, stubReducedMotion } from '@/test-utils'
@@ -54,7 +54,11 @@ function tap(x: number, y: number) {
 
 describe('MapTab', () => {
   beforeEach(() => stubReducedMotion(true))
-  afterEach(() => vi.unstubAllGlobals())
+  afterEach(() => {
+    // Unmount before dropping the matchMedia stub: late effects still read it.
+    cleanup()
+    vi.unstubAllGlobals()
+  })
 
   it('walks the character to a highlighted cell, along a path the server checks', async () => {
     const fetchMock = mockApi({
