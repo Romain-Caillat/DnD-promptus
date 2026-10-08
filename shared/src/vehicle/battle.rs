@@ -1017,12 +1017,10 @@ impl Battle {
                     station = Some(up[i].to_string());
                 }
             }
-            DamageEffect::Jolt => {
-                if !self.crew.is_empty() {
-                    let i = dice.roll(self.crew.len() as u32) as usize - 1;
-                    self.crew[i].shaken += 1;
-                    crew = Some(self.crew[i].id.clone());
-                }
+            DamageEffect::Jolt if !self.crew.is_empty() => {
+                let i = dice.roll(self.crew.len() as u32) as usize - 1;
+                self.crew[i].shaken += 1;
+                crew = Some(self.crew[i].id.clone());
             }
             _ => {}
         }
