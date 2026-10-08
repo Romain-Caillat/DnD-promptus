@@ -15,6 +15,13 @@
 //! (`players::play`, logged by the rules); at the end the XP of their
 //! rolls is granted and the scene's loot waits for the GM
 //! ([`super::rewards`]).
+//!
+//! engine/save-against-death: under the `death_saves` rule a dying
+//! character's turn is their save (`Command::DeathSave`), an ally next
+//! to them may stabilise them (`Command::Stabilize`); when the dice
+//! propose a death the GM confirms it (`GmCommand::ConfirmDeath`, the
+//! character then falls: `players::fate::fall`) or decides another
+//! outcome (`GmCommand::Spare`).
 
 use std::collections::BTreeMap;
 
@@ -404,10 +411,11 @@ fn sync_tokens(board: &mut Board, fight: &Fight) {
             });
         }
     }
-    // The fallen and the fled leave the board.
-    board
-        .tokens
-        .retain(|t| t.kind == TokenKind::Character || fight.positions.contains_key(&t.id));
+    // The fallen and the fled leave the board; so does a dead character.
+    board.tokens.retain(|t| {
+        (t.kind == TokenKind::Character || fight.positions.contains_key(&t.id))
+            && fight.standing.get(&t.id) != Some(&Standing::Dead)
+    });
     board.reveal_from_party();
 }
 
@@ -445,6 +453,10 @@ async fn sync_hit_points(
         let Some(character) = character_of_combatant(id) else {
             continue;
         };
+        // A dead character is out of play: nothing of theirs moves.
+        if fight.standing.get(id) == Some(&Standing::Dead) {
+            continue;
+        }
         let (sheet, state) = play::in_play_locked(tx, campaign, character, rules).await?;
         let Some(now) = play::combatant(rules, &sheet, &state) else {
             continue;
@@ -497,6 +509,9 @@ async fn commit_step(
     .await?;
     if let (true, Some(end)) = (ended, &fight.end) {
         for (id, xp) in &end.xp {
+            if end.dead.contains(id) {
+                continue;
+            }
             if let (Some(character), true) = (character_of_combatant(id), *xp > 0) {
                 play::adjust_in(
                     tx,
@@ -724,6 +739,12 @@ pub enum Command {
     },
     Flee,
     EndTurn,
+    /// Dying: roll against death (the whole turn).
+    DeathSave,
+    /// Try to stabilise a dying ally next to the combatant.
+    Stabilize {
+        target: String,
+    },
 }
 
 /// The save difficulty the GM gives when the rules leave it open
@@ -784,6 +805,8 @@ fn run(
         }
         Command::Flee => fight.flee(rules, who, None, &mut dice),
         Command::EndTurn => fight.end_turn(rules, who, &mut dice),
+        Command::DeathSave => fight.death_save(rules, who, &mut dice),
+        Command::Stabilize { target } => fight.stabilize(rules, who, target, &mut dice),
     }
     .map_err(|r| refused(&r))?;
     Ok((step.fight, step.events))
@@ -846,6 +869,11 @@ pub enum GmCommand {
     },
     /// End the fight now.
     Stop,
+    /// The character `who` (a combatant id) dies: the death the dice
+    /// proposed, or the GM's own decision for someone down at 0.
+    ConfirmDeath { who: String },
+    /// Another outcome than the death the dice proposed: `who` is stable.
+    Spare { who: String },
 }
 
 /// Apply `cmd` of the GM to the live fight.
@@ -928,9 +956,87 @@ pub async fn gm_command(
             let step = enc.fight.stop();
             commit_step(&mut tx, &row, rules, &enc, &step.fight, &step.events).await?;
         }
+        GmCommand::ConfirmDeath { who } => {
+            let character =
+                character_of_combatant(who).ok_or(AppError::BadRequest("NOT_A_CHARACTER"))?;
+            confirm_in(&mut tx, &row, rules, &enc, who, character).await?;
+        }
+        GmCommand::Spare { who } => {
+            let step = enc
+                .fight
+                .spare(rules, who, &mut SeededDice::from_os())
+                .map_err(|r| refused(&r))?;
+            commit_step(&mut tx, &row, rules, &enc, &step.fight, &step.events).await?;
+        }
     }
     tx.commit().await?;
     Ok(proposal)
+}
+
+/// The GM confirms the death of `character` in fight `enc`: the fight
+/// takes them out for good, then the character falls.
+async fn confirm_in(
+    tx: &mut Transaction<'_, Postgres>,
+    row: &CampaignRow,
+    rules: &RuleSystem,
+    enc: &Encounter,
+    who: &str,
+    character: Uuid,
+) -> Result<(), AppError> {
+    let proposed = enc
+        .fight
+        .combatant(who)
+        .and_then(|c| c.death_saves)
+        .is_some_and(|d| d.death_due);
+    let step = enc
+        .fight
+        .confirm_death(rules, who, &mut SeededDice::from_os())
+        .map_err(|r| refused(&r))?;
+    commit_step(tx, row, rules, enc, &step.fight, &step.events).await?;
+    crate::players::fate::fall(
+        tx,
+        row.id,
+        rules,
+        character,
+        if proposed {
+            crate::players::fate::Cause::Rules
+        } else {
+            crate::players::fate::Cause::Gm
+        },
+        enc.session_id,
+        Some(&enc.node),
+    )
+    .await
+}
+
+/// When the live fight of `row` holds `character` (in it, or put out of
+/// the scene), the GM's decision of their death goes through the fight:
+/// returns whether it did. The caller holds the campaign lock.
+///
+/// # Errors
+///
+/// 409 `REFUSED` with the engine's reason (not down at 0); the errors of
+/// `players::fate::fall`.
+pub async fn confirm_death_of(
+    tx: &mut Transaction<'_, Postgres>,
+    row: &CampaignRow,
+    rules: &RuleSystem,
+    character: Uuid,
+) -> Result<bool, AppError> {
+    if live_id(&mut **tx, row.id).await?.is_none() {
+        return Ok(false);
+    }
+    let enc = locked_live(tx, row.id).await?;
+    let who = character_token(character);
+    let present = matches!(
+        enc.fight.standing.get(&who),
+        Some(Standing::InFight | Standing::OutOfScene)
+    );
+    if !present {
+        return Ok(false);
+    }
+    confirm_in(tx, row, rules, &enc, &who, character).await?;
+    Ok(true)
 }
 
 /// How many commands a proposed turn may take.

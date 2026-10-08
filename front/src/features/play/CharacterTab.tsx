@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Sprite } from '@/features/sprites/Sprite'
 import { equipItem, type BagItem, type CharacterView, type PlayView } from '@/lib/play'
 import { ActionCard, signed } from './creator/RuleSteps'
+import { LevelUpCard } from './LevelUpCard'
 
 /**
  * The Character tab once in play (planche « Jouer », onglet Personnage):
@@ -52,6 +53,15 @@ export function CharacterTab({
 
   return (
     <div className="flex flex-col gap-4">
+      {play.levelUp && (
+        <LevelUpCard
+          campaignId={campaignId}
+          name={name}
+          up={play.levelUp}
+          maxHitPoints={play.maxHitPoints}
+          onChanged={onChanged}
+        />
+      )}
       <div className="flex items-end gap-3.5 rounded-[14px] border border-line bg-surface p-3.5">
         {character.sheet.look && <Sprite look={character.sheet.look} scale={4} label={name} />}
         <div className="flex min-w-0 flex-1 flex-col gap-1">

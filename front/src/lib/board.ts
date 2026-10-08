@@ -82,7 +82,16 @@ export interface TokenView {
   ghost: boolean
 }
 
-type Standing = 'in_fight' | 'defeated' | 'out_of_scene' | 'fled'
+type Standing = 'in_fight' | 'defeated' | 'out_of_scene' | 'fled' | 'dead'
+
+/** A dying party member's saves, and how many of each the rules ask. */
+export interface Dying {
+  successes: number
+  failures: number
+  stable: boolean
+  successesNeeded: number
+  failuresNeeded: number
+}
 
 interface FighterView {
   id: string
@@ -95,6 +104,8 @@ interface FighterView {
   down: boolean
   conditions: string[]
   mine: boolean
+  /** Down and dying under the death-saves rule (party members). */
+  dying: Dying | null
 }
 
 interface FightCardView {
@@ -119,7 +130,7 @@ export type FightEvent =
   | { kind: 'acted'; who: string; action: string; targets: string[] }
   | { kind: 'rules'; event: RulesEvent }
   | { kind: 'flee_roll'; who: string; roll: RollBreakdown }
-  | { kind: 'flee_failed' | 'fled' | 'defeated' | 'left_the_scene' | 'turn_ended'; who: string }
+  | { kind: 'flee_failed' | 'fled' | 'defeated' | 'left_the_scene' | 'turn_ended' | 'died'; who: string }
   | { kind: 'ended'; end: { winner: 'party' | 'opposition' | null; rounds: number } }
 
 type RulesEvent =
@@ -129,7 +140,8 @@ type RulesEvent =
   | { event: 'healed'; target: string; amount: number; hp_before: number; hp_after: number }
   | { event: 'condition_applied'; target: string; name: string; turns: number | null }
   | { event: 'condition_resisted' | 'condition_ended'; target: string; name: string }
-  | { event: 'knocked_out' | 'revived' | 'out_of_scene'; target: string }
+  | { event: 'knocked_out' | 'revived' | 'out_of_scene' | 'stabilized'; target: string }
+  | { event: 'death_saves'; target: string; successes: number; failures: number }
   | { event: 'turn_lost'; who: string; because: string }
   | { event: 'item_used'; who: string; item: string; left: number }
   | { event: 'cooldown_started' | 'progress' | 'for_the_gm'; [k: string]: unknown }
@@ -145,6 +157,10 @@ export interface FightView {
   events: FightEvent[]
   loot: { name: string; toMe: boolean }[]
   won: boolean | null
+  /** I am dying: my turn is my death save. */
+  deathSave: boolean
+  /** How an ally stabilises someone dying, when the rules say. */
+  stabilize: { kind: string; ability: string; difficulty: number } | null
 }
 
 /** The grid as a player may see it (`projection::board::BoardView`). */
@@ -162,6 +178,8 @@ export type Command =
   | { kind: 'item'; item: string; targets: string[] }
   | { kind: 'flee' }
   | { kind: 'endTurn' }
+  | { kind: 'deathSave' }
+  | { kind: 'stabilize'; target: string }
 
 export function fetchBoard(campaignId: string): Promise<BoardView | null> {
   return apiRequest<BoardView | null>('GET', `${play(campaignId)}/board`)
@@ -201,6 +219,8 @@ interface Combatant {
   side: 'party' | 'opposition'
   hit_points: number
   conditions: { id: string | null; name: string; remaining: number | null }[]
+  /** Dying under the death-saves rule; `death_due`: the dice propose the death. */
+  death_saves?: { successes: number; failures: number; stable: boolean; death_due: boolean } | null
 }
 
 interface Fight {
@@ -273,6 +293,8 @@ export type GmCommand =
   | { kind: 'accept' }
   | { kind: 'condition'; who: string; condition: string; turns?: number; remove: boolean }
   | { kind: 'stop' }
+  | { kind: 'confirmDeath'; who: string }
+  | { kind: 'spare'; who: string }
 
 export function fetchGmBoard(campaignId: string): Promise<GmBoard> {
   return apiRequest<GmBoard>('GET', `${gm(campaignId)}/board`)

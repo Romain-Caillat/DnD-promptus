@@ -121,4 +121,99 @@ describe('MapTab', () => {
       { kind: 'act', action: 'estocade', targets: ['marin-1'] },
     ])
   })
+  it('makes my turn a death save while I am dying, and lets an ally stabilise', async () => {
+    const dyingMe = {
+      ...fighter('pc-1', 'Borin', true, true),
+      hitPoints: 0,
+      down: true,
+      dying: { successes: 0, failures: 1, stable: false, successesNeeded: 3, failuresNeeded: 3 },
+    }
+    const fight = (deathSave: boolean) => ({
+      live: true,
+      round: 2,
+      active: 'pc-1',
+      myTurn: true,
+      order: [dyingMe, fighter('marin-1', 'Marin', false)],
+      actionsLeft: 2,
+      cards: [],
+      events: [],
+      loot: [],
+      won: null,
+      deathSave,
+      stabilize: null,
+    })
+    const fetchMock = mockApi({
+      ...MEDIA,
+      'GET /api/play/c1/board': () => board(fight(true)),
+      'POST /api/play/c1/fight': () => board(fight(false)),
+    })
+    render(<MapTab campaignId="c1" refreshKey={0} />)
+    expect(await screen.findByRole('heading', { name: 'À toi : jet contre la mort' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Réussites 0/3, Échecs 1/3' })).toBeInTheDocument()
+    // No hand, no arcade buttons: the save is the whole turn.
+    expect(screen.queryByRole('group', { name: /main/i })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Lancer le jet contre la mort/ }))
+    expect(sentTo(fetchMock, 'POST /api/play/c1/fight')).toEqual([{ kind: 'deathSave' }])
+    expect(await screen.findByRole('heading', { name: 'Tu es à terre' })).toBeInTheDocument()
+  })
+
+  it('offers to stabilise a dying ally on my turn', async () => {
+    const lyra = { ...fighter('pc-1', 'Lyra', true, true) }
+    const borin = {
+      ...fighter('pc-2', 'Borin', true),
+      hitPoints: 0,
+      down: true,
+      dying: { successes: 0, failures: 3, stable: false, successesNeeded: 3, failuresNeeded: 3 },
+    }
+    const fight = {
+      live: true,
+      round: 3,
+      active: 'pc-1',
+      myTurn: true,
+      order: [lyra, borin, fighter('marin-1', 'Marin', false)],
+      actionsLeft: 2,
+      cards: [],
+      events: [],
+      loot: [],
+      won: null,
+      deathSave: false,
+      stabilize: { kind: 'Soin', ability: 'Sagesse', difficulty: 10 },
+    }
+    const fetchMock = mockApi({
+      ...MEDIA,
+      'GET /api/play/c1/board': () => board(fight),
+      'POST /api/play/c1/fight': () => board(fight),
+    })
+    render(<MapTab campaignId="c1" refreshKey={0} />)
+    expect(await screen.findByText('0 ✓ · 3 ✗')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Stabiliser Borin/ }))
+    expect(sentTo(fetchMock, 'POST /api/play/c1/fight')).toEqual([{ kind: 'stabilize', target: 'pc-2' }])
+  })
+  it('counts the saves the rules ask, and waits for the GM once the failures are there', async () => {
+    const me = {
+      ...fighter('pc-1', 'Borin', true, true),
+      hitPoints: 0,
+      down: true,
+      dying: { successes: 1, failures: 2, stable: false, successesNeeded: 2, failuresNeeded: 2 },
+    }
+    const fight = {
+      live: true,
+      round: 5,
+      active: 'marin-1',
+      myTurn: false,
+      order: [me, fighter('marin-1', 'Marin', false)],
+      actionsLeft: 0,
+      cards: [],
+      events: [],
+      loot: [],
+      won: null,
+      deathSave: false,
+      stabilize: null,
+    }
+    mockApi({ ...MEDIA, 'GET /api/play/c1/board': () => board(fight) })
+    render(<MapTab campaignId="c1" refreshKey={0} />)
+    expect(await screen.findByRole('img', { name: 'Réussites 1/2, Échecs 2/2' })).toBeInTheDocument()
+    expect(screen.getByText('Le MJ regarde ce qui se passe…')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Lancer le jet contre la mort/ })).not.toBeInTheDocument()
+  })
 })

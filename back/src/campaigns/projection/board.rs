@@ -13,7 +13,9 @@
 //!
 //! Never: GM layers, GM notes, object checks, the backdrop prompt,
 //! fogged cells, hidden tokens, opponents' hit points, the co-GM's
-//! proposal, loot not handed out yet.
+//! proposal, loot not handed out yet, a death the dice propose before
+//! the GM confirmed it (engine/save-against-death: the saves themselves
+//! are the table's to see).
 
 use std::collections::BTreeSet;
 
@@ -21,8 +23,9 @@ use promptus_shared::combat::fight::{Fight, FightEvent, Standing};
 use promptus_shared::maps::{Cell, Map, Viewer};
 use promptus_shared::rules::RuleSystem;
 use promptus_shared::rules::action::action_cards;
+use promptus_shared::rules::death;
 use promptus_shared::rules::events::Event;
-use promptus_shared::rules::model::{AreaShape, Targeting};
+use promptus_shared::rules::model::{AreaShape, Targeting, ZeroHpRule};
 use promptus_shared::rules::sheet::Side;
 use serde::Serialize;
 use uuid::Uuid;
@@ -75,6 +78,31 @@ pub struct FightView {
     /// What the party received, line by line.
     pub loot: Vec<GivenLoot>,
     pub won: Option<bool>,
+    /// The caller is dying and their turn is the death save.
+    pub death_save: bool,
+    /// How an ally stabilises someone dying, when the rules say.
+    pub stabilize: Option<StabilizeView>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StabilizeView {
+    /// The action kind's name it spends.
+    pub kind: String,
+    pub ability: String,
+    pub difficulty: i32,
+}
+
+/// A dying party member's saves, as the table sees them.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DyingView {
+    pub successes: u32,
+    pub failures: u32,
+    pub stable: bool,
+    /// How many of each the rules ask (stable / death proposed).
+    pub successes_needed: u32,
+    pub failures_needed: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -91,6 +119,8 @@ pub struct FighterView {
     pub down: bool,
     pub conditions: Vec<String>,
     pub mine: bool,
+    /// Down and dying under the `death_saves` rule (party members).
+    pub dying: Option<DyingView>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -154,7 +184,7 @@ fn event_for_players(
             })
         }
         FightEvent::Rules { event } => match event {
-            Event::ForTheGm { .. } => None,
+            Event::ForTheGm { .. } | Event::DeathDue { .. } => None,
             Event::Damaged {
                 target, breakdown, ..
             } if opponent(target) => Some(FightEvent::Rules {
@@ -211,6 +241,27 @@ fn fight_view(
                 down: c.hit_points <= 0,
                 conditions: c.conditions.iter().map(|x| x.name.clone()).collect(),
                 mine: mine.as_deref() == Some(id.as_str()),
+                dying: c
+                    .death_saves
+                    .filter(|_| party && c.hit_points <= 0)
+                    .map(|d| {
+                        let (successes_needed, failures_needed) =
+                            match looker.rules.map(|r| &r.zero_hp) {
+                                Some(ZeroHpRule::DeathSaves {
+                                    successes,
+                                    failures,
+                                    ..
+                                }) => (*successes, *failures),
+                                _ => (3, 3),
+                            };
+                        DyingView {
+                            successes: d.successes,
+                            failures: d.failures,
+                            stable: d.stable,
+                            successes_needed,
+                            failures_needed,
+                        }
+                    }),
             })
         })
         .collect();
@@ -261,6 +312,19 @@ fn fight_view(
             })
             .collect(),
         won: f.end.as_ref().map(|e| e.winner == Some(Side::Party)),
+        death_save: my_turn && mine.as_deref().is_some_and(|m| f.awaits_death_save(m)),
+        stabilize: looker
+            .rules
+            .and_then(|r| death::stabilize_rule(r).map(|st| (r, st)))
+            .map(|(r, st)| StabilizeView {
+                kind: r
+                    .action_kind(&st.kind)
+                    .map_or_else(|| st.kind.clone(), |k| k.name.clone()),
+                ability: r
+                    .ability(&st.ability)
+                    .map_or_else(|| st.ability.clone(), |a| a.name.clone()),
+                difficulty: st.difficulty,
+            }),
     }
 }
 

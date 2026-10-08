@@ -198,6 +198,27 @@ Co-GM narration and NPC lines are editable drafts; suggestions are
 applied by the GM. Ids invented by the model (clues, nodes, entities
 that do not exist) are dropped before the answer is shown.
 
+### A death is always the GM's
+
+What 0 hit points does is data of the rule system (`zero_hp`):
+`knocked_out` never proposes a death, `death_saves` proposes one after
+the failures — hidden from players — and waits. Under any rule only the
+GM's confirmation kills (`players::fate::fall`): from the fight
+(`ConfirmDeath`, or `Spare` for another outcome) or from the sheets. A
+dead character is never deleted: status `fallen`, its sheet and history
+kept for the chronicle, a row of `character_deaths`. « One character per
+player » holds for the living only (partial unique index). Last words
+are written once; the choice « new character » is final and the new
+draft joins at the dead one's XP (`characters.starting_xp`).
+
+### A level's hit points are a choice, kept
+
+Level comes from XP and is never stored. When the rules add hit points
+per level, each level's die-or-average is taken once and kept
+(`character_play.hit_point_gains`, rolled by the server, never
+rerolled); `level_seen` is the last level the player went through. XP
+taken back takes the levels' hit points with it.
+
 ### One lock per campaign for world writes
 
 Every write to world state or combatants takes a row lock on the
@@ -263,6 +284,11 @@ Each LLM, image or video call is recorded with its cost and counted
 against the campaign budget; a batch that would exceed it is refused.
 
 ## 4. Traps
+
+- **vitest under Node 26** — on a Mac with Node 26, Vitest under Node
+  fails every test that touches `localStorage` (Node's own experimental
+  storage shadows jsdom's). Run it under Bun, as PCT 105 does:
+  `bun --bun node_modules/.bin/vitest run`.
 
 - **Design canvas: a board's CSS leaks into the components it imports.**
   A board class named `.fr` reshaped the item slot frame and broke the

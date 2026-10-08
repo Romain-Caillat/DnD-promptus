@@ -622,6 +622,18 @@ fn validate(s: &RuleSystem) -> Vec<RuleError> {
             "at least 1",
         );
     }
+    if let Some(hp) = &s.progression.hit_points_per_level {
+        if let Some(a) = &hp.ability {
+            v.ability(a, "progression.hit_points_per_level.ability");
+        }
+        if hp.average < 0 {
+            v.err(
+                ErrorCode::InvalidValue,
+                "progression.hit_points_per_level.average",
+                "at least 0",
+            );
+        }
+    }
 
     v.unique(s.conditions.iter().map(|c| c.id.as_str()), "conditions");
     for c in &s.conditions {
@@ -649,9 +661,20 @@ fn validate(s: &RuleSystem) -> Vec<RuleError> {
             condition,
             successes,
             failures,
+            stabilize,
             ..
         } => {
             v.condition(condition, "zero_hp.condition");
+            if let Some(st) = stabilize {
+                v.ability(&st.ability, "zero_hp.stabilize.ability");
+                if s.action_kind(&st.kind).is_none() {
+                    v.err(
+                        ErrorCode::UnknownActionKind,
+                        "zero_hp.stabilize.kind",
+                        format!("no action kind `{}`", st.kind),
+                    );
+                }
+            }
             if *successes == 0 || *failures == 0 {
                 v.err(
                     ErrorCode::InvalidValue,

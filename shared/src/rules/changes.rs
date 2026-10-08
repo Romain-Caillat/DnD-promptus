@@ -75,6 +75,13 @@ pub enum Field {
     UpgradeEveryXp,
     UpgradePoints,
     LevelXp,
+    /// Hit points a level adds (« 1d10 ou 6 + CON »).
+    HitPointsPerLevel,
+    /// Death saves: the roll to reach, how many successes and failures.
+    SaveDifficulty,
+    Successes,
+    Failures,
+    FailuresOnHit,
     CoverHalf,
     CoverThreeQuarters,
     LongRange,
@@ -532,6 +539,28 @@ pub fn rule_changes(old: &RuleSystem, new: &RuleSystem) -> Vec<RuleChange> {
     {
         d.cmp(s, "", Field::OutAfterTurns, num(*a), num(*b));
     }
+    if let (
+        ZeroHpRule::DeathSaves {
+            difficulty: od,
+            successes: os,
+            failures: of,
+            failures_on_hit: oh,
+            ..
+        },
+        ZeroHpRule::DeathSaves {
+            difficulty: nd,
+            successes: ns,
+            failures: nf,
+            failures_on_hit: nh,
+            ..
+        },
+    ) = (&old.zero_hp, &new.zero_hp)
+    {
+        d.cmp(s, "", Field::SaveDifficulty, num(*od), num(*nd));
+        d.cmp(s, "", Field::Successes, num(*os), num(*ns));
+        d.cmp(s, "", Field::Failures, num(*of), num(*nf));
+        d.cmp(s, "", Field::FailuresOnHit, num(*oh), num(*nh));
+    }
 
     let s = Section::Progression;
     let (op, np) = (&old.progression, &new.progression);
@@ -555,6 +584,26 @@ pub fn rule_changes(old: &RuleSystem, new: &RuleSystem) -> Vec<RuleChange> {
             .find(|l| l.level == level)
             .map_or_else(|| text(""), |l| num(l.xp))
     };
+    let per_level = |p: &super::model::Progression| {
+        text(
+            p.hit_points_per_level
+                .as_ref()
+                .map_or_else(String::new, |h| {
+                    let plus = h
+                        .ability
+                        .as_ref()
+                        .map_or_else(String::new, |a| format!(" + {a}"));
+                    format!("{}{plus} ou {}{plus}", h.dice, h.average)
+                }),
+        )
+    };
+    d.cmp(
+        s,
+        "",
+        Field::HitPointsPerLevel,
+        per_level(op),
+        per_level(np),
+    );
     let levels: std::collections::BTreeSet<u32> = op
         .levels
         .iter()

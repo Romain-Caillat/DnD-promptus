@@ -15,7 +15,13 @@
 //! - a character the zero-HP rule puts out of the scene (`hors_combat`)
 //!   is **out of the scene**; a knocked-out one stays, on the ground,
 //!   until healed or out;
-//! - whoever flees is **fled**.
+//! - whoever flees is **fled**;
+//! - under the `death_saves` rule a character at 0 stays in the fight,
+//!   dying: their turn opens for the save alone ([`Fight::death_save`]);
+//!   when the failures add up, the engine proposes the death and the GM
+//!   confirms it ([`Fight::confirm_death`]: **dead**) or decides
+//!   otherwise ([`Fight::spare`]). The GM may also confirm the death of
+//!   any character down at 0, under any rule (engine/save-against-death).
 //!
 //! The fight is over when a side has nobody left standing — in the fight,
 //! above 0 hit points — or when the GM stops it.
@@ -34,6 +40,7 @@ use crate::rules::action::{
 };
 use crate::rules::check::{self, Advantage, OutcomeBand, RollBreakdown, RollTarget};
 use crate::rules::conditions::{self, TurnError};
+use crate::rules::death::{self, DeathRefusal};
 use crate::rules::dice::DiceSource;
 use crate::rules::events::Event;
 use crate::rules::model::{
@@ -63,6 +70,8 @@ pub enum Standing {
     /// Put out of the scene by the zero-HP rule.
     OutOfScene,
     Fled,
+    /// A character whose death the GM confirmed.
+    Dead,
 }
 
 /// One initiative roll: the die faces, the bonus, the total, and the
@@ -85,6 +94,9 @@ pub struct FightEnd {
     pub defeated: Vec<String>,
     pub fled: Vec<String>,
     pub out_of_scene: Vec<String>,
+    /// Characters whose death the GM confirmed.
+    #[serde(default)]
+    pub dead: Vec<String>,
     /// XP each player character gained during the fight (per the bands
     /// of their rolls), by id.
     pub xp: BTreeMap<String, u32>,
@@ -147,6 +159,10 @@ pub enum FightEvent {
     LeftTheScene {
         who: String,
     },
+    /// The GM confirmed the death.
+    Died {
+        who: String,
+    },
     TurnEnded {
         who: String,
     },
@@ -202,9 +218,40 @@ pub enum CombatRefusal {
     },
     AreaEmpty,
     NoFleeRoll,
+    /// Dying: the turn is the death save, nothing else.
+    DeathSaveFirst,
+    /// Not dying (or stable, or waiting for the GM).
+    NotDying {
+        who: String,
+    },
+    /// The system has no death saves, or no way to stabilise.
+    NoDeathSaves,
+    NoStabilizeRule,
+    /// Stabilising takes being next to them.
+    TooFar {
+        target: String,
+    },
+    /// Only a character down at 0 hit points can die.
+    NotDown {
+        who: String,
+    },
     Rules {
         refusal: Refusal,
     },
+}
+
+impl From<DeathRefusal> for CombatRefusal {
+    fn from(r: DeathRefusal) -> Self {
+        match r {
+            DeathRefusal::NoDeathSaves => Self::NoDeathSaves,
+            DeathRefusal::NoStabilizeRule => Self::NoStabilizeRule,
+            DeathRefusal::UnknownCombatant(who) => Self::NotInFight { who },
+            DeathRefusal::NotRolling(who) => Self::NotDying { who },
+            DeathRefusal::Engine(detail) => Self::Rules {
+                refusal: Refusal::Engine { detail },
+            },
+        }
+    }
 }
 
 impl From<Refusal> for CombatRefusal {
@@ -439,6 +486,27 @@ impl Fight {
     /// The system's diagonal rule at this map's scale.
     pub fn diagonal(&self, system: &RuleSystem) -> Diagonal {
         movement_rules(system, &self.map).diagonal
+    }
+
+    /// Dying and still rolling: `id`'s turn is their death save.
+    pub fn awaits_death_save(&self, id: &str) -> bool {
+        self.in_fight(id)
+            && self
+                .scene
+                .get(id)
+                .is_some_and(|c| c.hit_points == 0 && c.death_saves.is_some_and(|d| d.rolling()))
+    }
+
+    /// Characters whose death the dice propose, waiting for the GM.
+    pub fn deaths_due(&self) -> impl Iterator<Item = &str> {
+        self.scene
+            .combatants
+            .values()
+            .filter(|c| {
+                c.death_saves.is_some_and(|d| d.death_due)
+                    && self.standing.get(&c.id) != Some(&Standing::Dead)
+            })
+            .map(|c| c.id.as_str())
     }
 
     /// Still in the fight and above 0 hit points.
@@ -867,6 +935,9 @@ impl Fight {
         dice: &mut dyn DiceSource,
     ) -> Result<Step, CombatRefusal> {
         self.open_turn(who)?;
+        if self.awaits_death_save(who) {
+            return Err(CombatRefusal::DeathSaveFirst);
+        }
         let mut next = self.clone();
         let mut events = Vec::new();
         next.close_turn(system, who, dice, &mut events)
@@ -896,6 +967,175 @@ impl Fight {
             fight: next,
             events,
         }
+    }
+
+    /// The dying active combatant rolls against death; the save is their
+    /// whole turn, which ends — unless a critical success brings them
+    /// back, and then the turn is theirs to play.
+    pub fn death_save(
+        &self,
+        system: &RuleSystem,
+        who: &str,
+        dice: &mut dyn DiceSource,
+    ) -> Result<Step, CombatRefusal> {
+        self.open_turn(who)?;
+        if !self.awaits_death_save(who) {
+            return Err(CombatRefusal::NotDying { who: who.into() });
+        }
+        let (scene, ev) = death::death_save(system, &self.scene, who, dice)?;
+        let mut next = self.clone();
+        next.scene = scene;
+        let mut events: Vec<FightEvent> = rules_events(ev).collect();
+        let back_up = next.scene.get(who).is_some_and(|c| c.hit_points > 0);
+        if back_up {
+            let per_turn = system
+                .turn_context(&next.scene.context)
+                .map(|c| c.actions_per_turn);
+            if let (Some(n), Some(me)) = (per_turn, next.scene.get_mut(who)) {
+                me.turn.spent_by_kind.clear();
+                me.turn.actions_left = n;
+            }
+            next.check_end(&mut events);
+            return Ok(Step {
+                fight: next,
+                events,
+            });
+        }
+        next.close_turn(system, who, dice, &mut events)
+            .map_err(|e| Refusal::Engine {
+                detail: format!("{e:?}"),
+            })?;
+        let current = next.turn;
+        next.advance(system, Some(current), dice, &mut events)
+            .map_err(|e| Refusal::Engine {
+                detail: format!("{e:?}"),
+            })?;
+        Ok(Step {
+            fight: next,
+            events,
+        })
+    }
+
+    /// The active combatant tries to stabilise `target`, dying next to
+    /// them: the system's stabilise action is spent and its ability
+    /// rolled.
+    pub fn stabilize(
+        &self,
+        system: &RuleSystem,
+        who: &str,
+        target: &str,
+        dice: &mut dyn DiceSource,
+    ) -> Result<Step, CombatRefusal> {
+        self.open_turn(who)?;
+        let rule = death::stabilize_rule(system).ok_or(if death::has_death_saves(system) {
+            CombatRefusal::NoStabilizeRule
+        } else {
+            CombatRefusal::NoDeathSaves
+        })?;
+        let me = self.scene.get(who).expect("in fight");
+        if let Some(c) = me.incapacitated_by() {
+            return Err(Refusal::Incapacitated {
+                because: c.name.clone(),
+            }
+            .into());
+        }
+        if !self.awaits_death_save(target) {
+            return Err(CombatRefusal::NotDying { who: target.into() });
+        }
+        let near = match (self.position(who), self.position(target)) {
+            (Some(a), Some(b)) => a.x.abs_diff(b.x) <= 1 && a.y.abs_diff(b.y) <= 1,
+            _ => false,
+        };
+        if !near {
+            return Err(CombatRefusal::TooFar {
+                target: target.into(),
+            });
+        }
+        let kind = affordable(system, &self.scene, me, &rule.kind)?;
+        let mut next = self.clone();
+        spend(next.scene.get_mut(who).expect("in fight"), kind);
+        let (scene, ev) = death::stabilize(system, &next.scene, who, target, dice)?;
+        next.scene = scene;
+        let events = rules_events(ev).collect();
+        Ok(Step {
+            fight: next,
+            events,
+        })
+    }
+
+    /// The GM confirms the death of `who`, a character down at 0 — the
+    /// one the dice proposed, or any other (rule 1). They leave the fight
+    /// for good; if it was their turn, the next one begins.
+    pub fn confirm_death(
+        &self,
+        system: &RuleSystem,
+        who: &str,
+        dice: &mut dyn DiceSource,
+    ) -> Result<Step, CombatRefusal> {
+        let c = self
+            .scene
+            .get(who)
+            .ok_or_else(|| CombatRefusal::NotInFight { who: who.into() })?;
+        let standing = self.standing.get(who).copied();
+        if c.progress.is_none()
+            || c.hit_points > 0
+            || matches!(standing, Some(Standing::Dead | Standing::Fled) | None)
+        {
+            return Err(CombatRefusal::NotDown { who: who.into() });
+        }
+        let mut next = self.clone();
+        let mut events = vec![FightEvent::Died { who: who.into() }];
+        next.leave(who, Standing::Dead);
+        if let Some(end) = next.end.as_mut() {
+            end.dead.push(who.into());
+            end.out_of_scene.retain(|o| o != who);
+            return Ok(Step {
+                fight: next,
+                events,
+            });
+        }
+        next.check_end(&mut events);
+        if next.active() == Some(who) {
+            next.scene.active = None;
+            let current = next.turn;
+            next.advance(system, Some(current), dice, &mut events)
+                .map_err(|e| Refusal::Engine {
+                    detail: format!("{e:?}"),
+                })?;
+        }
+        Ok(Step {
+            fight: next,
+            events,
+        })
+    }
+
+    /// The GM decides another outcome than the death the dice proposed:
+    /// `who` is stable, still down. If it was their turn, it ends.
+    pub fn spare(
+        &self,
+        system: &RuleSystem,
+        who: &str,
+        dice: &mut dyn DiceSource,
+    ) -> Result<Step, CombatRefusal> {
+        let (scene, ev) = death::spare(&self.scene, who)?;
+        let mut next = self.clone();
+        next.scene = scene;
+        let mut events: Vec<FightEvent> = rules_events(ev).collect();
+        if next.active() == Some(who) && !next.is_over() {
+            next.close_turn(system, who, dice, &mut events)
+                .map_err(|e| Refusal::Engine {
+                    detail: format!("{e:?}"),
+                })?;
+            let current = next.turn;
+            next.advance(system, Some(current), dice, &mut events)
+                .map_err(|e| Refusal::Engine {
+                    detail: format!("{e:?}"),
+                })?;
+        }
+        Ok(Step {
+            fight: next,
+            events,
+        })
     }
 
     fn close_turn(
@@ -954,7 +1194,7 @@ impl Fight {
                 .scene
                 .get(&id)
                 .is_some_and(|c| c.incapacitated_by().is_some());
-            if !blocked {
+            if !blocked || self.awaits_death_save(&id) {
                 return Ok(());
             }
             self.close_turn(system, &id, dice, events)?;
@@ -1037,6 +1277,7 @@ impl Fight {
             defeated: with(Standing::Defeated),
             fled: with(Standing::Fled),
             out_of_scene: with(Standing::OutOfScene),
+            dead: with(Standing::Dead),
             xp,
         };
         self.scene.active = None;

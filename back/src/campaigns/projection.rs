@@ -44,6 +44,9 @@ use std::collections::BTreeMap;
 use chrono::{DateTime, Utc};
 use promptus_shared::rules::RuleSystem;
 use promptus_shared::rules::action::{ActionCard, action_cards};
+use promptus_shared::rules::level_up::{
+    HitPointGain, cards_unlocked, hit_point_options, hit_points_due,
+};
 use promptus_shared::rules::model::{ActionDef, RollSpec, Tag};
 use promptus_shared::rules::sheet::Combatant;
 use promptus_shared::sprite::CharacterLook;
@@ -51,6 +54,7 @@ use promptus_shared::story::{Campaign, MusicTrack, WorldState};
 use serde::Serialize;
 use uuid::Uuid;
 
+use crate::players::fate::{Fallen, Next};
 use crate::players::play::{PlayState, combatant};
 use crate::players::{Character, CharacterSheet, CharacterStatus, Player, Role};
 
@@ -248,7 +252,44 @@ pub fn project_invitation(campaign_id: Uuid, campaign: &Campaign, gm_name: &str)
 pub struct PlayerHomeView {
     pub me: MeView,
     pub campaign: InvitationView,
+    /// The living character, if any.
     pub character: Option<CharacterView>,
+    /// The player's last dead character (player/face-death): their last
+    /// words and what the player chose next.
+    pub fallen: Option<FallenView>,
+}
+
+/// A dead character as its player reads it.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FallenView {
+    pub character_id: Uuid,
+    pub name: String,
+    pub class_name: Option<String>,
+    pub look: Option<CharacterLook>,
+    pub level: u32,
+    pub last_words: Option<String>,
+    pub next: Option<Next>,
+    pub died_at: DateTime<Utc>,
+}
+
+/// `fallen` as its player reads it.
+#[must_use]
+pub fn project_fallen(rules: Option<&RuleSystem>, fallen: &Fallen) -> FallenView {
+    FallenView {
+        character_id: fallen.character_id,
+        name: fallen.name.clone(),
+        class_name: fallen
+            .class_id
+            .as_deref()
+            .and_then(|id| rules?.class(id))
+            .map(|c| c.name.clone()),
+        look: fallen.look.clone(),
+        level: fallen.level,
+        last_words: fallen.last_words.clone(),
+        next: fallen.next,
+        died_at: fallen.died_at,
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -304,6 +345,35 @@ pub struct PlayView {
     pub cards: Vec<ActionCardView>,
     pub resources: Vec<ResourceView>,
     pub inventory: Vec<ItemView>,
+    /// A level reached that the player has not gone through yet
+    /// (engine/level-up).
+    pub level_up: Option<LevelUpView>,
+}
+
+/// What the new levels bring, from the last one the player went through.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LevelUpView {
+    pub from: u32,
+    pub to: u32,
+    /// The die-or-average choice, when the rules add hit points per level.
+    pub hit_points: Option<LevelHitPointsChoice>,
+    /// What the levels since `from` added, as taken.
+    pub gains: Vec<HitPointGain>,
+    /// The class cards these levels unlock.
+    pub cards: Vec<ActionCardView>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LevelHitPointsChoice {
+    pub dice: String,
+    pub average: i32,
+    /// The ability's name in the rules (« Constitution »).
+    pub ability: Option<String>,
+    pub modifier: i32,
+    /// The levels whose hit points are still to take.
+    pub due: Vec<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -357,7 +427,44 @@ pub fn project_play(
     let c = combatant(rules, sheet, state)?;
     let progress = c.progress.unwrap_or_default();
     let level = c.level(rules).unwrap_or(1);
+    let level_up = (level > state.level_seen).then(|| {
+        let from = state.level_seen;
+        let unlocked: Vec<&str> = cards_unlocked(&c, rules, from, level)
+            .iter()
+            .map(|a| a.id.as_str())
+            .collect();
+        LevelUpView {
+            from,
+            to: level,
+            hit_points: hit_point_options(rules, &c)
+                .ok()
+                .flatten()
+                .map(|o| LevelHitPointsChoice {
+                    dice: o.dice,
+                    average: o.average,
+                    ability: o.ability.map(|a| {
+                        rules
+                            .ability(&a)
+                            .map_or_else(|| a.clone(), |d| d.name.clone())
+                    }),
+                    modifier: o.modifier,
+                    due: hit_points_due(rules, state.total_xp, &state.chosen_levels()),
+                }),
+            gains: state
+                .hit_point_gains
+                .iter()
+                .filter(|g| g.level > from && g.level <= level)
+                .cloned()
+                .collect(),
+            cards: action_cards(rules, &c)
+                .iter()
+                .filter(|card| unlocked.contains(&card.action.id.as_str()))
+                .map(|card| card_view(rules, card))
+                .collect(),
+        }
+    });
     Some(PlayView {
+        level_up,
         level,
         total_xp: progress.total_xp,
         xp_bar: progress.bar,
@@ -563,6 +670,7 @@ pub fn project_home(
     gm_name: &str,
     player: &Player,
     character: Option<&Character>,
+    fallen: Option<&Fallen>,
     rules: Option<&RuleSystem>,
 ) -> PlayerHomeView {
     PlayerHomeView {
@@ -573,6 +681,7 @@ pub fn project_home(
         },
         campaign: project_invitation(player.campaign_id, campaign, gm_name),
         character: character.map(|c| project_character(rules, c)),
+        fallen: fallen.map(|f| project_fallen(rules, f)),
     }
 }
 

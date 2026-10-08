@@ -275,15 +275,19 @@ pub async fn decide(
     decision: Decision,
 ) -> Result<(), AppError> {
     let mut tx = pool.begin().await?;
-    let row: Option<(String, DateTime<Utc>)> = sqlx::query_as(
-        "SELECT status, updated_at FROM characters
+    // The campaign first, like every write that may touch play state.
+    let campaign = crate::campaigns::lock(&mut tx, campaign_id)
+        .await?
+        .ok_or(AppError::NotFound("NOT_FOUND"))?;
+    let row: Option<(String, DateTime<Utc>, i32, Json<CharacterSheet>)> = sqlx::query_as(
+        "SELECT status, updated_at, starting_xp, sheet FROM characters
          WHERE id = $1 AND campaign_id = $2 FOR UPDATE",
     )
     .bind(id)
     .bind(campaign_id)
     .fetch_optional(&mut *tx)
     .await?;
-    let Some((status, updated_at)) = row else {
+    let Some((status, updated_at, starting_xp, sheet)) = row else {
         return Err(AppError::NotFound("NOT_FOUND"));
     };
     if CharacterStatus::parse(&status)? != CharacterStatus::Submitted {
@@ -306,6 +310,25 @@ pub async fn decide(
     .bind(note)
     .execute(&mut *tx)
     .await?;
+    // A character made after a death joins at the party's level
+    // (player/face-death): it starts in play with the dead one's XP.
+    if let (true, Ok(xp @ 1..), Some(rules)) = (
+        status == "validated",
+        u32::try_from(starting_xp),
+        campaign.rules(),
+    ) {
+        let mut state = super::play::PlayState::start(rules, &sheet.0);
+        state.total_xp = xp;
+        let known: bool = sqlx::query_scalar(
+            "SELECT EXISTS (SELECT 1 FROM character_play WHERE character_id = $1)",
+        )
+        .bind(id)
+        .fetch_one(&mut *tx)
+        .await?;
+        if !known {
+            super::play::save(&mut tx, campaign_id, id, &state).await?;
+        }
+    }
     touch_character(&mut tx, campaign_id, id).await?;
     tx.commit().await?;
     Ok(())

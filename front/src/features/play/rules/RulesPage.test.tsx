@@ -58,7 +58,7 @@ function corsaires(over: Partial<RulesView> = {}): RulesView {
     applicationTurnCounts: false,
     conditions: [{ name: 'Empoisonné', description: '-1 à tous ses jets.', kind: 'bane' }],
     zeroHp: { rule: 'knockedOut', condition: 'Inconscient', outAfterTurns: 3, outCondition: 'Hors combat' },
-    progression: { upgradeEveryXp: 5, upgradePoints: 1, levels: [{ level: 1, xp: 0 }] },
+    progression: { upgradeEveryXp: 5, upgradePoints: 1, levels: [{ level: 1, xp: 0 }], hitPointsPerLevel: null },
     combat: {
       moveKind: { name: 'Se déplacer', description: '', cost: 1 },
       flee: { kind: { name: 'Fuir', description: '', cost: 2 }, ability: 'Dextérité' },

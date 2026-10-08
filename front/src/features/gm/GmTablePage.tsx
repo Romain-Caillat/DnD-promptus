@@ -249,6 +249,7 @@ function seatTone(seat: Seat): SeatTone {
       return 'todo'
     case 'draft':
     case 'returned':
+    case 'fallen':
       return 'wait'
   }
 }

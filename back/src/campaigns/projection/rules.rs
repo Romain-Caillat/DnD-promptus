@@ -186,7 +186,30 @@ pub enum ZeroHpView {
         difficulty: i32,
         successes: u32,
         failures: u32,
+        failures_on_hit: u32,
+        failures_on_critical_failure: u32,
+        critical_success_revives: bool,
+        /// What an ally rolls to stabilise someone dying.
+        stabilize: Option<StabilizeView>,
     },
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StabilizeView {
+    pub kind: String,
+    pub ability: String,
+    pub difficulty: i32,
+}
+
+/// What each level adds to the maximum hit points (engine/level-up).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LevelHitPointsView {
+    pub dice: String,
+    pub average: i32,
+    /// The ability's name, as the rules call it.
+    pub ability: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -195,6 +218,7 @@ pub struct ProgressionView {
     pub upgrade_every_xp: u32,
     pub upgrade_points: u32,
     pub levels: Vec<LevelView>,
+    pub hit_points_per_level: Option<LevelHitPointsView>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -521,14 +545,41 @@ pub fn project_rules(
                 difficulty,
                 successes,
                 failures,
+                failures_on_hit,
+                failures_on_critical_failure,
+                critical_success_revives,
+                stabilize,
                 ..
             } => ZeroHpView::DeathSaves {
                 difficulty: *difficulty,
                 successes: *successes,
                 failures: *failures,
+                failures_on_hit: *failures_on_hit,
+                failures_on_critical_failure: *failures_on_critical_failure,
+                critical_success_revives: *critical_success_revives,
+                stabilize: stabilize.as_ref().map(|st| StabilizeView {
+                    kind: system
+                        .action_kind(&st.kind)
+                        .map_or_else(|| st.kind.clone(), |k| k.name.clone()),
+                    ability: system
+                        .ability(&st.ability)
+                        .map_or_else(|| st.ability.clone(), |a| a.name.clone()),
+                    difficulty: st.difficulty,
+                }),
             },
         },
         progression: ProgressionView {
+            hit_points_per_level: system.progression.hit_points_per_level.as_ref().map(|h| {
+                LevelHitPointsView {
+                    dice: h.dice.to_string(),
+                    average: h.average,
+                    ability: h.ability.as_ref().map(|a| {
+                        system
+                            .ability(a)
+                            .map_or_else(|| a.clone(), |d| d.name.clone())
+                    }),
+                }
+            }),
             upgrade_every_xp: system.progression.upgrade_every_xp,
             upgrade_points: system.progression.upgrade_points,
             levels: system

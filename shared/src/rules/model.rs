@@ -310,6 +310,22 @@ pub struct Progression {
     pub upgrade_points: u32,
     /// Level thresholds on total XP, from level 1 at 0 XP.
     pub levels: Vec<LevelThreshold>,
+    /// Hit points each level above the first adds, rolled or taken at
+    /// the average — the player's choice (engine/level-up). Absent, the
+    /// maximum is `stats.hit_points` alone (both witness worlds: 10).
+    #[serde(default)]
+    pub hit_points_per_level: Option<LevelHitPoints>,
+}
+
+/// What a new level adds to the maximum hit points: `dice` rolled, or
+/// `average` taken, plus the modifier of `ability` either way.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LevelHitPoints {
+    pub dice: DiceExpr,
+    pub average: i32,
+    #[serde(default)]
+    pub ability: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -332,15 +348,54 @@ pub enum ZeroHpRule {
         #[serde(default)]
         note: String,
     },
-    /// Death saves (engine/save-against-death plays them; modelled here).
+    /// Down and dying: at each of their turns the character rolls the
+    /// check die against `difficulty` (engine/save-against-death).
+    /// `successes` of them and they are stable; `failures` and the engine
+    /// proposes their death, which the GM confirms or overrules. The
+    /// natural faces of the system's critical bands count: a critical
+    /// failure is `failures_on_critical_failure` failures, a critical
+    /// success brings them back with 1 hit point when
+    /// `critical_success_revives`. Hit while down: `failures_on_hit`
+    /// (`failures_on_critical_hit` on a critical). A heal lifts it all.
     DeathSaves {
         condition: String,
         difficulty: i32,
         successes: u32,
         failures: u32,
+        #[serde(default = "one")]
+        failures_on_hit: u32,
+        #[serde(default = "two")]
+        failures_on_critical_hit: u32,
+        #[serde(default = "two")]
+        failures_on_critical_failure: u32,
+        #[serde(default = "yes")]
+        critical_success_revives: bool,
+        /// An ally may try to stabilise a dying character.
+        #[serde(default)]
+        stabilize: Option<StabilizeRule>,
         #[serde(default)]
         note: String,
     },
+}
+
+fn one() -> u32 {
+    1
+}
+fn two() -> u32 {
+    2
+}
+fn yes() -> bool {
+    true
+}
+
+/// An ally's attempt to stabilise someone dying: next to them, it spends
+/// an action of `kind` and rolls `ability` against `difficulty`.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct StabilizeRule {
+    pub kind: String,
+    pub ability: String,
+    pub difficulty: i32,
 }
 
 impl ZeroHpRule {

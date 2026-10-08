@@ -10,6 +10,7 @@ import { GameTab } from '@/features/evening/GameTab'
 import { MapTab } from '@/features/map/MapTab'
 import { CharacterTab } from './CharacterTab'
 import { CharacterSummary } from './creator/ReviewStep'
+import { FallenCard } from './FallenCard'
 import { JournalTab } from './JournalTab'
 import { RulesEntry } from './rules/RulesEntry'
 
@@ -62,7 +63,9 @@ export function PlayerHomePage() {
   }, [load])
 
   useEffect(() => {
-    characterId.current = state.kind === 'ready' ? (state.home.character?.id ?? null) : null
+    // Once dead, the fallen character's changes (last words, choice) still concern me.
+    characterId.current =
+      state.kind === 'ready' ? (state.home.character?.id ?? state.home.fallen?.characterId ?? null) : null
   }, [state])
 
   useLiveChanges(
@@ -91,17 +94,24 @@ export function PlayerHomePage() {
   }
 
   const { me, campaign, character } = state.home
+  // My character died and no other sits in its place yet: still at the table.
+  const fallen = me.role === 'player' && character === null ? (state.home.fallen ?? null) : null
   const seated = me.role === 'player' && character !== null
   const play = character?.play ?? null
-  // The character comes first while it is being made; once in play, the game.
-  const tabs: Tab[] = !seated
-    ? ['jeu', 'carte', 'journal']
-    : play
+  // The character comes first while it is being made; once in play, the
+  // game; after a death, the death until the player chose what comes next.
+  const tabs: Tab[] = fallen
+    ? fallen.next
       ? ['jeu', 'carte', 'perso', 'journal']
       : ['perso', 'jeu', 'carte', 'journal']
+    : !seated
+      ? ['jeu', 'carte', 'journal']
+      : play
+        ? ['jeu', 'carte', 'perso', 'journal']
+        : ['perso', 'jeu', 'carte', 'journal']
   const asked = params.get('onglet')
   const tab: Tab = tabs.find((x) => x === asked) ?? tabs[0]
-  const bannerKey = !seated ? 'spectator' : play ? 'inPlay' : character.status
+  const bannerKey = fallen ? 'fallen' : !seated ? 'spectator' : play ? 'inPlay' : character.status
   const good = bannerKey === 'validated' || bannerKey === 'draft' || bannerKey === 'inPlay'
 
   function replaceCharacter(next: CharacterView) {
@@ -118,6 +128,7 @@ export function PlayerHomePage() {
           bannerKey === 'submitted' && 'border-[1.5px] border-dashed border-line-dashed bg-table text-chalk-soft',
           bannerKey === 'returned' && 'border-[1.5px] border-stat-atk bg-table text-chalk',
           bannerKey === 'spectator' && 'border border-line bg-surface text-chalk-soft',
+          bannerKey === 'fallen' && 'border-[1.5px] border-stat-atk bg-table text-chalk',
         )}
       >
         {t(`play.banner.${bannerKey}`)}
@@ -131,9 +142,16 @@ export function PlayerHomePage() {
         {tab === 'carte' && <MapTab campaignId={campaignId} refreshKey={mapVersion} />}
         {tab === 'journal' && (
           <>
-            {!seated && <p className="text-body text-chalk-soft">{t('play.spectator')}</p>}
+            {!seated && !fallen && <p className="text-body text-chalk-soft">{t('play.spectator')}</p>}
             <JournalTab campaignId={campaignId} refreshKey={viewVersion} />
           </>
+        )}
+        {tab === 'perso' && fallen && (
+          <FallenCard
+            campaignId={campaignId}
+            fallen={fallen}
+            onChanged={(home) => setState({ kind: 'ready', home })}
+          />
         )}
         {tab === 'perso' && character && play && (
           <CharacterTab campaignId={campaignId} character={character} play={play} onChanged={replaceCharacter} />

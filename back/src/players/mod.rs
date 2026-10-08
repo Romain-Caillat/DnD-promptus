@@ -17,6 +17,7 @@
 //! and the history of what changed it are in [`play`].
 
 pub mod assist;
+pub mod fate;
 pub mod play;
 pub mod review;
 
@@ -78,6 +79,9 @@ pub enum CharacterStatus {
     Validated,
     /// Sent back by the GM with a note (`Character::gm_note`).
     Returned,
+    /// Dead, the GM confirmed it (player/face-death): out of play for
+    /// good, kept for the chronicle. Its player may make another.
+    Fallen,
 }
 
 impl CharacterStatus {
@@ -87,6 +91,7 @@ impl CharacterStatus {
             "submitted" => Ok(Self::Submitted),
             "validated" => Ok(Self::Validated),
             "returned" => Ok(Self::Returned),
+            "fallen" => Ok(Self::Fallen),
             other => Err(AppError::Internal(format!(
                 "unknown character status {other}"
             ))),
@@ -594,7 +599,7 @@ pub async fn find_by_token(
 /// Fails on a database error.
 pub async fn character_of(pool: &PgPool, player: &Player) -> Result<Option<Character>, AppError> {
     let row: Option<CharacterRow> = sqlx::query_as(&format!(
-        "SELECT {CHARACTER_COLUMNS} FROM characters WHERE player_id = $1"
+        "SELECT {CHARACTER_COLUMNS} FROM characters WHERE player_id = $1 AND status <> 'fallen'"
     ))
     .bind(player.id)
     .fetch_optional(pool)
@@ -645,7 +650,7 @@ async fn lock_character(
     player: &Player,
 ) -> Result<Character, AppError> {
     let row: Option<CharacterRow> = sqlx::query_as(&format!(
-        "SELECT {CHARACTER_COLUMNS} FROM characters WHERE player_id = $1 FOR UPDATE"
+        "SELECT {CHARACTER_COLUMNS} FROM characters WHERE player_id = $1 AND status <> 'fallen' FOR UPDATE"
     ))
     .bind(player.id)
     .fetch_optional(&mut **tx)
@@ -753,7 +758,7 @@ pub async fn seats(pool: &PgPool, campaign_id: Uuid) -> Result<Vec<Seat>, AppErr
         "SELECT p.id, p.nickname, p.role, p.created_at, p.last_seen_at,
                 c.id, c.status, c.sheet->>'name', c.sheet->>'classId', c.sheet->'look',
                 c.reviewed_sheet IS NOT NULL, c.updated_at
-         FROM players p LEFT JOIN characters c ON c.player_id = p.id
+         FROM players p LEFT JOIN characters c ON c.player_id = p.id AND c.status <> 'fallen'
          WHERE p.campaign_id = $1
          ORDER BY p.created_at, p.id",
     )
@@ -817,7 +822,7 @@ pub async fn remove(pool: &PgPool, campaign_id: Uuid, player_id: Uuid) -> Result
     let mut tx = pool.begin().await?;
     let character: Option<Option<Uuid>> = sqlx::query_scalar(
         "DELETE FROM players p WHERE p.id = $1 AND p.campaign_id = $2
-         RETURNING (SELECT c.id FROM characters c WHERE c.player_id = p.id)",
+         RETURNING (SELECT c.id FROM characters c WHERE c.player_id = p.id AND c.status <> 'fallen')",
     )
     .bind(player_id)
     .bind(campaign_id)

@@ -57,6 +57,29 @@ impl ActiveCondition {
     }
 }
 
+/// Where a dying character stands under the `death_saves` rule
+/// (engine/save-against-death). Present from the moment they drop to 0
+/// hit points until a heal lifts them.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DeathSaves {
+    pub successes: u32,
+    pub failures: u32,
+    /// Enough successes, or the GM chose so: no more saves, still down.
+    #[serde(default)]
+    pub stable: bool,
+    /// Enough failures: the engine proposes the death and waits for the
+    /// GM (`MEMORY.md` §3, nothing final without them). GM-side only.
+    #[serde(default)]
+    pub death_due: bool,
+}
+
+impl DeathSaves {
+    /// Still rolling: neither stable nor waiting for the GM.
+    pub fn rolling(&self) -> bool {
+        !self.stable && !self.death_due
+    }
+}
+
 /// What the current turn has spent.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TurnBudget {
@@ -82,6 +105,13 @@ pub struct Combatant {
     /// Action id → cooldown counter (0 or absent = ready).
     pub cooldowns: BTreeMap<String, u32>,
     pub turn: TurnBudget,
+    /// Maximum hit points the levels added on top of the rules' formula
+    /// (engine/level-up: the die or the average, per level).
+    #[serde(default)]
+    pub hit_point_bonus: i32,
+    /// Dying under the `death_saves` rule.
+    #[serde(default)]
+    pub death_saves: Option<DeathSaves>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -128,6 +158,8 @@ impl Combatant {
             conditions: Vec::new(),
             cooldowns: BTreeMap::new(),
             turn: TurnBudget::default(),
+            hit_point_bonus: 0,
+            death_saves: None,
         };
         c.hit_points = c.max_hit_points(system)?;
         Ok(c)
@@ -157,6 +189,8 @@ impl Combatant {
             conditions: Vec::new(),
             cooldowns: BTreeMap::new(),
             turn: TurnBudget::default(),
+            hit_point_bonus: 0,
+            death_saves: None,
         })
     }
 
@@ -229,7 +263,9 @@ impl Combatant {
                 .adversary(id)
                 .map(|a| a.hit_points)
                 .ok_or_else(|| SheetError::UnknownAdversary(id.clone())),
-            Origin::Class(_) => self.eval(system, &system.stats.hit_points.formula),
+            Origin::Class(_) => {
+                Ok(self.eval(system, &system.stats.hit_points.formula)? + self.hit_point_bonus)
+            }
         }
     }
 
