@@ -27,7 +27,7 @@ use serde_json::{Map, Value};
 
 use super::library::{Library, validate_with};
 use super::model::{Campaign, Id};
-use super::validate::{Severity, validate};
+use super::validate::Severity;
 
 /// The lists of a campaign whose items carry an id, and the kind each
 /// holds.
@@ -212,8 +212,21 @@ pub fn apply_with(
 /// dropped.
 #[must_use]
 pub fn sanitize(campaign: &Campaign, edits: Vec<Edit>) -> (Vec<Edit>, usize) {
+    sanitize_with(campaign, edits, &Library::default())
+}
+
+/// [`sanitize`] against `library`: an edit is applied as the GM's
+/// would be ([`apply_with`], the scene parts checked against the rule
+/// system) and must add no error [`validate_with`] finds. The co-GM thus
+/// never proposes what the GM would be refused.
+#[must_use]
+pub fn sanitize_with(
+    campaign: &Campaign,
+    edits: Vec<Edit>,
+    library: &Library<'_>,
+) -> (Vec<Edit>, usize) {
     let errors = |c: &Campaign| -> BTreeSet<(&'static str, String)> {
-        validate(c)
+        validate_with(c, library)
             .into_iter()
             .filter(|i| i.severity == Severity::Error)
             .map(|i| (i.code, i.detail))
@@ -224,7 +237,7 @@ pub fn sanitize(campaign: &Campaign, edits: Vec<Edit>) -> (Vec<Edit>, usize) {
     let mut known = errors(&base);
     let mut dropped = 0;
     for edit in edits {
-        match apply(&base, std::slice::from_ref(&edit)) {
+        match apply_with(&base, std::slice::from_ref(&edit), library) {
             Ok((next, _)) => {
                 let now = errors(&next);
                 if now.is_subset(&known) {
@@ -609,6 +622,34 @@ mod tests {
         };
         assert!(check("CHA").is_ok());
         assert_eq!(check("CHARME").unwrap_err().code, "EDIT_SCENE_INVALID");
+    }
+
+    #[test]
+    fn a_proposal_drops_a_check_on_a_stat_the_rules_lack() {
+        let c = from_yaml(KERBRUME).unwrap();
+        let rules = crate::rules::RuleSystem::from_yaml(include_str!(
+            "../../../content/rules/corsaires/v1.yaml"
+        ))
+        .unwrap();
+        let library = Library {
+            rules: Some(&rules),
+            maps: None,
+        };
+        let proposed = edits(json!([
+            { "op": "set", "target": "sc_taverne", "field": "checks", "value": [
+                { "action": "Charmer", "stat": "CHARME", "difficulty": 10 }
+            ]},
+            { "op": "set", "target": "sc_port", "field": "checks", "value": [
+                { "action": "Repérer", "stat": "SAG", "difficulty": 10 }
+            ]},
+        ]));
+        // Without the rules nothing tells them apart; with them, the GM
+        // would be refused the first, so the co-GM cannot propose it.
+        assert_eq!(sanitize(&c, proposed.clone()).1, 0);
+        let (kept, dropped) = sanitize_with(&c, proposed, &library);
+        assert_eq!(dropped, 1);
+        assert_eq!(kept.len(), 1);
+        assert!(matches!(&kept[0], Edit::Set { target, .. } if target == "sc_port"));
     }
 
     #[test]

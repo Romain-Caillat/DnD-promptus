@@ -272,3 +272,63 @@ async fn the_brasier_boarding_keeps_its_ships_and_refuses_an_unknown_opponent() 
     .await;
     assert_eq!(r.body["error"]["code"], "EDIT_SCENE_INVALID");
 }
+
+#[tokio::test]
+async fn a_co_gm_proposal_the_gm_would_be_refused_cannot_be_accepted() {
+    let pool = common::test_pool().await;
+    let app = common::app(pool.clone());
+    let (_, token) = common::signed_in_gm(&pool, "Romain").await;
+    let id = imported(&app, &token, CORSAIRES).await;
+    // A proposal stored as the co-GM would write it: a check on a stat
+    // the Corsaires' rules do not have.
+    let proposal: uuid::Uuid = sqlx::query_scalar(
+        "INSERT INTO story_proposals (campaign_id, prompt, edits)
+         VALUES ($1, 'Un jet de plus.', $2) RETURNING id",
+    )
+    .bind(uuid::Uuid::parse_str(&id).unwrap())
+    .bind(
+        json!([{ "op": "set", "target": "sc_quai", "field": "checks", "value": [
+            { "action": "Charmer la foule", "stat": "CHARME", "difficulty": 10 }
+        ]}]),
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+
+    // The GM sees it as no longer applicable, and accepting it changes nothing.
+    let r = gm(
+        &app,
+        &token,
+        "GET",
+        &format!("/api/campaigns/{id}/workshop"),
+        None,
+    )
+    .await;
+    let listed = r.body["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["id"] == proposal.to_string())
+        .unwrap()
+        .clone();
+    assert_eq!(listed["stale"], true, "{listed}");
+    let r = gm(
+        &app,
+        &token,
+        "POST",
+        &format!("/api/campaigns/{id}/workshop/{proposal}/accept"),
+        None,
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::CONFLICT, "{}", r.body);
+    assert_eq!(r.body["error"]["code"], "PROPOSAL_STALE");
+    let r = gm(&app, &token, "GET", &format!("/api/campaigns/{id}"), None).await;
+    let checks = node(&r.body["data"], "sc_quai")["checks"].clone();
+    assert!(
+        checks
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|c| c["stat"] != "CHARME")
+    );
+}

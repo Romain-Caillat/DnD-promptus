@@ -80,7 +80,10 @@ memory. If someone would re-litigate it in six months, it is.
   scene's `encounter`, `ambience`, `checks`, `exits`, `loot` or `xp` is
   refused when it adds an error or a structural slip to that scene
   (`EDIT_SCENE_INVALID`, checked against the campaign's rule system),
-  because a wrong id there reaches the table. Elsewhere the validator
+  because a wrong id there reaches the table. The co-GM's proposals
+  (workshop, generation repairs) go through the same check with the
+  same rule system (`prep::edit_library`, `edit::sanitize_with`): the
+  co-GM never proposes what the GM would be refused. Elsewhere the validator
   reports and the GM decides; `remove` is never blocked. A screen that
   rewrites a part sends it whole and must carry what it does not edit
   (a fight's `vehicles`, a check's outcomes, a track's `search`).

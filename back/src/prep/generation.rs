@@ -863,9 +863,9 @@ pub async fn generate(
             .filter_map(|v| serde_json::from_value(v).ok())
             .collect();
         dropped += total - readable.len();
-        let (kept, refused) = edit::sanitize(&story, readable);
+        let (kept, refused) = edit::sanitize_with(&story, readable, &library);
         dropped += refused;
-        let Ok((fixed, _)) = edit::apply(&story, &kept) else {
+        let Ok((fixed, _)) = edit::apply_with(&story, &kept, &library) else {
             continue;
         };
         let (fixed, pruned) = prune(&fixed, &library);
