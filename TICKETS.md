@@ -1938,7 +1938,9 @@ respecté. Testé : sur les deux mondes (fixture Corsaires/Kerbrume au
 balayage, Brasier à l'API) ; le choix du point focal et des moments en
 Vitest. **Écarts** : les niveaux n'ont pas de grand moment (le passage de
 niveau est `engine/level-up`, d'un autre lot ; le jour où il écrit une
-ligne partagée au journal, l'ajouter aux genres de `tv/focus.ts`) ; jamais essayé à six sur une vraie TV.
+ligne partagée au journal, l'ajouter aux genres de `tv/focus.ts`) ; les coups s'affichent en plein
+écran par-dessus la carte, pas sur le pion touché comme sur la planche ;
+jamais essayé à six sur une vraie TV.
 
 ---
 

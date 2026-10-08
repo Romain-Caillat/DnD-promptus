@@ -151,4 +151,17 @@ describe('TvStage', () => {
     expect(screen.getByText('Réussite')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: /16/ })).toBeInTheDocument()
   })
+
+  it('lands a blow as a big number, and says when it takes someone down', () => {
+    stubReducedMotion(true)
+    render(
+      <TvStage
+        view={{ ...VIEW, session: { number: 4, status: 'live', startedAt: '' } }}
+        media={null}
+        highlight={{ id: 'h1', at: 0, kind: 'hit', target: 'Kaël', amount: 4, down: true }}
+      />,
+    )
+    expect(screen.getByText('− 4')).toBeInTheDocument()
+    expect(screen.getByText('Hors de combat !')).toBeInTheDocument()
+  })
 })
