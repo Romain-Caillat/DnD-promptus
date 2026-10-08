@@ -419,6 +419,57 @@ serveur.
 
 **Origine** — Composant « dé » du canevas · `MEMORY.md` §2
 
+### `ui/offer-light-theme` · doing — reste la relecture de Romain sur son écran
+
+**Pourquoi** — Romain lit mal le texte clair sur la table noire. La
+table noire reste l'identité de Promptus, mais chacun doit pouvoir
+choisir un thème clair sur son appareil.
+
+**Périmètre** — Un réglage « Thème : sombre / clair / comme
+l'appareil », retenu par appareil, sombre par défaut, accessible au MJ
+et au joueur. Une palette claire tirée des mêmes jetons : table blanc
+cassé, texte encre, cartes blanches à bord gris, couleurs des
+statistiques foncées d'un cran pour rester lisibles sur fond clair.
+Suivent le thème : les matières des cartes et gemmes, la carte de
+combat dessinée, la carte du monde en hexagones. Ne changent pas : le
+pixel art (personnages, tuiles, objets) et l'écran TV, qui reste sombre.
+
+**Étapes** — Jetons clairs sous `[data-theme="light"]` → couleurs en
+dur passées en jetons (matières, carte, hexagones) → réglage et
+mémorisation → vérification écran par écran dans les deux thèmes.
+
+**Fini quand** — Chaque écran (MJ, joueur sur téléphone et ordinateur,
+carte, voyage, `/reference`) se lit dans les deux thèmes avec un
+contraste d'au moins 4,5:1 pour le texte courant, et Romain le
+confirme sur son écran.
+
+**Risques** — Une couleur en dur oubliée laisse une tache noire dans le
+thème clair ; les couleurs vives des statistiques perdent du contraste
+sur fond clair.
+
+**Origine** — Demande de Romain, 8 octobre 2026.
+
+**État** — Un réglage « Thème : Sombre / Clair / Comme l’appareil »
+sur l’accueil du MJ (à côté de « Se déconnecter ») et chez le joueur
+sous l’entrée des règles (onglets Perso et Journal au téléphone,
+colonne de gauche à l’ordinateur). Retenu par appareil, sombre par
+défaut, appliqué avant le premier affichage (pas d’éclair noir) ;
+« Comme l’appareil » suit le réglage du téléphone en direct. Palette
+claire : table blanc cassé, texte encre, panneaux blancs, cartes
+blanches à tranche grise, ombres légères ; couleurs des stats foncées
+d’un cran, toutes au-dessus de 4,5:1 sur chaque surface claire ; les
+gemmes, les dés et le bandeau « à toi » gardent leur couleur vive et
+leur chiffre encre. Suivent le thème : tables, panneaux, jauges vides (cœurs,
+cellules, horloges), bandeaux, toasts d’information, la marge autour de
+la carte de combat, le fond et le brouillard de la carte du monde, les
+lignes des ennemis en combat. Restent noirs, comme des pièces de jeu :
+carte noire et dos de carte, cases d’objet, badge d’état néfaste,
+toast de mauvaise nouvelle, bouton d’arcade sombre, et tout l’écran TV.
+Le pixel art et l’intérieur des cartes ne changent pas. Typecheck,
+lint, knip et tests passent (sauf les 9 tests connus de la table du MJ
+qui échouent sous Node faute de `localStorage`). **Reste** : Romain
+relit chaque écran dans les deux thèmes sur son écran.
+
 ---
 
 ## Épic `engine`

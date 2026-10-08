@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockApi, sentTo, stubReducedMotion } from '@/test-utils'
@@ -120,7 +120,7 @@ describe('MapTab', () => {
     expect(await screen.findByText('À toi, Borin !')).toBeInTheDocument()
     expect(screen.getByText('Au tour de Borin')).toBeInTheDocument()
     // The page learns the keys are the fight's now.
-    expect(turns.at(-1)).toBe(true)
+    await waitFor(() => expect(turns.at(-1)).toBe(true))
     await userEvent.click(screen.getByRole('button', { name: /Estocade/ }))
     tap(3, 0)
     await userEvent.click(screen.getByRole('button', { name: /Jouer/ }))

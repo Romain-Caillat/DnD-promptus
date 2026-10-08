@@ -11,7 +11,11 @@
  *   say (gradients, card buttons, rarity materials).
  * - The bottom of the file maps shadcn's variables onto these tokens.
  *
- * The black table is the only look: there is no light theme.
+ * The black table is the default look. A light theme (ui/offer-light-theme)
+ * redefines the same variables under `:root[data-theme="light"]` (bottom of
+ * the file); `src/lib/theme.ts` sets that attribute per device. Anything
+ * that must stay black in both themes (black cards, item slots, bane
+ * badges, the TV) is a "black island": it re-declares the dark values.
  */
 
 @theme static {
@@ -26,6 +30,8 @@
 
   /* The table (backgrounds, darkest first). */
   --color-table-deep: #050505;
+  --color-table-mid: #0c0c0c;
+  --color-table-glow: #1c1c1c;
   --color-table: #0a0a0a;
   --color-well: #121212;
   --color-surface: #141414;
@@ -37,6 +43,23 @@
   --color-line: #2c2c2c;
   --color-line-strong: #3a3a3a;
   --color-line-dashed: #5e5e5e;
+  /* The hard drop under a dark piece (a black card, an arcade button). */
+  --color-edge-hard: #000000;
+
+  /* Empty gauges: a spent heart, an empty cell, a clock part not filled. */
+  --color-empty-glint: #4a4a4a;
+  --color-empty: #2a2a2a;
+  --color-empty-low: #1e1e1e;
+  --color-empty-deep: #171717;
+
+  /*
+   * Around the maps: the space outside a battle map, the gaps between
+   * hexes, the unexplored fog. The maps themselves are pixel art in muted
+   * colour and do not change with the theme.
+   */
+  --color-map-void: #07090c;
+  --color-map-gap: #0a0d10;
+  --color-map-fog-dot: #2c2f36;
 
   /* Text on the table. */
   --color-chalk: #f2f2f2;
@@ -64,11 +87,25 @@
   --color-stat-init: #ffd60a;
   /* Bottom edge of the yellow "your turn" banner. */
   --color-stat-init-edge: #8a6f00;
+  /*
+   * A stat as a filled piece with an ink number on it (a gem, a die, the
+   * "your turn" banner): the bright colour in both themes, so the ink
+   * number keeps its contrast. Text in a stat colour uses the plain token.
+   */
+  --color-stat-hp-fill: #ff4d5e;
+  --color-stat-atk-fill: #ff9f1c;
+  --color-stat-ac-fill: #3d9bff;
+  --color-stat-mag-fill: #b28cff;
+  --color-stat-move-fill: #2ee6a6;
+  --color-stat-init-fill: #ffd60a;
 
   /* Damage: numbers that hit, damage dice, the lethal button. */
   --color-damage: #ff4d5e;
   --color-damage-edge: #8a2a33;
   --color-damage-edge-deep: #5a1a20;
+  /* The other side of a fight: an enemy's row, a dying character's box. */
+  --color-foe: #3a1512;
+  --color-foe-deep: #140b0c;
 
   /* Type. Chakra Petch is the default sans: every UI word and number. */
   --font-sans: "Chakra Petch", system-ui, sans-serif;
@@ -105,15 +142,24 @@
   --radius-panel: 14px;
   --radius-slab: 16px;
 
-  /* Shadows: hard stacked edges, like cardboard, never soft glows. */
-  --shadow-slab: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 12px 30px rgb(0 0 0 / 0.45);
-  --shadow-ivory: 0 4px 0 #8a8a8a, 0 7px 0 #5a5a5a, 0 14px 24px rgb(0 0 0 / 0.5);
-  --shadow-ivory-pressed: 0 1px 0 #8a8a8a, 0 2px 0 #5a5a5a, 0 4px 8px rgb(0 0 0 / 0.5);
-  --shadow-ivory-flat: 0 3px 0 #8a8a8a;
-  --shadow-dark: 0 0 0 1.5px #3a3a3a, 0 4px 0 #000000, 0 14px 24px rgb(0 0 0 / 0.5);
-  --shadow-dark-pressed: 0 0 0 1.5px #3a3a3a, 0 1px 0 #000000;
-  --shadow-card: 0 2px 0 #9a9a9a, 0 4px 0 #6a6a6a, 0 14px 28px rgb(0 0 0 / 0.55);
-  --shadow-turn: 0 3px 0 #8a6f00;
+  /*
+   * Shadows: hard stacked edges, like cardboard, never soft glows. Tailwind
+   * inlines a shadow into its utility, so the colours are variables: the
+   * light theme and the black islands only redefine the colours.
+   */
+  --color-card-edge: #9a9a9a;
+  --color-card-edge-deep: #6a6a6a;
+  --color-rim: rgb(255 255 255 / 0.06);
+  --color-drop: rgb(0 0 0 / 0.5);
+  --shadow-slab: inset 0 1px 0 var(--color-rim), 0 12px 30px var(--color-drop);
+  --shadow-ivory: 0 4px 0 var(--color-ivory-edge), 0 7px 0 var(--color-ivory-edge-deep), 0 14px 24px var(--color-drop);
+  --shadow-ivory-pressed:
+    0 1px 0 var(--color-ivory-edge), 0 2px 0 var(--color-ivory-edge-deep), 0 4px 8px var(--color-drop);
+  --shadow-ivory-flat: 0 3px 0 var(--color-ivory-edge);
+  --shadow-dark: 0 0 0 1.5px var(--color-line-strong), 0 4px 0 var(--color-edge-hard), 0 14px 24px var(--color-drop);
+  --shadow-dark-pressed: 0 0 0 1.5px var(--color-line-strong), 0 1px 0 var(--color-edge-hard);
+  --shadow-card: 0 2px 0 var(--color-card-edge), 0 4px 0 var(--color-card-edge-deep), 0 14px 28px var(--color-drop);
+  --shadow-turn: 0 3px 0 var(--color-stat-init-edge);
   --drop-shadow-gem: 0 3px 0 rgb(0 0 0 / 0.55);
 
   /*
@@ -262,12 +308,17 @@
 
 /* The black table: light falls from the top centre. */
 @utility surface-table {
-  background: radial-gradient(120% 80% at 50% 0%, #1c1c1c 0, #0c0c0c 55%, #050505 100%);
+  background: radial-gradient(
+    120% 80% at 50% 0%,
+    var(--color-table-glow) 0,
+    var(--color-table-mid) 55%,
+    var(--color-table-deep) 100%
+  );
 }
 
 /* A slab of the table: panels, side boards. */
 @utility surface-slab {
-  background: linear-gradient(180deg, #181818, #111111);
+  background: linear-gradient(180deg, var(--color-slab), var(--color-slab-low));
   border: 1px solid var(--color-line);
   border-radius: var(--radius-slab);
   box-shadow: var(--shadow-slab);
@@ -492,8 +543,10 @@
  * shadcn components read these variables (mapped to Tailwind colours in
  * index.css). They point at the tokens above: ivory is the primary
  * action, damage red the destructive one. `<html class="dark">` is set
- * once in index.html so shadcn's `dark:` variants apply; there are no
- * light values.
+ * by default in index.html so shadcn's `dark:` variants apply; the theme
+ * switch removes it with `data-theme="light"`. The light values follow the
+ * tokens: `--background: var(--color-table)` resolves on `<html>`, where
+ * the light tokens are declared too.
  */
 :root {
   color-scheme: dark;
@@ -516,4 +569,144 @@
   --border: var(--color-line);
   --input: var(--color-line-strong);
   --ring: var(--color-mute);
+}
+
+/* --- Light theme ----------------------------------------------------- */
+
+/*
+ * The light table (ui/offer-light-theme): off-white table, ink text, white
+ * cards with grey stacked edges, lighter shadows. Stat colours are a step
+ * darker so text in a stat colour keeps at least 4.5:1 on every light
+ * surface (table, slab, surface, well, raised); a stat drawn as a filled
+ * piece with an ink number (gem, die, banner) keeps its bright
+ * `--color-stat-*-fill`. `src/lib/theme.ts` sets `data-theme` on
+ * `<html>` per device, before the first paint (index.html).
+ */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-table-deep: #e9e6e0;
+  --color-table-mid: #f4f2ee;
+  --color-table-glow: #ffffff;
+  --color-table: #f4f2ee;
+  --color-well: #ebe8e2;
+  --color-surface: #e9e6df;
+  --color-slab: #ffffff;
+  --color-slab-low: #faf9f6;
+  --color-surface-raised: #e1ddd5;
+
+  --color-line: #d6d2ca;
+  --color-line-strong: #bdb8ae;
+  --color-line-dashed: #8a857b;
+  --color-edge-hard: #a9a49a;
+
+  --color-empty-glint: #f4f2ee;
+  --color-empty: #d6d2ca;
+  --color-empty-low: #c4bfb5;
+  --color-empty-deep: #bdb8ae;
+  --color-map-void: #dcd8cf;
+  --color-map-gap: #f4f2ee;
+  --color-map-fog-dot: #bdb8ae;
+
+  --color-chalk: #141414;
+  --color-chalk-soft: #383838;
+  --color-mute-soft: #525252;
+  --color-mute: #5f5f5f;
+
+  --color-ivory: #ffffff;
+  --color-ivory-edge: #b9b5ad;
+  --color-ivory-edge-deep: #8a857b;
+
+  --color-stat-hp: #b8142a;
+  --color-stat-atk: #924a00;
+  --color-stat-ac: #1a5cb5;
+  --color-stat-mag: #6a3fc4;
+  --color-stat-move: #006b51;
+  --color-stat-init: #705800;
+  --color-stat-init-edge: #3d3000;
+
+  --color-damage: #b8142a;
+  --color-damage-edge: #7a0d1c;
+  --color-damage-edge-deep: #4f0812;
+  --color-foe: #f5dcd8;
+  --color-foe-deep: #fbefed;
+
+  --color-card-edge: #c4c0b8;
+  --color-card-edge-deep: #9a958c;
+  --color-rim: rgb(255 255 255 / 0.8);
+  --color-drop: rgb(0 0 0 / 0.12);
+  --drop-shadow-gem: 0 3px 0 rgb(0 0 0 / 0.25);
+}
+
+/*
+ * Black islands: pieces that stay black in both themes — the black card
+ * (epic material, a card's back, a value disc), item slots, bane badges,
+ * the bad-news toast, the dark arcade button, the TV. They re-declare the
+ * dark values, so `var(--color-chalk)` inside them is chalk again.
+ * `.theme-dark` marks any other element that must stay dark.
+ */
+:root[data-theme="light"]
+  :is(
+    .theme-dark,
+    .material-epic,
+    .gk-card-wrap[data-state="back"] .gk-card,
+    .gk-card-disc,
+    .gk-slot,
+    .gk-badge.gk-bane,
+    .gk-toast[data-tone="bad"],
+    .gk-arc-dark .gk-arc-top,
+    .tv-root
+  ) {
+  color-scheme: dark;
+
+  --color-table-deep: #050505;
+  --color-table-mid: #0c0c0c;
+  --color-table-glow: #1c1c1c;
+  --color-table: #0a0a0a;
+  --color-well: #121212;
+  --color-surface: #141414;
+  --color-slab: #181818;
+  --color-slab-low: #111111;
+  --color-surface-raised: #1c1c1c;
+
+  --color-line: #2c2c2c;
+  --color-line-strong: #3a3a3a;
+  --color-line-dashed: #5e5e5e;
+  --color-edge-hard: #000000;
+
+  --color-empty-glint: #4a4a4a;
+  --color-empty: #2a2a2a;
+  --color-empty-low: #1e1e1e;
+  --color-empty-deep: #171717;
+  --color-map-void: #07090c;
+  --color-map-gap: #0a0d10;
+  --color-map-fog-dot: #2c2f36;
+
+  --color-chalk: #f2f2f2;
+  --color-chalk-soft: #d4d4d4;
+  --color-mute-soft: #a3a3a3;
+  --color-mute: #8c8c8c;
+
+  --color-ivory: #ededed;
+  --color-ivory-edge: #8a8a8a;
+  --color-ivory-edge-deep: #5a5a5a;
+
+  --color-stat-hp: #ff4d5e;
+  --color-stat-atk: #ff9f1c;
+  --color-stat-ac: #3d9bff;
+  --color-stat-mag: #b28cff;
+  --color-stat-move: #2ee6a6;
+  --color-stat-init: #ffd60a;
+  --color-stat-init-edge: #8a6f00;
+
+  --color-damage: #ff4d5e;
+  --color-damage-edge: #8a2a33;
+  --color-damage-edge-deep: #5a1a20;
+  --color-foe: #3a1512;
+  --color-foe-deep: #140b0c;
+
+  --color-card-edge: #9a9a9a;
+  --color-card-edge-deep: #6a6a6a;
+  --color-rim: rgb(255 255 255 / 0.06);
+  --color-drop: rgb(0 0 0 / 0.5);
 }

@@ -3,6 +3,12 @@
     "name": "Promptus",
     "tagline": "Le moteur narratif de vos parties de jeu de rôle, jouées à distance."
   },
+  "theme": {
+    "label": "Thème",
+    "dark": "Sombre",
+    "light": "Clair",
+    "system": "Comme l’appareil"
+  },
   "health": {
     "checking": "Vérification du serveur…",
     "ok": "Le serveur et sa base de données répondent.",

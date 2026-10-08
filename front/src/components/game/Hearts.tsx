@@ -37,8 +37,8 @@ function red(x: number, y: number) {
   return y >= 5 ? '#c22a3c' : '#ff4d5e'
 }
 function grey(x: number, y: number) {
-  if (x === 2 && y === 2) return '#4a4a4a'
-  return y >= 5 ? '#1e1e1e' : '#2a2a2a'
+  if (x === 2 && y === 2) return 'var(--color-empty-glint)'
+  return y >= 5 ? 'var(--color-empty-low)' : 'var(--color-empty)'
 }
 
 /** A heart filled from the left up to `fill`, by whole columns. */

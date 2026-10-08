@@ -105,6 +105,12 @@ export interface Scene {
   sprites?: Record<string, CanvasImageSource>
   /** Where each token is and which frame it shows now (`Motion.pose`), by token id. */
   poses?: Record<string, Pose>
+  /**
+   * The space outside the map in the light theme (`--color-map-void`),
+   * resolved by the caller once per theme change; the tileset's own
+   * darkness otherwise.
+   */
+  voidColor?: string
 }
 
 export const cellKey = ([x, y]: Cell) => `${x},${y}`
@@ -494,7 +500,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene) {
   const grid = readGrid(scene.map)
   const ts = scene.tileset ?? FALLBACK
   ctx.imageSmoothingEnabled = false
-  ctx.fillStyle = ts.void
+  ctx.fillStyle = scene.voidColor ?? ts.void
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
   const backdrop = scene.map.backdrop && scene.backdrop ? scene.backdrop : null

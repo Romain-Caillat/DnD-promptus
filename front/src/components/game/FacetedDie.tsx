@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion'
-import { STAT_TEXT, type Stat } from './stats'
+import { STAT_FILL_TEXT, type Stat } from './stats'
 
 /** The dice the rules roll; d100 is two d10s read together. */
 export const DICE = [4, 6, 8, 10, 12, 20, 100] as const
@@ -80,7 +80,7 @@ export function FacetedDie({
       data-rolling={rolling}
       className={cn(
         'relative grid size-21 place-items-center',
-        stat ? STAT_TEXT[stat] : 'text-ivory',
+        stat ? STAT_FILL_TEXT[stat] : 'text-ivory',
         rolling && 'animate-tumble',
         !rolling && !reduced && 'animate-pop',
         className,

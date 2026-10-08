@@ -326,7 +326,7 @@ function DraftCard({
           </div>
         ))}
         <div className="grid grid-cols-[2fr_1fr_1fr] gap-2">
-          <BigKey className="bg-ink text-chalk" onClick={show}>
+          <BigKey className="bg-ink text-ivory" onClick={show}>
             {t('gmLive.copilot.show')}
           </BigKey>
           <BigKey className="border-ink/40 bg-white text-ink" onClick={() => setEditing(true)}>

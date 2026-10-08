@@ -283,7 +283,7 @@
   }
   .gk-clock .gk-tick-off,
   .gk-clock .gk-tick-next {
-    background: #262626;
+    background: var(--color-empty);
   }
   .gk-clock.gk-on .gk-tick-next {
     animation: gk-tick 2.4s steps(1) infinite;
@@ -300,7 +300,7 @@
   @keyframes gk-tick {
     0%,
     100% {
-      background: #262626;
+      background: var(--color-empty);
     }
     50% {
       background: var(--color-chalk);
@@ -360,8 +360,8 @@
     background: var(--color-table);
     box-shadow:
       0 0 0 3px var(--color-line),
-      0 6px 0 #000000,
-      inset 0 0 0 6px #161616;
+      0 6px 0 var(--color-edge-hard),
+      inset 0 0 0 6px var(--color-surface);
   }
   .gk-arc-top {
     display: grid;
@@ -686,7 +686,8 @@
     --pip-rim: #e6e8eb;
   }
   [data-rarity="epic"] {
-    --pip-color: var(--color-chalk);
+    /* Chalk on the black card in both themes (it is a black island). */
+    --pip-color: #f2f2f2;
     --pip-rim: #111111;
   }
   [data-rarity="legendary"] {
@@ -996,7 +997,7 @@
     font-size: 15px;
   }
   .gk-banner[data-tone="listen"] {
-    background: #161616;
+    background: var(--color-surface);
     border: 1px solid var(--color-line);
     color: var(--color-chalk-soft);
   }
@@ -1012,7 +1013,7 @@
     animation: gk-banner-pulse 1.6s ease-in-out infinite;
   }
   .gk-banner[data-tone="turn"] {
-    background: var(--color-stat-init);
+    background: var(--color-stat-init-fill);
     color: var(--color-ink);
     box-shadow: var(--shadow-turn);
     font-family: var(--font-title);
@@ -1067,9 +1068,9 @@
     outline: 1.5px solid var(--color-ink);
     outline-offset: -5px;
     box-shadow:
-      0 3px 0 #8a8a8a,
-      0 6px 0 #5a5a5a,
-      0 14px 24px rgb(0 0 0 / 0.6);
+      0 3px 0 var(--color-ivory-edge),
+      0 6px 0 var(--color-ivory-edge-deep),
+      0 14px 24px var(--color-drop);
   }
   .gk-toast[data-tone="good"] .gk-toast-kicker {
     color: var(--color-ink-soft);
@@ -1083,11 +1084,11 @@
       0 14px 24px rgb(0 0 0 / 0.6);
   }
   .gk-toast[data-tone="info"] {
-    background: rgb(10 10 10 / 0.92);
+    background: color-mix(in srgb, var(--color-table) 92%, transparent);
     color: var(--color-chalk);
     box-shadow:
       0 0 0 1px var(--color-line-strong),
-      0 14px 24px rgb(0 0 0 / 0.6);
+      0 14px 24px var(--color-drop);
   }
   .gk-toast[data-tone="bad"] .gk-toast-kicker,
   .gk-toast[data-tone="info"] .gk-toast-kicker {
@@ -1131,7 +1132,7 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     outline: 0;
-    background: #080808;
+    background: var(--color-table);
     border-top: 1px solid var(--color-line);
     border-radius: var(--radius-panel) var(--radius-panel) 0 0;
     color: var(--color-chalk);

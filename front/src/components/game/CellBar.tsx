@@ -67,7 +67,7 @@ export function CellBar({
   const cells = Array.from({ length: rows }, (_, r) =>
     states.map((s, i) => {
       const on = rows === 1 ? shade(base, 'light', 0.08) : r === 0 ? shade(base, 'light', 0.2) : shade(base, 'dark', 0.18)
-      const off = r === 0 ? '#1e1e1e' : '#171717'
+      const off = r === 0 ? 'var(--color-empty-low)' : 'var(--color-empty-deep)'
       // Under reduced motion a spent cell is just empty.
       const state: CellState = s === 'spent' && !motion ? 'empty' : s
       const effect = state === 'lit' ? (low ? 'gk-blink' : r === 0 ? 'gk-glint' : '') : state === 'spent' ? 'gk-fall' : ''

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { fetchMe, signOut, type Gm } from '@/lib/auth'
+import { ThemeSetting } from '@/features/theme/ThemeSetting'
 import { CampaignsPanel } from './CampaignsPanel'
 import { InvitesPanel } from './InvitesPanel'
 
@@ -60,7 +61,8 @@ export function GmHomePage() {
           <header className="flex flex-wrap items-center gap-4 border-b border-line px-5 py-3 text-caption text-mute-soft">
             <span className="type-title text-[13px] tracking-[0.3em] text-chalk uppercase">{t('app.name')}</span>
             <p>{t('gm.home.greeting', { name: me.gm.displayName })}</p>
-            <Button className="ml-auto" variant="outline" size="sm" onClick={() => void leave()}>
+            <ThemeSetting className="ml-auto" />
+            <Button variant="outline" size="sm" onClick={() => void leave()}>
               {t('gm.home.signOut')}
             </Button>
           </header>
