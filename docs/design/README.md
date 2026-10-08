@@ -12,7 +12,10 @@ Decisions are in `MEMORY.md` §2, the closed design epic in
 In the app, the values of the « Fondations » board live in
 `front/src/styles/tokens.css` (Tailwind v4 `@theme` tokens and material
 utilities); the route `/reference` shows them. Change a colour, font or
-duration there, not in components.
+duration there, not in components. The interface chrome follows track A
+« Menu pixel » of `Pistes-UI` (ui/adopt-pixel-menu, `MEMORY.md`, visual
+direction), not the card buttons of track B that the board marks as
+retained: the board predates that choice.
 
 ## Rendering check
 

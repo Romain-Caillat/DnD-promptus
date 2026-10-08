@@ -152,11 +152,25 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   square cells, one cell per point; spent cells whiten and fall. Threat
   clocks are rings of square cells, the next part blinking. Rounded
   progress bars and pie clocks were tried and rejected as "app-like".
-- **Buttons are cards:** inner frame, Cinzel label, the stat gem when
-  the action depends on one; ivory for the main action, black for the
-  rest; pressing tips the card forward. On the phone in combat only, an
-  arcade cluster: one big round button under the thumb for the selected
-  card, item and end-turn as small round buttons around it.
+- **The interface chrome is a pixel menu (ui/adopt-pixel-menu, 8 October
+  2026).** Romain chose track A of the « Pistes UI » board for the whole
+  interface, GM and player, both themes; it overturns « buttons are
+  cards » and « pixel for the game only ». Keys, panels, fields, tabs and
+  choices have stepped corners (one cell then two, a `clip-path`) and flat
+  colour relief (lit top and left, shaded right, a hard bottom edge);
+  pressing sinks a key one pixel. Ivory key for the main action, dark key
+  for the rest. An RPG cursor (▶, drawn in cells: Silkscreen has no ▶ and
+  iOS may draw it as an emoji) points at keyboard focus and at the
+  current choice (`aria-pressed` / `-selected` / `-checked` / `-current`).
+  It all lives in `tokens.css` utilities (`pixel-key`, `pixel-choice`,
+  `pixel-tab`, `pixel-field`, `pixel-cursor`; `button-card` and
+  `surface-slab` redrawn) — a screen picks a utility, never draws its own.
+  Only leaf controls are clipped: a container (panel, sheet) keeps square
+  corners, since a clip would hide its popovers, focus and cursors.
+  Kept as they were: the playing cards and their rarity materials (Cinzel,
+  rounded), the pixel game pieces (gems, hearts, cells, clock, item
+  slots) and the arcade cluster on the phone in combat (one big round
+  button under the thumb, item and end-turn around it).
 - **Skill rarity has six tiers** — common, uncommon, rare, epic,
   legendary, divine — read from the card's material and from 1 to 6
   diamonds, never from a hue (hues belong to stats): ivory, double
@@ -233,8 +247,15 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
 - **The radial square grid has two uses only:** fog of war (unknown
   cells) and the small "AI is writing" indicator. Elsewhere it was too
   much.
-- **Type:** Cinzel (titles, cards), Cormorant Garamond italic (text read
-  aloud), Chakra Petch (UI and numbers).
+- **Type (ui/adopt-pixel-menu):** Silkscreen (self-hosted, OFL) for the
+  menu — titles, keys, labels, tabs; Chakra Petch for running text,
+  fields and numbers (Silkscreen has no −); Cormorant Garamond italic for
+  text read aloud; Cinzel only on the playing cards. Long text (narration,
+  notes, sheets, descriptions, body text on the phone) never goes pixel.
+  Silkscreen's glyphs sit on a 1/8 em grid: its sizes are 12, 16, 24,
+  32px…, 12px is the floor (crisp on a 2× phone), and it is wide (an A is
+  0.75 em) — check that a label fits before setting it in pixel. Upper
+  case only on keys, labels and tabs, as on the board.
 - **Motion is part of the product:** dice rolls, damage numbers, card
   deals and flips, hit shake, "your turn" slam. Every animation has a
   meaning and respects `prefers-reduced-motion`.
