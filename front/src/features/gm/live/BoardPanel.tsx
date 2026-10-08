@@ -336,7 +336,7 @@ function FightBlock({
                 'flex items-center justify-between gap-2 rounded-md px-2 py-1 text-caption',
                 id === active ? 'border border-ivory' : 'border border-transparent',
                 f.standing[id] !== 'in_fight' && 'opacity-40',
-                c.side === 'opposition' && 'bg-[#3a1512]',
+                c.side === 'opposition' && 'bg-foe',
               )}
             >
               <span className="font-bold">{c.name}</span>

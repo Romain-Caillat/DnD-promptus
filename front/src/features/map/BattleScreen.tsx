@@ -213,7 +213,7 @@ function ShipStrip({ ships, gauges }: { ships: ShipView[]; gauges: BattleView['g
           key={s.id}
           className={cn(
             'flex min-w-28 flex-col gap-0.5 rounded-lg border px-2 py-1.5 text-caption',
-            s.party ? 'border-ivory' : 'border-line bg-[#3a1512]',
+            s.party ? 'border-ivory' : 'border-line bg-foe',
             s.standing !== 'afloat' && 'opacity-40',
           )}
         >

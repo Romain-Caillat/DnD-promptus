@@ -49,8 +49,8 @@ export function RollDetail({
       <div className="flex flex-wrap items-center gap-1.5 text-[22px] font-bold tabular-nums">
         <span
           className={cn(
-            'grid size-10 place-items-center rounded-md text-ink shadow-ivory-flat',
-            stat ? STAT_BG[stat] : 'bg-ivory',
+            'grid size-10 place-items-center rounded-md shadow-ivory-flat',
+            stat ? cn(STAT_BG[stat], 'text-on-stat') : 'bg-ivory text-ink',
           )}
           aria-label={t('roll.face', { die: roll.die, face: roll.natural })}
         >

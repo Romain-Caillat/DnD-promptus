@@ -77,14 +77,14 @@ export function HexMap({
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
-      className={cn('w-full rounded-xl border border-line bg-[#0a0d10]', className)}
+      className={cn('w-full rounded-xl border border-line bg-(--color-map-gap)', className)}
       role="img"
       aria-label={map.name}
     >
       <defs>
         <pattern id={fogId} width="8" height="8" patternUnits="userSpaceOnUse">
-          <rect width="8" height="8" fill="#07090c" />
-          <rect x="3" y="3" width="2" height="2" fill="#2c2f36" />
+          <rect width="8" height="8" style={{ fill: 'var(--color-map-void)' }} />
+          <rect x="3" y="3" width="2" height="2" style={{ fill: 'var(--color-map-fog-dot)' }} />
         </pattern>
       </defs>
       {hexes.map(({ cell, fill, fog }) => (
@@ -92,7 +92,7 @@ export function HexMap({
           key={`${cell[0]},${cell[1]}`}
           points={corners(hexCenter(cell))}
           fill={fog ? `url(#${fogId})` : fill}
-          stroke="#0a0d10"
+          style={{ stroke: 'var(--color-map-gap)' }}
           strokeWidth={2}
           data-hex={`${cell[0]},${cell[1]}`}
           className={cn(onHex && 'cursor-pointer hover:opacity-80')}
@@ -122,7 +122,10 @@ export function HexMap({
             x={cx}
             y={cy + R + 4}
             textAnchor="middle"
-            className="fill-chalk text-[11px] font-bold"
+            className="text-[11px] font-bold"
+            // Written over the hexes, which keep their colours in both
+            // themes: light letters with a dark halo read on any of them.
+            style={{ fill: '#f2f2f2', stroke: '#0a0a0a', strokeWidth: 3, paintOrder: 'stroke' }}
             pointerEvents="none"
           >
             {l.text}

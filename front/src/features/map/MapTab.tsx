@@ -372,7 +372,7 @@ function DeathSaves({
   return (
     <section
       aria-label={t('fight.death.title')}
-      className="flex flex-col gap-3 rounded-2xl border border-stat-atk bg-[#140b0c] p-4"
+      className="flex flex-col gap-3 rounded-2xl border border-stat-atk bg-foe-deep p-4"
     >
       <h3 className="type-title text-[20px]">{fight.deathSave ? t('fight.death.turn') : t('fight.death.title')}</h3>
       {!dying.stable && !waiting && <p className="text-body text-chalk-soft">{t('fight.death.lead')}</p>}
@@ -410,7 +410,7 @@ function FightHeader({ fight }: { fight: FightView }) {
               'flex min-w-20 flex-col gap-1 rounded-lg border px-2 py-1.5 text-caption',
               f.id === fight.active ? 'border-ivory' : 'border-line',
               f.standing !== 'in_fight' && 'opacity-40',
-              !f.party && 'bg-[#3a1512]',
+              !f.party && 'bg-foe',
             )}
           >
             <span className="truncate font-bold">{f.name}</span>

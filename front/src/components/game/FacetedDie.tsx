@@ -93,7 +93,11 @@ export function FacetedDie({
         ))}
         <polygon points={shape.outline} fill="white" fillOpacity="0.14" clipPath="inset(0 50% 50% 0)" />
       </svg>
-      <span aria-hidden className="relative text-2xl font-bold text-ink tabular-nums" data-testid="die-face">
+      <span
+        aria-hidden
+        className={cn('relative text-2xl font-bold tabular-nums', stat ? 'text-on-stat' : 'text-ink')}
+        data-testid="die-face"
+      >
         {faces === 100 ? String(shown).padStart(2, '0') : shown}
       </span>
     </div>

@@ -84,7 +84,7 @@ function PendingRequest({
               aria-checked={ability === id}
               className={cn(
                 'min-h-12 rounded-button border-2 px-4 text-body font-bold',
-                ability === id ? 'border-ink bg-ink text-chalk' : 'border-ink/30 bg-white text-ink',
+                ability === id ? 'border-ink bg-ink text-ivory' : 'border-ink/30 bg-white text-ink',
               )}
               onClick={() => setAbility(id)}
             >

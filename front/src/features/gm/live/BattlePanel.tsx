@@ -135,7 +135,7 @@ export function BattlePanel({
             key={s.id}
             className={cn(
               'flex flex-wrap items-center justify-between gap-1.5 rounded-md px-2 py-1 text-caption',
-              s.side === 'opposition' && 'bg-[#3a1512]',
+              s.side === 'opposition' && 'bg-foe',
               s.standing !== 'afloat' && 'opacity-40',
             )}
           >

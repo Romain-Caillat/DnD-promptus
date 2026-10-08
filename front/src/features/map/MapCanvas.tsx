@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Cell, FightEvent, TokenView } from '@/lib/board'
+import { useResolvedTheme } from '@/lib/theme'
 import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion'
 import { cn } from '@/lib/utils'
 import { FACINGS, sheetUrl } from '@/features/sprites/look'
@@ -14,6 +15,11 @@ import { TILE, animated, cellAt, drawScene, readGrid, type Scene } from './rende
  * (a sprite pixel is three of them) and stay crisp on a phone.
  */
 const RESOLUTION = 2
+
+/** The light theme's space around a map, read from its token (jsdom has none). */
+function lightVoid(): string {
+  return getComputedStyle(document.documentElement).getPropertyValue('--color-map-void').trim() || '#dcd8cf'
+}
 
 /**
  * A map on a canvas, as `render.ts` draws it, scrolling inside its box.
@@ -51,6 +57,8 @@ export function MapCanvas({
   const box = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const reduced = usePrefersReducedMotion()
+  const theme = useResolvedTheme()
+  const voidColor = useMemo(() => (theme === 'light' ? lightVoid() : undefined), [theme])
   const gesture = useRef<Gesture>(idle)
   const painting = useRef<Cell[] | null>(null)
   const [painted, setPainted] = useState<Cell[] | null>(null)
@@ -81,7 +89,7 @@ export function MapCanvas({
       const s = sceneRef.current
       const poses: Record<string, Pose> = {}
       for (const tk of s.tokens) poses[tk.id] = motion.current.pose(tk, time, reduced)
-      drawScene(ctx, { ...s, tile: (s.tile ?? TILE) * RESOLUTION, time, sprites, poses })
+      drawScene(ctx, { ...s, tile: (s.tile ?? TILE) * RESOLUTION, time, sprites, poses, voidColor })
     }
     if (!moving) {
       draw(0)
@@ -102,7 +110,7 @@ export function MapCanvas({
     }
     frame = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(frame)
-  }, [moving, reduced, scene, sprites, painted])
+  }, [moving, reduced, scene, sprites, painted, voidColor])
 
   function cellOf(at: Pt): Cell {
     const el = canvas.current!
