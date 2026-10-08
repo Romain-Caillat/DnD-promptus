@@ -213,7 +213,16 @@ change a stored campaign with **edits by id** (`story::edit`,
 `format` are never set. The result is read back through the model, so
 an unknown field or a wrong type is refused like an import
 (`EDIT_INVALID`, with the edit's index). What the result breaks is the
-validator's to report.
+validator's to report — except in the parts of a scene the scene sheet
+edits (`campaign/edit-scenes-in-one-place`): a `set` whose field starts
+with `encounter`, `ambience`, `checks`, `exits`, `loot` or `xp` is
+refused (`EDIT_SCENE_INVALID`, the validator's code, path and detail)
+when it gives that scene an error it did not have — an opponent that
+is no adversary nor NPC, an exit or a loot item naming nothing, a check
+`stat` the rule system lacks — or one of the slips `ENCOUNTER_EMPTY`,
+`EXIT_TO_SELF`, `LOOT_EMPTY`, `MUSIC_NOT_YOUTUBE`. A problem the scene
+already had does not block it, and `remove` stays unchecked. The rest
+(`location`, `map`, `npcs`…) is still only reported.
 
 The co-GM's proposals are the same edits. Before the GM sees one, each
 edit that does not apply or adds an error (an id it invented, a

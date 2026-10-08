@@ -1272,7 +1272,7 @@ qui demande zéro erreur ; un import est validé d'office (le MJ l'a
 Vérifié sur l'acte 1 joué des Corsaires : le co-MJ place les indices
 manquants de la route du Greyhound et l'alerte disparaît.
 
-### `campaign/edit-scenes-in-one-place` · todo
+### `campaign/edit-scenes-in-one-place` · doing — reste une scène préparée pour de vrai sur les deux mondes, puis jouée
 
 **Pourquoi** — Romain se perd dans la préparation : une scène est
 éclatée entre Préparer (texte), Cartes, Médias, et le combat, le son et
@@ -1305,6 +1305,33 @@ adversaire inconnu (le serveur doit refuser) ; la fiche devient trop
 longue sur tablette.
 
 **Origine** — Demande de Romain, 8 octobre 2026.
+
+**État** — Livré et vérifié par les tests, pas encore essayé à la main
+dans le navigateur. Dans Préparer, cliquer une scène du graphe ouvre sa
+fiche à droite, avec quatre onglets. **Texte** : les champs d'avant,
+plus ce qui lance la scène, la transition, les jets prévus (action,
+caractéristique, difficulté, et ce que donnent une réussite, un échec,
+un 1 et un 20) et les sorties vers les autres scènes ; les indices
+restent en dessous. **Combat** : « Un combat » ou « Pas de combat »,
+les adversaires choisis parmi ceux de la campagne et les PNJ qui ont
+des caractéristiques, leur nombre, la tactique, le moral, l'issue, le
+butin (objet, pièces, caché ou non) et l'XP ; une scène qui ouvre une
+bataille navale garde ses navires et ne peut pas perdre son combat.
+**Visuels** : l'image de la scène et, sur la première scène d'un acte,
+sa vidéo d'introduction, à demander, garder ou refaire comme dans
+Médias ; la carte de combat de la scène, avec son aperçu, à valider,
+refuser, ouvrir dans l'éditeur, détacher, remplacer par une autre ou
+générer pour la scène. **Son** : l'humeur, les bruits d'ambiance et les
+morceaux YouTube (moment, titre, lien, recherche), avec un lien de
+recherche et une écoute d'essai dans la fiche. Le serveur refuse
+désormais une modification qui ferait combattre un adversaire inconnu,
+mènerait vers une scène qui n'existe pas, donnerait un objet inconnu,
+demanderait une caractéristique absente des règles ou mettrait un lien
+qui n'est pas YouTube : rien n'est enregistré et le MJ lit pourquoi.
+La jauge « prête à jouer » tient compte des cartes propres à la
+campagne une fois validées. Vérifié : `cargo test` (règle de
+modification, Corsaires et Brasier importés), Vitest de la fiche. Les
+pages Médias et Cartes restent.
 
 ---
 

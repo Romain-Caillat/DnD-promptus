@@ -74,6 +74,16 @@ memory. If someone would re-litigate it in six months, it is.
   same amount, each gauge within its own bounds; a loss moves no one
   else. Players see only factions they know of, never `diplomacy` (the
   GM's advice). It lives in the world state, moved by GM reveals.
+- **The scene sheet's parts are checked when written, the rest only
+  reported (campaign/edit-scenes-in-one-place, October 2026).** Edits by
+  id stay one generic `set` (no op per field); a `set` reaching a
+  scene's `encounter`, `ambience`, `checks`, `exits`, `loot` or `xp` is
+  refused when it adds an error or a structural slip to that scene
+  (`EDIT_SCENE_INVALID`, checked against the campaign's rule system),
+  because a wrong id there reaches the table. Elsewhere the validator
+  reports and the GM decides; `remove` is never blocked. A screen that
+  rewrites a part sends it whole and must carry what it does not edit
+  (a fight's `vehicles`, a check's outcomes, a track's `search`).
 - **Media are pre-generated** (async jobs, cached on disk), never live
   by default. Cost is estimated before each batch and checked against
   the campaign's AI budget.

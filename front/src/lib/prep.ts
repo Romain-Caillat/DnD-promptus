@@ -15,13 +15,68 @@ export interface Entity {
   [field: string]: unknown
 }
 
-interface StoryNode extends Entity {
+export type MusicMood = 'calm' | 'exploration' | 'tension' | 'mystery' | 'combat' | 'epic'
+
+/** A YouTube track of a scene; one still to choose has only a `search` hint. */
+export interface MusicTrack {
+  mood: MusicMood
+  title: string
+  url?: string
+  search?: string
+}
+
+export interface Ambience {
+  mood?: string
+  sounds?: string
+  music?: MusicTrack[]
+}
+
+export interface PlannedCheck {
+  action: string
+  stat: string
+  difficulty: number
+  success?: string
+  failure?: string
+  natural_1?: string
+  natural_20?: string
+}
+
+export interface Opponents {
+  who: string
+  count?: number
+}
+
+/** A scene's fight (`story::Encounter`); `vehicles` is a ship battle, kept as it is. */
+export interface Encounter {
+  opponents: Opponents[]
+  tactics?: string[]
+  morale?: { when: string; then: string }[]
+  on_victory?: string
+  on_defeat?: string
+  vehicles?: Record<string, unknown>
+}
+
+export interface Loot {
+  item?: string
+  coins?: number
+  found?: string
+  hidden?: boolean
+}
+
+export interface StoryNode extends Entity {
   act: string
   title: string
   optional?: boolean
   summary?: string
   read_aloud?: string
   flow?: string
+  map?: string
+  ambience?: Ambience
+  checks?: PlannedCheck[]
+  encounter?: Encounter
+  loot?: Loot[]
+  xp?: { amount: number; reason: string }[]
+  exits?: { to: string; label: string }[]
 }
 
 interface StoryClue extends Entity {
