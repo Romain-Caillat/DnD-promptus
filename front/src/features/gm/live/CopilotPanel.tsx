@@ -82,7 +82,10 @@ export function CopilotPanel({
         {kind === 'npc' && (
           <select className={field} value={npc} onChange={(e) => setNpc(e.target.value)} aria-label={t('gmLive.copilot.npc')}>
             <option value="">{t('gmLive.copilot.anyNpc')}</option>
-            {(screen.scene?.npcs ?? []).map((n) => (
+            {[
+              ...(screen.scene?.npcs ?? []),
+              ...screen.companions.filter((c) => !screen.scene?.npcs.some((n) => n.id === c.id)),
+            ].map((n) => (
               <option key={n.id} value={n.id}>
                 {n.name}
               </option>
@@ -100,6 +103,24 @@ export function CopilotPanel({
         <Btn type="submit" main disabled={!live || busy || !screen.ai.configured}>
           {busy ? t('gmLive.copilot.thinking') : t('gmLive.copilot.ask')}
         </Btn>
+        {/* A companion travels with the party: one tap, whatever the scene. */}
+        {screen.companions.map((c) => (
+          <Btn
+            key={c.id}
+            disabled={!live || busy || !screen.ai.configured}
+            onClick={async () => {
+              setBusy(true)
+              try {
+                await onAsk('npc', prompt.trim(), c.id)
+                setPrompt('')
+              } finally {
+                setBusy(false)
+              }
+            }}
+          >
+            {t('gmLive.copilot.companion', { name: c.name })}
+          </Btn>
+        ))}
       </form>
       {drafts.map((d) => (
         <DraftCard key={d.id} draft={d} onShow={onShow} onDismiss={onDismiss} onReveal={onReveal} />

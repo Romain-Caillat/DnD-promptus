@@ -1087,14 +1087,54 @@ adversaire absent des règles) ; l'acte 1 des Corsaires tel que joué
 signale la route du Greyhound seulement dans une scène facultative ;
 l'acte 1 réécrit des Corsaires est prêt.
 
-### `campaign/track-factions-and-goals` · todo · à spécifier
+### `campaign/track-factions-and-goals` · doing — reste une vraie soirée du Brasier où les jauges bougent, et la relecture des règles d'affinité par Romain
 
 **Périmètre** — Jauges d'affinité par faction, où gagner la faveur des
 uns fait baisser celle de leurs rivaux ; objectifs de campagne à cocher
 (les quatre composants du Brasier) ; un PNJ permanent joué par le co-MJ
 (l'IA de bord LUMEN).
 
+**Fini quand** (hypothèse écrite le 7 octobre 2026, à relire par Romain)
+— Pendant une session, le MJ monte ou baisse d'un geste l'affinité d'une
+faction ; un gain fait baisser d'autant chacun des rivaux **déclarés par
+cette faction** (les rivalités ne sont pas forcément réciproques),
+chaque jauge bornée par son `min`/`max` ; une perte ne fait monter
+personne. Les joueurs ne voient que les factions dont ils ont entendu
+parler (nom, description, jauge, rivaux connus ; jamais la `diplomacy`,
+qui est le conseil du MJ, ni ses notes) : une faction devient connue
+quand le MJ la fait connaître ou bouge sa jauge, ou quand l'objectif
+qu'elle détient est atteint. Un objectif de campagne est caché, connu ou
+atteint ; les joueurs voient les connus et les atteints, et qui le
+détient si cette faction est connue. Un PNJ marqué `companion` dans la
+campagne (LUMEN) se fait parler en un geste dans n'importe quelle scène,
+en brouillon du co-MJ que le MJ relit. Vérifié sur les deux mondes : les
+quatre races et les quatre composants du Brasier, la Couronne contre
+Gueule-Rouge et les plans du Greyhound des Corsaires (qui n'ont pas de
+compagnon).
+
 **Origine** — `dnd-save/DnD_07-06-2026/Univers.md`
+
+**État** — Le moteur (`shared/src/story/world.rs`) tient l'affinité, les
+factions connues et l'état des objectifs dans le monde vivant (pas de
+migration : le monde est un document, et un monde d'avant se recharge).
+Côté MJ, l'écran de soirée a un bloc « Factions et objectifs » : jauge en
+cases de part et d'autre du neutre, −1 / +1, « Faire connaître »,
+objectif caché / connu / atteint ; chaque geste passe sous le verrou de
+la campagne et laisse une ligne au journal (partagée pour ce que la
+table voit, MJ seul pour la jauge d'un rival inconnu qui chute). Le
+co-MJ reçoit les jauges, les objectifs et les compagnons dans son
+contexte ; le bouton « Faire parler LUMEN » apparaît dès qu'un
+compagnon existe. Côté joueur, l'onglet Journal montre les objectifs et
+les factions connues avec leur jauge. Tests : le moteur sur les deux
+YAML (bornes, rivaux, perte sans effet, objectif qui fait connaître son
+détenteur), l'API sur les deux mondes (ce que voit Marc, journal
+partagé ou non, gestes refusés, LUMEN sans scène), le balayage des
+fuites avec une faction et un objectif inconnus marqués, et les deux
+écrans en Vitest. **Hypothèses à confirmer par Romain** : les rivalités
+du Brasier sont celles du YAML (inventées, notées dans `gm_notes`) ; un
+point gagné coûte un point à chaque rival ; la `diplomacy` reste au MJ.
+La TV ne montre pas encore les jauges (`tv/show-evening` montre le
+journal partagé, où elles passent en une ligne).
 
 ### `campaign/edit-rule-system` · doing — reste une vraie modification jouée à la soirée suivante
 
@@ -1308,8 +1348,8 @@ chemin de sauvegarde ; à revoir si la base grossit trop. **Trouvé en
 route** : la stack de production ne transmettait aucun réglage d'IA au
 serveur (aucune fonction d'IA n'aurait marché) ; `OPENROUTER_*` et
 `AI_PRICE_*` passent maintenant par `.env.production` (`docs/install.md`).
-La TV n'existe pas encore : elle reprendra ces médias avec
-`tv/show-evening`.
+La TV reprend les images de scène approuvées (`tv/show-evening`) ;
+pas encore la vidéo d'acte.
 
 ---
 
@@ -1401,8 +1441,9 @@ d'indices, nom d'adversaire révélé ou non) ; la carte (cases et objets
 cachés) est couverte par `Map::project` dans `shared`, mais aucune route
 ne sert encore de carte, de tour ni de journal : leurs cas V1 (pions
 dans le brouillard, « Adversaire 1/2 », PV masqués dans le journal)
-arrivent avec ces routes, dans la même liste. Pas encore de route TV
-(`session/pair-shared-screen`).
+arrivent avec ces routes, dans la même liste. Les routes de la TV
+(`app::screen_routes`, `session/pair-shared-screen`) sont balayées de
+la même façon par le même test, avec le jeton d'un écran jumelé.
 
 ### `session/invite-and-join` · doing — reste l'essai réel sur le téléphone de Marc
 
@@ -1627,7 +1668,7 @@ le lendemain sur son téléphone. L'écran « Entre deux » complet (niveau,
 fiche hors séance) est `player/play-between-sessions`, qui reprend la
 chronique et le « Précédemment… » publiés tels quels.
 
-### `session/pair-shared-screen` · todo
+### `session/pair-shared-screen` · doing — reste une vraie TV du salon jumelée, et une fenêtre partagée sur Discord pendant une soirée
 
 **Périmètre** — La TV ouvre une page qui affiche un code et un QR ; le
 MJ tape le code et la TV rejoint la session avec la projection « tous
@@ -1638,6 +1679,29 @@ Le MJ choisit ce que la TV peut montrer.
 rien de ce que la projection joueur refuse.
 
 **Origine** — Planche « Lancer » (moments 1 à 3)
+
+**État** — `/tv` sur la TV (ou un vieil ordinateur branché dessus)
+affiche quatre lettres sans ambiguïté (ni 0/O ni 1/I/L) et le QR de la
+page `/tv/jumeler?code=…`, où le MJ connecté choisit sa table. Le code
+vit dix minutes et se renouvelle seul ; la TV redemande toutes les deux
+secondes, donc le jumelage prend le temps de taper quatre lettres. Sur
+l'écran de soirée du MJ, le bloc « Écran partagé » : saisir le code,
+« Ouvrir la fenêtre TV » (le navigateur du MJ reçoit un écran jumelé
+d'office, à partager dans Discord ; une seule fenêtre par campagne), la
+liste des écrans avec « suit la partie » ou « hors ligne », « Oublier »,
+et quatre interrupteurs de ce que la TV peut montrer (scène, carte,
+groupe, grands moments), qui ne peuvent que retirer à la projection.
+La TV garde son jeton (cookie HttpOnly sur `/api/tv`, empreinte seule
+en base, migration `036`) et se reconnecte seule à la soirée suivante ;
+oubliée, elle revient au code. Un écran n'est jamais compté comme un
+joueur dans la présence. Le jeton d'écran n'ouvre ni route MJ ni route
+joueur, et la session MJ n'ouvre aucune route d'écran : la fenêtre
+partagée vit dans le navigateur du MJ sans jamais rien voir de MJ. Tests :
+le jumelage de bout en bout (code faux, code expiré, code déjà pris par
+un autre MJ, oubli), la fenêtre, la présence et le signal en direct sur
+une vraie socket, le balayage des fuites des routes d'écran sur la table
+marquée, les routes MJ dans le balayage `require_gm`, et les écrans en
+Vitest.
 
 ---
 
@@ -2088,7 +2152,7 @@ proposition à valider.
 
 ## Épic `tv`
 
-### `tv/show-evening` · todo
+### `tv/show-evening` · doing — reste une soirée à six suivie sur une vraie TV, et les niveaux quand `engine/level-up` existera
 
 **Périmètre** — L'écran partagé : un point focal à la fois (histoire, dé,
 carte ou butin), lisible d'un canapé ; fil d'une ligne en bas ; grands
@@ -2098,6 +2162,35 @@ moments (dés, coups, butin, niveaux, révélations) ; rien de secret.
 planche, sans action du MJ autre que l'appairage.
 
 **Origine** — Planches « Écran TV » et « TV · la soirée côté TV »
+
+**État** — Une seule réponse serveur, `projection::screen`, construite
+depuis la vue des joueurs et la grille du spectateur, puis réduite par
+les interrupteurs du MJ : titre, session, « Précédemment… », musique, le
+groupe (personnage, pseudo, apparence, présent ou non, PV — jamais un
+spectateur), la scène telle que les joueurs la voient, la carte telle
+qu'un spectateur la voit (brouillard, pions cachés et invisibles exclus),
+les lignes partagées du journal de la session, les tests lancés réduits
+à ce que la ligne du journal dit déjà (qui, quelle caractéristique, la
+difficulté, les dés, l'issue), et « Ce soir » une fois la session close.
+La TV choisit seule son point focal : salon (les sièges, qui est là),
+« Précédemment… » phrase par phrase avant la première scène, la scène
+avec son image approuvée, la carte et le groupe en cœurs, le combat avec
+l'ordre du tour et la dernière ligne du combat ; par-dessus, un grand
+moment à la fois pendant six secondes (dé coloré qui roule puis l'issue,
+indice en carte qui se retourne, butin, objectif atteint, rencontre),
+jamais rejoué après une reconnexion de plus de 30 s ; en combat, chaque
+coup porté s'affiche en grand chiffre rouge deux secondes et demie
+(« Hors de combat ! » s'il fait tomber), les dégâts lancés pour un
+adversaire dont les PV restent cachés, une TV ouverte en plein combat
+ne rejouant aucun coup déjà porté. Scène 1920 × 1080
+mise à l'échelle de la fenêtre, lecteur YouTube visible, mouvement réduit
+respecté. Testé : sur les deux mondes (fixture Corsaires/Kerbrume au
+balayage, Brasier à l'API) ; le choix du point focal et des moments en
+Vitest. **Écarts** : les niveaux n'ont pas de grand moment (le passage de
+niveau est `engine/level-up`, d'un autre lot ; le jour où il écrit une
+ligne partagée au journal, l'ajouter aux genres de `tv/focus.ts`) ; les coups s'affichent en plein
+écran par-dessus la carte, pas sur le pion touché comme sur la planche ;
+jamais essayé à six sur une vraie TV.
 
 ---
 

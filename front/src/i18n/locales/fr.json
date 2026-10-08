@@ -450,6 +450,7 @@
     "gem": "{{name}} : {{value}}",
     "hearts": "Points de vie : {{hp}} sur {{max}}",
     "cells": "{{name}} : {{value}} sur {{max}}",
+    "affinity": "{{name}} : affinité {{value}}",
     "clock": "{{name}} : {{filled}} sur {{parts}}",
     "clockName": "Horloge de menace",
     "clockCount": "{{filled}}/{{parts}}",
@@ -612,6 +613,11 @@
       "scene": "Où vous êtes",
       "clues": "Les indices du groupe",
       "npcs": "Les gens rencontrés",
+      "goals": "Ce que le groupe doit accomplir",
+      "goalDone": "✓ {{title}}",
+      "heldBy": "Détenu par {{name}}",
+      "factions": "Les factions",
+      "rivals": "Rivaux : {{names}}",
       "empty": "Le groupe n'a encore rien découvert.",
       "chronicle": "La chronique",
       "chronicleEntry": "Séance {{number}}",
@@ -1251,6 +1257,45 @@
   "dice": {
     "die": "Dé à {{faces}} faces : {{value}}"
   },
+  "tv": {
+    "brand": "Promptus · TV",
+    "loading": "Connexion à la table…",
+    "error": "Le serveur ne répond pas. Nouvel essai dans un instant…",
+    "codeLabel": "Code de la TV",
+    "code": "Code de la TV : {{code}}",
+    "qr": "QR pour jumeler cette TV",
+    "howTo": "Le MJ saisit ce code sur son écran de soirée, ou scanne le QR.",
+    "session": "Session {{number}}",
+    "tonight": "Ce soir",
+    "soon": "La partie commence bientôt",
+    "allHere": "Tout le monde est là",
+    "waitingGm": "En attente du MJ…",
+    "tonightRecap": "Ce soir",
+    "previously": "Précédemment…",
+    "party": "Le groupe",
+    "feed": {
+      "table": "La table",
+      "fight": "Combat"
+    },
+    "roll": {
+      "against": "Il faut {{difficulty}}",
+      "total": "{{natural}} {{modifier}} = {{total}}"
+    },
+    "moment": {
+      "clue": "Indice trouvé",
+      "clueTitle": "Un indice",
+      "loot": "Butin",
+      "item": "Objectif",
+      "npc": "Rencontre",
+      "down": "Hors de combat !"
+    }
+  },
+  "pairScreen": {
+    "title": "Jumeler la TV {{code}}",
+    "which": "Pour quelle table ?",
+    "loading": "Chargement de tes campagnes…",
+    "error": "Impossible de charger tes campagnes."
+  },
   "evening": {
     "scene": "La scène",
     "intro": "Introduction de l'acte",
@@ -1787,6 +1832,7 @@
       },
       "npc": "PNJ",
       "anyNpc": "Le PNJ de la scène",
+      "companion": "Faire parler {{name}}",
       "prompt": "Ce que disent les joueurs, votre question…",
       "ask": "Demander",
       "thinking": "Le co-MJ écrit…",
@@ -1794,6 +1840,50 @@
       "apply": "Faire",
       "show": "Montrer à la table",
       "dismiss": "Écarter"
+    },
+    "screens": {
+      "title": "Écran partagé",
+      "code": "Code affiché par la TV",
+      "codePlaceholder": "K7QF",
+      "pair": "Jumeler",
+      "window": "Ouvrir la fenêtre TV",
+      "howTo": "Une TV dans la pièce : ouvre /tv dessus et saisis son code. Tout le monde à distance : ouvre la fenêtre TV et partage-la dans Discord.",
+      "kind": {
+        "tv": "TV",
+        "window": "Fenêtre partagée"
+      },
+      "online": "suit la partie",
+      "offline": "hors ligne",
+      "forget": "Oublier",
+      "shows": "Ce que la TV peut montrer",
+      "show": {
+        "scene": "La scène et « Précédemment… »",
+        "map": "La carte, sans le brouillard levé, et le combat",
+        "party": "Le groupe et ses cœurs",
+        "moments": "Les grands moments : dés, indices, butin"
+      },
+      "never": "Jamais tes notes, les PV des monstres, les zones cachées ni les propositions du co-MJ : la TV ne montre que ce que tous les joueurs ont le droit de voir.",
+      "errors": {
+        "NO_SUCH_CODE": "Aucune TV n'affiche ce code. Vérifie les lettres, ou recharge la page de la TV.",
+        "UNEXPECTED": "Le jumelage a échoué. Réessaie."
+      }
+    },
+    "factions": {
+      "title": "Factions et objectifs",
+      "known": "connue des joueurs",
+      "unknown": "inconnue des joueurs",
+      "minus": "−1",
+      "plus": "+1",
+      "down": "Baisser l'affinité de {{name}}",
+      "up": "Monter l'affinité de {{name}} (ses rivaux baissent d'autant)",
+      "meet": "Faire connaître",
+      "rivals": "Rivaux : {{names}}",
+      "goals": "Objectifs de campagne",
+      "goal": {
+        "hidden": "Caché",
+        "known": "Connu",
+        "done": "Atteint"
+      }
     },
     "journal": {
       "title": "Journal",

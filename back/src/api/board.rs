@@ -38,7 +38,7 @@ use crate::board::fight::{self, Command, GmCommand};
 use crate::board::rewards::{self, Give};
 use crate::board::{self, Edit};
 use crate::campaigns::projection::battle::{options, project_battle};
-use crate::campaigns::projection::board::{Looker, project_board};
+use crate::campaigns::projection::board::{BoardView, Looker, project_board};
 use crate::campaigns::{self, CampaignRow};
 use crate::error::AppError;
 use crate::players::{self, CharacterStatus};
@@ -301,31 +301,46 @@ pub async fn give_loot(
 
 /// The grid as player `p` may see it (`null` when no map is shown).
 async fn player_json(state: &AppState, p: &CurrentPlayer) -> Result<serde_json::Value, AppError> {
-    let pool = &state.pool;
-    let row = campaigns::find(pool, p.0.campaign_id)
-        .await?
-        .ok_or(AppError::Unauthorized("NOT_JOINED"))?;
-    let Some(b) = board::current(pool, row.id).await? else {
-        return Ok(serde_json::Value::Null);
-    };
-    let character = players::character_of(pool, &p.0)
+    let character = players::character_of(&state.pool, &p.0)
         .await?
         .filter(|c| c.status == CharacterStatus::Validated)
         .map(|c| c.id);
+    let view = seen_by(state, p.0.campaign_id, character).await?;
+    serde_json::to_value(view).map_err(|e| AppError::internal("board view", e))
+}
+
+/// The grid of `campaign` as the holder of `character` sees it — or, with
+/// no character, as a spectator and the shared screen do. `None` when no
+/// map is shown.
+///
+/// # Errors
+///
+/// 401 `NOT_JOINED` when the campaign is gone; a database error.
+pub async fn seen_by(
+    state: &AppState,
+    campaign: Uuid,
+    character: Option<Uuid>,
+) -> Result<Option<BoardView>, AppError> {
+    let pool = &state.pool;
+    let row = campaigns::find(pool, campaign)
+        .await?
+        .ok_or(AppError::Unauthorized("NOT_JOINED"))?;
+    let Some(b) = board::current(pool, row.id).await? else {
+        return Ok(None);
+    };
     let enc = fight::latest(pool, row.id).await?;
     let events = match &enc {
         Some(e) => fight::events(pool, e.id, EVENTS).await?,
         None => Vec::new(),
     };
-    let view = project_board(
+    Ok(Some(project_board(
         &b,
         enc.as_ref().map(|e| (e, events.as_slice())),
         &Looker {
             character,
             rules: row.rules(),
         },
-    );
-    serde_json::to_value(view).map_err(|e| AppError::internal("board view", e))
+    )))
 }
 
 /// `GET /api/play/{campaign}/board`

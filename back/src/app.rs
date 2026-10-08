@@ -14,6 +14,7 @@ use tower_http::trace::TraceLayer;
 use crate::api;
 use crate::auth::guard::require_gm;
 use crate::auth::player::require_player;
+use crate::auth::screen::require_screen;
 use crate::error::AppError;
 use crate::state::AppState;
 
@@ -54,7 +55,11 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         // Sprites: a description is drawn the same for GM, players and TV.
         .route("/api/sprites/render.png", get(api::sprites::render_png))
         .route("/api/sprites/looks", get(api::sprites::looks))
-        .route("/api/sprites/packs/{pack}", get(api::sprites::pack));
+        .route("/api/sprites/packs/{pack}", get(api::sprites::pack))
+        // A shared screen says hello before any GM paired it: a token and
+        // a code, then the QR of the pairing page for that code only.
+        .route("/api/tv", post(api::screens::hello))
+        .route("/api/tv/qr.svg", get(api::screens::qr));
     let public = invitation_routes()
         .into_iter()
         .fold(public, |r, (_, path, handler)| r.route(path, handler))
@@ -364,6 +369,23 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/session/copilot/{draft}/dismiss",
             post(api::evening::copilot_dismiss),
         )
+        // session/pair-shared-screen: the TVs of the table.
+        .route(
+            "/api/campaigns/{id}/screens",
+            get(api::screens::list).post(api::screens::pair),
+        )
+        .route(
+            "/api/campaigns/{id}/screens/window",
+            post(api::screens::window),
+        )
+        .route(
+            "/api/campaigns/{id}/screens/shows",
+            put(api::screens::set_shows),
+        )
+        .route(
+            "/api/campaigns/{id}/screens/{screen}",
+            delete(api::screens::forget),
+        )
         .route("/api/campaigns/{id}/live", get(api::live::gm_socket))
         .route_layer(middleware::from_fn_with_state(state.clone(), require_gm));
 
@@ -379,9 +401,22 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             require_player,
         ));
 
+    // Every paired-screen route: `require_screen` refuses a request
+    // without the token of a screen paired with a campaign.
+    let screen = screen_routes()
+        .into_iter()
+        .fold(Router::new(), |r, (_, path, handler)| {
+            r.route(path, handler)
+        })
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            require_screen,
+        ));
+
     public
         .merge(gm)
         .merge(player)
+        .merge(screen)
         .with_state(state)
         .layer(cors)
         .layer(TraceLayer::new_for_http())
@@ -601,6 +636,33 @@ fn invitation_routes() -> Vec<RouteSpec> {
         ("GET", "/api/join/{code}", get(api::play::invitation)),
         ("POST", "/api/join/{code}", post(api::play::join)),
     ]
+}
+
+/// Every route a paired shared screen calls, mounted behind
+/// `require_screen`: the campaign is the screen's own, named by no path.
+/// Each builds its answer with `campaigns::projection` (the screen view
+/// is `projection::screen`); `tests/screens_test.rs` sweeps them all for
+/// GM-only markers, like the player routes.
+fn screen_routes() -> Vec<RouteSpec> {
+    vec![
+        ("GET", "/api/tv/show", get(api::screens::show)),
+        ("GET", "/api/tv/media", get(api::screens::media_list)),
+        (
+            "GET",
+            "/api/tv/media/{asset}/image",
+            get(api::screens::image),
+        ),
+        ("GET", "/api/tv/board/backdrop", get(api::screens::backdrop)),
+        ("GET", "/api/tv/live", get(api::screens::live)),
+    ]
+}
+
+/// Method and path of every paired-screen route, for the sweep.
+pub fn screen_facing_routes() -> Vec<(&'static str, &'static str)> {
+    screen_routes()
+        .into_iter()
+        .map(|(method, path, _)| (method, path))
+        .collect()
 }
 
 /// Method and path of every player and invitation route, for the sweep.

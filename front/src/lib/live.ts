@@ -17,6 +17,8 @@ export interface Presence {
   gmOnline: boolean
   /** Player ids, each once. */
   players: string[]
+  /** Shared screens (TV) connected, each once. */
+  screens: string[]
 }
 
 export type LiveStatus = 'connecting' | 'live' | 'reconnecting'
@@ -64,12 +66,13 @@ function retryDelay(attempt: number): number {
   return Math.min(RETRY_BASE_MS * 2 ** attempt, RETRY_MAX_MS)
 }
 
-/** Who follows a campaign: its GM, or a player seated at it. */
-export type LiveViewer = 'gm' | 'player'
+/** Who follows a campaign: its GM, a player seated at it, or its shared screen. */
+export type LiveViewer = 'gm' | 'player' | 'screen'
 
 /**
  * `ws(s)://<this origin>/api/campaigns/<id>/live` for the GM,
- * `…/api/play/<id>/live` for a player (where their seat cookie goes).
+ * `…/api/play/<id>/live` for a player (where their seat cookie goes),
+ * `…/api/tv/live` for a paired shared screen.
  */
 export function liveUrl(
   campaignId: string,
@@ -77,6 +80,8 @@ export function liveUrl(
   viewer: LiveViewer = 'gm',
 ): string {
   const scheme = location.protocol === 'https:' ? 'wss' : 'ws'
+  // A screen's campaign is the one it is paired with: no path names it.
+  if (viewer === 'screen') return `${scheme}://${location.host}/api/tv/live`
   const base = viewer === 'gm' ? 'campaigns' : 'play'
   return `${scheme}://${location.host}/api/${base}/${encodeURIComponent(campaignId)}/live`
 }
@@ -182,7 +187,7 @@ export class LiveConnection {
         }
         break
       case 'presence':
-        this.options.onPresence({ gmOnline: msg.gmOnline, players: msg.players })
+        this.options.onPresence({ gmOnline: msg.gmOnline, players: msg.players, screens: msg.screens ?? [] })
         break
       default:
         break

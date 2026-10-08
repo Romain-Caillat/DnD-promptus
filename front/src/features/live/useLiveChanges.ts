@@ -6,7 +6,7 @@ export interface LiveState {
   presence: Presence
 }
 
-const NOBODY: Presence = { gmOnline: false, players: [] }
+const NOBODY: Presence = { gmOnline: false, players: [], screens: [] }
 
 /**
  * Follow the live channel of `campaignId` while the component is

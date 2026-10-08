@@ -76,7 +76,7 @@ const EVENING = {
         launch: null,
         music: null,
         lobby: [],
-        campaign: { ...CAMPAIGN, scene: null, clues: [], npcs: [] },
+        campaign: { ...CAMPAIGN, scene: null, clues: [], npcs: [], factions: [], goals: [] },
         journal: [],
         requests: [],
         cards: [],
@@ -174,6 +174,10 @@ describe('PlayerHomePage', () => {
             scene: null,
             clues: ['Gwen a vu une lanterne sur la falaise.'],
             npcs: [{ id: 'pnj_loic', name: 'Loïc', title: 'Le mousse', appearance: '' }],
+            factions: [
+              { id: 'fac_sereth', name: 'Les Sereth', description: 'Des tortues anciennes.', affinity: 2, min: -5, max: 5, rivals: ['Les Vorr'] },
+            ],
+            goals: [{ title: 'Obtenir la Lentille-écho', description: '', done: true, heldBy: 'Les Sereth' }],
           },
         },
       }),
@@ -202,6 +206,10 @@ describe('PlayerHomePage', () => {
     const chronicle = screen.getByRole('region', { name: 'La chronique' })
     expect(within(chronicle).getByText('Le quai de Port-Louis')).toBeInTheDocument()
     expect(within(chronicle).getByText('La boussole a changé de main.')).toBeInTheDocument()
+    // The factions it knows, with the party's standing; a goal reached.
+    expect(screen.getByRole('img', { name: 'Les Sereth : affinité +2' })).toBeInTheDocument()
+    expect(screen.getByText('Rivaux : Les Vorr')).toBeInTheDocument()
+    expect(screen.getByText('✓ Obtenir la Lentille-écho')).toBeInTheDocument()
   })
 
   it('gives a spectator the game, the map and the journal, no sheet', async () => {
@@ -210,7 +218,7 @@ describe('PlayerHomePage', () => {
       'GET /api/play/c1/me': () => home(null, 'spectator'),
       'GET /api/play/c1/view': () => ({
         status: 200,
-        body: { data: { ...CAMPAIGN, party: [], scene: null, clues: [], npcs: [] } },
+        body: { data: { ...CAMPAIGN, party: [], scene: null, clues: [], npcs: [], factions: [], goals: [] } },
       }),
     })
     renderHome()

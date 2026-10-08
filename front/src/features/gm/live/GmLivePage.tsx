@@ -40,6 +40,7 @@ import { BattlePanel } from './BattlePanel'
 import { BoardPanel } from './BoardPanel'
 import { CopilotPanel } from './CopilotPanel'
 import { EndPanel, FeedbackPanel } from './EndPanel'
+import { FactionsPanel } from './FactionsPanel'
 import { JournalPanel } from './JournalPanel'
 import { LaunchPanel } from './LaunchPanel'
 import { MediaPanel } from './MediaPanel'
@@ -47,6 +48,7 @@ import { RecapPanel } from './RecapPanel'
 import { RequestsPanel } from './RequestsPanel'
 import { ScenePanel } from './ScenePanel'
 import { ShopsPanel } from './ShopsPanel'
+import { ScreenPanel } from './ScreenPanel'
 import { TablePanel } from './TablePanel'
 import { Btn } from './ui'
 
@@ -73,6 +75,7 @@ export function GmLivePage() {
   const [media, setMedia] = useState<MediaList | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [shopsVersion, setShopsVersion] = useState(0)
+  const [screensKey, setScreensKey] = useState(0)
   const latest = useRef(0)
   const latestBoard = useRef(0)
   const latestMedia = useRef(0)
@@ -133,6 +136,7 @@ export function GmLivePage() {
     if (topics.some((x) => ['map', 'fight', 'world'].includes(x))) void loadBoard()
     if (topics.includes('desk')) void loadMedia()
     if (topics.some((x) => x === 'session' || x.startsWith('character:'))) setShopsVersion((v) => v + 1)
+    if (topics.includes('screens')) setScreensKey((k) => k + 1)
   })
 
   /** Run a gesture; refresh what it moved; say what went wrong. */
@@ -204,6 +208,7 @@ export function GmLivePage() {
             onScene={(node) => void act(() => reveal(campaignId, { kind: 'scene', node }))}
           />
           <TablePanel screen={screen} onSpotlight={(p) => void act(() => giveSpotlight(campaignId, p))} />
+          <ScreenPanel campaignId={campaignId} online={live.presence.screens} refreshKey={screensKey} />
           {session?.status === 'live' && (
             <RequestsPanel screen={screen} onDecide={(id, d) => void act(() => decide(campaignId, id, d))} />
           )}
@@ -250,6 +255,7 @@ export function GmLivePage() {
             />
           )}
           <ShopsPanel campaignId={campaignId} refreshKey={shopsVersion} />
+          {session && <FactionsPanel screen={screen} onReveal={(r) => void act(() => reveal(campaignId, r))} />}
           {!session && screen.lastEnded && (
             <FeedbackPanel
               load={() => fetchFeedback(campaignId, screen.lastEnded!.id)}

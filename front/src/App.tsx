@@ -8,6 +8,7 @@ import { GmLivePage } from '@/features/gm/live/GmLivePage'
 import { MapEditorPage } from '@/features/gm/maps/MapEditorPage'
 import { MapsPage } from '@/features/gm/maps/MapsPage'
 import { NewCampaignPage } from '@/features/gm/NewCampaignPage'
+import { PairScreenPage } from '@/features/gm/PairScreenPage'
 import { PlayerViewPage } from '@/features/gm/PlayerViewPage'
 import { GenerationPage } from '@/features/gm/prep/GenerationPage'
 import { MediaPage } from '@/features/gm/prep/MediaPage'
@@ -19,6 +20,7 @@ import { JoinPage } from '@/features/play/JoinPage'
 import { PlayerHomePage } from '@/features/play/PlayerHomePage'
 import { RulesPage } from '@/features/play/rules/RulesPage'
 import { ReferencePage } from '@/features/reference/ReferencePage'
+import { TvPage } from '@/features/tv/TvPage'
 
 export default function App() {
   return (
@@ -29,6 +31,8 @@ export default function App() {
         <Route path="/reference" element={<ReferencePage />} />
         <Route path="/sante" element={<HealthPage />} />
         <Route path="/rejoindre/:code" element={<JoinPage />} />
+        <Route path="/tv" element={<TvPage />} />
+        <Route path="/tv/jumeler" element={<PairScreenPage />} />
         <Route path="/partie/:campaignId" element={<PlayerHomePage />} />
         <Route path="/partie/:campaignId/personnage" element={<CharacterCreatorPage />} />
         <Route path="/partie/:campaignId/regles" element={<RulesPage />} />

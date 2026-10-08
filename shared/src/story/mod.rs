@@ -30,5 +30,8 @@ pub use library::{Library, validate_with};
 pub use model::*;
 pub use readiness::{ActReadiness, readiness};
 pub use validate::{Issue, Severity, validate};
-pub use world::{ClueReveal, FlagValue, FrontAdvance, NodeStatus, WorldError, WorldState};
+pub use world::{
+    AffinityShift, ClueReveal, FlagValue, FrontAdvance, GoalStatus, NodeStatus, WorldError,
+    WorldState,
+};
 pub use yaml::{YamlError, from_yaml, to_yaml};

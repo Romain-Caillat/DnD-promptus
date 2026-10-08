@@ -64,11 +64,13 @@ pub enum Topic {
     /// screen refetches on it, and nothing a player route reads moves
     /// with it.
     Desk,
+    /// The shared screens: one paired or forgotten, what they may show.
+    Screens,
 }
 
 impl Topic {
     /// The topic as stored and sent: `world`, `story`, `character:<id>`,
-    /// `table`, `session`, `map`, `fight`, `desk`.
+    /// `table`, `session`, `map`, `fight`, `desk`, `screens`.
     #[must_use]
     pub fn key(&self) -> String {
         match self {
@@ -80,6 +82,7 @@ impl Topic {
             Self::Map => "map".to_string(),
             Self::Fight => "fight".to_string(),
             Self::Desk => "desk".to_string(),
+            Self::Screens => "screens".to_string(),
         }
     }
 }
@@ -161,6 +164,9 @@ pub enum Viewer {
     Gm(Uuid),
     /// A player of `campaign` (checked by the player extractor).
     Player { campaign: Uuid, player: Uuid },
+    /// A shared screen paired with the campaign (checked by the screen
+    /// extractor): never counted as a player.
+    Screen(Uuid),
 }
 
 /// Who is connected to a campaign right now. Ids only: a client maps
@@ -171,6 +177,8 @@ pub struct Presence {
     pub gm_online: bool,
     /// Each connected player once, however many devices they use.
     pub players: Vec<Uuid>,
+    /// Each connected shared screen once.
+    pub screens: Vec<Uuid>,
 }
 
 /// What the hub tells a campaign's sockets.
@@ -222,14 +230,25 @@ impl Room {
             .values()
             .filter_map(|v| match v {
                 Viewer::Player { player, .. } => Some(*player),
-                Viewer::Gm(_) => None,
+                Viewer::Gm(_) | Viewer::Screen(_) => None,
             })
             .collect();
         players.sort_unstable();
         players.dedup();
+        let mut screens: Vec<Uuid> = self
+            .members
+            .values()
+            .filter_map(|v| match v {
+                Viewer::Screen(id) => Some(*id),
+                _ => None,
+            })
+            .collect();
+        screens.sort_unstable();
+        screens.dedup();
         Presence {
             gm_online: self.members.values().any(|v| matches!(v, Viewer::Gm(_))),
             players,
+            screens,
         }
     }
 }
@@ -421,7 +440,8 @@ mod tests {
             hub.presence(campaign),
             Presence {
                 gm_online: false,
-                players: vec![marc]
+                players: vec![marc],
+                screens: Vec::new(),
             }
         );
         let gm = hub.join(campaign, Viewer::Gm(Uuid::new_v4()));

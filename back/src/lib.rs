@@ -20,4 +20,5 @@ pub mod rule_systems;
 pub mod rules;
 pub mod schedule;
 pub mod shops;
+pub mod screens;
 pub mod state;

@@ -101,7 +101,7 @@ async fn presence_follows_sockets_joining_and_leaving() {
     let msg = next_of(&mut laptop, "presence").await;
     assert_eq!(
         msg,
-        json!({ "type": "presence", "gmOnline": true, "players": [] })
+        json!({ "type": "presence", "gmOnline": true, "players": [], "screens": [] })
     );
     assert!(t.hub.presence(t.campaign).gm_online);
 

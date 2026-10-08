@@ -53,6 +53,11 @@ memory. If someone would re-litigate it in six months, it is.
   death saves the GM confirms, last words, then the player watches,
   creates a new character or waits for a hook. Spectators stay (a friend
   watching, a dead character's player).
+- **Faction affinity (hypothesis of October 2026, to confirm with
+  Romain).** A gain with a faction lowers each rival *it declares* by the
+  same amount, each gauge within its own bounds; a loss moves no one
+  else. Players see only factions they know of, never `diplomacy` (the
+  GM's advice). It lives in the world state, moved by GM reveals.
 - **Media are pre-generated** (async jobs, cached on disk), never live
   by default. Cost is estimated before each batch and checked against
   the campaign's AI budget.
@@ -304,6 +309,18 @@ fires. Opening the lobby on its own goes through the same code as the
 GM's (`session::open_locked`: lock, validated campaign, newest rules).
 Tests call `tick` with a time and a campaign; only `main.rs` spawns it.
 
+### The shared screen is a third kind of caller
+
+A TV (or the window the GM shares on Discord) holds its own hashed
+token in a cookie on `/api/tv`, behind `require_screen`; no path names
+its campaign, it is the one it was paired with. It opens no GM or player
+route, and the GM's session opens none of its routes — which is what
+keeps the Discord window, living in the GM's browser, free of GM data.
+Its whole answer is `projection::screen`, built from the players'
+projection and the spectator's grid, narrowed (never widened) by the
+GM's switches; every screen route is swept like the player routes.
+Presence counts screens apart, never as players.
+
 ### Every AI call is counted
 
 Each LLM, image or video call is recorded with its cost and counted
@@ -382,6 +399,16 @@ against the campaign budget; a batch that would exceed it is refused.
 - **V1 GM pages had no authentication.** The rewrite has a GM account
   from day one (passkeys, `platform/sign-in-gm`, see §3 "GM routes");
   `/play/*` stays accountless.
+- **A `CHECK (kind IN (…))` on a shared table is a merge trap.** Two
+  lots that each `DROP CONSTRAINT … ADD CONSTRAINT` with their own list
+  on `table_journal.kind` (or `media_assets.kind`) silently drop each
+  other's values: whichever migration runs last wins. Reuse an existing
+  kind when one fits (factions and goals write `note` / `item` lines with
+  a `ref`), or merge the lists by hand when two lots land together.
+- **Parallel lots and the test database:** `db::migrate` refuses a
+  database that holds a migration the branch does not know ("previously
+  applied but missing"). Lots that add migrations side by side must each
+  run their tests on their own `TEST_DATABASE_URL` database.
 - **YouTube player must stay visible** also applies to the phone design:
   the scene screen currently hides music behind a button — needs a
   visible mini-player before it ships.

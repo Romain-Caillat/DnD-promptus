@@ -53,6 +53,12 @@ const SCREEN = {
   startNode: 'sc_taverne',
   gaps: [],
   fronts: [],
+  factions: [
+    { id: 'fac_sereth', name: 'Les Sereth', diplomacy: 'Le respect.', affinity: 0, start: 0, min: -5, max: 5, rivals: ['fac_vorr'], known: false },
+    { id: 'fac_vorr', name: 'Les Vorr', diplomacy: '', affinity: -3, start: -3, min: -5, max: 5, rivals: [], known: true },
+  ],
+  goals: [{ id: 'but_lentille_echo', title: 'Obtenir la Lentille-écho', heldBy: 'fac_sereth', status: 'known' }],
+  companions: [{ id: 'pnj_lumen', name: 'LUMEN', title: 'L’IA de bord', roleplay: '' }],
   requests: [
     {
       id: 'r1',
@@ -99,6 +105,7 @@ const SCREEN = {
   },
   ai: { configured: true, spending: { budgetMicros: 1_000_000, spentMicros: 0 } },
 }
+const SCREENS = { screens: [], shows: { scene: true, map: true, party: true, moments: true } }
 const BOARD = { board: null, maps: [{ id: 'quai', name: 'Le quai', nodes: [] }], encounters: [], encounter: null, conditions: null }
 
 function renderPage() {
@@ -130,6 +137,7 @@ describe('GmLivePage', () => {
       'GET /api/campaigns/c1/session': () => ({ status: 200, body: { data: SCREEN } }),
       'GET /api/campaigns/c1/board': () => ({ status: 200, body: { data: BOARD } }),
       'GET /api/campaigns/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
+      'GET /api/campaigns/c1/screens': () => ({ status: 200, body: { data: SCREENS } }),
       'POST /api/campaigns/c1/session/requests/r1': () => ({ status: 200, body: { data: {} } }),
       'POST /api/campaigns/c1/session/reveal': () => ({ status: 204 }),
       'PUT /api/campaigns/c1/session/music': () => ({ status: 200, body: { data: null } }),
@@ -238,6 +246,69 @@ describe('GmLivePage', () => {
         chronicle: 'Une nuit agitée.',
         publish: true,
       },
+    ])
+  })
+
+  it('moves a faction, ticks a goal and makes the companion speak', async () => {
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/session': () => ({ status: 200, body: { data: SCREEN } }),
+      'GET /api/campaigns/c1/board': () => ({ status: 200, body: { data: BOARD } }),
+      'GET /api/campaigns/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
+      'GET /api/campaigns/c1/screens': () => ({ status: 200, body: { data: SCREENS } }),
+      'POST /api/campaigns/c1/session/reveal': () => ({ status: 204 }),
+      'POST /api/campaigns/c1/session/copilot': () => ({ status: 201, body: { data: {} } }),
+    })
+    renderPage()
+
+    const factions = await screen.findByRole('region', { name: 'Factions et objectifs' })
+    expect(within(factions).getByRole('img', { name: 'Les Vorr : affinité -3' })).toBeInTheDocument()
+    expect(within(factions).getByText('Rivaux : Les Vorr')).toBeInTheDocument()
+    await userEvent.click(within(factions).getByRole('button', { name: /Monter l'affinité de Les Sereth/ }))
+    await userEvent.click(within(factions).getByRole('button', { name: 'Faire connaître' }))
+    await userEvent.click(within(factions).getByRole('button', { name: 'Atteint' }))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/session/reveal')).toEqual([
+      { kind: 'affinity', faction: 'fac_sereth', delta: 1 },
+      { kind: 'faction', faction: 'fac_sereth' },
+      { kind: 'goal', goal: 'but_lentille_echo', status: 'done' },
+    ])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Faire parler LUMEN' }))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/session/copilot')).toEqual([{ kind: 'npc', prompt: '', npc: 'pnj_lumen' }])
+  })
+
+  it('pairs the TV of the living room with its code and narrows what it shows', async () => {
+    const paired = {
+      screens: [{ id: 'tv1', kind: 'tv', pairedAt: '', online: false }],
+      shows: { scene: true, map: true, party: true, moments: true },
+    }
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/session': () => ({ status: 200, body: { data: SCREEN } }),
+      'GET /api/campaigns/c1/board': () => ({ status: 200, body: { data: BOARD } }),
+      'GET /api/campaigns/c1/media': () => ({ status: 200, body: { data: { assets: [], theme: null } } }),
+      'GET /api/campaigns/c1/screens': () => ({ status: 200, body: { data: SCREENS } }),
+      'POST /api/campaigns/c1/screens': (b) =>
+        (b as { code: string }).code === 'K7QF'
+          ? { status: 201, body: { data: paired } }
+          : { status: 404, body: { error: { code: 'NO_SUCH_CODE' } } },
+      'PUT /api/campaigns/c1/screens/shows': (b) => ({ status: 200, body: { data: { ...paired, shows: b } } }),
+    })
+    renderPage()
+
+    const panel = await screen.findByRole('region', { name: 'Écran partagé' })
+    const code = within(panel).getByRole('textbox', { name: 'Code affiché par la TV' })
+    await userEvent.type(code, 'zzzz')
+    await userEvent.click(within(panel).getByRole('button', { name: 'Jumeler' }))
+    expect(await within(panel).findByRole('alert')).toHaveTextContent('Aucune TV n')
+    await userEvent.clear(code)
+    await userEvent.type(code, 'k7qf')
+    await userEvent.click(within(panel).getByRole('button', { name: 'Jumeler' }))
+    expect(await within(panel).findByText('TV')).toBeInTheDocument()
+    expect(within(panel).getByText('hors ligne')).toBeInTheDocument()
+
+    await userEvent.click(within(panel).getByRole('checkbox', { name: /Le groupe et ses cœurs/ }))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/screens')).toEqual([{ code: 'ZZZZ' }, { code: 'K7QF' }])
+    expect(sentTo(fetchMock, 'PUT /api/campaigns/c1/screens/shows')).toEqual([
+      { scene: true, map: true, party: false, moments: true },
     ])
   })
 })
