@@ -1328,6 +1328,9 @@ désormais une modification qui ferait combattre un adversaire inconnu,
 mènerait vers une scène qui n'existe pas, donnerait un objet inconnu,
 demanderait une caractéristique absente des règles ou mettrait un lien
 qui n'est pas YouTube : rien n'est enregistré et le MJ lit pourquoi.
+Le co-MJ suit la même règle : il ne propose plus ce que le MJ se
+verrait refuser, et une ancienne proposition devenue fausse ne peut
+plus être acceptée.
 La jauge « prête à jouer » tient compte des cartes propres à la
 campagne une fois validées. Vérifié : `cargo test` (règle de
 modification, Corsaires et Brasier importés), Vitest de la fiche. Les

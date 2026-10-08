@@ -32,6 +32,16 @@ pub(crate) fn edit_error(e: &edit::EditError) -> AppError {
     }
 }
 
+/// What edits by id are checked against: the campaign's rule system
+/// (a scene check's `stat`). The GM's edits and the co-GM's proposals
+/// use the same, so the co-GM never proposes what the GM is refused.
+pub(crate) fn edit_library(row: &CampaignRow) -> Library<'_> {
+    Library {
+        rules: row.rules(),
+        maps: None,
+    }
+}
+
 /// The GM's edits, applied whole under the campaign lock. Returns the
 /// campaign as stored and what changed.
 ///
@@ -53,12 +63,8 @@ pub async fn apply(
     }
     let mut tx = pool.begin().await?;
     let row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
-    let library = Library {
-        rules: row.rules(),
-        maps: None,
-    };
     let (story, changes) =
-        edit::apply_with(&row.story, edits, &library).map_err(|e| edit_error(&e))?;
+        edit::apply_with(&row.story, edits, &edit_library(&row)).map_err(|e| edit_error(&e))?;
     campaigns::save_story(&mut tx, campaign, &story).await?;
     let row = campaigns::find(&mut *tx, campaign)
         .await?
