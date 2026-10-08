@@ -216,11 +216,14 @@ fn ship_view(s: &Ship) -> ShipView {
     }
 }
 
-/// An event as a player may read it: an unscanned enemy's gauges out.
-fn event_for_players(b: &Battle, e: &BattleEvent) -> BattleEvent {
+/// An event as a player may read it: an unscanned enemy's gauges out,
+/// and the damage it rolled (a hull threshold crossed) left out, as its
+/// damages are in [`ship_view`].
+fn event_for_players(b: &Battle, e: &BattleEvent) -> Option<BattleEvent> {
     let hidden = |id: &str| b.ship(id).is_some_and(|s| !known(s));
     let mut e = e.clone();
     match &mut e {
+        BattleEvent::DamageRolled { ship, .. } if hidden(ship) => return None,
         BattleEvent::Fired {
             target,
             screen_after,
@@ -237,7 +240,7 @@ fn event_for_players(b: &Battle, e: &BattleEvent) -> BattleEvent {
         } if hidden(target) => *morale_after = None,
         _ => {}
     }
-    e
+    Some(e)
 }
 
 /// What crew member `me` can do at their station now, each action with
@@ -438,7 +441,10 @@ pub fn project_battle(
             })
         }),
         me: me_view,
-        events: events.iter().map(|e| event_for_players(b, e)).collect(),
+        events: events
+            .iter()
+            .filter_map(|e| event_for_players(b, e))
+            .collect(),
         won,
         reason: b.end.as_ref().map(|e| e.reason),
     }
@@ -503,13 +509,23 @@ mod tests {
             "modifiers": [], "total": 12, "target": null, "band": null,
         }))
         .unwrap();
-        let events = [shot(roll)];
+        // The shot crossed a hull threshold: a damage rolled on board.
+        let rolled = BattleEvent::DamageRolled {
+            ship: "greyhound".into(),
+            face: 3,
+            damage: "incendie".into(),
+            name: "GMONLY-damage".into(),
+            station: None,
+            crew: None,
+        };
+        let events = [shot(roll), rolled];
         let view = project_battle(&stored, &events, Some(rules), Some("bretteur"));
         let grey = view.ships.iter().find(|s| s.id == "greyhound").unwrap();
         assert!(!grey.known && grey.hull.is_none() && grey.morale.is_none());
         let json = serde_json::to_value(&view.events).unwrap();
         assert!(json[0]["hull_after"].is_null(), "{json}");
         assert!(json[0]["screen_after"].is_null(), "{json}");
+        assert!(!json.to_string().contains("GMONLY"), "{json}");
         // The party ship is always known; my station's actions come with
         // what they can aim at.
         let me = view.me.as_ref().unwrap();
@@ -529,5 +545,6 @@ mod tests {
         assert!(grey.known && grey.hull.is_some());
         let json = serde_json::to_value(&view.events).unwrap();
         assert_eq!(json[0]["hull_after"], 17);
+        assert_eq!(json[1]["name"], "GMONLY-damage");
     }
 }
