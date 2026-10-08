@@ -262,7 +262,9 @@ a live session — numbers never move mid-game.
 
 Whether a session's « Précédemment… » may reach players is decided in
 one place, `Session::published_previously`: the evening, the between
-screen and the chronicle all read it there. A draft must never be read
+screen, the chronicle and the shared TV all read it there (the TV first
+read the raw column; the player-route leak sweep caught it at the
+phase 5 merge). A draft must never be read
 from `game_sessions.previously` directly.
 
 ### Money is the rules' first resource

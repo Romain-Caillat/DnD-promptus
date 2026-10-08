@@ -204,7 +204,15 @@ pub fn leaks(json: &str) -> Vec<String> {
         .match_indices("GMONLY<")
         .map(|(i, _)| json[i..json.len().min(i + 60)].to_string())
         .collect();
-    if json.contains(&SECRET_HP.to_string()) {
+    // As a JSON number only: a random token, uuid or timestamp may
+    // carry the same four digits (a flake seen at the phase 5 merge).
+    let hp = SECRET_HP.to_string();
+    let as_number = json.match_indices(&hp).any(|(i, _)| {
+        let before = json[..i].chars().next_back();
+        let after = json[i + hp.len()..].chars().next();
+        matches!(before, Some(':' | '[' | ',')) && matches!(after, Some(',' | ']' | '}'))
+    });
+    if as_number {
         out.push(format!("hit points {SECRET_HP}"));
     }
     out

@@ -679,3 +679,23 @@ async fn seated_routes_refuse_whoever_has_no_seat_at_that_table() {
     assert_eq!(r.status, StatusCode::OK);
     assert_clean("the GM's preview", &r.body);
 }
+
+/// The sweep's hit-point check sees the secret value as a JSON number,
+/// and only there: the same four digits inside a token, a uuid or a
+/// timestamp are no leak.
+#[test]
+fn the_sweep_sees_secret_hit_points_only_as_a_number() {
+    let hp = common::marked::SECRET_HP;
+    assert!(!leaks(&json!({ "hp": hp }).to_string()).is_empty());
+    assert!(!leaks(&json!({ "hp": [1, hp] }).to_string()).is_empty());
+    for noise in [
+        format!("tok-{hp}x"),
+        format!("1f0e{hp}-aa00"),
+        format!("2026-10-08T07:41:42.{hp}12Z"),
+    ] {
+        assert!(
+            leaks(&json!({ "s": noise }).to_string()).is_empty(),
+            "{noise}"
+        );
+    }
+}

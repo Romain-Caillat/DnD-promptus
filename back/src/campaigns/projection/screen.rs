@@ -220,8 +220,7 @@ pub fn project_screen(input: ScreenInput<'_>) -> ScreenView {
         previously: input
             .last_ended
             .filter(|_| shows.scene)
-            .map(|s| s.previously.clone())
-            .filter(|p| !p.trim().is_empty()),
+            .and_then(|s| s.published_previously().map(str::to_string)),
         music: current.and_then(|s| s.music.clone()),
         party,
         scene: campaign.scene.filter(|_| shows.scene),

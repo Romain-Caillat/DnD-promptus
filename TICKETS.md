@@ -144,6 +144,13 @@ continuité entre sessions. `engine/support-vehicle-combat` ·
 `tv/show-evening` · `gm/launch-session` · `player/play-between-sessions` ·
 `player/face-death` · `player/buy-and-trade`
 
+*État* : les cinq lots sont fusionnés, codés et testés (combat de
+véhicule, factions et objectifs, niveaux et mort, récaps, dates et
+rappels, TV jumelée, lancement de soirée, entre-deux-séances, marché) ;
+reste l'interception du Greyhound et un combat du Cure-Dent joués pour de
+vrai, avec une vraie TV, de vrais téléphones et un vrai rappel Discord,
+puis les relectures de Romain (affinités, monnaie du Brasier).
+
 ### Jalon 3 · Les variantes
 
 **Phase 6** — `engine/formalise-house-rules` · `engine/add-srd-preset` ·

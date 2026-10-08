@@ -792,6 +792,19 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             assert_eq!(r.body["error"]["code"], "WEBSOCKET_REQUIRED", "{uri}");
             continue;
         }
+        // The Kerbrume fixture has no ship battle (the Greyhound's
+        // interception lives in the corsairs campaign, played through
+        // in `battle_test.rs`): past the guard and the ownership check,
+        // the route itself refuses the scene, then the missing battle.
+        if path.ends_with("/battle") || path.ends_with("/battle/command") {
+            let code = if path.ends_with("/battle") {
+                "UNKNOWN_NODE"
+            } else {
+                "NO_BATTLE"
+            };
+            assert_eq!(r.body["error"]["code"], code, "{uri}: {}", r.body);
+            continue;
+        }
         assert!(
             r.status.is_success(),
             "{method} {uri} with the owner's session: {} {}",
