@@ -22,7 +22,7 @@ interface GivableItem {
   consumable: boolean
 }
 
-type HistoryKind = 'xp' | 'hit_points' | 'resource' | 'item' | 'equip' | 'level' | 'death'
+type HistoryKind = 'xp' | 'hit_points' | 'resource' | 'item' | 'equip' | 'level' | 'death' | 'upgrade'
 
 /** One change to a character in play, as the history keeps it. */
 export interface HistoryEntry {

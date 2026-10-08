@@ -34,10 +34,12 @@
 //! adjustments stays GM-side.
 
 pub mod battle;
+pub mod between;
 pub mod board;
 pub mod evening;
 pub mod rules;
 pub mod schedule;
+pub mod trade;
 
 use std::collections::BTreeMap;
 

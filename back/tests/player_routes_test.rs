@@ -37,6 +37,8 @@ struct Table {
     asset: String,
     /// A date proposed for the next session.
     date: String,
+    /// The open shop.
+    shop: String,
 }
 
 /// Romain's marked campaign mid-scene, Marc seated as a player with a
@@ -74,7 +76,9 @@ async fn marked_table(app: &Router, pool: &PgPool) -> Table {
     board(pool, Uuid::parse_str(&campaign).unwrap(), character).await;
     let asset = media(pool, Uuid::parse_str(&campaign).unwrap()).await;
     let date = schedule(pool, Uuid::parse_str(&campaign).unwrap()).await;
+    let shop = shops(pool, Uuid::parse_str(&campaign).unwrap()).await;
     Table {
+        shop: shop.to_string(),
         gm,
         campaign,
         code,
@@ -148,6 +152,36 @@ async fn media(pool: &PgPool, campaign: Uuid) -> Uuid {
     .await
     .unwrap();
     shown
+}
+
+/// An open shop with a free line on the counter and one hidden under
+/// it, kept by a story NPC; and a closed shop. What players may not see
+/// is marked.
+async fn shops(pool: &PgPool, campaign: Uuid) -> Uuid {
+    sqlx::query(
+        "INSERT INTO shops (campaign_id, name, npc, currency, lines)
+         VALUES ($1, $2, NULL, 'or', '[]')",
+    )
+    .bind(campaign)
+    .bind(m("shops.name (closed)"))
+    .execute(pool)
+    .await
+    .unwrap();
+    sqlx::query_scalar(
+        "INSERT INTO shops (campaign_id, name, keeper, npc, open, currency, lines, haggle)
+         VALUES ($1, 'Le marché', 'Dents-de-Fer', $2, true, 'or', $3,
+                 '{\"ability\": \"CHA\", \"difficulty\": 10}')
+         RETURNING id",
+    )
+    .bind(campaign)
+    .bind(m("shops.npc"))
+    .bind(json!([
+        { "key": "free", "name": "Un caillou", "price": 0 },
+        { "key": "under", "name": m("shops.lines (hidden)"), "price": 25, "hidden": true },
+    ]))
+    .fetch_one(pool)
+    .await
+    .unwrap()
 }
 
 /// Session 1 ended with a GM recap, its « Précédemment… » published,
@@ -275,6 +309,7 @@ fn players_only(method: &str, path: &str) -> Option<(StatusCode, &'static str)> 
         return Some((StatusCode::NOT_FOUND, "NO_SUCH_REQUEST"));
     }
     (path.ends_with("/requests")
+        || path.contains("/shops/")
         || path.ends_with("/feedback")
         || path.ends_with("/walk")
         || path.ends_with("/fight")
@@ -292,6 +327,16 @@ fn refused_to_marc(method: &str, path: &str) -> Option<(StatusCode, &'static str
         "POST" if path.ends_with("/fate/next") => Some((StatusCode::NOT_FOUND, "NO_DEATH")),
         "POST" if path.ends_with("/fight") => Some((StatusCode::CONFLICT, "NO_FIGHT")),
         "POST" if path.ends_with("/battle") => Some((StatusCode::CONFLICT, "NO_BATTLE")),
+        // Borin sits alone: nobody to give to. Giving is swept in
+        // `trade_test.rs`.
+        "POST" if path.ends_with("/character/give") => {
+            Some((StatusCode::NOT_FOUND, "NO_SUCH_CHARACTER"))
+        }
+        // A session is live: no upgrade point is spent mid-game (and
+        // Borin has none). Spending one is swept in `between_test.rs`.
+        "POST" if path.ends_with("/character/upgrade") => {
+            Some((StatusCode::CONFLICT, "SESSION_LIVE"))
+        }
         _ => None,
     }
 }
@@ -311,6 +356,7 @@ fn uri(path: &str, t: &Table) -> String {
         .replace("{code}", &t.code)
         .replace("{asset}", &t.asset)
         .replace("{date}", &t.date)
+        .replace("{shop}", &t.shop)
 }
 
 fn seated(path: &str) -> bool {
@@ -338,6 +384,9 @@ fn sweep_body(n: usize, method: &str, path: &str) -> Option<Value> {
         ("POST", p) if p.ends_with("/level-up") => Some(json!({ "kind": "seen" })),
         ("POST", p) if p.ends_with("/fate/words") => Some(json!({ "text": "Adieu." })),
         ("POST", p) if p.ends_with("/fate/next") => Some(json!({ "next": "watch" })),
+        ("POST", p) if p.ends_with("/upgrade") => Some(json!({ "ability": "FOR" })),
+        ("POST", p) if p.ends_with("/give") => Some(json!({ "to": Uuid::new_v4(), "amount": 1 })),
+        ("POST", p) if p.ends_with("/buy") => Some(json!({ "line": "free" })),
         ("POST", p) if p.ends_with("/walk") => Some(json!({ "path": [[1, 5]] })),
         ("POST", p) if p.ends_with("/fight") => Some(json!({ "kind": "endTurn" })),
         ("POST", p) if p.ends_with("/battle") => Some(json!({ "kind": "pass" })),

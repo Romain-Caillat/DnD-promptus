@@ -6,8 +6,11 @@ import { useLiveChanges } from '@/features/live/useLiveChanges'
 import { creatorPath } from '@/lib/creator'
 import { cn } from '@/lib/utils'
 import { fetchPlayerHome, type CharacterView, type PlayerHome } from '@/lib/play'
+import type { PlayerTab } from '@/lib/between'
 import { GameTab } from '@/features/evening/GameTab'
 import { MapTab } from '@/features/map/MapTab'
+import { Chronicle } from './between/Chronicle'
+import { LevelUpPanel } from './between/LevelUpPanel'
 import { CharacterTab } from './CharacterTab'
 import { CharacterSummary } from './creator/ReviewStep'
 import { FallenCard } from './FallenCard'
@@ -20,7 +23,7 @@ type HomeState =
   | { kind: 'error' }
   | { kind: 'ready'; home: PlayerHome }
 
-type Tab = 'jeu' | 'carte' | 'perso' | 'journal'
+type Tab = PlayerTab
 
 /**
  * `/partie/:campaignId` — a player's home in one campaign, phone first,
@@ -114,6 +117,10 @@ export function PlayerHomePage() {
   const bannerKey = fallen ? 'fallen' : !seated ? 'spectator' : play ? 'inPlay' : character.status
   const good = bannerKey === 'validated' || bannerKey === 'draft' || bannerKey === 'inPlay'
 
+  function openTab(id: Tab) {
+    setParams(id === tabs[0] ? {} : { onglet: id }, { replace: true })
+  }
+
   function replaceCharacter(next: CharacterView) {
     setState((s) => (s.kind === 'ready' ? { ...s, home: { ...s.home, character: next } } : s))
   }
@@ -138,11 +145,14 @@ export function PlayerHomePage() {
         <h1 className="type-title text-heading">{campaign.title}</h1>
       </header>
       <section className="flex flex-1 flex-col gap-3 p-4" aria-label={t(`play.tabs.${tab}`)}>
-        {tab === 'jeu' && <GameTab campaignId={campaignId} refreshKey={eveningVersion} seated={Boolean(play)} />}
+        {tab === 'jeu' && (
+          <GameTab campaignId={campaignId} refreshKey={eveningVersion} seated={Boolean(play)} onTab={openTab} />
+        )}
         {tab === 'carte' && <MapTab campaignId={campaignId} refreshKey={mapVersion} />}
         {tab === 'journal' && (
           <>
             {!seated && !fallen && <p className="text-body text-chalk-soft">{t('play.spectator')}</p>}
+            <Chronicle campaignId={campaignId} refreshKey={eveningVersion} />
             <JournalTab campaignId={campaignId} refreshKey={viewVersion} />
           </>
         )}
@@ -154,7 +164,18 @@ export function PlayerHomePage() {
           />
         )}
         {tab === 'perso' && character && play && (
-          <CharacterTab campaignId={campaignId} character={character} play={play} onChanged={replaceCharacter} />
+          <>
+            {play.upgradePoints > 0 && (
+              <LevelUpPanel
+                campaignId={campaignId}
+                character={character}
+                play={play}
+                refreshKey={eveningVersion}
+                onChanged={replaceCharacter}
+              />
+            )}
+            <CharacterTab campaignId={campaignId} character={character} play={play} onChanged={replaceCharacter} />
+          </>
         )}
         {tab === 'perso' && character && !play && (
           <CharacterCard

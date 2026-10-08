@@ -8,10 +8,11 @@
 //! - [`sheet`] — combatants and the scene they are in
 //! - [`action`] — resolving an action (to-hit, damage, effects, cooldown, XP)
 //! - [`conditions`] — conditions and the turn boundaries
-//! - [`progression`] — XP, upgrade points, levels
+//! - [`progression`] — XP, upgrade points (earned and spent), levels
 //! - [`level_up`] — what a new level brings: hit points (die or
 //!   average), cards unlocked
 //! - [`death`] — death saves, stabilising, the death the GM confirms
+//! - [`trade`] — a shop's prices after a haggle
 //! - [`lint`] — whether the rules are good: coherence and balance checks
 //!   that report and never block (`lint::lint`, `lint::balance_report`)
 //! - [`character`] — whether a player's character follows the rules
@@ -34,6 +35,7 @@ pub mod load;
 pub mod model;
 pub mod progression;
 pub mod sheet;
+pub mod trade;
 pub mod variant;
 
 pub use character::{CharacterInput, check_character};

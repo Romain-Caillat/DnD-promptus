@@ -611,6 +611,30 @@ pub async fn world_at_end(
     Ok(world.flatten().map(|w| w.0))
 }
 
+impl Session {
+    /// « Précédemment… » as the players may read it: the one place that
+    /// says whether it is published, for the evening, the between screen
+    /// and the chronicle alike: a draft stays GM-side until the GM
+    /// publishes it (`published_at`, session/write-recaps).
+    #[must_use]
+    pub fn published_previously(&self) -> Option<&str> {
+        self.published_at?;
+        Some(self.previously.as_str()).filter(|p| !p.trim().is_empty())
+    }
+
+    /// The chronicle entry as the players may read it, once published:
+    /// its title (empty when the GM gave none) and its text, the
+    /// chronicle's own lines or else « Précédemment… ».
+    #[must_use]
+    pub fn published_chronicle(&self) -> Option<(&str, &str)> {
+        self.published_at?;
+        let text = Some(self.chronicle.as_str())
+            .filter(|c| !c.trim().is_empty())
+            .or_else(|| self.published_previously())?;
+        Some((self.chronicle_title.trim(), text))
+    }
+}
+
 impl Status {
     /// The status as stored.
     #[must_use]

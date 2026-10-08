@@ -22,6 +22,10 @@ import {
 import { fetchPlayerMedia, imageOf, playerImageUrl, type MediaList } from '@/lib/media'
 import type { ModifierSource } from '@/lib/rules'
 import { cn } from '@/lib/utils'
+import { EveningEnd } from '@/features/play/between/EveningEnd'
+import { useBetween } from '@/features/play/between/useBetween'
+import { Market } from '@/features/play/trade/Market'
+import type { PlayerTab } from '@/lib/between'
 import { MusicPlayer } from './MusicPlayer'
 import { NextSession } from './NextSession'
 
@@ -42,11 +46,14 @@ export function GameTab({
   campaignId,
   refreshKey,
   seated,
+  onTab,
 }: {
   campaignId: string
   refreshKey: number
   /** A player with a character in play (a spectator only watches). */
   seated: boolean
+  /** Opens another tab of the player's page (between sessions). */
+  onTab?: (tab: PlayerTab) => void
 }) {
   const { t } = useTranslation()
   const [state, setState] = useState<State>({ kind: 'loading' })
@@ -123,8 +130,16 @@ export function GameTab({
           {t(`evening.errors.${error}`, { defaultValue: t('evening.errors.UNEXPECTED') })}
         </p>
       )}
+      <Market campaignId={campaignId} refreshKey={refreshKey} seated={seated} />
       {!session && (
-        <NoSession view={view} campaignId={campaignId} refreshKey={refreshKey} seated={seated} onView={show} />
+        <NoSession
+          view={view}
+          campaignId={campaignId}
+          seated={seated}
+          refreshKey={refreshKey}
+          onView={show}
+          onTab={onTab}
+        />
       )}
       {session?.status === 'lobby' && (
         <Lobby view={view} seated={seated} onArrive={(soundOk) => act(() => arrive(campaignId, soundOk, true))} />
@@ -218,29 +233,47 @@ function Launch({ launch }: { launch: NonNullable<EveningView['launch']> }) {
   )
 }
 
+/**
+ * Between two sessions (player/play-between-sessions): the end of the
+ * last evening, the way to level up, « Précédemment… » and the
+ * chronicle, then the three questions of the feedback.
+ */
 function NoSession({
   view,
   campaignId,
-  refreshKey,
   seated,
+  refreshKey,
   onView,
+  onTab,
 }: {
   view: EveningView
   campaignId: string
-  refreshKey: number
   seated: boolean
+  refreshKey: number
   onView: (v: EveningView) => void
+  onTab?: (tab: PlayerTab) => void
 }) {
   const { t } = useTranslation()
+  const between = useBetween(campaignId, refreshKey)
+  const go = (tab: PlayerTab) => onTab?.(tab)
   return (
     <section className="flex flex-col gap-3">
       <p className="text-body text-chalk-soft">{t('evening.noSession')}</p>
       <NextSession campaignId={campaignId} refreshKey={refreshKey} />
-      {view.previously && (
-        <div className="surface-slab flex flex-col gap-1 p-3.5">
-          <span className="type-label">{t('evening.previously')}</span>
-          <p className="type-narration text-[18px] leading-snug">{view.previously}</p>
-        </div>
+      {between.kind === 'ready' && between.between.last ? (
+        <EveningEnd
+          between={between.between}
+          onLevelUp={() => go('perso')}
+          onChronicle={() => go('journal')}
+          onSheet={() => go('perso')}
+        />
+      ) : (
+        view.previously && (
+          <div className="surface-slab flex flex-col gap-1 p-3.5">
+            <span className="type-label">{t('evening.previously')}</span>
+            <p className="type-narration text-[18px] leading-snug">{view.previously}</p>
+          </div>
+        )
       )}
       {seated && view.feedback && !view.feedback.answered && (
         <Feedback number={view.feedback.number} onSend={async (a) => onView(await answerFeedback(campaignId, a))} />

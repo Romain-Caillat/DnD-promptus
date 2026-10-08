@@ -378,6 +378,8 @@ function useChangeText() {
         return t('gm.sheets.log.level', { label: e.label ?? '', after: e.after, delta: e.after - e.before })
       case 'death':
         return t('gm.sheets.log.death', { level: e.before })
+      case 'upgrade':
+        return t('gm.sheets.log.upgrade', { label: e.label ?? '', before: e.before, after: e.after })
     }
   }
 }

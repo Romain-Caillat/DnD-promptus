@@ -177,12 +177,18 @@ describe('PlayerHomePage', () => {
           },
         },
       }),
-      'GET /api/play/c1/chronicle': () => ({
+      'GET /api/play/c1/between': () => ({
         status: 200,
         body: {
-          data: [
-            { number: 1, playedOn: '2026-10-03T18:30:00Z', title: 'Le quai de Port-Louis', text: 'La boussole a changé de main.', previously: '' },
-          ],
+          data: {
+            open: null,
+            last: null,
+            levelUp: null,
+            chronicle: [
+              { number: 1, endedAt: '2026-10-03T18:30:00Z', title: 'Le quai de Port-Louis', text: 'La boussole a changé de main.' },
+            ],
+            openThreads: [],
+          },
         },
       }),
     })

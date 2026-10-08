@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod between;
 pub mod board;
 pub mod body;
 pub mod campaigns;
@@ -17,3 +18,4 @@ pub mod schedule;
 pub mod sheets;
 pub mod sprites;
 pub mod table;
+pub mod trade;

@@ -154,19 +154,6 @@ export interface RecapTexts {
   chronicle: string
 }
 
-/** One published entry of the chronicle, as the table reads it. */
-export interface ChronicleEntry {
-  number: number
-  playedOn: string | null
-  title: string
-  text: string
-  previously: string
-}
-
-export function fetchChronicle(campaignId: string): Promise<ChronicleEntry[]> {
-  return apiRequest<ChronicleEntry[]>('GET', `${play(campaignId)}/chronicle`)
-}
-
 interface MusicTrack {
   mood: MusicMood
   title: string
