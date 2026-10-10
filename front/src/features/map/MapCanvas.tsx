@@ -31,6 +31,11 @@ function lightVoid(): string {
  * slide it, a pinch zooms. Water, weather and flickering lights move
  * unless the device asks for reduced motion.
  *
+ * While the map slides or zooms under the fingers or the mouse
+ * (maps/browse-atlas), it is drawn at half resolution and its animations
+ * hold still, so a phone or a tablet follows the gesture; it is drawn
+ * sharp again when the gesture ends.
+ *
  * Characters are their sprites (characters/walk-in-four-directions):
  * they breathe at rest, walk the last move the server sent cell by cell
  * facing each step, lunge at whom they strike and blink when hit
@@ -63,13 +68,16 @@ export function MapCanvas({
   const painting = useRef<Cell[] | null>(null)
   const [painted, setPainted] = useState<Cell[] | null>(null)
   const [zoom, setZoom] = useState(1)
+  /** A slide or a pinch is under way: draw light. */
+  const [sliding, setSliding] = useState(false)
+  const resolution = sliding ? 1 : RESOLUTION
   const zoomRef = useRef(1)
   const motion = useRef(new Motion())
   const tile = scene.tile ?? TILE
   const grid = readGrid(scene.map)
   const sprites = useSheets(scene.tokens)
   const hasSprites = Object.keys(sprites).length > 0
-  const moving = !reduced && (animated(scene.map, scene.tileset) || hasSprites)
+  const moving = !reduced && !sliding && (animated(scene.map, scene.tileset) || hasSprites)
   const drawn = painted ? { ...scene, highlight: painted } : scene
   const sceneRef = useRef(drawn)
 
@@ -89,7 +97,7 @@ export function MapCanvas({
       const s = sceneRef.current
       const poses: Record<string, Pose> = {}
       for (const tk of s.tokens) poses[tk.id] = motion.current.pose(tk, time, reduced)
-      drawScene(ctx, { ...s, tile: (s.tile ?? TILE) * RESOLUTION, time, sprites, poses, voidColor })
+      drawScene(ctx, { ...s, tile: (s.tile ?? TILE) * resolution, time, sprites, poses, voidColor })
     }
     if (!moving) {
       draw(0)
@@ -110,13 +118,13 @@ export function MapCanvas({
     }
     frame = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(frame)
-  }, [moving, reduced, scene, sprites, painted, voidColor])
+  }, [moving, reduced, scene, sprites, painted, voidColor, resolution])
 
   function cellOf(at: Pt): Cell {
     const el = canvas.current!
     const rect = el.getBoundingClientRect()
-    const scale = rect.width > 0 ? el.width / rect.width : RESOLUTION
-    return cellAt((at.x - rect.left) * scale, (at.y - rect.top) * scale, tile * RESOLUTION)
+    const scale = rect.width > 0 ? el.width / rect.width : resolution
+    return cellAt((at.x - rect.left) * scale, (at.y - rect.top) * scale, tile * resolution)
   }
 
   function paint(cells: Cell[] | null) {
@@ -136,6 +144,7 @@ export function MapCanvas({
           if (last[0] !== c[0] || last[1] !== c[1]) paint([...painting.current, c])
         } else if (box.current && (mouse || touch)) {
           // A finger without `touch` scrolls the box natively.
+          setSliding(true)
           box.current.scrollLeft -= effect.by.x
           box.current.scrollTop -= effect.by.y
         }
@@ -156,6 +165,7 @@ export function MapCanvas({
         return
       case 'pinch': {
         if (!touch || !box.current) return
+        setSliding(true)
         const el = box.current
         const rect = el.getBoundingClientRect()
         const cx = effect.center.x - rect.left
@@ -185,6 +195,7 @@ export function MapCanvas({
     const [g, effect] = step(gesture.current)
     gesture.current = g
     apply(effect, e.pointerType === 'mouse')
+    if (g.mode === 'none') setSliding(false)
   }
 
   const id = (e: PointerEvent) => e.pointerId ?? 0
@@ -194,8 +205,8 @@ export function MapCanvas({
     <div ref={box} className={cn('overflow-auto rounded-xl border border-line bg-black', className)}>
       <canvas
         ref={canvas}
-        width={grid.width * tile * RESOLUTION}
-        height={grid.height * tile * RESOLUTION}
+        width={grid.width * tile * resolution}
+        height={grid.height * tile * resolution}
         role="img"
         aria-label={t('map.canvas', { name: scene.map.name })}
         className={cn('block [image-rendering:pixelated]', (touch || onPaint) && 'touch-none')}

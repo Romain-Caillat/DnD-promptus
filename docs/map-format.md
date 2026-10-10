@@ -209,6 +209,37 @@ the same `Map::validate` as a file. Placed things get ids by prefix
 of cell takes the first free glyph of `.#,~_=:;+*%&@!?a…z A…Z 0…9`, and a
 glyph no cell uses leaves the legend.
 
+## The atlas: how maps nest
+
+The GM's Atlas (`maps/browse-atlas`, `shared/src/maps/atlas.rs`) shows
+every map of the world (`content/maps/<world>/`) and of the campaign
+(`campaign_maps`) as one tree — region in hexes › place › encounter —
+read from the maps' `exits`, never stored:
+
+- An exit from A to B makes A the **parent** of B only when B's `scale`
+  is strictly finer (`world` › `place` › `encounter`; a world map may
+  hold an encounter directly). The exit's `cells` are where B is
+  anchored on A: one hex on a region, a zone on a grid.
+- An exit between two maps of the same scale, or back up, is a **link**
+  (« à côté »), never an edge. Every edge goes down a scale, so the tree
+  has no cycle whatever the exits say.
+- An exit to a map neither the world nor the campaign has is ignored.
+- A map several exits lead down to keeps one parent: the nearest
+  coarser scale first (a place before the region for an encounter),
+  then a campaign map before a world map, then the smallest id. A map
+  no exit leads down to is a root; a campaign map shadows a world map
+  of the same id.
+
+`GET /api/campaigns/{id}/atlas` (GM only, not open to a personal token)
+answers `{revision, roots, maps: [{map, origin: world|campaign, parent:
+{map, exit}|null, children, links: [{to, exit}], backdrop, validated}]}`,
+maps whole, roots first then depth first. A player never receives it:
+the table shows the one map on the board, through the projection.
+
+The story's places will anchor maps too (`campaign/pin-scenes-on-maps`);
+until then a GM's own map hangs under another only if that map has an
+exit to it (a copy of a world map keeps the exits it had).
+
 ## Universal VTT import
 
 `maps::from_uvtt` reads a Universal VTT export (`.dd2vtt`, `.uvtt`,

@@ -37,6 +37,32 @@ export interface MapListing {
   world: { id: string; name: string }[]
 }
 
+/** One map of the atlas (`campaign_maps::AtlasMap`): whole, with where it hangs. */
+export interface AtlasMap {
+  map: MapData
+  /** `world`: compiled with the world; `campaign`: the GM's own. */
+  origin: 'world' | 'campaign'
+  /** The map and exit it hangs on; `null` for a root. */
+  parent: { map: string; exit: string } | null
+  /** In the order of this map's exits. */
+  children: string[]
+  /** Exits to maps of the same scale, or back up. */
+  links: { to: string; exit: string }[]
+  backdrop: boolean
+  validated: boolean
+}
+
+/** maps/browse-atlas — every map of the world and the campaign, roots first then depth first. */
+export interface Atlas {
+  revision: number
+  roots: string[]
+  maps: AtlasMap[]
+}
+
+export function fetchAtlas(campaignId: string): Promise<Atlas> {
+  return apiRequest<Atlas>('GET', `/campaigns/${encodeURIComponent(campaignId)}/atlas`)
+}
+
 export type MapImport =
   | { kind: 'uvtt'; name: string; file: string }
   | {

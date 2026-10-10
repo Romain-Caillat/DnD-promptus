@@ -2931,7 +2931,7 @@ n'a été vérifié que par sa logique, pas sous les doigts.
 
 ---
 
-### `gm/prep-on-atlas` · todo
+### `gm/prep-on-atlas` · doing — reste l'écran complet (scènes, fil, PNJ, lots de Claude, vue joueurs), la fin de la création sur la région, la bascule qui retire Préparer, Médias, Cartes et Vue joueurs, puis un acte préparé en entier dans l'Atlas
 
 **Pourquoi** — Préparer et jouer doivent se ressembler : la création
 finit sur la carte, et toute la préparation s'y fait.
@@ -2966,6 +2966,27 @@ l'Atlas.
 **Risques** — Un écran trop dense sur tablette : le panneau contextuel
 se replie. Retirer des écrans qui marchent : la bascule n'a lieu que
 quand l'Atlas fait tout ce qu'ils faisaient.
+
+*État* — La coquille est posée avec `maps/browse-atlas`, à l'adresse
+`/campagnes/:id/atlas` : fil d'Ariane, zone des calques, carte au centre,
+panneau de la carte à droite (échelle, origine, validée ou brouillon,
+notes du MJ, cartes où l'on entre, cartes d'à côté, lien vers l'éditeur
+ou vers la copie d'une carte du monde), bande de toutes les cartes en
+bas, et tiroir « Sans lieu » qui mène à la bible, aux scènes et actes, et
+aux fiches de l'écran Préparer (ouvert directement sur le bon
+onglet). Sur tablette, la carte se manie aux doigts et le panneau se
+replie. Les calques proposés sont pour l'instant ceux de la carte
+elle-même (par exemple « Secrets ») : les allumer ou les éteindre change
+seulement ce que voit le MJ. Absents à dessein, faute de ce qui les
+remplirait : la bascule « Vue MJ / Vue joueurs » (`maps/preview-as-player`),
+les calques Histoire, Personnages, Combats, Indices
+(`campaign/place-cast-and-clues`), le fil de la campagne et les épingles
+de scène. Ni les factions ni une chronologie n'ont d'écran de préparation
+aujourd'hui : le tiroir ne les propose pas. L'Atlas se recharge seul
+quand une carte change (le MJ ailleurs ou Claude), mais n'affiche pas
+encore le bandeau « Claude écrit · sur … » : il viendra avec les lots de
+Claude, en réutilisant le même mécanisme que l'écran Préparer. Les
+anciens écrans restent en place.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 
@@ -3598,7 +3619,7 @@ premières sessions réelles.
 
 ---
 
-### `maps/browse-atlas` · todo
+### `maps/browse-atlas` · doing — reste l'essai sur un iPad : de la région des Corsaires au quai de Port-Louis puis dans une rencontre, et retour, sans saccade
 
 **Pourquoi** — Les cartes existent déjà à trois échelles et se relient
 par leurs sorties ; il manque la façon d'y circuler.
@@ -3628,6 +3649,35 @@ navigation. Essai réel sur un iPad.
 **Risques** — Des cycles dans les sorties : l'arbre s'appuie sur les
 ancres, pas sur les sorties seules. Des cartes lourdes sur tablette :
 image basse résolution pendant le geste.
+
+*État* — Le MJ a un écran Atlas (entrée « Atlas » sur la page de la
+campagne) qui range toutes les cartes du monde et de la campagne en un
+arbre : la région en hexagones, les lieux posés dessus, les rencontres
+dans un lieu. Une carte est rangée sous une autre quand celle-ci a une
+sortie vers elle **et** que l'échelle descend (région › lieu ›
+rencontre) ; une sortie entre deux cartes de même échelle, ou qui
+remonte, devient un lien « À côté ». Aucune boucle n'est donc possible,
+quoi que disent les sorties (règle écrite dans `docs/map-format.md` et
+`MEMORY.md`). Sur la carte, les cases qui ouvrent une autre carte sont
+cerclées en pointillés : les toucher y entre, comme les boutons
+« Entrer » du panneau. Le fil d'Ariane nomme l'échelle de chaque niveau ;
+« Ressortir » ramène là d'où l'on vient (même après un saut par la bande
+du bas ou un lien « À côté »), sinon à la carte parente. Quand le MJ fait
+glisser ou pince une carte en cases, elle est dessinée en demi-résolution
+et ses animations s'arrêtent le temps du geste, puis redeviennent nettes
+(vaut partout pour un glissé à la souris, et aux doigts là où la carte se
+manie aux doigts : l'Atlas et la carte de soirée du MJ sur tablette ; le
+téléphone du joueur garde son défilement natif). Côté joueur, rien de
+neuf : il ne reçoit toujours que la carte posée sur la table, par la
+projection (l'Atlas est une route MJ, absente des routes joueur et
+jeton). Hypothèses prises : les ancres des lieux de l'histoire n'existant
+pas encore, l'arbre ne lit que les sorties — une carte dessinée par le MJ
+reste une racine tant qu'aucune carte n'a de sortie vers elle (elles
+arrivent avec `campaign/pin-scenes-on-maps`). Dans les fichiers actuels,
+le quai de Port-Louis est une carte de rencontre et ses sorties mènent à
+des cartes qui n'existent pas : « entrer dans une rencontre depuis le
+quai » demande d'abord d'y rattacher une carte. 🔴 La fluidité sur iPad
+n'est pas mesurée.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 

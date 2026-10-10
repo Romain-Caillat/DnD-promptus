@@ -60,6 +60,13 @@ memory. If someone would re-litigate it in six months, it is.
   ~10 km, day), place (square, ~5 m), encounter (square, 1.5 m, 6 s
   turn). The V1 "region in 500 m hexes" level is replaced by places on
   a square grid.
+- **The atlas is computed, never stored (maps/browse-atlas).** Maps nest
+  by their exits, and an exit is a parent → child edge only towards a
+  strictly finer scale (world › place › encounter); exits between equals
+  or back up are side links. That rule is what keeps the tree free of
+  cycles whatever the GM or Claude draws — do not let a same-scale exit
+  nest. The atlas is GM-only (`GET …/atlas`); a player gets the one map
+  on the board through the projection, never the tree.
 - **Table questions settled by the design pass (October 2026).** The
   shared screen is both: a real TV paired with a code, or the same page
   shared in a Discord window. Characters are created before the first

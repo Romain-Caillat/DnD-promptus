@@ -390,6 +390,112 @@ pub async fn get(
     Ok(one(pool, campaign, id).await?.at(row.prep_revision))
 }
 
+/// The GM's atlas (maps/browse-atlas): every map of the world and of the
+/// campaign, whole, nested by `maps::atlas::tree` — roots first, then
+/// depth first. GM only: a player receives the one map on the table,
+/// through the board's projection, never this.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AtlasView {
+    pub revision: i64,
+    pub roots: Vec<String>,
+    pub maps: Vec<AtlasMap>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AtlasMap {
+    pub map: Map,
+    pub origin: AtlasOrigin,
+    /// The map and exit it hangs on, if any.
+    pub parent: Option<AtlasAnchor>,
+    pub children: Vec<String>,
+    /// Exits to maps that are not children (same scale, or back up).
+    pub links: Vec<AtlasLink>,
+    pub backdrop: bool,
+    pub validated: bool,
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AtlasOrigin {
+    World,
+    Campaign,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AtlasAnchor {
+    pub map: String,
+    pub exit: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AtlasLink {
+    pub to: String,
+    pub exit: String,
+}
+
+/// # Errors
+///
+/// 404; a database error.
+pub async fn atlas(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<AtlasView, AppError> {
+    use promptus_shared::maps::atlas::{self as tree, Origin, Sheet};
+    let row = owned_by(campaigns::find(pool, campaign).await?, gm)?;
+    let own = all(pool, campaign).await?;
+    let sheets: Vec<Sheet<'_>> = content::maps(&row.story)
+        .map(|m| Sheet {
+            map: m,
+            origin: Origin::World,
+        })
+        .chain(own.iter().map(|m| Sheet {
+            map: &m.map,
+            origin: Origin::Campaign,
+        }))
+        .collect();
+    let built = tree::tree(&sheets);
+    let maps = built
+        .nodes
+        .into_iter()
+        .filter_map(|n| {
+            let mine = own.iter().find(|m| m.map.id == n.id);
+            let map = match (n.origin, mine) {
+                (Origin::Campaign, Some(m)) => m.map.clone(),
+                _ => content::map(&row.story, &n.id)?.clone(),
+            };
+            let campaign = n.origin == Origin::Campaign;
+            Some(AtlasMap {
+                map,
+                origin: if campaign {
+                    AtlasOrigin::Campaign
+                } else {
+                    AtlasOrigin::World
+                },
+                parent: n.parent.map(|p| AtlasAnchor {
+                    map: p.map,
+                    exit: p.exit,
+                }),
+                children: n.children,
+                links: n
+                    .links
+                    .into_iter()
+                    .map(|l| AtlasLink {
+                        to: l.to,
+                        exit: l.exit,
+                    })
+                    .collect(),
+                backdrop: campaign && mine.is_some_and(|m| m.backdrop),
+                // A world map is always playable (`playable`).
+                validated: !campaign || mine.is_some_and(|m| m.validated_at.is_some()),
+            })
+        })
+        .collect();
+    Ok(AtlasView {
+        revision: row.prep_revision,
+        roots: built.roots,
+        maps,
+    })
+}
+
 /// A blank map, or a copy of one of the world's.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

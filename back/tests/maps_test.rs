@@ -287,3 +287,40 @@ async fn a_dungeondraft_file_and_a_plain_image_become_maps_behind_their_grid() {
         .await;
     assert_eq!(r.body["error"]["code"], "BAD_SIZE");
 }
+
+#[tokio::test]
+async fn the_atlas_nests_the_world_and_the_campaign_maps_by_their_exits() {
+    let t = table().await;
+    let r = t
+        .gm("POST", "/maps", Some(json!({ "name": "La cale" })))
+        .await;
+    assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
+    let cale = r.body["data"]["map"]["id"].as_str().unwrap().to_string();
+
+    let r = t.gm("GET", "/atlas", None).await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    let atlas = &r.body["data"];
+    let maps = atlas["maps"].as_array().unwrap();
+    let node = |id: &str| maps.iter().find(|m| m["map"]["id"] == id).unwrap();
+
+    // The region of the Corsaires holds the quai and the Palais.
+    assert_eq!(atlas["roots"][0], "cotes-bretagne-sud");
+    assert_eq!(
+        node("quai-port-louis")["parent"],
+        json!({ "map": "cotes-bretagne-sud", "exit": "vers-port-louis" })
+    );
+    assert_eq!(
+        node("cotes-bretagne-sud")["children"],
+        json!(["quai-port-louis", "le-palais"])
+    );
+    assert_eq!(node("cotes-bretagne-sud")["map"]["scale"], "world");
+    // The GM's own map, which no exit reaches yet, is a root, a draft.
+    assert!(atlas["roots"].as_array().unwrap().contains(&json!(cale)));
+    assert_eq!(node(&cale)["origin"], "campaign");
+    assert_eq!(node(&cale)["validated"], false);
+    assert_eq!(node("quai-port-louis")["validated"], true);
+    assert!(
+        atlas["revision"].as_i64().unwrap() >= 1,
+        "the map was journalled"
+    );
+}

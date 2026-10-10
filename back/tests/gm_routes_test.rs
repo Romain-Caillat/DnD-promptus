@@ -151,6 +151,8 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/maps/{map}/validate"),
     ("GET", "/api/campaigns/{campaign}/maps/{map}/backdrop"),
     ("DELETE", "/api/campaigns/{campaign}/maps/{map}"),
+    // The atlas: every map nested (maps/browse-atlas).
+    ("GET", "/api/campaigns/{campaign}/atlas"),
     // Images: list, draw one, then on an image stored just before.
     ("GET", "/api/campaigns/{campaign}/media"),
     ("POST", "/api/campaigns/{campaign}/media"),

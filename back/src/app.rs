@@ -347,6 +347,8 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         // The editor and Claude send batches of operations
         // (maps/edit-maps-by-ops), never the whole map.
         .route("/api/campaigns/{id}/maps/{map}/ops", post(api::maps::edit))
+        // Every map of the world and the campaign, nested (maps/browse-atlas).
+        .route("/api/campaigns/{id}/atlas", get(api::maps::atlas))
         .route(
             "/api/campaigns/{id}/maps/{map}/validate",
             post(api::maps::validate),

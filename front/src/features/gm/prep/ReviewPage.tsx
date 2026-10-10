@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, Navigate, useNavigate, useParams } from 'react-router'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
 import { CardButton } from '@/components/game/CardButton'
 import { StatusBanner } from '@/components/game/StatusBanner'
 import { Btn, Panel } from '@/features/gm/live/ui'
@@ -84,7 +84,9 @@ export function ReviewPage() {
   const navigate = useNavigate()
   const { campaignId = '' } = useParams()
   const [state, setState] = useState<PageState>({ kind: 'loading' })
-  const [tab, setTab] = useState<Tab>('graph')
+  // `?onglet=bible` opens a tab directly (the Atlas's drawer links here).
+  const [params] = useSearchParams()
+  const [tab, setTab] = useState<Tab>(() => TABS.find((x) => x === params.get('onglet')) ?? 'graph')
   const [selected, setSelected] = useState<string | null>(null)
   const [version, setVersion] = useState(0)
   const [workshopVersion, setWorkshopVersion] = useState(0)

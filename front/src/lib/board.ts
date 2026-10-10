@@ -62,8 +62,8 @@ export interface MapData {
     notes?: string | null
   }[]
   lights?: { id: string; at: Cell; bright: number; dim: number; color?: string | null; flicker?: boolean; layer?: string }[]
-  exits?: { id: string; cells: Cell[]; to: string; label?: string | null }[]
-  labels?: { text: string; at: Cell; scene?: string | null }[]
+  exits?: { id: string; cells: Cell[]; to: string; label?: string | null; layer?: string }[]
+  labels?: { text: string; at: Cell; scene?: string | null; layer?: string }[]
   starts?: { id: string; at: Cell; side?: string | null; entity?: string | null; layer?: string }[]
   /** An imported image behind the grid: decor only. */
   backdrop?: { image?: string | null; cell_px?: number | null; offset?: [number, number] | null } | null

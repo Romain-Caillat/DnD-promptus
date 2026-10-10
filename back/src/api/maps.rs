@@ -9,6 +9,8 @@
 //! - `POST   /api/campaigns/{id}/maps/generate` → `{ node }`: the model's
 //!   draft for a scene (201);
 //! - `GET    /api/campaigns/{id}/maps/{map}` → one map;
+//! - `GET    /api/campaigns/{id}/atlas` → every map of the world and the
+//!   campaign, nested by their exits (maps/browse-atlas);
 //! - `POST   /api/campaigns/{id}/maps/{map}/ops` → `Batch`: operations
 //!   on the revision read (withdraws the validation; 409 `MAP_STALE`
 //!   with the fresh map when it steps on a later batch);
@@ -119,6 +121,20 @@ pub async fn get(
 ) -> Result<Response, AppError> {
     let m = campaign_maps::get(&state.pool, &gm, parse_id(&id)?, &map).await?;
     Ok(data(StatusCode::OK, m))
+}
+
+/// `GET /api/campaigns/{id}/atlas`
+///
+/// # Errors
+///
+/// 404.
+pub async fn atlas(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path(id): Path<String>,
+) -> Result<Response, AppError> {
+    let a = campaign_maps::atlas(&state.pool, &gm, parse_id(&id)?).await?;
+    Ok(data(StatusCode::OK, a))
 }
 
 /// `POST /api/campaigns/{id}/maps/{map}/ops`

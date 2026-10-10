@@ -45,6 +45,7 @@ export function HexMap({
   party,
   routes = [],
   destination,
+  marks = [],
   onHex,
   className,
 }: {
@@ -53,6 +54,8 @@ export function HexMap({
   party: Cell | null
   routes?: HexRoute[]
   destination?: Cell | null
+  /** Hexes ringed in dots: where the atlas enters another map (maps/browse-atlas). */
+  marks?: Cell[]
   /** A tap on a hex (the GM picks a place). */
   onHex?: (cell: Cell) => void
   className?: string
@@ -132,6 +135,20 @@ export function HexMap({
           </text>
         )
       })}
+      {marks.map((c) => (
+        <polygon
+          key={`mark${c[0]},${c[1]}`}
+          points={corners(hexCenter(c))}
+          fill="none"
+          stroke="#EDEDED"
+          strokeWidth={3}
+          strokeDasharray="3 4"
+          pointerEvents="none"
+          data-mark={`${c[0]},${c[1]}`}
+          transform={`scale(0.82)`}
+          style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+        />
+      ))}
       {dest && (
         <rect
           x={dest[0] - 7}

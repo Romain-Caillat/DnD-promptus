@@ -175,6 +175,8 @@
       "generateSub": "Le co-MJ écrit un brouillon complet, vous l'appliquez puis le relisez",
       "media": "Images et vidéos",
       "mediaSub": "Dessiner les scènes, les PNJ et les lieux, filmer l'ouverture des actes, garder ce qui convient",
+      "atlas": "Atlas",
+      "atlasSub": "Toutes les cartes, de la région aux rencontres : on entre dans un lieu, on en ressort",
       "maps": "Cartes",
       "mapsSub": "Dessiner, générer ou importer les cartes de combat et d’exploration, puis les valider",
       "settings": "Réglages",
@@ -2675,6 +2677,44 @@
       "versionDraft": "v{{version}} · brouillon",
       "played": "jouée"
     }
+  },
+  "atlas": {
+    "title": "Atlas",
+    "breadcrumb": "Où vous êtes dans l’atlas",
+    "empty": "Aucune carte : ni le monde ni la campagne n’en ont encore.",
+    "out": "Ressortir",
+    "fold": "Replier",
+    "unfold": "Panneau",
+    "drawer": "Sans lieu",
+    "drawerTitle": "Ce qui n’a pas de lieu",
+    "place": {
+      "bible": "La bible",
+      "graph": "Scènes et actes",
+      "sheets": "Fiches : PNJ, adversaires, objets"
+    },
+    "layers": "Calques",
+    "strip": "Toutes les cartes",
+    "scale": {
+      "world": "Région",
+      "place": "Lieu",
+      "encounter": "Rencontre"
+    },
+    "scaleShort": {
+      "world": "RÉG",
+      "place": "LIEU",
+      "encounter": "REN"
+    },
+    "origin": {
+      "world": "carte du monde",
+      "campaign": "carte de la campagne"
+    },
+    "inside": "On y entre",
+    "noInside": "Aucune carte ne s’ouvre ici pour l’instant.",
+    "enter": "Entrer : {{name}}",
+    "next": "À côté",
+    "goTo": "Aller à : {{name}}",
+    "edit": "Ouvrir dans l’éditeur de carte",
+    "copy": "Carte du monde : la copier dans la campagne pour la modifier"
   },
   "maps": {
     "title": "Cartes de la campagne",

@@ -5,6 +5,7 @@
 //! The grid carries the rules; drawing is only a projection of it.
 //! File format: `docs/map-format.md`. Fixtures: `content/maps/`.
 
+pub mod atlas;
 mod board;
 pub mod edit;
 mod format;

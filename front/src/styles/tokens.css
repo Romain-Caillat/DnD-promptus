@@ -237,6 +237,9 @@
   --animate-bob: bob var(--duration-bob) ease-in-out infinite;
   --animate-sheen: sheen var(--duration-sheen) ease-in-out infinite;
   --animate-holo: holo 6s linear infinite;
+  /* The atlas enters a place (it grows in) or comes back out (it settles from larger). */
+  --animate-zoom-in: zoom-in 260ms var(--ease-deal) both;
+  --animate-zoom-out: zoom-out 260ms var(--ease-deal) both;
 
   @keyframes deal {
     0% {
@@ -313,6 +316,26 @@
   @keyframes holo {
     to {
       filter: hue-rotate(360deg);
+    }
+  }
+  @keyframes zoom-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    100% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes zoom-out {
+    0% {
+      opacity: 0;
+      transform: scale(1.5);
+    }
+    100% {
+      opacity: 1;
+      transform: none;
     }
   }
 }

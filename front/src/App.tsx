@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router'
 import { SignInPage } from '@/features/auth/SignInPage'
+import { AtlasPage } from '@/features/gm/atlas/AtlasPage'
 import { CampaignPage } from '@/features/gm/CampaignPage'
 import { GmHomePage } from '@/features/gm/GmHomePage'
 import { GmTablePage } from '@/features/gm/GmTablePage'
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/campagnes/:campaignId/preparer" element={<ReviewPage />} />
         <Route path="/campagnes/:campaignId/generer" element={<GenerationPage />} />
         <Route path="/campagnes/:campaignId/medias" element={<MediaPage />} />
+        <Route path="/campagnes/:campaignId/atlas" element={<AtlasPage />} />
         <Route path="/campagnes/:campaignId/cartes" element={<MapsPage />} />
         <Route path="/campagnes/:campaignId/cartes/:mapId" element={<MapEditorPage />} />
         <Route path="*" element={<GmHomePage />} />
