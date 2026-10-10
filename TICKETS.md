@@ -364,6 +364,92 @@ soirée en cours ?
 
 ---
 
+### `platform/preview-campaign-in-claude` · todo · à spécifier
+
+**Pourquoi** — Quand Romain prépare sa campagne avec Claude Code
+(`platform/connect-claude-mcp`), il ne voit le résultat qu'en ouvrant
+Promptus ou en lisant le fichier de campagne. Il veut voir, à côté de
+la conversation et pendant que Claude écrit, ce qui a été produit :
+les scènes créées, leur résumé, leurs assets, et ce qui manque encore
+pour la soirée. Un second panneau fera de même pour les règles.
+
+**Périmètre** — Des mods Claude Code (panneaux dessinés dans la session,
+à côté de la conversation) qui montrent la campagne en lecture seule.
+Ils ne modifient rien : écrire reste le travail de Claude par le
+serveur MCP, et valider reste le geste du MJ dans Promptus. Pistes
+retenues, à trier en critères d'acceptation :
+
+*Voir ce qui existe*
+1. **Récap des scènes** — une carte par scène, rangée par acte : titre,
+   résumé, lieu, accroche, sorties, ambiance. La scène que Claude vient
+   de créer ou de modifier est mise en avant ; les passages « INVENTÉ —
+   à valider » sont signalés.
+2. **Graphe de l'histoire** — les scènes et leurs sorties dessinées :
+   scène d'ouverture, impasses, scènes jamais atteintes, scènes
+   facultatives.
+3. **Distribution** — quel PNJ, quelle faction, quel lieu apparaît dans
+   quelles scènes ; le PNJ jamais utilisé, le méchant absent d'un acte.
+
+*Voir ce qui manque*
+4. **Inventaire des assets** — par scène : carte présente ou non,
+   musique choisie ou encore « à chercher », visuels décrits ou déjà
+   générés. Le résultat est une liste de ce qui reste à produire avant
+   la soirée.
+5. **Jauge de préparation par acte** — prêt, presque, ébauche, avec la
+   raison, en relisant la jauge que Promptus calcule déjà
+   (`campaign/check-act-readiness`) plutôt qu'en la recalculant.
+6. **File de validation** — tout ce que Claude a inventé et que le MJ
+   doit relire, élément par élément.
+
+*Vérifier que l'histoire tient*
+7. **Révélations et indices** — chaque révélation, ses indices et la
+   scène où on les trouve ; une révélation qui a moins de trois indices
+   est signalée.
+8. **Menaces et horloges** — chaque menace, ses étapes, les scènes qui
+   la font avancer ; on voit si la catastrophe peut réellement arriver.
+9. **Vue joueur** — une scène vue par le MJ et par les joueurs côte à
+   côte (projection joueur) : aucun secret ne doit fuiter.
+
+*Les règles (second panneau)*
+10. **Règles** — classes, actions, états, alertes du lint
+    (`engine/lint-rule-system`) et résultat des combats simulés
+    (`engine/simulate-fights`).
+
+*Proposition* — commencer par un seul panneau qui réunit le récap des
+scènes et l'inventaire des assets (pistes 1 et 4) : il répond à
+« qu'est-ce que j'ai ? » et « qu'est-ce qui me manque pour la
+soirée ? ». Révélations et menaces (7, 8) en deuxième onglet, les
+règles (10) dans un panneau à part.
+
+*Hypothèse* — La source est la campagne dans Promptus, lue avec le
+jeton du MJ par les mêmes routes que le serveur MCP (export, jauge,
+alertes), pour voir ce que Claude a réellement écrit dans la
+plateforme. Le fichier YAML local (`content/campaigns/`) sert de repli
+quand Promptus n'est pas lancé. Le panneau se rafraîchit quand Claude
+appelle un outil d'écriture du serveur MCP.
+
+**Étapes** — Choisir les pistes du premier panneau et écrire leurs
+critères → panneau et commande dans Claude Code → lecture de la
+campagne (Promptus, puis repli fichier) → rafraîchissement sur les
+écritures de Claude → essai réel en préparant un acte d'un des deux
+mondes → onglets suivants, puis le panneau des règles.
+
+**Fini quand** — Romain demande à Claude Code d'ajouter une scène à
+une campagne des deux mondes, et le panneau la montre aussitôt avec son
+résumé, ses assets et ce qui lui manque, sans ouvrir Promptus ni le
+fichier.
+
+**Risques** — Les mods reposent sur une interface de Claude Code en
+accès anticipé, qui peut changer d'une version à l'autre. Le jeton du
+MJ ne doit jamais s'afficher dans un panneau ni dans un journal. La
+façon dont un mod appelle l'API de Promptus n'a pas encore été vérifiée.
+Un panneau qui recalcule ce que le serveur calcule déjà (jauge, alertes,
+projection) finirait par diverger : il relit le serveur.
+
+**Origine** — Demande de Romain, 10 octobre 2026.
+
+---
+
 ## Épic `ui`
 
 Le design system dessiné sur le canevas (`MEMORY.md` §2), en composants
