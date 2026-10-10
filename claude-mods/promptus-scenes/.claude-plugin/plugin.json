@@ -1,0 +1,9 @@
+{
+  "name": "promptus-scenes",
+  "version": "0.1.0",
+  "description": "Promptus: the scenes of a campaign, their summary and their assets, beside the conversation (/promptus)",
+  "author": {
+    "name": "Romain Caillat"
+  },
+  "types": "./types/index.d.ts"
+}

@@ -448,6 +448,11 @@ projection) finirait par diverger : il relit le serveur.
 
 **Origine** — Demande de Romain, 10 octobre 2026.
 
+*État* — Premier panneau livré (pistes 1 et 4) : `claude-mods/promptus-scenes`,
+commande `/promptus`. Il lit les fichiers de campagne du dépôt (pas
+encore Promptus) et se met à jour quand Claude ou le MJ modifie le
+fichier. Pas encore regardé dans une vraie séance de préparation.
+
 ---
 
 ## Épic `ui`
