@@ -274,6 +274,27 @@ export function registerTools(server: McpServer, promptus: () => Promptus) {
   )
 
   server.registerTool(
+    'create_campaign_from_yaml',
+    {
+      title: 'Créer une campagne depuis un YAML',
+      description:
+        'Crée une nouvelle campagne du MJ à partir d\'un fichier YAML complet (format de Promptus, docs/campaign-format.md ; ' +
+        'export_campaign_yaml en donne un exemple). Sert à mettre dans Promptus une campagne écrite avec le MJ. Rien ' +
+        'n\'atteint les joueurs : la campagne arrive en préparation. Un YAML illisible est refusé sans rien créer ; la ' +
+        'réponse donne l\'identifiant de la campagne et le rapport du validateur.',
+      inputSchema: {
+        yaml: z.string().min(1).describe('Le fichier de campagne complet, en YAML.'),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    ({ yaml }) =>
+      guarded(async () => {
+        const detail = await promptus().request<CampaignDetail>('POST', '/campaigns/import', { yaml })
+        return text({ id: detail.id, title: detail.story.title, issues: issueReport(detail.issues) })
+      }),
+  )
+
+  server.registerTool(
     'import_campaign_yaml',
     {
       title: 'Remplacer la campagne par un YAML',

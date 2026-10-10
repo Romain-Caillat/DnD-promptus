@@ -109,6 +109,27 @@ async fn a_token_prepares_its_gms_campaign_then_dies_when_revoked() {
         let r = call_with_token(&app, &secret, method, &uri, body).await;
         assert_eq!(r.status, StatusCode::OK, "{method} {uri}: {}", r.body);
     }
+    // A campaign written elsewhere lands as a new one of the GM's.
+    let r = call_with_token(
+        &app,
+        &secret,
+        "POST",
+        "/api/campaigns/import",
+        Some(json!({ "yaml": FIXTURE })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
+    let created = r.body["data"]["id"].as_str().unwrap().to_string();
+    let r = call(
+        &app,
+        Some(&session),
+        "GET",
+        &format!("/api/campaigns/{created}"),
+        None,
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::OK, "the GM owns it");
+
     // The edit landed, as the GM's own.
     let r = call(
         &app,

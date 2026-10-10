@@ -103,6 +103,7 @@ describe('promptus MCP server', () => {
     const { tools } = await c.listTools()
     expect(tools.map((t) => t.name).sort()).toEqual([
       'apply_story_edits',
+      'create_campaign_from_yaml',
       'export_campaign_yaml',
       'get_campaign',
       'get_readiness',
@@ -218,6 +219,19 @@ describe('promptus MCP server', () => {
     expect(api.sent[1]!.body).toEqual({ yaml: 'id: phare\n' })
     expect(r.title).toBe('Le Phare de Kerbrume')
     expect(r.issues.errors).toBe(1)
+  })
+
+  it('creates a new campaign from a YAML file', async () => {
+    const api = mockFetch({
+      'POST /campaigns/import': () => ({ status: 201, body: { data: DETAIL } }),
+    })
+    const c = await connect(ENV, api.fetchImpl)
+    const r = await call(c, 'create_campaign_from_yaml', { yaml: 'id: phare\n' })
+    expect(r.isError).toBe(false)
+    expect(api.sent[0]!.body).toEqual({ yaml: 'id: phare\n' })
+    const created = JSON.parse(r.text)
+    expect(created.title).toBe('Le Phare de Kerbrume')
+    expect(created.issues.errors).toBe(1)
   })
 
   it('says when the token is revoked, the campaign unknown or the server down', async () => {

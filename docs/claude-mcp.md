@@ -34,14 +34,15 @@ anything else is 403 `TOKEN_NOT_ALLOWED`.
 | Route | MCP tool |
 | --- | --- |
 | `GET /api/campaigns` | `list_campaigns` |
+| `POST /api/campaigns/import` | `create_campaign_from_yaml` (a campaign written with Claude lands as a new one, in preparation) |
 | `GET /api/campaigns/{id}` | `get_campaign`, `get_scene`, `get_readiness` (validator issues) |
 | `GET /api/campaigns/{id}/readiness` | `get_readiness` (act gauges) |
 | `POST /api/campaigns/{id}/story/edits` | `apply_story_edits` |
 | `GET /api/campaigns/{id}/export` | `export_campaign_yaml` |
 | `PUT /api/campaigns/{id}/import` | `import_campaign_yaml` |
 
-Deliberately excluded: sign-in, accounts, GM invitations, the token
-routes, creating / archiving / setting a campaign, `story/validate`
+Deliberately excluded: sign-in, accounts, the token routes, creating
+an empty campaign, archiving / setting a campaign, `story/validate`
 (declaring the campaign playable is the GM's decision; the validator's
 report already comes with every read and edit), the table and players,
 the live session and its socket, player and screen routes, and every

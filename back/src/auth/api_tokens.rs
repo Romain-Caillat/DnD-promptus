@@ -24,11 +24,12 @@ use crate::error::AppError;
 
 /// What a token reaches: campaign preparation only, read and write,
 /// with the same checks as the review screen. Paths are the router's
-/// own (`MatchedPath`).
+/// own (`MatchedPath`). Creating a campaign from a YAML file is in: the
+/// GM may write a campaign with Claude and have it land as a new one.
 ///
 /// Deliberately **not** here: signing in and out, accounts, GM
 /// invitations, the tokens themselves (a token never mints a token),
-/// creating, archiving or setting a campaign, declaring it playable
+/// creating an empty campaign, archiving or setting one, declaring it playable
 /// (`story/validate` is the GM's decision — the validator's report
 /// already comes back with every read and edit), the table and its
 /// players, the live session and its socket, the player routes, and
@@ -36,6 +37,7 @@ use crate::error::AppError;
 /// generated, images, the co-GM).
 pub const TOKEN_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/campaigns"),
+    ("POST", "/api/campaigns/import"),
     ("GET", "/api/campaigns/{id}"),
     ("GET", "/api/campaigns/{id}/export"),
     ("PUT", "/api/campaigns/{id}/import"),
