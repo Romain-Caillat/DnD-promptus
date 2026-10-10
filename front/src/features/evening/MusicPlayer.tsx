@@ -112,7 +112,7 @@ export function MusicPlayer({ music }: { music: Music }) {
         <span className="truncate text-body font-bold">{music.title}</span>
         <button
           type="button"
-          className="self-start rounded-button bg-ivory px-3 py-1.5 text-caption font-bold text-ink shadow-ivory-flat"
+          className="pixel-key pixel-cursor self-start py-1 pr-3 pb-2 text-label [--px:2px]"
           onClick={() => {
             const p = player.current
             if (!p) return

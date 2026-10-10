@@ -232,6 +232,19 @@ pub async fn call_as_screen(
     send(app, cookie.as_deref(), method, uri, body).await
 }
 
+/// Send one request as a program holding the GM's personal access
+/// token `token` (`Authorization: Bearer`), with no cookie.
+pub async fn call_with_token(
+    app: &Router,
+    token: &str,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> Reply {
+    let auth = format!("Bearer {token}");
+    send_with(app, &[(header::AUTHORIZATION, &auth)], method, uri, body).await
+}
+
 /// Send one request with `cookie` as its whole `Cookie` header.
 pub async fn send(
     app: &Router,
@@ -240,9 +253,23 @@ pub async fn send(
     uri: &str,
     body: Option<Value>,
 ) -> Reply {
+    match cookie {
+        Some(cookie) => send_with(app, &[(header::COOKIE, cookie)], method, uri, body).await,
+        None => send_with(app, &[], method, uri, body).await,
+    }
+}
+
+/// Send one request carrying `headers`.
+pub async fn send_with(
+    app: &Router,
+    headers: &[(header::HeaderName, &str)],
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> Reply {
     let mut req = Request::builder().method(method).uri(uri);
-    if let Some(cookie) = cookie {
-        req = req.header(header::COOKIE, cookie);
+    for (name, value) in headers {
+        req = req.header(name, *value);
     }
     let req = match body {
         Some(b) => req
@@ -325,6 +352,24 @@ pub async fn signed_in_gm(pool: &PgPool, name: &str) -> (Uuid, String) {
         .unwrap();
     tx.commit().await.unwrap();
     (id, token)
+}
+
+/// A personal access token minted by the GM behind `session`: its id
+/// and its secret.
+pub async fn api_token(app: &Router, session: &str, name: &str) -> (String, String) {
+    let r = call(
+        app,
+        Some(session),
+        "POST",
+        "/api/gm-tokens",
+        Some(serde_json::json!({ "name": name })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
+    (
+        r.body["data"]["id"].as_str().unwrap().to_string(),
+        r.body["data"]["secret"].as_str().unwrap().to_string(),
+    )
 }
 
 /// A one-second 16 kHz mono 16-bit WAV, base64, whose samples are

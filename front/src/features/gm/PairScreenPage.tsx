@@ -47,7 +47,7 @@ export function PairScreenPage() {
             <li key={c.id}>
               <button
                 type="button"
-                className="w-full rounded-button border border-line bg-surface px-4 py-3 text-left text-body font-bold"
+                className="pixel-choice w-full py-3 pr-4 pb-3.5 text-left text-body font-bold"
                 onClick={async () => {
                   setError(null)
                   try {

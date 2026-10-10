@@ -72,7 +72,8 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
 
     // Every GM route goes here: `require_gm` refuses a request without a
     // valid GM session before any handler runs. `tests/gm_routes_test.rs`
-    // lists them all.
+    // lists them all. A personal access token passes it only on the
+    // preparation routes of `auth::api_tokens::TOKEN_ROUTES`.
     let gm = Router::new()
         .route("/api/me", get(api::gm::me))
         .route("/api/auth/sign-out", post(api::auth::sign_out))
@@ -81,6 +82,13 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             get(api::gm::list_invites).post(api::gm::create_invite),
         )
         .route("/api/gm-invites/{id}", delete(api::gm::revoke_invite))
+        // platform/connect-claude-mcp: personal access tokens, minted and
+        // revoked from the GM's session only.
+        .route(
+            "/api/gm-tokens",
+            get(api::gm::list_tokens).post(api::gm::create_token),
+        )
+        .route("/api/gm-tokens/{id}", delete(api::gm::revoke_token))
         .route(
             "/api/campaigns",
             get(api::campaigns::list).post(api::campaigns::create),

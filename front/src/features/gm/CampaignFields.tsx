@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import type { CampaignForm } from './campaignForm'
 
 const inputClass =
-  'w-full rounded-button border border-line-strong bg-well px-3.5 py-2.5 text-body text-chalk placeholder:text-mute focus:border-chalk focus:outline-none'
+  'w-full pixel-field px-3.5 py-2.5 text-body'
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: (id: string) => ReactNode }) {
   const id = useId()
@@ -31,7 +31,7 @@ export function IdentityFields({ form, onChange }: { form: CampaignForm; onChang
         {(id) => (
           <input
             id={id}
-            className={cn(inputClass, 'type-title text-[20px]')}
+            className={cn(inputClass, 'type-title text-[16px]')}
             value={form.title}
             placeholder={t('gm.newCampaign.world.titlePlaceholder')}
             maxLength={120}

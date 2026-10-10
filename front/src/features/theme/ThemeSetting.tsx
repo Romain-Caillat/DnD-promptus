@@ -25,8 +25,7 @@ export function ThemeSetting({ className }: { className?: string }) {
           aria-checked={choice === c}
           onClick={() => setThemeChoice(c)}
           className={cn(
-            'rounded-md px-2.5 py-1 font-semibold',
-            choice === c ? 'bg-ivory text-ink shadow-ivory-flat' : 'border border-line text-chalk-soft',
+            'pixel-choice py-1 pr-2.5 pb-1.5 text-label type-key',
           )}
         >
           {t(`theme.${c}`)}

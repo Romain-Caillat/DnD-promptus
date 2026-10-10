@@ -41,8 +41,8 @@ export function TabletScreen({
   const [drawer, setDrawer] = useState(false)
   const target = (on: boolean) =>
     cn(
-      'relative flex h-[72px] w-full flex-col items-center justify-center gap-1 rounded-[14px] border text-caption font-semibold',
-      on ? 'border-ink bg-ivory text-ink shadow-ivory-flat' : 'border-line bg-surface text-mute-soft',
+      'pixel-choice flex h-[72px] w-full flex-col items-center justify-center gap-1 pr-1 pb-1 text-label type-key',
+      !on && 'text-mute-soft',
     )
   const dot = <i aria-hidden className="absolute top-2 right-2 size-2.5 rounded-full bg-stat-init" />
   return (
@@ -59,15 +59,21 @@ export function TabletScreen({
               setDrawer(false)
             }}
           >
-            <b aria-hidden className="font-title text-[22px]">
+            <b aria-hidden className="font-pixel text-[24px] font-normal">
               {s.glyph}
             </b>
             {t(`gmLive.tablet.${s.id}`)}
             {waiting[s.id] && dot}
           </button>
         ))}
-        <button type="button" aria-expanded={drawer} className={target(drawer)} onClick={() => setDrawer((d) => !d)}>
-          <b aria-hidden className="font-title text-[22px]">
+        <button
+          type="button"
+          aria-expanded={drawer}
+          data-active={drawer || undefined}
+          className={target(drawer)}
+          onClick={() => setDrawer((d) => !d)}
+        >
+          <b aria-hidden className="font-pixel text-[24px] font-normal">
             {COPILOT_GLYPH}
           </b>
           {t('gmLive.tablet.copilot')}
@@ -114,9 +120,9 @@ function Seats({ screen, onOpen }: { screen: LiveScreen; onOpen: () => void }) {
             key={s.playerId}
             type="button"
             className={cn(
-              'flex min-h-16 items-center gap-2.5 rounded-xl bg-surface px-3 text-left',
-              spot && spot.pendingRequests > 0 && 'border-[1.5px] border-stat-init',
-              spot?.alert && 'border-[1.5px] border-stat-atk',
+              'pixel-choice flex min-h-16 items-center gap-2.5 pr-3 pb-0.5 text-left',
+              spot && spot.pendingRequests > 0 && '[--pixel-line:var(--color-stat-init)]',
+              spot?.alert && '[--pixel-line:var(--color-stat-atk)]',
             )}
             onClick={onOpen}
             title={t('gmLive.tablet.see')}

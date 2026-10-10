@@ -108,7 +108,7 @@ export function NewCampaignPage() {
         <Link className="underline underline-offset-4" to="/">
           {t('gm.newCampaign.back')}
         </Link>
-        <span className="type-title text-[15px] text-chalk">{t('gm.newCampaign.title')}</span>
+        <span className="type-title text-[16px] text-chalk">{t('gm.newCampaign.title')}</span>
       </header>
       <nav aria-label={t('gm.newCampaign.title')} className="border-b border-line bg-table px-5 py-3">
         <ol className="flex items-center gap-3">
@@ -161,13 +161,10 @@ export function NewCampaignPage() {
                       aria-pressed={on}
                       onClick={() => setRules({ id: p.id, version: p.version })}
                       className={cn(
-                        'flex flex-col gap-3 rounded-panel border-[1.5px] p-4 text-left',
-                        on
-                          ? 'border-ink bg-ivory text-ink shadow-ivory-flat outline-[1.5px] -outline-offset-[7px] outline-ink outline-solid'
-                          : 'border-line bg-surface text-chalk',
+                        'pixel-choice flex flex-col gap-3 py-4 pr-4 pb-5 text-left [--cursor-room:22px] [--px:3px]',
                       )}
                     >
-                      <span className="type-title text-[22px]">{p.name}</span>
+                      <span className="type-title text-[24px]">{p.name}</span>
                       <span className={cn('text-body', on ? 'text-ink-soft' : 'text-mute-soft')}>{p.description}</span>
                       <PresetStats preset={p} onIvory={on} />
                     </button>

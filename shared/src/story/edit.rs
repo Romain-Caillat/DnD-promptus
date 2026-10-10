@@ -11,7 +11,13 @@
 //! format can be edited without a variant per field; the result is read
 //! back through the model, which refuses unknown fields and wrong
 //! types exactly as an import does. Whether the result is *good* is the
-//! validator's concern (`validate`), and it reports, never blocks.
+//! validator's concern (`validate`), and it reports, never blocks —
+//! except for the parts of a scene the scene sheet edits
+//! (`campaign/edit-scenes-in-one-place`): a `set` reaching a scene's
+//! fight, ambience, checks, exits, loot or XP is refused when it leaves
+//! that scene a problem it did not have (an opponent who names nothing,
+//! an exit to nowhere, a stat the rules lack, a link that is not
+//! YouTube), `EDIT_SCENE_INVALID`.
 
 use std::collections::BTreeSet;
 use std::fmt;
@@ -19,8 +25,9 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
+use super::library::{Library, validate_with};
 use super::model::{Campaign, Id};
-use super::validate::{Severity, validate};
+use super::validate::Severity;
 
 /// The lists of a campaign whose items carry an id, and the kind each
 /// holds.
@@ -130,12 +137,40 @@ impl std::error::Error for EditError {}
 /// break silently.
 const FROZEN: [&str; 2] = ["id", "format"];
 
+/// The parts of a scene a `set` may only leave sound: what the scene
+/// sheet edits, where a wrong id would reach the table (a fight against
+/// nobody, an exit to nowhere).
+const SCENE_PARTS: [&str; 6] = ["encounter", "ambience", "checks", "exits", "loot", "xp"];
+
+/// The warnings a scene part may not gain either, on top of every error:
+/// the structural slips of those parts.
+const SCENE_SLIPS: [&str; 4] = [
+    "ENCOUNTER_EMPTY",
+    "EXIT_TO_SELF",
+    "LOOT_EMPTY",
+    "MUSIC_NOT_YOUTUBE",
+];
+
 /// Apply `edits` to `campaign`, all or nothing.
 ///
 /// # Errors
 ///
 /// The first edit that does not fit.
 pub fn apply(campaign: &Campaign, edits: &[Edit]) -> Result<(Campaign, Vec<Change>), EditError> {
+    apply_with(campaign, edits, &Library::default())
+}
+
+/// [`apply`], with the scene parts also checked against `library` (a
+/// check's `stat` against the rule system's abilities).
+///
+/// # Errors
+///
+/// The first edit that does not fit.
+pub fn apply_with(
+    campaign: &Campaign,
+    edits: &[Edit],
+    library: &Library<'_>,
+) -> Result<(Campaign, Vec<Change>), EditError> {
     let mut doc = serde_json::to_value(campaign).map_err(|e| EditError {
         index: 0,
         code: "EDIT_INVALID",
@@ -150,8 +185,22 @@ pub fn apply(campaign: &Campaign, edits: &[Edit]) -> Result<(Campaign, Vec<Chang
             detail,
         };
         let change = apply_one(&mut doc, edit).map_err(|(code, detail)| err(code, detail))?;
-        current =
+        let next: Campaign =
             serde_json::from_value(doc.clone()).map_err(|e| err("EDIT_INVALID", e.to_string()))?;
+        if let Some(node) = scene_part(edit) {
+            let before = scene_problems(&current, library, node);
+            if let Some(new) = scene_problems(&next, library, node)
+                .into_iter()
+                .find(|p| !before.contains(p))
+            {
+                let (code, path, detail) = new;
+                return Err(err(
+                    "EDIT_SCENE_INVALID",
+                    format!("{code} {path}: {detail}"),
+                ));
+            }
+        }
+        current = next;
         changes.push(change);
     }
     Ok((current, changes))
@@ -163,8 +212,21 @@ pub fn apply(campaign: &Campaign, edits: &[Edit]) -> Result<(Campaign, Vec<Chang
 /// dropped.
 #[must_use]
 pub fn sanitize(campaign: &Campaign, edits: Vec<Edit>) -> (Vec<Edit>, usize) {
+    sanitize_with(campaign, edits, &Library::default())
+}
+
+/// [`sanitize`] against `library`: an edit is applied as the GM's
+/// would be ([`apply_with`], the scene parts checked against the rule
+/// system) and must add no error [`validate_with`] finds. The co-GM thus
+/// never proposes what the GM would be refused.
+#[must_use]
+pub fn sanitize_with(
+    campaign: &Campaign,
+    edits: Vec<Edit>,
+    library: &Library<'_>,
+) -> (Vec<Edit>, usize) {
     let errors = |c: &Campaign| -> BTreeSet<(&'static str, String)> {
-        validate(c)
+        validate_with(c, library)
             .into_iter()
             .filter(|i| i.severity == Severity::Error)
             .map(|i| (i.code, i.detail))
@@ -175,7 +237,7 @@ pub fn sanitize(campaign: &Campaign, edits: Vec<Edit>) -> (Vec<Edit>, usize) {
     let mut known = errors(&base);
     let mut dropped = 0;
     for edit in edits {
-        match apply(&base, std::slice::from_ref(&edit)) {
+        match apply_with(&base, std::slice::from_ref(&edit), library) {
             Ok((next, _)) => {
                 let now = errors(&next);
                 if now.is_subset(&known) {
@@ -190,6 +252,35 @@ pub fn sanitize(campaign: &Campaign, edits: Vec<Edit>) -> (Vec<Edit>, usize) {
         }
     }
     (kept, dropped)
+}
+
+/// The scene whose sheet part `edit` sets, if it does.
+fn scene_part(edit: &Edit) -> Option<&str> {
+    let Edit::Set { target, field, .. } = edit else {
+        return None;
+    };
+    let first = field.split('.').next()?;
+    SCENE_PARTS.contains(&first).then_some(target.as_str())
+}
+
+/// What is wrong in scene `node` that a sheet edit may not add: its
+/// errors and its structural slips, as `(code, path, detail)`. Empty
+/// when `node` is no scene (the edit then targeted something else).
+fn scene_problems(
+    c: &Campaign,
+    library: &Library<'_>,
+    node: &str,
+) -> BTreeSet<(&'static str, String, String)> {
+    let Some(i) = c.nodes.iter().position(|n| n.id == node) else {
+        return BTreeSet::new();
+    };
+    let prefix = format!("nodes[{i}].");
+    validate_with(c, library)
+        .into_iter()
+        .filter(|x| x.path.starts_with(&prefix))
+        .filter(|x| x.severity == Severity::Error || SCENE_SLIPS.contains(&x.code))
+        .map(|x| (x.code, x.path, x.detail))
+        .collect()
 }
 
 type Failure = (&'static str, String);
@@ -411,6 +502,154 @@ mod tests {
                 .code,
             "EDIT_ID_TAKEN"
         );
+    }
+
+    #[test]
+    fn the_scene_sheet_sets_a_fight_its_sound_and_its_exits() {
+        let c = from_yaml(KERBRUME).unwrap();
+        let (next, changes) = apply(
+            &c,
+            &edits(json!([
+                { "op": "set", "target": "sc_taverne", "field": "encounter", "value": {
+                    "opponents": [{ "who": "adv_contrebandier", "count": 3 }, { "who": "pnj_corentin" }],
+                    "tactics": ["Ils bloquent la porte."],
+                    "morale": [{ "when": "Deux tombent", "then": "Les autres fuient." }]
+                }},
+                { "op": "set", "target": "sc_taverne", "field": "xp", "value": [{ "amount": 2, "reason": "Bagarre gagnée" }] },
+                { "op": "set", "target": "sc_taverne", "field": "loot", "value": [{ "item": "obj_sabre", "found": "Sous le comptoir" }] },
+                { "op": "set", "target": "sc_taverne", "field": "ambience", "value": {
+                    "mood": "Enfumée", "sounds": "Chopes, rires",
+                    "music": [{ "mood": "tension", "title": "Taverne", "url": "https://www.youtube.com/watch?v=abc", "search": "tavern music" }]
+                }},
+                { "op": "set", "target": "sc_taverne", "field": "exits", "value": [{ "to": "sc_port", "label": "Vers le port" }] },
+                { "op": "set", "target": "sc_crique", "field": "encounter", "value": null },
+            ])),
+        )
+        .unwrap();
+        let tavern = next.node("sc_taverne").unwrap();
+        let fight = tavern.encounter.as_ref().unwrap();
+        assert_eq!(fight.opponents[0].count, 3);
+        assert_eq!(fight.morale[0].then, "Les autres fuient.");
+        assert_eq!(tavern.ambience.music[0].search, "tavern music");
+        assert_eq!(tavern.exits[0].to, "sc_port");
+        assert!(next.node("sc_crique").unwrap().encounter.is_none());
+        assert_eq!(changes[0].field.as_deref(), Some("encounter"));
+    }
+
+    #[test]
+    fn a_scene_part_naming_nothing_is_refused_whole() {
+        let c = from_yaml(KERBRUME).unwrap();
+        let fail = |v: Value| apply(&c, &edits(v)).unwrap_err();
+        // An opponent who is no adversary nor NPC: nothing is applied.
+        let e = fail(json!([
+            { "op": "set", "target": "sc_taverne", "field": "summary", "value": "Autre." },
+            { "op": "set", "target": "sc_taverne", "field": "encounter", "value": {
+                "opponents": [{ "who": "adv_kraken" }]
+            }},
+        ]));
+        assert_eq!((e.index, e.code), (1, "EDIT_SCENE_INVALID"));
+        assert!(e.detail.contains("adv_kraken"), "{}", e.detail);
+        // The wrong kind, a dotted path, nobody to fight, an exit to
+        // nowhere or to itself, loot of nothing, a link off YouTube.
+        for bad in [
+            json!({ "op": "set", "target": "sc_taverne", "field": "encounter", "value": { "opponents": [{ "who": "obj_sabre" }] } }),
+            json!({ "op": "set", "target": "sc_crique", "field": "encounter.opponents", "value": [{ "who": "pnj_inconnu" }] }),
+            json!({ "op": "set", "target": "sc_crique", "field": "encounter.opponents", "value": [] }),
+            json!({ "op": "set", "target": "sc_taverne", "field": "exits", "value": [{ "to": "sc_ailleurs", "label": "x" }] }),
+            json!({ "op": "set", "target": "sc_taverne", "field": "exits", "value": [{ "to": "sc_taverne", "label": "x" }] }),
+            json!({ "op": "set", "target": "sc_taverne", "field": "loot", "value": [{ "found": "Rien" }] }),
+            json!({ "op": "set", "target": "sc_taverne", "field": "ambience.music", "value": [
+                { "mood": "calm", "title": "x", "url": "https://example.com/x" }
+            ] }),
+        ] {
+            assert_eq!(
+                fail(json!([bad.clone()])).code,
+                "EDIT_SCENE_INVALID",
+                "{bad}"
+            );
+        }
+        // Outside the sheet's parts, a dangling reference stays the
+        // validator's to report.
+        assert!(
+            apply(
+                &c,
+                &edits(json!([{ "op": "set", "target": "sc_taverne", "field": "location", "value": "lieu_disparu" }]))
+            )
+            .is_ok()
+        );
+    }
+
+    #[test]
+    fn a_problem_the_scene_already_had_does_not_block_the_sheet() {
+        let c = from_yaml(KERBRUME).unwrap();
+        // An opponent removed elsewhere leaves a reference to nothing…
+        let (broken, _) = apply(
+            &c,
+            &edits(json!([{ "op": "remove", "target": "adv_contrebandier" }])),
+        )
+        .unwrap();
+        // …and the GM may still set the fight's tactics.
+        assert!(
+            apply(
+                &broken,
+                &edits(json!([{ "op": "set", "target": "sc_crique", "field": "encounter.tactics", "value": ["Ils fuient."] }]))
+            )
+            .is_ok()
+        );
+    }
+
+    #[test]
+    fn a_planned_check_names_an_ability_of_the_rules() {
+        let c = from_yaml(KERBRUME).unwrap();
+        let rules = crate::rules::RuleSystem::from_yaml(include_str!(
+            "../../../content/rules/corsaires/v1.yaml"
+        ))
+        .unwrap();
+        let library = Library {
+            rules: Some(&rules),
+            maps: None,
+        };
+        let check = |stat: &str| {
+            apply_with(
+                &c,
+                &edits(
+                    json!([{ "op": "set", "target": "sc_taverne", "field": "checks", "value": [
+                        { "action": "Calmer la salle", "stat": stat, "difficulty": 10, "natural_1": "Une chope vole." }
+                    ]}]),
+                ),
+                &library,
+            )
+        };
+        assert!(check("CHA").is_ok());
+        assert_eq!(check("CHARME").unwrap_err().code, "EDIT_SCENE_INVALID");
+    }
+
+    #[test]
+    fn a_proposal_drops_a_check_on_a_stat_the_rules_lack() {
+        let c = from_yaml(KERBRUME).unwrap();
+        let rules = crate::rules::RuleSystem::from_yaml(include_str!(
+            "../../../content/rules/corsaires/v1.yaml"
+        ))
+        .unwrap();
+        let library = Library {
+            rules: Some(&rules),
+            maps: None,
+        };
+        let proposed = edits(json!([
+            { "op": "set", "target": "sc_taverne", "field": "checks", "value": [
+                { "action": "Charmer", "stat": "CHARME", "difficulty": 10 }
+            ]},
+            { "op": "set", "target": "sc_port", "field": "checks", "value": [
+                { "action": "Repérer", "stat": "SAG", "difficulty": 10 }
+            ]},
+        ]));
+        // Without the rules nothing tells them apart; with them, the GM
+        // would be refused the first, so the co-GM cannot propose it.
+        assert_eq!(sanitize(&c, proposed.clone()).1, 0);
+        let (kept, dropped) = sanitize_with(&c, proposed, &library);
+        assert_eq!(dropped, 1);
+        assert_eq!(kept.len(), 1);
+        assert!(matches!(&kept[0], Edit::Set { target, .. } if target == "sc_port"));
     }
 
     #[test]

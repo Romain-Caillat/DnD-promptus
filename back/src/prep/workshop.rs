@@ -94,12 +94,12 @@ type Row = (
 const COLUMNS: &str = "id, prompt, reply, edits, dropped, status, created_at";
 
 fn proposal(
-    story: &Campaign,
+    row: &CampaignRow,
     (id, prompt, reply, Json(edits), dropped, status, created_at): Row,
 ) -> Result<Proposal, AppError> {
     let status = Status::parse(&status)?;
     let (changes, stale) = if status == Status::Pending {
-        match edit::apply(story, &edits) {
+        match edit::apply_with(&row.story, &edits, &super::edit_library(row)) {
             Ok((_, changes)) => (changes, false),
             Err(_) => (Vec::new(), true),
         }
@@ -137,7 +137,7 @@ pub async fn list(
     .bind(campaign)
     .fetch_all(pool)
     .await?;
-    rows.into_iter().map(|r| proposal(&row.story, r)).collect()
+    rows.into_iter().map(|r| proposal(&row, r)).collect()
 }
 
 const PROMPT_MAX: usize = 2_000;
@@ -241,7 +241,7 @@ pub async fn ask(
         .filter_map(|v| serde_json::from_value(v).ok())
         .collect();
     let unreadable = total - readable.len();
-    let (edits, dropped) = edit::sanitize(&row.story, readable);
+    let (edits, dropped) = edit::sanitize_with(&row.story, readable, &super::edit_library(&row));
     let dropped = i32::try_from(dropped + unreadable).unwrap_or(i32::MAX);
 
     let mut tx = pool.begin().await?;
@@ -264,7 +264,7 @@ pub async fn ask(
     .await?;
     live::touch(&mut tx, campaign, &Topic::Desk).await?;
     tx.commit().await?;
-    proposal(&row.story, stored)
+    proposal(&row, stored)
 }
 
 async fn locked(
@@ -306,7 +306,7 @@ pub async fn decide(
     let row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
     let stored = locked(&mut tx, campaign, id).await?;
     if accept {
-        let (story, _) = edit::apply(&row.story, &stored.3.0)
+        let (story, _) = edit::apply_with(&row.story, &stored.3.0, &super::edit_library(&row))
             .map_err(|_| AppError::Conflict("PROPOSAL_STALE"))?;
         campaigns::save_story(&mut tx, campaign, &story).await?;
     }
@@ -323,6 +323,6 @@ pub async fn decide(
         .await?
         .ok_or(AppError::NotFound("NOT_FOUND"))?;
     tx.commit().await?;
-    let p = proposal(&row.story, decided)?;
+    let p = proposal(&row, decided)?;
     Ok((row, p))
 }

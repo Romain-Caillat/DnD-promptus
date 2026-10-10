@@ -309,6 +309,7 @@
 
   /* --- Card button --------------------------------------------------- */
 
+  /* The card button is a pixel key now (tokens.css `button-card`). */
   .gk-card-button {
     position: relative;
     overflow: hidden;
@@ -943,7 +944,7 @@
     flex: none;
     box-sizing: border-box;
     vertical-align: middle;
-    border-radius: 6px;
+    border-radius: 0;
   }
   .gk-badge.gk-bane {
     background: var(--color-table);
@@ -992,7 +993,7 @@
     align-items: center;
     gap: 10px;
     padding: 10px 14px;
-    border-radius: 12px;
+    border-radius: 0;
     font-weight: 700;
     font-size: 15px;
   }
@@ -1016,8 +1017,12 @@
     background: var(--color-stat-init-fill);
     color: var(--color-ink);
     box-shadow: var(--shadow-turn);
-    font-family: var(--font-title);
-    font-size: 18px;
+    font-family: var(--font-pixel);
+    font-weight: 400;
+    font-synthesis: none;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 16px;
     animation: gk-banner-pulse 1.2s ease-in-out infinite;
   }
   .gk-banner[data-tone="star"] {
@@ -1052,25 +1057,25 @@
     align-items: center;
     gap: 12px;
     padding: 8px 12px 8px 8px;
-    border-radius: 12px;
+    border-radius: 0;
     touch-action: pan-y;
     animation: gk-toast-in 0.4s cubic-bezier(0.2, 1.2, 0.3, 1) both;
   }
   .gk-toast-kicker {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.16em;
+    font-family: var(--font-pixel);
+    font-synthesis: none;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
   }
   .gk-toast[data-tone="good"] {
     background: var(--color-ivory);
     color: var(--color-ink);
-    outline: 1.5px solid var(--color-ink);
-    outline-offset: -5px;
     box-shadow:
+      inset 0 0 0 3px var(--color-ink),
       0 3px 0 var(--color-ivory-edge),
-      0 6px 0 var(--color-ivory-edge-deep),
-      0 14px 24px var(--color-drop);
+      0 6px 0 var(--color-ivory-edge-deep);
   }
   .gk-toast[data-tone="good"] .gk-toast-kicker {
     color: var(--color-ink-soft);
@@ -1079,16 +1084,15 @@
     background: var(--color-table);
     color: var(--color-chalk);
     box-shadow:
-      0 0 0 1.5px var(--color-mute),
-      0 4px 0 #000000,
-      0 14px 24px rgb(0 0 0 / 0.6);
+      inset 0 0 0 3px var(--color-mute),
+      0 4px 0 #000000;
   }
   .gk-toast[data-tone="info"] {
     background: color-mix(in srgb, var(--color-table) 92%, transparent);
     color: var(--color-chalk);
     box-shadow:
-      0 0 0 1px var(--color-line-strong),
-      0 14px 24px var(--color-drop);
+      inset 0 0 0 2px var(--color-line-strong),
+      0 4px 0 var(--color-edge-hard);
   }
   .gk-toast[data-tone="bad"] .gk-toast-kicker,
   .gk-toast[data-tone="info"] .gk-toast-kicker {
@@ -1133,8 +1137,8 @@
     overscroll-behavior: contain;
     outline: 0;
     background: var(--color-table);
-    border-top: 1px solid var(--color-line);
-    border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+    border-top: 3px solid var(--color-line-strong);
+    border-radius: 0;
     color: var(--color-chalk);
     transform: translateY(var(--drawer-swipe-movement-y, 0));
     transition: transform 250ms ease-out;
@@ -1163,12 +1167,9 @@
       0 0 0 5px var(--color-chalk),
       0 18px 36px rgb(0 0 0 / 0.6);
   }
-  /* Held down: the button card stays tipped forward. */
+  /* Held down: the key stays sunk into the table (an action being sent). */
   .gk-card-button.gk-pressed {
-    transform: perspective(500px) rotateX(14deg) translateY(4px);
-    box-shadow: var(--shadow-ivory-pressed);
-  }
-  .gk-card-button.gk-pressed.button-card-dark {
-    box-shadow: var(--shadow-dark-pressed);
+    --pixel-depth: var(--px);
+    translate: 0 var(--px);
   }
 }

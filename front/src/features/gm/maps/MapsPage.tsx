@@ -152,7 +152,7 @@ export function MapsPage() {
   return (
     <main className="surface-table flex min-h-dvh flex-col gap-4 p-5 text-chalk">
       {back}
-      <h1 className="type-title text-[22px]">{t('maps.title')}</h1>
+      <h1 className="type-title text-[24px]">{t('maps.title')}</h1>
       {error && (
         <p role="alert" className="text-body text-stat-atk">
           {t(`maps.errors.${error.code}`, {

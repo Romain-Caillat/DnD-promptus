@@ -98,7 +98,7 @@ export function WorldMapTab({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="type-title text-[20px]">{board.map.name}</h2>
+        <h2 className="type-title text-[16px]">{board.map.name}</h2>
         {travel && <span className="type-label">{when(t, travel)}</span>}
       </div>
       {travel && (
@@ -187,7 +187,7 @@ export function TravelMoments({ campaignId, refreshKey }: { campaignId: string; 
       {last && (
         <article className="surface-slab flex flex-col gap-1 p-3.5">
           <span className="type-label">{t('travel.onTheRoad')}</span>
-          <h3 className="type-title text-[18px]">{last.title}</h3>
+          <h3 className="type-title text-[16px]">{last.title}</h3>
           <p className="type-narration text-[18px] leading-snug text-chalk-soft">{last.text}</p>
         </article>
       )}

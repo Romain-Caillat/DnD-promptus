@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import { CardButton } from '@/components/game/CardButton'
@@ -10,20 +10,18 @@ import {
   applyEdits,
   entityAtPath,
   fetchReview,
-  freshId,
   nameOf,
   validateCampaign,
-  valueAt,
   type ActReadiness,
   type Edit,
-  type Entity,
   type ReviewCampaign,
   type Story,
   type StoryIssue,
 } from '@/lib/prep'
 import { cn } from '@/lib/utils'
-import { TextField } from '../fields'
+import { EntityForm, type FieldDef } from './EntityForm'
 import { Gauge, Readiness, useReadiness } from './Readiness'
+import { SceneSheet } from './SceneSheet'
 import { Workshop, useWorkshop } from './Workshop'
 
 const TABS = ['graph', 'bible', 'sheets', 'coherence', 'validate'] as const
@@ -36,22 +34,6 @@ type PageState =
   | { kind: 'error' }
   | { kind: 'ready'; campaign: ReviewCampaign }
 
-/** A field of an entity form: its dotted path, and how it is written. */
-interface FieldDef {
-  path: string
-  multiline?: boolean
-  number?: boolean
-  /** A list of lines (`truths`), edited one per line. */
-  lines?: boolean
-}
-
-const NODE_FIELDS: FieldDef[] = [
-  { path: 'title' },
-  { path: 'summary', multiline: true },
-  { path: 'read_aloud', multiline: true },
-  { path: 'flow', multiline: true },
-  { path: 'gm_notes', multiline: true },
-]
 const BIBLE_FIELDS: FieldDef[] = [
   { path: 'pitch', multiline: true },
   { path: 'tone' },
@@ -106,7 +88,7 @@ export function ReviewPage() {
   const [version, setVersion] = useState(0)
   const [workshopVersion, setWorkshopVersion] = useState(0)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<{ code: string; detail: string | null } | null>(null)
 
   useEffect(() => {
     let live = true
@@ -159,7 +141,7 @@ export function ReviewPage() {
     try {
       adopt((await applyEdits(campaignId, edits)).campaign)
     } catch (err) {
-      setError(err instanceof ApiError ? err.code : 'action')
+      setError(err instanceof ApiError ? { code: err.code, detail: err.detail } : { code: 'action', detail: null })
     } finally {
       setBusy(false)
     }
@@ -171,13 +153,14 @@ export function ReviewPage() {
     try {
       adopt(await validateCampaign(campaignId))
     } catch (err) {
-      setError(err instanceof ApiError ? err.code : 'action')
+      setError(err instanceof ApiError ? { code: err.code, detail: err.detail } : { code: 'action', detail: null })
     } finally {
       setBusy(false)
     }
   }
 
   const selectedNode = story.nodes?.find((n) => n.id === selected)
+  const sceneOpen = tab === 'graph' && Boolean(selectedNode)
   const selectedSheet = SHEET_KINDS.flatMap((k) => (story[k] ?? []).map((e) => ({ kind: k, entity: e }))).find(
     (s) => s.entity.id === selected,
   )
@@ -188,7 +171,7 @@ export function ReviewPage() {
         <Link className="underline underline-offset-4" to={`/campagnes/${campaignId}`}>
           {t('prep.back')}
         </Link>
-        <h1 className="type-title text-[15px] text-chalk">{story.title}</h1>
+        <h1 className="type-title text-[16px] text-chalk">{story.title}</h1>
         <span className="rounded-md border border-line-strong px-2 py-0.5 text-[11px] font-semibold">
           {campaign.validatedAt ? t('prep.review.validated') : t('prep.review.notValidated')}
         </span>
@@ -199,8 +182,7 @@ export function ReviewPage() {
               type="button"
               aria-current={tab === id ? 'page' : undefined}
               className={cn(
-                'rounded-button px-2.5 py-1.5 text-caption font-semibold',
-                tab === id ? 'bg-ivory text-ink' : 'text-chalk hover:bg-surface',
+                'pixel-tab py-1.5 pb-2',
               )}
               onClick={() => setTab(id)}
             >
@@ -215,11 +197,24 @@ export function ReviewPage() {
       <div className="flex flex-col gap-4 p-5">
         {error && (
           <p role="alert" className="text-body text-stat-atk">
-            {t(`prep.review.errors.${error}`, { defaultValue: t('prep.review.errors.action') })}
+            {t(`prep.review.errors.${error.code}`, { defaultValue: t('prep.review.errors.action') })}
+            {error.code === 'EDIT_SCENE_INVALID' && error.detail && (
+              <span className="block font-mono text-caption">{error.detail}</span>
+            )}
           </p>
         )}
-        <div className="grid gap-4 xl:grid-cols-[340px_1fr_340px]">
-          <Workshop workshop={workshop} story={story} node={selectedNode?.id ?? null} />
+        <div
+          className={cn(
+            'grid gap-4',
+            sceneOpen
+              ? 'lg:grid-cols-[1fr_440px] xl:grid-cols-[300px_1fr_460px]'
+              : 'xl:grid-cols-[340px_1fr_340px]',
+          )}
+        >
+          {/* With a scene open on a tablet, the graph and its sheet side by side; the co-GM below. */}
+          <div className={cn('flex min-w-0 flex-col', sceneOpen && 'lg:order-last lg:col-span-2 xl:order-none xl:col-span-1')}>
+            <Workshop workshop={workshop} story={story} node={selectedNode?.id ?? null} />
+          </div>
 
           <section className="flex min-w-0 flex-col gap-4">
             {tab === 'graph' && <Graph story={story} acts={acts} selected={selected} onSelect={setSelected} />}
@@ -255,7 +250,15 @@ export function ReviewPage() {
 
           <aside className="flex flex-col gap-4">
             {tab === 'graph' && selectedNode && (
-              <NodePanel key={`${selectedNode.id}${campaign.updatedAt}`} story={story} node={selectedNode} busy={busy} onSave={save} />
+              <SceneSheet
+                key={selectedNode.id}
+                campaignId={campaignId}
+                story={story}
+                node={selectedNode}
+                version={campaign.updatedAt}
+                busy={busy}
+                onSave={save}
+              />
             )}
             {tab === 'sheets' && selectedSheet && (
               <EntityForm
@@ -313,12 +316,11 @@ function Graph({
                   type="button"
                   aria-pressed={selected === n.id}
                   className={cn(
-                    'flex flex-col gap-0.5 rounded-xl p-2.5 text-left',
-                    selected === n.id ? 'bg-ivory text-ink shadow-ivory-flat' : 'border border-line bg-surface',
+                    'pixel-choice flex flex-col gap-0.5 py-2.5 pr-2.5 pb-3 text-left',
                   )}
                   onClick={() => onSelect(n.id)}
                 >
-                  <span className="text-[11px] font-semibold uppercase tracking-wide opacity-70">
+                  <span className="type-key text-label opacity-70">
                     {n.optional ? t('prep.review.optional') : t('prep.review.scene')}
                   </span>
                   <b className="text-body">{n.title}</b>
@@ -329,155 +331,6 @@ function Graph({
         ))}
       </div>
     </Panel>
-  )
-}
-
-/** The text of `value` as a form shows it. */
-function shown(value: unknown, def: FieldDef): string {
-  if (def.lines) return Array.isArray(value) ? value.join('\n') : ''
-  if (value === undefined || value === null) return ''
-  return String(value)
-}
-
-/** The value a form's `text` stores. Empty clears the field. */
-function stored(text: string, def: FieldDef): unknown {
-  if (def.lines) {
-    const lines = text
-      .split('\n')
-      .map((l) => l.trim())
-      .filter(Boolean)
-    return lines.length ? lines : null
-  }
-  if (def.number) return text.trim() === '' ? null : Number(text)
-  return text.trim() === '' ? null : text
-}
-
-/** One entity's fields, saved as `set` edits of the changed ones. */
-function EntityForm({
-  title,
-  target,
-  entity,
-  fields,
-  busy,
-  onSave,
-  children,
-}: {
-  title: string
-  target: string
-  entity: Record<string, unknown>
-  fields: FieldDef[]
-  busy: boolean
-  onSave: (edits: Edit[]) => Promise<void>
-  children?: React.ReactNode
-}) {
-  const { t } = useTranslation()
-  const initial = useMemo(
-    () => Object.fromEntries(fields.map((f) => [f.path, shown(valueAt(entity, f.path), f)])),
-    [entity, fields],
-  )
-  const [values, setValues] = useState(initial)
-  const changed = fields.filter((f) => values[f.path] !== initial[f.path])
-  return (
-    <Panel title={title}>
-      {fields.map((f) => (
-        <TextField
-          key={f.path}
-          label={t(`prep.review.field.${f.path}`, { defaultValue: f.path })}
-          multiline={f.multiline || f.lines}
-          value={values[f.path] ?? ''}
-          onChange={(v) => setValues((cur) => ({ ...cur, [f.path]: v }))}
-        />
-      ))}
-      <Btn
-        main
-        className="self-end"
-        disabled={busy || changed.length === 0}
-        onClick={() =>
-          void onSave(changed.map((f) => ({ op: 'set', target, field: f.path, value: stored(values[f.path], f) })))
-        }
-      >
-        {t('prep.review.save')}
-      </Btn>
-      {children}
-    </Panel>
-  )
-}
-
-function NodePanel({
-  story,
-  node,
-  busy,
-  onSave,
-}: {
-  story: Story
-  node: NonNullable<Story['nodes']>[number]
-  busy: boolean
-  onSave: (edits: Edit[]) => Promise<void>
-}) {
-  const { t } = useTranslation()
-  const clues = (story.clues ?? []).filter((c) => c.node === node.id)
-  const revelations = story.revelations ?? []
-  const [revelation, setRevelation] = useState(revelations[0]?.id ?? '')
-  const [text, setText] = useState('')
-  return (
-    <>
-      <EntityForm
-        title={node.title}
-        target={node.id}
-        entity={node}
-        fields={NODE_FIELDS}
-        busy={busy}
-        onSave={onSave}
-      />
-      <Panel title={t('prep.review.cluesTitle')}>
-        {clues.length === 0 && <p className="text-body text-chalk-soft">{t('prep.review.noClue')}</p>}
-        <ul className="flex flex-col gap-1.5">
-          {clues.map((c) => (
-            <li key={c.id} className="flex flex-col rounded-lg bg-surface px-2.5 py-1.5 text-caption">
-              <b className="text-chalk">{c.text}</b>
-              <span className="text-mute-soft">
-                → {nameOf(revelations.find((r) => r.id === c.revelation))}
-              </span>
-            </li>
-          ))}
-        </ul>
-        {revelations.length > 0 && (
-          <div className="flex flex-col gap-2 border-t border-line pt-2">
-            <label className="flex flex-col gap-1 text-caption text-mute-soft">
-              {t('prep.review.clueLeadsTo')}
-              <select
-                className="rounded-button border border-line bg-table px-2 py-1.5 text-body text-chalk"
-                value={revelation}
-                onChange={(e) => setRevelation(e.target.value)}
-              >
-                {revelations.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.statement}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <TextField label={t('prep.review.clueText')} multiline value={text} onChange={setText} />
-            <Btn
-              main
-              className="self-end"
-              disabled={busy || !text.trim() || !revelation}
-              onClick={() => {
-                const value: Entity = {
-                  id: freshId('cl_', text, story),
-                  revelation,
-                  node: node.id,
-                  text: text.trim(),
-                }
-                void onSave([{ op: 'add', kind: 'clue', value }]).then(() => setText(''))
-              }}
-            >
-              {t('prep.review.addClue')}
-            </Btn>
-          </div>
-        )}
-      </Panel>
-    </>
   )
 }
 
@@ -505,8 +358,7 @@ function Sheets({
                 type="button"
                 aria-pressed={selected === e.id}
                 className={cn(
-                  'rounded-button px-2.5 py-1.5 text-caption font-semibold',
-                  selected === e.id ? 'bg-ivory text-ink' : 'border border-line text-chalk',
+                  'pixel-choice py-1.5 pr-2.5 pb-2 text-caption font-semibold',
                 )}
                 onClick={() => onSelect(e.id)}
               >
@@ -590,7 +442,7 @@ function Validate({
       <ul className="grid grid-cols-2 gap-2 md:grid-cols-5">
         {counts.map(([key, n]) => (
           <li key={key} className="flex flex-col rounded-xl bg-surface p-2.5">
-            <b className="type-title text-[22px]">{n}</b>
+            <b className="type-title text-[24px]">{n}</b>
             <span className="text-caption text-mute-soft">{t(`prep.review.count.${key}`, { count: n })}</span>
           </li>
         ))}

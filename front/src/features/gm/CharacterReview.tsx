@@ -146,7 +146,7 @@ export function CharacterReview({
       <div className="grid flex-1 gap-4 xl:grid-cols-[1fr_340px]">
         <article className="flex flex-col gap-4" aria-label={t('gm.review.sheetOf', { name })}>
           <div className="grid gap-5 sm:grid-cols-[190px_1fr]">
-            <div className="grid h-[220px] place-items-end justify-center rounded-[14px] border border-line bg-surface pb-3.5">
+            <div className="grid h-[220px] place-items-end justify-center rounded-none border border-line bg-surface pb-3.5">
               {review.sheet.look ? (
                 <Sprite look={review.sheet.look} scale={5} label={name} />
               ) : (
@@ -171,7 +171,7 @@ export function CharacterReview({
                         title={a.name}
                         data-flag={flagged.has(path) ? 'bad' : moved.has(path) ? 'fix' : undefined}
                         className={cn(
-                          'flex flex-col items-center gap-0.5 rounded-[10px] border border-line bg-well py-2',
+                          'flex flex-col items-center gap-0.5 pixel-well py-2',
                           flagged.has(path) && 'border-[1.5px] border-stat-atk text-stat-atk',
                           !flagged.has(path) && moved.has(path) && 'border-[1.5px] border-chalk bg-surface-raised',
                         )}
@@ -306,7 +306,7 @@ export function CharacterReview({
 
 function Writing({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="rounded-xl border border-line-strong bg-well px-4 py-3.5 text-body leading-relaxed text-chalk-soft">
+    <div className="pixel-well px-4 py-3.5 text-body leading-relaxed text-chalk-soft">
       <span className="type-label mb-2 block">{label}</span>
       {children}
     </div>
@@ -317,14 +317,14 @@ function Check({ ok, children }: { ok: boolean; children: ReactNode }) {
   return (
     <p
       className={cn(
-        'flex items-start gap-2.5 rounded-[10px] bg-well px-3 py-2.5 text-[13px] leading-snug',
+        'flex items-start gap-2.5 rounded-none bg-well px-3 py-2.5 text-[13px] leading-snug',
         !ok && 'border-[1.5px] border-stat-atk',
       )}
     >
       <i
         aria-hidden
         className={cn(
-          'mt-px grid size-[18px] flex-none place-items-center rounded-[5px] text-[11px] font-extrabold not-italic',
+          'mt-px grid size-[18px] flex-none place-items-center rounded-none text-[11px] font-extrabold not-italic',
           ok ? 'bg-ivory text-ink' : 'bg-stat-atk-fill text-ink',
         )}
       >

@@ -81,7 +81,7 @@ export function InvitesPanel() {
           <p className="text-sm">{t('gm.invites.created')}</p>
           <div className="flex flex-wrap gap-2">
             <input
-              className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm"
+              className="h-9 min-w-0 flex-1 pixel-field px-3 text-sm"
               value={link}
               readOnly
               aria-label={t('gm.invites.linkLabel')}

@@ -305,6 +305,65 @@ tourner sans conteneur cible.
 
 ---
 
+### `platform/connect-claude-mcp` · doing — reste l'essai réel depuis Claude Desktop
+
+**Pourquoi** — Romain veut préparer sa campagne en parlant à son propre
+Claude (Claude Desktop ou Claude Code sur son Mac), qui modifie
+directement la campagne dans Promptus.
+
+**Périmètre** — Jetons personnels du MJ : créés, nommés, listés et
+révoqués depuis son espace, montrés une seule fois, stockés hachés,
+acceptés par le serveur en en-tête `Authorization` sur les routes de
+préparation seulement (pas d'invitation, pas de compte, pas de soirée).
+Un serveur MCP local (lancé par Claude sur le Mac, il parle à Promptus
+avec le jeton) : lister les campagnes, lire une campagne ou une scène,
+lire les alertes de cohérence, appliquer des modifications ciblées,
+exporter et importer le fichier de campagne. Mêmes garde-fous que
+l'écran : modifications validées par le serveur, tout ou rien ; rien
+n'atteint les joueurs sans la validation du MJ dans Promptus. Une page
+d'aide dit comment le déclarer dans Claude.
+
+*Hypothèse* — Claude tourne sur le Mac de Romain. Claude sur le web
+demanderait un serveur joignable depuis internet avec OAuth : hors
+périmètre.
+
+**Étapes** — Jetons (table, création, révocation, garde) → serveur MCP
+et ses outils → page d'aide et réglage dans l'espace MJ → essai réel
+depuis Claude Desktop.
+
+**Fini quand** — Depuis Claude Desktop, Romain demande « ajoute un
+indice vers le quai dans la scène de l'auberge », la scène change dans
+Promptus, et un jeton révoqué est refusé.
+
+**Risques** — Un jeton qui fuit donne la main sur les campagnes : portée
+limitée à la préparation, révocation immédiate, jamais affiché deux
+fois.
+
+**Origine** — Demande de Romain, 8 octobre 2026.
+
+*État* — Depuis son accueil MJ, Romain crée un jeton nommé « pour
+Claude », le copie (il n'est montré qu'une fois), voit quand chaque
+jeton a servi pour la dernière fois et le révoque d'un clic ; un jeton
+révoqué est refusé à l'appel suivant. Un jeton ne sert qu'à la
+préparation : lister les campagnes, lire une campagne, exporter,
+réimporter par-dessus une campagne existante, appliquer des
+modifications ciblées, lire la jauge des actes. Il ne peut ni créer de
+jeton, ni inviter, ni toucher à la table, à la soirée ou à quoi que ce
+soit qui dépense le budget IA, ni déclarer la campagne jouable : ce
+geste reste celui du MJ dans Promptus (les alertes du validateur
+reviennent à chaque lecture et chaque modification). Le serveur MCP
+local donne à Claude sept outils décrits en français (lister, lire une
+campagne, lire une scène, alertes de cohérence, modifier l'histoire,
+exporter, importer) ; une modification refusée n'applique rien et Claude
+lit pourquoi. Le même panneau montre la configuration à coller dans
+Claude Desktop et la commande pour Claude Code, jeton compris juste
+après sa création. Testé de bout en bout côté serveur et côté outils
+(appels simulés) ; pas encore essayé depuis le vrai Claude Desktop.
+*Décision ouverte* — faut-il refuser les écritures par jeton pendant une
+soirée en cours ?
+
+---
+
 ## Épic `ui`
 
 Le design system dessiné sur le canevas (`MEMORY.md` §2), en composants
@@ -469,6 +528,59 @@ Le pixel art et l’intérieur des cartes ne changent pas. Typecheck,
 lint, knip et tests passent (sauf les 9 tests connus de la table du MJ
 qui échouent sous Node faute de `localStorage`). **Reste** : Romain
 relit chaque écran dans les deux thèmes sur son écran.
+
+---
+
+### `ui/adopt-pixel-menu` · doing — reste la relecture de Romain sur son écran
+
+**Pourquoi** — Romain veut une interface entièrement pixel art : la
+piste « Menu pixel » de la planche des pistes d'interface (écartée au
+départ) devient la direction retenue.
+
+**Périmètre** — Toute l'interface, MJ et joueur, dans les deux thèmes :
+police pixel pour les titres, boutons et étiquettes (Silkscreen ou
+équivalent), coins en escalier, relief en aplats, curseur façon jeu de
+rôle rétro sur le choix actif, panneaux et champs au même dessin. Le
+texte long (narration, notes, fiches) garde une police lisible. Les
+pièces de jeu déjà en pixel art restent telles quelles.
+
+**Étapes** — Jetons et composants de base (bouton, panneau, champ,
+onglet) → écrans MJ → écrans joueur (téléphone d'abord) → page de
+référence du design → vérification écran par écran dans les deux thèmes.
+
+**Fini quand** — Chaque écran suit la piste Menu pixel dans les deux
+thèmes, le texte courant garde un contraste d'au moins 4,5:1, et Romain
+le confirme sur son écran.
+
+**Risques** — Une police pixel est illisible en petit sur téléphone ;
+la mémoire du projet disait l'inverse (UI noir et blanc, pixel pour le
+jeu seulement) : à mettre à jour.
+
+**Origine** — Demande de Romain, 8 octobre 2026.
+
+**État** — Toute l'interface, MJ et joueur, a pris le dessin du menu
+pixel, dans le thème sombre comme dans le clair. Les titres, les
+boutons, les étiquettes et les onglets s'écrivent dans une police pixel
+servie par l'application elle-même ; la narration, les notes, les fiches
+et le texte courant gardent une police lisible. Boutons, panneaux,
+champs, onglets et listes de choix ont des coins en escalier et un relief
+en aplats : une touche ivoire pour l'action principale, sombre pour les
+autres, et une touche s'enfonce d'un pixel quand on appuie. Un curseur de
+jeu de rôle (▶) pointe le choix en cours et suit le clavier ; il reste
+visible, immobile, quand l'appareil demande moins d'animations. Les
+cartes à jouer, les pièces de jeu déjà en pixel art et la grappe de
+boutons ronds du combat au téléphone n'ont pas bougé. La page de
+référence du design montre le nouveau menu (touches, choix avec curseur,
+onglets, champ, tailles de la police). Vérifié à l'écran : la page de
+référence et la page de connexion, dans les deux thèmes, sur ordinateur
+et au format téléphone, et le curseur au clavier ; le texte sur les
+nouvelles touches et onglets garde un contraste d'au moins 4,6:1 dans
+les deux thèmes (calculé). Pas vérifié : les
+écrans derrière la connexion (MJ et joueur, il faut une passkey) et
+l'écran TV ; c'est la relecture qui reste à faire. Choix pris en route :
+la police pixel ne descend jamais sous 12 px (lisible sur téléphone), et
+les petites étiquettes de caractéristiques des fiches restent dans la
+police lisible, faute de place pour la police pixel, qui est large.
 
 ---
 
@@ -1204,6 +1316,72 @@ qui demande zéro erreur ; un import est validé d'office (le MJ l'a
 écrit), une campagne créée depuis un pitch ou générée attend le MJ.
 Vérifié sur l'acte 1 joué des Corsaires : le co-MJ place les indices
 manquants de la route du Greyhound et l'alerte disparaît.
+
+### `campaign/edit-scenes-in-one-place` · doing — reste une scène préparée pour de vrai sur les deux mondes, puis jouée
+
+**Pourquoi** — Romain se perd dans la préparation : une scène est
+éclatée entre Préparer (texte), Cartes, Médias, et le combat, le son et
+la musique n'ont aucun éditeur hors du fichier de campagne. Une scène
+doit se préparer d'un seul endroit.
+
+**Périmètre** — Dans Préparer, la scène choisie dans le graphe s'ouvre
+en fiche à quatre onglets : **Texte** (titre, résumé, à lire à voix
+haute, déroulé, notes MJ, indices, jets, sorties), **Combat**
+(adversaires et nombre, tactique, moral, butin, XP ; « pas de combat »
+possible), **Visuels** (image de la scène, carte de combat, vidéo
+d'acte si c'est la première scène de l'acte : voir, générer, valider ou
+refuser, comme dans Médias et Cartes), **Son** (humeur, bruits
+d'ambiance, musique YouTube : titre, lien, recherche, écoute d'essai).
+Chaque modification passe par les mêmes modifications ciblées que
+l'atelier du co-MJ (tout ou rien, validées par le serveur). Les pages
+Médias et Cartes restent pour la vue d'ensemble.
+
+**Étapes** — Opérations de modification manquantes côté serveur
+(combat, ambiance, musique) → fiche Scène et ses quatre onglets →
+visuels branchés sur les médias et cartes existants → essai sur les
+deux mondes.
+
+**Fini quand** — Sur les Corsaires et le Brasier, le MJ prépare une
+scène de bout en bout (texte, combat, image, carte, musique) sans
+quitter la fiche, et la soirée en direct montre ce qu'il a réglé.
+
+**Risques** — Un éditeur de combat trop libre laisse passer un
+adversaire inconnu (le serveur doit refuser) ; la fiche devient trop
+longue sur tablette.
+
+**Origine** — Demande de Romain, 8 octobre 2026.
+
+**État** — Livré et vérifié par les tests, pas encore essayé à la main
+dans le navigateur. Dans Préparer, cliquer une scène du graphe ouvre sa
+fiche à droite, avec quatre onglets. **Texte** : les champs d'avant,
+plus ce qui lance la scène, la transition, les jets prévus (action,
+caractéristique, difficulté, et ce que donnent une réussite, un échec,
+un 1 et un 20) et les sorties vers les autres scènes ; les indices
+restent en dessous. **Combat** : « Un combat » ou « Pas de combat »,
+les adversaires choisis parmi ceux de la campagne et les PNJ qui ont
+des caractéristiques, leur nombre, la tactique, le moral, l'issue, le
+butin (objet, pièces, caché ou non) et l'XP ; une scène qui ouvre une
+bataille navale garde ses navires et ne peut pas perdre son combat.
+**Visuels** : l'image de la scène et, sur la première scène d'un acte,
+sa vidéo d'introduction, à demander, garder ou refaire comme dans
+Médias ; la carte de combat de la scène, avec son aperçu, à valider,
+refuser, ouvrir dans l'éditeur, détacher, remplacer par une autre ou
+générer pour la scène. **Son** : l'humeur, les bruits d'ambiance et les
+morceaux YouTube (moment, titre, lien, recherche), avec un lien de
+recherche et une écoute d'essai dans la fiche. Le serveur refuse
+désormais une modification qui ferait combattre un adversaire inconnu,
+mènerait vers une scène qui n'existe pas, donnerait un objet inconnu,
+demanderait une caractéristique absente des règles ou mettrait un lien
+qui n'est pas YouTube : rien n'est enregistré et le MJ lit pourquoi.
+Le co-MJ suit la même règle : il ne propose plus ce que le MJ se
+verrait refuser, et une ancienne proposition devenue fausse ne peut
+plus être acceptée.
+La jauge « prête à jouer » tient compte des cartes propres à la
+campagne une fois validées. Vérifié : `cargo test` (règle de
+modification, Corsaires et Brasier importés), Vitest de la fiche. Les
+pages Médias et Cartes restent.
+
+---
 
 ### `campaign/check-player-knowledge` · doing — reste une fin de soirée jouée pour de vrai
 

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { fetchMe, signOut, type Gm } from '@/lib/auth'
 import { ThemeSetting } from '@/features/theme/ThemeSetting'
 import { CampaignsPanel } from './CampaignsPanel'
+import { ClaudeAccessPanel } from './ClaudeAccessPanel'
 import { InvitesPanel } from './InvitesPanel'
 
 type MeState = { kind: 'loading' } | { kind: 'signed-out' } | { kind: 'error' } | { kind: 'ready'; gm: Gm }
@@ -59,7 +60,7 @@ export function GmHomePage() {
       {me.kind === 'ready' && (
         <>
           <header className="flex flex-wrap items-center gap-4 border-b border-line px-5 py-3 text-caption text-mute-soft">
-            <span className="type-title text-[13px] tracking-[0.3em] text-chalk uppercase">{t('app.name')}</span>
+            <span className="type-title text-[12px] tracking-[0.3em] text-chalk uppercase">{t('app.name')}</span>
             <p>{t('gm.home.greeting', { name: me.gm.displayName })}</p>
             <ThemeSetting className="ml-auto" />
             <Button variant="outline" size="sm" onClick={() => void leave()}>
@@ -70,6 +71,9 @@ export function GmHomePage() {
             <CampaignsPanel gmName={me.gm.displayName} />
             <div className="surface-slab max-w-2xl p-4">
               <InvitesPanel />
+            </div>
+            <div className="surface-slab max-w-2xl p-4">
+              <ClaudeAccessPanel />
             </div>
           </div>
         </>

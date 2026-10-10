@@ -66,6 +66,7 @@ front/          # React frontend (Vite), i18n in src/i18n (fr.json = reference)
 back/           # Rust/Axum backend (API + WebSocket), sqlx migrations
 shared/         # Shared Rust crate (rules engine, models)
 src-tauri/      # Tauri 2.x shell (desktop/mobile app)
+mcp/            # Local MCP server (Bun, stdio) for Claude on the GM's Mac (docs/claude-mcp.md)
 scripts/        # Dev helpers (test database creation)
 deploy/         # Production: install, backup, restore, continuous deploy (docs/install.md)
 docs/           # Reference docs (design brief, security, realtime…)

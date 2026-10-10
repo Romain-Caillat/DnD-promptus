@@ -125,6 +125,32 @@ jobs:
       - name: Vitest
         run: bun --bun run test
 
+  mcp:
+    name: MCP server (tsc, bun test)
+    runs-on: ubuntu-24.04
+
+    defaults:
+      run:
+        working-directory: mcp
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type check
+        run: bun run typecheck
+
+      # The Promptus API is a mocked fetch: no server, no database.
+      - name: Tests
+        run: bun test
+
   secrets:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-24.04

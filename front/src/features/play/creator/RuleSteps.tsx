@@ -26,7 +26,7 @@ export function OptionGrid({
         <button
           key={o.id}
           type="button"
-          className="cr-option"
+          className="cr-option pixel-choice"
           aria-pressed={selected === o.id}
           onClick={() => onPick(o.id)}
         >
@@ -139,7 +139,7 @@ export function AbilitiesStep({
   const left = budget - spent
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-baseline justify-between rounded-[10px] bg-well px-3 py-2.5 text-[13px]">
+      <div className="flex items-baseline justify-between rounded-none bg-well px-3 py-2.5 text-[13px]">
         <span>{t('creator.abilities.spread', { name: className })}</span>
         <b className={left < 0 ? 'text-[18px] text-stat-atk' : 'text-[18px]'}>
           {left >= 0 ? t('creator.abilities.left', { count: left }) : t('creator.abilities.over', { count: -left })}
@@ -178,7 +178,7 @@ export function AbilitiesStep({
           {t('creator.abilities.warn', { budget, gm: gmName })}
         </div>
       )}
-      <button type="button" className="cr-chip self-start" onClick={onReset}>
+      <button type="button" className="cr-chip pixel-choice self-start" onClick={onReset}>
         {t('creator.abilities.reset')}
       </button>
     </div>
@@ -237,7 +237,7 @@ export function StoryStep({
         <label key={q} className="flex flex-col gap-1.5">
           <span className="type-label">{t(`creator.story.${q}`)}</span>
           <input
-            className="cr-field"
+            className="cr-field pixel-field"
             value={backstory[q] ?? ''}
             maxLength={300}
             onChange={(e) => onChange({ ...backstory, [q]: e.target.value })}
@@ -260,7 +260,7 @@ export function StoryStep({
       <label className="flex flex-col gap-1.5">
         <span className="type-label">{t('creator.story.text')}</span>
         <textarea
-          className="cr-field"
+          className="cr-field pixel-field"
           rows={4}
           value={backstory.text ?? ''}
           maxLength={4000}

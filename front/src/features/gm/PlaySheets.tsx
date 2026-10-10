@@ -17,7 +17,7 @@ import {
 } from '@/lib/sheets'
 
 const inputClass =
-  'rounded-button border border-line-strong bg-well px-2.5 py-1.5 text-body text-chalk placeholder:text-mute focus:border-chalk focus:outline-none'
+  'pixel-field px-2.5 py-1.5 text-body'
 
 const timeFormat = new Intl.DateTimeFormat('fr-FR', { timeStyle: 'short' })
 
@@ -167,11 +167,11 @@ function SheetCard({
   return (
     <li className="surface-slab flex flex-col gap-3 p-3.5" aria-label={name}>
       <div className="flex items-end gap-3">
-        <span className="grid h-16 w-12 flex-none place-items-end justify-center overflow-hidden rounded-[9px] border-2 border-line-strong bg-linear-to-b from-surface-raised to-well">
+        <span className="grid h-16 w-12 flex-none place-items-end justify-center overflow-hidden rounded-none border-2 border-line-strong bg-linear-to-b from-surface-raised to-well">
           {sheet.look && <Sprite look={sheet.look} scale={2} />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <b className="type-title truncate text-[18px]">{name}</b>
+          <b className="type-title truncate text-[16px]">{name}</b>
           <small className="truncate text-caption text-mute">
             {[sheet.nickname, sheet.className, play && t('gm.sheets.level', { level: play.level })]
               .filter(Boolean)

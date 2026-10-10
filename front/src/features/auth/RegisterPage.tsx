@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { authErrorKey, fetchNeedsSetup, registerWithPasskey, type AuthErrorKey } from '@/lib/auth'
 import { passkeysSupported } from '@/lib/webauthn'
 
-const inputClass = 'h-9 w-full rounded-md border border-input bg-background px-3 text-base'
+const inputClass = 'h-9 w-full pixel-field px-3 text-base'
 
 /**
  * `/inscription` — create a GM account with a passkey. The code is the
@@ -54,7 +54,7 @@ export function RegisterPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 p-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight">{t('auth.register.title')}</h1>
+        <h1 className="type-title text-heading-lg">{t('auth.register.title')}</h1>
         <p className="text-muted-foreground">{t('auth.register.intro')}</p>
         <p className="text-sm text-muted-foreground">
           {needsSetup ? t('auth.register.setupHint') : t('auth.register.inviteHint')}
@@ -62,8 +62,8 @@ export function RegisterPage() {
       </header>
       {supported ? (
         <form className="flex flex-col gap-4" onSubmit={(e) => void submit(e)}>
-          <label className="flex flex-col gap-1.5 text-sm">
-            {t('auth.register.code')}
+          <label className="flex flex-col gap-1.5">
+            <span className="type-label text-chalk-soft">{t('auth.register.code')}</span>
             <input
               className={inputClass}
               value={code}
@@ -72,8 +72,8 @@ export function RegisterPage() {
               required
             />
           </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            {t('auth.register.displayName')}
+          <label className="flex flex-col gap-1.5">
+            <span className="type-label text-chalk-soft">{t('auth.register.displayName')}</span>
             <input
               className={inputClass}
               value={displayName}

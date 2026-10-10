@@ -7,7 +7,7 @@ import { give } from '@/lib/trade'
 import { useTrade } from './useTrade'
 
 const MONEY = '__money__'
-const field = 'rounded-button border border-line bg-table px-2 py-2 text-body text-chalk'
+const field = 'pixel-field px-2 py-2 text-body'
 
 /**
  * « Partager le butin » (player/buy-and-trade): hand some of a bag line,
