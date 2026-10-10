@@ -7,7 +7,7 @@
 
 use std::sync::{Arc, Mutex};
 
-use lettre::message::{Mailbox, header::ContentType};
+use lettre::message::{Mailbox, MultiPart};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 
@@ -84,12 +84,19 @@ impl Mailer for Smtp {
     fn send_code<'a>(&'a self, to: &'a str, code: &'a str) -> BoxFuture<'a, Result<(), String>> {
         Box::pin(async move {
             let to: Mailbox = to.parse().map_err(|e| format!("recipient: {e}"))?;
+            // A Message-ID on the sender's own domain: lettre adds none
+            // by default, and a missing or foreign one sends the code to
+            // the spam folder.
+            let message_id = format!("<{}@{}>", uuid::Uuid::new_v4(), self.from.email.domain());
             let message = Message::builder()
                 .from(self.from.clone())
                 .to(to)
-                .subject(format!("{code} — ton code de connexion Promptus"))
-                .header(ContentType::TEXT_PLAIN)
-                .body(code_text(code))
+                .message_id(Some(message_id))
+                .subject(format!("Ton code de connexion Promptus : {code}"))
+                .multipart(MultiPart::alternative_plain_html(
+                    code_text(code),
+                    code_html(code),
+                ))
                 .map_err(|e| format!("message: {e}"))?;
             self.transport
                 .send(message)
@@ -107,6 +114,19 @@ fn code_text(code: &str) -> String {
          Il expire dans {CODE_MINUTES} minutes.\n\n\
          Si tu n'as pas demandé ce code, ignore cet email : personne ne peut \
          se connecter sans lui."
+    )
+}
+
+/// The same, for mail apps that show HTML. `code` is six digits: nothing
+/// to escape.
+fn code_html(code: &str) -> String {
+    format!(
+        "<!doctype html><html lang=\"fr\"><body style=\"font-family:sans-serif;max-width:420px;margin:0 auto;padding:24px\">\
+         <h2 style=\"margin:0 0 12px\">Promptus</h2>\
+         <p>Ton code de connexion :</p>\
+         <p style=\"font-size:32px;font-weight:bold;letter-spacing:8px;padding:16px;background:#f4f4f5;border-radius:8px;text-align:center\">{code}</p>\
+         <p style=\"color:#71717a;font-size:14px\">Il expire dans {CODE_MINUTES} minutes. Si tu n'as pas demandé ce code, ignore cet email : personne ne peut se connecter sans lui.</p>\
+         </body></html>"
     )
 }
 
