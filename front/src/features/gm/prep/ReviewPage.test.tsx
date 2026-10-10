@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -12,7 +12,16 @@ const ALERT = {
   detail: 'critical revelation `rev_route` has 1 clue(s) in 1 node(s)',
 }
 
-function campaign(over: { summary?: string; clues?: unknown[]; issues?: unknown[]; validatedAt?: string | null } = {}) {
+function campaign(
+  over: {
+    summary?: string
+    clues?: unknown[]
+    issues?: unknown[]
+    validatedAt?: string | null
+    morel?: string
+    revision?: number
+  } = {},
+) {
   return {
     id: 'c1',
     story: {
@@ -27,11 +36,32 @@ function campaign(over: { summary?: string; clues?: unknown[]; issues?: unknown[
       ],
       revelations: [{ id: 'rev_route', statement: 'La route du Greyhound', importance: 'critical' }],
       clues: over.clues ?? [{ id: 'cl_carte', revelation: 'rev_route', node: 'sc_bureau', text: 'Une carte.' }],
-      npcs: [{ id: 'pnj_morel', name: 'Morel', disposition: 'neutral', motivation: 'Survivre.' }],
+      npcs: [{ id: 'pnj_morel', name: over.morel ?? 'Morel', disposition: 'neutral', motivation: 'Survivre.' }],
     },
     issues: over.issues ?? [ALERT],
     validatedAt: over.validatedAt ?? null,
     updatedAt: '2026-10-06T10:00:00Z',
+    revision: over.revision ?? 0,
+  }
+}
+
+/** The browser's WebSocket, played by the test. */
+class FakeSocket {
+  static all: FakeSocket[] = []
+  onopen: (() => void) | null = null
+  onmessage: ((ev: { data: string }) => void) | null = null
+  onclose: (() => void) | null = null
+  onerror: (() => void) | null = null
+
+  constructor() {
+    FakeSocket.all.push(this)
+  }
+
+  send() {}
+  close() {}
+
+  push(msg: unknown) {
+    act(() => this.onmessage?.({ data: JSON.stringify(msg) }))
   }
 }
 
@@ -145,6 +175,62 @@ describe('ReviewPage', () => {
     expect(await screen.findByText(/elle est jouable/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /Inviter les joueurs/ }))
     expect(await screen.findByText('La table')).toBeInTheDocument()
+  })
+
+  it('lights up what Claude wrote while the screen is open, and takes it back', async () => {
+    vi.stubGlobal('WebSocket', FakeSocket)
+    FakeSocket.all = []
+    let current = campaign({ revision: 4 })
+    let journal: unknown[] = []
+    const api = mockApi({
+      'GET /api/campaigns/c1': () => ({ status: 200, body: { data: current } }),
+      'GET /api/campaigns/c1/workshop': () => ({ status: 200, body: { data: [] } }),
+      'GET /api/campaigns/c1/readiness': () => ({ status: 200, body: { data: [READY] } }),
+      'GET /api/campaigns/c1/revisions?since=4': () => ({
+        status: 200,
+        body: { data: { revision: 4 + journal.length, entries: journal } },
+      }),
+      'POST /api/campaigns/c1/revisions/5/undo': () => {
+        current = campaign({ revision: 6 })
+        return { status: 200, body: { data: current } }
+      },
+    })
+    renderPage()
+    await screen.findByRole('button', { name: /Le quai/ })
+    const socket = FakeSocket.all[0]
+    socket.push({ type: 'ready', versions: { story: 1, prep: 4 } })
+
+    // Claude renames Morel from Claude Code: no reload.
+    current = campaign({ revision: 5, morel: 'Morel le borgne' })
+    journal = [
+      {
+        revision: 5,
+        author: 'token',
+        target: 'story',
+        changes: [
+          { op: 'add', kind: 'clue', id: 'cl_registre', name: 'Un registre raturé', place: 'sc_quai' },
+          { op: 'set', kind: 'npc', id: 'pnj_morel', name: 'Morel le borgne' },
+        ],
+        undone: false,
+        undoable: true,
+        createdAt: '2026-10-06T10:02:00Z',
+      },
+    ]
+    socket.push({ type: 'changed', topic: 'story', version: 2 })
+    socket.push({ type: 'changed', topic: 'prep', version: 5 })
+    socket.push({ type: 'activity', author: 'token', revision: 5 })
+    // Named by the scene its clue lands in, which is lit.
+    expect(await screen.findByText('Claude écrit · sur Le quai')).toBeInTheDocument()
+    expect(within(screen.getByRole('button', { name: /Le quai/ })).getByText('Modifié')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Fiches/ }))
+    const morel = await screen.findByRole('button', { name: /Morel le borgne/ })
+    expect(within(morel).getByText('Modifié')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler' }))
+    // Morel is back; the banner is gone.
+    expect(await screen.findByRole('button', { name: /^Morel\s*(Modifié)?$/ })).toBeInTheDocument()
+    expect(screen.queryByText(/Claude/)).not.toBeInTheDocument()
+    expect(api.mock.calls.some(([u, i]) => String(u).endsWith('/revisions/5/undo') && i?.method === 'POST')).toBe(true)
   })
 
   it('does not validate a campaign with errors', async () => {

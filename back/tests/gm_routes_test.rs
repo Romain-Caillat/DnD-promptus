@@ -55,6 +55,12 @@ const GM_ROUTES: &[(&str, &str)] = &[
     // Preparing: an edit, the campaign declared playable, then the
     // co-GM's workshop — each decision on a proposal stored just before.
     ("POST", "/api/campaigns/{campaign}/story/edits"),
+    // The journal, then the edit just made taken back.
+    ("GET", "/api/campaigns/{campaign}/revisions?since=0"),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/revisions/{revision}/undo",
+    ),
     ("GET", "/api/campaigns/{campaign}/readiness"),
     ("POST", "/api/campaigns/{campaign}/story/validate"),
     ("GET", "/api/campaigns/{campaign}/workshop"),
@@ -381,6 +387,8 @@ struct Ids {
     date: String,
     /// A shop of the campaign, stored on first use; empty before.
     shop: String,
+    /// The campaign's latest preparation revision.
+    revision: String,
     screen: String,
 }
 
@@ -407,6 +415,7 @@ fn route_uri(path: &str, ids: &Ids) -> String {
             },
         )
         .replace("{screen}", &ids.screen)
+        .replace("{revision}", &ids.revision)
 }
 
 /// Every placeholder filled for `player` of `campaign`: a token of the
@@ -446,6 +455,7 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         map: "carte-inconnue".to_string(),
         shop: String::new(),
         screen: Uuid::new_v4().to_string(),
+        revision: "1".to_string(),
     }
 }
 
@@ -641,6 +651,15 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .await
             .unwrap()
             .to_string();
+        }
+        if path.contains("{revision}") {
+            ids.revision =
+                sqlx::query_scalar::<_, i64>("SELECT prep_revision FROM campaigns WHERE id = $1")
+                    .bind(Uuid::parse_str(&ids.campaign).unwrap())
+                    .fetch_one(&pool)
+                    .await
+                    .unwrap()
+                    .to_string();
         }
         if path.contains("{proposal}") {
             ids.proposal = sqlx::query_scalar::<_, Uuid>(

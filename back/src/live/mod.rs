@@ -21,6 +21,12 @@
 //! falls behind its broadcast channel, or every socket after the
 //! listener lost Postgres (notifications may have been dropped), gets a
 //! `resync` with the versions again — the same catch-up.
+//!
+//! Who hears what (`platform/stream-prep-edits`): some topics are the
+//! GM's alone ([`visible_to`]) — the preparation revision — and so is
+//! the activity of a program writing with the GM's token ("Claude
+//! écrit"). A player's or a shared screen's socket never receives them,
+//! not even in the versions sent on (re)connection.
 
 pub mod listener;
 pub mod socket;
@@ -66,6 +72,9 @@ pub enum Topic {
     Desk,
     /// The shared screens: one paired or forgotten, what they may show.
     Screens,
+    /// The preparation journal (`prep_revisions`): its version is the
+    /// campaign's revision. The GM's only ([`visible_to`]).
+    Prep,
 }
 
 impl Topic {
@@ -83,8 +92,32 @@ impl Topic {
             Self::Fight => "fight".to_string(),
             Self::Desk => "desk".to_string(),
             Self::Screens => "screens".to_string(),
+            Self::Prep => PREP.to_string(),
         }
     }
+}
+
+/// The key of [`Topic::Prep`].
+const PREP: &str = "prep";
+
+/// Whether `viewer` may hear of `topic` (a [`Topic::key`]): the
+/// preparation is the GM's, players and shared screens never learn that
+/// it moved.
+#[must_use]
+pub fn visible_to(viewer: &Viewer, topic: &str) -> bool {
+    matches!(viewer, Viewer::Gm(_)) || topic != PREP
+}
+
+/// Who wrote a preparation change, as the GM's screen is told. Numbers
+/// and a kind only: the screen reads the journal for the rest.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct Activity {
+    /// `token` — a program on the GM's machine (Claude, through the MCP
+    /// server) — is the only author announced today.
+    pub author: String,
+    /// The revision it wrote.
+    pub revision: i64,
 }
 
 /// The payload of one notification on [`CHANNEL`].
@@ -93,6 +126,8 @@ struct Notice {
     campaign: Uuid,
     topic: String,
     version: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    activity: Option<Activity>,
 }
 
 /// Bump `topic` of `campaign` and notify the listener, inside `tx`: the
@@ -121,11 +156,56 @@ pub async fn touch(
     .bind(&topic)
     .fetch_one(&mut **tx)
     .await?;
-    let notice = Notice {
-        campaign,
-        topic,
-        version,
-    };
+    notify(
+        tx,
+        Notice {
+            campaign,
+            topic,
+            version,
+            activity: None,
+        },
+    )
+    .await?;
+    Ok(version)
+}
+
+/// Set `topic` of `campaign` to `version` — a number its writer already
+/// holds, the campaign's preparation revision — and notify, with the
+/// `activity` to show the GM if any, inside `tx` like [`touch`].
+///
+/// # Errors
+///
+/// Fails on a database error.
+pub async fn announce(
+    tx: &mut Transaction<'_, Postgres>,
+    campaign: Uuid,
+    topic: &Topic,
+    version: i64,
+    activity: Option<Activity>,
+) -> Result<(), AppError> {
+    let topic = topic.key();
+    sqlx::query(
+        "INSERT INTO live_versions (campaign_id, topic, version) VALUES ($1, $2, $3)
+         ON CONFLICT (campaign_id, topic) DO UPDATE SET version = EXCLUDED.version",
+    )
+    .bind(campaign)
+    .bind(&topic)
+    .bind(version)
+    .execute(&mut **tx)
+    .await?;
+    notify(
+        tx,
+        Notice {
+            campaign,
+            topic,
+            version,
+            activity,
+        },
+    )
+    .await
+}
+
+async fn notify(tx: &mut Transaction<'_, Postgres>, notice: Notice) -> Result<(), AppError> {
     let payload =
         serde_json::to_string(&notice).map_err(|e| AppError::internal("live notice", e))?;
     sqlx::query("SELECT pg_notify($1, $2)")
@@ -133,7 +213,7 @@ pub async fn touch(
         .bind(payload)
         .execute(&mut **tx)
         .await?;
-    Ok(version)
+    Ok(())
 }
 
 /// The current version of every topic of `campaign` that ever changed.
@@ -189,6 +269,8 @@ pub enum Signal {
         version: i64,
     },
     Presence(Arc<Presence>),
+    /// A program wrote with the GM's token: for GM sockets only.
+    Activity(Activity),
     /// Notifications may have been lost: send the versions again.
     Resync,
 }
@@ -359,13 +441,18 @@ impl LiveHub {
     /// Relay one notification payload from [`CHANNEL`].
     fn dispatch(&self, payload: &str) {
         match serde_json::from_str::<Notice>(payload) {
-            Ok(n) => self.publish(
-                n.campaign,
-                Signal::Changed {
-                    topic: n.topic,
-                    version: n.version,
-                },
-            ),
+            Ok(n) => {
+                self.publish(
+                    n.campaign,
+                    Signal::Changed {
+                        topic: n.topic,
+                        version: n.version,
+                    },
+                );
+                if let Some(activity) = n.activity {
+                    self.publish(n.campaign, Signal::Activity(activity));
+                }
+            }
             Err(e) => tracing::warn!(%e, payload, "ignoring a malformed live notice"),
         }
     }

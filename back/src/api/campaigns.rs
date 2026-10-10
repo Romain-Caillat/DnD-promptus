@@ -30,7 +30,8 @@ use serde_json::json;
 use uuid::Uuid;
 
 use super::body::Body;
-use crate::auth::guard::{CurrentGm, owned_by};
+use crate::auth::guard::{Credential, CurrentGm, owned_by};
+use crate::campaigns::revisions::Author;
 use crate::campaigns::{self, CampaignRow, Settings, projection};
 use crate::content;
 use crate::error::AppError;
@@ -50,6 +51,9 @@ pub(crate) struct CampaignDetail {
     updated_at: DateTime<Utc>,
     /// When the GM declared it playable; `None` until then.
     validated_at: Option<DateTime<Utc>>,
+    /// The preparation revision (`platform/stream-prep-edits`): what the
+    /// screen holds, to ask the journal what changed since.
+    revision: i64,
 }
 
 pub(crate) fn detail(row: CampaignRow) -> CampaignDetail {
@@ -62,6 +66,7 @@ pub(crate) fn detail(row: CampaignRow) -> CampaignDetail {
         archived_at: row.archived_at,
         updated_at: row.updated_at,
         validated_at: row.validated_at,
+        revision: row.prep_revision,
     }
 }
 
@@ -208,7 +213,7 @@ pub async fn update_settings(
     story.bible.pitch = input.pitch.trim().to_string();
     story.bible.player_hook = input.player_hook.trim().to_string();
     if story != row.story {
-        campaigns::save_story(&mut tx, id, &story).await?;
+        campaigns::save_story(&mut tx, id, &row.story, &story, Author::Gm).await?;
     }
     campaigns::save_settings(&mut tx, id, settings).await?;
     let row = campaigns::find(&mut *tx, id)
@@ -300,14 +305,15 @@ pub async fn export(
 pub async fn import_replace(
     State(state): State<AppState>,
     gm: CurrentGm,
+    credential: Credential,
     Path(id): Path<String>,
     Body(input): Body<YamlBody>,
 ) -> Result<Response, AppError> {
     let id = campaign_id(&id)?;
     let mut tx = state.pool.begin().await?;
-    owned_by(campaigns::lock(&mut tx, id).await?, &gm)?;
+    let row = owned_by(campaigns::lock(&mut tx, id).await?, &gm)?;
     let story = parse(&input.yaml)?;
-    campaigns::save_story(&mut tx, id, &story).await?;
+    campaigns::save_story(&mut tx, id, &row.story, &story, credential.into()).await?;
     let row = campaigns::find(&mut *tx, id)
         .await?
         .ok_or(AppError::NotFound("NOT_FOUND"))?;

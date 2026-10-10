@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils'
 import { EntityForm, type FieldDef } from './EntityForm'
 import { Gauge, Readiness, useReadiness } from './Readiness'
 import { SceneSheet } from './SceneSheet'
+import { usePrepChanges, type PrepChanges } from './usePrepChanges'
 import { Workshop, useWorkshop } from './Workshop'
 
 const TABS = ['graph', 'bible', 'sheets', 'coherence', 'validate'] as const
@@ -108,10 +109,17 @@ export function ReviewPage() {
     }
   }, [campaignId, version])
 
-  useLiveChanges(campaignId, (topics) => {
-    if (topics.includes('story')) setVersion((v) => v + 1)
-    if (topics.includes('desk')) setWorkshopVersion((v) => v + 1)
-  })
+  const changes = usePrepChanges(campaignId, state.kind === 'ready' ? state.campaign.revision : null)
+  useLiveChanges(
+    campaignId,
+    (topics) => {
+      if (topics.includes('story')) setVersion((v) => v + 1)
+      if (topics.includes('desk')) setWorkshopVersion((v) => v + 1)
+      changes.onTopics(topics)
+    },
+    'gm',
+    changes.onActivity,
+  )
 
   const adopt = useCallback((campaign: ReviewCampaign) => setState({ kind: 'ready', campaign }), [])
   const workshop = useWorkshop(campaignId, workshopVersion, adopt)
@@ -140,6 +148,19 @@ export function ReviewPage() {
     setError(null)
     try {
       adopt((await applyEdits(campaignId, edits)).campaign)
+    } catch (err) {
+      setError(err instanceof ApiError ? { code: err.code, detail: err.detail } : { code: 'action', detail: null })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function undoClaude() {
+    setBusy(true)
+    setError(null)
+    try {
+      const campaign = await changes.undo()
+      if (campaign) adopt(campaign)
     } catch (err) {
       setError(err instanceof ApiError ? { code: err.code, detail: err.detail } : { code: 'action', detail: null })
     } finally {
@@ -195,6 +216,7 @@ export function ReviewPage() {
       </header>
 
       <div className="flex flex-col gap-4 p-5">
+        <ClaudeBanner story={story} changes={changes} busy={busy} onUndo={() => void undoClaude()} />
         {error && (
           <p role="alert" className="text-body text-stat-atk">
             {t(`prep.review.errors.${error.code}`, { defaultValue: t('prep.review.errors.action') })}
@@ -217,7 +239,9 @@ export function ReviewPage() {
           </div>
 
           <section className="flex min-w-0 flex-col gap-4">
-            {tab === 'graph' && <Graph story={story} acts={acts} selected={selected} onSelect={setSelected} />}
+            {tab === 'graph' && (
+              <Graph story={story} acts={acts} selected={selected} fresh={changes.fresh} onSelect={setSelected} />
+            )}
             {tab === 'bible' && (
               <EntityForm
                 key={`bible${campaign.updatedAt}`}
@@ -229,7 +253,9 @@ export function ReviewPage() {
                 onSave={save}
               />
             )}
-            {tab === 'sheets' && <Sheets story={story} selected={selected} onSelect={setSelected} />}
+            {tab === 'sheets' && (
+              <Sheets story={story} selected={selected} fresh={changes.fresh} onSelect={setSelected} />
+            )}
             {tab === 'coherence' && (
               <Coherence
                 story={story}
@@ -278,21 +304,72 @@ export function ReviewPage() {
   )
 }
 
+/**
+ * Claude's latest write on this campaign (platform/stream-prep-edits):
+ * « Claude écrit · sur … » while it writes, then what it wrote, with a
+ * way to take it back while nothing covered it.
+ */
+function ClaudeBanner({
+  story,
+  changes,
+  busy,
+  onUndo,
+}: {
+  story: Story
+  changes: PrepChanges
+  busy: boolean
+  onUndo: () => void
+}) {
+  const { t } = useTranslation()
+  const { claude } = changes
+  if (!claude) return null
+  const touch = claude.touch
+  // A clue is named by the scene it lands in.
+  const scene = touch?.kind === 'clue' && touch.place ? story.nodes?.find((n) => n.id === touch.place) : undefined
+  const place = scene?.title ?? (touch ? touch.name || touch.id : null)
+  const text = place
+    ? t(claude.live ? 'prep.changes.writing' : 'prep.changes.wrote', { place })
+    : t('prep.changes.writingNowhere')
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <StatusBanner tone={claude.live ? 'wait' : 'listen'} className="flex-1">
+        {text}
+      </StatusBanner>
+      {claude.undoable && (
+        <Btn disabled={busy} onClick={onUndo}>
+          {t('prep.changes.undo')}
+        </Btn>
+      )}
+      <Btn onClick={changes.dismiss}>{t('prep.changes.dismiss')}</Btn>
+    </div>
+  )
+}
+
+/** The small mark on what someone else changed just now. */
+function FreshMark() {
+  const { t } = useTranslation()
+  return <span className="type-key self-start border border-dashed border-current px-1 text-label">{t('prep.changes.fresh')}</span>
+}
+
 function Graph({
   story,
   acts: gauges,
   selected,
+  fresh,
   onSelect,
 }: {
   story: Story
   acts: ActReadiness[] | null
   selected: string | null
+  fresh: ReadonlySet<string>
   onSelect: (id: string) => void
 }) {
   const { t } = useTranslation()
   const acts = story.acts ?? []
   const nodes = story.nodes ?? []
   const clueCount = (node: string) => (story.clues ?? []).filter((c) => c.node === node).length
+  // A scene is lit when it, or one of its clues, just changed.
+  const isFresh = (node: string) => fresh.has(node)
   return (
     <Panel title={t('prep.review.graphTitle', { count: nodes.length, acts: acts.length })}>
       {nodes.length === 0 && <p className="text-body text-chalk-soft">{t('prep.review.noScene')}</p>}
@@ -325,6 +402,7 @@ function Graph({
                   </span>
                   <b className="text-body">{n.title}</b>
                   <span className="text-caption opacity-70">{t('prep.review.clues', { count: clueCount(n.id) })}</span>
+                  {isFresh(n.id) && <FreshMark />}
                 </button>
               ))}
           </div>
@@ -337,10 +415,12 @@ function Graph({
 function Sheets({
   story,
   selected,
+  fresh,
   onSelect,
 }: {
   story: Story
   selected: string | null
+  fresh: ReadonlySet<string>
   onSelect: (id: string) => void
 }) {
   const { t } = useTranslation()
@@ -358,11 +438,12 @@ function Sheets({
                 type="button"
                 aria-pressed={selected === e.id}
                 className={cn(
-                  'pixel-choice py-1.5 pr-2.5 pb-2 text-caption font-semibold',
+                  'pixel-choice flex items-center gap-1.5 py-1.5 pr-2.5 pb-2 text-caption font-semibold',
                 )}
                 onClick={() => onSelect(e.id)}
               >
                 {nameOf(e)}
+                {fresh.has(e.id) && <FreshMark />}
               </button>
             ))}
           </div>

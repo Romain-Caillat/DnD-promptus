@@ -339,6 +339,30 @@ The live channel only says "this changed" (Postgres NOTIFY relayed to
 the session's sockets, plus presence). Clients refetch through the API,
 so the projection is never bypassed.
 
+Some of it is the GM's alone (`platform/stream-prep-edits`): the `prep`
+topic (the preparation revision) and the `activity` message (a token
+wrote: « Claude écrit »). The socket filters per viewer
+(`live::visible_to`, `socket::out_for`), **including the versions sent
+on `ready` and `resync`** — filtering only the changes would still hand
+a player the prep revision at connection. Activity carries a kind and a
+revision number, never a name: the GM's screen reads the journal over
+HTTP. Presence still goes to every socket (players' screens ignore it);
+`desk` is GM-only in spirit but still broadcast.
+
+### One preparation journal, written in one place
+
+Every story write goes through `campaigns::save_story(tx, id, before,
+after, author)`, which diffs the two stories entity by entity
+(`story::revision`), takes the next `campaigns.prep_revision` under the
+campaign lock and leaves a `prep_revisions` line (author `gm`, `token`,
+`copilot` or `server`; touched ids; each entity as it was). An undo
+restores only what that line touched, and is refused when a later line
+touched the same entity (an undo is itself a line, so nothing is undone
+twice). Map operations (`maps/edit-maps-by-ops`) must join this journal
+and this number (`target`), never a version of their own. Writing
+`campaigns.story` anywhere else skips the journal and the GM's live
+screens.
+
 ### The sheet and the play state are two things
 
 `characters.sheet` is what the player wrote and the GM reviewed; the

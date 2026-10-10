@@ -57,6 +57,18 @@ all-or-nothing, and players see it exactly as they would see the same
 edit made on the review screen (only what the projection already
 shows: title, universe, hook, revealed content).
 
+Every story write — a token's included — takes the campaign's next
+preparation revision and leaves a line in its journal
+(`campaigns::revisions`, `platform/stream-prep-edits`): author (`token`
+here), the entities touched, and each as it was. The GM's open prep
+screen hears the revision on the GM-only `prep` live topic, plus an
+`activity` message for a token write, reads
+`GET /api/campaigns/{id}/revisions?since=N`, shows « Claude écrit · sur
+… », lights up what moved, and may take the write back
+(`POST …/revisions/{n}/undo`) while no later revision touched the same
+entities. Players' and screens' sockets never hear either. The journal
+and undo routes are not token routes: a token never takes back a write.
+
 ## The MCP server (`mcp/`)
 
 TypeScript on Bun with `@modelcontextprotocol/sdk`: the official SDK,

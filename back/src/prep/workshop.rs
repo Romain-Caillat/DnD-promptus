@@ -18,6 +18,7 @@ use uuid::Uuid;
 
 use crate::ai::{self, Ai, LlmRequest, ledger, templates};
 use crate::auth::guard::{CurrentGm, owned_by};
+use crate::campaigns::revisions::Author;
 use crate::campaigns::{self, CampaignRow};
 use crate::error::AppError;
 use crate::live::{self, Topic};
@@ -308,7 +309,7 @@ pub async fn decide(
     if accept {
         let (story, _) = edit::apply_with(&row.story, &stored.3.0, &super::edit_library(&row))
             .map_err(|_| AppError::Conflict("PROPOSAL_STALE"))?;
-        campaigns::save_story(&mut tx, campaign, &story).await?;
+        campaigns::save_story(&mut tx, campaign, &row.story, &story, Author::Copilot).await?;
     }
     let decided: Row = sqlx::query_as(&format!(
         "UPDATE story_proposals SET status = $2, decided_at = now()

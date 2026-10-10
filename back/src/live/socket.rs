@@ -5,9 +5,14 @@
 //!   every connection: the current version of each topic;
 //! - `{"type":"changed","topic":"world","version":8}`;
 //! - `{"type":"presence","gmOnline":true,"players":["<id>",…]}`;
+//! - `{"type":"activity","author":"token","revision":12}` — the GM's
+//!   sockets only: a program wrote with the GM's token;
 //! - `{"type":"resync","versions":{…}}` — signals were lost (this socket
 //!   lagged, or the listener lost Postgres): compare again, as on `ready`;
 //! - `{"type":"pong"}` — the answer to a client `{"type":"ping"}`.
+//!
+//! A GM-only topic (`super::visible_to`) and the activity never reach a
+//! player's or a screen's socket, whether as a change or in the versions.
 //!
 //! The client pings because a browser cannot see WebSocket ping frames,
 //! and a phone that lost its network keeps a socket that looks open: a
@@ -26,7 +31,7 @@ use tokio::sync::broadcast::error::RecvError;
 use tokio::time::Instant;
 use uuid::Uuid;
 
-use super::{LiveHub, Presence, Signal, Viewer, versions};
+use super::{Activity, LiveHub, Presence, Signal, Viewer, versions, visible_to};
 
 /// Clients only send pings: anything bigger is not ours.
 const MAX_CLIENT_MESSAGE: usize = 1024;
@@ -48,6 +53,10 @@ enum Out {
     Presence {
         #[serde(flatten)]
         presence: Arc<Presence>,
+    },
+    Activity {
+        #[serde(flatten)]
+        activity: Activity,
     },
     Resync {
         versions: BTreeMap<String, i64>,
@@ -93,11 +102,42 @@ async fn close(mut socket: WebSocket, code: u16, reason: &'static str) {
         .await;
 }
 
+/// The versions `viewer` may see.
+fn visible(viewer: &Viewer, mut versions: BTreeMap<String, i64>) -> BTreeMap<String, i64> {
+    versions.retain(|topic, _| visible_to(viewer, topic));
+    versions
+}
+
+/// What `viewer` is sent for `signal`, if anything; `None` from the outer
+/// option ends the socket.
+async fn out_for(
+    viewer: &Viewer,
+    signal: Result<Signal, RecvError>,
+    pool: &PgPool,
+    campaign: Uuid,
+) -> Option<Option<Out>> {
+    let gm = matches!(viewer, Viewer::Gm(_));
+    Some(match signal {
+        Ok(Signal::Changed { topic, version }) => {
+            visible_to(viewer, &topic).then_some(Out::Changed { topic, version })
+        }
+        Ok(Signal::Presence(presence)) => Some(Out::Presence { presence }),
+        Ok(Signal::Activity(activity)) => gm.then_some(Out::Activity { activity }),
+        Ok(Signal::Resync) | Err(RecvError::Lagged(_)) => match versions(pool, campaign).await {
+            Ok(versions) => Some(Out::Resync {
+                versions: visible(viewer, versions),
+            }),
+            Err(_) => return None,
+        },
+        Err(RecvError::Closed) => return None,
+    })
+}
+
 async fn run(mut socket: WebSocket, pool: PgPool, hub: LiveHub, campaign: Uuid, viewer: Viewer) {
     let config = hub.config();
     // Join first: from here every signal is queued for this socket, so
     // nothing can slip between the versions read below and the stream.
-    let mut member = hub.join(campaign, viewer);
+    let mut member = hub.join(campaign, viewer.clone());
     if !hub.wait_listening(config.listener_wait).await {
         // 1013 "try again later": the client reconnects with its backoff.
         close(socket, close_code::AGAIN, "listener unavailable").await;
@@ -109,7 +149,9 @@ async fn run(mut socket: WebSocket, pool: PgPool, hub: LiveHub, campaign: Uuid, 
     };
     if !send(
         &mut socket,
-        &Out::Ready { versions: snapshot },
+        &Out::Ready {
+            versions: visible(&viewer, snapshot),
+        },
         config.timeout,
     )
     .await
@@ -122,18 +164,12 @@ async fn run(mut socket: WebSocket, pool: PgPool, hub: LiveHub, campaign: Uuid, 
     loop {
         tokio::select! {
             signal = member.recv() => {
-                let out = match signal {
-                    Ok(Signal::Changed { topic, version }) => Out::Changed { topic, version },
-                    Ok(Signal::Presence(presence)) => Out::Presence { presence },
-                    Ok(Signal::Resync) | Err(RecvError::Lagged(_)) => {
-                        match versions(&pool, campaign).await {
-                            Ok(versions) => Out::Resync { versions },
-                            Err(_) => break,
-                        }
-                    }
-                    Err(RecvError::Closed) => break,
+                let Some(out) = out_for(&viewer, signal, &pool, campaign).await else {
+                    break;
                 };
-                if !send(&mut socket, &out, config.timeout).await {
+                if let Some(out) = out
+                    && !send(&mut socket, &out, config.timeout).await
+                {
                     break;
                 }
             }

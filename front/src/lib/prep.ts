@@ -111,6 +111,31 @@ export interface ReviewCampaign {
   issues: StoryIssue[]
   validatedAt: string | null
   updatedAt: string
+  /** The preparation revision: ask the journal what changed since. */
+  revision: number
+}
+
+/** One entity a preparation write touched (`story::revision::Touch`). */
+export interface RevisionTouch {
+  op: 'add' | 'set' | 'remove'
+  kind: string
+  /** The entity's id, or `bible` / `campaign`. */
+  id: string
+  name?: string
+  /** Where it lands: a clue's scene, a scene's act. */
+  place?: string
+}
+
+/** One line of the preparation journal (`campaigns::revisions::Entry`). */
+export interface RevisionEntry {
+  revision: number
+  author: 'gm' | 'token' | 'copilot' | 'server'
+  target: string
+  changes: RevisionTouch[]
+  undoes?: number
+  undone: boolean
+  undoable: boolean
+  createdAt: string
 }
 
 /** One change by id (`story::edit::Edit`). */
@@ -159,6 +184,19 @@ export function applyEdits(
   edits: Edit[],
 ): Promise<{ campaign: ReviewCampaign; changes: Change[] }> {
   return apiRequest('POST', `${base(campaignId)}/story/edits`, { edits })
+}
+
+/** The journal after revision `since`, and the revision now. */
+export function fetchRevisions(
+  campaignId: string,
+  since: number,
+): Promise<{ revision: number; entries: RevisionEntry[] }> {
+  return apiRequest('GET', `${base(campaignId)}/revisions?since=${since}`)
+}
+
+/** Take back one revision; answers the campaign as it is now. */
+export function undoRevision(campaignId: string, revision: number): Promise<ReviewCampaign> {
+  return apiRequest<ReviewCampaign>('POST', `${base(campaignId)}/revisions/${revision}/undo`)
 }
 
 export function validateCampaign(campaignId: string): Promise<ReviewCampaign> {

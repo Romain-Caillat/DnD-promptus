@@ -424,6 +424,11 @@ lit pourquoi. Le même panneau montre la configuration à coller dans
 Claude Desktop et la commande pour Claude Code, jeton compris juste
 après sa création. Testé de bout en bout côté serveur et côté outils
 (appels simulés) ; pas encore essayé depuis le vrai Claude Desktop.
+*Mis à jour par `platform/stream-prep-edits`* : une écriture par jeton
+entre aussi dans le journal des révisions ; le MJ la voit arriver sur son
+écran de préparation ouvert et peut l'annuler tant que rien ne l'a
+recouverte. Elle s'applique toujours directement (les propositions
+viennent avec `platform/propose-edits-by-claude`).
 *Décision ouverte* — faut-il refuser les écritures par jeton pendant une
 soirée en cours ?
 
@@ -520,7 +525,7 @@ fichier. Pas encore regardé dans une vraie séance de préparation.
 
 ---
 
-### `platform/stream-prep-edits` · todo
+### `platform/stream-prep-edits` · doing — reste l'essai réel : Claude écrit depuis Claude Code, l'écran de préparation ouvert le montre sans recharger
 
 **Pourquoi** — Quand Claude modifie la campagne par le serveur MCP,
 l'Atlas ouvert du MJ doit le montrer aussitôt, sans recharger.
@@ -564,6 +569,32 @@ journal qui garde l'état d'avant grossit avec la campagne : à surveiller,
 élaguer plus tard si besoin.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+*État* — Chaque écriture de la préparation, quel que soit son auteur,
+porte désormais un numéro de révision et laisse une ligne dans le journal
+de la campagne : qui a écrit (le MJ dans Promptus, Claude par son jeton,
+le co-MJ quand le MJ accepte une proposition de l'atelier ou une
+génération, le serveur quand il adopte une version des règles à
+l'ouverture d'une soirée), quels éléments ont bougé, et chacun tel qu'il
+était. Une écriture qui ne change rien ne prend pas de numéro. Le MJ
+peut demander « ce qui a changé depuis N » et annuler une révision tant
+qu'aucune révision plus récente n'a touché les mêmes éléments ;
+l'annulation remet seulement ce que cette révision avait touché, garde
+le reste, et devient elle-même une révision (on peut donc la défaire à
+son tour) ; ce que le serveur a fait seul ne s'annule pas, et un jeton ne
+peut ni lire le journal ni annuler. L'écran de préparation ouvert relit
+la campagne à chaque révision, met « Modifié » sur les scènes et fiches
+que Claude ou le co-MJ viennent de toucher, et affiche « Claude écrit ·
+sur … » avec un bouton Annuler tant que c'est possible. Les téléphones
+des joueurs et la TV ne reçoivent ni la révision ni l'activité de Claude,
+pas même à la connexion (testé sur une socket joueur et une socket TV) ;
+la présence (qui est connecté) part toujours vers tous, comme avant.
+**Hypothèses retenues** : le journal garde l'état d'avant de chaque
+élément touché (pas de diff fin par champ) ; seul l'écran Préparer met en
+avant les changements pour l'instant, l'Atlas le reprendra ; l'activité
+ne porte qu'un numéro, le nom du lieu est lu dans le journal. **Reste** :
+l'essai réel depuis Claude Code, et brancher les opérations de carte sur
+ce même journal (`maps/edit-maps-by-ops`).
 
 ---
 
@@ -1607,6 +1638,10 @@ qui demande zéro erreur ; un import est validé d'office (le MJ l'a
 écrit), une campagne créée depuis un pitch ou générée attend le MJ.
 Vérifié sur l'acte 1 joué des Corsaires : le co-MJ place les indices
 manquants de la route du Greyhound et l'alerte disparaît.
+*Mis à jour par `platform/stream-prep-edits`* : l'écran suit la
+préparation en direct — ce que Claude ou le co-MJ viennent de toucher
+porte « Modifié », et un bandeau « Claude écrit · sur … » propose
+d'annuler sa dernière écriture tant que rien ne l'a recouverte.
 
 ### `campaign/edit-scenes-in-one-place` · doing — reste une scène préparée pour de vrai sur les deux mondes, puis jouée
 

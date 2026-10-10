@@ -45,6 +45,7 @@ use uuid::Uuid;
 use crate::ai::templates::{self, Template};
 use crate::ai::{self, Ai, BoxFuture, LlmRequest, LlmResponse, Message, Pricing, Role, ledger};
 use crate::auth::guard::{CurrentGm, owned_by};
+use crate::campaigns::revisions::Author;
 use crate::campaigns::{self, CampaignRow};
 use crate::error::AppError;
 use crate::live::{self, Topic};
@@ -1086,7 +1087,7 @@ pub async fn apply(
     story.world = row.story.world.clone();
     story.rules = row.story.rules.clone();
     story.party = row.story.party.clone();
-    campaigns::save_story(&mut tx, campaign, &story).await?;
+    campaigns::save_story(&mut tx, campaign, &row.story, &story, Author::Copilot).await?;
     let applied: Row = sqlx::query_as(&format!(
         "UPDATE generation_jobs SET status = 'applied' WHERE id = $1 RETURNING {COLUMNS}"
     ))

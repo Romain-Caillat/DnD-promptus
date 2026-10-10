@@ -18,6 +18,7 @@ use promptus_shared::story::{ActReadiness, Library, Severity, readiness, validat
 use uuid::Uuid;
 
 use crate::auth::guard::{CurrentGm, owned_by};
+use crate::campaigns::revisions::Author;
 use crate::campaigns::{self, CampaignRow};
 use crate::error::AppError;
 
@@ -42,7 +43,8 @@ pub(crate) fn edit_library(row: &CampaignRow) -> Library<'_> {
     }
 }
 
-/// The GM's edits, applied whole under the campaign lock. Returns the
+/// The GM's edits, applied whole under the campaign lock and journaled
+/// as `author`'s (the GM in Promptus, or their token). Returns the
 /// campaign as stored and what changed.
 ///
 /// # Errors
@@ -55,6 +57,7 @@ pub(crate) fn edit_library(row: &CampaignRow) -> Library<'_> {
 pub async fn apply(
     pool: &sqlx::PgPool,
     gm: &CurrentGm,
+    author: Author,
     campaign: Uuid,
     edits: &[Edit],
 ) -> Result<(CampaignRow, Vec<Change>), AppError> {
@@ -65,7 +68,7 @@ pub async fn apply(
     let row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
     let (story, changes) =
         edit::apply_with(&row.story, edits, &edit_library(&row)).map_err(|e| edit_error(&e))?;
-    campaigns::save_story(&mut tx, campaign, &story).await?;
+    campaigns::save_story(&mut tx, campaign, &row.story, &story, author).await?;
     let row = campaigns::find(&mut *tx, campaign)
         .await?
         .ok_or(AppError::NotFound("NOT_FOUND"))?;

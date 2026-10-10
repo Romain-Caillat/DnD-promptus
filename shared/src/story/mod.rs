@@ -20,6 +20,7 @@ pub mod model;
 pub mod prune;
 pub mod readiness;
 pub mod recap;
+pub mod revision;
 pub mod v1;
 pub mod validate;
 pub mod world;

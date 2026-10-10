@@ -3,6 +3,10 @@
 //! - `POST /api/campaigns/{id}/story/edits` → the GM's edits by id
 //!   (`story::edit::Edit`), applied whole; answers the campaign and
 //!   what changed;
+//! - `GET  /api/campaigns/{id}/revisions?since=N` → the preparation
+//!   journal after revision N (`platform/stream-prep-edits`);
+//! - `POST /api/campaigns/{id}/revisions/{revision}/undo` → take one
+//!   back, while no later revision touched the same entities;
 //! - `GET  /api/campaigns/{id}/readiness` → one gauge per act;
 //! - `POST /api/campaigns/{id}/story/validate` → declare it playable;
 //! - `GET  /api/campaigns/{id}/workshop` → the co-GM's proposals;
@@ -15,7 +19,7 @@
 //!   draft as the campaign's story, to review.
 
 use axum::Json;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use promptus_shared::story::edit::Edit;
@@ -25,7 +29,8 @@ use uuid::Uuid;
 
 use super::body::Body;
 use super::campaigns::detail;
-use crate::auth::guard::CurrentGm;
+use crate::auth::guard::{Credential, CurrentGm};
+use crate::campaigns::revisions;
 use crate::error::AppError;
 use crate::prep::{self, generation, workshop};
 use crate::state::AppState;
@@ -48,11 +53,59 @@ pub struct EditsBody {
 pub async fn edits(
     State(state): State<AppState>,
     gm: CurrentGm,
+    credential: Credential,
     Path(id): Path<String>,
     Body(input): Body<EditsBody>,
 ) -> Result<Response, AppError> {
-    let (row, changes) = prep::apply(&state.pool, &gm, parse_id(&id)?, &input.edits).await?;
+    let (row, changes) = prep::apply(
+        &state.pool,
+        &gm,
+        credential.into(),
+        parse_id(&id)?,
+        &input.edits,
+    )
+    .await?;
     Ok(Json(json!({ "data": { "campaign": detail(row), "changes": changes } })).into_response())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SinceQuery {
+    #[serde(default)]
+    since: i64,
+}
+
+/// `GET /api/campaigns/{id}/revisions?since=N`
+///
+/// # Errors
+///
+/// As `campaigns::revisions::since`.
+pub async fn revisions(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path(id): Path<String>,
+    Query(q): Query<SinceQuery>,
+) -> Result<Response, AppError> {
+    let since = revisions::since(&state.pool, &gm, parse_id(&id)?, q.since).await?;
+    Ok(Json(json!({ "data": since })).into_response())
+}
+
+/// `POST /api/campaigns/{id}/revisions/{revision}/undo`
+///
+/// # Errors
+///
+/// 404 `NO_SUCH_REVISION` for a revision that is not a number; as
+/// `campaigns::revisions::undo`.
+pub async fn undo(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path((id, revision)): Path<(String, String)>,
+) -> Result<Response, AppError> {
+    let revision: i64 = revision
+        .parse()
+        .map_err(|_| AppError::NotFound("NO_SUCH_REVISION"))?;
+    let row = revisions::undo(&state.pool, &gm, parse_id(&id)?, revision).await?;
+    Ok(Json(json!({ "data": detail(row) })).into_response())
 }
 
 /// `POST /api/campaigns/{id}/story/validate`

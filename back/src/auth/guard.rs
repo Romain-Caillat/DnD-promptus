@@ -119,6 +119,20 @@ impl<S: Send + Sync> FromRequestParts<S> for SessionOnly {
     }
 }
 
+/// How the GM of this request signed it: a write journals it as its
+/// author (`campaigns::revisions::Author`).
+impl<S: Send + Sync> FromRequestParts<S> for Credential {
+    type Rejection = AppError;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        parts
+            .extensions
+            .get::<Self>()
+            .copied()
+            .ok_or_else(unauthenticated)
+    }
+}
+
 impl<S: Send + Sync> FromRequestParts<S> for CurrentGm {
     type Rejection = AppError;
 

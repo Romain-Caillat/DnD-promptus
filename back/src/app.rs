@@ -121,6 +121,11 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             post(api::rule_versions::try_house_rule),
         )
         .route("/api/campaigns/{id}/story/edits", post(api::prep::edits))
+        .route("/api/campaigns/{id}/revisions", get(api::prep::revisions))
+        .route(
+            "/api/campaigns/{id}/revisions/{revision}/undo",
+            post(api::prep::undo),
+        )
         .route("/api/campaigns/{id}/readiness", get(api::prep::readiness))
         .route(
             "/api/campaigns/{id}/generation",

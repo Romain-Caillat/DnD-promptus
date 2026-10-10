@@ -2204,7 +2204,10 @@
         "EDIT_UNKNOWN_TARGET": "Cet élément n'existe plus : rechargez la page.",
         "EDIT_ID_TAKEN": "Cet identifiant est déjà pris.",
         "CAMPAIGN_HAS_ERRORS": "Corrigez d'abord les erreurs de la campagne.",
-        "EDIT_SCENE_INVALID": "La scène nommerait quelque chose qui n'existe pas (adversaire, objet, scène, caractéristique) ou un lien qui n'est pas YouTube : rien n'a été enregistré."
+        "EDIT_SCENE_INVALID": "La scène nommerait quelque chose qui n'existe pas (adversaire, objet, scène, caractéristique) ou un lien qui n'est pas YouTube : rien n'a été enregistré.",
+        "REVISION_COVERED": "Une modification plus récente touche les mêmes éléments : annulez-la d'abord, ou corrigez à la main.",
+        "REVISION_NOT_UNDOABLE": "Cette modification ne s'annule pas.",
+        "REVISION_NOT_REVERTIBLE": "Ce qui serait remis ne rentre plus dans la campagne : corrigez à la main."
       },
       "graphTitle": "Graphe · {{count}} scènes en {{acts}} actes",
       "noScene": "Aucune scène pour l'instant.",
@@ -2308,6 +2311,14 @@
       "validateSub": "Elle devient jouable : la première soirée peut s'ouvrir",
       "validateBlocked_one": "{{count}} erreur à corriger d'abord",
       "validateBlocked_other": "{{count}} erreurs à corriger d'abord"
+    },
+    "changes": {
+      "writing": "Claude écrit · sur {{place}}",
+      "wrote": "Claude a écrit · sur {{place}}",
+      "writingNowhere": "Claude écrit…",
+      "undo": "Annuler",
+      "dismiss": "Fermer",
+      "fresh": "Modifié"
     },
     "scene": {
       "label": "Fiche de la scène « {{title}} »",
