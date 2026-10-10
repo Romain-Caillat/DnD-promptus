@@ -17,12 +17,6 @@ function renderHome() {
 }
 
 const ME = { status: 200, body: { data: { id: 'g1', displayName: 'Romain' } } }
-const INVITE = {
-  id: 'i1',
-  createdAt: '2026-10-04T10:00:00Z',
-  expiresAt: '2026-10-11T10:00:00Z',
-}
-
 describe('GmHomePage', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -40,44 +34,9 @@ describe('GmHomePage', () => {
     expect(await screen.findByText('page de connexion')).toBeInTheDocument()
   })
 
-  it('mints an invitation link, then revokes the invitation', async () => {
-    let pending: (typeof INVITE)[] = []
-    const api = mockApi({
-      'GET /api/me': () => ME,
-      'GET /api/campaigns': () => ({ status: 200, body: { data: [] } }),
-      'GET /api/rule-systems': () => ({ status: 200, body: { data: [] } }),
-      'GET /api/gm-invites': () => ({ status: 200, body: { data: pending } }),
-      'GET /api/gm-tokens': () => ({ status: 200, body: { data: [] } }),
-      'POST /api/gm-invites': () => {
-        pending = [INVITE]
-        return { status: 201, body: { data: { ...INVITE, code: 'secret code' } } }
-      },
-      'DELETE /api/gm-invites/i1': () => {
-        pending = []
-        return { status: 204 }
-      },
-    })
-    renderHome()
-
-    expect(await screen.findByText('Bonjour, Romain')).toBeInTheDocument()
-    expect(await screen.findByText('Aucune invitation en attente.')).toBeInTheDocument()
-
-    await userEvent.click(screen.getByRole('button', { name: 'Créer une invitation' }))
-
-    expect(await screen.findByLabelText("Lien d'invitation")).toHaveValue(
-      `${window.location.origin}/inscription?code=secret%20code`,
-    )
-    const item = (await screen.findByText(/^Expire le/)).closest('li')!
-    await userEvent.click(within(item).getByRole('button', { name: 'Révoquer' }))
-
-    expect(await screen.findByText('Aucune invitation en attente.')).toBeInTheDocument()
-    expect(sentTo(api, 'DELETE /api/gm-invites/i1')).toHaveLength(1)
-  })
-
   it('shows each campaign as a card that reopens it, archived ones apart', async () => {
     mockApi({
       'GET /api/me': () => ME,
-      'GET /api/gm-invites': () => ({ status: 200, body: { data: [] } }),
       'GET /api/gm-tokens': () => ({ status: 200, body: { data: [] } }),
       'GET /api/rule-systems': () => ({
         status: 200,
@@ -144,7 +103,6 @@ describe('GmHomePage', () => {
       'GET /api/me': () => ME,
       'GET /api/campaigns': () => ({ status: 200, body: { data: [] } }),
       'GET /api/rule-systems': () => ({ status: 200, body: { data: [] } }),
-      'GET /api/gm-invites': () => ({ status: 200, body: { data: [] } }),
       'GET /api/gm-tokens': () => ({ status: 200, body: { data: [] } }),
       'POST /api/auth/sign-out': () => ({ status: 204 }),
     })

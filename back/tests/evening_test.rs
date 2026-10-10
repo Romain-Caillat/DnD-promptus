@@ -13,7 +13,6 @@ use axum::http::StatusCode;
 use common::{Reply, call, call_as_player, imported_campaign, invite_code, join};
 use promptus_back::ai::fake::FakeProvider;
 use promptus_back::ai::{Ai, Pricing};
-use promptus_back::auth::setup::SetupState;
 use promptus_back::live::{LiveConfig, LiveHub};
 use serde_json::{Value, json};
 use sqlx::PgPool;
@@ -34,12 +33,7 @@ struct Table {
 /// Romain's table: Marc plays Borin (validated), Léa watches.
 async fn table_with(ai: Ai) -> Table {
     let pool = common::test_pool().await;
-    let app = common::app_with_ai(
-        pool.clone(),
-        SetupState::closed(),
-        LiveHub::new(LiveConfig::default()),
-        ai,
-    );
+    let app = common::app_with_ai(pool.clone(), LiveHub::new(LiveConfig::default()), ai);
     let (_, gm) = common::signed_in_gm(&pool, "Romain").await;
     let campaign = imported_campaign(&app, &gm, FIXTURE).await;
     let code = invite_code(&app, &gm, &campaign).await;
@@ -418,7 +412,6 @@ async fn the_recap_draft_respects_the_budget_and_the_format() {
     let broken = Arc::new(FakeProvider::broken());
     let app = common::app_with_ai(
         t.pool.clone(),
-        SetupState::closed(),
         LiveHub::new(LiveConfig::default()),
         Ai::new(Some(broken.clone()), Pricing::default()),
     );

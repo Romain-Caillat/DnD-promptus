@@ -51,8 +51,7 @@ jobs:
 
       # The workspace includes the Tauri shell, which links against
       # WebKitGTK: clippy and the tests compile it, so it needs the
-      # system libraries Tauri documents for Debian/Ubuntu. The server's
-      # passkey verification (webauthn-rs) links OpenSSL.
+      # system libraries Tauri documents for Debian/Ubuntu.
       - name: Install Tauri system dependencies
         run: |
           sudo apt-get update

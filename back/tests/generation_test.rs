@@ -14,7 +14,6 @@ use axum::http::StatusCode;
 use common::{Reply, call};
 use promptus_back::ai::fake::FakeProvider;
 use promptus_back::ai::{Ai, Pricing, Provider};
-use promptus_back::auth::setup::SetupState;
 use promptus_back::live::{LiveConfig, LiveHub};
 use serde_json::{Value, json};
 use sqlx::PgPool;
@@ -25,7 +24,6 @@ const PITCH: &str = "Des gobelins pillent un village minier.";
 fn app_with(pool: &PgPool, provider: &Arc<FakeProvider>) -> Router {
     common::app_with_ai(
         pool.clone(),
-        SetupState::closed(),
         LiveHub::new(LiveConfig::default()),
         Ai::new(
             Some(provider.clone() as Arc<dyn Provider>),

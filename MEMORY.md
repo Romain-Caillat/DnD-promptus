@@ -392,9 +392,13 @@ Every GM route is mounted on the GM router in `back/src/app.rs`, behind
 `back/tests/gm_routes_test.rs`, which sweeps them all. A resource is
 checked with `owned_by` (`back/src/auth/guard.rs`): another GM's row
 answers 404, exactly like a missing one — never 403, which would
-confirm it exists. The first GM is created with the setup code from
-the server log, every other one through an invitation: registration is
-never open to whoever reaches the server first.
+confirm it exists. A GM signs in with a six-digit code emailed to
+them (`auth::codes`), and **anyone who reaches the app may become a
+GM** (decided 2026-10-10, replacing passkeys, the setup code and GM
+invitations, which were too heavy for the table). That is only
+acceptable because the app is reachable over NetBird alone
+(`docs/install.md`): publishing it on the Internet means adding an
+allow-list of GM addresses first. Ownership is what isolates GMs.
 
 ### A GM's personal token reaches campaign preparation only
 
@@ -567,7 +571,7 @@ condition or damage it causes still reaches them as its own event.
   global shadows jsdom's. Run the front tests with
   `bun --bun node_modules/.bin/vitest run` (as in PCT 105).
 - **V1 GM pages had no authentication.** The rewrite has a GM account
-  from day one (passkeys, `platform/sign-in-gm`, see §3 "GM routes");
+  from day one (email code, `platform/sign-in-gm`, see §3 "GM routes");
   `/play/*` stays accountless.
 - **A `CHECK (kind IN (…))` on a shared table is a merge trap.** Two
   lots that each `DROP CONSTRAINT … ADD CONSTRAINT` with their own list

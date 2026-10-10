@@ -49,11 +49,16 @@ services:
       # The front is served by the same server, so the web app needs no
       # CORS; only the desktop and phone shells call from another origin.
       ALLOWED_ORIGINS: https://${PROMPTUS_DOMAIN:?set PROMPTUS_DOMAIN in .env.production},${PROMPTUS_APP_ORIGINS-tauri://localhost,http://tauri.localhost}
-      # GM passkeys are bound to this origin's host; the session cookie
-      # is Secure because it is https (platform/sign-in-gm).
+      # The session cookie is Secure because it is https
+      # (platform/sign-in-gm).
       PUBLIC_ORIGIN: https://${PROMPTUS_DOMAIN}
-      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-}
-      GM_SETUP_TOKEN: ${GM_SETUP_TOKEN:-}
+      # GMs sign in with a code sent by email (platform/sign-in-gm);
+      # without SMTP_HOST the codes go to this container's log.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
       # The models (.env.production.example); unset, AI is off.
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}

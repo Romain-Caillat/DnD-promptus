@@ -19,7 +19,7 @@ use crate::error::AppError;
 pub const COOKIE_NAME: &str = "promptus_gm";
 /// The cookie only travels to the API.
 const COOKIE_PATH: &str = "/api";
-/// A GM signs in with a passkey about once a month.
+/// A GM signs in with an emailed code about once a month.
 pub const SESSION_DAYS: i64 = 30;
 
 /// The signed-in GM, as every GM route sees them.

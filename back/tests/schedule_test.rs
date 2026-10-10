@@ -15,7 +15,6 @@ use axum::http::StatusCode;
 use chrono::{DateTime, Duration, DurationRound, Utc};
 use common::{Reply, call, call_as_player, imported_campaign, invite_code, join};
 use promptus_back::ai::Ai;
-use promptus_back::auth::setup::SetupState;
 use promptus_back::live::{LiveConfig, LiveHub};
 use promptus_back::schedule::notify::Recorder;
 use promptus_back::schedule::{self, Kind, Notifier};
@@ -70,7 +69,6 @@ async fn table(yaml: &str) -> Table {
     let (notifier, recorder) = Notifier::recorder(common::ORIGIN);
     let app = common::app_with_notifier(
         pool.clone(),
-        SetupState::closed(),
         LiveHub::new(LiveConfig::default()),
         Ai::fake(),
         notifier.clone(),

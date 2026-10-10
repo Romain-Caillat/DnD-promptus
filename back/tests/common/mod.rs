@@ -10,12 +10,13 @@ pub mod live;
 pub mod marked;
 
 use std::str::FromStr;
+use std::sync::Arc;
 
 use axum::Router;
 use axum::body::Body;
 use axum::http::{Request, StatusCode, header};
 use promptus_back::ai::Ai;
-use promptus_back::auth::setup::SetupState;
+use promptus_back::auth::mailer::Recorder;
 use promptus_back::live::{LiveConfig, LiveHub};
 use promptus_back::schedule::Notifier;
 use promptus_back::state::{AppState, Auth};
@@ -99,21 +100,20 @@ pub async fn fresh_instance_pool() -> PgPool {
     pool
 }
 
-/// GM authentication as the server builds it, for `ORIGIN`.
-pub fn auth(setup: SetupState) -> Auth {
-    Auth::new(ORIGIN, None, setup).expect("relying party")
+/// GM authentication as the server builds it, for `ORIGIN`, with its
+/// emails recorded by `mailer`.
+pub fn auth(mailer: &Recorder) -> Auth {
+    Auth::new(ORIGIN, Arc::new(mailer.clone()))
 }
 
-/// The real router over `pool`, with setup closed.
+/// The real router over `pool`.
 pub fn app(pool: PgPool) -> Router {
-    app_with(pool, SetupState::closed())
+    app_with_mailer(pool, &Recorder::default())
 }
 
-/// The real router, without the live listener: it would hold one of the
-/// test pool's two connections, and only tests opening live sockets need
-/// it ([`app_live`]).
-pub fn app_with(pool: PgPool, setup: SetupState) -> Router {
-    router_with(pool, setup, LiveHub::new(LiveConfig::default()))
+/// The real router whose sign-in emails land in `mailer`.
+pub fn app_with_mailer(pool: PgPool, mailer: &Recorder) -> Router {
+    router_with(pool, mailer, LiveHub::new(LiveConfig::default()))
 }
 
 /// The real router with its live listener running, and the hub, for
@@ -121,33 +121,31 @@ pub fn app_with(pool: PgPool, setup: SetupState) -> Router {
 pub fn app_live(pool: PgPool, config: LiveConfig) -> (Router, LiveHub) {
     let live = LiveHub::new(config);
     promptus_back::live::listener::spawn(pool.clone(), live.clone());
-    (router_with(pool, SetupState::closed(), live.clone()), live)
+    (router_with(pool, &Recorder::default(), live.clone()), live)
 }
 
-fn router_with(pool: PgPool, setup: SetupState, live: LiveHub) -> Router {
-    app_with_ai(pool, setup, live, Ai::fake())
+fn router_with(pool: PgPool, mailer: &Recorder, live: LiveHub) -> Router {
+    build(pool, mailer, live, Ai::fake(), Notifier::recorder(ORIGIN).0)
 }
 
 /// The real router with a chosen AI (the fake provider by default
 /// elsewhere): tests of the co-GM and of the budget pass their own to
 /// count its calls.
-pub fn app_with_ai(pool: PgPool, setup: SetupState, live: LiveHub, ai: Ai) -> Router {
-    app_with_notifier(pool, setup, live, ai, Notifier::recorder(ORIGIN).0)
+pub fn app_with_ai(pool: PgPool, live: LiveHub, ai: Ai) -> Router {
+    app_with_notifier(pool, live, ai, Notifier::recorder(ORIGIN).0)
 }
 
 /// The real router with a chosen notifier: tests of the reminders pass a
 /// recorder and read what would have reached the table's channel.
-pub fn app_with_notifier(
-    pool: PgPool,
-    setup: SetupState,
-    live: LiveHub,
-    ai: Ai,
-    notifier: Notifier,
-) -> Router {
+pub fn app_with_notifier(pool: PgPool, live: LiveHub, ai: Ai, notifier: Notifier) -> Router {
+    build(pool, &Recorder::default(), live, ai, notifier)
+}
+
+fn build(pool: PgPool, mailer: &Recorder, live: LiveHub, ai: Ai, notifier: Notifier) -> Router {
     promptus_back::app::router(
         AppState {
             pool,
-            auth: auth(setup),
+            auth: auth(mailer),
             live,
             ai,
             notifier,
@@ -338,7 +336,7 @@ pub async fn join(app: &Router, code: &str, nickname: &str, role: &str) -> Reply
 }
 
 /// A GM account with an open session, created straight in the database
-/// (the passkey ceremonies have their own tests). Returns the GM id and
+/// (the emailed codes have their own tests). Returns the GM id and
 /// the session token.
 pub async fn signed_in_gm(pool: &PgPool, name: &str) -> (Uuid, String) {
     let id: Uuid = sqlx::query_scalar("INSERT INTO gms (display_name) VALUES ($1) RETURNING id")

@@ -10,7 +10,6 @@ use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use common::{Reply, call, call_as_player, imported_campaign, invite_code, join};
 use promptus_back::ai::Ai;
-use promptus_back::auth::setup::SetupState;
 use promptus_back::live::{LiveConfig, LiveHub};
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -40,7 +39,6 @@ async fn table() -> Table {
     let pool = common::test_pool().await;
     let app = common::app_with_ai(
         pool.clone(),
-        SetupState::closed(),
         LiveHub::new(LiveConfig::default()),
         Ai::fake(),
     );

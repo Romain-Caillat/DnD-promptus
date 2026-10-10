@@ -32,18 +32,6 @@ export function sentTo(fetchMock: ReturnType<typeof mockApi>, key: string): unkn
 }
 
 /**
- * A browser that can use passkeys: a secure context, the WebAuthn API,
- * and `navigator.credentials` answering with the given functions.
- */
-export function stubPasskeys(credentials: { create?: unknown; get?: unknown }) {
-  vi.stubGlobal('isSecureContext', true)
-  vi.stubGlobal('PublicKeyCredential', function PublicKeyCredential() {})
-  vi.stubGlobal('navigator', { ...navigator, credentials })
-}
-
-export const bytes = (...b: number[]) => new Uint8Array(b).buffer
-
-/**
  * A device that does, or does not, ask for reduced motion; `matching`
  * lists the other media queries it answers (a computer, a tablet).
  */

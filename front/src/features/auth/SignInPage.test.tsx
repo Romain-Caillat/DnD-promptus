@@ -2,24 +2,8 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { bytes, mockApi, sentTo, stubPasskeys } from '@/test-utils'
+import { mockApi, sentTo } from '@/test-utils'
 import { SignInPage } from './SignInPage'
-
-const CHALLENGE = {
-  data: { ceremonyId: 'c1', options: { publicKey: { challenge: 'AAE', allowCredentials: [] } } },
-}
-
-const ASSERTION = {
-  id: 'AQ',
-  rawId: bytes(1),
-  type: 'public-key',
-  response: {
-    authenticatorData: bytes(5),
-    clientDataJSON: bytes(6),
-    signature: bytes(7),
-    userHandle: bytes(8),
-  },
-}
 
 function renderAt() {
   render(
@@ -27,90 +11,106 @@ function renderAt() {
       <Routes>
         <Route path="/connexion" element={<SignInPage />} />
         <Route path="/" element={<p>accueil MJ</p>} />
-        <Route path="/inscription" element={<p>création de compte</p>} />
       </Routes>
     </MemoryRouter>,
   )
 }
 
+const GM = { status: 200, body: { data: { id: 'g1', displayName: 'Romain' } } }
+
+async function askCode(email = 'romain@example.org') {
+  await userEvent.type(screen.getByLabelText('Adresse email'), email)
+  await userEvent.click(screen.getByRole('button', { name: 'Recevoir un code' }))
+}
+
 describe('SignInPage', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    localStorage.clear()
   })
 
-  it('signs in with a passkey and lands on the GM home', async () => {
+  it('signs in with the code received and lands on the GM home', async () => {
     const api = mockApi({
-      'GET /api/auth/status': () => ({ status: 200, body: { data: { needsSetup: false } } }),
-      'POST /api/auth/sign-in/options': () => ({ status: 200, body: CHALLENGE }),
-      'POST /api/auth/sign-in': () => ({
-        status: 200,
-        body: { data: { id: 'g1', displayName: 'Romain' } },
-      }),
+      'POST /api/auth/code': () => ({ status: 204 }),
+      'POST /api/auth/verify': () => GM,
     })
-    stubPasskeys({ get: vi.fn().mockResolvedValue(ASSERTION) })
     renderAt()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Se connecter avec une passkey' }))
+    await askCode()
+    expect(await screen.findByText(/vient d’être envoyé à romain@example.org/)).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('Code reçu par email'), '12 34-56')
+    await userEvent.click(screen.getByRole('button', { name: 'Se connecter' }))
 
     expect(await screen.findByText('accueil MJ')).toBeInTheDocument()
-    expect(sentTo(api, 'POST /api/auth/sign-in')).toEqual([
-      {
-        ceremonyId: 'c1',
-        credential: expect.objectContaining({
-          rawId: 'AQ',
-          response: expect.objectContaining({ userHandle: 'CA' }),
-        }),
-      },
+    expect(sentTo(api, 'POST /api/auth/code')).toEqual([{ email: 'romain@example.org' }])
+    expect(sentTo(api, 'POST /api/auth/verify')).toEqual([
+      { email: 'romain@example.org', code: '123456' },
     ])
   })
 
-  it('explains a closed prompt and sends nothing', async () => {
+  it('asks a new address for its display name, then creates the account', async () => {
     const api = mockApi({
-      'GET /api/auth/status': () => ({ status: 200, body: { data: { needsSetup: false } } }),
-      'POST /api/auth/sign-in/options': () => ({ status: 200, body: CHALLENGE }),
-    })
-    stubPasskeys({
-      get: vi.fn().mockRejectedValue(new DOMException('closed', 'NotAllowedError')),
+      'POST /api/auth/code': () => ({ status: 204 }),
+      'POST /api/auth/verify': (sent) =>
+        (sent as { displayName?: string }).displayName
+          ? { status: 201, body: GM.body }
+          : { status: 409, body: { error: { code: 'DISPLAY_NAME_REQUIRED', message: 'x' } } },
     })
     renderAt()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Se connecter avec une passkey' }))
+    await askCode()
+    await userEvent.type(await screen.findByLabelText('Code reçu par email'), '123456')
+    await userEvent.click(screen.getByRole('button', { name: 'Se connecter' }))
+    await userEvent.type(await screen.findByLabelText('Nom affiché'), 'Romain')
+    await userEvent.click(screen.getByRole('button', { name: 'Créer mon compte MJ' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      "La passkey n'a pas été utilisée.",
-    )
-    expect(sentTo(api, 'POST /api/auth/sign-in')).toEqual([])
+    expect(await screen.findByText('accueil MJ')).toBeInTheDocument()
+    expect(sentTo(api, 'POST /api/auth/verify')).toEqual([
+      { email: 'romain@example.org', code: '123456' },
+      { email: 'romain@example.org', code: '123456', displayName: 'Romain' },
+    ])
   })
 
-  it('tells an unknown passkey apart from a closed prompt', async () => {
+  it('explains a wrong code and stays on the page', async () => {
     mockApi({
-      'GET /api/auth/status': () => ({ status: 200, body: { data: { needsSetup: false } } }),
-      'POST /api/auth/sign-in/options': () => ({ status: 200, body: CHALLENGE }),
-      'POST /api/auth/sign-in': () => ({
+      'POST /api/auth/code': () => ({ status: 204 }),
+      'POST /api/auth/verify': () => ({
         status: 401,
-        body: { error: { code: 'INVALID_PASSKEY', message: 'x' } },
+        body: { error: { code: 'INVALID_CODE', message: 'x' } },
       }),
     })
-    stubPasskeys({ get: vi.fn().mockResolvedValue(ASSERTION) })
     renderAt()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Se connecter avec une passkey' }))
+    await askCode()
+    await userEvent.type(await screen.findByLabelText('Code reçu par email'), '000000')
+    await userEvent.click(screen.getByRole('button', { name: 'Se connecter' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      "Cette passkey n'a pas été reconnue. Réessayez.",
-    )
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ce code n’est pas bon')
     expect(screen.queryByText('accueil MJ')).not.toBeInTheDocument()
   })
 
-  it('sends a fresh server to the first account creation', async () => {
+  it('says when a code was asked for too soon', async () => {
     mockApi({
-      'GET /api/auth/status': () => ({ status: 200, body: { data: { needsSetup: true } } }),
+      'POST /api/auth/code': () => ({
+        status: 429,
+        body: { error: { code: 'CODE_TOO_SOON', message: 'x' } },
+      }),
     })
-    stubPasskeys({})
     renderAt()
 
-    await userEvent.click(await screen.findByRole('link', { name: 'Créer le premier compte' }))
+    await askCode()
 
-    expect(await screen.findByText('création de compte')).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Attends une minute')
+    expect(screen.getByLabelText('Adresse email')).toBeInTheDocument()
+  })
+
+  it('remembers the last address on this device', async () => {
+    mockApi({ 'POST /api/auth/code': () => ({ status: 204 }) })
+    renderAt()
+    await askCode('marc@example.org')
+    await screen.findByLabelText('Code reçu par email')
+    await userEvent.click(screen.getByRole('button', { name: 'Changer d’adresse' }))
+
+    expect(screen.getByLabelText('Adresse email')).toHaveValue('marc@example.org')
   })
 })

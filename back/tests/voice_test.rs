@@ -12,7 +12,6 @@ use axum::http::StatusCode;
 use common::{Reply, call, call_as_player, imported_campaign, invite_code, join, wav_saying};
 use promptus_back::ai::fake::FakeProvider;
 use promptus_back::ai::{Ai, Pricing};
-use promptus_back::auth::setup::SetupState;
 use promptus_back::live::{LiveConfig, LiveHub};
 use serde_json::{Value, json};
 use sqlx::PgPool;
@@ -37,12 +36,7 @@ struct Table {
 
 async fn table(yaml: &str, ai: Ai) -> Table {
     let pool = common::test_pool().await;
-    let app = common::app_with_ai(
-        pool.clone(),
-        SetupState::closed(),
-        LiveHub::new(LiveConfig::default()),
-        ai,
-    );
+    let app = common::app_with_ai(pool.clone(), LiveHub::new(LiveConfig::default()), ai);
     let (_, gm) = common::signed_in_gm(&pool, "Romain").await;
     let campaign = imported_campaign(&app, &gm, yaml).await;
     let code = invite_code(&app, &gm, &campaign).await;
@@ -221,7 +215,6 @@ async fn nothing_is_sent_for_a_dictation_that_would_be_refused() {
     let broken = Arc::new(FakeProvider::broken());
     let app = common::app_with_ai(
         t.pool.clone(),
-        SetupState::closed(),
         LiveHub::new(LiveConfig::default()),
         Ai::new(Some(broken.clone()), Pricing::default()),
     );

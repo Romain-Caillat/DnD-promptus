@@ -18,16 +18,13 @@ use serde_json::Value;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-/// Every GM route, `{invite}` standing for an invitation of the caller,
-/// `{token}` for one of their personal access tokens,
+/// Every GM route, `{token}` standing for one of the caller's personal
+/// access tokens,
 /// `{campaign}` for one of their campaigns, `{player}` for a player at
 /// that campaign's table, `{character}` for that player's character and
 /// `{hook}` for a secret hook drawn from it.
 const GM_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/me"),
-    ("GET", "/api/gm-invites"),
-    ("POST", "/api/gm-invites"),
-    ("DELETE", "/api/gm-invites/{invite}"),
     ("GET", "/api/gm-tokens"),
     ("POST", "/api/gm-tokens"),
     ("DELETE", "/api/gm-tokens/{token}"),
@@ -368,7 +365,6 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
 
 /// The ids the routes' placeholders stand for.
 struct Ids {
-    invite: String,
     token: String,
     campaign: String,
     player: String,
@@ -389,8 +385,7 @@ struct Ids {
 }
 
 fn route_uri(path: &str, ids: &Ids) -> String {
-    path.replace("{invite}", &ids.invite)
-        .replace("{token}", &ids.token)
+    path.replace("{token}", &ids.token)
         .replace("{campaign}", &ids.campaign)
         .replace("{player}", &ids.player)
         .replace("{character}", &ids.character)
@@ -414,8 +409,8 @@ fn route_uri(path: &str, ids: &Ids) -> String {
         .replace("{screen}", &ids.screen)
 }
 
-/// Every placeholder filled for `player` of `campaign`: an invitation of
-/// the GM, the player's character and a hook drawn from it.
+/// Every placeholder filled for `player` of `campaign`: a token of the
+/// GM, the player's character and a hook drawn from it.
 async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, player: String) -> Ids {
     // A class of the rules, so the character can be put in play.
     let character: Uuid = sqlx::query_scalar(
@@ -436,7 +431,6 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
     .await;
     assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
     Ids {
-        invite: invite_of(app, token).await,
         token: common::api_token(app, token, "Balayage").await.0,
         hook: r.body["data"]["id"].as_str().unwrap().to_string(),
         character: character.to_string(),
@@ -519,22 +513,6 @@ async fn campaign_count(pool: &PgPool, gm: Uuid) -> i64 {
         .unwrap()
 }
 
-async fn invite_of(app: &Router, token: &str) -> String {
-    let r = call(app, Some(token), "POST", "/api/gm-invites", None).await;
-    assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
-    r.body["data"]["id"].as_str().unwrap().to_string()
-}
-
-async fn invite_exists(pool: &PgPool, id: &str) -> bool {
-    sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM gm_invites WHERE id = $1)")
-        .bind(Uuid::parse_str(id).unwrap())
-        .fetch_one(pool)
-        .await
-        .unwrap()
-}
-
-/// Every GM route answers 401 `UNAUTHENTICATED` with `cookie`, and
-/// touches nothing.
 async fn assert_all_refuse(app: &Router, pool: &PgPool, cookie: Option<&str>, ids: &Ids) {
     assert_all_refuse_raw(app, pool, cookie.map(|c| format!("promptus_gm={c}")), ids).await;
 }
@@ -564,10 +542,6 @@ fn in_token_scope(method: &str, path: &str) -> bool {
 
 /// Nothing a refused sweep could have changed has changed.
 async fn assert_untouched(pool: &PgPool, ids: &Ids) {
-    assert!(
-        invite_exists(pool, &ids.invite).await,
-        "a refused DELETE deleted"
-    );
     assert!(
         token_live(pool, &ids.token).await,
         "a refused DELETE revoked a token"
@@ -615,8 +589,8 @@ async fn every_gm_route_refuses_without_a_valid_session() {
     let (player, _) = player_of(&app, &token, &campaign).await;
     let ids = ids_of(&app, &pool, &token, campaign, player).await;
     let campaigns_before = campaign_count(&pool, gm).await;
-    let invites_before: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM gm_invites WHERE created_by = $1")
+    let tokens_before: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM gm_api_tokens WHERE gm_id = $1")
             .bind(gm)
             .fetch_one(&pool)
             .await
@@ -630,13 +604,13 @@ async fn every_gm_route_refuses_without_a_valid_session() {
     assert_all_refuse(&app, &pool, Some(&hash), &ids).await;
 
     // A refused POST minted nothing.
-    let invites_after: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM gm_invites WHERE created_by = $1")
+    let tokens_after: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM gm_api_tokens WHERE gm_id = $1")
             .bind(gm)
             .fetch_one(&pool)
             .await
             .unwrap();
-    assert_eq!(invites_after, invites_before);
+    assert_eq!(tokens_after, tokens_before);
     assert_eq!(campaign_count(&pool, gm).await, campaigns_before);
 
     // An expired session.
@@ -1006,72 +980,52 @@ async fn another_gm_cannot_reach_what_a_gm_owns() {
     let app = common::app(pool.clone());
     let (_, romain) = common::signed_in_gm(&pool, "Romain").await;
     let (marc_id, marc) = common::signed_in_gm(&pool, "Marc").await;
-    let invite = invite_of(&app, &romain).await;
+    let (token, _) = common::api_token(&app, &romain, "Claude").await;
 
     // Each session is its own GM.
     let r = call(&app, Some(&marc), "GET", "/api/me", None).await;
     assert_eq!(r.body["data"]["id"], marc_id.to_string());
     assert_eq!(r.body["data"]["displayName"], "Marc");
 
-    // Romain's invitation is invisible to Marc…
-    let r = call(&app, Some(&marc), "GET", "/api/gm-invites", None).await;
+    // Romain's token is invisible to Marc…
+    let r = call(&app, Some(&marc), "GET", "/api/gm-tokens", None).await;
     assert_eq!(r.status, StatusCode::OK);
     let listed: Vec<&Value> = r.body["data"].as_array().unwrap().iter().collect();
     assert!(
-        listed.iter().all(|i| i["id"] != invite.as_str()),
+        listed.iter().all(|t| t["id"] != token.as_str()),
         "{listed:?}"
     );
 
     // …and cannot be revoked by him: 404, like one that does not exist.
-    let r = call(
-        &app,
-        Some(&marc),
-        "DELETE",
-        &format!("/api/gm-invites/{invite}"),
-        None,
-    )
-    .await;
-    assert_eq!(r.status, StatusCode::NOT_FOUND);
-    assert_eq!(r.body["error"]["code"], "NOT_FOUND");
-    assert!(invite_exists(&pool, &invite).await);
-    let missing = Uuid::new_v4();
-    let r = call(
-        &app,
-        Some(&marc),
-        "DELETE",
-        &format!("/api/gm-invites/{missing}"),
-        None,
-    )
-    .await;
-    assert_eq!(r.status, StatusCode::NOT_FOUND);
-    let r = call(
-        &app,
-        Some(&marc),
-        "DELETE",
-        "/api/gm-invites/not-a-uuid",
-        None,
-    )
-    .await;
-    assert_eq!(r.status, StatusCode::NOT_FOUND);
+    for id in [
+        token.clone(),
+        Uuid::new_v4().to_string(),
+        "not-a-uuid".into(),
+    ] {
+        let r = call(
+            &app,
+            Some(&marc),
+            "DELETE",
+            &format!("/api/gm-tokens/{id}"),
+            None,
+        )
+        .await;
+        assert_eq!(r.status, StatusCode::NOT_FOUND, "{id}");
+        assert_eq!(r.body["error"]["code"], "NOT_FOUND");
+    }
+    assert!(token_live(&pool, &token).await);
 
     // Its owner can.
-    let r = call(&app, Some(&romain), "GET", "/api/gm-invites", None).await;
-    let listed = r.body["data"].as_array().unwrap();
-    assert!(listed.iter().any(|i| i["id"] == invite.as_str()));
-    assert!(
-        listed.iter().all(|i| i.get("code").is_none()),
-        "the code is shown once"
-    );
     let r = call(
         &app,
         Some(&romain),
         "DELETE",
-        &format!("/api/gm-invites/{invite}"),
+        &format!("/api/gm-tokens/{token}"),
         None,
     )
     .await;
     assert_eq!(r.status, StatusCode::NO_CONTENT);
-    assert!(!invite_exists(&pool, &invite).await);
+    assert!(!token_live(&pool, &token).await);
 }
 
 /// The `/api/{*rest}` catch-all (a JSON 404 for unknown API paths) must
@@ -1084,7 +1038,7 @@ async fn the_api_catch_all_neither_shadows_nor_opens_gm_routes() {
     let (_, token) = common::signed_in_gm(&pool, "Romain").await;
 
     for session in [None, Some(token.as_str())] {
-        for uri in ["/api/nope", "/api/me/extra", "/api/gm-invites/a/b"] {
+        for uri in ["/api/nope", "/api/me/extra", "/api/gm-tokens/a/b"] {
             let r = call(&app, session, "GET", uri, None).await;
             assert_eq!(r.status, StatusCode::NOT_FOUND, "{uri} with {session:?}");
             assert_eq!(r.body["error"]["code"], "ROUTE_NOT_FOUND", "{uri}");

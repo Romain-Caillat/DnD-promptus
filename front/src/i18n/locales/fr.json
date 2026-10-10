@@ -19,33 +19,29 @@
   "auth": {
     "signIn": {
       "title": "Espace MJ",
-      "intro": "Connectez-vous avec la passkey de votre compte MJ : Face ID, empreinte ou clé de sécurité.",
-      "submit": "Se connecter avec une passkey",
-      "pending": "Connexion…",
-      "noAccount": "Pas encore de compte ? Créez-le avec une invitation.",
-      "setupNeeded": "Aucun compte MJ n'existe encore sur ce serveur.",
-      "setupLink": "Créer le premier compte"
-    },
-    "register": {
-      "title": "Créer un compte MJ",
-      "intro": "Votre compte n'a pas de mot de passe : il s'ouvre avec une passkey enregistrée sur cet appareil.",
-      "setupHint": "Premier compte du serveur : le code de démarrage est affiché dans le journal du serveur.",
-      "inviteHint": "Le code vient d'un lien d'invitation envoyé par un autre MJ.",
-      "code": "Code d'invitation ou de démarrage",
+      "intro": "Saisis ton adresse email : on t’y envoie un code de connexion. Pas de mot de passe.",
+      "email": "Adresse email",
+      "sendCode": "Recevoir un code",
+      "codeSent": "Un code à 6 chiffres vient d’être envoyé à {{email}}. Il est valable 10 minutes.",
+      "code": "Code reçu par email",
+      "submit": "Se connecter",
+      "pending": "Un instant…",
+      "resend": "Renvoyer un code",
+      "resent": "Un nouveau code est parti.",
+      "changeEmail": "Changer d’adresse",
+      "newAccount": "Première connexion avec cette adresse : choisis le nom que tes joueurs verront.",
       "displayName": "Nom affiché",
-      "submit": "Créer mon compte avec une passkey",
-      "pending": "Création…",
-      "haveAccount": "Déjà un compte ? Se connecter."
+      "createAccount": "Créer mon compte MJ"
     },
     "errors": {
-      "cancelled": "La passkey n'a pas été utilisée. Réessayez quand vous êtes prêt.",
-      "invalidCode": "Ce code n'est pas valable : il est faux, déjà utilisé, révoqué ou expiré.",
-      "invalidDisplayName": "Indiquez un nom affiché de 1 à 60 caractères.",
-      "invalidPasskey": "Cette passkey n'a pas été reconnue. Réessayez.",
-      "passkeyTaken": "Cette passkey est déjà liée à un compte.",
+      "invalidEmail": "Cette adresse email n’est pas valable.",
+      "invalidCode": "Ce code n’est pas bon, ou il a expiré. Vérifie-le, ou demande-en un nouveau.",
+      "invalidDisplayName": "Indique un nom affiché de 1 à 60 caractères.",
+      "codeTooSoon": "Un code vient déjà d’être envoyé. Attends une minute avant d’en demander un autre.",
+      "tooManyCodes": "Trop de codes demandés ces dernières minutes. Réessaie un peu plus tard.",
+      "emailUnavailable": "L’email n’a pas pu partir. Réessaie dans un instant.",
       "unreachable": "Le serveur est injoignable.",
-      "unsupported": "Ce navigateur ne permet pas d'utiliser une passkey ici. Ouvrez l'application en HTTPS dans un navigateur récent.",
-      "generic": "Une erreur est survenue. Réessayez."
+      "generic": "Une erreur est survenue. Réessaie."
     }
   },
   "gm": {
@@ -53,20 +49,6 @@
       "loading": "Chargement…",
       "greeting": "Bonjour, {{name}}",
       "signOut": "Se déconnecter"
-    },
-    "invites": {
-      "title": "Inviter un autre MJ",
-      "intro": "Une invitation crée un seul compte et expire au bout de 7 jours.",
-      "create": "Créer une invitation",
-      "created": "Envoyez ce lien à la personne invitée. Il ne sera plus affiché ensuite.",
-      "copy": "Copier le lien",
-      "copied": "Lien copié",
-      "linkLabel": "Lien d'invitation",
-      "pending": "Invitations en attente",
-      "none": "Aucune invitation en attente.",
-      "expires": "Expire le {{date}}",
-      "revoke": "Révoquer",
-      "error": "L'action n'a pas abouti. Réessayez."
     },
     "claude": {
       "title": "Accès pour Claude",

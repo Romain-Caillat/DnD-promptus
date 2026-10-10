@@ -20,7 +20,7 @@ pub enum AppError {
         detail: String,
     },
     /// 401 — no valid GM session (missing, unknown, expired or signed
-    /// out), or a passkey answer that does not verify.
+    /// out), or a wrong sign-in code.
     Unauthorized(&'static str),
     /// 403 — the caller is known (or holds a code) but is not allowed
     /// to do this, whatever the resource.
@@ -32,6 +32,8 @@ pub enum AppError {
     /// already sent to the GM, not waiting for review, or changed since
     /// it was read).
     Conflict(&'static str),
+    /// 429 — asked again too soon, or too often (sign-in codes).
+    TooManyRequests(&'static str),
     /// A dependency the request needs (today: the database) is down, or
     /// the server refuses new work for a moment.
     ServiceUnavailable(&'static str),
@@ -73,6 +75,11 @@ impl IntoResponse for AppError {
             Self::Forbidden(code) => (StatusCode::FORBIDDEN, code, "not allowed".into()),
             Self::NotFound(code) => (StatusCode::NOT_FOUND, code, "not found".into()),
             Self::Conflict(code) => (StatusCode::CONFLICT, code, "conflict".into()),
+            Self::TooManyRequests(code) => (
+                StatusCode::TOO_MANY_REQUESTS,
+                code,
+                "too many requests".into(),
+            ),
             Self::ServiceUnavailable(code) => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 code,

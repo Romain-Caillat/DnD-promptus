@@ -2,8 +2,9 @@ use axum::extract::FromRef;
 use sqlx::PgPool;
 
 use crate::ai::Ai;
-use crate::auth::passkeys::Passkeys;
-use crate::auth::setup::SetupState;
+use std::sync::Arc;
+
+use crate::auth::mailer::Mailer;
 use crate::live::LiveHub;
 use crate::schedule::Notifier;
 
@@ -20,32 +21,23 @@ pub struct AppState {
     pub notifier: Notifier,
 }
 
-/// GM authentication: the relying party, the setup code, and how the
-/// session cookie is written.
+/// GM authentication: where sign-in codes are sent, and how the session
+/// cookie is written.
 #[derive(Clone)]
 pub struct Auth {
-    pub passkeys: Passkeys,
-    pub setup: SetupState,
+    pub mailer: Arc<dyn Mailer>,
     /// `Secure` cookie flag: on whenever the app is served over HTTPS.
     pub secure_cookie: bool,
 }
 
 impl Auth {
-    /// From the public origin the app is opened at.
-    ///
-    /// # Errors
-    ///
-    /// Fails when no relying party can be built for that origin.
-    pub fn new(
-        public_origin: &str,
-        rp_id: Option<&str>,
-        setup: SetupState,
-    ) -> Result<Self, String> {
-        Ok(Self {
-            passkeys: Passkeys::from_origin(public_origin, rp_id)?,
-            setup,
+    /// For the public origin the app is opened at.
+    #[must_use]
+    pub fn new(public_origin: &str, mailer: Arc<dyn Mailer>) -> Self {
+        Self {
+            mailer,
             secure_cookie: public_origin.starts_with("https://"),
-        })
+        }
     }
 }
 

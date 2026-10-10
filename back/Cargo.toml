@@ -15,9 +15,7 @@ chrono = { version = "0.4", features = ["serde"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tower-http = { version = "0.6", features = ["cors", "fs", "set-header", "trace"] }
-# platform/sign-in-gm — passkeys, and the hashing of session tokens.
-webauthn-rs = { version = "0.5", features = ["conditional-ui"] }
-webauthn-rs-proto = "0.5"
+# platform/sign-in-gm — the hashing of session tokens and sign-in codes.
 sha2 = "0.10"
 base64 = "0.22"
 rand = "0.8"
@@ -30,12 +28,12 @@ serde_yaml_ng = "0.10"
 # session/pair-shared-screen — the QR a TV shows next to its code (SVG
 # only: no image codecs).
 qrcode ={ version = "0.14.1", default-features = false, features = ["svg"] }
+# platform/sign-in-gm — sign-in codes by email, over SMTP with STARTTLS
+# (rustls: no system OpenSSL at run time).
+lettre = { version = "0.11", default-features = false, features = ["builder", "hostname", "smtp-transport", "tokio1-rustls-tls"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
 # session/stream-live-changes — a real WebSocket client against a real server.
 tokio-tungstenite = "0.29"
 futures-util = "0.3"
-# A software authenticator: real key pairs signing the server's real
-# challenges, so the ceremonies are tested end to end without a browser.
-webauthn-authenticator-rs = { version = "0.5", features = ["softpasskey"] }

@@ -1,5 +1,4 @@
 import { BrowserRouter, Route, Routes } from 'react-router'
-import { RegisterPage } from '@/features/auth/RegisterPage'
 import { SignInPage } from '@/features/auth/SignInPage'
 import { CampaignPage } from '@/features/gm/CampaignPage'
 import { GmHomePage } from '@/features/gm/GmHomePage'
@@ -27,7 +26,6 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/connexion" element={<SignInPage />} />
-        <Route path="/inscription" element={<RegisterPage />} />
         <Route path="/reference" element={<ReferencePage />} />
         <Route path="/sante" element={<HealthPage />} />
         <Route path="/rejoindre/:code" element={<JoinPage />} />

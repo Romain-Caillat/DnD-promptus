@@ -41,17 +41,8 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
     // added here is open to the whole Internet.
     let public = Router::new()
         .route("/api/health", get(api::health::health))
-        .route("/api/auth/status", get(api::auth::status))
-        .route(
-            "/api/auth/register/options",
-            post(api::auth::register_options),
-        )
-        .route("/api/auth/register", post(api::auth::register))
-        .route(
-            "/api/auth/sign-in/options",
-            post(api::auth::sign_in_options),
-        )
-        .route("/api/auth/sign-in", post(api::auth::sign_in))
+        .route("/api/auth/code", post(api::auth::request_code))
+        .route("/api/auth/verify", post(api::auth::verify))
         // Sprites: a description is drawn the same for GM, players and TV.
         .route("/api/sprites/render.png", get(api::sprites::render_png))
         .route("/api/sprites/sheet.png", get(api::sprites::sheet_png))
@@ -77,11 +68,6 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
     let gm = Router::new()
         .route("/api/me", get(api::gm::me))
         .route("/api/auth/sign-out", post(api::auth::sign_out))
-        .route(
-            "/api/gm-invites",
-            get(api::gm::list_invites).post(api::gm::create_invite),
-        )
-        .route("/api/gm-invites/{id}", delete(api::gm::revoke_invite))
         // platform/connect-claude-mcp: personal access tokens, minted and
         // revoked from the GM's session only.
         .route(

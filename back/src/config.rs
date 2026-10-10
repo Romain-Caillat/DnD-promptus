@@ -1,20 +1,18 @@
 use std::env;
 use std::path::PathBuf;
 
+use crate::auth::mailer::SmtpConfig;
+
 pub struct Config {
     pub database_url: String,
     pub port: u16,
     pub allowed_origins: Vec<String>,
-    /// The origin people open the app at (`PUBLIC_ORIGIN`). Passkeys
-    /// are bound to it, and the session cookie is `Secure` when it is
-    /// HTTPS.
+    /// The origin people open the app at (`PUBLIC_ORIGIN`). The session
+    /// cookie is `Secure` when it is HTTPS.
     pub public_origin: String,
-    /// `WEBAUTHN_RP_ID`: the domain passkeys belong to. Defaults to the
-    /// host of `public_origin`.
-    pub webauthn_rp_id: Option<String>,
-    /// `GM_SETUP_TOKEN`: pins the first-account setup code instead of a
-    /// random one printed at boot.
-    pub gm_setup_token: Option<String>,
+    /// Where sign-in codes are sent from (`SMTP_*`). Unset in
+    /// development: codes then go to the server log.
+    pub smtp: Option<SmtpConfig>,
     /// The built front to serve next to the API (`FRONT_DIR`). Unset in
     /// development, where Vite serves the front and proxies `/api`.
     pub front_dir: Option<PathBuf>,
@@ -61,11 +59,29 @@ impl Config {
             port,
             allowed_origins,
             public_origin,
-            webauthn_rp_id: non_empty("WEBAUTHN_RP_ID"),
-            gm_setup_token: non_empty("GM_SETUP_TOKEN"),
+            smtp: smtp_from_env()?,
             front_dir,
         })
     }
+}
+
+/// `SMTP_HOST` turns email on; `SMTP_FROM` is then required.
+fn smtp_from_env() -> Result<Option<SmtpConfig>, String> {
+    let Some(host) = non_empty("SMTP_HOST") else {
+        return Ok(None);
+    };
+    let port_str = non_empty("SMTP_PORT").unwrap_or_else(|| "587".to_string());
+    let port = port_str
+        .parse()
+        .map_err(|_| format!("Invalid SMTP_PORT value: '{port_str}' — must be a valid u16"))?;
+    let from = non_empty("SMTP_FROM").ok_or("SMTP_FROM must be set when SMTP_HOST is")?;
+    Ok(Some(SmtpConfig {
+        host,
+        port,
+        user: non_empty("SMTP_USER"),
+        password: env::var("SMTP_PASS").ok().filter(|v| !v.is_empty()),
+        from,
+    }))
 }
 
 fn non_empty(name: &str) -> Option<String> {

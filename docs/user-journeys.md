@@ -30,7 +30,7 @@ Rappels qui valent pour tous les parcours :
 
 ### M1 · Créer une campagne
 
-1. Le MJ se connecte (passkey) et arrive sur **la liste de ses
+1. Le MJ se connecte (email + code) et arrive sur **la liste de ses
    campagnes**. · *dessiné* (Préparer)
 2. « Nouvelle campagne » : il choisit **l'univers** (fantasy, zombies,
    spatial…), qui fixe le pack de tuiles, de personnages et d'objets, et

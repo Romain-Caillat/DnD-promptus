@@ -7,7 +7,6 @@ mod common;
 use axum::http::StatusCode;
 use common::{call, call_as_player, imported_campaign, invite_code, join};
 use promptus_back::ai::Ai;
-use promptus_back::auth::setup::SetupState;
 use promptus_back::live::{LiveConfig, LiveHub};
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -19,7 +18,6 @@ async fn an_image_reaches_the_table_only_approved_and_once_its_scene_is_entered(
     let pool = common::test_pool().await;
     let app = common::app_with_ai(
         pool.clone(),
-        SetupState::closed(),
         LiveHub::new(LiveConfig::default()),
         Ai::fake(),
     );
@@ -203,7 +201,6 @@ async fn a_batch_draws_what_is_missing_and_an_act_gets_its_video_in_the_backgrou
     let pool = common::test_pool().await;
     let app = common::app_with_ai(
         pool.clone(),
-        SetupState::closed(),
         LiveHub::new(LiveConfig::default()),
         Ai::fake(),
     );

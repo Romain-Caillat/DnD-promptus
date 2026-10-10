@@ -16,11 +16,6 @@ RUN bun run build
 # ---------------------------------------------------------------- server
 FROM rust:1-slim-trixie AS server-builder
 
-# webauthn-rs (GM passkeys) verifies signatures with OpenSSL.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends pkg-config libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY shared/ shared/
@@ -45,9 +40,9 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 FROM debian:trixie-slim
 
 # curl is the health check's only dependency (HEALTHCHECK below);
-# libssl3t64 is OpenSSL for the passkey verification.
+# TLS (OpenRouter, SMTP) is rustls with its own roots: no OpenSSL.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl libssl3t64 \
+    && apt-get install -y --no-install-recommends ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
 
 # An unprivileged user with a fixed uid, so a host folder mounted later
