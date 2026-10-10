@@ -166,6 +166,46 @@ une campagne SRD jouée, un voyage et des déplacements vus sur de vrais
 téléphones et à la TV, une soirée jouée sur ordinateur et une menée
 depuis un iPad.
 
+### Jalon 4 · Préparer sur la carte, avec Claude en direct
+
+La préparation quitte les listes pour la carte : un **Atlas** (région en
+hexagones → lieu → rencontre) où les scènes sont épinglées, le fil de
+l'histoire se lit comme un chemin, PNJ, indices et combats sont posés à
+leur place, avec le rendu du jeu. Claude, par le serveur MCP, y travaille
+en direct : le MJ le voit poser ses propositions en pointillés et les
+garde ou les jette. Planche : « Atlas · préparer avec Claude en direct ».
+
+**Ce qui ne change pas** — Le graphe d'histoire reste la source : la
+carte en est une vue, le fil se calcule depuis les sorties des scènes,
+jamais dessiné (`MEMORY.md`, « l'histoire est un graphe, pas un
+script »). Le validateur, la jauge, la règle des trois indices et les
+outils MCP existants restent valables.
+
+**Fini quand** — Romain prépare un acte d'un des deux mondes dans
+l'Atlas, en demandant à Claude de peupler deux lieux et un combat ; il
+voit chaque proposition apparaître sans recharger, en garde une partie,
+vérifie la vue joueurs, puis joue l'acte à une vraie soirée.
+
+**Ordre retenu** — Après la soirée du jalon 1, jouée avec les écrans
+actuels : ce virage ne la remplace pas.
+
+**Phase 7 · Les scènes sur la carte** — `campaign/pin-scenes-on-maps` ·
+`maps/browse-atlas` · `campaign/draw-story-thread` ·
+`campaign/place-cast-and-clues` · `maps/preview-as-player` ·
+`gm/prep-on-atlas`
+
+**Phase 8 · Claude en direct** — `maps/edit-maps-by-ops` ·
+`platform/stream-prep-edits` · `platform/propose-edits-by-claude` ·
+`platform/edit-maps-by-claude`
+
+*Tickets existants touchés* — `campaign/edit-scenes-in-one-place` (on y
+entre aussi par une épingle) ; `campaign/check-act-readiness` (alerte
+« scène sans lieu ») ; `maps/generate-map-llm` (part d'une épingle et
+rattache la carte à la scène) ; `maps/edit-map-gm` (passe aux
+opérations, outil épingle) ; `campaign/review-story-graph` (le graphe
+devient une vue secondaire) ; `platform/preview-campaign-in-claude`
+(gelé après son premier panneau : la vue en direct devient l'app).
+
 Plus tard, sans jalon : `maps/support-hex-combat`.
 
 ---
@@ -452,6 +492,87 @@ projection) finirait par diverger : il relit le serveur.
 commande `/promptus`. Il lit les fichiers de campagne du dépôt (pas
 encore Promptus) et se met à jour quand Claude ou le MJ modifie le
 fichier. Pas encore regardé dans une vraie séance de préparation.
+
+---
+
+### `platform/stream-prep-edits` · todo
+
+**Pourquoi** — Quand Claude modifie la campagne par le serveur MCP,
+l'Atlas ouvert du MJ doit le montrer aussitôt, sans recharger.
+
+**Périmètre** — Chaque écriture de préparation (MJ, jeton, co-MJ)
+incrémente un numéro de révision de la campagne et notifie le sujet
+concerné sur le canal temps réel existant ; le canal ne transporte
+toujours que des numéros, l'écran relit par HTTP. Un journal des
+révisions (auteur, modifications, inverse) permet de rattraper ce qui a
+changé depuis N et d'annuler une révision tant que rien ne l'a
+recouverte. Un signal d'activité « Claude écrit · sur Valombre » part
+vers le MJ **seulement** : aujourd'hui la présence part vers toutes les
+sockets de la campagne, joueurs compris.
+
+**Fini quand** — Claude ajoute un indice depuis Claude Code et l'Atlas
+ouvert le met en avant sans rechargement ; un téléphone joueur connecté
+à la même campagne ne reçoit ni l'activité ni la révision.
+
+**Risques** — Une fuite de l'activité de Claude vers les joueurs
+révèle la préparation : un test sur la socket joueur le vérifie.
+
+**Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+---
+
+### `platform/propose-edits-by-claude` · todo
+
+**Pourquoi** — Aujourd'hui une écriture par jeton vaut une écriture du
+MJ et s'applique tout de suite. Dans l'Atlas, Claude propose et le MJ
+garde : c'est la règle 1, rendue mécanique.
+
+**Périmètre** — Les modifications de Claude vont dans un lot (titre,
+foyer sur la carte), appliqué virtuellement pour l'affichage : l'Atlas
+les dessine en pointillés marqués « ▶ Claude ». Le MJ garde, jette avec
+un mot, ou garde tout ; accepter rejoue le lot sous le verrou de la
+campagne et refuse ce qui est devenu impossible. Seule la session du MJ
+peut accepter, jamais un jeton. Un mot de rejet revient à Claude, qui
+peut proposer autre chose. Les outils MCP d'écriture passent par ce lot.
+
+*Décision ouverte* — un mode « Claude a la main » (écriture directe,
+annulable par lot) hors soirée ouverte ? Recommandation : oui, réglé par
+le MJ, refusé pendant une soirée et sur un contenu déjà révélé. Tranche
+la décision ouverte de `platform/connect-claude-mcp`.
+
+**Fini quand** — Romain demande à Claude de peupler le cimetière ;
+quatre éléments apparaissent en pointillés, il en jette un avec « trop
+évident », Claude en propose un autre, Romain garde le reste ; rien n'a
+été visible des joueurs avant.
+
+**Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+---
+
+### `platform/edit-maps-by-claude` · todo
+
+**Pourquoi** — Claude ne voit pas les pixels : pour travailler sur
+l'Atlas il lui faut la carte en texte et des gestes qui ont du sens.
+
+**Périmètre** — Outils MCP de lecture : l'atlas (cartes et lieux), une
+carte ou une zone en ASCII avec légende et éléments posés, les questions
+au moteur (chemin et coût, ligne de vue, ce que voient les joueurs). En
+écriture, des opérations sémantiques résolues et validées par le serveur
+— épingler une scène, poser un PNJ « près du comptoir », un indice, une
+rencontre — plutôt que des coordonnées de cases. Les routes s'ajoutent à
+`TOKEN_ROUTES` (décision explicite, `MEMORY.md`) ; tout passe par le lot
+de `platform/propose-edits-by-claude`.
+
+**Fini quand** — Depuis Claude Code, « ajoute Oswin au cimetière et deux
+indices sur le chemin de la colline » produit trois propositions bien
+placées sur la carte de Valombre, sans mur traversé ni PNJ dans l'eau.
+
+**Risques** — Le raisonnement spatial des modèles est faible sur les
+grilles : le serveur résout les positions, Claude choisit le sens. Un
+rendu en image pour Claude est reporté, à décider après une vraie
+séance.
+
+**Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 
 ---
 
@@ -1623,6 +1744,66 @@ modification de règle (l'atelier arrive avec
 
 ---
 
+### `campaign/pin-scenes-on-maps` · todo
+
+**Pourquoi** — Le cœur de l'Atlas : une scène existe quelque part sur la
+carte.
+
+**Périmètre** — Une scène porte un lieu (carte et zone, ou case) ;
+l'épingle numérotée ouvre l'éditeur de scène existant. Plusieurs scènes
+peuvent partager un lieu. Une scène sans lieu (rêve, souvenir, dialogue)
+reste permise : le validateur la signale sans bloquer. Côté joueur,
+seule la projection serveur montre les épingles révélées. Le format de
+campagne gagne ces champs sans rien casser (un fichier ancien s'importe
+toujours).
+
+**Fini quand** — Sur les deux mondes, 3 à 5 scènes sont épinglées sur une
+carte de région et une carte de lieu ; en soirée, toucher une épingle
+lance la scène, et les joueurs voient les épingles révélées sur leur
+téléphone.
+
+**Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+---
+
+### `campaign/draw-story-thread` · todo
+
+**Pourquoi** — Voir la campagne d'un coup d'œil : où elle commence, où
+elle passe, où elle peut finir.
+
+**Périmètre** — Le fil est calculé depuis les sorties des scènes,
+projeté sur les épingles : branches visibles, jamais une ligne unique.
+Liste des scènes à côté, synchronisée avec la carte (cliquer l'une zoome
+l'autre). Le validateur signale deux scènes reliées dont les lieux ne
+sont reliés par aucun chemin.
+
+**Fini quand** — Le fil d'un acte des deux mondes s'affiche sur la
+région, une sortie ajoutée dans l'éditeur de scène redessine le fil
+sans autre geste.
+
+**Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+---
+
+### `campaign/place-cast-and-clues` · todo
+
+**Pourquoi** — Écrire une scène, c'est aussi placer qui s'y trouve et ce
+qu'on y trouve.
+
+**Périmètre** — PNJ (sprites), indices (losanges) et rencontres posés
+sur la carte, sur le calque du MJ, éventuellement propres à une scène ;
+révélés pendant la soirée comme le reste. Calques Histoire, Personnages,
+Combats, Indices qu'on allume et éteint. Une rencontre pointe vers son
+vrai plan de combat, adversaires déjà placés.
+
+**Fini quand** — Romain place Oswin et deux indices au cimetière, une
+rencontre à l'entrée de la crypte, et les retrouve en soirée au même
+endroit, révélables un par un.
+
+**Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+---
+
 ## Épic `ai`
 
 ### `ai/route-llm-provider` · doing — reste la soirée du jalon jouée pour de vrai
@@ -2582,6 +2763,28 @@ n'a été vérifié que par sa logique, pas sous les doigts.
 
 ---
 
+### `gm/prep-on-atlas` · todo
+
+**Pourquoi** — Préparer et jouer doivent se ressembler : la création
+finit sur la carte, et toute la préparation s'y fait.
+
+**Périmètre** — Un écran Atlas : fil d'Ariane région › lieu › rencontre,
+calques, panneau contextuel (fil de la campagne, scène, combat, lot de
+Claude), atlas des cartes en bas, bascule « Vue MJ / Vue joueurs ». Il
+absorbe les écrans Préparer, Médias, Cartes et Vue joueurs ; Règles,
+Table et Soirée restent à part. La création de campagne s'y termine : la
+première scène est posée sur la région, les lieux proposés autour en
+pointillés. Ce qui n'a pas de lieu (bible, factions, chronologie) vit
+dans un tiroir.
+
+**Fini quand** — Les six moments de la planche « Atlas · préparer avec
+Claude en direct » sont faisables dans l'app, sur ordinateur et sur
+tablette.
+
+**Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+---
+
 ## Épic `copilot`
 
 Tout ce que le co-MJ produit est un brouillon que le MJ modifie ou
@@ -3202,3 +3405,57 @@ n'avance seule avec les jours. Pas encore joué pour de vrai.
 premières sessions réelles.
 
 **Origine** — Session de design du 3 octobre 2026 (reporté volontairement)
+
+---
+
+### `maps/browse-atlas` · todo
+
+**Pourquoi** — Les cartes existent déjà à trois échelles et se relient
+par leurs sorties ; il manque la façon d'y circuler.
+
+**Périmètre** — Arbre de cartes tiré des sorties (une carte enfant
+ancrée sur un hexagone ou une zone du parent), fil d'Ariane, zoom avant
+qui entre dans un lieu et zoom arrière qui revient d'où l'on vient.
+Rendu en basse résolution pendant le mouvement, pour les téléphones et
+les tablettes. Le joueur ne reçoit que la carte où il se trouve, jamais
+l'atlas entier.
+
+**Fini quand** — De la région des Corsaires, Romain entre dans le quai
+de Port-Louis puis dans une rencontre, et revient à la région, sans
+saccade sur un iPad.
+
+**Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+---
+
+### `maps/edit-maps-by-ops` · todo
+
+**Pourquoi** — L'éditeur réenregistre aujourd'hui la carte entière : la
+dernière écriture gagne. Avec Claude qui écrit en même temps, il
+effacerait ses ajouts sans rien dire.
+
+**Périmètre** — L'éditeur et l'API passent à des opérations ciblées
+(peindre une zone, poser, déplacer, retirer) avec un numéro de version ;
+une version dépassée est refusée et relue, jamais écrasée. Mêmes verrou,
+révision et tout-ou-rien que les modifications d'histoire.
+
+**Fini quand** — Le MJ peint un mur pendant que Claude pose un PNJ sur
+la même carte : les deux changements restent.
+
+**Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+---
+
+### `maps/preview-as-player` · todo
+
+**Pourquoi** — Avant de lancer, le MJ vérifie ce qui partira sur la TV
+et les téléphones.
+
+**Périmètre** — Une bascule dans l'Atlas rend la carte par la projection
+serveur : brouillard, PNJ non rencontrés, indices, numéros de scène et
+propositions de Claude disparaissent. Aucun filtre côté client.
+
+**Fini quand** — Sur les deux mondes, la vue joueurs de l'Atlas est
+identique, élément par élément, à ce que montre la TV pour le même état.
+
+**Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
