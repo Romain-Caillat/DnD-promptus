@@ -38,13 +38,16 @@ export class ApiError extends Error {
   readonly code: string
   /** The server's own words, for the codes whose screen shows them (a map's `MAP_INVALID` says, in French, what is wrong). */
   readonly detail: string | null
+  /** A stale write's resource as it is now (`error.fresh`), for the screen to reload and replay (a map's `MAP_STALE`). */
+  readonly fresh: unknown
 
-  constructor(status: number, code: string, detail: string | null = null) {
+  constructor(status: number, code: string, detail: string | null = null, fresh: unknown = undefined) {
     super(`API error ${status} ${code}`)
     this.name = 'ApiError'
     this.status = status
     this.code = code
     this.detail = detail
+    this.fresh = fresh
   }
 }
 
@@ -74,6 +77,7 @@ export async function apiRequest<T>(method: string, path: string, body?: unknown
       response.status,
       typeof code === 'string' ? code : 'UNEXPECTED',
       typeof detail === 'string' ? detail : null,
+      readPath(json, 'error', 'fresh'),
     )
   }
   if (typeof json !== 'object' || json === null || !('data' in json)) {

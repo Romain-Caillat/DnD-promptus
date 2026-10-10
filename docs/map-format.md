@@ -198,6 +198,17 @@ deep water. Places are the map's `labels` (`scene` = the story node the
 place opens); an `exit` on a label's hex is the map the place opens on
 arrival. The party starts on the map's first `party` start.
 
+## Editing by operations
+
+The editor and Claude never write a map whole: they send batches of
+operations (paint, place, move, remove, erase, door, set) on the
+campaign revision they read — `shared/src/maps/edit.rs`, protocol in
+`docs/claude-mcp.md` under *Map operations*. The result goes through
+the same `Map::validate` as a file. Placed things get ids by prefix
+(`porte-n`, `decor-n`, `objet-n`, `lumiere-n`, `depart-n`); a new kind
+of cell takes the first free glyph of `.#,~_=:;+*%&@!?a…z A…Z 0…9`, and a
+glyph no cell uses leaves the legend.
+
 ## Universal VTT import
 
 `maps::from_uvtt` reads a Universal VTT export (`.dd2vtt`, `.uvtt`,

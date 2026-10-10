@@ -23,7 +23,11 @@ use super::tokens::{hash_token, random_token};
 use crate::error::AppError;
 
 /// What a token reaches: campaign preparation only, read and write,
-/// with the same checks as the review screen. Paths are the router's
+/// with the same checks as the review screen — the story, and the
+/// campaign's maps by operations (`maps/edit-maps-by-ops`): reading them
+/// and sending batches, which journal as the token's and never
+/// overwrite the GM's concurrent change. Not creating, importing,
+/// deleting or validating a map, nor its backdrop image. Paths are the router's
 /// own (`MatchedPath`). Creating a campaign from a YAML file is in: the
 /// GM may write a campaign with Claude and have it land as a new one.
 ///
@@ -43,6 +47,9 @@ pub const TOKEN_ROUTES: &[(&str, &str)] = &[
     ("PUT", "/api/campaigns/{id}/import"),
     ("POST", "/api/campaigns/{id}/story/edits"),
     ("GET", "/api/campaigns/{id}/readiness"),
+    ("GET", "/api/campaigns/{id}/maps"),
+    ("GET", "/api/campaigns/{id}/maps/{map}"),
+    ("POST", "/api/campaigns/{id}/maps/{map}/ops"),
 ];
 
 /// Whether a token may call `method` on the route matched as `path`.

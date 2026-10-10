@@ -1,5 +1,5 @@
 import { apiRequest } from './api'
-import type { MapData } from './board'
+import type { Cell, CellKind, MapData } from './board'
 
 /** One of the campaign's own maps (`campaign_maps::CampaignMap`). */
 export interface CampaignMap {
@@ -10,7 +10,26 @@ export interface CampaignMap {
   backdrop: boolean
   validatedAt: string | null
   updatedAt: string
+  /** The campaign's preparation revision it was read at: the one a batch of operations is sent on. */
+  revision: number
 }
+
+/** What a `place` operation puts down (`maps::edit::Thing`). */
+type MapThing =
+  | { kind: 'prop'; prop: string; label: string }
+  | { kind: 'object'; label: string }
+  | { kind: 'light' }
+  | { kind: 'start'; side: 'party' | 'foes' | 'neutral'; entity?: string }
+
+/** One operation on a map (`maps::edit::MapOp`); the server applies a batch all or nothing. */
+export type MapOp =
+  | { op: 'paint'; cells: Cell[]; kind: CellKind }
+  | { op: 'place'; at: Cell; thing: MapThing; layer: string }
+  | { op: 'move'; id: string; to: Cell }
+  | { op: 'remove'; id: string }
+  | { op: 'erase'; at: Cell }
+  | { op: 'door'; at: Cell; layer: string }
+  | { op: 'set'; name?: string; notes?: string; ambience?: MapData['ambience'] }
 
 export interface MapListing {
   maps: CampaignMap[]
@@ -57,8 +76,13 @@ export function generateMap(campaignId: string, node: string): Promise<CampaignM
   return apiRequest('POST', `${base(campaignId)}/generate`, { node })
 }
 
-export function saveMap(campaignId: string, map: MapData): Promise<CampaignMap> {
-  return apiRequest<CampaignMap>('PUT', one(campaignId, map.id), map)
+/**
+ * maps/edit-maps-by-ops — one batch of operations on the revision the map
+ * was read at. Refused with 409 `MAP_STALE` (and the map as it is now in
+ * `ApiError.fresh`) when a later batch touched the same cells or things.
+ */
+export function editMap(campaignId: string, map: string, revision: number, ops: MapOp[]): Promise<CampaignMap> {
+  return apiRequest<CampaignMap>('POST', `${one(campaignId, map)}/ops`, { revision, ops })
 }
 
 export function validateMap(campaignId: string, map: string): Promise<CampaignMap> {

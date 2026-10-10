@@ -358,10 +358,32 @@ campaign lock and leaves a `prep_revisions` line (author `gm`, `token`,
 `copilot` or `server`; touched ids; each entity as it was). An undo
 restores only what that line touched, and is refused when a later line
 touched the same entity (an undo is itself a line, so nothing is undone
-twice). Map operations (`maps/edit-maps-by-ops`) must join this journal
-and this number (`target`), never a version of their own. Writing
-`campaigns.story` anywhere else skips the journal and the GM's live
-screens.
+twice). Map content joins the same journal and number
+(`maps/edit-maps-by-ops`): every write of a campaign map's content goes
+through `campaign_maps::write` (or `insert` / `delete`), which calls
+`revisions::record_map` — a line with `target = map:<id>`, the cells and
+things touched (`maps::edit::MapTouch`, shaped like a story `Touch`,
+`name` = the map's) and the whole map before as inverse. Taking a map
+line back puts back only what it touched (`maps::edit::revert`), and is
+refused when a later line on the same map `overlaps` it. Only `revisions::append`
+inserts a line. Writing `campaigns.story` or `campaign_maps.map`
+anywhere else skips the journal and the GM's live screens.
+
+### A map is edited by operations, never written whole
+
+The editor and Claude send batches of `maps::edit::MapOp` (paint,
+place, move, remove, erase, door, set) with the campaign revision they
+read (`POST …/maps/{map}/ops`); the server applies them on the map as
+it is now, under the campaign lock, then `Map::validate`, all or
+nothing. A stale batch lands when no later line on that map
+`overlaps` it (same cell or same thing); otherwise 409 `MAP_STALE`
+carries the fresh map (`error.fresh`) and nothing is written — the
+editor reloads and replays the gesture once on it (then the GM's
+gesture wins on that cell; the other writer's line stays in the
+journal). The whole-map `PUT` is
+gone; import, generation and copies still create maps whole. Story
+edits never make a map batch stale. Any change withdraws the map's
+validation, as before.
 
 ### The sheet and the play state are two things
 
@@ -431,13 +453,16 @@ A program on the GM's own machine (the MCP server Claude launches,
 token (`Authorization: Bearer`, hashed in `gm_api_tokens`, shown once,
 revoked at once). `require_gm` lets a token through only on the routes
 of `auth::api_tokens::TOKEN_ROUTES` — list campaigns, read one, export,
-import over an existing one, story edits, readiness — checked on the
+import over an existing one, story edits, readiness, and since
+`maps/edit-maps-by-ops` (decided 2026-10-11) reading the campaign's
+maps and sending batches of map operations — checked on the
 matched path before any lookup (403 `TOKEN_NOT_ALLOWED` elsewhere).
 Never on sign-in, accounts, invitations, the tokens themselves (their
 handlers also take `SessionOnly`), creating or setting a campaign,
 `story/validate` (declaring playable is the GM's act, in Promptus), the
 table, the live session, player or screen routes, nor any route that
-spends AI budget. Widening the list is a decision, not a fix: the sweep
+spends AI budget, nor creating, importing, deleting or validating a
+map. Widening the list is a decision, not a fix: the sweep
 in `gm_routes_test.rs` sends a token to every other GM route. A token
 write is the GM's own write (same edits, lock, all or nothing), so
 players see it as they would the same edit made on the review screen.

@@ -2,16 +2,25 @@
 //! the worlds' maps compiled into the server (`content::maps`).
 //!
 //! - maps/edit-map-gm: the GM creates a map (blank, or a copy of one of
-//!   the world's), paints and places in the editor and saves the whole
-//!   map, checked by `Map::validate`;
+//!   the world's), paints and places in the editor, checked by
+//!   `Map::validate`;
+//! - maps/edit-maps-by-ops ([`edit`]): the editor — and Claude, through
+//!   the GM's personal token — sends batches of operations
+//!   (`maps::edit::MapOp`) with the campaign revision it read, never the
+//!   whole map. A batch on a stale revision lands when no later batch on
+//!   the same map touched the same cells or things, else it is refused
+//!   (409 `MAP_STALE`, with the map as it is now) and never overwrites.
+//!   Every write of a map's content goes through [`write`], which
+//!   journals it in the campaign's one preparation journal
+//!   (`campaigns::revisions::record_map`);
 //! - maps/import-image-map: a Universal VTT file (`maps::from_uvtt`) or a
 //!   plain image aligned on a grid becomes a map whose image is only the
 //!   backdrop; the GM traces or touches up its walls in the editor;
 //! - maps/generate-map-llm ([`generate`]): the model proposes a map for a
 //!   scene.
 //!
-//! A map reaches the table only once the GM validated it; saving it
-//! again withdraws the validation (the GM has the last word on what is
+//! A map reaches the table only once the GM validated it; any change
+//! withdraws the validation (the GM has the last word on what is
 //! shown, `MEMORY.md` §3).
 
 pub mod generate;
@@ -21,6 +30,7 @@ use std::collections::BTreeMap;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use chrono::{DateTime, Utc};
+use promptus_shared::maps::edit::{self as ops, MapOp, OpError};
 use promptus_shared::maps::{
     Ambience, BASE_LAYER, Backdrop, CellKind, FORMAT_VERSION, Grid, Issue, Layer, Map, MapError,
     Scale, Visibility, Water, from_uvtt,
@@ -32,6 +42,7 @@ use sqlx::{PgExecutor, PgPool};
 use uuid::Uuid;
 
 use crate::auth::guard::{CurrentGm, owned_by};
+use crate::campaigns::revisions::{self, Author};
 use crate::campaigns::{self, CampaignRow};
 use crate::content;
 use crate::error::AppError;
@@ -77,6 +88,9 @@ pub struct CampaignMap {
     pub backdrop: bool,
     pub validated_at: Option<DateTime<Utc>>,
     pub updated_at: DateTime<Utc>,
+    /// The campaign's preparation revision this map was read at: the
+    /// revision a batch of operations is sent on.
+    pub revision: i64,
 }
 
 type Row = (
@@ -98,6 +112,14 @@ fn campaign_map((Json(map), source, node, backdrop, validated_at, updated_at): R
         backdrop,
         validated_at,
         updated_at,
+        revision: 0,
+    }
+}
+
+impl CampaignMap {
+    fn at(mut self, revision: i64) -> Self {
+        self.revision = revision;
+        self
     }
 }
 
@@ -282,7 +304,7 @@ fn clean_name(name: &str) -> Result<String, AppError> {
     Ok(name.to_string())
 }
 
-/// Store a new map of `campaign`, unvalidated.
+/// Store a new map of `campaign`, unvalidated, and journal it.
 #[allow(clippy::too_many_arguments)]
 async fn insert(
     pool: &PgPool,
@@ -291,10 +313,14 @@ async fn insert(
     source: Source,
     node: Option<&str>,
     backdrop: Option<(Vec<u8>, String)>,
+    author: Author,
 ) -> Result<CampaignMap, AppError> {
     map.validate().map_err(|e| invalid(&e))?;
     let (bytes, mime) = backdrop.unzip();
     let mut tx = pool.begin().await?;
+    let locked = campaigns::lock(&mut tx, campaign)
+        .await?
+        .ok_or(AppError::NotFound("NOT_FOUND"))?;
     let row: Row = sqlx::query_as(&format!(
         "INSERT INTO campaign_maps (campaign_id, id, map, source, node, backdrop, backdrop_mime)
          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING {COLUMNS}"
@@ -308,9 +334,12 @@ async fn insert(
     .bind(mime)
     .fetch_one(&mut *tx)
     .await?;
+    let revision = revisions::record_map(&mut tx, campaign, None, Some(map), author, None)
+        .await?
+        .unwrap_or(locked.prep_revision);
     live::touch(&mut tx, campaign, &Topic::Desk).await?;
     tx.commit().await?;
-    Ok(campaign_map(row))
+    Ok(campaign_map(row).at(revision))
 }
 
 /// What the GM's maps screen lists.
@@ -334,7 +363,11 @@ pub struct WorldMap {
 pub async fn listing(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Listing, AppError> {
     let row = owned_by(campaigns::find(pool, campaign).await?, gm)?;
     Ok(Listing {
-        maps: all(pool, campaign).await?,
+        maps: all(pool, campaign)
+            .await?
+            .into_iter()
+            .map(|m| m.at(row.prep_revision))
+            .collect(),
         world: content::maps(&row.story)
             .map(|m| WorldMap {
                 id: m.id.clone(),
@@ -353,8 +386,8 @@ pub async fn get(
     campaign: Uuid,
     id: &str,
 ) -> Result<CampaignMap, AppError> {
-    owned_by(campaigns::find(pool, campaign).await?, gm)?;
-    one(pool, campaign, id).await
+    let row = owned_by(campaigns::find(pool, campaign).await?, gm)?;
+    Ok(one(pool, campaign, id).await?.at(row.prep_revision))
 }
 
 /// A blank map, or a copy of one of the world's.
@@ -383,6 +416,7 @@ const fn default_side() -> u32 {
 pub async fn create(
     pool: &PgPool,
     gm: &CurrentGm,
+    author: Author,
     campaign: Uuid,
     new: &NewMap,
 ) -> Result<CampaignMap, AppError> {
@@ -408,6 +442,7 @@ pub async fn create(
         Source::Editor,
         new.node.as_deref(),
         None,
+        author,
     )
     .await
 }
@@ -484,49 +519,172 @@ fn blank(
     })
 }
 
-/// Save the whole map `id` as the editor sends it. Its id, format
-/// version and backdrop image stay the server's; the validation is
-/// withdrawn until the GM gives it again.
+/// A batch of operations on one map, and the campaign revision the
+/// sender read the map at.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Batch {
+    pub revision: i64,
+    pub ops: Vec<MapOp>,
+}
+
+/// The most operations one batch carries: one gesture of the editor is
+/// one batch.
+pub const MAX_OPS: usize = 200;
+
+/// The GM's words for an operation that does not apply.
+fn refused(e: &OpError) -> AppError {
+    match e {
+        OpError::NameRequired => AppError::BadRequest("NAME_REQUIRED"),
+        OpError::TextTooLong => AppError::BadRequest("TEXT_TOO_LONG"),
+        OpError::OffGrid(c) => AppError::Invalid {
+            code: "MAP_OP_INVALID",
+            detail: format!("la case ({}, {}) sort de la grille", c.x, c.y),
+        },
+        OpError::NoSuchThing(id) => AppError::Invalid {
+            code: "MAP_OP_INVALID",
+            detail: format!("rien sur la carte ne s’appelle « {id} »"),
+        },
+        OpError::LegendFull => AppError::Invalid {
+            code: "MAP_OP_INVALID",
+            detail: "la carte a trop de sortes de cases".into(),
+        },
+    }
+}
+
+/// Apply `batch` to map `id`, under the campaign lock, all or nothing.
+/// On the revision the map was read at, the batch applies as it is; on
+/// a stale one it applies on the map as it is now as long as no later
+/// batch on this map touched the same cells or things (`ops::overlaps`)
+/// and the result holds; otherwise it is refused with the map as it is
+/// now, for the sender to reload and replay. The validation is withdrawn.
 ///
 /// # Errors
 ///
-/// 404 `NO_SUCH_MAP`; 400 `MAP_INVALID` with the GM's words.
-pub async fn save(
+/// 404 `NO_SUCH_MAP`; 400 `BAD_BATCH` (empty or too long),
+/// `MAP_OP_INVALID`, `MAP_INVALID`, `NAME_REQUIRED`, `TEXT_TOO_LONG`;
+/// 409 `MAP_STALE` with `fresh`, the map as it is now.
+pub async fn edit(
     pool: &PgPool,
     gm: &CurrentGm,
+    author: Author,
     campaign: Uuid,
     id: &str,
-    raw: serde_json::Value,
+    batch: &Batch,
 ) -> Result<CampaignMap, AppError> {
-    let mut tx = pool.begin().await?;
-    owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
-    let before = one(&mut *tx, campaign, id).await?;
-    let mut map: Map = serde_json::from_value(raw).map_err(|e| invalid(&MapError::Json(e)))?;
-    map.id = before.map.id.clone();
-    map.version = FORMAT_VERSION;
-    let name = clean_name(&map.name)?;
-    map.name = name;
-    // The image behind the grid is the import's, whatever the editor sends.
-    let image = before.map.backdrop.as_ref().and_then(|b| b.image.clone());
-    match (before.backdrop, map.backdrop.as_mut()) {
-        (true, Some(b)) => b.image = image,
-        (true, None) => map.backdrop.clone_from(&before.map.backdrop),
-        (false, Some(b)) => b.image = None,
-        (false, None) => {}
+    if batch.ops.is_empty() || batch.ops.len() > MAX_OPS {
+        return Err(AppError::BadRequest("BAD_BATCH"));
     }
-    map.validate().map_err(|e| invalid(&e))?;
-    let row: Row = sqlx::query_as(&format!(
+    let mut tx = pool.begin().await?;
+    let row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
+    let before = one(&mut *tx, campaign, id).await?.at(row.prep_revision);
+    let stale = || AppError::Stale {
+        code: "MAP_STALE",
+        fresh: serde_json::to_value(&before).unwrap_or_default(),
+    };
+    if batch.revision > row.prep_revision {
+        return Err(stale());
+    }
+    let later = if batch.revision < row.prep_revision {
+        revisions::map_lines_since(&mut tx, campaign, id, batch.revision).await?
+    } else {
+        vec![]
+    };
+    let after = match ops::apply(&before.map, &batch.ops) {
+        Ok(after) => after,
+        Err(_) if !later.is_empty() => return Err(stale()),
+        Err(e) => return Err(refused(&e)),
+    };
+    let touched = ops::diff(&before.map, &after);
+    if later.iter().any(|l| ops::overlaps(&touched, l)) {
+        return Err(stale());
+    }
+    if let Err(e) = after.validate() {
+        return Err(if later.is_empty() {
+            invalid(&e)
+        } else {
+            stale()
+        });
+    }
+    if touched.is_empty() {
+        return Ok(before);
+    }
+    let edited = write(&mut tx, campaign, &before.map, &after, author, None).await?;
+    tx.commit().await?;
+    Ok(edited)
+}
+
+/// The one write of a map's content, in `tx` with the campaign locked:
+/// store `after` over `before`, withdraw the validation, journal the
+/// change and tell the GM's screens.
+///
+/// # Errors
+///
+/// 404 `NO_SUCH_MAP`; a database error.
+pub async fn write(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    campaign: Uuid,
+    before: &Map,
+    after: &Map,
+    author: Author,
+    undoes: Option<i64>,
+) -> Result<CampaignMap, AppError> {
+    let row: Option<Row> = sqlx::query_as(&format!(
         "UPDATE campaign_maps SET map = $3, validated_at = NULL
          WHERE campaign_id = $1 AND id = $2 RETURNING {COLUMNS}"
     ))
     .bind(campaign)
-    .bind(id)
-    .bind(Json(&map))
-    .fetch_one(&mut *tx)
+    .bind(&before.id)
+    .bind(Json(after))
+    .fetch_optional(&mut **tx)
     .await?;
-    live::touch(&mut tx, campaign, &Topic::Desk).await?;
-    tx.commit().await?;
-    Ok(campaign_map(row))
+    let row = row.ok_or(AppError::NotFound("NO_SUCH_MAP"))?;
+    let revision =
+        revisions::record_map(tx, campaign, Some(before), Some(after), author, undoes).await?;
+    live::touch(tx, campaign, &Topic::Desk).await?;
+    let revision = match revision {
+        Some(r) => r,
+        None => {
+            sqlx::query_scalar("SELECT prep_revision FROM campaigns WHERE id = $1")
+                .bind(campaign)
+                .fetch_one(&mut **tx)
+                .await?
+        }
+    };
+    Ok(campaign_map(row).at(revision))
+}
+
+/// Take back a batch on map `id`: put back what it `touched` as it was
+/// in `before` (the map before the batch), keeping every later change
+/// made elsewhere on the map (`maps::edit::revert`), as a new revision
+/// by the GM that `undoes` the batch's.
+///
+/// # Errors
+///
+/// 409 `REVISION_NOT_REVERTIBLE` when the map is gone or what it puts
+/// back no longer holds; a database error.
+pub async fn restore(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    campaign: Uuid,
+    id: &str,
+    before: &Map,
+    touched: &[ops::MapTouch],
+    undoes: i64,
+) -> Result<(), AppError> {
+    let not_revertible = AppError::Conflict("REVISION_NOT_REVERTIBLE");
+    let now = match one(&mut **tx, campaign, id).await {
+        Ok(m) => m.map,
+        Err(AppError::NotFound(_)) => return Err(not_revertible),
+        Err(e) => return Err(e),
+    };
+    let Some(back) = ops::revert(&now, before, touched) else {
+        return Err(not_revertible);
+    };
+    if back.id != now.id || back.validate().is_err() {
+        return Err(not_revertible);
+    }
+    write(tx, campaign, &now, &back, Author::Gm, Some(undoes)).await?;
+    Ok(())
 }
 
 /// The GM validates map `id`: from now on it may be shown at the table.
@@ -541,7 +699,7 @@ pub async fn validate(
     id: &str,
 ) -> Result<CampaignMap, AppError> {
     let mut tx = pool.begin().await?;
-    owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
+    let locked = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
     let row: Option<Row> = sqlx::query_as(&format!(
         "UPDATE campaign_maps SET validated_at = now()
          WHERE campaign_id = $1 AND id = $2 RETURNING {COLUMNS}"
@@ -553,7 +711,7 @@ pub async fn validate(
     let row = row.ok_or(AppError::NotFound("NO_SUCH_MAP"))?;
     live::touch(&mut tx, campaign, &Topic::Desk).await?;
     tx.commit().await?;
-    Ok(campaign_map(row))
+    Ok(campaign_map(row).at(locked.prep_revision))
 }
 
 /// # Errors
@@ -562,6 +720,7 @@ pub async fn validate(
 pub async fn delete(
     pool: &PgPool,
     gm: &CurrentGm,
+    author: Author,
     campaign: Uuid,
     id: &str,
 ) -> Result<(), AppError> {
@@ -575,14 +734,15 @@ pub async fn delete(
     if shown.as_deref() == Some(id) {
         return Err(AppError::Conflict("MAP_ON_THE_TABLE"));
     }
-    let gone = sqlx::query("DELETE FROM campaign_maps WHERE campaign_id = $1 AND id = $2")
-        .bind(campaign)
-        .bind(id)
-        .execute(&mut *tx)
-        .await?;
-    if gone.rows_affected() == 0 {
-        return Err(AppError::NotFound("NO_SUCH_MAP"));
-    }
+    let gone: Option<Json<Map>> = sqlx::query_scalar(
+        "DELETE FROM campaign_maps WHERE campaign_id = $1 AND id = $2 RETURNING map",
+    )
+    .bind(campaign)
+    .bind(id)
+    .fetch_optional(&mut *tx)
+    .await?;
+    let Json(gone) = gone.ok_or(AppError::NotFound("NO_SUCH_MAP"))?;
+    revisions::record_map(&mut tx, campaign, Some(&gone), None, author, None).await?;
     live::touch(&mut tx, campaign, &Topic::Desk).await?;
     tx.commit().await?;
     Ok(())
@@ -643,6 +803,7 @@ pub enum Import {
 pub async fn import(
     pool: &PgPool,
     gm: &CurrentGm,
+    author: Author,
     campaign: Uuid,
     import: &Import,
 ) -> Result<CampaignMap, AppError> {
@@ -692,7 +853,7 @@ pub async fn import(
             (map, Some(image))
         }
     };
-    insert(pool, campaign, &map, Source::Imported, None, image).await
+    insert(pool, campaign, &map, Source::Imported, None, image, author).await
 }
 
 /// `map`'s floor without its surrounding wall.

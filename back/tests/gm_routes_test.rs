@@ -147,7 +147,7 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/maps/import"),
     ("POST", "/api/campaigns/{campaign}/maps/generate"),
     ("GET", "/api/campaigns/{campaign}/maps/{map}"),
-    ("PUT", "/api/campaigns/{campaign}/maps/{map}"),
+    ("POST", "/api/campaigns/{campaign}/maps/{map}/ops"),
     ("POST", "/api/campaigns/{campaign}/maps/{map}/validate"),
     ("GET", "/api/campaigns/{campaign}/maps/{map}/backdrop"),
     ("DELETE", "/api/campaigns/{campaign}/maps/{map}"),
@@ -811,10 +811,16 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             body_for(method, path)
         };
         let body = match (method, body) {
-            // The editor sends the whole map back.
-            (&"PUT", _) if path.ends_with("/maps/{map}") => {
+            // The editor sends one operation on the revision it read.
+            (&"POST", _) if path.ends_with("/maps/{map}/ops") => {
                 let uri = format!("/api/campaigns/{}/maps/{}", ids.campaign, ids.map);
-                Some(call(&app, Some(&token), "GET", &uri, None).await.body["data"]["map"].clone())
+                let read =
+                    call(&app, Some(&token), "GET", &uri, None).await.body["data"]["revision"]
+                        .clone();
+                Some(serde_json::json!({
+                    "revision": read,
+                    "ops": [{ "op": "set", "notes": "Balayage." }]
+                }))
             }
             // A hook needs a character of the table.
             (&"POST", Some(mut b)) if path.ends_with("/hooks") => {

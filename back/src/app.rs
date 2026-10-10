@@ -342,12 +342,11 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         )
         .route(
             "/api/campaigns/{id}/maps/{map}",
-            get(api::maps::get)
-                .put(api::maps::save)
-                .delete(api::maps::delete)
-                // The editor sends the whole map.
-                .layer(DefaultBodyLimit::max(4 * 1024 * 1024)),
+            get(api::maps::get).delete(api::maps::delete),
         )
+        // The editor and Claude send batches of operations
+        // (maps/edit-maps-by-ops), never the whole map.
+        .route("/api/campaigns/{id}/maps/{map}/ops", post(api::maps::edit))
         .route(
             "/api/campaigns/{id}/maps/{map}/validate",
             post(api::maps::validate),

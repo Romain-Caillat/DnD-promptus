@@ -20,6 +20,7 @@ use super::{CampaignMap, Source, french, fresh_id, insert, layers, look};
 use crate::ai::{self, Ai, LlmRequest, Message, Role, templates};
 use crate::auth::guard::{CurrentGm, owned_by};
 use crate::campaigns;
+use crate::campaigns::revisions::Author;
 use crate::content;
 use crate::error::AppError;
 use sqlx::PgPool;
@@ -215,6 +216,7 @@ pub async fn generate(
                     Source::Generated,
                     Some(&node.id),
                     None,
+                    Author::Copilot,
                 )
                 .await?;
                 return Ok(Generated {

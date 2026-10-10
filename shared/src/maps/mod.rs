@@ -6,6 +6,7 @@
 //! File format: `docs/map-format.md`. Fixtures: `content/maps/`.
 
 mod board;
+pub mod edit;
 mod format;
 mod grid;
 mod hex;

@@ -50,6 +50,13 @@ pub enum AppError {
         code: &'static str,
         refusal: serde_json::Value,
     },
+    /// 409 — a write sent on a stale revision that steps on a later one
+    /// (a map batch, `maps/edit-maps-by-ops`): `fresh` is the resource as
+    /// it is now, for the screen to reload and replay.
+    Stale {
+        code: &'static str,
+        fresh: serde_json::Value,
+    },
     Internal(String),
 }
 
@@ -65,6 +72,13 @@ impl IntoResponse for AppError {
             return (
                 StatusCode::CONFLICT,
                 Json(json!({ "error": { "code": code, "message": "refused by the rules", "refusal": refusal } })),
+            )
+                .into_response();
+        }
+        if let Self::Stale { code, fresh } = self {
+            return (
+                StatusCode::CONFLICT,
+                Json(json!({ "error": { "code": code, "message": "changed since it was read", "fresh": fresh } })),
             )
                 .into_response();
         }
@@ -86,7 +100,9 @@ impl IntoResponse for AppError {
                 "a dependency is unavailable".into(),
             ),
             Self::Upstream { code, detail } => (StatusCode::BAD_GATEWAY, code, detail),
-            Self::Refused { code, .. } => (StatusCode::CONFLICT, code, String::new()),
+            Self::Refused { code, .. } | Self::Stale { code, .. } => {
+                (StatusCode::CONFLICT, code, String::new())
+            }
             Self::Internal(detail) => {
                 tracing::error!(%detail, "internal error");
                 (

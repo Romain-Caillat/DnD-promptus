@@ -40,6 +40,9 @@ anything else is 403 `TOKEN_NOT_ALLOWED`.
 | `POST /api/campaigns/{id}/story/edits` | `apply_story_edits` |
 | `GET /api/campaigns/{id}/export` | `export_campaign_yaml` |
 | `PUT /api/campaigns/{id}/import` | `import_campaign_yaml` |
+| `GET /api/campaigns/{id}/maps` | — (MCP tools: `platform/edit-maps-by-claude`) |
+| `GET /api/campaigns/{id}/maps/{map}` | — (idem; the answer carries `revision`) |
+| `POST /api/campaigns/{id}/maps/{map}/ops` | — (idem; a batch of map operations, below) |
 
 Deliberately excluded: sign-in, accounts, the token routes, creating
 an empty campaign, archiving / setting a campaign, `story/validate`
@@ -118,3 +121,32 @@ claude mcp add promptus -s user -e PROMPTUS_URL=https://promptus.example \
 
 The GM home shows both snippets with the app's origin, and with the
 token filled in right after it is minted.
+
+## Map operations
+
+A map is never written whole (`maps/edit-maps-by-ops`). A writer reads
+it (`GET …/maps/{map}`, whose `revision` is the campaign's preparation
+revision) and sends `POST …/maps/{map}/ops` with
+`{ "revision": N, "ops": [...] }`, at most 200 operations applied in
+order, all or nothing (`shared/src/maps/edit.rs`, `MapOp`):
+
+| `op` | Fields | Effect |
+| --- | --- | --- |
+| `paint` | `cells`, `kind` (a legend entry) | cells off the grid ignored; a door whose wall is painted over leaves |
+| `place` | `at`, `thing` (`prop` `{prop,label}`, `object` `{label}`, `light`, `start` `{side, entity?}`), `layer` | a new id: `decor-n`, `objet-n`, `lumiere-n`, `depart-n` |
+| `move` | `id`, `to` | a door, prop, object, light or start |
+| `remove` | `id` | any id'd thing, exits included |
+| `erase` | `at` | everything placed on the cell |
+| `door` | `at`, `layer` | new (closed, cell walled) → open → locked → gone |
+| `set` | `name?`, `notes?`, `ambience?` | the map's own fields; empty `notes` clears |
+
+A batch on a stale revision applies to the map as it is now unless a
+later batch on the same map touched the same cell or thing: then 409
+`MAP_STALE` with `error.fresh` (the map and its revision), and nothing
+is written. 400 `MAP_OP_INVALID` / `MAP_INVALID` say in French what is
+wrong. Each batch is a journal line (`target: "map:<id>"`, changes
+`{op, kind: cells|door|prop|object|light|exit|start|map, id, name,
+cells}`) and the GM may take it back from the journal; a token write's
+`activity` reaches the GM's screens like a story write. Today a token
+batch applies at once; `platform/propose-edits-by-claude` turns it into
+a proposal.

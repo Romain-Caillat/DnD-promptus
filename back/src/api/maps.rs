@@ -1,6 +1,7 @@
 //! The campaign's own maps over HTTP (`campaign_maps`).
 //!
-//! GM (behind `require_gm`):
+//! GM (behind `require_gm`; a GM's personal token reaches the two reads
+//! and the operations, `auth::api_tokens::TOKEN_ROUTES`):
 //! - `GET    /api/campaigns/{id}/maps` → its maps, and the world's to copy;
 //! - `POST   /api/campaigns/{id}/maps` → `NewMap`: blank or copied (201);
 //! - `POST   /api/campaigns/{id}/maps/import` → `Import`: a Universal VTT
@@ -8,8 +9,9 @@
 //! - `POST   /api/campaigns/{id}/maps/generate` → `{ node }`: the model's
 //!   draft for a scene (201);
 //! - `GET    /api/campaigns/{id}/maps/{map}` → one map;
-//! - `PUT    /api/campaigns/{id}/maps/{map}` → the whole map, from the
-//!   editor (withdraws the validation);
+//! - `POST   /api/campaigns/{id}/maps/{map}/ops` → `Batch`: operations
+//!   on the revision read (withdraws the validation; 409 `MAP_STALE`
+//!   with the fresh map when it steps on a later batch);
 //! - `DELETE /api/campaigns/{id}/maps/{map}` (204);
 //! - `POST   /api/campaigns/{id}/maps/{map}/validate` → may be shown;
 //! - `GET    /api/campaigns/{id}/maps/{map}/backdrop` → its image.
@@ -27,9 +29,10 @@ use uuid::Uuid;
 
 use super::body::Body;
 use super::media::image_response;
-use crate::auth::guard::CurrentGm;
+use crate::auth::guard::{Credential, CurrentGm};
 use crate::auth::player::CurrentPlayer;
-use crate::campaign_maps::{self, Import, NewMap, generate};
+use crate::campaign_maps::{self, Batch, Import, NewMap, generate};
+use crate::campaigns::revisions::Author;
 use crate::error::AppError;
 use crate::state::AppState;
 
@@ -63,10 +66,12 @@ pub async fn list(
 pub async fn create(
     State(state): State<AppState>,
     gm: CurrentGm,
+    credential: Credential,
     Path(id): Path<String>,
     Body(new): Body<NewMap>,
 ) -> Result<Response, AppError> {
-    let m = campaign_maps::create(&state.pool, &gm, parse_id(&id)?, &new).await?;
+    let m =
+        campaign_maps::create(&state.pool, &gm, credential.into(), parse_id(&id)?, &new).await?;
     Ok(data(StatusCode::CREATED, m))
 }
 
@@ -78,10 +83,12 @@ pub async fn create(
 pub async fn import(
     State(state): State<AppState>,
     gm: CurrentGm,
+    credential: Credential,
     Path(id): Path<String>,
     Body(import): Body<Import>,
 ) -> Result<Response, AppError> {
-    let m = campaign_maps::import(&state.pool, &gm, parse_id(&id)?, &import).await?;
+    let author = Author::from(credential);
+    let m = campaign_maps::import(&state.pool, &gm, author, parse_id(&id)?, &import).await?;
     Ok(data(StatusCode::CREATED, m))
 }
 
@@ -114,18 +121,20 @@ pub async fn get(
     Ok(data(StatusCode::OK, m))
 }
 
-/// `PUT /api/campaigns/{id}/maps/{map}`
+/// `POST /api/campaigns/{id}/maps/{map}/ops`
 ///
 /// # Errors
 ///
-/// As `campaign_maps::save`.
-pub async fn save(
+/// As `campaign_maps::edit`.
+pub async fn edit(
     State(state): State<AppState>,
     gm: CurrentGm,
+    credential: Credential,
     Path((id, map)): Path<(String, String)>,
-    Body(raw): Body<serde_json::Value>,
+    Body(batch): Body<Batch>,
 ) -> Result<Response, AppError> {
-    let m = campaign_maps::save(&state.pool, &gm, parse_id(&id)?, &map, raw).await?;
+    let author = Author::from(credential);
+    let m = campaign_maps::edit(&state.pool, &gm, author, parse_id(&id)?, &map, &batch).await?;
     Ok(data(StatusCode::OK, m))
 }
 
@@ -137,9 +146,10 @@ pub async fn save(
 pub async fn delete(
     State(state): State<AppState>,
     gm: CurrentGm,
+    credential: Credential,
     Path((id, map)): Path<(String, String)>,
 ) -> Result<Response, AppError> {
-    campaign_maps::delete(&state.pool, &gm, parse_id(&id)?, &map).await?;
+    campaign_maps::delete(&state.pool, &gm, credential.into(), parse_id(&id)?, &map).await?;
     Ok(StatusCode::NO_CONTENT.into_response())
 }
 

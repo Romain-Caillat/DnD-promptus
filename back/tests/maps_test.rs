@@ -1,5 +1,6 @@
 //! The campaign's own maps, over the API: maps/generate-map-llm,
-//! maps/edit-map-gm, maps/import-image-map — drafted, edited, validated
+//! maps/edit-map-gm, maps/import-image-map — drafted, edited by
+//! operations, validated
 //! by the GM, then shown at the table without their secrets.
 
 mod common;
@@ -111,17 +112,40 @@ async fn a_generated_map_is_a_draft_until_the_gm_validates_it_and_keeps_its_secr
         ["gueule-rouge", "marin-de-gueule-rouge", "pnj_fanch"]
     );
 
-    // The editor saves the whole map; a door off the wall is refused in
-    // the GM's words.
-    let mut map = drafted["map"].clone();
-    map["name"] = json!("La réserve du quai");
-    map["doors"][0]["state"] = json!("locked");
-    let r = t.gm("PUT", &format!("/maps/{id}"), Some(map.clone())).await;
+    // The editor sends operations on the revision it read; a door moved
+    // off the wall is refused in the GM's words, and nothing lands.
+    let door = drafted["map"]["doors"][0]["id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let read = drafted["revision"].as_i64().unwrap();
+    let ops = |revision: i64, ops: Value| json!({ "revision": revision, "ops": ops });
+    let r = t
+        .gm(
+            "POST",
+            &format!("/maps/{id}/ops"),
+            Some(ops(
+                read,
+                json!([{ "op": "set", "name": "La réserve du quai" }]),
+            )),
+        )
+        .await;
     assert_eq!(r.status, StatusCode::OK, "{}", r.body);
     assert_eq!(r.body["data"]["map"]["name"], "La réserve du quai");
-    let mut off = map.clone();
-    off["doors"][0]["at"] = json!([3, 2]);
-    let r = t.gm("PUT", &format!("/maps/{id}"), Some(off)).await;
+    let read = r.body["data"]["revision"].as_i64().unwrap();
+    let r = t
+        .gm(
+            "POST",
+            &format!("/maps/{id}/ops"),
+            Some(ops(
+                read,
+                json!([
+                    { "op": "set", "notes": "rien" },
+                    { "op": "move", "id": door, "to": [3, 2] },
+                ]),
+            )),
+        )
+        .await;
     assert_eq!(r.body["error"]["code"], "MAP_INVALID");
     assert!(
         r.body["error"]["message"]
@@ -153,8 +177,15 @@ async fn a_generated_map_is_a_draft_until_the_gm_validates_it_and_keeps_its_secr
     let r = t.gm("DELETE", &format!("/maps/{id}"), None).await;
     assert_eq!(r.body["error"]["code"], "MAP_ON_THE_TABLE");
 
-    // Saving again withdraws the validation.
-    let r = t.gm("PUT", &format!("/maps/{id}"), Some(map)).await;
+    // A change withdraws the validation.
+    let r = t
+        .gm(
+            "POST",
+            &format!("/maps/{id}/ops"),
+            Some(ops(read, json!([{ "op": "set", "notes": "Fanch ment." }]))),
+        )
+        .await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
     assert_eq!(r.body["data"]["validatedAt"], Value::Null);
 }
 

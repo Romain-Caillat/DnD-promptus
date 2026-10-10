@@ -593,8 +593,10 @@ la présence (qui est connecté) part toujours vers tous, comme avant.
 élément touché (pas de diff fin par champ) ; seul l'écran Préparer met en
 avant les changements pour l'instant, l'Atlas le reprendra ; l'activité
 ne porte qu'un numéro, le nom du lieu est lu dans le journal. **Reste** :
-l'essai réel depuis Claude Code, et brancher les opérations de carte sur
-ce même journal (`maps/edit-maps-by-ops`).
+l'essai réel depuis Claude Code. Les opérations de carte entrent
+désormais dans ce même journal et ce même numéro (`maps/edit-maps-by-ops`,
+cible `map:<id>`) ; l'écran Préparer affiche « Claude écrit · sur <nom de
+la carte> » pour un lot de carte, faute d'Atlas.
 
 ---
 
@@ -3433,7 +3435,11 @@ pinceaux sol, mur, eau, vide (glisser), portes (fermée → ouverte →
 verrouillée → retirée ; la case devient un mur), décors du jeu de tuiles,
 objets cachés, lumières, départs héros et adversaires, gomme ; tout peut
 aller sur le calque secret ; heure, météo, lumière de base et notes du
-MJ. Enregistrer repasse la carte en brouillon ; seule une carte validée
+MJ. Depuis `maps/edit-maps-by-ops`, il n'y a plus de bouton
+Enregistrer : chaque geste part aussitôt et s'enregistre, « Annuler mon
+dernier geste » le reprend par le journal de préparation, le nom et les
+notes partent quand on quitte le champ. Toute modification repasse la
+carte en brouillon ; seule une carte validée
 est proposée au plateau (avant les cartes du monde) et peut être montrée.
 Le serveur valide chaque enregistrement et répond en français. Une carte
 affichée à la table ne peut pas être supprimée. Révéler un calque ou un
@@ -3627,7 +3633,7 @@ image basse résolution pendant le geste.
 
 ---
 
-### `maps/edit-maps-by-ops` · todo
+### `maps/edit-maps-by-ops` · doing — reste l'essai réel : le MJ peint un mur pendant que Claude pose un PNJ sur la même carte, et les deux restent
 
 **Pourquoi** — L'éditeur réenregistre aujourd'hui la carte entière : la
 dernière écriture gagne. Avec Claude qui écrit en même temps, il
@@ -3657,6 +3663,46 @@ le journal. Tests front de l'éditeur.
 **Risques** — Une carte validée qu'une opération rend invalide : même
 règle qu'aujourd'hui, une modification retire la validation. Des lots
 très fins qui gonflent le journal : regrouper un geste en un lot.
+
+*État* — L'éditeur de carte n'envoie plus jamais la carte entière :
+chaque geste (un coup de pinceau, une porte, un objet posé, une gomme,
+un réglage d'ambiance, le nom, les notes) part aussitôt comme un petit
+lot d'opérations, avec le numéro de révision de la campagne lu à
+l'ouverture. Le serveur rejoue le lot sur la carte telle qu'elle est,
+sous le verrou de la campagne, tout ou rien, puis la vérifie comme une
+carte entière. Si quelqu'un d'autre a écrit entre-temps sur d'autres
+cases, les deux changements restent ; s'il a touché les mêmes cases ou
+le même objet, le serveur refuse le lot avec la carte à jour et n'écrit
+rien par-dessus ; l'éditeur recharge alors la carte et rejoue le geste
+une fois dessus (message « la carte a changé entre-temps »). Ce geste
+rejoué l'emporte donc sur ce que Claude venait de mettre sur ces cases
+(une porte touchée repart de son état à jour), et la ligne de Claude
+reste au journal. Ce que Claude écrit
+pendant que l'éditeur est ouvert arrive sans recharger. Chaque lot est
+une ligne du journal de préparation commun (auteur, cases et objets
+touchés, carte d'avant) ; « Annuler mon dernier geste » passe par ce
+journal, remet seulement les cases et objets de ce geste (ce que Claude
+a fait ailleurs reste), peut être répété geste après geste, et n'est
+refusé que si un lot plus récent a touché les mêmes cases. Créer,
+importer, générer ou supprimer une carte laisse aussi sa ligne. Un
+jeton personnel (Claude) peut lire les cartes de la campagne et envoyer
+des lots, mais ni créer, importer, supprimer ou valider une carte.
+Testé côté serveur : mur du MJ et PNJ de Claude sur la même révision →
+les deux restent ; même case → refus avec la carte fraîche ; annulation
+par le journal, deux fois de suite malgré un lot de Claude ailleurs, et refus
+quand un lot plus récent touche la même case ; l'ancien
+enregistrement de la carte entière ne répond plus.
+**Hypothèses retenues** : « poser un PNJ » sur une carte = un départ
+rattaché au PNJ (`entity`), seul moyen existant aujourd'hui ; les vraies
+positions de PNJ, indices et rencontres rangées dans l'histoire
+viendront avec `campaign/place-cast-and-clues`. Un lot de Claude
+s'applique encore tout de suite (il deviendra une proposition avec
+`platform/propose-edits-by-claude`), et aucun outil MCP n'écrit encore
+sur les cartes (`platform/edit-maps-by-claude`). Une modification
+d'histoire ne rend
+jamais un lot de carte périmé. Valider une carte n'entre pas dans le
+journal. **Reste** : l'essai réel avec Claude, une fois ses outils de
+carte branchés.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 
