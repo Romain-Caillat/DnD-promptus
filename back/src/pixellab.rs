@@ -58,7 +58,10 @@ fn allowed_host(host: &str) -> bool {
         .any(|h| host == *h || host.ends_with(&format!(".{h}")))
 }
 
-static HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
+/// The client that fetches PixelLab's images. If it cannot be built, no
+/// image is fetched at all: never a default client, which would follow
+/// redirects anywhere.
+static HTTP: LazyLock<Result<reqwest::Client, String>> = LazyLock::new(|| {
     reqwest::Client::builder()
         .timeout(Duration::from_secs(30))
         // A redirect may only stay among the allowed hosts.
@@ -69,8 +72,11 @@ static HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
             if ok { attempt.follow() } else { attempt.stop() }
         }))
         .build()
-        .unwrap_or_default()
+        .map_err(|e| e.to_string())
 });
+
+/// How many images of one character are fetched at once.
+const FETCHES_AT_ONCE: usize = 8;
 
 fn refused(code: &'static str, detail: impl Into<String>) -> AppError {
     AppError::Invalid {
@@ -117,7 +123,10 @@ pub async fn fetch(url: &str) -> Result<Vec<u8>, AppError> {
         code: "IMAGE_FETCH_FAILED",
         detail: e,
     };
-    let mut response = HTTP
+    let client = HTTP
+        .as_ref()
+        .map_err(|e| failed(format!("no HTTP client: {e}")))?;
+    let mut response = client
         .get(parsed)
         .send()
         .await
@@ -255,9 +264,28 @@ pub async fn needs(
         slots.extend(elements::needs_for_map(t, &map));
         // Who stands on the map: its NPCs' figures too.
         let cast = promptus_shared::story::cast::on_map(&row.story, map_id, &[]);
-        for n in &cast.npcs {
-            if !figures.iter().any(|f| f.subject == n.npc) {
-                figures.extend(figure(&row.story, &n.npc));
+        // The opponents of the fights that break out there, too.
+        let opponents = cast.fights.iter().flat_map(|f| {
+            row.story
+                .node(&f.scene)
+                .and_then(|n| n.encounter.as_ref())
+                .map(|e| {
+                    e.opponents
+                        .iter()
+                        .map(|o| o.who.clone())
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default()
+        });
+        let who: Vec<String> = cast
+            .npcs
+            .iter()
+            .map(|n| n.npc.clone())
+            .chain(opponents)
+            .collect();
+        for id in who {
+            if !figures.iter().any(|f| f.subject == id) {
+                figures.extend(figure(&row.story, &id));
             }
         }
     }
@@ -409,18 +437,23 @@ pub async fn import(
             if ask.frames.len() > MAX_FRAMES {
                 return Err(refused("TOO_MANY_FRAMES", format!("at most {MAX_FRAMES}")));
             }
-            let mut frames = Vec::with_capacity(ask.frames.len());
+            let mut named = Vec::with_capacity(ask.frames.len());
             for f in &ask.frames {
-                let animation = word(&f.animation, "animation")?;
-                let direction = word(&f.direction, "direction")?;
-                let bytes = fetch(&f.url).await?;
-                // Characters keep PixelLab's colours: they are the colour
-                // of the board (`MEMORY.md` §2), never the theme's.
-                let png = elements::read_png(&bytes)
-                    .and_then(|i| elements::write_png(&i))
-                    .map_err(|e| image_error(&e))?;
-                frames.push((animation, direction, f.index, png));
+                if f.index as usize >= MAX_FRAMES {
+                    return Err(refused(
+                        "BAD_FRAME",
+                        format!("index {} is past {MAX_FRAMES}", f.index),
+                    ));
+                }
+                named.push((
+                    word(&f.animation, "animation")?,
+                    word(&f.direction, "direction")?,
+                    f.index,
+                    f.url.clone(),
+                ));
             }
+            let frames = fetch_frames(named).await?;
+            let mut frames = frames;
             frames.sort_by(|a, b| (&a.0, &a.1, a.2).cmp(&(&b.0, &b.1, b.2)));
             frames.dedup_by(|a, b| (&a.0, &a.1, a.2) == (&b.0, &b.1, b.2));
             // The figure shown before any animation: resting, facing us.
@@ -490,7 +523,8 @@ pub async fn import(
         .bind(stored.id)
         .bind(animation)
         .bind(direction)
-        .bind(i32::try_from(*index).unwrap_or(i32::MAX))
+        // Below MAX_FRAMES, checked above.
+        .bind(i32::try_from(*index).unwrap_or_default())
         .bind(png)
         .execute(&mut *tx)
         .await?;
@@ -544,6 +578,37 @@ async fn exists(
     }
 }
 
+/// A character's frames, fetched a few at a time, each checked as a PNG:
+/// `(animation, direction, index, png)`, in no particular order.
+async fn fetch_frames(
+    named: Vec<(String, String, u32, String)>,
+) -> Result<Vec<(String, String, u32, Vec<u8>)>, AppError> {
+    let gate = std::sync::Arc::new(tokio::sync::Semaphore::new(FETCHES_AT_ONCE));
+    let mut set = tokio::task::JoinSet::new();
+    for (animation, direction, index, url) in named {
+        let gate = gate.clone();
+        set.spawn(async move {
+            let _permit = gate
+                .acquire_owned()
+                .await
+                .map_err(|e| AppError::Internal(e.to_string()))?;
+            let bytes = fetch(&url).await?;
+            // Characters keep PixelLab's colours: they are the colour of
+            // the board (`MEMORY.md` §2), never the theme's.
+            let png = elements::read_png(&bytes)
+                .and_then(|i| elements::write_png(&i))
+                .map_err(|e| image_error(&e))?;
+            Ok::<_, AppError>((animation, direction, index, png))
+        });
+    }
+    let mut out = Vec::new();
+    while let Some(done) = set.join_next().await {
+        // The first failure answers; the others are dropped with the set.
+        out.push(done.map_err(|e| AppError::Internal(e.to_string()))??);
+    }
+    Ok(out)
+}
+
 /// The bytes of frame `n` of character `asset`.
 ///
 /// # Errors
@@ -555,18 +620,21 @@ pub async fn frame(
     asset: Uuid,
     n: usize,
 ) -> Result<Vec<u8>, AppError> {
-    let rows: Vec<Vec<u8>> = sqlx::query_scalar(
-        "SELECT f.image FROM media_frames f JOIN media_assets a ON a.id = f.asset_id
-         WHERE f.asset_id = $1 AND a.campaign_id = $2
-         ORDER BY f.animation, f.direction, f.idx",
+    let n = i64::try_from(n).map_err(|_| AppError::NotFound("NO_SUCH_ASSET"))?;
+    // `COLLATE "C"`: byte order, the order `meta.frames` was numbered in
+    // (Rust's), whatever the database's collation.
+    let row: Option<Vec<u8>> = sqlx::query_scalar(
+        r#"SELECT f.image FROM media_frames f JOIN media_assets a ON a.id = f.asset_id
+           WHERE f.asset_id = $1 AND a.campaign_id = $2
+           ORDER BY f.animation COLLATE "C", f.direction COLLATE "C", f.idx
+           OFFSET $3 LIMIT 1"#,
     )
     .bind(asset)
     .bind(campaign)
-    .fetch_all(pool)
+    .bind(n)
+    .fetch_optional(pool)
     .await?;
-    rows.into_iter()
-        .nth(n)
-        .ok_or(AppError::NotFound("NO_SUCH_ASSET"))
+    row.ok_or(AppError::NotFound("NO_SUCH_ASSET"))
 }
 
 #[cfg(test)]

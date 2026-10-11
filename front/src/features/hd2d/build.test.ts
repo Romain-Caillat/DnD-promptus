@@ -127,9 +127,10 @@ describe('buildScene (campaign/watch-prep-in-hd2d)', () => {
     ])
   })
 
-  it('still draws without the needs (loading): every prop a volume, nothing listed', () => {
+  it('still draws without the needs (loading): the shape rule holds, nothing listed', () => {
     const s = buildScene(input({ needs: null }))
-    expect(s.volumes.map((v) => v.id)).toEqual(['c1', 'r1'])
+    expect(s.volumes.map((v) => v.id)).toEqual(['c1'])
+    expect(s.flats.map((f) => f.id)).toEqual(['r1'])
     expect(s.floors.every((f) => f.paint.kind === 'theme')).toBe(true)
     expect(s.missing.map((m) => m.subject)).toEqual(['pnj_loic'])
   })

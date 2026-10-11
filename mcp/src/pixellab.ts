@@ -16,7 +16,7 @@ interface Need {
   kind: 'element' | 'character'
   subject: string
   name: string
-  form: 'texture' | 'flat' | 'facade' | 'character'
+  form: 'texture' | 'flat' | 'character'
   status: 'missing' | 'pending' | 'approved'
   generations: number
 }
@@ -32,7 +32,6 @@ interface Needs {
 export const HOW: Record<Need['form'], string> = {
   texture: "texture vue de face (view: side), sans perspective ni isométrie, qui se répète : posée sur un volume ou au sol",
   flat: 'image plate sur fond transparent, vue de côté, tournée vers la caméra',
-  facade: "façade de bâtiment vue de face (view: side), sans perspective",
   character: '4 directions (sud, est, nord, ouest) et les animations repos, marche, attaque, coup reçu, chute',
 }
 
@@ -110,8 +109,8 @@ export function registerPixellabTools(server: McpServer, promptus: () => Promptu
       description:
         "Dépose dans Promptus une image générée chez PixelLab, en attente de validation par le MJ (rien n'atteint les " +
         'joueurs avant). Un élément du thème (kind « element ») : son emplacement tel que get_theme_needs le donne ' +
-        '(« port-1718/material/pavés », « port-1718/wall », « port-1718/prop/caisse/side », « port-1718/prop/cordages », ' +
-        '« port-1718/facade/taverne ») et l\'adresse de l\'image ; Promptus ramène ses couleurs sur la palette du thème. ' +
+        '(« port-1718/material/pavés », « port-1718/wall », « port-1718/prop/caisse/side », « port-1718/prop/cordages ») ' +
+        'et l\'adresse de l\'image ; Promptus ramène ses couleurs sur la palette du thème. ' +
         'Un personnage (kind « character ») : l\'identifiant du PNJ et ses images (frames), une par direction et par ' +
         "image d'animation. Promptus télécharge lui-même, depuis PixelLab seulement. Un emplacement déjà rempli est " +
         "refusé : ne regénère pas, sauf si le MJ demande de remplacer (replace).",

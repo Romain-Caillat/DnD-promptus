@@ -195,7 +195,7 @@ export function scene(detail: CampaignDetail, sceneId: string): Json | null {
 
 /**
  * « Jouable » (campaign/prepare-with-claude, moment 6): no validator
- * error and the first act's gauge full. The GM still declares it
+ * error, an opening scene, and the first act's gauge full. The GM still declares it
  * playable in Promptus; this only says whether it is time to.
  */
 export function playable(issues: Issue[], acts: { title: string; ready: boolean }[]): Json {
@@ -203,6 +203,7 @@ export function playable(issues: Issue[], acts: { title: string; ready: boolean 
   const first = acts[0]
   const missing: string[] = []
   if (errors > 0) missing.push(`${errors} erreur(s) du validateur`)
+  if (issues.some((i) => i.code === 'START_NODE_MISSING')) missing.push("pas encore de scène d'ouverture")
   if (!first) missing.push('aucun acte')
   else if (!first.ready) missing.push(`la jauge de « ${first.title} » n'est pas pleine`)
   return missing.length === 0

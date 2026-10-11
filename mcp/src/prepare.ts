@@ -160,6 +160,8 @@ export function registerPrepareTools(server: McpServer, promptus: () => Promptus
         'peuvent rester provisoires : on les fixe à la fin (moment 6). Les règles se choisissent au premier combat ' +
         '(list_rule_systems) ; d\'ici là la campagne joue le premier système connu, changeable avec apply_story_edits ' +
         '({ "op": "set", "target": "campaign", "field": "rules", "value": { "id": "…", "version": 1 } }). ' +
+        "Partie de la fin, la campagne n'a pas encore d'ouverture : la scène la plus en amont la deviendra " +
+        '(propose_scene avec « opening »). ' +
         "La campagne arrive en préparation, rien n'atteint les joueurs. Pour partir d'une campagne existante, " +
         "utilise list_campaigns ; d'un fichier complet, create_campaign_from_yaml.",
       inputSchema: {
@@ -211,7 +213,9 @@ export function registerPrepareTools(server: McpServer, promptus: () => Promptus
             pitch: pitch ?? '',
             tone,
             themes: themes ?? [],
-            start_node: sceneId,
+            // A finale is never the opening: the scene kept upstream with
+            // `opening` (propose_scene) becomes it.
+            ...(scene.ending ? {} : { start_node: sceneId }),
           },
           acts: [{ id: 'acte_1', title: 'Acte I', summary: '' }],
           nodes: [node],
@@ -226,7 +230,9 @@ export function registerPrepareTools(server: McpServer, promptus: () => Promptus
           rules: rules ? story.rules : { ...story.rules, provisional: 'à confirmer au premier combat' },
           scene: { id: sceneId, ending: scene.ending === true },
           issues: issueReport(detail.issues),
-          next: 'Propose autour de cette scène le lieu, deux PNJ, trois indices et une tension (propose_tension).',
+          next: scene.ending
+            ? "Propose autour de cette scène de fin le lieu, deux PNJ, trois indices et une tension ; les scènes se préparent à rebours, la plus en amont avec « opening »."
+            : 'Propose autour de cette scène le lieu, deux PNJ, trois indices et une tension (propose_tension).',
         })
       }),
   )

@@ -112,13 +112,13 @@ MJ le veut. Pour un lieu ou un PNJ **gardé** :
 1. **Ce qui manque** : `get_theme_needs` (avec `map_id` pour un lieu,
    `npc_id` pour un PNJ). Il liste chaque élément du thème — texture
    d'une matière de sol, de mur, face d'un accessoire en volume, image
-   plate d'un accessoire fin, façade, personnage — avec son état. Ce qui
+   plate d'un accessoire fin, personnage — avec son état. Ce qui
    est déjà là (gardé ou en attente) **ne se regénère jamais**.
 2. **Le coût** : annonce au MJ, avant chaque lot, le nombre de
    générations (`generations` de chaque élément manquant, et le total)
    et attends son accord explicite.
 3. **Générer chez PixelLab**, en respectant la règle de forme : ce qui a
-   du volume (sol, mur, caisse, tonneau, coque, façade) en **texture vue
+   du volume (sol, mur, caisse, tonneau, coque) en **texture vue
    de face** (`view: side`, jamais isométrique) ; ce qui est fin ou
    irrégulier (lanterne, cordage, enseigne) en **image plate** ; un
    personnage avec ses 4 directions et ses animations. Donne à PixelLab

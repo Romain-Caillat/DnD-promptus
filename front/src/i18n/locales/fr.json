@@ -2033,6 +2033,8 @@
     "notFound": "Cette campagne n'existe pas, ou elle n'est pas à vous.",
     "error": "Impossible de charger. Réessayez dans un instant.",
     "media": {
+      "pixellab": "PixelLab · à valider",
+      "pixellabHint": "Les images que Claude a générées chez PixelLab : gardées, elles habillent la scène HD-2D ; jetées, Claude peut en proposer une autre.",
       "title": "Images et vidéos de la campagne",
       "batchTitle": "Tout ce qui manque",
       "missing": "Rien d'attendu ni de gardé pour l'instant : {{images}} sujets à dessiner, {{videos}} actes à filmer.",

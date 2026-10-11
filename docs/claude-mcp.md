@@ -206,8 +206,8 @@ The GM's Claude holds the PixelLab MCP too. For a place or an NPC kept,
 lists what the HD-2D scene still needs: every **element** of the
 tileset the map uses (`shared::elements`: `<tileset>/material/<id>`,
 `<tileset>/wall`, `<tileset>/prop/<id>/side|top` for a prop with volume,
-`<tileset>/prop/<id>` for a thin one; `<tileset>/facade/<kind>` is
-accepted on import) and the **character** of each NPC standing on it,
+`<tileset>/prop/<id>` for a thin one; no facade slot until the scene
+draws buildings) and the **character** of each NPC standing on it,
 each `missing`, `pending` or `approved` with its generations (an
 estimate: 1 an image, 6 a character), plus the tileset's palette. Claude
 announces the total and waits for the GM's yes before generating.
@@ -215,7 +215,10 @@ announces the total and waits for the GM's yes before generating.
 `import_pixellab_asset` (`POST …/media/import`) hands an image over:
 `{ kind: "element", subject, url }` or `{ kind: "character", subject:
 <npc>, frames: [{ url, direction, animation?, index? }] }` (80 frames at
-most), with `description`, `generations`, `replace`. The server fetches
+most), with `description`, `generations`, `replace` (16 MB of body at most;
+frame indexes below 80). A character's frames are fetched eight at a
+time; `…/frames/{n}` numbers them in byte order of (animation,
+direction, index), as `meta.frames` does. The server fetches
 the bytes itself — `https` on `PIXELLAB_HOSTS` only (PixelLab's
 `pixellab.ai` and its subdomains by default; redirects must stay there),
 or a `data:image/png;base64,` URL — 4 MB and 1024 px a side at most,

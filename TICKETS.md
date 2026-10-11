@@ -2223,11 +2223,15 @@ rencontré. Testé côté serveur (téléchargement refusé hors PixelLab,
 palette, doublon, personnage et ses images, jeton qui ne décide pas) et
 MCP. **Hypothèses retenues** : les emplacements d'un thème sont
 `<tileset>/material/<id>`, `<tileset>/wall`, `<tileset>/prop/<id>/side`
-et `/top` pour un volume, `<tileset>/prop/<id>` pour un accessoire fin,
-`<tileset>/facade/<type>` (une façade n'est pas déduite de la carte : elle
-se dépose seulement) ; qui est volume ou plat se décide par la forme de
+et `/top` pour un volume, `<tileset>/prop/<id>` pour un accessoire fin ;
+pas encore d'emplacement de façade, tant que la scène ne dessine pas de
+bâtiment (rien ne se génère que le MJ ne puisse ni voir ni valider) ; qui est volume ou plat se décide par la forme de
 l'accessoire dans le thème (caisse, tonneau, trappe… volume ; cordage,
-mât, échelle… plat). **Pas fait** : le rendu des animations des
+mât, échelle… plat). Les adversaires des combats posés sur la carte
+comptent aussi parmi les personnages à générer. Les images d'un personnage
+se téléchargent huit à la fois. Toutes les images PixelLab en attente se
+gardent ou se jettent aussi dans le tiroir « Médias » de l'Atlas, quelle
+que soit leur carte. **Pas fait** : le rendu des animations des
 personnages (`hd2d/show-pixellab-characters`), les façades dans la
 scène. **Reste** l'essai réel avec l'abonnement PixelLab : les adresses
 que renvoie le MCP de PixelLab sont-elles bien sur `pixellab.ai` ? Sinon,

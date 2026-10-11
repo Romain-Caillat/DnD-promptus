@@ -4,7 +4,7 @@ import { StatusBanner } from '@/components/game/StatusBanner'
 import { Btn, Panel } from '@/features/gm/live/ui'
 import { ApiError } from '@/lib/api'
 import { dollars } from '@/lib/money'
-import { askImage, decideImage, drawMissing, fetchGmMedia, type GmMediaList, type MediaKind } from '@/lib/media'
+import { askImage, decideImage, drawMissing, fetchGmMedia, gmImageUrl, type GmMediaList, type MediaKind } from '@/lib/media'
 import { fetchReview, nameOf, type Story } from '@/lib/prep'
 import { SubjectCard } from './SubjectCard'
 
@@ -30,7 +30,9 @@ type PageState =
  * draws what is missing in one background batch (its cost said first),
  * then keeps or redraws each one; nothing reaches the table unkept.
  * `live` moves with the story and the background jobs (the Atlas hears
- * them).
+ * them). The images Claude brought from PixelLab and still waiting
+ * (campaign/import-pixellab-assets) come first: whatever the map they
+ * belong to, the GM keeps or discards them here.
  */
 export function MediaDesk({ campaignId, live: heard }: { campaignId: string; live: number }) {
   const { t } = useTranslation()
@@ -69,6 +71,7 @@ export function MediaDesk({ campaignId, live: heard }: { campaignId: string; liv
 
   const { story, media } = state
   const { plan } = media
+  const pixellab = media.assets.filter((a) => a.source === 'pixellab' && a.status === 'pending')
   const left = Math.max(0, plan.spending.budgetMicros - plan.spending.spentMicros)
   const count = plan.images.length + (videos ? plan.videos.length : 0)
   const estimate = plan.images.length * plan.imageMicros + (videos ? plan.videos.length * plan.videoMicros : 0)
@@ -120,6 +123,36 @@ export function MediaDesk({ campaignId, live: heard }: { campaignId: string; liv
           {plan.running ? t('prep.media.running') : t('prep.media.drawAll', { count })}
         </Btn>
       </Panel>
+
+      {pixellab.length > 0 && (
+        <section className="flex flex-col gap-2" aria-label={t('prep.media.pixellab')}>
+          <h3 className="type-title text-[16px]">{t('prep.media.pixellab')}</h3>
+          <p className="text-caption text-mute-soft">{t('prep.media.pixellabHint')}</p>
+          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {pixellab.map((a) => (
+              <li key={a.id} className="surface-slab flex items-center gap-3 p-3">
+                <img
+                  src={gmImageUrl(campaignId, a.id)}
+                  alt={a.meta?.name ?? a.subject}
+                  className="size-16 shrink-0 bg-black object-contain [image-rendering:pixelated]"
+                />
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <span className="text-caption text-chalk">{a.meta?.name ?? a.subject}</span>
+                  <span className="text-caption text-mute-soft">{t(`gmLive.media.kinds.${a.kind}`)}</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Btn main disabled={busy} onClick={() => act(() => decideImage(campaignId, a.id, true))}>
+                      {t('atlas.hd2d.keep')}
+                    </Btn>
+                    <Btn disabled={busy} onClick={() => act(() => decideImage(campaignId, a.id, false))}>
+                      {t('atlas.hd2d.discard')}
+                    </Btn>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {SECTIONS.map(({ kind, list }) => {
         const entities = story[list] ?? []

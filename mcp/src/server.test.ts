@@ -580,13 +580,15 @@ describe('promptus MCP server', () => {
       const out = JSON.parse(r.text)
       expect(out).toMatchObject({ id: 'c9', scene: { id: 'sc_la_bagarre_du_quai', ending: true } })
       expect(out.rules.provisional).toBeDefined()
+      // A finale is not the opening: the scene kept upstream will be.
       const story = JSON.parse((api.sent.at(-1)!.body as { yaml: string }).yaml)
       expect(story).toMatchObject({
         id: 'la_machoire',
         rules: { id: 'corsaires', version: 1 },
-        bible: { tone: 'Sel et poudre', start_node: 'sc_la_bagarre_du_quai' },
+        bible: { tone: 'Sel et poudre' },
         nodes: [{ id: 'sc_la_bagarre_du_quai', act: 'acte_1', title: 'La bagarre du quai' }],
       })
+      expect(story.bible.start_node).toBeUndefined()
     })
 
     it('proposes a tension with its clock, never applies it', async () => {

@@ -12,7 +12,9 @@
 //!   volume (crate, barrel, hatch…), **textures** on a box;
 //! - `prop/<id>` — a thin or irregular prop (lantern, rope, sign, mast),
 //!   one **flat** image turned to the camera;
-//! - `facade/<kind>` — a building's front, a **facade** texture.
+//!
+//! Building facades will come with the scene that draws them: until then
+//! no slot names one, so nothing is generated that the GM cannot review.
 //!
 //! The shape rule: what has volume is geometry textured with images
 //! seen from the front (`view: side`), never isometric; what is thin is
@@ -38,8 +40,6 @@ pub enum Form {
     Texture,
     /// A flat image turned to the camera.
     Flat,
-    /// A building's front.
-    Facade,
     /// A character: four directions, animations.
     Character,
 }
@@ -53,7 +53,7 @@ impl Form {
     #[must_use]
     pub fn generations(self) -> u32 {
         match self {
-            Self::Texture | Self::Flat | Self::Facade => 1,
+            Self::Texture | Self::Flat => 1,
             Self::Character => 6,
         }
     }
@@ -111,7 +111,7 @@ impl std::fmt::Display for SlotError {
         match self {
             Self::Malformed => write!(
                 f,
-                "an element is `<tileset>/material/<id>`, `<tileset>/wall`, `<tileset>/prop/<id>[/side|/top]` or `<tileset>/facade/<kind>`"
+                "an element is `<tileset>/material/<id>`, `<tileset>/wall`, `<tileset>/prop/<id>[/side|/top]`"
             ),
             Self::UnknownTileset(t) => write!(f, "no tileset `{t}` in the campaign's theme"),
             Self::UnknownMaterial(m) => write!(f, "no material `{m}` in this tileset"),
@@ -119,13 +119,6 @@ impl std::fmt::Display for SlotError {
             Self::WrongForm(why) => write!(f, "{why}"),
         }
     }
-}
-
-fn is_slug(s: &str) -> bool {
-    !s.is_empty()
-        && s.len() <= 40
-        && s.chars()
-            .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
 }
 
 /// The slot `subject` names among `tilesets`, checked.
@@ -177,10 +170,6 @@ pub fn slot(tilesets: &[Tileset], subject: &str) -> Result<Slot, SlotError> {
             let face = if *face == "side" { "côté" } else { "dessus" };
             Ok(made(format!("{} · {face}", p.name), Form::Texture))
         }
-        ["facade", kind] if is_slug(kind) => Ok(made(
-            format!("Façade · {}", kind.replace('_', " ")),
-            Form::Facade,
-        )),
         _ => Err(SlotError::Malformed),
     }
 }
@@ -459,8 +448,8 @@ mod tests {
             Err(SlotError::WrongForm(_))
         ));
         assert_eq!(
-            slot(ts, "port-1718/facade/taverne").unwrap().form,
-            Form::Facade
+            slot(ts, "port-1718/facade/taverne"),
+            Err(SlotError::Malformed)
         );
         assert_eq!(
             slot(ts, "ailleurs/wall"),
@@ -471,7 +460,6 @@ mod tests {
             Err(SlotError::UnknownMaterial("lave".into()))
         );
         assert_eq!(slot(ts, "port-1718/porte"), Err(SlotError::Malformed));
-        assert_eq!(slot(ts, "port-1718/facade/a b"), Err(SlotError::Malformed));
     }
 
     #[test]

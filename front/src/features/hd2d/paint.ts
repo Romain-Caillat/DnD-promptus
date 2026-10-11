@@ -35,7 +35,8 @@ function pixelTexture(source: HTMLCanvasElement | HTMLImageElement): THREE.Textu
   t.wrapS = THREE.RepeatWrapping
   t.wrapT = THREE.RepeatWrapping
   t.colorSpace = THREE.SRGBColorSpace
-  t.needsUpdate = true
+  // An image still loading is uploaded when it arrives (`textureOf`).
+  if (source instanceof HTMLCanvasElement || (source.complete && source.naturalWidth > 0)) t.needsUpdate = true
   return t
 }
 
@@ -104,9 +105,7 @@ export function textureOf(paint: Paint, onLoad: () => void): THREE.Texture {
     images.set(paint.url, img)
   }
   const t = pixelTexture(img)
-  if (img.complete && img.naturalWidth > 0) {
-    t.needsUpdate = true
-  } else {
+  if (!img.complete || img.naturalWidth === 0) {
     img.addEventListener(
       'load',
       () => {

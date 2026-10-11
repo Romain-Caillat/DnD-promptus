@@ -197,6 +197,17 @@ async fn a_wrong_slot_or_address_brings_nothing_in() {
             json!({ "kind": "scene", "subject": "sc_crique", "url": tiny }),
             "IMPORT_MALFORMED",
         ),
+        // No scene draws a facade yet: nothing to generate for it.
+        (
+            json!({ "kind": "element", "subject": "port-1718/facade/taverne", "url": tiny }),
+            "ELEMENT_UNKNOWN",
+        ),
+        (
+            json!({ "kind": "character", "subject": "pnj_gwen", "frames": [
+                { "url": tiny, "direction": "south", "index": 3_000_000_000_u64 },
+            ] }),
+            "BAD_FRAME",
+        ),
     ];
     for (body, code) in cases {
         let r = call(&app, Some(&session), "POST", &uri, Some(body.clone())).await;
@@ -315,4 +326,95 @@ async fn an_npc_arrives_with_its_frames_and_stays_hidden_from_players() {
         "{}",
         r.body
     );
+}
+
+#[tokio::test]
+async fn frames_are_served_in_the_order_meta_numbers_them() {
+    let pool = common::test_pool().await;
+    let app = common::app(pool.clone());
+    let (_, session) = common::signed_in_gm(&pool, "Romain").await;
+    let campaign = common::imported_campaign(&app, &session, FIXTURE).await;
+    let frame = |r: u8| data_url(vec![r, 10, 10, 255], 1, 1);
+    // `_` sorts before `a` in bytes, after it in most collations.
+    let r = call(
+        &app,
+        Some(&session),
+        "POST",
+        &format!("/api/campaigns/{campaign}/media/import"),
+        Some(
+            json!({ "kind": "character", "subject": "pnj_gwen", "frames": [
+            { "url": frame(40), "direction": "south", "animation": "walka" },
+            { "url": frame(80), "direction": "south", "animation": "walk_b" },
+        ] }),
+        ),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
+    let meta = &r.body["data"]["meta"]["frames"];
+    assert_eq!(meta[0]["animation"], "walk_b");
+    let id = r.body["data"]["id"].as_str().unwrap();
+    let r = call(
+        &app,
+        Some(&session),
+        "GET",
+        &format!("/api/campaigns/{campaign}/media/{id}/frames/0"),
+        None,
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::OK);
+    let stored: Vec<u8> = sqlx::query_scalar(
+        "SELECT image FROM media_frames WHERE asset_id = $1::uuid AND animation = 'walk_b'",
+    )
+    .bind(id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(read_png(&stored).unwrap().pixels[0], 80);
+    let served = sqlx::query_scalar::<_, Vec<u8>>(
+        r#"SELECT image FROM media_frames WHERE asset_id = $1::uuid
+           ORDER BY animation COLLATE "C", direction COLLATE "C", idx LIMIT 1"#,
+    )
+    .bind(id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(served, stored);
+}
+
+#[tokio::test]
+async fn a_fight_on_the_map_brings_its_opponents_figures_into_the_needs() {
+    let pool = common::test_pool().await;
+    let app = common::app(pool.clone());
+    let (_, session) = common::signed_in_gm(&pool, "Romain").await;
+    let campaign = common::imported_campaign(&app, &session, FIXTURE).await;
+    let r = call(
+        &app,
+        Some(&session),
+        "POST",
+        &format!("/api/campaigns/{campaign}/story/edits"),
+        Some(
+            json!({ "edits": [{ "op": "set", "target": "sc_crique", "field": "encounter.anchor",
+            "value": { "map": "quai-port-louis", "at": [12, 6] } }] }),
+        ),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    let r = call(
+        &app,
+        Some(&session),
+        "GET",
+        &format!("/api/campaigns/{campaign}/elements?map=quai-port-louis"),
+        None,
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    let figures: Vec<&str> = r.body["data"]["needs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|n| n["kind"] == "character")
+        .map(|n| n["subject"].as_str().unwrap())
+        .collect();
+    assert!(figures.contains(&"adv_contrebandier"), "{figures:?}");
+    assert!(figures.contains(&"pnj_corentin"), "{figures:?}");
 }

@@ -14,7 +14,7 @@ import { fetchAtlas, generateMap, gmBackdropUrl, type Atlas, type AtlasMap, type
 import { applyEdits, decideClaude, setClaudeHand, type ClaudeDecision, type Edit, type Proposal } from '@/lib/prep'
 import { decideImage, fetchGmMedia, gmImageUrl, type MediaList } from '@/lib/media'
 import { fetchNeeds, type Needs } from '@/lib/elements'
-import { buildScene } from '@/features/hd2d/build'
+import { buildSceneOnce } from '@/features/hd2d/build'
 import { TABLET_QUERY, useMediaQuery } from '@/lib/useMediaQuery'
 import { cn } from '@/lib/utils'
 import { canLeave, climb, depth, doorAt, doorCells, enter, index, leave, switchable, trail, withoutLayers } from './atlas'
@@ -153,7 +153,8 @@ export function AtlasPage() {
   const players = params.get('vue') === 'joueurs'
   /** « Plan / HD-2D » (campaign/watch-prep-in-hd2d), kept in `?rendu=hd2d`. */
   const hd2d = params.get('rendu') === 'hd2d'
-  const [needs, setNeeds] = useState<Needs | null>(null)
+  /** What the map shown lacks from PixelLab: `map` and `read` (a count) say which reading it is. */
+  const [needs, setNeeds] = useState<{ map: string; read: number; needs: Needs } | null>(null)
   const [mediaBusy, setMediaBusy] = useState(false)
   const [mediaFailed, setMediaFailed] = useState<string | null>(null)
   const [seen, setSeen] = useState(0)
@@ -217,7 +218,7 @@ export function AtlasPage() {
     let live = true
     fetchNeeds(campaignId, shownId).then(
       (n) => {
-        if (live) setNeeds(n)
+        if (live) setNeeds((was) => ({ map: shownId, read: (was?.read ?? 0) + 1, needs: n }))
       },
       () => {
         if (live) setNeeds(null)
@@ -494,14 +495,29 @@ export function AtlasPage() {
       setMediaBusy(false)
     }
   }
+  // Another map's needs never dress this one, even for the instant its own are read.
+  const ownNeeds = needs && needs.map === shownId ? needs : null
+  const marks3d = [...pinMarks, ...claudeMarks.pins]
+  // Built again only when what it shows changed, not on every render of the page.
+  const sceneKey = [
+    campaignId,
+    shownId,
+    state.atlas.revision,
+    [...hidden].join(','),
+    ownNeeds?.read ?? 0,
+    (media?.assets ?? []).map((a) => `${a.id}:${a.status ?? ''}`).join(','),
+    marks3d.map((m) => `${m.key}@${m.at.join(',')}:${m.picked ? 1 : 0}${m.faint ? 1 : 0}`).join(';'),
+    claudeMarks.cells.map((c) => c.join(',')).join(';'),
+    tileset?.id ?? '',
+  ].join('|')
   const scene3d =
     hd2d && !players && entry && map && !flatOnly
-      ? buildScene({
+      ? buildSceneOnce(sceneKey, {
           map,
           tileset,
-          needs: needs?.tileset === map.theme || needs?.tileset === null ? needs : null,
+          needs: ownNeeds?.needs ?? null,
           assets: media?.assets ?? [],
-          marks: [...pinMarks, ...claudeMarks.pins],
+          marks: marks3d,
           proposedCells: claudeMarks.cells,
           imageUrl: (id) => gmImageUrl(campaignId, id),
           npcOf: (key) => {

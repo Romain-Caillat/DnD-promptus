@@ -108,6 +108,12 @@ export interface BuildInput {
   batchOf: (key: string) => string | null
 }
 
+/**
+ * The thin shapes, drawn flat (`shared::elements::has_volume` says the
+ * same on the server, which names the slots: keep the two in step).
+ */
+const THIN: ReadonlySet<string> = new Set(['post', 'rail', 'mast', 'rope', 'ladder', 'pipes', 'beacon', 'tree'])
+
 const GREY: Material = { name: '', base: '#5a5a5a', dark: '#3a3a3a', light: '#7a7a7a', pattern: 'plain' }
 
 function kindAt(map: MapData, [x, y]: Cell): CellKind | null {
@@ -177,7 +183,8 @@ export function buildScene(input: BuildInput): Hd2dScene {
   for (const t of things) {
     const look = tileset?.props[t.kind]
     const name = t.label || look?.name || t.kind
-    const flat = need(`${ts}/prop/${t.kind}`) !== null && need(`${ts}/prop/${t.kind}/side`) === null
+    // The shape rule, from the theme itself: what is thin stands flat.
+    const flat = look !== undefined && THIN.has(look.shape)
     const colours: Material = look
       ? { name: look.name, base: look.color, dark: look.accent, light: look.color, pattern: 'planks' }
       : GREY
@@ -250,4 +257,16 @@ export function buildScene(input: BuildInput): Hd2dScene {
     missing,
     pending,
   }
+}
+
+let last: { key: string; scene: Hd2dScene } | null = null
+
+/**
+ * `buildScene`, kept for as long as `key` (what the scene shows, said by
+ * the page) stays the same: the page renders far more often than the
+ * scene changes, and the same object spares the view its rebuild.
+ */
+export function buildSceneOnce(key: string, input: BuildInput): Hd2dScene {
+  if (last?.key !== key) last = { key, scene: buildScene(input) }
+  return last.scene
 }

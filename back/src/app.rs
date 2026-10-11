@@ -401,7 +401,12 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         // campaign/import-pixellab-assets: what the theme lacks, an image
         // brought from PixelLab, a character's frames.
         .route("/api/campaigns/{id}/elements", get(api::media::needs))
-        .route("/api/campaigns/{id}/media/import", post(api::media::import))
+        .route(
+            "/api/campaigns/{id}/media/import",
+            // A character's frames may come as data URLs: 16 MB, past
+            // the 4 MB a single image may weigh.
+            post(api::media::import).layer(DefaultBodyLimit::max(16 * 1024 * 1024)),
+        )
         .route(
             "/api/campaigns/{id}/media/{asset}/frames/{n}",
             get(api::media::gm_frame),

@@ -1,7 +1,7 @@
 import { apiRequest } from './api'
 
 /** How the HD-2D scene draws an element (`shared::elements::Form`). */
-type ElementForm = 'texture' | 'flat' | 'facade' | 'character'
+type ElementForm = 'texture' | 'flat' | 'character'
 
 /** One element or figure a scene needs (`pixellab::Need`). */
 interface Need {
