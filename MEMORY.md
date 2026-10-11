@@ -282,12 +282,22 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   grid every other part reads. The players' vote on a route advises;
   the GM chooses. A route the GM proposes is shown whole to players,
   fog included — it is a road the table is told of.
-- **Open direction, not settled: HD-2D (Romain, 11 October 2026).**
-  Romain wants to explore an Octopath Traveler look later: pixel-art
-  characters as flat billboards in a Three.js 3D scene, the 3D bringing
-  light, shadows, depth of field and bloom. It would overturn the side
-  view and the server-only renderer above, so nothing changes until
-  `characters/choose-sprite-source` settles it. Points already on the
+- **Decided: the platform renders in HD-2D (Romain, 11 October 2026).**
+  An Octopath Traveler look: a Three.js 3D scene built from the map grid,
+  the 3D bringing light, shadows, fog, depth of field and bloom. Assets
+  come from PixelLab, split by shape: **volumes** (crates, barrels,
+  buildings, hull) are 3D geometry textured with PixelLab images drawn
+  straight on (`view: side`; an isometric object cannot be unskewed into
+  a face); **thin or irregular things** (characters, lanterns, ropes,
+  signs) are flat billboards. Romain chose it on the prototype of the
+  Corsaires quay brawl (`docs/design/hd2d/quai.html`) and
+  preferred textured 3D boxes to flat prop sprites. This overturns the
+  side view, the layered characters and the server-only renderer above:
+  those entries stand until the tickets that replace them land. Our
+  SDXL pipeline (`scripts/pixel-art`) is superseded as a source; it
+  remains a tool. Cost is the open constraint: the trial account cannot
+  use `create_tiles_pro` or `create_building_kit` (Tier 1+), and a full
+  scene is about 120–145 generations. Points already on the
   table: Octopath's sprites are small (about 40 px tall); the depth and
   the light do the impressing. Detailed 256 px sprites fit only two or
   three to a phone screen, hence the idea of 64 px sprites on the board

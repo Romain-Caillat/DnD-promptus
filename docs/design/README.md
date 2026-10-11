@@ -109,6 +109,11 @@ any board layout already set in `canvas.json`.
 - `outdoor/*.py` → outdoor map PNGs; `items-prototype.py`,
   `walls-prototype.py`, `sprite-prototype.py` (+ `sprites.json`) →
   pixel-art previews.
+- `hd2d/quai.html` → the HD-2D reference prototype (`MEMORY.md` §2, epic
+  `hd2d`): the Corsaires quay brawl in Three.js, built from the map
+  `quai-port-louis`, with the PixelLab test assets embedded as data URIs.
+  Self-contained; open it in a browser or publish it with the Artifact
+  tool (it was the artifact « Quai de Port-Louis »).
 
 Other boards were edited by hand. Regenerating `Jouer-Marc`,
 `Ecran-TV`, `Mener-MJ`, `Preparer-MJ`, `Inviter-MJ` and the GM storyboards from these scripts reproduces the snapshot byte for byte.
