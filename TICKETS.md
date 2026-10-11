@@ -3888,7 +3888,7 @@ n'est qu'une projection des données que le serveur a déjà filtrées
 (brouillard, pions cachés, calques du MJ) ; le serveur reste seul juge
 du déplacement, de la portée et de la ligne de vue.
 
-### `media/choose-pixellab-plan` · todo — décision de Romain
+### `media/choose-pixellab-plan` · doing — abonnement pris ; restent le budget par monde dans `MEMORY.md` et la vérification des conditions
 
 **Pourquoi** — L'essai gratuit (40 générations, 17 restantes) ne donne
 pas accès aux tuiles haut de gamme ni aux kits de bâtiment, et une
@@ -3905,6 +3905,11 @@ monde noté dans `MEMORY.md`.
 
 **Origine** — Devis du 11 octobre 2026 (test à 8 générations, puis la
 texture de caisse).
+
+*État* — Romain a pris le palier 1 (« Pixel Apprentice ») le 11 octobre
+2026 : 2 000 générations par cycle, remises à zéro le 11 de chaque mois
+(prochain : 11 novembre 2026). Les 17 générations d'essai restantes ne
+sont pas reportées.
 
 ### `hd2d/build-pixellab-asset-pack` · todo
 
