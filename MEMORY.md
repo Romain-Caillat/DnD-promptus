@@ -290,7 +290,7 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   straight on (`view: side`; an isometric object cannot be unskewed into
   a face); **thin or irregular things** (characters, lanterns, ropes,
   signs) are flat billboards. Romain chose it on the prototype of the
-  Corsaires quay brawl (`scripts/pixel-art/work/hd2d/quai.html`) and
+  Corsaires quay brawl (`docs/design/hd2d/quai.html`) and
   preferred textured 3D boxes to flat prop sprites. This overturns the
   side view, the layered characters and the server-only renderer above:
   those entries stand until the tickets that replace them land. Our

@@ -3778,7 +3778,7 @@ animations, sprite de carte redessiné à partir d'un portrait de 256 px.
 (acte 1, scène 4) montée en Three.js à partir de la carte
 `quai-port-louis` : lumière des lanternes, brouillard, ombres, flou de
 profondeur, une passe de combat avec les vrais jets
-(`scripts/pixel-art/work/hd2d/quai.html`, artefact « Quai de
+(`docs/design/hd2d/quai.html`, artefact « Quai de
 Port-Louis »). Test PixelLab de 9 générations dedans : Gueule-Rouge et
 un marin animés, une façade d'entrepôt (excellente pour 1 génération),
 des lanternes, une texture de face de caisse. Romain a préféré les
@@ -3799,7 +3799,7 @@ donne pas accès aux tuiles haut de gamme ni aux kits de bâtiment.
 
 Décision : `MEMORY.md` §2 (« the platform renders in HD-2D »).
 Prototype de référence : la bagarre du quai des Corsaires,
-`scripts/pixel-art/work/hd2d/quai.html` (artefact « Quai de
+`docs/design/hd2d/quai.html` (artefact « Quai de
 Port-Louis »). Règle de forme : ce qui a du volume est une forme 3D
 texturée par des images PixelLab vues de face ; les personnages et ce
 qui est fin ou irrégulier sont des images plates tournées vers la
