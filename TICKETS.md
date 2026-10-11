@@ -45,9 +45,14 @@ vraie plateforme, en jouant, et s'itère.
 
 **Priorité de Romain (11 octobre 2026).** Le travail porte d'abord sur
 la nouvelle création de campagne, branchée sur PixelLab et le rendu
-HD-2D : `campaign/start-from-a-scene`, `campaign/generate-scene-visuals`,
-`campaign/preview-scene-in-hd2d`, et l'épic `hd2d` qui les porte. Le
-reste de l'ordre ci-dessous attend.
+HD-2D : les trois tickets vont ensemble et passent par Claude :
+`campaign/prepare-with-claude` (préparer en conversation),
+`campaign/import-pixellab-assets` (Claude génère chez PixelLab et dépose
+dans Promptus), `campaign/watch-prep-in-hd2d` (l'Atlas devient le
+visualiseur HD-2D), avec l'épic `hd2d` qui les porte. L'ordre :
+le premier, puis `hd2d/render-board-in-three` et le troisième, puis le
+deuxième une fois l'abonnement PixelLab pris. Le reste de l'ordre
+ci-dessous attend.
 
 La méthode derrière cet ordre — quatre chaînes (règles, campagne,
 soirée, retour) tirées des deux parties que Romain a menées à la main —
@@ -297,74 +302,6 @@ PCT 100 et l'enregistrement DNS chez Ionos, installer la boucle de
 déploiement sur l'hôte Proxmox — puis le test du téléphone en 4G, qui
 attend aussi `session/invite-and-join`. `prod-deploy.sh` n'a pas pu
 tourner sans conteneur cible.
-
----
-
-### `platform/connect-claude-mcp` · doing — reste l'essai réel depuis Claude Desktop
-
-**Pourquoi** — Romain veut préparer sa campagne en parlant à son propre
-Claude (Claude Desktop ou Claude Code sur son Mac), qui modifie
-directement la campagne dans Promptus.
-
-**Périmètre** — Jetons personnels du MJ : créés, nommés, listés et
-révoqués depuis son espace, montrés une seule fois, stockés hachés,
-acceptés par le serveur en en-tête `Authorization` sur les routes de
-préparation seulement (pas d'invitation, pas de compte, pas de soirée).
-Un serveur MCP local (lancé par Claude sur le Mac, il parle à Promptus
-avec le jeton) : lister les campagnes, lire une campagne ou une scène,
-lire les alertes de cohérence, appliquer des modifications ciblées,
-exporter et importer le fichier de campagne. Mêmes garde-fous que
-l'écran : modifications validées par le serveur, tout ou rien ; rien
-n'atteint les joueurs sans la validation du MJ dans Promptus. Une page
-d'aide dit comment le déclarer dans Claude.
-
-*Hypothèse* — Claude tourne sur le Mac de Romain. Claude sur le web
-demanderait un serveur joignable depuis internet avec OAuth : hors
-périmètre.
-
-**Étapes** — Jetons (table, création, révocation, garde) → serveur MCP
-et ses outils → page d'aide et réglage dans l'espace MJ → essai réel
-depuis Claude Desktop.
-
-**Fini quand** — Depuis Claude Desktop, Romain demande « ajoute un
-indice vers le quai dans la scène de l'auberge », la scène change dans
-Promptus, et un jeton révoqué est refusé.
-
-**Risques** — Un jeton qui fuit donne la main sur les campagnes : portée
-limitée à la préparation, révocation immédiate, jamais affiché deux
-fois.
-
-**Origine** — Demande de Romain, 8 octobre 2026.
-
-*État* — Depuis son accueil MJ, Romain crée un jeton nommé « pour
-Claude », le copie (il n'est montré qu'une fois), voit quand chaque
-jeton a servi pour la dernière fois et le révoque d'un clic ; un jeton
-révoqué est refusé à l'appel suivant. Un jeton ne sert qu'à la
-préparation : lister les campagnes, lire une campagne, exporter,
-réimporter par-dessus une campagne existante, appliquer des
-modifications ciblées, lire la jauge des actes. Il ne peut ni créer de
-jeton, ni inviter, ni toucher à la table, à la soirée ou à quoi que ce
-soit qui dépense le budget IA, ni déclarer la campagne jouable : ce
-geste reste celui du MJ dans Promptus (les alertes du validateur
-reviennent à chaque lecture et chaque modification). Le serveur MCP
-local donne à Claude sept outils décrits en français (lister, lire une
-campagne, lire une scène, alertes de cohérence, modifier l'histoire,
-exporter, importer) ; une modification refusée n'applique rien et Claude
-lit pourquoi. Le même panneau montre la configuration à coller dans
-Claude Desktop et la commande pour Claude Code, jeton compris juste
-après sa création. Testé de bout en bout côté serveur et côté outils
-(appels simulés) ; pas encore essayé depuis le vrai Claude Desktop.
-*Mis à jour par `platform/stream-prep-edits`* : une écriture par jeton
-entre aussi dans le journal des révisions ; le MJ la voit arriver sur son
-écran de préparation ouvert et peut l'annuler tant que rien ne l'a
-recouverte. Elle s'applique toujours directement (les propositions
-viennent avec `platform/propose-edits-by-claude`).
-*Décision tranchée* (`platform/propose-edits-by-claude`, 11 octobre
-2026) — une écriture par jeton ne s'applique plus jamais d'elle-même :
-elle devient une proposition que le MJ garde ou jette dans Promptus.
-Pendant une soirée ouverte, Claude ne fait que proposer, même si le MJ
-lui a donné la main ; remplacer toute la campagne par un fichier n'est
-possible qu'avec la main, hors soirée.
 
 ---
 
@@ -2177,72 +2114,87 @@ Goulven au Perroquet Noyé. Le choix revient à Romain.
 
 ---
 
-### `campaign/start-from-a-scene` · todo
+### `campaign/prepare-with-claude` · todo
 
 **Pourquoi** — La création actuelle (`/campagnes/nouvelle` puis
 `/generer`) demande un formulaire avant toute idée, fait saisir l'idée
 deux fois, demande le budget IA trop tôt et aboutit à une campagne
-vide. Un MJ part d'une image de scène, pas d'un formulaire.
+vide. Romain prépare désormais en parlant à son Claude, et le MCP
+Promptus a fait ses preuves : la préparation devient une conversation,
+l'app ne sert plus qu'à regarder et à valider.
 
-**Périmètre** — Le parcours de la planche « Créer · la campagne de
-Romain (refonte) » du canevas, en remplacement des deux pages
-actuelles : (1) départ d'une idée, d'un fichier ou d'une page blanche ;
-(2) une scène écrite comme on la raconte, d'ouverture ou de fin, dont
-le co-MJ lit l'univers et le ton, corrigeables ; (3) autour d'elle, des
-cartes proposées (le lieu, deux PNJ, trois indices, une tension et son
-horloge de 6 étapes), chacune gardée, modifiée ou jetée ; la jauge
-« Ta prochaine soirée » en 7 points ; (4) les indices gardés deviennent
-des scènes proposées en pointillés, à rebours si l'on est parti de la
-fin ; (5) les règles demandées au premier combat ; (6) « Jouable » : le
-titre et l'accroche ne sont demandés qu'à ce moment-là, pour inviter la
-table, et « Écrire tout l'arc » reste une option chiffrée. Rien n'est
-gardé sans le MJ (règle 1) ; le coût IA est affiché à chaque
-proposition.
+**Périmètre** — Un skill Claude « préparer ma prochaine soirée », livré
+avec `mcp/` et utilisable depuis Claude Desktop comme depuis Claude
+Code, qui suit les moments de la planche « Créer · la campagne de
+Romain (refonte) » : (1) départ d'une idée, d'un fichier ou d'une
+campagne existante ; (2) Romain raconte une scène, d'ouverture ou de
+fin, et Claude en tire l'univers et le ton, à confirmer ; (3) Claude
+propose autour d'elle le lieu, deux PNJ, trois indices et une tension
+avec son horloge de 6 étapes, chacun en proposition gardée ou jetée
+par Romain ; (4) les indices gardés deviennent des scènes proposées, à
+rebours si l'on est parti de la fin ; (5) les règles au premier
+combat ; (6) « Jouable » selon `get_readiness`, puis seulement le
+titre et l'accroche pour inviter la table. Les outils MCP qui manquent
+pour ces cartes (tension et horloge, scène à rebours) sont ajoutés,
+toujours en propositions (`platform/propose-edits-by-claude`). Les
+pages `/campagnes/nouvelle` et `/generer` sont retirées ; la variante
+fichier reste.
 
-**Fini quand** — Romain prépare sa prochaine soirée dans l'app en
-partant d'une scène, sans passer par l'ancien formulaire, et la jauge
-dit « Jouable ».
+**Fini quand** — Romain prépare sa prochaine soirée en conversation
+avec Claude, de la première scène à « Jouable », sans ouvrir de
+formulaire dans l'app.
 
-**Origine** — Demande de Romain, 10 octobre 2026 ; planche « Créer · la
-campagne de Romain (refonte) », page « MJ · Créer » du canevas.
+**Origine** — Demande de Romain, 10 et 11 octobre 2026 ; planche « Créer
+· la campagne de Romain (refonte) », page « MJ · Créer » du canevas ;
+`docs/claude-mcp.md`.
 
-### `campaign/generate-scene-visuals` · todo
+### `campaign/import-pixellab-assets` · todo
 
-**Pourquoi** — Une carte gardée doit pouvoir devenir ce que la table
-verra : le lieu en HD-2D, les PNJ en pixel art, sans que le MJ dessine.
+**Pourquoi** — Ce que Claude prépare doit devenir ce que la table verra
+(le lieu en HD-2D, les PNJ en pixel art) sans que Romain dessine ni
+copie de fichier.
 
-**Périmètre** — Dans la création, une carte « lieu » gardée propose sa
-carte de grille (`maps/generate-map-llm`) et la liste des éléments
-PixelLab qui lui manquent dans le thème (`hd2d/build-pixellab-asset-pack`) ;
-une carte « PNJ » gardée propose son personnage PixelLab
-(`hd2d/show-pixellab-characters`). Chaque lot annonce son coût en
-générations avant de partir, et rien ne s'affiche aux joueurs sans
-validation du MJ. Ce qui existe déjà dans le thème est réutilisé, pas
-regénéré.
+**Périmètre** — Un outil MCP Promptus qui reçoit une image PixelLab (son
+adresse) et l'attache en proposition : élément d'un thème (texture vue
+de face d'une matière ou d'une face d'accessoire, façade, accessoire
+plat), personnage ou PNJ avec ses directions et animations. Le serveur
+télécharge l'image lui-même et la range dans `media_assets`, en
+attente de validation comme les autres images. Le skill de
+`campaign/prepare-with-claude` enchaîne les deux MCP : pour un lieu ou
+un PNJ gardé, Claude dresse la liste de ce qui manque au thème, annonce
+le coût en générations, génère chez PixelLab après l'accord de Romain,
+ramène les couleurs sur la palette du thème et dépose le résultat. Ce
+qui existe déjà dans le thème est réutilisé, jamais regénéré. Règle de
+forme : `MEMORY.md` §2.
 
-**Fini quand** — Pour la scène d'ouverture de la prochaine soirée,
-Romain obtient depuis la création le lieu et ses PNJ en éléments
-PixelLab validés, avec le coût total affiché.
+**Fini quand** — Pour la scène d'ouverture de la prochaine soirée, le
+lieu et ses PNJ arrivent dans Promptus en éléments PixelLab, validés
+par Romain, avec le coût total annoncé avant chaque lot.
 
-**Origine** — Priorité de Romain, 11 octobre 2026 ; devis PixelLab du
-même jour.
+**Origine** — Priorité de Romain, 11 octobre 2026 ; test PixelLab du même
+jour. Dépend de `media/choose-pixellab-plan`.
 
-### `campaign/preview-scene-in-hd2d` · todo
+### `campaign/watch-prep-in-hd2d` · todo
 
-**Pourquoi** — Le MJ doit voir la scène comme la table la verra avant
-de la dire prête.
+**Pourquoi** — L'éditeur devient un visualiseur : Romain édite la
+campagne avec Claude et voit le rendu.
 
-**Périmètre** — Pendant la création, la scène gardée s'ouvre dans le
-rendu HD-2D (`hd2d/render-board-in-three`), avec ses éléments générés
-et ses PNJ posés à leur place ; ce qui manque encore est signalé
-plutôt que caché. La jauge « Ta prochaine soirée » compte « la scène
-se voit » parmi ses points.
+**Périmètre** — L'Atlas montre la scène en préparation dans le rendu
+HD-2D (`hd2d/render-board-in-three`), mis à jour en direct à chaque
+modification de Claude (`platform/stream-prep-edits`) : lieux,
+éléments et PNJ posés à leur place, propositions en attente visibles
+et distinguées de ce qui est validé, garder ou jeter d'un geste. Ce
+qui manque encore (élément pas généré, PNJ sans personnage) est
+signalé plutôt que caché. L'édition à la main se réduit aux retouches.
 
-**Fini quand** — La scène d'ouverture de la prochaine soirée se
-regarde dans l'app comme le prototype du quai
-(`docs/design/hd2d/quai.html`), sur ordinateur et sur la TV.
+**Fini quand** — Pendant que Romain prépare avec Claude, l'Atlas ouvert
+à côté montre la scène d'ouverture en HD-2D changer sous ses yeux,
+comme le prototype du quai (`docs/design/hd2d/quai.html`), sur
+ordinateur et sur la TV.
 
-**Origine** — Priorité de Romain, 11 octobre 2026.
+**Origine** — Romain, 11 octobre 2026 : « Je vois bien l'éditeur plus
+devenir un visualisateur. J'édite la campagne avec Claude et je vois le
+rendu. »
 
 ## Épic `ai`
 
