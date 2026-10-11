@@ -2449,8 +2449,9 @@ toutes les scènes d'un acte (Port-Louis porte les 9 scènes de l'acte 1).
 
 **Périmètre**
 
-- **Une frise par acte**, dans l'ordre des actes : son titre, sa soirée
-  prévue, puis les cartes que ses scènes traversent, dans l'ordre du
+- **Une frise par acte**, dans l'ordre des actes : un acte est une
+  soirée (« Soir 1 · L'Offre qu'on ne refuse pas »), aucun champ à
+  ajouter ; puis les cartes que ses scènes traversent, dans l'ordre du
   chemin entre les scènes (départ de la campagne ou ouverture de l'acte,
   puis les sorties). Des scènes au choix (des sorties parallèles)
   forment un embranchement : leurs cartes sont empilées sur la même
