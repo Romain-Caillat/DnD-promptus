@@ -4128,7 +4128,11 @@ compris ; le balayage des fuites passe dessus. *Décision* : une carte de
 la campagne encore en brouillon n’a pas de vue joueurs (la table ne
 reçoit que des cartes validées) — l’Atlas le dit et renvoie vers la
 validation. Claude n’a pas cette route : il a déjà « ce que voient les
-joueurs depuis une case » dans `ask_map`. Reste l’essai réel, la télé à
-côté de l’Atlas.
+joueurs depuis une case » dans `ask_map`. La télé dessine maintenant,
+elle aussi, les épingles des lieux visités et les indices trouvés
+qu’elle recevait sans les montrer. ⚠️ Une différence de dessin
+demeure : sur une région en hexagones, la télé dessine des cases
+carrées, là où l’Atlas et les téléphones dessinent des hexagones ; le
+contenu reçu est le même. Reste l’essai réel, la télé à côté de l’Atlas.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).

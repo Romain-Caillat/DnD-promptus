@@ -2729,8 +2729,8 @@
       "switch": "Vue MJ ou vue joueurs",
       "gm": "Vue MJ",
       "players": "Vue joueurs",
-      "shown": "Sur la table en ce moment : la télé et les téléphones montrent exactement ceci.",
-      "ahead": "Pas encore sur la table : voici ce que la télé et les téléphones montreraient si vous la montriez maintenant.",
+      "shown": "Sur la table en ce moment : c’est exactement ce que reçoivent la télé et les téléphones.",
+      "ahead": "Pas encore sur la table : c’est ce que recevraient la télé et les téléphones si vous la montriez maintenant.",
       "errors": {
         "MAP_DRAFT": "Cette carte est un brouillon : validez-la dans l’éditeur pour la montrer, et donc pour la voir comme les joueurs.",
         "NO_SUCH_MAP": "Cette carte n’existe plus.",

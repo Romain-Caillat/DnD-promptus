@@ -5,6 +5,7 @@ import { Hearts } from '@/components/game/Hearts'
 import { MusicPlayer } from '@/features/evening/MusicPlayer'
 import { eventLine } from '@/features/map/events'
 import { MapCanvas } from '@/features/map/MapCanvas'
+import { playerMarks } from '@/features/map/pins'
 import { readGrid } from '@/features/map/render'
 import { useImage } from '@/features/map/useImage'
 import { useTileset } from '@/features/map/useTileset'
@@ -186,6 +187,7 @@ function MapFocus({ view, media, fight }: { view: ScreenView; media: MediaList |
         <MapCanvas
           scene={{ map: board.map, tileset, atlases, backdrop, tokens: board.tokens, tile }}
           className="size-full overflow-hidden rounded-none border-0"
+          pins={fight ? [] : playerMarks(board.pins, board.clues)}
         />
       </div>
       <aside className="tv-party" aria-label={t('tv.party')}>

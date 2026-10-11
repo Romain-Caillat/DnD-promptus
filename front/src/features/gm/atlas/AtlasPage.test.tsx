@@ -604,7 +604,7 @@ describe('AtlasPage', () => {
     expect(container.querySelectorAll('[data-proposed]')).toHaveLength(1)
 
     await userEvent.click(screen.getByRole('button', { name: 'Vue joueurs' }))
-    await screen.findByText(/télé et les téléphones montreraient/)
+    await screen.findByText(/recevraient la télé et les téléphones/)
     expect(sentTo(fetchMock, 'GET /api/campaigns/c1/maps/region/players')).toHaveLength(1)
     // Only what the route returned: the pin by its name, no number, nothing of Claude's.
     expect(container.querySelectorAll('[data-proposed]')).toHaveLength(0)
