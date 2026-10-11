@@ -418,6 +418,10 @@ pub struct AtlasView {
     pub castable: Castable,
     /// The acts, in order, for the thread's act filter.
     pub acts: Vec<AtlasAct>,
+    /// The maps each act's scenes cross, in the order of the story, maps
+    /// to create included, then the maps no scene crosses
+    /// (campaign/order-maps-by-story).
+    pub frieze: promptus_shared::story::frieze::Frieze,
     /// Claude's batches still waiting on the GM
     /// (`platform/propose-edits-by-claude`), oldest first; each map says
     /// what they would add on it (`AtlasMap::proposed`).
@@ -550,6 +554,7 @@ pub struct AtlasLink {
 /// 404; a database error.
 pub async fn atlas(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<AtlasView, AppError> {
     use promptus_shared::maps::atlas::{self as tree, Origin, Sheet};
+    use promptus_shared::story::frieze;
     let row = owned_by(campaigns::find(pool, campaign).await?, gm)?;
     let own = all(pool, campaign).await?;
     let sheets: Vec<Sheet<'_>> = content::maps(&row.story)
@@ -605,6 +610,15 @@ pub async fn atlas(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Atla
         .collect::<Vec<_>>();
     let shown: Vec<Map> = maps.iter().map(|m| m.map.clone()).collect();
     let story = &row.story;
+    let known: Vec<frieze::Known<'_>> = shown
+        .iter()
+        .map(|m| frieze::Known {
+            id: &m.id,
+            name: &m.name,
+            scale: m.scale,
+        })
+        .collect();
+    let frieze = frieze::frieze(story, &known);
     let mut maps = maps;
     for m in &mut maps {
         m.cast = cast::on_map(story, &m.map.id, &shown);
@@ -634,6 +648,7 @@ pub async fn atlas(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Atla
         claude_hand: row.claude_hand,
         revision: row.prep_revision,
         roots: built.roots,
+        frieze,
         places: story
             .locations
             .iter()

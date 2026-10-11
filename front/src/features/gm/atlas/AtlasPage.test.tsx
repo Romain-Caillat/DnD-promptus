@@ -72,6 +72,10 @@ const ATLAS = {
   issues: [],
   castable: { npcs: [], clues: [], fights: [], scenes: [] },
   acts: [],
+  frieze: { acts: [], outside: ['region', 'quai', 'cale', 'rues'] } as {
+    acts: { act: string; title: string; evening: number; slots: { stops: Record<string, unknown>[] }[] }[]
+    outside: string[]
+  },
 }
 
 const ok = (data: unknown) => ({ status: 200, body: { data } })
@@ -209,12 +213,19 @@ describe('AtlasPage', () => {
     expect(screen.queryByText('Mouillage anglais')).not.toBeInTheDocument()
     expect(screen.getByText('Port-Louis')).toBeInTheDocument()
 
-    // Claude (or the GM elsewhere) adds a map: the strip shows it.
-    atlas = { ...ATLAS, roots: [...ATLAS.roots, 'crypte'], maps: [...ATLAS.maps, sheet('crypte', 'La crypte', 'encounter')] }
+    // Claude (or the GM elsewhere) adds a map no scene crosses yet: the frieze shows it outside the story.
+    atlas = {
+      ...ATLAS,
+      roots: [...ATLAS.roots, 'crypte'],
+      maps: [...ATLAS.maps, sheet('crypte', 'La crypte', 'encounter')],
+      frieze: { acts: [], outside: [...ATLAS.frieze.outside, 'crypte'] },
+    }
     FakeSocket.all[0].push({ type: 'ready', versions: { prep: 3 } })
     FakeSocket.all[0].push({ type: 'changed', topic: 'prep', version: 4 })
-    const strip = screen.getByRole('navigation', { name: 'Toutes les cartes' })
-    expect(await within(strip).findByRole('button', { name: /La crypte/ })).toBeInTheDocument()
+    const outside = within(screen.getByRole('navigation', { name: 'La frise de l’histoire' })).getByRole('region', {
+      name: 'Hors de l’histoire',
+    })
+    expect(await within(outside).findByRole('button', { name: /La crypte/ })).toBeInTheDocument()
   })
 
   it('draws a place light while the fingers move it, then sharp again', async () => {
@@ -843,5 +854,121 @@ describe('AtlasPage', () => {
     // Back to the plan: the flat map again.
     await userEvent.click(screen.getByRole('button', { name: 'Plan' }))
     await screen.findByRole('img', { name: 'Carte : Le quai' })
+  })
+
+  it('lays the maps out act by act, opens a stop on its map and makes the map a place lacks', async () => {
+    stubReducedMotion(true)
+    vi.stubGlobal('WebSocket', FakeSocket)
+    FakeSocket.all = []
+    const scene = (id: string, number: number, title: string) => ({ id, number, title })
+    const frieze = (first: Record<string, unknown>) => ({
+      acts: [
+        {
+          act: 'acte_1',
+          title: 'L’Offre',
+          evening: 1,
+          slots: [
+            { stops: [first] },
+            {
+              stops: [
+                { map: 'quai', name: 'Le quai', scenes: [scene('sc_b', 2, 'Le marché')] },
+                { map: 'rues', name: 'Les rues', scenes: [scene('sc_c', 3, 'Le chantier')] },
+              ],
+            },
+            { stops: [{ map: 'cale', name: 'La cale', scenes: [scene('sc_d', 4, 'La bagarre')] }] },
+          ],
+        },
+        { act: 'acte_2', title: 'Le large', evening: 2, slots: [] },
+      ],
+      outside: ['region'],
+    })
+    const tavern = { place: 'l_taverne', name: 'Le Perroquet Noyé', scenes: [scene('sc_a', 1, 'L’arrivée')] }
+    const stop = (act: string) => ({ scene: `sc_${act}`, place: 'l_quai', act, start: true, end: true })
+    let atlas: Omit<typeof ATLAS, 'maps'> & { maps: unknown[] } = {
+      ...ATLAS,
+      maps: ATLAS.maps.map((m) =>
+        m.map.id === 'quai' ? { ...m, thread: { segments: [], stops: [stop('acte_1'), stop('acte_2')] } } : m,
+      ),
+      places: [{ id: 'l_taverne', name: 'Le Perroquet Noyé', parent: null, anchor: null }] as never[],
+      acts: [
+        { id: 'acte_1', title: 'L’Offre' },
+        { id: 'acte_2', title: 'Le large' },
+      ] as never[],
+      frieze: frieze(tavern),
+    }
+    const made = sheet('perroquet', 'Le Perroquet Noyé', 'place', {}, { origin: 'campaign' })
+    const fetchMock = mockApi({
+      ...CAMPAIGN,
+      'GET /api/campaigns/c1/atlas': () => ok(atlas),
+      'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
+      'GET /api/campaigns/c1/maps': () => ok({ maps: [], world: [{ id: 'rues', name: 'Les rues' }] }),
+      'POST /api/campaigns/c1/maps': () => ({
+        status: 201,
+        body: {
+          data: { map: made.map, source: 'editor', node: null, backdrop: false, validatedAt: null, updatedAt: '', revision: 3 },
+        },
+      }),
+      'POST /api/campaigns/c1/story/edits': () => {
+        atlas = { ...atlas, maps: [...atlas.maps, made], frieze: frieze({ ...tavern, place: undefined, map: 'perroquet' }) }
+        return ok({ campaign: {}, changes: [] })
+      },
+    })
+    render(
+      <MemoryRouter initialEntries={['/campagnes/c1/atlas']}>
+        <Routes>
+          <Route
+            path="/campagnes/:campaignId/atlas"
+            element={
+              <>
+                <AtlasPage />
+                <Where />
+              </>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    )
+    await screen.findByRole('img', { name: 'Les côtes' })
+    const strip = () => screen.getByRole('navigation', { name: 'La frise de l’histoire' })
+    const evening = (name: string) => within(strip()).getByRole('region', { name })
+
+    // One evening per act; the branch's maps share one slot; the region no scene crosses comes last, marked as shown.
+    const first = evening('Soir 1 · L’Offre')
+    const branch = within(first).getByRole('group', { name: 'Au choix' })
+    expect(within(branch).getAllByRole('button').map((b) => b.textContent)).toEqual(['LIEULe quai', 'LIEULes rues'])
+    expect(within(evening('Hors de l’histoire')).getByRole('button', { name: /Les côtes/ })).toHaveAttribute('aria-current', 'page')
+
+    // A stop opens its map, marked in the frieze, with its act's scenes put forward in the thread.
+    await userEvent.click(within(branch).getByRole('button', { name: /Le quai/ }))
+    await screen.findByRole('img', { name: 'Carte : Le quai' })
+    expect(within(branch).getByRole('button', { name: /Le quai/ })).toHaveAttribute('aria-current', 'page')
+    expect(within(screen.getByRole('group', { name: 'Acte du fil' })).getByRole('button', { name: 'L’Offre' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+
+    // The tavern has no map: its stop leads to the drawer's maps, the place's map ready to make.
+    await userEvent.click(within(first).getByRole('button', { name: 'Le Perroquet Noyé — pas de carte' }))
+    expect(screen.getByRole('status', { name: 'adresse' })).toHaveTextContent('onglet=cartes')
+    expect(screen.getByRole('status', { name: 'adresse' })).toHaveTextContent('lieu=l_taverne')
+    expect(await screen.findByRole('textbox', { name: 'Nom de la carte du lieu' })).toHaveValue('Le Perroquet Noyé')
+    await userEvent.click(screen.getByRole('button', { name: 'Créer la carte du lieu' }))
+
+    // Made, the place pinned in its middle: the Atlas shows it and the frieze takes it.
+    await waitFor(() => expect(sentTo(fetchMock, 'POST /api/campaigns/c1/story/edits')).toHaveLength(1))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/maps')).toEqual([{ name: 'Le Perroquet Noyé' }])
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/story/edits')[0]).toEqual({
+      edits: [{ op: 'set', target: 'l_taverne', field: 'anchor', value: { map: 'perroquet', at: [2, 1] } }],
+    })
+    await screen.findByRole('img', { name: 'Carte : Le Perroquet Noyé' })
+    expect(within(evening('Soir 1 · L’Offre')).getByRole('button', { name: /Le Perroquet Noyé/ })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(screen.getByRole('status', { name: 'adresse' })).not.toHaveTextContent('lieu=')
+
+    // An act with no scene yet is written from the drawer's scenes and acts.
+    await userEvent.click(within(evening('Soir 2 · Le large')).getByRole('button', { name: 'Écrire l’acte' }))
+    expect(screen.getByRole('status', { name: 'adresse' })).toHaveTextContent('onglet=graph')
   })
 })

@@ -91,6 +91,10 @@ function atlas(maps: unknown[], roots: string[], claude: unknown[] = []) {
     issues: [],
     castable: { npcs: [], clues: [], fights: [], scenes: [] },
     acts: [{ id: 'acte_1', title: 'Le brick' }],
+    frieze: {
+      acts: [{ act: 'acte_1', title: 'Le brick', evening: 1, slots: [] }],
+      outside: roots,
+    },
     claude,
   }
 }

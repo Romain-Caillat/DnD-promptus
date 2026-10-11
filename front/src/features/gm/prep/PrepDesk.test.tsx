@@ -119,7 +119,7 @@ const ATLAS = {
       { id: 'sc_bureau', title: 'Le bureau de Morel', number: 2 },
     ],
   },
-  acts: [],
+  acts: [],  frieze: { acts: [], outside: [] },
 }
 const AROUND = {
   'GET /api/campaigns/c1/atlas': () => ({ status: 200, body: { data: ATLAS } }),

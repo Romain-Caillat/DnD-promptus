@@ -2686,6 +2686,14 @@
     },
     "layers": "Calques",
     "strip": "Toutes les cartes",
+    "frieze": {
+      "label": "La frise de l’histoire",
+      "evening": "Soir {{number}} · {{title}}",
+      "branch": "Au choix",
+      "missing": "{{name}} — pas de carte",
+      "write": "Écrire l’acte",
+      "outside": "Hors de l’histoire"
+    },
     "scale": {
       "world": "Région",
       "place": "Lieu",
@@ -2858,6 +2866,14 @@
     "blank": "Salle vide (16 × 16)",
     "copyOf": "Copie de « {{name}} »",
     "create": "Créer",
+    "forPlace": {
+      "title": "La carte de « {{name}} »",
+      "hint": "Ce lieu n’a pas encore de carte à lui. Créée ici, elle reçoit son épingle au milieu et prend sa place dans la frise.",
+      "create": "Créer la carte du lieu",
+      "name": "Nom de la carte du lieu",
+      "copy": "Point de départ de la carte du lieu",
+      "claude": "Ou demandez-la à Claude : get_atlas lui donne la carte de « {{name}} » à créer, dans la frise."
+    },
     "importTitle": "Importer une carte",
     "file": "Fichier",
     "importHint": "Une image (PNG, JPEG, WEBP) à caler sur la grille, ou un fichier Universal VTT (.dd2vtt, .uvtt) avec ses murs, portes et lumières.",

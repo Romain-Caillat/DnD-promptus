@@ -12,6 +12,7 @@
 //! - [`pins`] — where the scenes stand on the maps, from their places;
 //! - [`cast`] — the NPCs, clues and fights placed on the maps;
 //! - [`thread`] — the thread of the scenes' exits, drawn between their pins;
+//! - [`frieze`] — the maps each act crosses, in the order of its scenes;
 //! - [`sketch`] — a map as text, for Claude;
 //! - [`placing`] — placing by name on a map, and the engine's questions;
 //! - [`prune`] — dropping the ids a model invented;
@@ -21,6 +22,7 @@
 pub mod cast;
 pub mod edit;
 pub mod encounter;
+pub mod frieze;
 pub mod library;
 pub mod model;
 pub mod pins;

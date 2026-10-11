@@ -179,10 +179,34 @@ export interface Atlas {
   }
   /** The acts in order, for the thread's filter. */
   acts: { id: string; title: string }[]
+  /** The maps each act's scenes cross, in story order (campaign/order-maps-by-story). */
+  frieze: Frieze
   /** Claude's batches waiting on the GM, oldest first (platform/propose-edits-by-claude). */
   claude?: Proposal[]
   /** « Claude a la main »: Claude's writes land directly. */
   claudeHand?: boolean
+}
+
+/**
+ * A stop of the story frieze: the atlas map some scenes of an act stand
+ * on, or — with `place` and no `map` — the map still to create for the
+ * place of those scenes.
+ */
+export interface FriezeStop {
+  map?: string
+  place?: string
+  name: string
+  scenes: PinScene[]
+}
+
+/**
+ * The story frieze (campaign/order-maps-by-story), computed by the server:
+ * per act, one per evening, its slots in the order of the story — a slot
+ * of several stops is a branch — then the maps no scene crosses.
+ */
+export interface Frieze {
+  acts: { act: string; title: string; evening: number; slots: { stops: FriezeStop[] }[] }[]
+  outside: string[]
 }
 
 export function fetchAtlas(campaignId: string): Promise<Atlas> {

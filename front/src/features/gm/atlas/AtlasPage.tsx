@@ -46,6 +46,7 @@ import { Hd2dSection } from './Hd2dSection'
 import { PanelTabs, panelTabOf, shownPanelTab, type PanelTab } from './PanelTabs'
 import { IdeaSection } from './IdeaSection'
 import { ThreadSection } from './ThreadSection'
+import { StoryFrieze, markedStop, type FriezeAt } from './StoryFrieze'
 import { PlayersMap, PlayersSection, usePlayersMap } from './PlayersView'
 
 /** Three.js weighs half a megabyte: only a GM who opens the HD-2D view loads it. */
@@ -105,9 +106,12 @@ const dateFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' })
  * their exits (region in hexes › place › encounter). The GM enters a
  * place by tapping where it opens on its parent (or from the side
  * panel), and zooming out goes back where they came from. The
- * breadcrumb, the map's own layers, the side panel and the strip of
- * every map at the bottom frame it. On a tablet the map is handled with
- * the fingers and the side panel folds away.
+ * breadcrumb, the map's own layers, the side panel and, at the bottom,
+ * the story frieze (campaign/order-maps-by-story: the maps each act
+ * crosses in story order, the maps to create, the ones outside the
+ * story — the plain strip of every map in « Vue joueurs ») frame it. On
+ * a tablet the map is handled with the fingers and the side panel folds
+ * away.
  *
  * It is the one preparation screen (gm/prep-on-atlas): its drawer opens,
  * in place of the map, what has no place on one — scenes and acts with
@@ -194,6 +198,8 @@ export function AtlasPage() {
   const [batch, setBatch] = useState<string | null>(null)
   const [claudeBusy, setClaudeBusy] = useState(false)
   const [claudeFailed, setClaudeFailed] = useState<string | null>(null)
+  /** The frieze's stop last tapped (campaign/order-maps-by-story). */
+  const [tapped, setTapped] = useState<FriezeAt | null>(null)
   /** « Vue MJ / Vue joueurs » (maps/preview-as-player), kept in `?vue=joueurs`. */
   const players = params.get('vue') === 'joueurs'
   /** « Plan / HD-2D » (campaign/watch-prep-in-hd2d), kept in `?rendu=hd2d`. */
@@ -206,6 +212,8 @@ export function AtlasPage() {
   /** The drawer's tab open instead of the map, and the scene chosen in it. */
   const tab = DRAWER.find((x) => x === params.get('onglet')) ?? null
   const deskScene = params.get('scene')
+  /** The place whose map the « Cartes » drawer makes, from the frieze (`?lieu=`). */
+  const deskPlace = params.get('lieu')
   /** What the drawer hears live: the story and the jobs, then the co-GM's and Claude's batches. */
   const [deskLive, setDeskLive] = useState(0)
   const [batchesLive, setBatchesLive] = useState(0)
@@ -338,7 +346,7 @@ export function AtlasPage() {
     setScene(null)
     setFocus(null)
     const last = next[next.length - 1]
-    if (last) query({ carte: last, onglet: null, scene: null })
+    if (last) query({ carte: last, onglet: null, scene: null, lieu: null })
   }
   /** Change some of the address's parameters, keep the others (`null` removes one). */
   function query(patch: Record<string, string | null>) {
@@ -573,7 +581,16 @@ export function AtlasPage() {
     setPicked(null)
     setPlacing(null)
   }
-  const openTab = (next: DrawerTab | null) => query({ carte: shownId, onglet: next, scene: null })
+  const openTab = (next: DrawerTab | null) => query({ carte: shownId, onglet: next, scene: null, lieu: null })
+  /** A stop of the frieze tapped: its map, with that act's scenes put forward in the thread. */
+  const fromFrieze = (id: string, at: FriezeAt | null) => {
+    jump(id)
+    setTapped(at)
+    setAct(at?.act ?? null)
+  }
+  /** A map to create, from the frieze: the « Cartes » drawer, for that place. */
+  const createFor = (place: string) => query({ carte: shownId, onglet: 'cartes', scene: null, lieu: place })
+  const madePlace = deskPlace ? (places.find((p) => p.id === deskPlace) ?? null) : null
   const switchRender = (on: boolean) => query({ carte: shownId, rendu: on ? 'hd2d' : null })
   /** The GM's word on a PixelLab image, from beside the scene. */
   async function decideMedia(asset: string, keep: boolean) {
@@ -637,7 +654,15 @@ export function AtlasPage() {
     ) : tab === 'medias' ? (
       <MediaDesk campaignId={campaignId} live={deskLive} />
     ) : (
-      <MapsDesk campaignId={campaignId} live={deskLive} />
+      <MapsDesk
+        campaignId={campaignId}
+        live={deskLive}
+        place={madePlace ? { id: madePlace.id, name: madePlace.name } : null}
+        onPlaceMap={(id) => {
+          setVersion((v) => v + 1)
+          go(enter(here, id), 'in')
+        }}
+      />
     )
 
   const mapView = !entry || !map ? (
@@ -1068,23 +1093,37 @@ export function AtlasPage() {
           </div>
         )}
 
-        <nav aria-label={t('atlas.strip')} className="flex gap-1.5 overflow-x-auto pb-1">
-          {state.atlas.maps.map((m) => (
-            <button
-              key={m.map.id}
-              type="button"
-              className="pixel-choice flex shrink-0 items-center gap-1.5 py-1.5 pr-2.5 pb-2 text-caption font-semibold"
-              aria-current={m.map.id === shownId ? 'page' : undefined}
-              onClick={() => jump(m.map.id)}
-            >
-              <span className="text-mute-soft" aria-hidden="true">
-                {'·'.repeat(depth(maps, m.map.id))}
-              </span>
-              <span className="text-mute-soft">{t(`atlas.scaleShort.${scaleOf(m)}`)}</span>
-              {m.map.name}
-            </button>
-          ))}
-        </nav>
+        {!players && (
+          <StoryFrieze
+            frieze={state.atlas.frieze}
+            maps={maps}
+            marked={markedStop(state.atlas.frieze, shownId, tapped)}
+            shown={shownId}
+            onMap={fromFrieze}
+            onCreate={createFor}
+            onWrite={() => openTab('graph')}
+          />
+        )}
+        {players && (
+          // « Vue joueurs » keeps every map in nesting order.
+          <nav aria-label={t('atlas.strip')} className="flex gap-1.5 overflow-x-auto pb-1">
+            {state.atlas.maps.map((m) => (
+              <button
+                key={m.map.id}
+                type="button"
+                className="pixel-choice flex shrink-0 items-center gap-1.5 py-1.5 pr-2.5 pb-2 text-caption font-semibold"
+                aria-current={m.map.id === shownId ? 'page' : undefined}
+                onClick={() => jump(m.map.id)}
+              >
+                <span className="text-mute-soft" aria-hidden="true">
+                  {'·'.repeat(depth(maps, m.map.id))}
+                </span>
+                <span className="text-mute-soft">{t(`atlas.scaleShort.${scaleOf(m)}`)}</span>
+                {m.map.name}
+              </button>
+            ))}
+          </nav>
+        )}
       </main>
     </TouchScreen.Provider>
   )

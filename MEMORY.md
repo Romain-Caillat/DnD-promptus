@@ -504,6 +504,11 @@ its places is a warning (`EXIT_WITHOUT_PATH`), never a refusal, and not
 the model's to fix (`prep::for_the_model`); the walk is one flood fill
 per map, made only when a check needs it.
 
+The story frieze (`campaign/order-maps-by-story`) follows the same rule:
+`story::frieze::frieze` walks each act's exits at every atlas read and
+the Atlas and `get_atlas` both read that one order — never recomputed
+in the front or the MCP server. One act is one evening; no field says so.
+
 ### Claude proposes, the GM keeps
 
 A write with the GM's token (`Credential::Token`) on the story or a map

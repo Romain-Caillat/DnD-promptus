@@ -43,7 +43,7 @@ anything else is 403 `TOKEN_NOT_ALLOWED`.
 | `GET /api/campaigns/{id}/maps` | — (the campaign's own maps; `get_atlas` covers them all) |
 | `GET /api/campaigns/{id}/maps/{map}` | `edit_map` (reads the `revision` first) |
 | `POST /api/campaigns/{id}/maps/{map}/ops` | `edit_map` (a batch of map operations, below — proposed too) |
-| `GET /api/campaigns/{id}/atlas` | `get_atlas` (every map nested, what stands on each, the places, the scenes without a pin) |
+| `GET /api/campaigns/{id}/atlas` | `get_atlas` (every map nested, what stands on each, the places, the scenes without a pin; the story frieze — per act, one act per evening, the maps its scenes cross in story order, branches as one slot, maps to create named by their place — and the maps outside the story) |
 | `GET /api/campaigns/{id}/maps/{map}/sketch` | `get_map_text` (the map as text, below; a world map too) |
 | `POST /api/campaigns/{id}/maps/{map}/ask` | `ask_map` (path and cost, line of sight, what players see) |
 | `POST /api/campaigns/{id}/maps/{map}/place` | `place_on_map` (pins, NPCs, clues, fights placed by name — proposed too) |

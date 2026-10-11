@@ -13,7 +13,7 @@ import {
   type MapImport,
   type MapListing,
 } from '@/lib/maps'
-import { fetchReview, type Story } from '@/lib/prep'
+import { applyEdits, fetchReview, type Story } from '@/lib/prep'
 
 type PageState =
   | { kind: 'loading' }
@@ -55,8 +55,24 @@ function readFile(file: File, as: 'text' | 'dataUrl'): Promise<string> {
  * aligned on a grid (maps/import-image-map). Each opens in the editor;
  * only a validated one reaches the table. `live` moves with every
  * preparation revision (a map added or changed elsewhere).
+ *
+ * Opened from a map to create in the story frieze
+ * (campaign/order-maps-by-story), it first offers that place's map: its
+ * name ready, blank or copied from the world's, and the place pinned in
+ * its middle — the frieze takes it on the next revision, and `onPlaceMap`
+ * shows it in the Atlas.
  */
-export function MapsDesk({ campaignId, live: heard }: { campaignId: string; live: number }) {
+export function MapsDesk({
+  campaignId,
+  live: heard,
+  place = null,
+  onPlaceMap,
+}: {
+  campaignId: string
+  live: number
+  place?: { id: string; name: string } | null
+  onPlaceMap?: (map: string) => void
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [state, setState] = useState<PageState>({ kind: 'loading' })
@@ -69,6 +85,9 @@ export function MapsDesk({ campaignId, live: heard }: { campaignId: string; live
   const [name, setName] = useState('')
   const [copy, setCopy] = useState('')
   const [node, setNode] = useState('')
+  /** The place's map: its name (the place's until typed over) and where it starts from. */
+  const [placeName, setPlaceName] = useState<string | null>(null)
+  const [placeCopy, setPlaceCopy] = useState('')
   const [aligning, setAligning] = useState<Aligning | null>(null)
 
   useEffect(() => {
@@ -114,6 +133,23 @@ export function MapsDesk({ campaignId, live: heard }: { campaignId: string; live
     }
   }
 
+  /** The place's map: made, the place pinned in its middle, then shown in the Atlas. */
+  async function makeForPlace(of: { id: string; name: string }) {
+    setBusy(true)
+    setError(null)
+    try {
+      const made = await createMap(campaignId, { name: (placeName ?? of.name).trim(), copy: placeCopy || undefined })
+      const rows = made.map.grid.rows
+      const at = [Math.floor((rows[0]?.length ?? 1) / 2), Math.floor(rows.length / 2)]
+      await applyEdits(campaignId, [{ op: 'set', target: of.id, field: 'anchor', value: { map: made.map.id, at } }])
+      setBusy(false)
+      onPlaceMap?.(made.map.id)
+    } catch (err) {
+      setError(err instanceof ApiError ? { code: err.code, detail: err.detail } : { code: 'action', detail: null })
+      setBusy(false)
+    }
+  }
+
   async function chooseFile(file: File) {
     const base = file.name.replace(/\.[^.]+$/, '')
     if (UVTT.test(file.name)) {
@@ -150,6 +186,36 @@ export function MapsDesk({ campaignId, live: heard }: { campaignId: string; live
           })}
           {error.detail && error.code !== 'INVALID_BODY' && <span className="block text-caption">{error.detail}</span>}
         </p>
+      )}
+
+      {place && (
+        <Panel title={t('maps.forPlace.title', { name: place.name })}>
+          <p className="text-caption text-mute-soft">{t('maps.forPlace.hint', { name: place.name })}</p>
+          <input
+            className={field}
+            value={placeName ?? place.name}
+            maxLength={80}
+            onChange={(e) => setPlaceName(e.target.value)}
+            aria-label={t('maps.forPlace.name')}
+          />
+          <select
+            className={field}
+            value={placeCopy}
+            onChange={(e) => setPlaceCopy(e.target.value)}
+            aria-label={t('maps.forPlace.copy')}
+          >
+            <option value="">{t('maps.blank')}</option>
+            {listing.world.map((w) => (
+              <option key={w.id} value={w.id}>
+                {t('maps.copyOf', { name: w.name })}
+              </option>
+            ))}
+          </select>
+          <Btn main disabled={busy || !(placeName ?? place.name).trim()} onClick={() => void makeForPlace(place)}>
+            {t('maps.forPlace.create')}
+          </Btn>
+          <p className="text-caption text-mute-soft">{t('maps.forPlace.claude', { name: place.name })}</p>
+        </Panel>
       )}
 
       <section className="flex flex-col gap-2" aria-label={t('maps.mine')}>

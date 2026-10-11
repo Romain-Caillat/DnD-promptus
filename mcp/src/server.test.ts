@@ -383,6 +383,26 @@ describe('promptus MCP server', () => {
             places: [{ id: 'lieu_port', name: 'Le port', parent: null, anchor: { map: 'cotes', at: [2, 1] } }],
             unplaced: [{ id: 'sc_reve', title: 'Le rêve' }],
             issues: [],
+            frieze: {
+              acts: [
+                {
+                  act: 'acte_1',
+                  title: 'L’Offre',
+                  evening: 1,
+                  slots: [
+                    { stops: [{ place: 'lieu_taverne', name: 'La taverne', scenes: [{ id: 'sc_taverne', title: 'La taverne' }] }] },
+                    {
+                      stops: [
+                        { map: 'rues', name: 'Les rues', scenes: [{ id: 'sc_marche', title: 'Le marché' }] },
+                        { map: 'quai', name: 'Le quai', scenes: [{ id: 'sc_chantier', title: 'Le chantier' }] },
+                      ],
+                    },
+                  ],
+                },
+                { act: 'acte_2', title: 'Le large', evening: 2, slots: [] },
+              ],
+              outside: ['cotes'],
+            },
           },
         },
       }),
@@ -395,6 +415,21 @@ describe('promptus MCP server', () => {
     expect(a.cartes[0].pnj).toEqual([{ pnj: 'pnj_gwen', case: '[1, 1]' }])
     expect(a.lieux[0].épingle).toBe('cotes [2, 1]')
     expect(a.scènes_sans_épingle).toEqual(['sc_reve (Le rêve)'])
+    // The story's order, act by act: a map to create names its place, a branch is one slot of several maps.
+    expect(a.frise[0]).toEqual({
+      soir: 1,
+      acte: 'acte_1',
+      titre: 'L’Offre',
+      cases: [
+        [{ carte_à_créer_pour: 'lieu_taverne', nom: 'La taverne', scènes: ['sc_taverne'] }],
+        [
+          { carte: 'rues', nom: 'Les rues', scènes: ['sc_marche'] },
+          { carte: 'quai', nom: 'Le quai', scènes: ['sc_chantier'] },
+        ],
+      ],
+    })
+    expect(a.frise[1].cases).toEqual([])
+    expect(a.hors_de_l_histoire).toEqual(['cotes'])
   })
 
   it('draws a map as text with its legend, a zone on demand', async () => {

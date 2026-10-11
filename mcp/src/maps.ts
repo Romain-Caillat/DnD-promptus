@@ -36,6 +36,19 @@ interface AtlasMap {
   proposed: { proposal: string }[]
 }
 
+/** One map an act's scenes cross, or the map to create for a place (campaign/order-maps-by-story). */
+interface FriezeStop {
+  map?: string
+  place?: string
+  name: string
+  scenes: PinScene[]
+}
+
+interface Frieze {
+  acts: { act: string; title: string; evening: number; slots: { stops: FriezeStop[] }[] }[]
+  outside: string[]
+}
+
 interface Atlas {
   revision: number
   roots: string[]
@@ -45,6 +58,7 @@ interface Atlas {
   issues: Issue[]
   claude: unknown[]
   claudeHand: boolean
+  frieze: Frieze
 }
 
 interface Mark {
@@ -130,7 +144,13 @@ function cells(list: Cell[], max = 6): string {
   return list.length > max ? `${shown} … (+${list.length - max})` : shown
 }
 
-/** The atlas as Claude needs it: the tree, what stands on each map, the places, what is not placed. */
+/** A stop of the frieze: the map and its scenes, or the place whose map is still to create. */
+function friezeStop(s: FriezeStop): Json {
+  const scènes = s.scenes.map((x) => x.id)
+  return s.map ? { carte: s.map, nom: s.name, scènes } : { carte_à_créer_pour: s.place, nom: s.name, scènes }
+}
+
+/** The atlas as Claude needs it: the tree, what stands on each map, the places, what is not placed, the story's order. */
 export function atlasReport(a: Atlas): Json {
   return {
     revision: a.revision,
@@ -159,6 +179,13 @@ export function atlasReport(a: Atlas): Json {
       ...(p.anchor ? { épingle: `${p.anchor.map} ${at(p.anchor.at)}` } : {}),
     })),
     scènes_sans_épingle: a.unplaced.map((s) => `${s.id} (${s.title})`),
+    frise: a.frieze.acts.map((act) => ({
+      soir: act.evening,
+      acte: act.act,
+      titre: act.title,
+      cases: act.slots.map((slot) => slot.stops.map(friezeStop)),
+    })),
+    hors_de_l_histoire: a.frieze.outside,
     alertes: issueReport(a.issues),
   }
 }
@@ -289,7 +316,10 @@ export function registerMapTools(server: McpServer, promptus: () => Promptus) {
       description:
         "L'atlas de la campagne : les cartes (monde et campagne) rangées région › lieu › rencontre, et sur chacune les " +
         'scènes épinglées, les PNJ, indices et combats posés ; les lieux de l\'histoire et leur épingle ; les scènes sans ' +
-        'épingle ; les alertes de placement. Pour voir une carte, get_map_text.',
+        "épingle ; les alertes de placement. Puis la frise de l'histoire : pour chaque acte (un acte = une soirée), les " +
+        "cartes que ses scènes traversent dans l'ordre du chemin — une case de plusieurs cartes est un embranchement " +
+        "(des scènes au choix) — et les cartes à créer (carte_à_créer_pour : le lieu d'une scène qui n'a pas de carte " +
+        "à lui) ; enfin les cartes hors de l'histoire. Pour voir une carte, get_map_text.",
       inputSchema: { campaign_id: campaignId },
       annotations: read,
     },

@@ -2439,7 +2439,7 @@ est au bout de la rangée d'onglets et le panneau replié le reste. **Reste**
 l'essai réel de Romain sur son portable (la région des Corsaires dans le
 premier tiers de l'écran, le pitch écrit à l'aise).
 
-### `campaign/order-maps-by-story` · todo
+### `campaign/order-maps-by-story` · doing — reste l'essai réel de Romain
 
 **Pourquoi** — Romain veut écrire l'histoire en suivant les cartes dans
 l'ordre où les joueurs les traversent. Aujourd'hui la bande de cartes de
@@ -2484,6 +2484,58 @@ frise la prend aussitôt. Tests à jour, lint et tests passent.
 à 4 actes en 4 soirées : « Il me manque les cartes dans l'ordre
 chronologique. C'est surtout comme ça que je veux travailler
 l'histoire. »
+
+*État* — La frise est calculée une fois, côté serveur, par une fonction
+pure testée (`shared/src/story/frieze.rs`), à chaque lecture de l'atlas :
+`GET …/atlas` la renvoie (`frieze` : par acte `evening`, `title`, `slots`
+de `stops`, puis `outside`), et `get_atlas` la donne à Claude (`frise`,
+une case par étape, `carte_à_créer_pour` pour une carte manquante,
+`hors_de_l_histoire`). Dans l'Atlas, en vue MJ, elle remplace la bande
+de cartes (la vue joueurs garde la bande) : « Soir N · titre de l'acte »,
+puis les cases reliées par des flèches, un embranchement empilé dans une
+case (« Au choix »), une carte à créer en pointillés (« Le Perroquet
+Noyé — pas de carte »), un acte vide « Écrire l'acte » (ouvre « Scènes et
+actes »), enfin « Hors de l'histoire ». Elle défile de côté sur téléphone
+et tablette, et suit le direct comme le reste de l'Atlas. Toucher une
+case ouvre sa carte, marque la case et règle le fil sur cet acte ;
+toucher une case à créer ouvre le tiroir « Cartes » (`?lieu=`) sur « La
+carte de « … » » : nom prérempli, vierge ou copie d'une carte du monde ;
+créée, le lieu y est épinglé au milieu, l'Atlas l'ouvre et la frise la
+prend. **Règles retenues** : la carte d'une scène est d'abord la carte où
+elle se joue (`map` de la scène) si l'atlas l'a ; sinon la plus fine des
+cartes où son lieu ou un de ses parents est épinglé (à échelle égale, le
+lieu le plus proche) ; elle est **à créer**, au nom du lieu de la scène,
+quand rien de sa chaîne n'est épinglé, ou quand la seule carte est une
+région et que c'est un parent qui y est épinglé (la taverne dans
+Port-Louis n'est pas dessinée par l'hexagone de Port-Louis) ; une scène
+sans lieu ni carte n'a pas de case. Le chemin part de `start_node` s'il
+est dans l'acte, sinon des scènes de l'acte où aucune autre ne mène
+(aucune : la première) ; d'une scène à une seule suite on passe à la
+suivante ; d'une scène à plusieurs suites, tout ce qui précède le point
+où tous les chemins se rejoignent (la scène par laquelle passe tout
+chemin vers une fin d'acte) forme l'embranchement, puis le chemin reprend
+là ; des chemins qui ne se rejoignent pas mettent tout le reste dans
+l'embranchement. Les sorties vers un autre acte ou vers une scène déjà
+parcourue ne sont pas suivies (pas de boucle) ; les scènes jamais
+atteintes reprennent à la fin. Deux cases de suite sur la même carte
+seule n'en font qu'une. La « mise en avant » des scènes de l'acte est le
+filtre d'acte du fil (« Acte du fil »), déjà là. **Ce que donnent les
+Corsaires** : en production (seul Port-Louis épinglé, sur la région),
+Soir 1 = Perroquet Noyé (à créer) → port de nuit (à créer) → marché ·
+chantier · bureau · Perroquet Noyé (Anaïs), tous à créer → Le quai de
+Port-Louis (la carte de la bagarre) → La Mâchoire (à créer) ; Soir 2 =
+L'abordage du Greyhound (la carte de la scène ; Belle-Île n'est épinglée
+nulle part, « Au large de Belle-Île » n'est liée à aucune scène et reste
+hors de l'histoire, avec la région, les rues et Le Palais). Écarts avec
+l'attente : « Ramener Anaïs » est dans l'embranchement (elle part du
+chantier et rejoint le quai) ; le port de nuit et La Mâchoire sont aussi
+à créer. Dans le fichier du dépôt, où chaque lieu est épinglé sur les
+rues, Soir 1 = les rues → le quai → les rues. **Limite** : le tiroir
+« Cartes » ne connaissait pas les lieux ; la création « pour un lieu »
+y est ajoutée, et pour la demander à Claude il suffit de lui parler :
+`get_atlas` lui liste les cartes à créer. **Reste** l'essai réel de
+Romain sur les Corsaires (toucher une case, créer la carte du Perroquet
+Noyé depuis sa case).
 
 ## Épic `ai`
 
