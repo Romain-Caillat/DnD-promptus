@@ -2407,6 +2407,51 @@ comme point d'entrée : « C'est étrange d'avoir l'idée puis en dessous
 la carte. Je préférerais que ce soit un switch de tabs. Et je pense en
 termes d'UX qu'on peut améliorer et gagner de la place. »
 
+### `campaign/order-maps-by-story` · todo
+
+**Pourquoi** — Romain veut écrire l'histoire en suivant les cartes dans
+l'ordre où les joueurs les traversent. Aujourd'hui la bande de cartes de
+l'Atlas suit l'emboîtement (région › lieu › rencontre), rien ne dit
+dans quel ordre l'histoire passe par elles, et une épingle peut porter
+toutes les scènes d'un acte (Port-Louis porte les 9 scènes de l'acte 1).
+
+**Périmètre**
+
+- **Une frise par acte**, dans l'ordre des actes : son titre, sa soirée
+  prévue, puis les cartes que ses scènes traversent, dans l'ordre du
+  chemin entre les scènes (départ de la campagne ou ouverture de l'acte,
+  puis les sorties). Des scènes au choix (des sorties parallèles)
+  forment un embranchement : leurs cartes sont empilées sur la même
+  case (« marché · chantier · bureau »).
+- **La carte d'une scène** est la carte la plus fine qui porte son lieu
+  (le lieu épinglé, ou en remontant ses parents). Une scène dont le lieu
+  n'a pas de carte à lui fait apparaître une **case « à créer »** au nom
+  du lieu (« Le Perroquet Noyé — pas de carte ») ; la toucher mène à la
+  création de la carte de ce lieu (onglet « Cartes » du tiroir, lieu
+  prérempli), ou la demande à Claude.
+- **Toucher une case** ouvre sa carte dans l'Atlas, avec les scènes de
+  l'acte qui s'y passent mises en avant ; la case de la carte ouverte
+  est marquée dans la frise.
+- La frise remplace la bande de cartes en bas de l'Atlas en vue MJ ;
+  les cartes qu'aucune scène ne traverse restent accessibles à la fin
+  (« Hors de l'histoire »). Un acte sans scène montre une case vide
+  « Écrire l'acte ».
+- **Claude** : `get_atlas` (MCP) renvoie la même frise par acte, cartes
+  manquantes comprises, pour qu'il sache quelles cartes créer.
+- Calculé côté serveur depuis le graphe (un seul ordre partout, Atlas
+  et MCP), mis à jour en direct comme le reste de l'Atlas.
+
+**Fini quand** — Sur les Corsaires, l'Atlas montre l'acte 1 en frise
+(Perroquet Noyé à créer → port de nuit → marché · chantier · bureau →
+quai → La Mâchoire) puis l'acte 2 ; Romain touche une case et arrive sur
+la bonne carte ; il crée la carte du Perroquet Noyé depuis sa case et la
+frise la prend aussitôt. Tests à jour, lint et tests passent.
+
+**Origine** — Romain, 11 octobre 2026, en voulant passer les Corsaires
+à 4 actes en 4 soirées : « Il me manque les cartes dans l'ordre
+chronologique. C'est surtout comme ça que je veux travailler
+l'histoire. »
+
 ## Épic `ai`
 
 ### `ai/route-llm-provider` · doing — reste la soirée du jalon jouée pour de vrai
