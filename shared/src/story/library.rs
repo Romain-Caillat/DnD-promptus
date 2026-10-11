@@ -289,6 +289,7 @@ pub fn anchor_issues(c: &Campaign, maps: &[Map]) -> Vec<Issue> {
 
 fn check_maps(issues: &mut Vec<Issue>, c: &Campaign, maps: &[Map]) {
     issues.extend(anchor_issues(c, maps));
+    issues.extend(super::thread::path_issues(c, maps));
     for (i, n) in c.nodes.iter().enumerate() {
         let Some(v) = n.encounter.as_ref().and_then(|e| e.vehicles.as_ref()) else {
             continue;

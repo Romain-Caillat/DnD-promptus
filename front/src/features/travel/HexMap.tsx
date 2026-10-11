@@ -1,7 +1,8 @@
 import { useId } from 'react'
 import { readGrid } from '@/features/map/render'
 import type { Cell, MapData } from '@/lib/board'
-import type { PinMark } from '@/features/map/pins'
+import type { PinMark, ThreadMark } from '@/features/map/pins'
+import { ThreadLines } from '@/features/map/ThreadLines'
 import type { Tileset } from '@/lib/media'
 import { cn } from '@/lib/utils'
 
@@ -20,6 +21,12 @@ const PIN_PAPER = '#EDEDED'
 /** Centre of a hex: pointy top, odd rows shifted half a hex right. */
 function hexCenter([x, y]: Cell): [number, number] {
   return [W * (x + 0.5 * (y & 1)) + W / 2 + 4, R * 1.5 * y + R + 4]
+}
+
+/** Where a pin stands: on the upper half of its hex. */
+function pinCenter(cell: Cell): [number, number] {
+  const [cx, cy] = hexCenter(cell)
+  return [cx, cy - R * 0.45]
 }
 
 function corners([cx, cy]: [number, number]): string {
@@ -41,7 +48,8 @@ export interface HexRoute {
  * hex in its material's muted colour, the fog as a grid of small squares,
  * the places written on the map, the routes proposed as dotted lines (the
  * one chosen solid), the party as one ivory pin, and the scenes' pins
- * (campaign/pin-scenes-on-maps) on the upper half of their hex. The grid
+ * (campaign/pin-scenes-on-maps) on the upper half of their hex, joined by
+ * the campaign's thread (campaign/draw-story-thread). The grid
  * carries the rules: this only draws what the server sent.
  */
 export function HexMap({
@@ -52,6 +60,7 @@ export function HexMap({
   destination,
   marks = [],
   pins = [],
+  thread = [],
   onPin,
   onHex,
   className,
@@ -65,6 +74,8 @@ export function HexMap({
   marks?: Cell[]
   /** Pins (campaign/pin-scenes-on-maps), on the upper half of their hex so the hex stays tappable. */
   pins?: readonly PinMark[]
+  /** The thread's segments, from pin to pin (campaign/draw-story-thread). */
+  thread?: readonly ThreadMark[]
   /** A tap on a pin; without it the pins are only drawn. */
   onPin?: (key: string) => void
   /** A tap on a hex (the GM picks a place). */
@@ -172,9 +183,9 @@ export function HexMap({
           pointerEvents="none"
         />
       )}
+      {thread.length > 0 && <ThreadLines marks={thread} point={pinCenter} inset={13} />}
       {pins.map((p) => {
-        const [cx, cy] = hexCenter(p.at)
-        const y = cy - R * 0.45
+        const [cx, y] = pinCenter(p.at)
         const w = Math.max(16, 7 * p.label.length + 8)
         const ink = p.current ? PIN_PAPER : PIN_INK
         const paper = p.current ? PIN_INK : PIN_PAPER

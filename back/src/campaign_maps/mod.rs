@@ -37,6 +37,7 @@ use promptus_shared::maps::{
 };
 use promptus_shared::story::cast::{self, Cast};
 use promptus_shared::story::pins::{Pin, PinScene, is_pinned, pins_on};
+use promptus_shared::story::thread::{Thread, path_issues, thread_on};
 use promptus_shared::story::{Anchor, Campaign, anchor_issues};
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
@@ -414,6 +415,15 @@ pub struct AtlasView {
     /// clue and fight of the story, and the scenes an NPC's spot may be
     /// for.
     pub castable: Castable,
+    /// The acts, in order, for the thread's act filter.
+    pub acts: Vec<AtlasAct>,
+}
+
+/// An act, as the thread's filter names it.
+#[derive(Debug, Clone, Serialize)]
+pub struct AtlasAct {
+    pub id: String,
+    pub title: String,
 }
 
 /// The story's NPCs, clues and fights, and where each is placed.
@@ -477,6 +487,9 @@ pub struct AtlasMap {
     /// The NPCs, clues and fights placed on it (campaign/place-cast-and-
     /// clues), each fight with how many opponents its battle plan places.
     pub cast: Cast,
+    /// The scenes' exits drawn between its pins (campaign/draw-story-
+    /// thread), and the scenes standing on it.
+    pub thread: Thread,
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -549,6 +562,7 @@ pub async fn atlas(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Atla
                 // A world map is always playable (`playable`).
                 validated: !campaign || mine.is_some_and(|m| m.validated_at.is_some()),
                 pins: pins_on(&row.story, &n.id),
+                thread: thread_on(&row.story, &n.id),
                 cast: Cast::default(),
                 map,
             })
@@ -580,7 +594,18 @@ pub async fn atlas(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Atla
             .filter(|(_, n)| !is_pinned(story, n))
             .map(|(i, n)| PinScene::of(i, n))
             .collect(),
-        issues: anchor_issues(story, &shown),
+        issues: anchor_issues(story, &shown)
+            .into_iter()
+            .chain(path_issues(story, &shown))
+            .collect(),
+        acts: story
+            .acts
+            .iter()
+            .map(|a| AtlasAct {
+                id: a.id.clone(),
+                title: a.title.clone(),
+            })
+            .collect(),
         castable: Castable {
             npcs: story
                 .npcs

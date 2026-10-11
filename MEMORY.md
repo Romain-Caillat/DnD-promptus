@@ -427,6 +427,20 @@ opens `fight::start` on the scene. A spot in a wall is a warning
 (`SPOT_ON_WALL`), never refused, and none of these cells is the model's
 to fix (`prep::for_the_model`).
 
+### The thread is computed from the exits, never stored
+
+The campaign's thread on a map (`campaign/draw-story-thread`) is
+`story::thread::thread_on`, read from the scenes' `exits` and projected
+on `pins_on` at every atlas read: no thread field exists in the story or
+the maps, so an exit added anywhere (scene editor, co-GM, Claude) redraws
+it on the next `prep` revision. One segment per directed pair of pins —
+a branch is two arrows, a way back a second one, never one polyline —
+drawn solid (dots mean routes and Claude's proposals). The GM's alone:
+no player or screen projection carries it. A link with no path between
+its places is a warning (`EXIT_WITHOUT_PATH`), never a refusal, and not
+the model's to fix (`prep::for_the_model`); the walk is one flood fill
+per map, made only when a check needs it.
+
 ### The sheet and the play state are two things
 
 `characters.sheet` is what the player wrote and the GM reviewed; the

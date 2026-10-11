@@ -258,6 +258,20 @@ receives it: the table shows the one map on the board, through the
 projection, which adds only the clues found (`clues: [{text, at}]`, no
 id) on cells out of the fog; placed NPCs are ordinary hidden tokens.
 
+Each map also carries `thread` (`story::thread::Thread`,
+`campaign/draw-story-thread`), computed from the scenes' exits at every
+read, never stored: `segments: [{from: {place, at}, to: {place, at},
+steps: [{from, to, act}]}]` — one per pair of pins an exit joins, in
+each direction, the exits between them as `steps` (scene ids, the act of
+the scene left) — and `stops: [{scene, place, act, start, end}]`, the
+scenes standing on the map in campaign order. A step whose two scenes
+share a pin, or one end of which has no pin on the map, is not a
+segment. `start`: no exit of the scene's act leads to it; `end`: none of
+its exits stays in its act. The atlas also lists the `acts` (`{id,
+title}`) for the thread's filter, and `issues` adds `EXIT_WITHOUT_PATH`
+(see `docs/campaign-format.md`). The thread is the GM's: no projection
+carries it.
+
 Pins never nest maps (`campaign/pin-scenes-on-maps`): a place's anchor
 puts scenes on a map, it does not say which map opens there. Nesting
 stays the exits' alone, so the « strictly finer scale » rule above is

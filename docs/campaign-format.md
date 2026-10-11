@@ -225,6 +225,7 @@ part is optional; what is not supplied is not checked.
 | `MAP_UNKNOWN` | error | A node's `map`, or a place's, NPC spot's, clue's or fight's `anchor.map` / `map`, is no known map |
 | `ANCHOR_OFF_GRID` | error | A place's anchor, an NPC's spot, a clue's or a fight's anchor is outside its map |
 | `SPOT_ON_WALL` | warning | An NPC's spot, a clue's or a fight's anchor stands on a wall or void cell |
+| `EXIT_WITHOUT_PATH` | warning | A scene's exit leads to a scene no path joins (`campaign/draw-story-thread`): their chains of places share no place, and no anchor of one chain meets an anchor of the other — on the same map, on cells no wall parts (a door opens; hexes walked by hex neighbours), or on two maps joined by exits, followed either way. A scene with no anchored place, or an anchor in a wall, is not checked |
 | `MAP_ENTITY_UNKNOWN` | warning | A map a node uses places a token whose `entity` is no NPC or adversary of the campaign |
 
 Two more checks of the campaign alone came with the witness worlds:

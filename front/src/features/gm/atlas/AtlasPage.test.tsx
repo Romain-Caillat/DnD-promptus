@@ -27,6 +27,7 @@ const sheet = (
   validated: true,
   pins: [],
   cast: { npcs: [], clues: [], fights: [] },
+  thread: { segments: [], stops: [] },
   ...tree,
 })
 
@@ -70,6 +71,7 @@ const ATLAS = {
   unplaced: [],
   issues: [],
   castable: { npcs: [], clues: [], fights: [], scenes: [] },
+  acts: [],
 }
 
 const ok = (data: unknown) => ({ status: 200, body: { data } })
@@ -352,5 +354,135 @@ describe('AtlasPage', () => {
     expect(within(fight).getByText('Adversaires déjà placés sur le plan : 2 / 3')).toBeInTheDocument()
     await userEvent.click(within(fight).getByRole('button', { name: 'Ouvrir le plan de combat' }))
     expect(await screen.findByRole('img', { name: 'Carte : La cale' })).toBeInTheDocument()
+  })
+
+  it('draws the thread between the pins, branches included, synced with the scene list and redrawn on a revision', async () => {
+    stubReducedMotion(true)
+    vi.stubGlobal('WebSocket', FakeSocket)
+    FakeSocket.all = []
+    const scenes = [
+      { id: 'sc_a', title: 'L’arrivée', number: 1 },
+      { id: 'sc_b', title: 'Le port', number: 2 },
+      { id: 'sc_c', title: 'Le phare', number: 3 },
+      { id: 'sc_d', title: 'Le départ', number: 4 },
+    ]
+    const end = (place: string, at: [number, number]) => ({ place, at })
+    const town = end('l_ville', [1, 0])
+    const light = end('l_phare', [3, 2])
+    const isle = end('l_ile', [0, 2])
+    const stop = (scene: string, place: string, act: string, start = false, last = false) => ({ scene, place, act, start, end: last })
+    const thread = {
+      segments: [
+        // sc_a branches: to the port inside the town (no line), and out to the lighthouse.
+        { from: town, to: light, steps: [{ from: 'sc_a', to: 'sc_c', act: 'a1' }] },
+        { from: light, to: town, steps: [{ from: 'sc_c', to: 'sc_b', act: 'a1' }] },
+        { from: town, to: isle, steps: [{ from: 'sc_b', to: 'sc_d', act: 'a1' }] },
+      ],
+      stops: [stop('sc_a', 'l_ville', 'a1', true), stop('sc_b', 'l_ville', 'a1'), stop('sc_c', 'l_phare', 'a1'), stop('sc_d', 'l_ile', 'a2', true, true)],
+    }
+    const pins = [
+      { location: 'l_ville', name: 'Port-Louis', at: [1, 0], scenes: [scenes[0], scenes[1]] },
+      { location: 'l_phare', name: 'Le phare', at: [3, 2], scenes: [scenes[2]] },
+      { location: 'l_ile', name: 'L’île', at: [0, 2], scenes: [scenes[3]] },
+    ]
+    // Inside the town, on the place map: the tavern and the port, act 1 only.
+    const quayPins = [
+      { location: 'l_taverne', name: 'La taverne', at: [0, 0], scenes: [scenes[0]] },
+      { location: 'l_port', name: 'Le port', at: [3, 2], scenes: [scenes[1]] },
+    ]
+    const quayThread = {
+      segments: [{ from: end('l_taverne', [0, 0]), to: end('l_port', [3, 2]), steps: [{ from: 'sc_a', to: 'sc_b', act: 'a1' }] }],
+      stops: [stop('sc_a', 'l_taverne', 'a1', true), stop('sc_b', 'l_port', 'a1')],
+    }
+    let atlas = {
+      ...ATLAS,
+      maps: ATLAS.maps.map((m) =>
+        m.map.id === 'region'
+          ? { ...m, pins, thread }
+          : m.map.id === 'quai'
+            ? { ...m, pins: quayPins, thread: quayThread }
+            : m,
+      ),
+      places: pins.map((p) => ({ id: p.location, name: p.name, parent: null, anchor: { map: 'region', at: p.at } })),
+      castable: { ...ATLAS.castable, scenes },
+      acts: [
+        { id: 'a1', title: 'Le port' },
+        { id: 'a2', title: 'Le large' },
+      ],
+    }
+    mockApi({
+      'GET /api/campaigns/c1/atlas': () => ok(atlas),
+      'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
+    })
+    const { container } = renderPage()
+    const lines = () => [...container.querySelectorAll('[data-thread]')].map((g) => g.getAttribute('data-thread'))
+    const lit = () => [...container.querySelectorAll('[data-thread][data-lit]')].map((g) => g.getAttribute('data-thread'))
+
+    // Every way between two pins is its own arrow: the town branches.
+    await screen.findByRole('button', { name: /Port-Louis — scènes/ })
+    expect(lines()).toEqual(['l_ville>l_phare', 'l_phare>l_ville', 'l_ville>l_ile'])
+    const list = screen.getByRole('region', { name: 'Le fil de la campagne' })
+    expect(within(list).getByRole('button', { name: /1\. L’arrivée/ })).toHaveTextContent('départ')
+    expect(within(list).getByRole('button', { name: /4\. Le départ/ })).toHaveTextContent('fin possible')
+
+    // A scene from the list lights its arrows and chooses its pin…
+    await userEvent.click(within(list).getByRole('button', { name: /3\. Le phare/ }))
+    expect(lit()).toEqual(['l_ville>l_phare', 'l_phare>l_ville'])
+    expect(screen.getByRole('button', { name: /Le phare — scènes/ })).toHaveAttribute('aria-pressed', 'true')
+    // …and a pin from the map marks its scenes in the list.
+    await userEvent.click(screen.getByRole('button', { name: /Port-Louis — scènes/ }))
+    const marked = within(list)
+      .getAllByRole('button')
+      .filter((b) => b.getAttribute('aria-current') === 'true')
+      .map((b) => b.getAttribute('data-scene'))
+    expect(marked).toEqual(['sc_a', 'sc_b'])
+    expect(lit()).toEqual(['l_ville>l_phare', 'l_phare>l_ville', 'l_ville>l_ile'])
+
+    // One act at a time.
+    await userEvent.click(within(list).getByRole('button', { name: 'Le large' }))
+    expect(lines()).toEqual([])
+    expect(within(list).getAllByRole('listitem')).toHaveLength(1)
+    // Into the town with act 2 chosen: the town has act 1 only, so its
+    // whole thread shows, drawn over the grid map too.
+    fireEvent.click(container.querySelector('[data-hex="1,0"]')!)
+    await screen.findByRole('img', { name: 'Carte : Le quai' })
+    expect(lines()).toEqual(['l_taverne>l_port'])
+    const inTown = screen.getByRole('region', { name: 'Le fil de la campagne' })
+    expect(within(inTown).getAllByRole('listitem')).toHaveLength(2)
+    await userEvent.click(screen.getByRole('button', { name: 'Ressortir' }))
+    await screen.findByRole('img', { name: 'Les côtes' })
+    await userEvent.click(within(screen.getByRole('region', { name: 'Le fil de la campagne' })).getByRole('button', { name: 'Tous les actes' }))
+
+    // An exit added in the scene editor: the revision redraws the thread.
+    atlas = {
+      ...atlas,
+      revision: 4,
+      maps: atlas.maps.map((m) =>
+        m.map.id === 'region'
+          ? { ...m, thread: { ...thread, segments: [...thread.segments, { from: isle, to: light, steps: [{ from: 'sc_d', to: 'sc_c', act: 'a2' }] }] } }
+          : m,
+      ),
+    }
+    FakeSocket.all[0].push({ type: 'ready', versions: { prep: 3 } })
+    FakeSocket.all[0].push({ type: 'changed', topic: 'prep', version: 4 })
+    await waitFor(() => expect(lines()).toContain('l_ile>l_phare'))
+    expect(lines()).toHaveLength(4)
+  })
+
+  it('warns of two linked scenes no path joins, naming the scene', async () => {
+    stubReducedMotion(true)
+    vi.stubGlobal('WebSocket', FakeSocket)
+    mockApi({
+      'GET /api/campaigns/c1/atlas': () =>
+        ok({
+          ...ATLAS,
+          castable: { ...ATLAS.castable, scenes: [{ id: 'sc_a', title: 'L’arrivée', number: 1 }] },
+          issues: [{ severity: 'warning', code: 'EXIT_WITHOUT_PATH', path: 'nodes[0].exits[1]', detail: '' }],
+        }),
+      'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
+    })
+    renderPage()
+    const issues = await screen.findByRole('list', { name: 'Épingles et poses à revoir' })
+    expect(issues).toHaveTextContent('1. L’arrivée mène à une scène qu’aucun chemin ne relie')
   })
 })

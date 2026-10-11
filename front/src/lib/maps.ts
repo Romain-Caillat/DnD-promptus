@@ -54,6 +54,32 @@ export interface AtlasMap {
   pins: Pin[]
   /** The NPCs, clues and fights placed on it (campaign/place-cast-and-clues). */
   cast: Cast
+  /** The scenes' exits between its pins (campaign/draw-story-thread). */
+  thread: Thread
+}
+
+/**
+ * The thread on one map (campaign/draw-story-thread): one segment per
+ * pair of pins an exit joins, in each direction; the scenes standing on
+ * the map, each a start or an end of its act or neither.
+ */
+interface Thread {
+  segments: { from: ThreadEnd; to: ThreadEnd; steps: { from: string; to: string; act: string }[] }[]
+  stops: ThreadStop[]
+}
+
+interface ThreadEnd {
+  place: string
+  at: Cell
+}
+
+export interface ThreadStop {
+  scene: string
+  /** The pin it stands on. */
+  place: string
+  act: string
+  start: boolean
+  end: boolean
 }
 
 /** Where a story entity stands on a map: a map and a cell. */
@@ -138,6 +164,8 @@ export interface Atlas {
     fights: { scene: string; title: string; number: number; map: string | null; anchor: Anchor | null }[]
     scenes: PinScene[]
   }
+  /** The acts in order, for the thread's filter. */
+  acts: { id: string; title: string }[]
 }
 
 export function fetchAtlas(campaignId: string): Promise<Atlas> {

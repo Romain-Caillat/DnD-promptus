@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils'
 import { FACINGS, sheetUrl } from '@/features/sprites/look'
 import { cancel, clampZoom, down, idle, move, up, type Effect, type Gesture, type Pt } from './gesture'
 import { Motion, type Pose } from './motion'
-import type { PinMark } from './pins'
+import type { PinMark, ThreadMark } from './pins'
+import { ThreadLines } from './ThreadLines'
 import { TILE, animated, cellAt, drawScene, readGrid, type Scene } from './render'
 
 /**
@@ -38,7 +39,9 @@ function lightVoid(): string {
  * sharp again when the gesture ends.
  *
  * Pins (campaign/pin-scenes-on-maps) stand over the map as buttons: a
- * tap on one answers its key, never a cell under it.
+ * tap on one answers its key, never a cell under it. The campaign's
+ * thread (campaign/draw-story-thread) runs between them, under them, and
+ * lets taps through; `focus` brings a cell to the middle of the box.
  *
  * Characters are their sprites (characters/walk-in-four-directions):
  * they breathe at rest, walk the last move the server sent cell by cell
@@ -51,6 +54,8 @@ export function MapCanvas({
   onCell,
   onPaint,
   pins = [],
+  thread = [],
+  focus,
   onPin,
   touch = false,
   className,
@@ -62,6 +67,10 @@ export function MapCanvas({
   onPaint?: (cells: Cell[]) => void
   /** Pins over the map: scenes for the GM, places visited for players. */
   pins?: readonly PinMark[]
+  /** The thread's segments, from pin to pin (campaign/draw-story-thread). */
+  thread?: readonly ThreadMark[]
+  /** A cell to scroll to the middle of the box, when it changes. */
+  focus?: Cell | null
   /** A tap on a pin; without it the pins are only drawn. */
   onPin?: (key: string) => void
   /** Finger gestures: two fingers slide and pinch, nothing scrolls on its own. */
@@ -129,6 +138,16 @@ export function MapCanvas({
     frame = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(frame)
   }, [moving, reduced, scene, sprites, painted, voidColor, resolution])
+
+  // A cell chosen from outside (the atlas's scene list) comes to the middle.
+  const fx = focus?.[0]
+  const fy = focus?.[1]
+  useEffect(() => {
+    const el = box.current
+    if (!el || fx === undefined || fy === undefined) return
+    el.scrollLeft = (fx + 0.5) * tile * zoomRef.current - el.clientWidth / 2
+    el.scrollTop = (fy + 0.5) * tile * zoomRef.current - el.clientHeight / 2
+  }, [fx, fy, tile])
 
   function cellOf(at: Pt): Cell {
     const el = canvas.current!
@@ -237,6 +256,16 @@ export function MapCanvas({
           }
           onPointerCancel={(e) => handle((g) => cancel(g, id(e)), e)}
         />
+        {thread.length > 0 && (
+          <svg
+            className="pointer-events-none absolute inset-0"
+            width={grid.width * tile * zoom}
+            height={grid.height * tile * zoom}
+            aria-hidden="true"
+          >
+            <ThreadLines marks={thread} point={(c) => [(c[0] + 0.5) * tile * zoom, (c[1] + 0.5) * tile * zoom]} inset={14} />
+          </svg>
+        )}
         {pins.map((p) => (
           <PinButton key={p.key} pin={p} left={(p.at[0] + 0.5) * tile * zoom} top={(p.at[1] + 0.5) * tile * zoom} onPin={onPin} />
         ))}

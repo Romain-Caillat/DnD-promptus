@@ -60,7 +60,7 @@ impl PinScene {
 
 /// The places from `location` up its parents, each once: a parent loop
 /// (which nothing forbids in a hand-written file) ends the walk.
-fn chain<'a>(c: &'a Campaign, location: &str) -> Vec<&'a Location> {
+pub(crate) fn chain<'a>(c: &'a Campaign, location: &str) -> Vec<&'a Location> {
     let mut seen = BTreeSet::new();
     let mut out = Vec::new();
     let mut next = Some(location);

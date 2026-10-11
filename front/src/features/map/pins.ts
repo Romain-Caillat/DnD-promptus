@@ -65,3 +65,20 @@ export function playerMarks(pins: readonly PinView[] | undefined, clues?: BoardV
     ...(clues ?? []).map((c, i) => ({ key: `clue:${i}`, at: c.at, label: '', title: c.text, shape: 'clue' as const })),
   ]
 }
+
+/**
+ * A segment of the campaign's thread as the two maps draw it
+ * (campaign/draw-story-thread): from one pin to another, one way.
+ */
+export interface ThreadMark {
+  /** `from>to`, the two places. */
+  key: string
+  from: Cell
+  to: Cell
+  /** Its accessible name: the scenes it leads between. */
+  title: string
+  /** The scene or pin chosen is on it. */
+  lit?: boolean
+  /** Something else is chosen. */
+  faint?: boolean
+}

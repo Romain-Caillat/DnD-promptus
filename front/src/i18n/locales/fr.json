@@ -2301,7 +2301,8 @@
         "THREE_CLUE_RULE": "Une révélation essentielle a moins de trois indices dans des scènes différentes.",
         "KNOWLEDGE_NEVER_GIVEN": "Une scène demande une information que rien ne donne avant.",
         "KNOWLEDGE_ONLY_OPTIONAL": "Une information nécessaire n'est donnée que dans des scènes facultatives.",
-        "SCENE_WITHOUT_PLACE": "Une scène ne se trouve sur aucune carte : permis pour un rêve ou un souvenir, à épingler sinon dans l’Atlas."
+        "SCENE_WITHOUT_PLACE": "Une scène ne se trouve sur aucune carte : permis pour un rêve ou un souvenir, à épingler sinon dans l’Atlas.",
+        "EXIT_WITHOUT_PATH": "Une sortie relie deux scènes dont les lieux ne sont reliés par aucun chemin sur les cartes."
       },
       "validateTitle": "Valider la campagne",
       "count": {
@@ -2748,8 +2749,18 @@
       "issue": {
         "MAP_UNKNOWN": "Un lieu, un PNJ, un indice ou un combat est posé sur une carte qui n’existe pas.",
         "ANCHOR_OFF_GRID": "Un lieu, un PNJ, un indice ou un combat est posé hors de sa carte.",
-        "SPOT_ON_WALL": "Un PNJ, un indice ou un combat est posé dans un mur : déplacez-le."
+        "SPOT_ON_WALL": "Un PNJ, un indice ou un combat est posé dans un mur : déplacez-le.",
+        "EXIT_WITHOUT_PATH": "{{scene}} mène à une scène qu’aucun chemin ne relie : un mur les sépare, ou aucune sortie ne joint leurs cartes."
       }
+    },
+    "thread": {
+      "title": "Le fil de la campagne",
+      "act": "Acte du fil",
+      "allActs": "Tous les actes",
+      "none": "Aucune scène ne se trouve sur cette carte.",
+      "start": "départ",
+      "end": "fin possible",
+      "segment": "De {{from}} à {{to}} : {{scenes}}"
     },
     "storyLayers": {
       "label": "Calques de l’histoire",

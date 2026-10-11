@@ -4,13 +4,13 @@ import { Link, Navigate, useParams, useSearchParams } from 'react-router'
 import { Btn, Panel, TouchScreen, field } from '@/features/gm/live/ui'
 import { useLiveChanges } from '@/features/live/useLiveChanges'
 import { MapCanvas } from '@/features/map/MapCanvas'
-import { gmMarks } from '@/features/map/pins'
+import { gmMarks, type ThreadMark } from '@/features/map/pins'
 import { useImage } from '@/features/map/useImage'
 import { useTileset } from '@/features/map/useTileset'
 import { HexMap } from '@/features/travel/HexMap'
 import { ApiError } from '@/lib/api'
 import type { Cell } from '@/lib/board'
-import { fetchAtlas, generateMap, gmBackdropUrl, type Atlas, type AtlasMap, type Pin } from '@/lib/maps'
+import { fetchAtlas, generateMap, gmBackdropUrl, type Atlas, type AtlasMap, type Pin, type ThreadStop } from '@/lib/maps'
 import { applyEdits, type Edit } from '@/lib/prep'
 import { fetchGmMedia, gmImageUrl, type MediaList } from '@/lib/media'
 import { TABLET_QUERY, useMediaQuery } from '@/lib/useMediaQuery'
@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 import { canLeave, climb, depth, doorAt, doorCells, enter, index, leave, switchable, trail, withoutLayers } from './atlas'
 import { CastSection } from './CastSection'
 import { STORY_LAYERS, castMarks, placeEdit, readKey, removeEdit, type StoryLayer, type Target } from './cast'
+import { ThreadSection } from './ThreadSection'
 
 type PageState =
   | { kind: 'loading' }
@@ -58,6 +59,13 @@ const DRAWER = ['bible', 'graph', 'sheets'] as const
  * map's own layers. A fight opens its battle plan and says how many
  * opponents it already places.
  *
+ * The campaign's thread (campaign/draw-story-thread) joins the pins:
+ * one arrow per pair of places an exit leads between, so a branch shows
+ * as two. The scenes of the map are listed beside it, for one act or all;
+ * a scene tapped lights its arrows and brings its pin into view, a pin
+ * tapped marks its scenes in the list. Every revision received redraws
+ * it — an exit added in the scene editor appears with no other gesture.
+ *
  * GM only: a player receives the one map on the table, through the
  * board's projection, never the atlas.
  */
@@ -85,6 +93,10 @@ export function AtlasPage() {
   const [choice, setChoice] = useState('')
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
+  /** The thread's act (`null`: all), the scene chosen in the list, the cell brought into view. */
+  const [act, setAct] = useState<string | null>(null)
+  const [scene, setScene] = useState<string | null>(null)
+  const [focus, setFocus] = useState<Cell | null>(null)
 
   useEffect(() => {
     let live = true
@@ -158,6 +170,8 @@ export function AtlasPage() {
     setHidden(new Set())
     setPicked(null)
     setPlacing(null)
+    setScene(null)
+    setFocus(null)
     const last = next[next.length - 1]
     if (last) setParams({ carte: last }, { replace: true })
   }
@@ -204,7 +218,15 @@ export function AtlasPage() {
     const to = doorAt(entry, cell)
     if (to) open(to)
   }
-  const pick = (place: string) => setPicked((p) => (p === place ? null : place))
+  const pick = (place: string) => {
+    setScene(null)
+    setPicked((p) => (p === place ? null : place))
+  }
+  const choose = (stop: ThreadStop) => {
+    setScene(stop.scene)
+    setPicked(stop.place)
+    setFocus(pins.find((p) => p.location === stop.place)?.at ?? null)
+  }
 
   const crumbs = entry ? trail(maps, entry.map.id) : []
   const name = (id: string) => maps.get(id)?.map.name ?? id
@@ -237,6 +259,41 @@ export function AtlasPage() {
   const pinning = placing?.kind === 'place' ? placing.id : null
   const places = state.atlas.places
   const placeName = (id: string) => places.find((p) => p.id === id)?.name ?? id
+  const actsHere = state.atlas.acts.filter((a) => entry?.thread.stops.some((s) => s.act === a.id))
+  // An act chosen on another map, or whose scenes left this one, falls back to every act.
+  const shownAct = act !== null && actsHere.some((a) => a.id === act) ? act : null
+  const inAct = (a: string) => shownAct === null || a === shownAct
+  const stops = (entry?.thread.stops ?? []).filter((s) => inAct(s.act))
+  const pickedPlace = pins.some((p) => p.location === picked) ? picked : null
+  const number = (id: string) => state.atlas.castable.scenes.find((x) => x.id === id)?.number ?? '?'
+  const threadMarks: ThreadMark[] = !entry || !lit.has('story')
+    ? []
+    : entry.thread.segments
+        .map((sg) => ({ ...sg, steps: sg.steps.filter((st) => inAct(st.act)) }))
+        .filter((sg) => sg.steps.length > 0)
+        .map((sg) => {
+          const on = scene
+            ? sg.steps.some((st) => st.from === scene || st.to === scene)
+            : pickedPlace !== null && (sg.from.place === pickedPlace || sg.to.place === pickedPlace)
+          return {
+            key: `${sg.from.place}>${sg.to.place}`,
+            from: sg.from.at,
+            to: sg.to.at,
+            title: t('atlas.thread.segment', {
+              from: placeName(sg.from.place),
+              to: placeName(sg.to.place),
+              scenes: sg.steps.map((st) => `${number(st.from)} → ${number(st.to)}`).join(', '),
+            }),
+            lit: on,
+            faint: (scene !== null || pickedPlace !== null) && !on,
+          }
+        })
+  /** The scene an issue's path is about (`nodes[3].exits[0]`), by its number and title. */
+  const sceneAt = (path: string) => {
+    const i = /^nodes\[(\d+)\]/.exec(path)
+    const sc = i ? state.atlas.castable.scenes[Number(i[1])] : undefined
+    return sc ? t('atlas.pins.scene', { number: sc.number, title: sc.title }) : ''
+  }
   const sceneLink = (id: string) => `/campagnes/${campaignId}/preparer?onglet=graph&scene=${encodeURIComponent(id)}`
 
   const mapView = !entry || !map ? (
@@ -258,6 +315,7 @@ export function AtlasPage() {
           party={null}
           marks={marks}
           pins={pinMarks}
+          thread={threadMarks}
           onPin={placing ? undefined : pick}
           onHex={tap}
           className="max-h-[70dvh]"
@@ -267,6 +325,8 @@ export function AtlasPage() {
           scene={{ map, tileset, atlases, tokens: [], backdrop, highlight: marks }}
           onCell={tap}
           pins={pinMarks}
+          thread={threadMarks}
+          focus={focus}
           onPin={placing ? undefined : pick}
           touch={tablet}
           className="max-h-[70dvh]"
@@ -291,6 +351,19 @@ export function AtlasPage() {
         {entry.validated ? t('maps.validated') : t('maps.draft')}
       </p>
       {entry.map.gm_notes && <p className="text-body text-chalk-soft">{entry.map.gm_notes}</p>}
+      <ThreadSection
+        stops={stops}
+        acts={actsHere}
+        act={shownAct}
+        scene={scene}
+        place={pickedPlace}
+        sceneTitle={sceneName}
+        onAct={(a) => {
+          setAct(a)
+          setScene(null)
+        }}
+        onScene={choose}
+      />
       <PinsSection
         chosen={chosen}
         places={places}
@@ -303,6 +376,7 @@ export function AtlasPage() {
         issues={state.atlas.issues}
         sceneLink={sceneLink}
         placeName={placeName}
+        sceneAt={sceneAt}
         onChoice={setChoice}
         onPin={(place) => {
           setPlacing({ kind: 'place', id: place })
@@ -519,6 +593,7 @@ function PinsSection({
   issues,
   sceneLink,
   placeName,
+  sceneAt,
   onChoice,
   onPin,
   onCancel,
@@ -537,6 +612,7 @@ function PinsSection({
   issues: Atlas['issues']
   sceneLink: (id: string) => string
   placeName: (id: string) => string
+  sceneAt: (path: string) => string
   onChoice: (place: string) => void
   onPin: (place: string) => void
   onCancel: () => void
@@ -625,7 +701,7 @@ function PinsSection({
         <ul className="flex flex-col gap-1" aria-label={t('atlas.pins.issues')}>
           {issues.map((i) => (
             <li key={i.path} className="text-caption text-stat-hp">
-              {t(`atlas.pins.issue.${i.code}`, { defaultValue: i.detail })}
+              {t(`atlas.pins.issue.${i.code}`, { defaultValue: i.detail, scene: sceneAt(i.path) })}
             </li>
           ))}
         </ul>

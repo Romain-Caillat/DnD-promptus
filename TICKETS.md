@@ -1961,7 +1961,7 @@ annuler les écritures de Claude seulement).
 
 ---
 
-### `campaign/draw-story-thread` · todo
+### `campaign/draw-story-thread` · doing — reste l'essai réel : le fil d'un acte des deux mondes affiché sur la région, puis une sortie ajoutée dans l'éditeur de scène qui le redessine sous les yeux du MJ
 
 **Pourquoi** — Voir la campagne d'un coup d'œil : où elle commence, où
 elle passe, où elle peut finir.
@@ -1991,6 +1991,44 @@ après une révision.
 **Risques** — Un fil illisible quand beaucoup de scènes partagent un
 lieu : regrouper par lieu. Un calcul de chemin coûteux sur une grande
 région : le faire à la demande, pas à chaque image.
+
+*État* — Dans l'Atlas, les épingles de scène sont reliées par le fil de
+la campagne, sur la région en hexagones comme sur une carte de lieu : une
+flèche ivoire pleine par couple de lieux qu'une sortie relie, dans chaque
+sens. Une scène qui mène à deux lieux dessine donc deux branches, et un
+retour se dessine à côté de l'aller au lieu de le recouvrir. Les scènes
+d'un même lieu partagent une épingle : les sorties entre elles restent
+dans l'épingle, sans trait. Une scène sans lieu ou hors de la carte ne
+casse rien, elle n'est simplement pas tracée. À côté de la carte, la
+liste « Le fil de la campagne » donne les scènes posées sur la carte,
+dans l'ordre, avec « départ » (rien de son acte n'y mène) et « fin
+possible » (aucune sortie ne reste dans son acte), et un filtre par acte.
+Toucher une scène de la liste allume ses flèches, choisit son épingle et
+amène la carte de lieu jusqu'à elle (🔴 non mesuré : ce défilement n'est
+vérifié par aucun test, l'environnement de test n'ayant pas de mise en
+page) ; toucher une épingle marque ses scènes dans la liste. Un acte
+choisi qui n'a aucune scène sur la carte ouverte revient à « tous les
+actes ». Le fil suit le calque « Histoire ». Il est
+recalculé à chaque lecture de l'Atlas et rien ne le stocke : une sortie
+ajoutée dans l'éditeur de scène, par Claude ou par le co-MJ redessine le
+fil dès que la révision arrive à l'écran, sans autre geste. Les joueurs
+et l'écran TV ne le reçoivent jamais.
+Le validateur avertit (jamais ne refuse) quand une sortie relie deux
+scènes qu'aucun chemin ne joint, et l'Atlas le dit en nommant la scène.
+**Hypothèse retenue** pour « chemin » : deux scènes sont jointes si
+leurs lieux ont un lieu commun en remontant les parents (la taverne et
+le port d'une même ville), ou si un lieu de chacune est posé sur la même
+carte sans qu'un mur les sépare (une porte laisse passer, les hexagones
+comptent leurs six voisins), ou sur deux cartes reliées par des sorties,
+dans un sens ou dans l'autre. Le chemin n'est calculé que pour cet
+avertissement, une passe par carte, pas à chaque image. Claude ne tente
+pas de le réparer. Aucun des deux mondes livrés ne déclenche
+l'avertissement. Tout cela est testé côté moteur, serveur et interface.
+⚠️ Sur la région des Corsaires, l'acte 1 tient presque entier dans
+l'épingle de Port-Louis : la région n'y montre qu'une flèche, vers
+Belle-Île. Les branches de l'acte (la nuit au port vers le marché noir,
+le chantier, la capitainerie et le quai) se voient sur la carte du
+quartier de Port-Louis. Reste l'essai réel sur les deux mondes.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 
@@ -3037,7 +3075,7 @@ n'a été vérifié que par sa logique, pas sous les doigts.
 
 ---
 
-### `gm/prep-on-atlas` · doing — reste l'écran complet (scènes, fil, PNJ, lots de Claude, vue joueurs), la fin de la création sur la région, la bascule qui retire Préparer, Médias, Cartes et Vue joueurs, puis un acte préparé en entier dans l'Atlas
+### `gm/prep-on-atlas` · doing — reste l'écran complet (scènes, lots de Claude, vue joueurs), la fin de la création sur la région, la bascule qui retire Préparer, Médias, Cartes et Vue joueurs, puis un acte préparé en entier dans l'Atlas
 
 **Pourquoi** — Préparer et jouer doivent se ressembler : la création
 finit sur la carte, et toute la préparation s'y fait.
@@ -3099,6 +3137,9 @@ Depuis `campaign/place-cast-and-clues`, la rangée « Calques de
 l'histoire » allume ou éteint Histoire, Personnages, Combats et Indices.
 Le panneau gagne l'outil « Poser sur la carte » (PNJ, indice, combat) et
 le détail de ce qui est touché sur la carte.
+Depuis `campaign/draw-story-thread`, le fil de la campagne relie les
+épingles, et le panneau commence par la liste des scènes de la carte,
+synchronisée avec elle et filtrable par acte.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 
