@@ -282,6 +282,17 @@ Settled with Romain on the design canvas (link in `TICKETS.md`, epic
   grid every other part reads. The players' vote on a route advises;
   the GM chooses. A route the GM proposes is shown whole to players,
   fog included — it is a road the table is told of.
+- **Open direction, not settled: HD-2D (Romain, 11 October 2026).**
+  Romain wants to explore an Octopath Traveler look later: pixel-art
+  characters as flat billboards in a Three.js 3D scene, the 3D bringing
+  light, shadows, depth of field and bloom. It would overturn the side
+  view and the server-only renderer above, so nothing changes until
+  `characters/choose-sprite-source` settles it. Points already on the
+  table: Octopath's sprites are small (about 40 px tall); the depth and
+  the light do the impressing. Detailed 256 px sprites fit only two or
+  three to a phone screen, hence the idea of 64 px sprites on the board
+  and a detailed 256 px portrait for close-ups (an action, a dialogue,
+  the sheet, the TV).
 
 ## 3. Load-bearing invariants (proven in V1, keep them)
 
@@ -722,6 +733,35 @@ condition or damage it causes still reaches them as its own event.
   `features/map/gesture.ts` (tap, stroke, two-finger pan and pinch,
   cancel), and the canvas is `touch-action: none` wherever it handles
   the drag itself.
+- **Generated pixel art: what the October 2026 experiment taught**
+  (`scripts/pixel-art/`, SDXL + Pixel Art XL on ComfyUI).
+  - SDXL draws "pixels" as 8 px blocks because its latent is 8× smaller
+    than the image. Fix the cell at 8 and detect only the phase: a free
+    search picks a multiple on small figures (a 48 px dwarf came out 9 px).
+  - A palette learned from the batch drops rare colours: skin vanished
+    from small faces. Use the fixed house palette, with a ramp per need.
+  - Three views in one image are far more alike than three generations
+    tied by IP-Adapter. The model fills the empty space above short
+    figures with thumbnails: crop to the mannequin's box.
+  - Weapons generated with the body never match from one view to the
+    next. Generate hands empty, and items apart.
+  - The model sometimes draws a back in the front column (long hair is
+    the usual culprit): weight the front view in the prompt.
+  - It also draws a white "sticker" outline unless the negative prompt
+    forbids it; that outline is not background and survives removal.
+  - Inpainting beside a reference keeps the character. With two of three
+    panels masked the colours wash out; one panel at a time keeps them.
+  - ComfyUI has no authentication: the tower's firewall admits named
+    hosts only (today the Proxmox host, not PCT 105).
+  - **PixelLab beats this pipeline** (test of 11 October 2026): clean
+    outlines, directions consistent with the front, weapons held. Its
+    limits: every humanoid comes out with the same build unless the
+    proportions are set (the dwarf was not stocky, the orc neither huge
+    nor green), and the weapon is part of the drawing.
+  - **Never downscale pixel art to get a small sprite.** Averaging blurs
+    the outline and invents colours; picking one pixel in N breaks the
+    outline and drops the eyes. A small sprite is redrawn at its size:
+    give the large image as a reference (PixelLab v3), not as a source.
 - **YouTube player must stay visible** (YouTube terms) and starts muted:
   each player taps "activate sound". Ads can desync a player; playback
   re-syncs on its own.
