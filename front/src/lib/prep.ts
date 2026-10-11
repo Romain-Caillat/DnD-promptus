@@ -309,6 +309,8 @@ export interface ActReadiness {
   done: number
   total: number
   checks: ReadinessCheck[]
+  /** Said, never counted: a scene standing on no map (`NO_PLACE`), allowed. */
+  alerts: ReadinessGap[]
 }
 
 export function fetchReadiness(campaignId: string): Promise<ActReadiness[]> {

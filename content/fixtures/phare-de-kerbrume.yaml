@@ -384,6 +384,7 @@ locations:
   - id: lieu_port
     name: Le port de Kerbrume
     description: Quais de granit, barques à sec, brume qui monte de la mer.
+    anchor: { map: cotes-bretagne-sud, at: [2, 4] }
     art: Port breton en granit, barques, brume grise.
   - id: lieu_taverne
     name: Le Goéland Ivre
@@ -392,9 +393,11 @@ locations:
   - id: lieu_phare
     name: Le phare de Kerbrume
     description: Une tour de granit sur la pointe.
+    anchor: { map: cotes-bretagne-sud, at: [1, 5] }
   - id: lieu_crique
     name: La crique aux Morts
     description: Une anse cachée entre les récifs.
+    anchor: { map: cotes-bretagne-sud, at: [2, 5] }
 
 items:
   - id: obj_lanterne

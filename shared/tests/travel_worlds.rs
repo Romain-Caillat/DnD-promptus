@@ -42,7 +42,7 @@ fn corsaires() -> World {
         to: Cell::new(9, 9),
         places: vec![
             map("corsaires/le-palais.yaml"),
-            map("corsaires/quai-port-louis.yaml"),
+            map("corsaires/port-louis-rues.yaml"),
         ],
     }
 }
@@ -54,7 +54,7 @@ fn brasier() -> World {
         to: Cell::new(11, 7),
         places: vec![
             map("brasier/reliquaire-sereth.yaml"),
-            map("brasier/cure-dent-coursive.yaml"),
+            map("brasier/abords-du-toboggan.yaml"),
         ],
     }
 }

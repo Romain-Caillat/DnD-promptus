@@ -47,7 +47,7 @@ async fn gm_json(state: &AppState, row: &CampaignRow) -> Result<serde_json::Valu
         "mapId": map.id,
         "mapName": map.name,
         "travel": t,
-        "places": travel::places(&map),
+        "places": travel::places(&map, &row.story, &row.world),
         "members": members,
         "guide": {
             "portions": guide.portions,

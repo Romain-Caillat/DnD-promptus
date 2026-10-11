@@ -696,6 +696,7 @@ fn needs_repair(issues: &[Issue]) -> bool {
 fn issue_lines(issues: &[Issue]) -> String {
     issues
         .iter()
+        .filter(|i| super::for_the_model(i))
         .map(|i| {
             let severity = match i.severity {
                 Severity::Error => "erreur",

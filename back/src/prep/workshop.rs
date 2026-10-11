@@ -217,7 +217,12 @@ pub async fn ask(
 ) -> Result<Proposal, AppError> {
     let prompt = crate::evening::clean_text(&ask.prompt, PROMPT_MAX)?;
     let row = owned_by(campaigns::find(pool, campaign).await?, gm)?;
-    let issues = validate(&row.story);
+    // What the co-GM may fix: an alert it cannot act on is neither shown
+    // to it nor askable (`ISSUE_GONE`), before any AI is spent.
+    let issues: Vec<Issue> = validate(&row.story)
+        .into_iter()
+        .filter(super::for_the_model)
+        .collect();
     let vars: BTreeMap<&str, String> = [
         ("context", context(&row.story, &issues)?),
         ("request", request(ask, &prompt, &row.story, &issues)?),

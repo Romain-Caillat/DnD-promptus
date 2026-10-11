@@ -26,6 +26,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use promptus_shared::maps::Cell;
+use promptus_shared::story::pins::pins_on;
 use serde::Deserialize;
 use serde_json::json;
 use uuid::Uuid;
@@ -115,8 +116,15 @@ async fn gm_json(state: &AppState, row: &CampaignRow) -> Result<serde_json::Valu
         .filter(|n| n.encounter.as_ref().is_some_and(|e| e.vehicles.is_some()))
         .map(|n| json!({ "node": n.id, "title": n.title }))
         .collect();
+    // The scenes pinned on the map shown (campaign/pin-scenes-on-maps):
+    // a tap on one launches it.
+    let pins = b
+        .as_ref()
+        .map(|b| pins_on(&row.story, &b.map_id))
+        .unwrap_or_default();
     Ok(json!({
         "board": b,
+        "pins": pins,
         "maps": board::choices(&state.pool, row).await?,
         "encounters": encounters,
         "encounter": fight_json,
@@ -339,6 +347,7 @@ pub async fn seen_by(
         &Looker {
             character,
             rules: row.rules(),
+            story: Some((&row.story, &row.world)),
         },
     )))
 }

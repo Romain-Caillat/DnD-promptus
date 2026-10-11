@@ -303,15 +303,16 @@ async fn the_atlas_nests_the_world_and_the_campaign_maps_by_their_exits() {
     let maps = atlas["maps"].as_array().unwrap();
     let node = |id: &str| maps.iter().find(|m| m["map"]["id"] == id).unwrap();
 
-    // The region of the Corsaires holds the quai and the Palais.
+    // The region of the Corsaires holds Port-Louis and the Palais, and
+    // Port-Louis the quay: région › lieu › rencontre.
     assert_eq!(atlas["roots"][0], "cotes-bretagne-sud");
     assert_eq!(
-        node("quai-port-louis")["parent"],
-        json!({ "map": "cotes-bretagne-sud", "exit": "vers-port-louis" })
+        node("cotes-bretagne-sud")["children"],
+        json!(["port-louis-rues", "le-palais"])
     );
     assert_eq!(
-        node("cotes-bretagne-sud")["children"],
-        json!(["quai-port-louis", "le-palais"])
+        node("quai-port-louis")["parent"],
+        json!({ "map": "port-louis-rues", "exit": "vers-le-quai" })
     );
     assert_eq!(node("cotes-bretagne-sud")["map"]["scale"], "world");
     // The GM's own map, which no exit reaches yet, is a root, a draft.

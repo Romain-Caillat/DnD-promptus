@@ -1829,6 +1829,9 @@
       "fingers": "Un doigt touche, ou peint le brouillard avec Révéler et Cacher · deux doigts déplacent · pincer zoome. Rien ne part avant le relâcher.",
       "title": "La carte",
       "none": "Aucune carte montrée.",
+      "pin": "{{name}} — lancer : {{scenes}}",
+      "pinScenes": "Scènes de {{name}}",
+      "launch": "Lancer {{number}}. {{title}}",
       "noMaps": "Pas de carte pour ce monde.",
       "show": "Montrer : {{name}}",
       "tool": {
@@ -2168,7 +2171,6 @@
       },
       "fields": {
         "summary": "le résumé",
-        "location": "le lieu",
         "ambience": "l'ambiance",
         "read_aloud": "le texte à lire",
         "flow": "le déroulé",
@@ -2185,8 +2187,10 @@
         "NO_TACTICS": "« {{name}} » : aucune tactique pour les adversaires.",
         "NOT_STAGED": "« {{name}} » : le combat ne peut pas être simulé.",
         "SIMULATION_FAILED": "« {{name}} » : la simulation du combat a échoué.",
-        "NO_RULES": "« {{name}} » : pas de règles pour simuler le combat."
-      }
+        "NO_RULES": "« {{name}} » : pas de règles pour simuler le combat.",
+        "NO_PLACE": "« {{name}} » ne se trouve sur aucune carte (permis : rêve, souvenir)."
+      },
+      "alerts": "À savoir, sans compter dans la jauge"
     },
     "review": {
       "validated": "Validée",
@@ -2270,6 +2274,7 @@
         "info": "Pour info"
       },
       "askFix": "Proposer une correction",
+      "pinInAtlas": "L’épingler dans l’Atlas",
       "codes": {
         "ID_INVALID": "Un identifiant n'a pas le bon format.",
         "ID_DUPLICATE": "Deux éléments ont le même identifiant.",
@@ -2290,7 +2295,8 @@
         "REVELATION_NO_CLUE": "Aucun indice ne mène à une révélation.",
         "THREE_CLUE_RULE": "Une révélation essentielle a moins de trois indices dans des scènes différentes.",
         "KNOWLEDGE_NEVER_GIVEN": "Une scène demande une information que rien ne donne avant.",
-        "KNOWLEDGE_ONLY_OPTIONAL": "Une information nécessaire n'est donnée que dans des scènes facultatives."
+        "KNOWLEDGE_ONLY_OPTIONAL": "Une information nécessaire n'est donnée que dans des scènes facultatives.",
+        "SCENE_WITHOUT_PLACE": "Une scène ne se trouve sur aucune carte : permis pour un rêve ou un souvenir, à épingler sinon dans l’Atlas."
       },
       "validateTitle": "Valider la campagne",
       "count": {
@@ -2714,7 +2720,31 @@
     "next": "À côté",
     "goTo": "Aller à : {{name}}",
     "edit": "Ouvrir dans l’éditeur de carte",
-    "copy": "Carte du monde : la copier dans la campagne pour la modifier"
+    "copy": "Carte du monde : la copier dans la campagne pour la modifier",
+    "pins": {
+      "pin": "{{name}} — scènes : {{scenes}}",
+      "chosen": "Épingle : {{name}}",
+      "scene": "{{number}}. {{title}}",
+      "openMap": "Voir sa carte",
+      "generate": "Générer sa carte",
+      "move": "Déplacer l’épingle",
+      "remove": "Retirer l’épingle",
+      "tool": "Épingler un lieu",
+      "place": "Lieu à épingler",
+      "choose": "Choisir un lieu…",
+      "placed": "{{name}} (déjà épinglé)",
+      "pinHere": "Épingler sur cette carte",
+      "tapCell": "Touchez la case où se trouve « {{name}} ».",
+      "cancel": "Annuler",
+      "noPlaces": "La campagne n’a pas encore de lieu : ajoutez-en dans la préparation.",
+      "failed": "L’épingle n’a pas été posée ({{code}}). Réessayez.",
+      "unplaced": "Scènes sur aucune carte",
+      "issues": "Épingles posées sur rien",
+      "issue": {
+        "MAP_UNKNOWN": "Un lieu est épinglé sur une carte qui n’existe pas.",
+        "ANCHOR_OFF_GRID": "Un lieu est épinglé hors de sa carte."
+      }
+    }
   },
   "maps": {
     "title": "Cartes de la campagne",

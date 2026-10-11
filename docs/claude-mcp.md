@@ -55,6 +55,12 @@ other GM route and expects 403; `tests/api_tokens_test.rs` covers the
 in-scope routes, revocation and ownership (another GM's campaign is
 404).
 
+A scene's spot on a map is a story edit too (`campaign/pin-scenes-on-maps`):
+`{ "op": "set", "target": "<location>", "field": "anchor", "value": { "map":
+"<map id>", "at": [x, y] } }` pins the place (and every scene up to it);
+`"value": null` takes the pin off. Whether the map and the cell exist is
+reported by the atlas, not refused.
+
 A token write is the GM's own write: same edit format, same lock, same
 all-or-nothing, and players see it exactly as they would see the same
 edit made on the review screen (only what the projection already

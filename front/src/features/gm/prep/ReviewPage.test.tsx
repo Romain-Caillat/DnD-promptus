@@ -96,12 +96,13 @@ const NOT_READY = {
     },
     { kind: 'player_hooks', done: 1, total: 1, gaps: [] },
   ],
+  alerts: [{ id: 'sc_reve', name: 'Le rêve de Borin', code: 'NO_PLACE', detail: 'x' }],
 }
-const READY = { ...NOT_READY, ready: true, done: 5, checks: [] }
+const READY = { ...NOT_READY, ready: true, done: 5, checks: [], alerts: [] }
 
-function renderPage() {
+function renderPage(at = '/campagnes/c1/preparer') {
   render(
-    <MemoryRouter initialEntries={['/campagnes/c1/preparer']}>
+    <MemoryRouter initialEntries={[at]}>
       <Routes>
         <Route path="/campagnes/:campaignId/preparer" element={<ReviewPage />} />
         <Route path="/campagnes/:campaignId/table" element={<p>La table</p>} />
@@ -254,5 +255,28 @@ describe('ReviewPage', () => {
     expect(await screen.findByText('« La route du Greyhound » ne se trouve que dans des scènes facultatives.')).toBeInTheDocument()
     expect(screen.getByText("« La route du Greyhound » n'a qu'un chemin sur trois.")).toBeInTheDocument()
     expect(screen.getAllByRole('meter', { name: '3 sur 5' }).length).toBeGreaterThan(0)
+    // A scene standing on no map is said, apart from what the act lacks.
+    expect(screen.getByText('« Le rêve de Borin » ne se trouve sur aucune carte (permis : rêve, souvenir).')).toBeInTheDocument()
+  })
+
+  it('opens on the scene of an Atlas pin, and sends a scene with no spot to the Atlas, not to the co-GM', async () => {
+    mockApi({
+      'GET /api/campaigns/c1': () => ({
+        status: 200,
+        body: {
+          data: campaign({
+            issues: [{ severity: 'warning', code: 'SCENE_WITHOUT_PLACE', path: 'nodes[1].location', detail: 'x' }],
+          }),
+        },
+      }),
+      'GET /api/campaigns/c1/workshop': () => ({ status: 200, body: { data: [] } }),
+      'GET /api/campaigns/c1/readiness': () => ({ status: 200, body: { data: [READY] } }),
+    })
+    renderPage('/campagnes/c1/preparer?onglet=graph&scene=sc_bureau')
+
+    expect(await screen.findByRole('region', { name: 'Fiche de la scène « Le bureau de Morel »' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Cohérence · 1/ }))
+    expect(screen.getByRole('link', { name: 'L’épingler dans l’Atlas' })).toHaveAttribute('href', '/campagnes/c1/atlas')
+    expect(screen.queryByRole('button', { name: 'Proposer une correction' })).not.toBeInTheDocument()
   })
 })

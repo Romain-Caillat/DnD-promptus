@@ -712,11 +712,26 @@ pub struct Location {
     /// The place containing this one (a district, a ship).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<Id>,
+    /// Where it stands on a map (`campaign/pin-scenes-on-maps`): the pin
+    /// of every scene held here, or in a place inside this one that has
+    /// no anchor of its own (`story::pins`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub anchor: Option<Anchor>,
     /// The place, described for pixel art.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub art: String,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub gm_notes: String,
+}
+
+/// A place's spot on a map: a map of the world (`content/maps/`) or of
+/// the campaign, by id, and the cell its pin stands on. Checked against
+/// the maps supplied to `validate::validate_with`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Anchor {
+    pub map: String,
+    pub at: crate::maps::Cell,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

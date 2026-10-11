@@ -557,6 +557,7 @@ pub fn import_v1(
                 name: e.name.clone(),
                 description,
                 parent: None,
+                anchor: None,
                 art: String::new(),
                 gm_notes: String::new(),
             }),

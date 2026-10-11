@@ -50,6 +50,33 @@ export interface AtlasMap {
   links: { to: string; exit: string }[]
   backdrop: boolean
   validated: boolean
+  /** The scenes standing on this map, by place (campaign/pin-scenes-on-maps). */
+  pins: Pin[]
+}
+
+/** A scene on a pin (`story::pins::PinScene`): numbered as in the campaign. */
+interface PinScene {
+  id: string
+  title: string
+  number: number
+  /** The grid map it is played on. */
+  map?: string
+}
+
+/** A place anchored on a map and the scenes standing there (`story::pins::Pin`). */
+export interface Pin {
+  location: string
+  name: string
+  at: Cell
+  scenes: PinScene[]
+}
+
+/** A place of the story and where it is pinned (`campaign_maps::AtlasPlace`). */
+interface AtlasPlace {
+  id: string
+  name: string
+  parent: string | null
+  anchor: { map: string; at: Cell } | null
 }
 
 /** maps/browse-atlas — every map of the world and the campaign, roots first then depth first. */
@@ -57,6 +84,12 @@ export interface Atlas {
   revision: number
   roots: string[]
   maps: AtlasMap[]
+  /** Every place of the story, for the pin tool. */
+  places: AtlasPlace[]
+  /** Scenes no place anchors on a map. */
+  unplaced: PinScene[]
+  /** Pins standing nowhere (a map the atlas lacks, a cell off its grid). */
+  issues: { severity: string; code: string; path: string; detail: string }[]
 }
 
 export function fetchAtlas(campaignId: string): Promise<Atlas> {

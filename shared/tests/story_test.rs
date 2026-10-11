@@ -67,6 +67,27 @@ fn export_then_import_is_an_identity() {
 }
 
 #[test]
+fn a_file_written_before_pins_still_imports_and_says_its_scenes_stand_nowhere() {
+    // The format before campaign/pin-scenes-on-maps: no place anchored.
+    let old: String = FIXTURE
+        .lines()
+        .filter(|l| !l.trim_start().starts_with("anchor:"))
+        .map(|l| format!("{l}\n"))
+        .collect();
+    assert_ne!(old, FIXTURE);
+    let c = from_yaml(&old).expect("an old file imports");
+    assert!(c.locations.iter().all(|l| l.anchor.is_none()));
+    // Reported, never refused: each scene is a warning, nothing else.
+    let issues = validate(&c);
+    assert_eq!(issues.len(), c.nodes.len(), "{issues:#?}");
+    assert!(
+        issues
+            .iter()
+            .all(|i| i.code == "SCENE_WITHOUT_PLACE" && i.severity == Severity::Warning)
+    );
+}
+
+#[test]
 fn a_typo_in_a_key_is_refused_with_its_line() {
     let typo = FIXTURE.replace(
         "    hides: Il paie le douanier.",

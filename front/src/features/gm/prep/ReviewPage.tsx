@@ -84,10 +84,12 @@ export function ReviewPage() {
   const navigate = useNavigate()
   const { campaignId = '' } = useParams()
   const [state, setState] = useState<PageState>({ kind: 'loading' })
-  // `?onglet=bible` opens a tab directly (the Atlas's drawer links here).
+  // `?onglet=bible` opens a tab directly (the Atlas's drawer links here);
+  // `?scene=` opens a scene's sheet (a pin of the Atlas,
+  // campaign/pin-scenes-on-maps).
   const [params] = useSearchParams()
   const [tab, setTab] = useState<Tab>(() => TABS.find((x) => x === params.get('onglet')) ?? 'graph')
-  const [selected, setSelected] = useState<string | null>(null)
+  const [selected, setSelected] = useState<string | null>(() => params.get('scene'))
   const [version, setVersion] = useState(0)
   const [workshopVersion, setWorkshopVersion] = useState(0)
   const [busy, setBusy] = useState(false)
@@ -262,6 +264,7 @@ export function ReviewPage() {
               <Coherence
                 story={story}
                 issues={campaign.issues}
+                atlas={`/campagnes/${campaignId}/atlas`}
                 onAsk={(issue) => void workshop.send({ issue: { code: issue.code, path: issue.path } })}
               />
             )}
@@ -458,10 +461,13 @@ function Sheets({
 function Coherence({
   story,
   issues,
+  atlas,
   onAsk,
 }: {
   story: Story
   issues: StoryIssue[]
+  /** Where a scene is pinned on a map. */
+  atlas: string
   onAsk: (issue: StoryIssue) => void
 }) {
   const { t } = useTranslation()
@@ -488,9 +494,16 @@ function Coherence({
                 {where && ` · ${nameOf(where)}`}
               </span>
               <span className="font-mono text-[11px] text-mute-soft">{i.detail}</span>
-              <Btn className="self-end" onClick={() => onAsk(i)}>
-                {t('prep.review.askFix')}
-              </Btn>
+              {i.code === 'SCENE_WITHOUT_PLACE' ? (
+                // A spot on a map is pinned in the Atlas, never asked of the co-GM.
+                <Link className="self-end text-caption text-chalk underline underline-offset-4" to={atlas}>
+                  {t('prep.review.pinInAtlas')}
+                </Link>
+              ) : (
+                <Btn className="self-end" onClick={() => onAsk(i)}>
+                  {t('prep.review.askFix')}
+                </Btn>
+              )}
             </li>
           )
         })}

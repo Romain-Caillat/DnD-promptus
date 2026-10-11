@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { eventLine } from '@/features/map/events'
 import { MapCanvas } from '@/features/map/MapCanvas'
+import { gmMarks } from '@/features/map/pins'
 import { cellKey } from '@/features/map/render'
 import { readGrid } from '@/features/map/render'
 import { useImage } from '@/features/map/useImage'
@@ -30,6 +31,10 @@ const TIMES: TimeOfDay[] = ['dawn', 'day', 'dusk', 'night']
  * tablet (gm/run-on-tablet) the map is handled by finger — one paints the
  * fog, two slide it, a pinch zooms — and the adversary's turn is three
  * big keys: validate the proposal, it flees, it passes.
+ *
+ * The scenes pinned on the map shown (campaign/pin-scenes-on-maps) stand
+ * on it, numbered: touching a pin launches its scene, or lists them when
+ * several share the place.
  */
 export function BoardPanel({
   campaignId,
@@ -41,6 +46,7 @@ export function BoardPanel({
   onStart,
   onCommand,
   onLoot,
+  onScene,
 }: {
   campaignId: string
   data: GmBoard
@@ -51,6 +57,8 @@ export function BoardPanel({
   onStart: (node: string) => void
   onCommand: (c: GmCommand) => void
   onLoot: (index: number, character: string) => void
+  /** Launch a scene (`reveal` scene): from a pin on the map. */
+  onScene?: (node: string) => void
 }) {
   const { t } = useTranslation()
   const [tool, setTool] = useState<Tool>('move')
@@ -61,6 +69,40 @@ export function BoardPanel({
   const backdrop = useImage(board?.map.backdrop?.image ? gmBackdropUrl(campaignId, board.mapId) : null)
   const enc = data.encounter
   const fighting = Boolean(enc?.live)
+  const [pinOpen, setPinOpen] = useState<string | null>(null)
+  const pins = data.pins ?? []
+  const launching = live && Boolean(onScene)
+  const marks = gmMarks(
+    pins,
+    (p) => t('gmLive.board.pin', { name: p.name, scenes: p.scenes.map((x) => `${x.number}. ${x.title}`).join(', ') }),
+    { picked: pinOpen },
+  )
+  /** A pin touched: its one scene starts, or its scenes are listed. */
+  function touchPin(place: string) {
+    const pin = pins.find((p) => p.location === place)
+    if (!pin || !onScene) return
+    if (pin.scenes.length === 1) {
+      setPinOpen(null)
+      onScene(pin.scenes[0].id)
+    } else setPinOpen((o) => (o === place ? null : place))
+  }
+  const opened = pins.find((p) => p.location === pinOpen)
+  const chooser = opened && launching && (
+    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('gmLive.board.pinScenes', { name: opened.name })}>
+      <span className="text-caption font-bold">{opened.name}</span>
+      {opened.scenes.map((sc) => (
+        <Btn
+          key={sc.id}
+          onClick={() => {
+            setPinOpen(null)
+            onScene?.(sc.id)
+          }}
+        >
+          {t('gmLive.board.launch', { number: sc.number, title: sc.title })}
+        </Btn>
+      ))}
+    </div>
+  )
 
   if (!board) {
     return (
@@ -77,7 +119,15 @@ export function BoardPanel({
         title={t('gmLive.board.title')}
         actions={<MapPicker data={data} live={live && !fighting} onShow={onShow} current={board.mapId} />}
       >
-        <TravelPanel campaignId={campaignId} map={board.map} tileset={tileset} refreshKey={data} />
+        <TravelPanel
+          campaignId={campaignId}
+          map={board.map}
+          tileset={tileset}
+          refreshKey={data}
+          pins={marks}
+          onPin={launching ? touchPin : undefined}
+        />
+        {chooser}
       </Panel>
     )
   }
@@ -168,6 +218,8 @@ export function BoardPanel({
         fightEvents={enc?.events}
         className="max-h-[60vh]"
         touch={touch}
+        pins={fighting ? [] : marks}
+        onPin={launching && !fighting ? touchPin : undefined}
         onCell={tool === 'move' ? tap : undefined}
         onPaint={
           tool === 'move'
@@ -175,6 +227,7 @@ export function BoardPanel({
             : (cells) => onEdit(tool === 'reveal' ? { kind: 'revealCells', cells } : { kind: 'hideCells', cells })
         }
       />
+      {chooser}
       {touch && <p className="text-caption text-mute-soft">{t('gmLive.board.fingers')}</p>}
       {board.map.gm_notes && <p className="text-caption text-mute-soft">{board.map.gm_notes}</p>}
       {sel && (

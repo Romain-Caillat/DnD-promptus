@@ -35,7 +35,8 @@ use promptus_shared::maps::{
     Ambience, BASE_LAYER, Backdrop, CellKind, FORMAT_VERSION, Grid, Issue, Layer, Map, MapError,
     Scale, Visibility, Water, from_uvtt,
 };
-use promptus_shared::story::Campaign;
+use promptus_shared::story::pins::{Pin, PinScene, is_pinned, pins_on};
+use promptus_shared::story::{Anchor, Campaign, anchor_issues};
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
 use sqlx::{PgExecutor, PgPool};
@@ -392,14 +393,30 @@ pub async fn get(
 
 /// The GM's atlas (maps/browse-atlas): every map of the world and of the
 /// campaign, whole, nested by `maps::atlas::tree` — roots first, then
-/// depth first. GM only: a player receives the one map on the table,
-/// through the board's projection, never this.
+/// depth first — with the scenes pinned on each (`story::pins`,
+/// campaign/pin-scenes-on-maps). GM only: a player receives the one map
+/// on the table, through the board's projection, never this.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AtlasView {
     pub revision: i64,
     pub roots: Vec<String>,
     pub maps: Vec<AtlasMap>,
+    /// Every place of the story, for the pin tool.
+    pub places: Vec<AtlasPlace>,
+    /// Scenes no place anchors on a map (a dream, a memory: allowed).
+    pub unplaced: Vec<PinScene>,
+    /// Pins standing nowhere: a map the atlas lacks, a cell off its grid.
+    pub issues: Vec<promptus_shared::story::Issue>,
+}
+
+/// A place of the story and where it is pinned.
+#[derive(Debug, Clone, Serialize)]
+pub struct AtlasPlace {
+    pub id: String,
+    pub name: String,
+    pub parent: Option<String>,
+    pub anchor: Option<Anchor>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -414,6 +431,8 @@ pub struct AtlasMap {
     pub links: Vec<AtlasLink>,
     pub backdrop: bool,
     pub validated: bool,
+    /// The scenes standing on this map, by place.
+    pub pins: Vec<Pin>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -464,7 +483,6 @@ pub async fn atlas(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Atla
             };
             let campaign = n.origin == Origin::Campaign;
             Some(AtlasMap {
-                map,
                 origin: if campaign {
                     AtlasOrigin::Campaign
                 } else {
@@ -486,12 +504,34 @@ pub async fn atlas(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Atla
                 backdrop: campaign && mine.is_some_and(|m| m.backdrop),
                 // A world map is always playable (`playable`).
                 validated: !campaign || mine.is_some_and(|m| m.validated_at.is_some()),
+                pins: pins_on(&row.story, &n.id),
+                map,
             })
         })
-        .collect();
+        .collect::<Vec<_>>();
+    let shown: Vec<Map> = maps.iter().map(|m| m.map.clone()).collect();
+    let story = &row.story;
     Ok(AtlasView {
         revision: row.prep_revision,
         roots: built.roots,
+        places: story
+            .locations
+            .iter()
+            .map(|l| AtlasPlace {
+                id: l.id.clone(),
+                name: l.name.clone(),
+                parent: l.parent.clone(),
+                anchor: l.anchor.clone(),
+            })
+            .collect(),
+        unplaced: story
+            .nodes
+            .iter()
+            .enumerate()
+            .filter(|(_, n)| !is_pinned(story, n))
+            .map(|(i, n)| PinScene::of(i, n))
+            .collect(),
+        issues: anchor_issues(story, &shown),
         maps,
     })
 }

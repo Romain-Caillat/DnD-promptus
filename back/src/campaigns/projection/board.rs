@@ -11,10 +11,14 @@
 //! the order, whose turn, each combatant's standing, the party's hit
 //! points (an opponent's never: only whether it is down), the caller's
 //! cards and reachable cells on their turn, the events with opponents'
-//! hit points and the GM's notes removed, and the loot already given.
+//! hit points and the GM's notes removed, and the loot already given;
+//! the pins of the places whose scenes the table has entered, on cells
+//! it sees — a name and a cell, never the scenes
+//! (campaign/pin-scenes-on-maps).
 //!
 //! Never: GM layers, GM notes, object checks, the backdrop prompt,
-//! fogged cells, hidden tokens, opponents' hit points, the co-GM's
+//! fogged cells, hidden tokens, a pin of a place not visited yet,
+//! opponents' hit points, the co-GM's
 //! proposal, loot not handed out yet, a death the dice propose before
 //! the GM confirmed it (engine/save-against-death: the saves themselves
 //! are the table's to see).
@@ -30,6 +34,8 @@ use promptus_shared::rules::events::Event;
 use promptus_shared::rules::model::{AreaShape, Targeting, ZeroHpRule};
 use promptus_shared::rules::sheet::Side;
 use promptus_shared::sprite::{CharacterLook, Direction};
+use promptus_shared::story::pins::pins_on;
+use promptus_shared::story::{Campaign, WorldState};
 use serde::Serialize;
 use uuid::Uuid;
 
@@ -45,6 +51,21 @@ pub struct BoardView {
     /// Where the caller's token may walk now, out of a fight.
     pub reachable: Vec<ReachCell>,
     pub fight: Option<FightView>,
+    /// The places of this map the table has been to (campaign/pin-scenes-
+    /// on-maps): a pin holding a scene entered, on a cell out of the fog.
+    pub pins: Vec<PinView>,
+}
+
+/// A pin as players see it: the place's name and its cell — never the
+/// scenes it holds, their ids or their numbers (a « 7 » would say there
+/// are seven).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PinView {
+    pub name: String,
+    pub at: Cell,
+    /// The table is in one of its scenes now.
+    pub current: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -160,6 +181,34 @@ pub struct Looker<'a> {
     /// The caller's character, when they have one validated.
     pub character: Option<Uuid>,
     pub rules: Option<&'a RuleSystem>,
+    /// The story and where the table stands in it, for the pins.
+    pub story: Option<(&'a Campaign, &'a WorldState)>,
+}
+
+/// The pins of `map` the table may see: a place holding a scene entered
+/// (or the current one), standing on a cell `seen`.
+fn pins_seen(
+    story: Option<(&Campaign, &WorldState)>,
+    map: &str,
+    seen: &dyn Fn(Cell) -> bool,
+) -> Vec<PinView> {
+    let Some((campaign, world)) = story else {
+        return Vec::new();
+    };
+    let entered =
+        |id: &str| world.node_status.contains_key(id) || world.current_node.as_deref() == Some(id);
+    pins_on(campaign, map)
+        .into_iter()
+        .filter(|p| seen(p.at) && p.scenes.iter().any(|s| entered(&s.id)))
+        .map(|p| PinView {
+            current: p
+                .scenes
+                .iter()
+                .any(|s| world.current_node.as_deref() == Some(s.id.as_str())),
+            name: p.name,
+            at: p.at,
+        })
+        .collect()
 }
 
 fn token_of(character: Option<Uuid>) -> Option<String> {
@@ -400,6 +449,7 @@ pub fn project_board(
         tokens,
         reachable,
         fight: encounter.map(|(e, ev)| fight_view(e, ev, looker, &seen)),
+        pins: pins_seen(looker.story, &board.map_id, &seen),
     }
 }
 

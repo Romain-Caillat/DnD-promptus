@@ -43,6 +43,14 @@ pub(crate) fn edit_library(row: &CampaignRow) -> Library<'_> {
     }
 }
 
+/// Whether a validator finding is the model's to act on. A scene's spot
+/// on a map is not (`SCENE_WITHOUT_PLACE`): the GM pins it in the atlas,
+/// on maps the model never sees — asking would spend AI budget on an
+/// anchor it can only invent.
+pub(crate) fn for_the_model(issue: &promptus_shared::story::Issue) -> bool {
+    issue.code != "SCENE_WITHOUT_PLACE"
+}
+
 /// The GM's edits, applied whole under the campaign lock and journaled
 /// as `author`'s (the GM in Promptus, or their token). Returns the
 /// campaign as stored and what changed.

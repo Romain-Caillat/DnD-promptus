@@ -392,6 +392,20 @@ gone; import, generation and copies still create maps whole. Story
 edits never make a map batch stale. Any change withdraws the map's
 validation, as before.
 
+### A scene's pin has one source: its place
+
+Where a scene stands on a map is its place's `anchor` in the story
+(`Location.anchor`, `campaign/pin-scenes-on-maps`); on a map, a scene's
+pin is the first place up its `parent` chain anchored there, computed by
+`story::pins` for the atlas, the GM's board, travel arrivals and the
+players' projection alike. A map's `labels` only write words — their old
+`scene` field is gone (migration 048), so the two can never disagree. A
+pin edit is a story `set` on `anchor`, journaled like any edit. Players
+receive pins only through `projection::board`: places holding a scene
+the table entered, on cells out of the fog, as a name and a cell — never
+scene ids or numbers (a « 7 » says seven scenes exist). Pins never nest
+maps: the atlas tree stays the exits' alone.
+
 ### The sheet and the play state are two things
 
 `characters.sheet` is what the player wrote and the GM reviewed; the

@@ -9,6 +9,7 @@ import type { BoardView } from '@/lib/board'
 import type { Tileset } from '@/lib/media'
 import { fetchTravel, travelCommand, type PlayerCommand, type TravelView } from '@/lib/travel'
 import { cn } from '@/lib/utils'
+import { playerMarks } from '@/features/map/pins'
 import { HexMap, type HexRoute } from './HexMap'
 
 /** The journey as this player may see it, refetched when `refreshKey` moves. */
@@ -117,6 +118,7 @@ export function WorldMapTab({
         party={party}
         routes={routes}
         destination={j?.destinationAt ?? null}
+        pins={playerMarks(board.pins)}
         className="max-h-[55dvh]"
       />
       {j && (

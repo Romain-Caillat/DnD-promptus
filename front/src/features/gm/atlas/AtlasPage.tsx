@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router'
-import { Btn, Panel, TouchScreen } from '@/features/gm/live/ui'
+import { Btn, Panel, TouchScreen, field } from '@/features/gm/live/ui'
 import { useLiveChanges } from '@/features/live/useLiveChanges'
 import { MapCanvas } from '@/features/map/MapCanvas'
+import { gmMarks } from '@/features/map/pins'
 import { useImage } from '@/features/map/useImage'
 import { useTileset } from '@/features/map/useTileset'
 import { HexMap } from '@/features/travel/HexMap'
 import { ApiError } from '@/lib/api'
 import type { Cell } from '@/lib/board'
-import { fetchAtlas, gmBackdropUrl, type Atlas, type AtlasMap } from '@/lib/maps'
+import { fetchAtlas, generateMap, gmBackdropUrl, type Atlas, type AtlasMap, type Pin } from '@/lib/maps'
+import { applyEdits } from '@/lib/prep'
 import { fetchGmMedia, gmImageUrl, type MediaList } from '@/lib/media'
 import { TABLET_QUERY, useMediaQuery } from '@/lib/useMediaQuery'
 import { cn } from '@/lib/utils'
@@ -40,6 +42,12 @@ const DRAWER = ['bible', 'graph', 'sheets'] as const
  * (bible, scenes and acts, sheets). On a tablet the map is handled
  * with the fingers and the side panel folds away.
  *
+ * The scenes stand on the maps as numbered pins (campaign/pin-scenes-
+ * on-maps), carried by their places in the story: tapping one lists its
+ * scenes, each opening the scene sheet; the pin tool anchors a place on
+ * a cell, moves or removes it — a story edit, so a line of the journal.
+ * A scene can generate its fight map from there (maps/generate-map-llm).
+ *
  * GM only: a player receives the one map on the table, through the
  * board's projection, never the atlas.
  */
@@ -60,6 +68,12 @@ export function AtlasPage() {
   const [drawer, setDrawer] = useState(false)
   const tablet = useMediaQuery(TABLET_QUERY)
   const [panel, setPanel] = useState(true)
+  /** The pin chosen (its place), and the place being anchored by a tap. */
+  const [picked, setPicked] = useState<string | null>(null)
+  const [pinning, setPinning] = useState<string | null>(null)
+  const [choice, setChoice] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState<string | null>(null)
 
   useEffect(() => {
     let live = true
@@ -131,22 +145,68 @@ export function AtlasPage() {
     setWalk(next)
     setMotion(how)
     setHidden(new Set())
+    setPicked(null)
+    setPinning(null)
     const last = next[next.length - 1]
     if (last) setParams({ carte: last }, { replace: true })
   }
   const open = (id: string) => go(enter(here, id), 'in')
   const jump = (id: string) => go(enter(here, id), null)
   const out = () => go(leave(here, maps), 'out')
+  /** One story edit on a place's anchor (pin, move, remove), then the atlas again. */
+  async function anchor(place: string, value: { map: string; at: Cell } | null) {
+    setBusy(true)
+    setFailed(null)
+    try {
+      await applyEdits(campaignId, [{ op: 'set', target: place, field: 'anchor', value }])
+      setVersion((v) => v + 1)
+    } catch (err) {
+      setFailed(err instanceof ApiError ? err.code : 'action')
+    } finally {
+      setBusy(false)
+    }
+  }
+  /** maps/generate-map-llm, from a pin: the scene's fight map, attached to it (as the scene sheet does). */
+  async function generate(scene: string) {
+    setBusy(true)
+    setFailed(null)
+    try {
+      const made = await generateMap(campaignId, scene)
+      await applyEdits(campaignId, [{ op: 'set', target: scene, field: 'map', value: made.map.id }])
+      setVersion((v) => v + 1)
+      go(enter(here, made.map.id), 'in')
+    } catch (err) {
+      setFailed(err instanceof ApiError ? err.code : 'action')
+    } finally {
+      setBusy(false)
+    }
+  }
   const tap = (cell: Cell) => {
     if (!entry) return
+    if (pinning) {
+      const place = pinning
+      setPinning(null)
+      setPicked(place)
+      void anchor(place, { map: entry.map.id, at: cell })
+      return
+    }
     const to = doorAt(entry, cell)
     if (to) open(to)
   }
+  const pick = (place: string) => setPicked((p) => (p === place ? null : place))
 
   const crumbs = entry ? trail(maps, entry.map.id) : []
   const name = (id: string) => maps.get(id)?.map.name ?? id
   const layers = entry ? switchable(entry.map) : []
   const marks = entry ? doorCells(entry) : []
+  const pins: Pin[] = entry?.pins ?? []
+  const pinTitle = (p: Pin) =>
+    t('atlas.pins.pin', { name: p.name, scenes: p.scenes.map((x) => `${x.number}. ${x.title}`).join(', ') })
+  const pinMarks = gmMarks(pins, pinTitle, { picked })
+  const chosen = pins.find((p) => p.location === picked) ?? null
+  const places = state.atlas.places
+  const placeName = (id: string) => places.find((p) => p.id === id)?.name ?? id
+  const sceneLink = (id: string) => `/campagnes/${campaignId}/preparer?onglet=graph&scene=${encodeURIComponent(id)}`
 
   const mapView = !entry || !map ? (
     <p className="text-body text-mute-soft">{t('atlas.empty')}</p>
@@ -161,11 +221,22 @@ export function AtlasPage() {
       onAnimationEnd={() => setMotion(null)}
     >
       {scaleOf(entry) === 'world' ? (
-        <HexMap map={map} tileset={tileset} party={null} marks={marks} onHex={tap} className="max-h-[70dvh]" />
+        <HexMap
+          map={map}
+          tileset={tileset}
+          party={null}
+          marks={marks}
+          pins={pinMarks}
+          onPin={pinning ? undefined : pick}
+          onHex={tap}
+          className="max-h-[70dvh]"
+        />
       ) : (
         <MapCanvas
           scene={{ map, tileset, atlases, tokens: [], backdrop, highlight: marks }}
           onCell={tap}
+          pins={pinMarks}
+          onPin={pinning ? undefined : pick}
           touch={tablet}
           className="max-h-[70dvh]"
         />
@@ -189,6 +260,31 @@ export function AtlasPage() {
         {entry.validated ? t('maps.validated') : t('maps.draft')}
       </p>
       {entry.map.gm_notes && <p className="text-body text-chalk-soft">{entry.map.gm_notes}</p>}
+      <PinsSection
+        chosen={chosen}
+        places={places}
+        busy={busy}
+        pinning={pinning}
+        choice={choice}
+        failed={failed}
+        maps={maps}
+        unplaced={state.atlas.unplaced}
+        issues={state.atlas.issues}
+        sceneLink={sceneLink}
+        placeName={placeName}
+        onChoice={setChoice}
+        onPin={(place) => {
+          setPinning(place)
+          setFailed(null)
+        }}
+        onCancel={() => setPinning(null)}
+        onUnpin={(place) => {
+          setPicked(null)
+          void anchor(place, null)
+        }}
+        onOpenMap={(id) => go(enter(here, id), 'in')}
+        onGenerate={(scene) => void generate(scene)}
+      />
       <h3 className="type-label text-mute-soft">{t('atlas.inside')}</h3>
       {entry.children.length === 0 ? (
         <p className="text-caption text-mute-soft">{t('atlas.noInside')}</p>
@@ -330,5 +426,138 @@ export function AtlasPage() {
         </nav>
       </main>
     </TouchScreen.Provider>
+  )
+}
+
+/**
+ * The side panel's pins (campaign/pin-scenes-on-maps): the pin chosen
+ * and its scenes, each opening the scene sheet or its fight map; the pin
+ * tool, which anchors a place on the next cell tapped; the scenes that
+ * stand nowhere and the pins that stand on nothing.
+ */
+function PinsSection({
+  chosen,
+  places,
+  busy,
+  pinning,
+  choice,
+  failed,
+  maps,
+  unplaced,
+  issues,
+  sceneLink,
+  placeName,
+  onChoice,
+  onPin,
+  onCancel,
+  onUnpin,
+  onOpenMap,
+  onGenerate,
+}: {
+  chosen: Pin | null
+  places: Atlas['places']
+  busy: boolean
+  pinning: string | null
+  choice: string
+  failed: string | null
+  maps: Map<string, AtlasMap>
+  unplaced: Atlas['unplaced']
+  issues: Atlas['issues']
+  sceneLink: (id: string) => string
+  placeName: (id: string) => string
+  onChoice: (place: string) => void
+  onPin: (place: string) => void
+  onCancel: () => void
+  onUnpin: (place: string) => void
+  onOpenMap: (map: string) => void
+  onGenerate: (scene: string) => void
+}) {
+  const { t } = useTranslation()
+  const link = 'text-caption text-chalk underline underline-offset-4'
+  return (
+    <>
+      {chosen && (
+        <section aria-label={t('atlas.pins.chosen', { name: chosen.name })} className="flex flex-col gap-1.5">
+          <h3 className="type-label text-mute-soft">{t('atlas.pins.chosen', { name: chosen.name })}</h3>
+          <ul className="flex flex-col gap-1.5">
+            {chosen.scenes.map((sc) => (
+              <li key={sc.id} className="flex flex-wrap items-center gap-2">
+                <Link className={link} to={sceneLink(sc.id)}>
+                  {t('atlas.pins.scene', { number: sc.number, title: sc.title })}
+                </Link>
+                {sc.map && maps.has(sc.map) ? (
+                  <Btn onClick={() => onOpenMap(sc.map!)}>{t('atlas.pins.openMap')}</Btn>
+                ) : (
+                  !sc.map && (
+                    <Btn disabled={busy} onClick={() => onGenerate(sc.id)}>
+                      {t('atlas.pins.generate')}
+                    </Btn>
+                  )
+                )}
+              </li>
+            ))}
+          </ul>
+          <div className="flex flex-wrap gap-1.5">
+            <Btn disabled={busy} onClick={() => onPin(chosen.location)}>
+              {t('atlas.pins.move')}
+            </Btn>
+            <Btn disabled={busy} onClick={() => onUnpin(chosen.location)}>
+              {t('atlas.pins.remove')}
+            </Btn>
+          </div>
+        </section>
+      )}
+      <h3 className="type-label text-mute-soft">{t('atlas.pins.tool')}</h3>
+      {pinning ? (
+        <div className="flex flex-wrap items-center gap-1.5" role="status">
+          <p className="text-caption text-chalk-soft">{t('atlas.pins.tapCell', { name: placeName(pinning) })}</p>
+          <Btn onClick={onCancel}>{t('atlas.pins.cancel')}</Btn>
+        </div>
+      ) : places.length === 0 ? (
+        <p className="text-caption text-mute-soft">{t('atlas.pins.noPlaces')}</p>
+      ) : (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <select className={field} value={choice} onChange={(e) => onChoice(e.target.value)} aria-label={t('atlas.pins.place')}>
+            <option value="">{t('atlas.pins.choose')}</option>
+            {places.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.anchor ? t('atlas.pins.placed', { name: p.name }) : p.name}
+              </option>
+            ))}
+          </select>
+          <Btn main disabled={!choice || busy} onClick={() => onPin(choice)}>
+            {t('atlas.pins.pinHere')}
+          </Btn>
+        </div>
+      )}
+      {failed && (
+        <p role="alert" className="text-caption text-stat-hp">
+          {t('atlas.pins.failed', { code: failed })}
+        </p>
+      )}
+      {unplaced.length > 0 && (
+        <>
+          <h3 className="type-label text-mute-soft">{t('atlas.pins.unplaced')}</h3>
+          <ul className="flex flex-col gap-1">
+            {unplaced.map((sc) => (
+              <li key={sc.id}>
+                <Link className={link} to={sceneLink(sc.id)}>
+                  {t('atlas.pins.scene', { number: sc.number, title: sc.title })}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {issues.length > 0 && (
+        <ul className="flex flex-col gap-1" aria-label={t('atlas.pins.issues')}>
+          {issues.map((i) => (
+            <li key={i.path} className="text-caption text-stat-hp">
+              {t(`atlas.pins.issue.${i.code}`, { defaultValue: i.detail })}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   )
 }

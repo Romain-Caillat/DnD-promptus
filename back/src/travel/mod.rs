@@ -19,7 +19,8 @@
 //! 6. at night the GM sets the watches and speaks to the one awake only,
 //!    who may wake the others;
 //! 7. on arrival, entering the place opens its map (the exit on its hex)
-//!    and its scene (the label's), without leaving the game screen.
+//!    and its scene — the first the table has not played among the scenes
+//!    pinned on that hex (`story::pins`) — without leaving the game screen.
 //!
 //! The party's hex and the hexes seen live here and are copied onto the
 //! board in the same transaction, so a world map comes back as it was
@@ -32,6 +33,8 @@ use promptus_shared::rules::RuleSystem;
 use promptus_shared::rules::check::{self, Advantage, OutcomeBand, RollBreakdown, RollTarget};
 use promptus_shared::rules::dice::SeededDice;
 use promptus_shared::rules::model::{GroupThreshold, RollScope};
+use promptus_shared::story::pins::pins_on;
+use promptus_shared::story::{Campaign, WorldState};
 use promptus_shared::travel::{
     Advanced, Guide, Party, Route, TravelEvent, Way, draw_events, routes,
 };
@@ -384,7 +387,9 @@ async fn save(
 }
 
 /// A place of a world map: a label, the map an exit on its hex opens,
-/// and the scene it names.
+/// and the scene entering it opens: the first, in campaign order, of the
+/// scenes pinned on that hex that the table has not entered yet
+/// (`campaign/pin-scenes-on-maps`: a map's label names, the story pins).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Place {
@@ -427,9 +432,11 @@ fn arrival_line(map: &Map, d: &Destination, day: u32) -> String {
     }
 }
 
-/// The places of `map`, as the GM sees them.
+/// The places of `map`, as the GM sees them, with the scene each opens
+/// for a table at `world`.
 #[must_use]
-pub fn places(map: &Map) -> Vec<Place> {
+pub fn places(map: &Map, story: &Campaign, world: &WorldState) -> Vec<Place> {
+    let pins = pins_on(story, &map.id);
     map.labels
         .iter()
         .map(|l| Place {
@@ -440,7 +447,12 @@ pub fn places(map: &Map) -> Vec<Place> {
                 .iter()
                 .find(|e| e.cells.contains(&l.at))
                 .map(|e| e.to.clone()),
-            scene: l.scene.clone(),
+            scene: pins
+                .iter()
+                .filter(|p| p.at == l.at)
+                .flat_map(|p| &p.scenes)
+                .find(|s| !world.node_status.contains_key(&s.id))
+                .map(|s| s.id.clone()),
             secret: map.visibility(&l.layer) != Visibility::All,
         })
         .collect()
@@ -882,7 +894,9 @@ pub async fn gm(
             }
             t.proposal = None;
             t.party.way = None;
-            let place = places(&map).into_iter().find(|p| p.at == j.destination.at);
+            let place = places(&map, &row.story, &row.world)
+                .into_iter()
+                .find(|p| p.at == j.destination.at);
             let target = place
                 .as_ref()
                 .and_then(|p| p.map.clone())

@@ -106,7 +106,7 @@ lights:
 exits:
   - { id: vers-les-rues, cells: [[0, 4], [0, 5]], to: port-louis-rues, arrive: depart-quai, label: Vers les rues }
 labels:
-  - { text: Appontement, at: [10, 10], scene: sc-quai }
+  - { text: Appontement, at: [10, 10] }
 starts:
   - { id: pj-1, side: party, at: [0, 5] }
   - { id: gueule-rouge, side: foes, at: [13, 6], entity: gueule-rouge, layer: embuscade }
@@ -127,6 +127,12 @@ starts:
 - **Lights**: radii in cells; `dim` ≥ `bright`.
 - **Exits** link cells to another map id; `arrive` names a start or exit
   there.
+- **Labels** are words written on the map, nothing more. Where a scene
+  happens is its place's `anchor` in the story (`docs/campaign-format.md`,
+  `locations`): a map never names a scene, so the pin has one source.
+  The `scene` a label once carried is gone (migration
+  `048_labels_without_scenes` stripped it from every stored map); a V1
+  cell's `sceneId` is dropped on import.
 - **Starts**: token positions; `side` is `party`, `foes` or `neutral`;
   ambushers go on a `gm` layer.
 
@@ -194,9 +200,11 @@ could be sailed with one guide and walked with another:
 
 Without a guide a world map travels by its cell flags: 1 step, 2 through
 difficult terrain or shallow water, nothing through walls, voids and
-deep water. Places are the map's `labels` (`scene` = the story node the
-place opens); an `exit` on a label's hex is the map the place opens on
-arrival. The party starts on the map's first `party` start.
+deep water. Places are the map's `labels`; an `exit` on a label's hex is
+the map the place opens on arrival, and the scene it opens is the first,
+in campaign order, of the scenes pinned on that hex (`story::pins`) the
+table has not entered yet. The party starts on the map's first `party`
+start.
 
 ## Editing by operations
 
@@ -232,13 +240,21 @@ read from the maps' `exits`, never stored:
 
 `GET /api/campaigns/{id}/atlas` (GM only, not open to a personal token)
 answers `{revision, roots, maps: [{map, origin: world|campaign, parent:
-{map, exit}|null, children, links: [{to, exit}], backdrop, validated}]}`,
-maps whole, roots first then depth first. A player never receives it:
-the table shows the one map on the board, through the projection.
+{map, exit}|null, children, links: [{to, exit}], backdrop, validated,
+pins}], places, unplaced, issues}`, maps whole, roots first then depth
+first. `pins` are the scenes standing on each map (`story::pins::Pin`:
+`{location, name, at, scenes: [{id, title, number, map?}]}`); `places`
+every place of the story with its `anchor`, for the pin tool; `unplaced`
+the scenes standing on no map; `issues` the anchors pointing at a map
+the atlas lacks or off its grid. A player never receives it: the table
+shows the one map on the board, through the projection.
 
-The story's places will anchor maps too (`campaign/pin-scenes-on-maps`);
-until then a GM's own map hangs under another only if that map has an
-exit to it (a copy of a world map keeps the exits it had).
+Pins never nest maps (`campaign/pin-scenes-on-maps`): a place's anchor
+puts scenes on a map, it does not say which map opens there. Nesting
+stays the exits' alone, so the « strictly finer scale » rule above is
+the only guard against cycles; a GM's own map hangs under another only
+if that map has an exit to it (a copy of a world map keeps the exits it
+had).
 
 ## Universal VTT import
 

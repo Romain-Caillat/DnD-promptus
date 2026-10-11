@@ -1707,7 +1707,9 @@ plus être acceptée.
 La jauge « prête à jouer » tient compte des cartes propres à la
 campagne une fois validées. Vérifié : `cargo test` (règle de
 modification, Corsaires et Brasier importés), Vitest de la fiche. Les
-pages Médias et Cartes restent.
+pages Médias et Cartes restent. Depuis `campaign/pin-scenes-on-maps`,
+on entre aussi dans la fiche par une épingle de l'Atlas : chaque scène
+de l'épingle ouvre Préparer sur sa fiche.
 
 ---
 
@@ -1770,7 +1772,12 @@ Vérifié : l'acte 1 du Brasier n'est pas prêt (une scène à moitié
 écrite, le secret du moteur donné une seule fois, l'abordage contre un
 adversaire absent des règles) ; l'acte 1 des Corsaires tel que joué
 signale la route du Greyhound seulement dans une scène facultative ;
-l'acte 1 réécrit des Corsaires est prêt.
+l'acte 1 réécrit des Corsaires est prêt. Depuis
+`campaign/pin-scenes-on-maps`, une scène qui ne se trouve sur aucune
+carte (sans lieu, ou aucun lieu épinglé en remontant) est dite à part,
+en alerte « scène sans lieu », sans compter dans la jauge ni empêcher
+l'acte d'être prêt : un rêve ou un souvenir y ont droit. Le lieu
+manquant n'est plus compté parmi les champs d'une scène.
 
 ### `campaign/track-factions-and-goals` · doing — reste une vraie soirée du Brasier où les jauges bougent, et la relecture des règles d'affinité par Romain
 
@@ -1860,7 +1867,7 @@ modification de règle (l'atelier arrive avec
 
 ---
 
-### `campaign/pin-scenes-on-maps` · todo
+### `campaign/pin-scenes-on-maps` · doing — reste l'essai réel sur les deux mondes : en soirée, toucher une épingle lance la scène, et les joueurs voient les épingles révélées sur leur téléphone
 
 **Pourquoi** — Le cœur de l'Atlas : une scène existe quelque part sur la
 carte.
@@ -1897,6 +1904,60 @@ le lieu) qui divergent : une seule reste. Le format exige les champs
 connus : tout nouveau champ est facultatif.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+*État* — Livré et vérifié par les tests, pas encore essayé à la main.
+Un lieu de la campagne peut être épinglé sur une case d'une carte (du
+monde ou de la campagne), et chaque scène apparaît sur l'épingle du
+premier lieu épinglé en remontant ses lieux parents : sur la région,
+Port-Louis porte toutes les scènes de l'acte 1 ; sur la carte du
+quartier, la taverne porte ses trois scènes. Plusieurs scènes partagent
+donc une épingle, numérotées dans l'ordre de la campagne (« 1·2·6 »).
+Dans l'Atlas, les épingles sont dessinées sur la région en hexagones
+comme sur les cartes en cases ; en toucher une liste ses scènes, chacune
+ouvre sa fiche dans Préparer, ou la carte de combat de la scène, ou la
+fait générer et la rattache à la scène. L'outil « Épingler un lieu »
+pose, déplace ou retire une épingle d'une touche sur la case : c'est une
+modification de l'histoire comme une autre, inscrite au journal de
+préparation (Claude peut faire de même par ses modifications ciblées).
+Une scène sans lieu sur une carte (rêve, souvenir) reste permise : le
+validateur la signale, la jauge de l'acte la dit à part sans la compter,
+et l'Atlas la liste ; une épingle posée sur une carte qui n'existe pas
+ou hors de la grille est signalée. En soirée, les épingles de la carte
+montrée apparaissent sur la carte du MJ : en toucher une lance sa scène,
+ou propose de choisir quand plusieurs scènes s'y trouvent ; sur la carte
+en hexagones, l'épingle est en haut de la case, si bien que choisir une
+destination de voyage ne change pas. À l'arrivée d'un voyage, la scène
+ouverte est la première scène épinglée sur l'hexagone que la table n'a
+pas encore jouée. Les joueurs ne voient que les épingles des lieux où la
+table est déjà allée, hors du brouillard, avec seulement leur nom :
+jamais les scènes ni leurs numéros. Un ancien fichier de campagne
+s'importe tel quel. Contenu : nouvelle carte de lieu « Port-Louis, le
+quartier bas » (taverne, bureau du port, cour de Kerjean, chantier,
+quais, appontement de La Mâchoire), les dix scènes des Corsaires
+épinglées (région et quartier), les trois scènes du Brasier (la
+Carapace au Reliquaire, comme le disait la carte du système ; l'essaim
+à la sortie du Toboggan ; le Cure-Dent épinglé à la sortie du Toboggan
+pendant l'acte 1, ce qui y place la scène du Toboggan). Du coup l'Atlas
+range région › Port-Louis › quai pour les Corsaires et région › abords
+du Toboggan › coursive pour le Brasier. Décisions prises : l'étiquette
+de carte ne nomme plus de scène (bascule nette, retirée des cartes
+enregistrées) ; une épingle ne range pas les cartes entre elles, seules
+les sorties le font ; une épingle est une case, pas une zone ; la
+numérotation suit l'ordre des scènes de la campagne. À valider par
+Romain : la disposition du quartier de Port-Louis, le lieu
+« La sortie du Toboggan », le Reliquaire et le Cure-Dent épinglé pour
+l'acte 1. ⚠️ Une campagne importée avant ce lot garde son histoire sans
+épingles (et le Brasier n'ouvre plus la Carapace à l'arrivée au
+Reliquaire) : pour l'essai, réimporter le fichier des Corsaires et du
+Brasier par-dessus (l'état de la partie est gardé). Le co-MJ ne reçoit
+pas l'alerte « scène sans lieu », lui qui ne voit pas les cartes :
+l'onglet Cohérence renvoie vers l'Atlas plutôt que de lui demander une
+correction. Restent : l'essai réel en soirée sur les deux mondes ;
+l'écran TV reçoit les épingles visitées mais ne les dessine pas encore ;
+une épingle de Claude s'applique encore tout de suite
+(`platform/propose-edits-by-claude`) ; l'Atlas n'a pas encore de bouton
+pour annuler sa dernière épingle (le journal la garde, Préparer sait
+annuler les écritures de Claude seulement).
 
 ---
 
@@ -2980,8 +3041,11 @@ elle-même (par exemple « Secrets ») : les allumer ou les éteindre change
 seulement ce que voit le MJ. Absents à dessein, faute de ce qui les
 remplirait : la bascule « Vue MJ / Vue joueurs » (`maps/preview-as-player`),
 les calques Histoire, Personnages, Combats, Indices
-(`campaign/place-cast-and-clues`), le fil de la campagne et les épingles
-de scène. Ni les factions ni une chronologie n'ont d'écran de préparation
+(`campaign/place-cast-and-clues`), le fil de la campagne (les épingles
+de scène sont arrivées depuis avec `campaign/pin-scenes-on-maps` :
+numérotées sur la carte, elles listent leurs scènes dans le panneau, qui
+gagne l'outil « Épingler un lieu » et la liste des scènes sur aucune
+carte). Ni les factions ni une chronologie n'ont d'écran de préparation
 aujourd'hui : le tiroir ne les propose pas. L'Atlas se recharge seul
 quand une carte change (le MJ ailleurs ou Claude), mais n'affiche pas
 encore le bandeau « Claude écrit · sur … » : il viendra avec les lots de
@@ -3495,7 +3559,10 @@ fond et sorties, écarte un adversaire ou une caractéristique inventés
 chance avec les raisons en français, puis une erreur. La proposition
 arrive en brouillon dans l'éditeur et n'atteint la table qu'une fois
 validée. Écart : la carte n'est pas encore rattachée automatiquement au
-nœud (le MJ la choisit au plateau).
+nœud (le MJ la choisit au plateau). Depuis la fiche de scène et, avec
+`campaign/pin-scenes-on-maps`, depuis une épingle de l'Atlas
+(« Générer sa carte » sur une scène qui n'en a pas), la carte générée
+est rattachée à la scène, et l'Atlas l'ouvre aussitôt.
 
 **Origine** — Règles de design 1 et 2 (`CLAUDE.md`)
 
@@ -3677,7 +3744,12 @@ arrivent avec `campaign/pin-scenes-on-maps`). Dans les fichiers actuels,
 le quai de Port-Louis est une carte de rencontre et ses sorties mènent à
 des cartes qui n'existent pas : « entrer dans une rencontre depuis le
 quai » demande d'abord d'y rattacher une carte. 🔴 La fluidité sur iPad
-n'est pas mesurée.
+n'est pas mesurée. Depuis `campaign/pin-scenes-on-maps`, la région des
+Corsaires ouvre une nouvelle carte de lieu, « Port-Louis, le quartier
+bas », dont l'appontement ouvre le quai : région › lieu › rencontre
+existe désormais (et région › abords du Toboggan › coursive pour le
+Brasier). Les épingles des lieux ne rangent pas les cartes : seules les
+sorties le font (décision écrite dans `docs/map-format.md`).
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 

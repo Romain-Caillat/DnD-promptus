@@ -106,3 +106,55 @@ describe('BoardPanel, a death in the fight', () => {
     expect(onCommand).toHaveBeenCalledWith({ kind: 'confirmDeath', who: 'pc-s' })
   })
 })
+
+describe('BoardPanel, the scenes pinned on the map', () => {
+  beforeEach(() => stubReducedMotion(true))
+  afterEach(() => vi.unstubAllGlobals())
+
+  const pinned = {
+    board: { mapId: 'crypte', map: MAP, fog: false, revealed: [], tokens: [] },
+    pins: [
+      { location: 'l_porte', name: 'La porte', at: [0, 0], scenes: [{ id: 'sc_porte', title: 'La porte scellée', number: 4 }] },
+      {
+        location: 'l_ossuaire',
+        name: 'L’ossuaire',
+        at: [3, 1],
+        scenes: [
+          { id: 'sc_os', title: 'Les os qui parlent', number: 5 },
+          { id: 'sc_fuite', title: 'La fuite', number: 7 },
+        ],
+      },
+    ],
+    maps: [],
+    encounters: [],
+    conditions: null,
+    encounter: null,
+  } as unknown as GmBoard
+
+  it('launches the scene of a pin touched, and lets the GM pick when several share it', async () => {
+    const onScene = vi.fn()
+    render(
+      <BoardPanel
+        campaignId="c1"
+        data={pinned}
+        media={null}
+        live
+        onShow={() => {}}
+        onEdit={() => {}}
+        onStart={() => {}}
+        onCommand={() => {}}
+        onLoot={() => {}}
+        onScene={onScene}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'La porte — lancer : 4. La porte scellée' }))
+    expect(onScene).toHaveBeenLastCalledWith('sc_porte')
+
+    const ossuary = screen.getByRole('button', { name: /L’ossuaire — lancer/ })
+    expect(ossuary.textContent).toBe('5·7')
+    await userEvent.click(ossuary)
+    expect(onScene).toHaveBeenCalledTimes(1)
+    await userEvent.click(screen.getByRole('button', { name: 'Lancer 7. La fuite' }))
+    expect(onScene).toHaveBeenLastCalledWith('sc_fuite')
+  })
+})

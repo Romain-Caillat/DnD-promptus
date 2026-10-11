@@ -102,6 +102,13 @@ export function Readiness({ acts }: { acts: ActReadiness[] | null }) {
                 </li>
               ))}
           </ul>
+          {a.alerts.length > 0 && (
+            <ul className="mt-2 flex flex-col gap-1" aria-label={t('prep.readiness.alerts')}>
+              {a.alerts.map((g) => (
+                <GapText key={`${g.code}${g.id}`} gap={g} />
+              ))}
+            </ul>
+          )}
         </details>
       ))}
     </Panel>

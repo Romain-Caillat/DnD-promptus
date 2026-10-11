@@ -125,7 +125,34 @@ effects in the rule system).
 `name`, `description`, `art`, `stats` (required), `gm_notes`.
 
 **`locations`** — `id`, `name`, `description` (what players see),
-`parent` (the containing location), `art`, `gm_notes`.
+`parent` (the containing location), `anchor`, `art`, `gm_notes`.
+
+`anchor` (optional, `campaign/pin-scenes-on-maps`) is where the place
+stands on a map: `{ map, at: [x, y] }`, `map` being a map of the world
+(`content/maps/`) or of the campaign, `at` a cell of it. It is the one
+source of the pins: a map's labels only name things. On a given map, a
+scene's pin is the **first place up its chain** (`location`, then each
+`parent`) anchored on that map — so the tavern's scenes stand on the
+tavern on the town's map and on Port-Louis on the region's, when the
+tavern is anchored on the town and Port-Louis on the region. Scenes
+sharing a place share its pin, numbered by their order in `nodes`
+(`story::pins`). A scene no place of its chain anchors stands on no map:
+allowed (a dream, a memory), reported. A file written before anchors
+existed imports as it is.
+
+```yaml
+locations:
+  - { id: lieu_port_louis, name: Port-Louis, anchor: { map: cotes-bretagne-sud, at: [5, 0] } }
+  - { id: lieu_perroquet, name: Le Perroquet Noyé, parent: lieu_port_louis,
+      anchor: { map: port-louis-rues, at: [2, 1] } }
+```
+
+Players see a pin only through the board's projection: on the map the
+table is on, a place holding a scene the table has entered, on a cell
+out of the fog — its name and cell, never its scenes or their numbers.
+At the table, the GM touches a pin to launch its scene (or picks among
+the scenes sharing it); a travel that ends on a hex opens the first
+scene pinned there the table has not entered.
 
 **`items`** — `id`, `name`, `description`, `effect`, `value`, `rarity`
 (`common`, `uncommon`, `rare`, `epic`, `legendary`, `divine`), `art`
@@ -159,6 +186,7 @@ issues come back with it (`issues`: `severity`, `code`, `path`,
 | `FRONT_CLOCK_LENGTH` | warning | A clock outside 4–6 steps |
 | `EXIT_TO_SELF`, `LOOT_EMPTY`, `ENCOUNTER_EMPTY`, `MUSIC_NOT_YOUTUBE`, `MUSIC_NO_URL`, `FACTION_SELF_RIVAL` | warning | Structural slips |
 | `PLAYER_WITHOUT_HOOK` | warning | A party member has no hook in an act that has scenes |
+| `SCENE_WITHOUT_PLACE` | warning | A scene has no place, or no place up its chain is anchored on a map (allowed: a dream, a memory) |
 
 ### Against the rule system and the maps
 
@@ -171,7 +199,8 @@ part is optional; what is not supplied is not checked.
 | `RULES_MISMATCH` | error | The rule system supplied is not the one `rules` names (nothing else is checked against it) |
 | `RULES_UNKNOWN_CLASS`, `RULES_UNKNOWN_ADVERSARY`, `RULES_UNKNOWN_ITEM`, `RULES_UNKNOWN_ABILITY` | error | A `class`, `from_rules` or check `stat` names nothing in the rule system |
 | `DIFFICULTY_OFF_SCALE` | warning | A planned or clue check difficulty that is none of the rule system's named difficulties |
-| `MAP_UNKNOWN` | error | A node's `map` is no known map |
+| `MAP_UNKNOWN` | error | A node's `map`, or a place's `anchor.map`, is no known map |
+| `ANCHOR_OFF_GRID` | error | A place's `anchor.at` is outside its map |
 | `MAP_ENTITY_UNKNOWN` | warning | A map a node uses places a token whose `entity` is no NPC or adversary of the campaign |
 
 Two more checks of the campaign alone came with the witness worlds:
@@ -186,13 +215,17 @@ to choose).
 
 | Check | Passes when | Gap codes |
 | --- | --- | --- |
-| `scene_fields` | Each scene has `summary`, `location`, `ambience.mood`, `read_aloud`, `flow`, and `transition` when it has exits | `MISSING_FIELDS` (with `fields`) |
+| `scene_fields` | Each scene has `summary`, `ambience.mood`, `read_aloud`, `flow`, and `transition` when it has exits | `MISSING_FIELDS` (with `fields`) |
 | `knowledge_paths` | Each revelation a scene of the act `requires`, and each critical one the act gives clues to, is given in at least 3 scenes other than the one requiring it, not all optional | `FEW_PATHS` (with `paths`), `ONLY_OPTIONAL` |
 | `player_hooks` | Each party member has a hook in a scene of the act | `NO_HOOK` |
 | `encounters` | Each planned fight's opponents have numbers (`from_rules`, or hit points and armour class) and the fight has a tactic | `NO_STATS`, `NO_TACTICS` |
 | `fights` | Each planned fight can be staged (`encounter_scenario`) and simulated on its map | `NOT_STAGED`, `SIMULATION_FAILED`, `NO_RULES` |
 
 An act with no scene is not ready.
+
+Beside the checks, `alerts` say what the GM should know but is allowed:
+`NO_PLACE`, a scene standing on no map (no place, or none anchored up
+its chain). Alerts count neither in `done`/`total` nor against `ready`.
 
 ## Editing by id
 

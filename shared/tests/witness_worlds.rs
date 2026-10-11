@@ -30,6 +30,9 @@ fn maps() -> Vec<Map> {
         "maps/corsaires/pont-du-greyhound.yaml",
         "maps/brasier/cure-dent-coursive.yaml",
         "maps/brasier/abords-du-toboggan.yaml",
+        "maps/corsaires/cotes-bretagne-sud.yaml",
+        "maps/corsaires/port-louis-rues.yaml",
+        "maps/brasier/systeme-brasier.yaml",
     ]
     .iter()
     .map(|rel| Map::from_yaml(&read(rel)).unwrap())
@@ -143,6 +146,30 @@ fn rule_and_map_references_are_checked_against_the_library() {
     assert!(codes.contains(&"RULES_UNKNOWN_ADVERSARY"), "{codes:?}");
     assert!(codes.contains(&"RULES_UNKNOWN_CLASS"), "{codes:?}");
     assert!(codes.contains(&"MAP_UNKNOWN"), "{codes:?}");
+
+    // A pin on a map nobody has, or off its grid, is reported where it is.
+    let text = read("campaigns/corsaires/campagne.yaml")
+        .replace(
+            "anchor: { map: port-louis-rues, at: [2, 1] }",
+            "anchor: { map: port-louis-haut, at: [2, 1] }",
+        )
+        .replace(
+            "anchor: { map: port-louis-rues, at: [17, 8] }",
+            "anchor: { map: port-louis-rues, at: [40, 8] }",
+        );
+    let issues = check(&from_yaml(&text).unwrap(), "corsaires");
+    let pins: Vec<(&str, &str)> = issues
+        .iter()
+        .filter(|i| i.path.starts_with("locations"))
+        .map(|i| (i.code, i.path.as_str()))
+        .collect();
+    assert_eq!(
+        pins,
+        [
+            ("MAP_UNKNOWN", "locations[1].anchor.map"),
+            ("ANCHOR_OFF_GRID", "locations[4].anchor.at"),
+        ]
+    );
 
     // The wrong rule system is named as such, not as a pile of misses.
     let issues = check(&campaign("campaigns/corsaires/campagne.yaml"), "brasier");

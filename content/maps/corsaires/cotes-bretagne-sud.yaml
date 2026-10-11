@@ -42,10 +42,10 @@ grid:
     - "~~~~~-#####-~~"
     - "~~~~~~-####-~~"
 exits:
-  - { id: vers-port-louis, cells: [[5, 0]], to: quai-port-louis, label: Le quai de Port-Louis }
+  - { id: vers-port-louis, cells: [[5, 0]], to: port-louis-rues, label: "Port-Louis, le quartier bas" }
   - { id: vers-le-palais, cells: [[9, 9]], to: le-palais, label: Le port du Palais }
 labels:
-  - { text: Port-Louis, at: [5, 0], scene: sc_port_nuit }
+  - { text: Port-Louis, at: [5, 0] }
   - { text: Île de Groix, at: [0, 3] }
   - { text: Presqu'île de Quiberon, at: [12, 4] }
   - { text: "Belle-Île · Le Palais", at: [9, 9] }

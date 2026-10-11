@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { FACINGS, sheetUrl } from '@/features/sprites/look'
 import { cancel, clampZoom, down, idle, move, up, type Effect, type Gesture, type Pt } from './gesture'
 import { Motion, type Pose } from './motion'
+import type { PinMark } from './pins'
 import { TILE, animated, cellAt, drawScene, readGrid, type Scene } from './render'
 
 /**
@@ -36,6 +37,9 @@ function lightVoid(): string {
  * hold still, so a phone or a tablet follows the gesture; it is drawn
  * sharp again when the gesture ends.
  *
+ * Pins (campaign/pin-scenes-on-maps) stand over the map as buttons: a
+ * tap on one answers its key, never a cell under it.
+ *
  * Characters are their sprites (characters/walk-in-four-directions):
  * they breathe at rest, walk the last move the server sent cell by cell
  * facing each step, lunge at whom they strike and blink when hit
@@ -46,6 +50,8 @@ export function MapCanvas({
   fightEvents,
   onCell,
   onPaint,
+  pins = [],
+  onPin,
   touch = false,
   className,
 }: {
@@ -54,6 +60,10 @@ export function MapCanvas({
   fightEvents?: readonly FightEvent[]
   onCell?: (cell: Cell) => void
   onPaint?: (cells: Cell[]) => void
+  /** Pins over the map: scenes for the GM, places visited for players. */
+  pins?: readonly PinMark[]
+  /** A tap on a pin; without it the pins are only drawn. */
+  onPin?: (key: string) => void
   /** Finger gestures: two fingers slide and pinch, nothing scrolls on its own. */
   touch?: boolean
   className?: string
@@ -203,30 +213,80 @@ export function MapCanvas({
 
   return (
     <div ref={box} className={cn('overflow-auto rounded-xl border border-line bg-black', className)}>
-      <canvas
-        ref={canvas}
-        width={grid.width * tile * resolution}
-        height={grid.height * tile * resolution}
-        role="img"
-        aria-label={t('map.canvas', { name: scene.map.name })}
-        className={cn('block [image-rendering:pixelated]', (touch || onPaint) && 'touch-none')}
-        style={{ width: grid.width * tile * zoom, height: grid.height * tile * zoom, maxWidth: 'none' }}
-        onPointerDown={(e) => {
-          try {
-            e.currentTarget.setPointerCapture(id(e))
-          } catch {
-            // A synthetic pointer cannot be captured; the gesture still reads.
+      <div className="relative" style={{ width: grid.width * tile * zoom, height: grid.height * tile * zoom }}>
+        <canvas
+          ref={canvas}
+          width={grid.width * tile * resolution}
+          height={grid.height * tile * resolution}
+          role="img"
+          aria-label={t('map.canvas', { name: scene.map.name })}
+          className={cn('block [image-rendering:pixelated]', (touch || onPaint) && 'touch-none')}
+          style={{ width: grid.width * tile * zoom, height: grid.height * tile * zoom, maxWidth: 'none' }}
+          onPointerDown={(e) => {
+            try {
+              e.currentTarget.setPointerCapture(id(e))
+            } catch {
+              // A synthetic pointer cannot be captured; the gesture still reads.
+            }
+            handle((g) => down(g, id(e), at(e)), e)
+          }}
+          onPointerMove={(e) => handle((g) => move(g, id(e), at(e)), e)}
+          onPointerUp={(e) =>
+            // An up without its down (the press began off the map) still taps.
+            handle((g) => (id(e) in g.pts ? up(g, id(e), at(e)) : [g, { kind: 'tap', at: at(e) }]), e)
           }
-          handle((g) => down(g, id(e), at(e)), e)
-        }}
-        onPointerMove={(e) => handle((g) => move(g, id(e), at(e)), e)}
-        onPointerUp={(e) =>
-          // An up without its down (the press began off the map) still taps.
-          handle((g) => (id(e) in g.pts ? up(g, id(e), at(e)) : [g, { kind: 'tap', at: at(e) }]), e)
-        }
-        onPointerCancel={(e) => handle((g) => cancel(g, id(e)), e)}
-      />
+          onPointerCancel={(e) => handle((g) => cancel(g, id(e)), e)}
+        />
+        {pins.map((p) => (
+          <PinButton key={p.key} pin={p} left={(p.at[0] + 0.5) * tile * zoom} top={(p.at[1] + 0.5) * tile * zoom} onPin={onPin} />
+        ))}
+      </div>
     </div>
+  )
+}
+
+/**
+ * One pin over the grid map: an ivory square, black-edged, holding the
+ * scene numbers, ringed when chosen, black when the table is there. The
+ * colours are the game piece's, like the party's pin on the hex map.
+ */
+function PinButton({ pin, left, top, onPin }: { pin: PinMark; left: number; top: number; onPin?: (key: string) => void }) {
+  const look = pin.current ? { background: '#0A0A0A', color: '#EDEDED' } : { background: '#EDEDED', color: '#0A0A0A' }
+  const body = (
+    <>
+      <span
+        className="flex min-h-5 min-w-5 items-center justify-center border-2 px-1 text-[11px] leading-none font-bold"
+        style={{ ...look, borderColor: '#0A0A0A', outline: pin.picked ? '2px dashed #EDEDED' : undefined, outlineOffset: 2 }}
+      >
+        {pin.label}
+      </span>
+      {pin.caption && (
+        <span
+          className="mt-0.5 text-[11px] font-bold whitespace-nowrap"
+          style={{ color: '#f2f2f2', textShadow: '0 0 3px #0a0a0a, 0 0 3px #0a0a0a' }}
+        >
+          {pin.caption}
+        </span>
+      )}
+    </>
+  )
+  const place = 'absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center'
+  return onPin ? (
+    <button
+      type="button"
+      className={cn(place, 'cursor-pointer')}
+      style={{ left, top }}
+      aria-label={pin.title}
+      aria-pressed={pin.picked || undefined}
+      data-pin={pin.key}
+      onClick={() => onPin(pin.key)}
+    >
+      {body}
+    </button>
+  ) : (
+    <span className={cn(place, 'pointer-events-none')} style={{ left, top }} role="img" aria-label={pin.title} data-pin={pin.key}>
+      {body}
+    </span>
   )
 }
 

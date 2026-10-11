@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { readGrid } from '@/features/map/render'
 import type { Cell, MapData } from '@/lib/board'
+import type { PinMark } from '@/features/map/pins'
 import type { Tileset } from '@/lib/media'
 import { cn } from '@/lib/utils'
 
@@ -12,6 +13,9 @@ const FOG = 'brouillard'
 /** Muted fallbacks when a material is not in the tileset. */
 const FALLBACK = '#2a2e28'
 const WALL = '#3a3a40'
+/** A pin's game-piece colours: ivory on black, inverted where the table is. */
+const PIN_INK = '#0A0A0A'
+const PIN_PAPER = '#EDEDED'
 
 /** Centre of a hex: pointy top, odd rows shifted half a hex right. */
 function hexCenter([x, y]: Cell): [number, number] {
@@ -36,8 +40,9 @@ export interface HexRoute {
  * A world map in hexes (maps/travel-hex-world, board « Voyager »): each
  * hex in its material's muted colour, the fog as a grid of small squares,
  * the places written on the map, the routes proposed as dotted lines (the
- * one chosen solid), and the party as one ivory pin. The grid carries the
- * rules: this only draws what the server sent.
+ * one chosen solid), the party as one ivory pin, and the scenes' pins
+ * (campaign/pin-scenes-on-maps) on the upper half of their hex. The grid
+ * carries the rules: this only draws what the server sent.
  */
 export function HexMap({
   map,
@@ -46,6 +51,8 @@ export function HexMap({
   routes = [],
   destination,
   marks = [],
+  pins = [],
+  onPin,
   onHex,
   className,
 }: {
@@ -56,6 +63,10 @@ export function HexMap({
   destination?: Cell | null
   /** Hexes ringed in dots: where the atlas enters another map (maps/browse-atlas). */
   marks?: Cell[]
+  /** Pins (campaign/pin-scenes-on-maps), on the upper half of their hex so the hex stays tappable. */
+  pins?: readonly PinMark[]
+  /** A tap on a pin; without it the pins are only drawn. */
+  onPin?: (key: string) => void
   /** A tap on a hex (the GM picks a place). */
   onHex?: (cell: Cell) => void
   className?: string
@@ -161,6 +172,45 @@ export function HexMap({
           pointerEvents="none"
         />
       )}
+      {pins.map((p) => {
+        const [cx, cy] = hexCenter(p.at)
+        const y = cy - R * 0.45
+        const w = Math.max(16, 7 * p.label.length + 8)
+        const ink = p.current ? PIN_PAPER : PIN_INK
+        const paper = p.current ? PIN_INK : PIN_PAPER
+        return (
+          <g
+            key={`pin${p.key}`}
+            data-pin={p.key}
+            role={onPin ? 'button' : 'img'}
+            aria-label={p.title}
+            aria-pressed={onPin && p.picked ? true : undefined}
+            tabIndex={onPin ? 0 : undefined}
+            className={cn(onPin ? 'cursor-pointer' : 'pointer-events-none')}
+            onClick={onPin ? () => onPin(p.key) : undefined}
+            onKeyDown={
+              onPin
+                ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onPin(p.key)
+                    }
+                  }
+                : undefined
+            }
+          >
+            <rect x={cx - w / 2} y={y - 9} width={w} height={18} fill={paper} stroke={PIN_INK} strokeWidth={2} />
+            {p.picked && (
+              <rect x={cx - w / 2 - 4} y={y - 13} width={w + 8} height={26} fill="none" stroke="#EDEDED" strokeWidth={2} strokeDasharray="3 3" />
+            )}
+            {p.label && (
+              <text x={cx} y={y + 4} textAnchor="middle" className="text-[11px] font-bold" style={{ fill: ink }}>
+                {p.label}
+              </text>
+            )}
+          </g>
+        )
+      })}
       {pin && (
         <g pointerEvents="none" data-party="">
           <rect x={pin[0] - 9} y={pin[1] - 9} width={18} height={18} fill="#0A0A0A" transform={`rotate(45 ${pin[0]} ${pin[1]})`} />

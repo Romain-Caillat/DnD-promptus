@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TABLET_QUERY } from '@/lib/useMediaQuery'
-import { mockApi, stubReducedMotion } from '@/test-utils'
+import { mockApi, sentTo, stubReducedMotion } from '@/test-utils'
 import { AtlasPage } from './AtlasPage'
 
 const grid = (w: number, h: number) => ({
@@ -25,6 +25,7 @@ const sheet = (
   links: [],
   backdrop: false,
   validated: true,
+  pins: [],
   ...tree,
 })
 
@@ -64,6 +65,9 @@ const ATLAS = {
     sheet('cale', 'La cale', 'encounter', {}, { parent: { map: 'quai', exit: 'vers-cale' }, origin: 'campaign' }),
     sheet('rues', 'Les rues', 'place'),
   ],
+  places: [],
+  unplaced: [],
+  issues: [],
 }
 
 const ok = (data: unknown) => ({ status: 200, body: { data } })
@@ -192,5 +196,85 @@ describe('AtlasPage', () => {
     fireEvent.pointerUp(canvas, { pointerId: 2, clientX: 90, clientY: 10 })
     fireEvent.pointerUp(canvas, { pointerId: 1, clientX: 10, clientY: 10 })
     await waitFor(() => expect(canvas.width).toBe(sharp))
+  })
+
+  it('lists the scenes of a pin, opens their sheet, and pins a place on the cell tapped', async () => {
+    stubReducedMotion(true)
+    vi.stubGlobal('WebSocket', FakeSocket)
+    const tavern = {
+      location: 'l_taverne',
+      name: 'La taverne',
+      at: [2, 1],
+      scenes: [
+        { id: 'sc_a', title: 'L’arrivée', number: 1 },
+        { id: 'sc_c', title: 'La proposition', number: 3, map: 'cale' },
+      ],
+    }
+    const town = { location: 'l_ville', name: 'Port-Louis', at: [1, 0], scenes: [...tavern.scenes, { id: 'sc_b', title: 'Le port', number: 2 }] }
+    let atlas = {
+      ...ATLAS,
+      maps: ATLAS.maps.map((m) =>
+        m.map.id === 'region' ? { ...m, pins: [town] } : m.map.id === 'quai' ? { ...m, pins: [tavern] } : m,
+      ),
+      places: [
+        { id: 'l_ville', name: 'Port-Louis', parent: null, anchor: { map: 'region', at: [1, 0] } },
+        { id: 'l_crypte', name: 'La crypte', parent: null, anchor: null },
+      ],
+      unplaced: [{ id: 'sc_reve', title: 'Le rêve', number: 4 }],
+    }
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/atlas': () => ok(atlas),
+      'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
+      'POST /api/campaigns/c1/story/edits': () => {
+        atlas = { ...atlas, revision: 4 }
+        return ok({ campaign: {}, changes: [] })
+      },
+      'POST /api/campaigns/c1/maps/generate': () => ok({ map: { id: 'carte-arrivee' }, dropped: 0 }),
+    })
+    const { container } = renderPage()
+
+    // On the region, the town's pin carries its scene numbers.
+    const pin = await screen.findByRole('button', { name: /Port-Louis — scènes : 1\. L’arrivée/ })
+    expect(pin.textContent).toBe('1·3·2')
+    // The scene standing nowhere is said, and opens its sheet.
+    expect(screen.getByRole('link', { name: '4. Le rêve' })).toHaveAttribute(
+      'href',
+      '/campagnes/c1/preparer?onglet=graph&scene=sc_reve',
+    )
+
+    // On the place map, the tavern's pin lists its two scenes.
+    fireEvent.click(container.querySelector('[data-hex="1,0"]')!)
+    await screen.findByRole('img', { name: 'Carte : Le quai' })
+    await userEvent.click(screen.getByRole('button', { name: /La taverne — scènes/ }))
+    const chosen = screen.getByRole('region', { name: 'Épingle : La taverne' })
+    expect(within(chosen).getByRole('link', { name: '1. L’arrivée' })).toHaveAttribute(
+      'href',
+      '/campagnes/c1/preparer?onglet=graph&scene=sc_a',
+    )
+    // A scene with its fight map opens it; one without may generate it.
+    expect(within(chosen).getByRole('button', { name: 'Voir sa carte' })).toBeInTheDocument()
+    expect(within(chosen).getByRole('button', { name: 'Générer sa carte' })).toBeInTheDocument()
+
+    // The pin tool: a place, then the cell — one story edit on its anchor.
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Lieu à épingler' }), 'l_crypte')
+    await userEvent.click(screen.getByRole('button', { name: 'Épingler sur cette carte' }))
+    expect(screen.getByRole('status')).toHaveTextContent('Touchez la case où se trouve « La crypte ».')
+    const canvas = screen.getByRole('img', { name: 'Carte : Le quai' })
+    canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: canvas.clientWidth, height: canvas.clientHeight }) as DOMRect
+    fireEvent.pointerDown(canvas, { pointerId: 1, clientX: 1, clientY: 1 })
+    fireEvent.pointerUp(canvas, { pointerId: 1, clientX: 1, clientY: 1 })
+    await waitFor(() => expect(sentTo(fetchMock, 'POST /api/campaigns/c1/story/edits')).toHaveLength(1))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/story/edits')[0]).toEqual({
+      edits: [{ op: 'set', target: 'l_crypte', field: 'anchor', value: { map: 'quai', at: [0, 0] } }],
+    })
+
+    // From the pin, a scene without a fight map generates one, attached to it.
+    await userEvent.click(screen.getByRole('button', { name: /La taverne — scènes/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Générer sa carte' }))
+    await waitFor(() => expect(sentTo(fetchMock, 'POST /api/campaigns/c1/story/edits')).toHaveLength(2))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/maps/generate')).toEqual([{ node: 'sc_a' }])
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/story/edits')[1]).toEqual({
+      edits: [{ op: 'set', target: 'sc_a', field: 'map', value: 'carte-arrivee' }],
+    })
   })
 })

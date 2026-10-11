@@ -214,7 +214,49 @@ fn check_rules(issues: &mut Vec<Issue>, c: &Campaign, rules: &RuleSystem) {
     }
 }
 
+/// Pins standing nowhere: a place anchored on a map `maps` lacks, or on a
+/// cell outside it (`campaign/pin-scenes-on-maps`). Part of
+/// [`validate_with`]; the atlas, which holds every map, reports them too.
+#[must_use]
+pub fn anchor_issues(c: &Campaign, maps: &[Map]) -> Vec<Issue> {
+    let mut issues = Vec::new();
+    for (i, l) in c.locations.iter().enumerate() {
+        let Some(a) = &l.anchor else { continue };
+        let path = format!("locations[{i}].anchor");
+        match maps.iter().find(|m| m.id == a.map) {
+            None => push(
+                &mut issues,
+                Severity::Error,
+                "MAP_UNKNOWN",
+                format!("{path}.map"),
+                format!(
+                    "`{}` is anchored on `{}`, which is not a known map",
+                    l.id, a.map
+                ),
+            ),
+            Some(m) if !m.grid.contains(a.at) => push(
+                &mut issues,
+                Severity::Error,
+                "ANCHOR_OFF_GRID",
+                format!("{path}.at"),
+                format!(
+                    "`{}` is pinned at [{}, {}], outside map `{}` ({} × {})",
+                    l.id,
+                    a.at.x,
+                    a.at.y,
+                    m.id,
+                    m.grid.width(),
+                    m.grid.height()
+                ),
+            ),
+            Some(_) => {}
+        }
+    }
+    issues
+}
+
 fn check_maps(issues: &mut Vec<Issue>, c: &Campaign, maps: &[Map]) {
+    issues.extend(anchor_issues(c, maps));
     for (i, n) in c.nodes.iter().enumerate() {
         let Some(v) = n.encounter.as_ref().and_then(|e| e.vehicles.as_ref()) else {
             continue;

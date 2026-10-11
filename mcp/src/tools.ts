@@ -137,7 +137,9 @@ Rien n'atteint les joueurs : le MJ révèle toujours depuis Promptus.
 Chaque modification est un objet :
 - { "op": "set", "target": "<id ou bible ou campaign>", "field": "<champ, pointé pour aller dedans>", "value": <valeur> } \
 — par ex. { "op": "set", "target": "sc_quai", "field": "summary", "value": "…" }, \
-{ "op": "set", "target": "pnj_morel", "field": "stats.hit_points", "value": 12 }; "value": null efface le champ.
+{ "op": "set", "target": "pnj_morel", "field": "stats.hit_points", "value": 12 }; "value": null efface le champ. \
+Épingler un lieu sur une carte (ses scènes y apparaissent) : \
+{ "op": "set", "target": "lieu_quai", "field": "anchor", "value": { "map": "<id de carte>", "at": [x, y] } }.
 - { "op": "add", "kind": "<party_member|act|front|node|revelation|clue|npc|adversary|location|item|faction|goal>", "value": { "id": "…", … } } \
 — par ex. un indice : { "op": "add", "kind": "clue", "value": { "id": "cl_…", "revelation": "…", "node": "…", "text": "…" } }
 - { "op": "remove", "target": "<id>" }
