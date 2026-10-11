@@ -300,3 +300,126 @@ async fn claudes_activity_names_the_revision_it_wrote() {
         json!({ "type": "activity", "author": "token", "revision": 2 })
     );
 }
+
+/// Bump the world (the sentinel) and return its new version.
+async fn sentinel(t: &common::live::Table) -> i64 {
+    t.bump().await;
+    sqlx::query_scalar(
+        "SELECT version FROM live_versions WHERE campaign_id = $1 AND topic = 'world'",
+    )
+    .bind(t.campaign)
+    .fetch_one(&t.pool)
+    .await
+    .unwrap()
+}
+
+/// A seated player's phone and a paired shared screen, connected.
+async fn phone_and_screen(t: &common::live::Table) -> (Socket, Socket) {
+    let (_, device) = t.seat("Marc").await;
+    let r = call_as_screen(&t.router, None, "POST", "/api/tv", None).await;
+    let tv = r.screen_token().unwrap();
+    let code = r.body["data"]["code"].as_str().unwrap().to_string();
+    let r = call(
+        &t.router,
+        Some(&t.token),
+        "POST",
+        &format!("/api/campaigns/{}/screens", t.campaign),
+        Some(json!({ "code": code })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
+    let phone = open_player(t.addr, Some(&device), t.campaign)
+        .await
+        .unwrap();
+    let screen = open_screen(t.addr, &tv).await.unwrap();
+    (phone, screen)
+}
+
+/// Nothing but presence: no topic moved, no activity.
+fn quiet(seen: &[String]) -> bool {
+    !seen
+        .iter()
+        .any(|s| s.starts_with("changed:") || s.starts_with("activity"))
+}
+
+#[tokio::test]
+async fn claudes_map_writes_reach_the_gm_and_no_player_or_screen() {
+    let t = table(LiveConfig::default()).await;
+    let (_, secret) = common::api_token(&t.router, &t.token, "Claude").await;
+    let campaign = t.campaign.to_string();
+    let r = call(
+        &t.router,
+        Some(&t.token),
+        "POST",
+        &format!("/api/campaigns/{campaign}/maps"),
+        Some(json!({ "name": "La crypte", "width": 8, "height": 6 })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::CREATED, "{}", r.body);
+    let map = r.body["data"]["map"]["id"].as_str().unwrap().to_string();
+    let uri = format!("/api/campaigns/{campaign}/maps/{map}");
+    let revision = |t: &common::live::Table| {
+        let router = t.router.clone();
+        let token = t.token.clone();
+        let uri = uri.clone();
+        async move {
+            call(&router, Some(&token), "GET", &uri, None).await.body["data"]["revision"].clone()
+        }
+    };
+    let wall = |x: i32| json!({ "op": "paint", "cells": [[x, 1]], "kind": { "terrain": "pierre", "wall": true } });
+
+    let mut gm = t.connect().await;
+    let (mut phone, mut screen) = phone_and_screen(&t).await;
+    assert!(ready(&mut gm).await.get("desk").is_some());
+    for ws in [&mut phone, &mut screen] {
+        let versions = ready(ws).await;
+        assert!(versions.get("desk").is_none(), "{versions}");
+    }
+
+    // Proposed: the GM hears of the batch, nobody else of anything.
+    let r = call_with_token(
+        &t.router,
+        &secret,
+        "POST",
+        &format!("{uri}/ops"),
+        Some(json!({ "revision": revision(&t).await, "ops": [wall(1)], "title": "Un mur" })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::ACCEPTED, "{}", r.body);
+    let v = sentinel(&t).await;
+    let heard = seen_until_world(&mut gm, v).await;
+    assert!(
+        heard.contains(&"changed:proposals".to_string()),
+        "{heard:?}"
+    );
+    for ws in [&mut phone, &mut screen] {
+        let seen = seen_until_world(ws, v).await;
+        assert!(quiet(&seen), "{seen:?}");
+    }
+
+    // With the hand, written directly: the GM hears the map and Claude's
+    // activity, nobody else of anything.
+    common::claude_hand(&t.router, &t.token, &campaign).await;
+    let v = sentinel(&t).await;
+    for ws in [&mut gm, &mut phone, &mut screen] {
+        seen_until_world(ws, v).await;
+    }
+    let r = call_with_token(
+        &t.router,
+        &secret,
+        "POST",
+        &format!("{uri}/ops"),
+        Some(json!({ "revision": revision(&t).await, "ops": [wall(2)] })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+    let v = sentinel(&t).await;
+    let heard = seen_until_world(&mut gm, v).await;
+    assert!(heard.contains(&"changed:desk".to_string()), "{heard:?}");
+    assert!(heard.contains(&"changed:prep".to_string()), "{heard:?}");
+    assert!(heard.contains(&"activity:".to_string()), "{heard:?}");
+    for ws in [&mut phone, &mut screen] {
+        let seen = seen_until_world(ws, v).await;
+        assert!(quiet(&seen), "{seen:?}");
+    }
+}

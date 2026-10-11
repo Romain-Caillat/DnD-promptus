@@ -602,6 +602,12 @@ sur … » avec un bouton Annuler tant que c'est possible. Les téléphones
 des joueurs et la TV ne reçoivent ni la révision ni l'activité de Claude,
 pas même à la connexion (testé sur une socket joueur et une socket TV) ;
 la présence (qui est connecté) part toujours vers tous, comme avant.
+Depuis la revue de l'Atlas, le bureau du MJ (cartes de la campagne,
+brouillons du co-MJ, images à valider, brouillon de règles, tour adverse
+proposé) est lui aussi réservé au MJ : quand Claude touche une carte,
+qu'il la propose ou l'écrive directement avec la main, rien ne bouge sur
+un téléphone ni sur la TV, qui ne se recharge plus pendant la
+préparation (testé sur une socket joueur et une socket TV).
 **Hypothèses retenues** : le journal garde l'état d'avant de chaque
 élément touché (pas de diff fin par champ) ; seul l'écran Préparer met en
 avant les changements pour l'instant, l'Atlas le reprendra ; l'activité
@@ -2056,10 +2062,25 @@ les sorties le font ; une épingle est une case, pas une zone ; la
 numérotation suit l'ordre des scènes de la campagne. À valider par
 Romain : la disposition du quartier de Port-Louis, le lieu
 « La sortie du Toboggan », le Reliquaire et le Cure-Dent épinglé pour
-l'acte 1. ⚠️ Une campagne importée avant ce lot garde son histoire sans
-épingles (et le Brasier n'ouvre plus la Carapace à l'arrivée au
-Reliquaire) : pour l'essai, réimporter le fichier des Corsaires et du
-Brasier par-dessus (l'état de la partie est gardé). Le co-MJ ne reçoit
+l'acte 1. Une campagne importée avant ce lot garde les épingles que ses
+cartes donnaient, quand c'est possible sans en déplacer d'autres : une
+étiquette qui nommait une scène épingle le lieu de cette scène sur sa
+case, si ce lieu n'a pas encore d'épingle et ne contient aucun autre
+lieu (épingler un quartier ou tout un système y mettrait toutes les
+scènes qu'il contient) ; la première étiquette l'emporte. Sur la carte
+du monde des Corsaires, Port-Louis est épinglé là où l'étiquette
+« Port-Louis » ouvrait la scène du port de nuit, comme dans le fichier
+actuel. ⚠️ Ce qui se perd : une scène sans lieu, ou dont le lieu en
+contient d'autres, n'est plus sur aucune carte (le validateur et l'Atlas
+la signalent, le MJ épingle un lieu) ; dans le Brasier, la Carapace
+était rangée dans le système tout entier, elle n'a donc plus d'épingle
+et n'ouvre plus à l'arrivée au Reliquaire ; hors de ces étiquettes,
+une campagne importée avant ce lot n'a aucune autre épingle. Pour
+l'essai, réimporter le fichier des Corsaires et du Brasier par-dessus
+(l'état de la partie est gardé) donne toutes les épingles. Les
+étiquettes ont perdu leur scène partout où une carte est gardée : cartes
+de la campagne, carte posée sur la table, combat et bataille navale en
+cours, journal de préparation. Le co-MJ ne reçoit
 pas l'alerte « scène sans lieu », lui qui ne voit pas les cartes :
 l'onglet Cohérence renvoie vers l'Atlas plutôt que de lui demander une
 correction. Restent : l'essai réel en soirée sur les deux mondes ;

@@ -33,7 +33,7 @@ pub const MAX_TEST_BODY: usize = 1024 * 1024;
 /// The origin the test "browser" opens the app at.
 pub const ORIGIN: &str = "http://localhost:4334";
 
-fn test_database_url() -> String {
+pub fn test_database_url() -> String {
     let url = std::env::var("TEST_DATABASE_URL").expect(
         "TEST_DATABASE_URL must be set to run integration tests \
          (copy .env.example to .env, then `bun run db:start`)",

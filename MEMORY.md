@@ -377,8 +377,11 @@ co-GM and Claude, `platform/propose-edits-by-claude`) and the
 on `ready` and `resync`** — filtering only the changes would still hand
 a player the prep revision at connection. Activity carries a kind and a
 revision number, never a name: the GM's screen reads the journal over
-HTTP. Presence still goes to every socket (players' screens ignore it);
-`desk` is GM-only in spirit but still broadcast.
+HTTP. Presence still goes to every socket (players' screens ignore it).
+`desk` is the GM's too (maps, drafts, images, rule drafts, proposed
+adversary turns): a map Claude writes in preparation, proposed or with
+the hand, moves nothing on a phone or a TV — and the TV, which refetches
+on any topic, no longer reloads on preparation.
 
 ### One preparation journal, written in one place
 
@@ -423,7 +426,12 @@ Where a scene stands on a map is its place's `anchor` in the story
 pin is the first place up its `parent` chain anchored there, computed by
 `story::pins` for the atlas, the GM's board, travel arrivals and the
 players' projection alike. A map's `labels` only write words — their old
-`scene` field is gone (migration 048), so the two can never disagree. A
+`scene` field is gone (migration 048, which stripped it from every
+stored copy — campaign maps, the table's map, fights, ship battles,
+journal inverses — after moving each label's scene onto its place as an
+anchor where that pins nothing else: a place with no anchor and no place
+inside it, plus Port-Louis on the Corsaires' world map), so the two can
+never disagree. A
 pin edit is a story `set` on `anchor`, journaled like any edit. Players
 receive pins only through `projection::board`: places holding a scene
 the table entered, on cells out of the fog, as a name and a cell — never
@@ -483,7 +491,7 @@ such items one by one. Discarding keeps the GM's word for Claude
 (`GET …/proposals`). A batch is shown applied virtually
 (`proposals::virtual_of`, the atlas's `proposed`), never stored so.
 Everything about batches moves the GM-only `proposals` topic, never
-`desk` (still broadcast) nor `prep` (whose version is the revision).
+`desk` nor `prep` (whose version is the revision).
 « Claude a la main » (`campaigns.claude_hand`) lets token writes land
 directly, journaled as `token` and undone line by line; the GM's
 session sets it, never while an evening is open, and a write that comes

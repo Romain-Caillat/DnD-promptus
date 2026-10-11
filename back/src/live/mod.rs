@@ -23,9 +23,9 @@
 //! `resync` with the versions again — the same catch-up.
 //!
 //! Who hears what (`platform/stream-prep-edits`): some topics are the
-//! GM's alone ([`visible_to`]) — the preparation revision — and so is
-//! the activity of a program writing with the GM's token ("Claude
-//! écrit"). A player's or a shared screen's socket never receives them,
+//! GM's alone ([`visible_to`]) — the preparation revision, the batches
+//! of proposals, the GM's desk — and so is the activity of a program
+//! writing with the GM's token ("Claude écrit"). A player's or a shared screen's socket never receives them,
 //! not even in the versions sent on (re)connection.
 
 pub mod listener;
@@ -66,9 +66,11 @@ pub enum Topic {
     Map,
     /// The fight in progress (`encounters`).
     Fight,
-    /// The GM's desk: co-GM drafts, images to review. Only the GM
-    /// screen refetches on it, and nothing a player route reads moves
-    /// with it.
+    /// The GM's desk: co-GM drafts, images to review, the campaign's
+    /// maps, rule drafts, proposed adversary turns. The GM's only
+    /// ([`visible_to`]): nothing a player route or a shared screen reads
+    /// moves with it, and a map Claude writes in preparation must not
+    /// tell the table that something is being prepared.
     Desk,
     /// The shared screens: one paired or forgotten, what they may show.
     Screens,
@@ -95,7 +97,7 @@ impl Topic {
             Self::Session => "session".to_string(),
             Self::Map => "map".to_string(),
             Self::Fight => "fight".to_string(),
-            Self::Desk => "desk".to_string(),
+            Self::Desk => DESK.to_string(),
             Self::Screens => "screens".to_string(),
             Self::Prep => PREP.to_string(),
             Self::Proposals => PROPOSALS.to_string(),
@@ -107,13 +109,15 @@ impl Topic {
 const PREP: &str = "prep";
 /// The key of [`Topic::Proposals`].
 const PROPOSALS: &str = "proposals";
+/// The key of [`Topic::Desk`].
+const DESK: &str = "desk";
 
 /// Whether `viewer` may hear of `topic` (a [`Topic::key`]): the
-/// preparation and its proposals are the GM's, players and shared
-/// screens never learn that they moved.
+/// preparation, its proposals and the GM's desk are the GM's, players
+/// and shared screens never learn that they moved.
 #[must_use]
 pub fn visible_to(viewer: &Viewer, topic: &str) -> bool {
-    matches!(viewer, Viewer::Gm(_)) || (topic != PREP && topic != PROPOSALS)
+    matches!(viewer, Viewer::Gm(_)) || ![PREP, PROPOSALS, DESK].contains(&topic)
 }
 
 /// Who wrote a preparation change, as the GM's screen is told. Numbers

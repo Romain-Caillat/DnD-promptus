@@ -130,9 +130,13 @@ starts:
 - **Labels** are words written on the map, nothing more. Where a scene
   happens is its place's `anchor` in the story (`docs/campaign-format.md`,
   `locations`): a map never names a scene, so the pin has one source.
-  The `scene` a label once carried is gone (migration
-  `048_labels_without_scenes` stripped it from every stored map); a V1
-  cell's `sceneId` is dropped on import.
+  The `scene` a label once carried is gone: migration
+  `048_labels_without_scenes` first anchored the scene's place on the
+  label's cell when that place had no anchor and no place inside it
+  (and Port-Louis on the Corsaires' world map), then stripped the field
+  from every stored map. A scene whose place could not take the pin is
+  on no map until the GM pins a place. A V1 cell's `sceneId` is dropped
+  on import.
 - **Starts**: token positions; `side` is `party`, `foes` or `neutral`;
   ambushers go on a `gm` layer.
 
