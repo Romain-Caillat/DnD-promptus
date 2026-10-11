@@ -342,11 +342,15 @@ pub fn read_png(bytes: &[u8]) -> Result<Rgba, ImageError> {
     let pixels: Vec<u8> = match info.color_type {
         png::ColorType::Rgba => raw.to_vec(),
         png::ColorType::Rgb => raw
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .flat_map(|p| [p[0], p[1], p[2], 255])
             .collect(),
         png::ColorType::GrayscaleAlpha => raw
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .flat_map(|p| [p[0], p[0], p[0], p[1]])
             .collect(),
         png::ColorType::Grayscale => raw.iter().flat_map(|&g| [g, g, g, 255]).collect(),
@@ -390,7 +394,7 @@ pub fn reduce_to_palette(bytes: &[u8], palette: &[String]) -> Result<Vec<u8>, Im
     let mut image = read_png(bytes)?;
     let colours: Vec<[u8; 3]> = palette.iter().filter_map(|c| parse_hex(c)).collect();
     if !colours.is_empty() {
-        for px in image.pixels.chunks_exact_mut(4) {
+        for px in image.pixels.as_chunks_mut::<4>().0 {
             if px[3] == 0 {
                 continue;
             }
