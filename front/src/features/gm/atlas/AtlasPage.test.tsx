@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes } from 'react-router'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TABLET_QUERY } from '@/lib/useMediaQuery'
 import { mockApi, sentTo, stubReducedMotion } from '@/test-utils'
@@ -118,6 +118,12 @@ class FakeSocket {
   drop() {
     act(() => this.onclose?.())
   }
+}
+
+/** The address the page is at, for the side panel's tab. */
+function Where() {
+  const at = useLocation()
+  return <output aria-label="adresse">{at.pathname + at.search}</output>
 }
 
 function renderPage() {
@@ -272,7 +278,8 @@ describe('AtlasPage', () => {
     // On the region, the town's pin carries its scene numbers.
     const pin = await screen.findByRole('button', { name: /Port-Louis — scènes : 1\. L’arrivée/ })
     expect(pin.textContent).toBe('1·3·2')
-    // The scene standing nowhere is said, and opens its sheet.
+    // The scene standing nowhere is said in « La carte », and opens its sheet.
+    await userEvent.click(screen.getByRole('tab', { name: 'La carte' }))
     expect(screen.getByRole('link', { name: '4. Le rêve' })).toHaveAttribute(
       'href',
       '/campagnes/c1/atlas?carte=region&onglet=graph&scene=sc_reve',
@@ -455,6 +462,8 @@ describe('AtlasPage', () => {
     // Every way between two pins is its own arrow: the town branches.
     await screen.findByRole('button', { name: /Port-Louis — scènes/ })
     expect(lines()).toEqual(['l_ville>l_phare', 'l_phare>l_ville', 'l_ville>l_ile'])
+    // The region opens on « L'idée »; the list is in « La carte », which stays chosen map after map.
+    await userEvent.click(screen.getByRole('tab', { name: 'La carte' }))
     const list = screen.getByRole('region', { name: 'Le fil de la campagne' })
     expect(within(list).getByRole('button', { name: /1\. L’arrivée/ })).toHaveTextContent('départ')
     expect(within(list).getByRole('button', { name: /4\. Le départ/ })).toHaveTextContent('fin possible')
@@ -517,6 +526,7 @@ describe('AtlasPage', () => {
       'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
     })
     renderPage()
+    await userEvent.click(await screen.findByRole('tab', { name: 'La carte' }))
     const issues = await screen.findByRole('list', { name: 'Épingles et poses à revoir' })
     expect(issues).toHaveTextContent('1. L’arrivée mène à une scène qu’aucun chemin ne relie')
   })
@@ -565,7 +575,10 @@ describe('AtlasPage', () => {
     const pin = await screen.findByRole('button', { name: /▶ Claude · La crypte — scènes/ })
     expect(pin.getAttribute('data-proposed')).toBe('true')
     expect(container.querySelectorAll('[data-proposed]')).toHaveLength(1)
+    // The region opens on « L'idée »: the tap opens Claude's tab, which counts the batch.
+    expect(screen.getByRole('tab', { name: 'L’idée' })).toHaveAttribute('aria-selected', 'true')
     fireEvent.click(pin)
+    expect(screen.getByRole('tab', { name: 'Claude · 1 lot en attente' })).toHaveAttribute('aria-selected', 'true')
     const panel = screen.getByRole('region', { name: 'Propositions de Claude' })
     expect(within(panel).getByRole('button', { name: '▶ Claude · Peupler le cimetière' })).toHaveAttribute('aria-pressed', 'true')
 
@@ -588,6 +601,7 @@ describe('AtlasPage', () => {
     FakeSocket.all[0].push({ type: 'ready', versions: { proposals: 1 } })
     FakeSocket.all[0].push({ type: 'changed', topic: 'proposals', version: 2 })
     expect(await within(panel).findByRole('button', { name: '▶ Claude · Deux indices sur la colline' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Claude · 2 lots en attente' })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('shows the players’ view from the server alone: no scene numbers, no proposals, refreshed live', async () => {
@@ -708,6 +722,80 @@ describe('AtlasPage', () => {
     expect(screen.getByText('En direct')).toBeInTheDocument()
     expect(await screen.findByText('Des pas dans le sable')).toBeInTheDocument()
     expect(screen.getByText('Un registre raturé')).toBeInTheDocument()
+  })
+
+  it('shows the side panel one tab at a time, kept in the address, and counts Claude’s batches without opening them (campaign/tidy-atlas-layout)', async () => {
+    stubReducedMotion(true)
+    vi.stubGlobal('WebSocket', FakeSocket)
+    FakeSocket.all = []
+    const batch = {
+      id: 'p1',
+      author: 'token',
+      prompt: 'Peupler le cimetière',
+      reply: '',
+      changes: [],
+      stale: false,
+      dropped: 0,
+      status: 'pending',
+      items: [{ key: 'e0', status: 'pending', stale: false, change: { op: 'add', kind: 'clue', id: 'cl_os', name: 'Un os' } }],
+      createdAt: '2026-10-11T10:00:00Z',
+    }
+    let atlas: Record<string, unknown> = { ...ATLAS, claude: [] }
+    mockApi({
+      ...CAMPAIGN,
+      'GET /api/campaigns/c1/atlas': () => ok(atlas),
+      'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
+    })
+    const { container } = render(
+      <MemoryRouter initialEntries={['/campagnes/c1/atlas']}>
+        <Routes>
+          <Route
+            path="/campagnes/:campaignId/atlas"
+            element={
+              <>
+                <AtlasPage />
+                <Where />
+              </>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    )
+    const tab = (name: string | RegExp) => within(screen.getByRole('tablist', { name: 'Panneau de la carte' })).getByRole('tab', { name })
+
+    // The region opens on « L'idée », alone in the panel.
+    await screen.findByRole('img', { name: 'Les côtes' })
+    expect(tab('L’idée')).toHaveAttribute('aria-selected', 'true')
+    expect(within(screen.getByRole('tabpanel', { name: 'L’idée' })).getByRole('region', { name: 'L’idée' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Le fil de la campagne' })).toBeNull()
+
+    // The arrow keys move along the tabs; the choice is in the address.
+    tab('L’idée').focus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(tab('La carte')).toHaveAttribute('aria-selected', 'true')
+    expect(tab('La carte')).toHaveFocus()
+    expect(screen.getByRole('status', { name: 'adresse' })).toHaveTextContent('panneau=carte')
+    expect(screen.getByRole('region', { name: 'Le fil de la campagne' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'L’idée' })).toBeNull()
+    await userEvent.click(tab('Claude'))
+    expect(within(screen.getByRole('tabpanel', { name: 'Claude' })).getByText(/^Rien en attente. Ce que Claude écrit/)).toBeInTheDocument()
+
+    // Back on « L'idée », a batch arrives: Claude's tab counts it, the panel stays.
+    await userEvent.click(tab('L’idée'))
+    atlas = { ...atlas, claude: [batch] }
+    FakeSocket.all[0].push({ type: 'ready', versions: { proposals: 1 } })
+    FakeSocket.all[0].push({ type: 'changed', topic: 'proposals', version: 2 })
+    expect(await screen.findByRole('tab', { name: 'Claude · 1 lot en attente' })).toHaveAttribute('aria-selected', 'false')
+    expect(tab('L’idée')).toHaveAttribute('aria-selected', 'true')
+
+    // « L'idée » belongs to the widest scale: a place shows « La carte », and the way out finds the idea again.
+    fireEvent.click(container.querySelector('[data-hex="1,0"]')!)
+    await screen.findByRole('img', { name: 'Carte : Le quai' })
+    expect(screen.queryByRole('tab', { name: 'L’idée' })).toBeNull()
+    expect(tab('La carte')).toHaveAttribute('aria-selected', 'true')
+    await userEvent.click(screen.getByRole('button', { name: 'Ressortir' }))
+    await screen.findByRole('img', { name: 'Les côtes' })
+    expect(tab('L’idée')).toHaveAttribute('aria-selected', 'true')
   })
 
   it('shows the scene in HD-2D, what it lacks, and keeps a PixelLab image with one tap (campaign/watch-prep-in-hd2d)', async () => {

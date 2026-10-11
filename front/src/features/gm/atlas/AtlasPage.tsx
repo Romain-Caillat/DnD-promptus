@@ -1,7 +1,6 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
-import { StatusBanner } from '@/components/game/StatusBanner'
 import { Btn, Panel, TouchScreen, field } from '@/features/gm/live/ui'
 import { useLiveChanges } from '@/features/live/useLiveChanges'
 import { MapCanvas } from '@/features/map/MapCanvas'
@@ -44,6 +43,7 @@ import { batchOf, proposedMarks } from './claude'
 import { ClaudeSection } from './ClaudeSection'
 import { STORY_LAYERS, castMarks, placeEdit, readKey, removeEdit, type StoryLayer, type Target } from './cast'
 import { Hd2dSection } from './Hd2dSection'
+import { PanelTabs, panelTabOf, shownPanelTab, type PanelTab } from './PanelTabs'
 import { IdeaSection } from './IdeaSection'
 import { ThreadSection } from './ThreadSection'
 import { PlayersMap, PlayersSection, usePlayersMap } from './PlayersView'
@@ -87,7 +87,18 @@ const dateFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' })
  * tone and themes, then its acts and fronts, the table's settings folded
  * below; a campaign with no map shows « L'idée » alone and the way to
  * its maps. The header carries the campaign's actions (the evening, the
- * table, the rules, the shelf) and its state stands above the map.
+ * table, the rules, the shelf) and its state, as a chip whose sentence
+ * shows on hover or tap.
+ *
+ * campaign/tidy-atlas-layout: the side panel shows one tab at a time
+ * (`?panneau=idee|carte|claude`) — « L'idée » at the widest scale only,
+ * where it opens first and widens the panel; « La carte » (the map's
+ * thread, pins, cast, HD-2D) elsewhere; « Claude » with its waiting
+ * batches counted on the tab. A batch arriving lights the count and never
+ * changes the tab; a batch tapped on the map or in « L'idée » opens
+ * Claude's tab, a pin or piece tapped opens « La carte ». Above the map,
+ * as little height as possible: one header row, one row for the
+ * breadcrumb and the two view switches, one for every layer.
  *
  * maps/browse-atlas and the shell of
  * gm/prep-on-atlas: every map of the world and the campaign, nested by
@@ -312,6 +323,11 @@ export function AtlasPage() {
 
   const current = walk.filter((id) => maps.has(id))
   const here = current.length > 0 ? current : shownId ? [shownId] : []
+  /** The side panel's tab: « L'idée » is offered at the widest scale only. */
+  const widest = !entry || atWidest(state.atlas, entry)
+  const panelTab = shownPanelTab(panelTabOf(params.get('panneau')), widest)
+  const panelTabs: PanelTab[] = widest ? ['idee', 'carte', 'claude'] : ['carte', 'claude']
+  const waiting = (state.atlas.claude ?? []).filter((p) => p.status === 'pending').length
 
   function go(next: string[], how: 'in' | 'out' | null) {
     setWalk(next)
@@ -332,6 +348,10 @@ export function AtlasPage() {
       else next.set(key, value)
     }
     setParams(next, { replace: true })
+  }
+  /** Open a tab of the side panel; the choice stays in the address, map after map. */
+  function showPanel(next: PanelTab) {
+    if (next !== panelTab) query({ panneau: next })
   }
   const open = (id: string) => go(enter(here, id), 'in')
   const jump = (id: string) => go(enter(here, id), null)
@@ -425,8 +445,18 @@ export function AtlasPage() {
   /** A tap on a mark: Claude's opens its batch, the campaign's is picked. */
   const onMark = (key: string) => {
     const of = batchOf(key)
-    if (of) setBatch((b) => (b === of ? null : of))
-    else pick(key)
+    if (!of) {
+      pick(key)
+      return
+    }
+    const next = batch === of ? null : of
+    setBatch(next)
+    if (next) showPanel('claude')
+  }
+  /** A batch chosen from the map or « L'idée »: the GM reads it in Claude's tab. */
+  const pickBatch = (id: string) => {
+    setBatch(id)
+    showPanel('claude')
   }
   const tap = (cell: Cell) => {
     if (!entry) return
@@ -443,6 +473,8 @@ export function AtlasPage() {
   const pick = (place: string) => {
     setScene(null)
     setPicked((p) => (p === place ? null : place))
+    // What a pin or a piece says (its scenes, its fight) stands in « La carte ».
+    if (picked !== place) showPanel('carte')
   }
   const choose = (stop: ThreadStop) => {
     setScene(stop.scene)
@@ -621,7 +653,16 @@ export function AtlasPage() {
           <Btn disabled={claudeBusy} onClick={() => void decide(pickedBatch, { all: 'discard' })}>
             {t('atlas.hd2d.discardAll')}
           </Btn>
-          {tablet && !panel && <Btn onClick={() => setPanel(true)}>{t('atlas.hd2d.details')}</Btn>}
+          {tablet && !panel && (
+            <Btn
+              onClick={() => {
+                setPanel(true)
+                showPanel('claude')
+              }}
+            >
+              {t('atlas.hd2d.details')}
+            </Btn>
+          )}
         </div>
       )}
       <Suspense fallback={<p role="status" className="text-body text-mute-soft">{t('prep.loading')}</p>}>
@@ -682,7 +723,7 @@ export function AtlasPage() {
   )
   // The widest scale carries the campaign's idea; with no map at all, it stands alone.
   const idea =
-    campaign && !players && (!entry || atWidest(state.atlas, entry)) ? (
+    campaign && !players && widest ? (
       <IdeaSection
         key={campaign.id}
         campaignId={campaignId}
@@ -691,7 +732,7 @@ export function AtlasPage() {
         claude={{
           batches: state.atlas.claude ?? [],
           busy: claudeBusy,
-          onPick: setBatch,
+          onPick: pickBatch,
           onDecide: (p, d) => void decide(p, d),
         }}
         onSaved={(c) => {
@@ -703,16 +744,7 @@ export function AtlasPage() {
   const base = `/campagnes/${encodeURIComponent(campaignId)}`
 
   const side = entry && (
-    <Panel
-      title={entry.map.name}
-      actions={
-        tablet ? (
-          <Btn aria-expanded={panel} onClick={() => setPanel(false)}>
-            {t('atlas.fold')}
-          </Btn>
-        ) : undefined
-      }
-    >
+    <Panel title={entry.map.name}>
       <p className="text-caption text-mute-soft">
         {t(`atlas.scale.${scaleOf(entry)}`)} · {t(`atlas.origin.${entry.origin}`)} ·{' '}
         {entry.validated ? t('maps.validated') : t('maps.draft')}
@@ -720,7 +752,6 @@ export function AtlasPage() {
       {entry.map.gm_notes && <p className="text-body text-chalk-soft">{entry.map.gm_notes}</p>}
       {scene3d && <Hd2dSection scene={scene3d} busy={mediaBusy} failed={mediaFailed} onDecide={(a, k) => void decideMedia(a, k)} />}
       {hd2d && flatOnly && <p className="text-caption text-mute-soft">{t('atlas.hd2d.world')}</p>}
-      {claudeSection}
       <ThreadSection
         stops={stops}
         acts={actsHere}
@@ -823,13 +854,18 @@ export function AtlasPage() {
   return (
     <TouchScreen.Provider value={tablet}>
       <main className="surface-table flex min-h-dvh flex-col gap-3 p-4 text-chalk sm:p-5">
-        <header className="flex flex-wrap items-center gap-3">
+        <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
           {back}
           <h1 className="type-title text-[16px]">{campaign?.story.title ?? t('atlas.title')}</h1>
           {campaign && (
-            <span className="rounded-md border border-line-strong px-2 py-0.5 text-[11px] font-semibold text-mute-soft">
-              {campaign.archivedAt ? t('gm.campaigns.status.archived') : t('gm.campaigns.status.prep')}
-            </span>
+            <StatusChip
+              label={campaign.archivedAt ? t('gm.campaigns.status.archived') : t('gm.campaigns.status.prep')}
+              hint={
+                campaign.archivedAt
+                  ? t('gm.campaign.bannerArchived', { date: dateFormat.format(new Date(campaign.archivedAt)) })
+                  : t('gm.campaign.bannerPrep')
+              }
+            />
           )}
           <div className="ml-auto flex flex-wrap gap-1.5" role="group" aria-label={t('gm.campaign.actions')}>
             <Btn main onClick={() => navigate(`${base}/soiree`)}>
@@ -858,16 +894,8 @@ export function AtlasPage() {
             {t('gm.campaign.actionError')}
           </p>
         )}
-        {campaign &&
-          (campaign.archivedAt ? (
-            <StatusBanner tone="warn">
-              {t('gm.campaign.bannerArchived', { date: dateFormat.format(new Date(campaign.archivedAt)) })}
-            </StatusBanner>
-          ) : (
-            <StatusBanner tone="listen">{t('gm.campaign.bannerPrep')}</StatusBanner>
-          ))}
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <nav aria-label={t('atlas.breadcrumb')} className="flex min-w-0 flex-wrap items-center gap-1.5">
             {crumbs.map((c, i) => (
               <span key={c.map.id} className="flex items-center gap-1.5">
@@ -884,44 +912,22 @@ export function AtlasPage() {
               </span>
             ))}
           </nav>
-          <div className="ml-auto flex flex-wrap gap-1.5">
-            <div className="flex gap-1" role="group" aria-label={t('atlas.players.switch')}>
-              <button
-                type="button"
-                className="pixel-choice py-1 pr-2 pb-1.5 text-caption font-semibold"
-                aria-pressed={!players}
-                onClick={() => switchView(false)}
-              >
-                {t('atlas.players.gm')}
-              </button>
-              <button
-                type="button"
-                className="pixel-choice py-1 pr-2 pb-1.5 text-caption font-semibold"
-                aria-pressed={players}
-                onClick={() => switchView(true)}
-              >
-                {t('atlas.players.players')}
-              </button>
-            </div>
+          <div className="ml-auto flex flex-wrap items-center gap-1.5">
+            <Segmented
+              label={t('atlas.players.switch')}
+              options={[
+                { label: t('atlas.players.gm'), on: !players, onClick: () => switchView(false) },
+                { label: t('atlas.players.players'), on: players, onClick: () => switchView(true) },
+              ]}
+            />
             {!players && (
-              <div className="flex gap-1" role="group" aria-label={t('atlas.hd2d.switch')}>
-                <button
-                  type="button"
-                  className="pixel-choice py-1 pr-2 pb-1.5 text-caption font-semibold"
-                  aria-pressed={!hd2d}
-                  onClick={() => switchRender(false)}
-                >
-                  {t('atlas.hd2d.plan')}
-                </button>
-                <button
-                  type="button"
-                  className="pixel-choice py-1 pr-2 pb-1.5 text-caption font-semibold"
-                  aria-pressed={hd2d}
-                  onClick={() => switchRender(true)}
-                >
-                  {t('atlas.hd2d.hd2d')}
-                </button>
-              </div>
+              <Segmented
+                label={t('atlas.hd2d.switch')}
+                options={[
+                  { label: t('atlas.hd2d.plan'), on: !hd2d, onClick: () => switchRender(false) },
+                  { label: t('atlas.hd2d.hd2d'), on: hd2d, onClick: () => switchRender(true) },
+                ]}
+              />
             )}
             <Btn disabled={!canLeave(here, maps)} onClick={out}>
               {t('atlas.out')}
@@ -969,50 +975,36 @@ export function AtlasPage() {
         {desk}
 
         {!players && tab === null && (
-          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('atlas.storyLayers.label')}>
-            <span className="type-label text-mute-soft">{t('atlas.storyLayers.label')}</span>
-            {STORY_LAYERS.map((l) => (
-              <button
-                key={l}
-                type="button"
-                className="pixel-choice py-1 pr-2 pb-1.5 text-caption font-semibold"
-                aria-pressed={lit.has(l)}
-                onClick={() =>
-                  setLit((s) => {
-                    const next = new Set(s)
-                    if (next.has(l)) next.delete(l)
-                    else next.add(l)
-                    return next
-                  })
-                }
-              >
-                {t(`atlas.storyLayers.${l}`)}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {!players && tab === null && layers.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('atlas.layers')}>
-            <span className="type-label text-mute-soft">{t('atlas.layers')}</span>
-            {layers.map((l) => (
-              <button
-                key={l.id}
-                type="button"
-                className="pixel-choice py-1 pr-2 pb-1.5 text-caption font-semibold"
-                aria-pressed={!hidden.has(l.id)}
-                onClick={() =>
+          // The story's layers and the map's own share one row.
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            <LayerGroup
+              label={t('atlas.storyLayers.label')}
+              layers={STORY_LAYERS.map((l) => ({ id: l, name: t(`atlas.storyLayers.${l}`), on: lit.has(l) }))}
+              onToggle={(id) =>
+                setLit((s) => {
+                  const l = STORY_LAYERS.find((x) => x === id)
+                  if (!l) return s
+                  const next = new Set(s)
+                  if (next.has(l)) next.delete(l)
+                  else next.add(l)
+                  return next
+                })
+              }
+            />
+            {layers.length > 0 && (
+              <LayerGroup
+                label={t('atlas.layers')}
+                layers={layers.map((l) => ({ id: l.id, name: l.name, on: !hidden.has(l.id) }))}
+                onToggle={(id) =>
                   setHidden((h) => {
                     const next = new Set(h)
-                    if (next.has(l.id)) next.delete(l.id)
-                    else next.add(l.id)
+                    if (next.has(id)) next.delete(id)
+                    else next.add(id)
                     return next
                   })
                 }
-              >
-                {l.name}
-              </button>
-            ))}
+              />
+            )}
           </div>
         )}
 
@@ -1033,16 +1025,45 @@ export function AtlasPage() {
         )}
 
         {tab === null && entry && (
-          <div className={cn('grid min-h-0 flex-1 gap-3', (!tablet || panel) && 'lg:grid-cols-[minmax(0,1fr)_320px]')}>
+          <div
+            className={cn(
+              'grid min-h-0 flex-1 gap-3',
+              (!tablet || panel) &&
+                (!players && panelTab === 'idee'
+                  ? 'lg:grid-cols-[minmax(0,1fr)_480px]'
+                  : 'lg:grid-cols-[minmax(0,1fr)_320px]'),
+            )}
+          >
             <div className="min-w-0 overflow-hidden">{mapView}</div>
             {(!tablet || panel) &&
               (players ? (
                 <PlayersSection campaignId={campaignId} version={seen} live={live} />
               ) : (
-                <div className="flex min-w-0 flex-col gap-3">
-                  {idea}
-                  {side}
-                </div>
+                <PanelTabs
+                  tabs={panelTabs}
+                  current={panelTab}
+                  waiting={waiting}
+                  onTab={showPanel}
+                  aside={
+                    tablet ? (
+                      <Btn aria-expanded={panel} onClick={() => setPanel(false)}>
+                        {t('atlas.fold')}
+                      </Btn>
+                    ) : undefined
+                  }
+                >
+                  {panelTab === 'idee' ? (
+                    (idea ?? (
+                      <p role="status" className="text-body text-mute-soft">
+                        {t('prep.loading')}
+                      </p>
+                    ))
+                  ) : panelTab === 'claude' ? (
+                    <div className="surface-slab p-3.5">{claudeSection}</div>
+                  ) : (
+                    side
+                  )}
+                </PanelTabs>
               ))}
           </div>
         )}
@@ -1201,5 +1222,103 @@ function PinsSection({
         </ul>
       )}
     </>
+  )
+}
+
+/**
+ * The campaign's state in the header (campaign/tidy-atlas-layout): a chip
+ * whose sentence — what the state means for the table — shows on hover,
+ * on keyboard focus, or on a tap for a finger, and is its description for
+ * a screen reader.
+ */
+function StatusChip({ label, hint }: { label: string; hint: string }) {
+  const [open, setOpen] = useState(false)
+  const id = useId()
+  return (
+    <span className="group relative">
+      <button
+        type="button"
+        className="pixel-choice py-0.5 pr-2 pb-1 text-[11px] font-semibold text-mute-soft"
+        aria-expanded={open}
+        aria-describedby={id}
+        onClick={() => setOpen((o) => !o)}
+        onFocus={(e) => {
+          // Keyboard focus shows the sentence; a tap's focus leaves it to the tap.
+          if (focusVisible(e.currentTarget)) setOpen(true)
+        }}
+        onBlur={() => setOpen(false)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') setOpen(false)
+        }}
+      >
+        {label}
+      </button>
+      <span
+        id={id}
+        role="tooltip"
+        className={cn(
+          'surface-slab absolute top-full left-0 z-30 mt-1.5 w-72 p-2.5 text-caption text-chalk-soft',
+          open ? 'block' : 'hidden group-hover:block',
+        )}
+      >
+        {hint}
+      </span>
+    </span>
+  )
+}
+
+/** Whether the element's focus came from the keyboard (an engine without `:focus-visible` says no). */
+function focusVisible(el: Element): boolean {
+  try {
+    return el.matches(':focus-visible')
+  } catch {
+    return false
+  }
+}
+
+/** Exclusive choices drawn as one compact strip of keys: « Vue MJ / Vue joueurs », « Plan / HD-2D ». */
+function Segmented({ label, options }: { label: string; options: { label: string; on: boolean; onClick: () => void }[] }) {
+  return (
+    <div className="pixel-well flex gap-0.5 p-0.5" role="group" aria-label={label}>
+      {options.map((o) => (
+        <button
+          key={o.label}
+          type="button"
+          className="pixel-choice py-0.5 pr-2 pb-1 text-caption font-semibold"
+          aria-pressed={o.on}
+          onClick={o.onClick}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** One family of layers (the story's, the map's own), lit or dimmed one by one. */
+function LayerGroup({
+  label,
+  layers,
+  onToggle,
+}: {
+  label: string
+  layers: { id: string; name: string; on: boolean }[]
+  onToggle: (id: string) => void
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={label}>
+      <span className="type-label text-mute-soft">{label}</span>
+      {layers.map((l) => (
+        <button
+          key={l.id}
+          type="button"
+          className="pixel-choice py-0.5 pr-2 pb-1 text-caption font-semibold"
+          aria-pressed={l.on}
+          onClick={() => onToggle(l.id)}
+        >
+          {l.name}
+        </button>
+      ))}
+    </div>
   )
 }

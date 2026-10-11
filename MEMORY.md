@@ -380,7 +380,9 @@ Règles, Table, Soirée and the map editor stay apart. The drawer's
 components (`PrepDesk`, `MediaDesk`, `MapsDesk`) own no socket and no
 banner: the Atlas holds the one live channel and Claude's banner
 (`usePrepChanges`) and passes them counters. A new preparation tool is
-a drawer tab or a side-panel section, never a new page. A generated
+a drawer tab or a section of one of the side panel's tabs (« L'idée »,
+« La carte », « Claude », `?panneau=`, campaign/tidy-atlas-layout),
+never a new page. A generated
 campaign is applied with its opening scene pinned on the region
 (`generation::pin_opening`), so creation ends on the map.
 Since campaign/write-story-by-map-scale entering a campaign is entering

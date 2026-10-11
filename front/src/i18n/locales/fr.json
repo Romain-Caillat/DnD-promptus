@@ -2664,6 +2664,14 @@
     "out": "Ressortir",
     "fold": "Replier",
     "unfold": "Panneau",
+    "panel": {
+      "tabs": "Panneau de la carte",
+      "idee": "L’idée",
+      "carte": "La carte",
+      "claude": "Claude",
+      "claudeWaiting_one": "Claude · {{count}} lot en attente",
+      "claudeWaiting_other": "Claude · {{count}} lots en attente"
+    },
     "drawer": "Tiroir",
     "drawerTitle": "Le tiroir : ce qui n’a pas de lieu",
     "backToMap": "Retour à la carte",

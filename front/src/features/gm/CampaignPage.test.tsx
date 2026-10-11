@@ -159,7 +159,15 @@ describe('entering a campaign (campaign/write-story-by-map-scale)', () => {
     // The region, not the place listed first; the campaign's name and state above it.
     await screen.findByRole('img', { name: 'Les côtes' })
     expect(await screen.findByRole('heading', { name: 'Les Corsaires', level: 1 })).toBeInTheDocument()
-    expect(screen.getByText(/En préparation · rien n’est encore montré/)).toBeInTheDocument()
+    // The state is a chip whose sentence describes it, shown on a tap.
+    const chip = screen.getByRole('button', { name: 'en préparation' })
+    expect(chip).toHaveAccessibleDescription(/^En préparation · rien n’est encore montré/)
+    await userEvent.click(chip)
+    expect(chip).toHaveAttribute('aria-expanded', 'true')
+    await userEvent.click(chip)
+    expect(chip).toHaveAttribute('aria-expanded', 'false')
+    // « L'idée » is the panel's tab at the widest scale.
+    expect(screen.getByRole('tab', { name: 'L’idée' })).toHaveAttribute('aria-selected', 'true')
     const actions = screen.getByRole('group', { name: 'Actions de la campagne' })
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual([
       'Mener la soirée',
@@ -320,10 +328,10 @@ describe('entering a campaign (campaign/write-story-by-map-scale)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Archiver' }))
     expect(sentTo(api, 'PUT /api/campaigns/c1/archive')).toHaveLength(0)
     await userEvent.click(screen.getByRole('button', { name: 'Archiver cette campagne ?' }))
-    expect(await screen.findByText(/Archivée le 5 octobre 2026/)).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'archivée' })).toHaveAccessibleDescription(/^Archivée le 5 octobre 2026/)
 
     await userEvent.click(screen.getByRole('button', { name: 'Désarchiver' }))
-    expect(await screen.findByText(/En préparation · rien/)).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'en préparation' })).toHaveAccessibleDescription(/^En préparation · rien/)
     expect(sentTo(api, 'PUT /api/campaigns/c1/archive')).toEqual([{ archived: true }, { archived: false }])
   })
 

@@ -2365,7 +2365,7 @@ les Corsaires (pitch, accroche, acte 1, descente jusqu'au quai, soirée
 lancée depuis l'en-tête).
 
 
-### `campaign/tidy-atlas-layout` · todo
+### `campaign/tidy-atlas-layout` · doing — reste l'essai réel de Romain
 
 **Pourquoi** — Depuis `campaign/write-story-by-map-scale`, le panneau
 latéral de l'Atlas empile « L'idée » puis le panneau de la carte : il
@@ -2406,6 +2406,38 @@ tests passent.
 comme point d'entrée : « C'est étrange d'avoir l'idée puis en dessous
 la carte. Je préférerais que ce soit un switch de tabs. Et je pense en
 termes d'UX qu'on peut améliorer et gagner de la place. »
+
+*État* — Le panneau latéral de l'Atlas est en onglets ARIA
+(`atlas/PanelTabs.tsx` : `tablist` / `tab` / `tabpanel`, flèches,
+Début et Fin) : « L'idée » (à l'échelle la plus large seulement),
+« La carte » (HD-2D, fil, épingles, personnages, « On y entre ») et
+« Claude » (ses lots), un seul visible ; le choix est dans
+`?panneau=idee|carte|claude`. À l'échelle la plus large on arrive sur
+« L'idée », ailleurs sur « La carte ». L'onglet « Claude » porte le
+nombre de lots en attente en pastille (nom accessible « Claude · 2 lots
+en attente ») ; un lot qui arrive la met à jour sans changer d'onglet.
+Quand « L'idée » est ouverte, le panneau passe de 320 à 480 px. Au-dessus
+de la carte : titre, puce d'état et actions sur une rangée ; le bandeau
+« En préparation · … » / « Archivée le … » est devenu la description de
+la puce (bulle au survol, au focus clavier ou au toucher, `aria-describedby`) ;
+« Vue MJ / Vue joueurs » et « Plan / HD-2D » sont deux sélecteurs
+segmentés compacts sur la rangée du fil d'Ariane ; calques de l'histoire
+et calques de la carte partagent une rangée. La « Vue joueurs » garde son
+panneau tel quel, sans onglets ; sans carte, « L'idée », « Pas encore de
+carte » et Claude restent côte à côte. **Hypothèses retenues** : le choix
+d'onglet est collant — choisir « La carte » sur la région le garde de
+carte en carte et au retour ; un choix « L'idée » retombe sur « La carte »
+dans un lieu et revient en ressortant ; toucher un lot de Claude sur la
+carte ou une proposition en pointillés dans « L'idée » ouvre l'onglet
+« Claude » sur ce lot, toucher une épingle ou une pièce ouvre « La
+carte » (sa fiche y est) ; « Le détail » du bandeau HD-2D ouvre le
+panneau sur « Claude » ; les calques tiennent sur une rangée sans menu
+« Calques » (quatre calques d'histoire et deux ou trois de carte tiennent
+sur un portable ; la rangée passe à la ligne au besoin) ; la pastille
+compte les lots en attente, pas leurs éléments. Sur tablette, « Replier »
+est au bout de la rangée d'onglets et le panneau replié le reste. **Reste**
+l'essai réel de Romain sur son portable (la région des Corsaires dans le
+premier tiers de l'écran, le pitch écrit à l'aise).
 
 ### `campaign/order-maps-by-story` · todo
 
