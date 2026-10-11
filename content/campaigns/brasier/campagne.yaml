@@ -341,7 +341,7 @@ nodes:
       ÉBAUCHE — à écrire. Une Carapace Sereth, lente et massive, approche
       du Cure-Dent ; secours ou menace. Premier allié et premier ennemi
       posés d'un coup, selon la piste de la source.
-    location: lieu_brasier
+    location: lieu_reliquaire
     requires:
       - rev_moteur
     gm_notes: >-
@@ -358,7 +358,7 @@ nodes:
       Guidés par la balise, cinq chasseurs Vorr fondent sur le Cure-Dent à
       la sortie du Toboggan. Premier combat de vaisseau ; si un chasseur
       s'arrime, l'abordage se joue dans la coursive.
-    location: lieu_toboggan
+    location: lieu_sortie_toboggan
     map: cure-dent-coursive
     read_aloud: >-
       LUMEN, d'une voix trop calme : « Cinq signatures. Petites. Rapides.
@@ -607,6 +607,7 @@ locations:
     name: Le Toboggan
     description: Un trou de ver non répertorié, qui happe et recrache ; personne ne sait d'où il vient.
     parent: lieu_brasier
+    anchor: { map: systeme-brasier, at: [0, 1] }
     art: >-
       Pixel art : tunnel de lumière blanche et violette qui se tord en
       spirale, étoiles étirées en lignes, petite silhouette du Cure-Dent
@@ -619,6 +620,7 @@ locations:
       plusieurs générations sur tout le matériel local, mais unique,
       irremplaçable ici, et endommagé.
     parent: lieu_brasier
+    anchor: { map: abords-du-toboggan, at: [3, 8] }
     art: >-
       Vaisseau en pixel art, vue de côté : soucoupe blanc cassé, coque
       d'ingénierie allongée, deux nacelles à halo cyan, matricule
@@ -648,6 +650,30 @@ locations:
     parent: lieu_cure_dent
     art: Vue de trois quarts en pixel art, réacteur à lueur cyan, conduites de refroidissement, pupitre aux écrans.
 
+  - id: lieu_sortie_toboggan
+    name: La sortie du Toboggan
+    description: >-
+      Là où le trou de ver recrache ce qu'il a avalé : un champ d'astéroïdes
+      épars à la lisière de la ceinture, sans abri ni balise.
+    parent: lieu_toboggan
+    anchor: { map: abords-du-toboggan, at: [1, 8] }
+    art: >-
+      Pixel art : bouche du trou de ver en spirale blanche et violette,
+      astéroïdes sombres en premier plan, étoile orange au loin.
+    gm_notes: INVENTÉ — à valider par Romain (campaign/pin-scenes-on-maps).
+  - id: lieu_reliquaire
+    name: Le Reliquaire
+    description: >-
+      Station sereth posée dans la ceinture, lente et silencieuse ; on y
+      garde les mémoires du peuple.
+    parent: lieu_brasier
+    anchor: { map: systeme-brasier, at: [11, 7] }
+    art: >-
+      Station en pixel art : carapace de nacre en spirale, coursives
+      lumineuses bleu pâle, vaisseaux-coquilles à quai.
+    gm_notes: >-
+      INVENTÉ — à valider par Romain : la carte du système rattachait la
+      scène de la Carapace à la station (campaign/pin-scenes-on-maps).
 items:
   - id: obj_moelle_vive
     name: Moelle vive

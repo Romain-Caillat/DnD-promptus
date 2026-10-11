@@ -31,7 +31,7 @@ use super::validate::Severity;
 
 /// The lists of a campaign whose items carry an id, and the kind each
 /// holds.
-const LISTS: [(&str, Kind); 12] = [
+pub(crate) const LISTS: [(&str, Kind); 12] = [
     ("party", Kind::PartyMember),
     ("acts", Kind::Act),
     ("fronts", Kind::Front),
@@ -421,7 +421,7 @@ fn set_path(entity: &mut Value, path: &str, value: Value) -> Result<Value, Failu
     Err(bad())
 }
 
-fn name_of(entity: &Value) -> String {
+pub(crate) fn name_of(entity: &Value) -> String {
     ["name", "title", "statement", "label"]
         .iter()
         .find_map(|k| entity.get(*k).and_then(Value::as_str))
@@ -430,7 +430,7 @@ fn name_of(entity: &Value) -> String {
         .to_string()
 }
 
-fn place_of(kind: Kind, entity: &Value) -> Option<Id> {
+pub(crate) fn place_of(kind: Kind, entity: &Value) -> Option<Id> {
     let key = match kind {
         Kind::Clue => "node",
         Kind::Node => "act",

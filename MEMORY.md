@@ -60,6 +60,13 @@ memory. If someone would re-litigate it in six months, it is.
   ~10 km, day), place (square, ~5 m), encounter (square, 1.5 m, 6 s
   turn). The V1 "region in 500 m hexes" level is replaced by places on
   a square grid.
+- **The atlas is computed, never stored (maps/browse-atlas).** Maps nest
+  by their exits, and an exit is a parent → child edge only towards a
+  strictly finer scale (world › place › encounter); exits between equals
+  or back up are side links. That rule is what keeps the tree free of
+  cycles whatever the GM or Claude draws — do not let a same-scale exit
+  nest. The atlas is GM-only (`GET …/atlas`); a player gets the one map
+  on the board through the projection, never the tree.
 - **Table questions settled by the design pass (October 2026).** The
   shared screen is both: a real TV paired with a code, or the same page
   shared in a Discord window. Characters are created before the first
@@ -288,6 +295,14 @@ in one pure function (`projectPlayerView`) and every player route went
 through it. Keep a **single projection point** on the server; never
 filter on the client.
 
+The GM's preview of what players see goes through the same point:
+the Atlas's « Vue joueurs » (`maps/preview-as-player`) calls
+`GET …/maps/{map}/players`, which projects the board on the table or
+the board a show would lay out (`board::preview` and `board::show` share
+`laid_out`) with no character, like the shared screen. The front draws
+what it receives and nothing else — a client-side filter of the atlas
+"to go faster" is the bug this rule forbids.
+
 A token's last move (`trail`) goes through the same projection: cut to
 the cells the player sees, like an opponent's `Moved` event — a walk
 through the fog must not draw where it came from. Screens replay only a
@@ -333,11 +348,174 @@ Every write to world state or combatants takes a row lock on the
 campaign (`SELECT … FOR UPDATE`) and re-reads inside the transaction.
 GM and players act concurrently; without it they overwrite each other.
 
+### The Atlas is the one preparation screen
+
+Since gm/prep-on-atlas the Atlas (`/campagnes/:id/atlas`) is where all
+preparation happens: what has no place on a map opens in its drawer
+(`?onglet=graph|bible|sheets|coherence|validate|medias|cartes`, with
+`?scene=`), the players' view is its switch (`?vue=joueurs`). The old
+pages (Préparer, Médias, Cartes, Vue joueurs) are gone, not hidden;
+Règles, Table, Soirée and the map editor stay apart. The drawer's
+components (`PrepDesk`, `MediaDesk`, `MapsDesk`) own no socket and no
+banner: the Atlas holds the one live channel and Claude's banner
+(`usePrepChanges`) and passes them counters. A new preparation tool is
+a drawer tab or a side-panel section, never a new page. A generated
+campaign is applied with its opening scene pinned on the region
+(`generation::pin_opening`), so creation ends on the map.
+
 ### Realtime carries no game data
 
 The live channel only says "this changed" (Postgres NOTIFY relayed to
 the session's sockets, plus presence). Clients refetch through the API,
 so the projection is never bypassed.
+
+Some of it is the GM's alone (`platform/stream-prep-edits`): the `prep`
+topic (the preparation revision), the `proposals` topic (batches of the
+co-GM and Claude, `platform/propose-edits-by-claude`) and the
+`activity` message (a token wrote: « Claude écrit »). The socket filters per viewer
+(`live::visible_to`, `socket::out_for`), **including the versions sent
+on `ready` and `resync`** — filtering only the changes would still hand
+a player the prep revision at connection. Activity carries a kind and a
+revision number, never a name: the GM's screen reads the journal over
+HTTP. Presence still goes to every socket (players' screens ignore it).
+`desk` is the GM's too (maps, drafts, images, rule drafts, proposed
+adversary turns): a map Claude writes in preparation, proposed or with
+the hand, moves nothing on a phone or a TV — and the TV, which refetches
+on any topic, no longer reloads on preparation.
+
+### One preparation journal, written in one place
+
+Every story write goes through `campaigns::save_story(tx, id, before,
+after, author)`, which diffs the two stories entity by entity
+(`story::revision`), takes the next `campaigns.prep_revision` under the
+campaign lock and leaves a `prep_revisions` line (author `gm`, `token`,
+`copilot` or `server`; touched ids; each entity as it was). An undo
+restores only what that line touched, and is refused when a later line
+touched the same entity (an undo is itself a line, so nothing is undone
+twice). Map content joins the same journal and number
+(`maps/edit-maps-by-ops`): every write of a campaign map's content goes
+through `campaign_maps::write` (or `insert` / `delete`), which calls
+`revisions::record_map` — a line with `target = map:<id>`, the cells and
+things touched (`maps::edit::MapTouch`, shaped like a story `Touch`,
+`name` = the map's) and the whole map before as inverse. Taking a map
+line back puts back only what it touched (`maps::edit::revert`), and is
+refused when a later line on the same map `overlaps` it. Only `revisions::append`
+inserts a line. Writing `campaigns.story` or `campaign_maps.map`
+anywhere else skips the journal and the GM's live screens.
+
+### A map is edited by operations, never written whole
+
+The editor and Claude send batches of `maps::edit::MapOp` (paint,
+place, move, remove, erase, door, set) with the campaign revision they
+read (`POST …/maps/{map}/ops`); the server applies them on the map as
+it is now, under the campaign lock, then `Map::validate`, all or
+nothing. A stale batch lands when no later line on that map
+`overlaps` it (same cell or same thing); otherwise 409 `MAP_STALE`
+carries the fresh map (`error.fresh`) and nothing is written — the
+editor reloads and replays the gesture once on it (then the GM's
+gesture wins on that cell; the other writer's line stays in the
+journal). The whole-map `PUT` is
+gone; import, generation and copies still create maps whole. Story
+edits never make a map batch stale. Any change withdraws the map's
+validation, as before.
+
+### A scene's pin has one source: its place
+
+Where a scene stands on a map is its place's `anchor` in the story
+(`Location.anchor`, `campaign/pin-scenes-on-maps`); on a map, a scene's
+pin is the first place up its `parent` chain anchored there, computed by
+`story::pins` for the atlas, the GM's board, travel arrivals and the
+players' projection alike. A map's `labels` only write words — their old
+`scene` field is gone (migration 048, which stripped it from every
+stored copy — campaign maps, the table's map, fights, ship battles,
+journal inverses — after moving each label's scene onto its place as an
+anchor where that pins nothing else: a place with no anchor and no place
+inside it, plus Port-Louis on the Corsaires' world map), so the two can
+never disagree. A
+pin edit is a story `set` on `anchor`, journaled like any edit. Players
+receive pins only through `projection::board`: places holding a scene
+the table entered, on cells out of the fog, as a name and a cell — never
+scene ids or numbers (a « 7 » says seven scenes exist). Pins never nest
+maps: the atlas tree stays the exits' alone.
+
+### Placed NPCs and clues are preparation, copied to the table on a fresh show
+
+Where an NPC stands, where a clue is found and where a fight breaks out
+live in the story (`Npc.spots`, `Clue.anchor`, `Encounter.anchor`,
+`campaign/place-cast-and-clues`), placed by story edits like a pin,
+read through `story::cast`. They reach the table one way only: when the
+evening shows a place's map fresh (`board::show_in`), each NPC spot for
+every scene or for the current one becomes a token `prep-<npc>-<index>`,
+hidden unless the table already met that NPC (a map shown again after
+another starts fresh, like every token on it); a spot for one scene joins the map shown when that
+scene first opens (`board::scene_arrives`). Showing the map already
+shown keeps its state, so editing the preparation never moves, adds or
+removes a token on an open evening's board — the board is evening state
+(`map_states`) and never writes back to the story. Revealing an NPC
+(`Reveal::Npc`) unhides its `prep-` tokens; a clue is never a token —
+players get the found ones, text and cell without the id, through
+`projection::board` (`clues`). A fight's mark is the GM's alone and
+opens `fight::start` on the scene. A spot in a wall is a warning
+(`SPOT_ON_WALL`), never refused, and none of these cells is the model's
+to fix (`prep::for_the_model`).
+
+### The thread is computed from the exits, never stored
+
+The campaign's thread on a map (`campaign/draw-story-thread`) is
+`story::thread::thread_on`, read from the scenes' `exits` and projected
+on `pins_on` at every atlas read: no thread field exists in the story or
+the maps, so an exit added anywhere (scene editor, co-GM, Claude) redraws
+it on the next `prep` revision. One segment per directed pair of pins —
+a branch is two arrows, a way back a second one, never one polyline —
+drawn solid (dots mean routes and Claude's proposals). The GM's alone:
+no player or screen projection carries it. A link with no path between
+its places is a warning (`EXIT_WITHOUT_PATH`), never a refusal, and not
+the model's to fix (`prep::for_the_model`); the walk is one flood fill
+per map, made only when a check needs it.
+
+### Claude proposes, the GM keeps
+
+A write with the GM's token (`Credential::Token`) on the story or a map
+never lands by itself (`platform/propose-edits-by-claude`): `prep::claude`
+checks it exactly like the GM's, then stores it as a batch in
+`story_proposals` (`author = 'token'` — the co-GM workshop's table, one
+model of batch, never a second circuit), an item per story edit (`e<i>`)
+and per map batch (`m<i>`). Only the GM's session decides
+(`SessionOnly` on `…/proposals/{id}/decide` and the workshop's accept
+and reject): kept items replay under the campaign lock on the campaign
+as it is then — map items through `campaign_maps::prepare`, the
+editor's own staleness rule — journaled as `copilot`, so the GM's own
+gesture never shows as « Claude écrit »; keeping one named item that no
+longer applies refuses the decision, keeping everything left refuses
+such items one by one. Discarding keeps the GM's word for Claude
+(`GET …/proposals`). A batch is shown applied virtually
+(`proposals::virtual_of`, the atlas's `proposed`), never stored so.
+Everything about batches moves the GM-only `proposals` topic, never
+`desk` nor `prep` (whose version is the revision).
+« Claude a la main » (`campaigns.claude_hand`) lets token writes land
+directly, journaled as `token` and undone line by line; the GM's
+session sets it, never while an evening is open, and a write that comes
+during an evening or touches what players know (`claude::revealed`:
+entered scenes, their places and the places containing them — a pin
+players see may be the parent's —, found clues, met NPCs, known factions
+and goals, the map on the board) is proposed anyway. A whole file over
+the campaign with a token needs the hand (409 `CLAUDE_PROPOSES`).
+Writing `campaigns.story` or a map from a token anywhere else skips the
+GM's word.
+
+### Claude places by name, the server picks the cell
+
+Claude never sends a cell it chose for a pin, an NPC, a clue or a fight
+(`platform/edit-maps-by-claude`): it names a thing (« près du
+comptoir ») or a path, and `story::placing` walks out from it — never
+through a wall — to the first cell that is standable, out of water
+(shallow included, unlike `standable`), free of every mark, start,
+object, prop, exit and door (and of marks still proposed) and
+reachable from the party's starts or the exits. The result is ordinary
+story edits, resolved inside `prep::claude::story_edits_with` (campaign
+locked, on the story the batch would leave), so an NPC's whole `spots`
+list is read where it is written. World maps flag no water (the sea is
+a terrain): there « never in the water » is not enforced.
 
 ### The sheet and the play state are two things
 
@@ -407,16 +585,25 @@ A program on the GM's own machine (the MCP server Claude launches,
 token (`Authorization: Bearer`, hashed in `gm_api_tokens`, shown once,
 revoked at once). `require_gm` lets a token through only on the routes
 of `auth::api_tokens::TOKEN_ROUTES` — list campaigns, read one, export,
-import over an existing one, story edits, readiness — checked on the
+import over an existing one, story edits, readiness, and since
+`maps/edit-maps-by-ops` (decided 2026-10-11) reading the campaign's
+maps and sending batches of map operations — checked on the
 matched path before any lookup (403 `TOKEN_NOT_ALLOWED` elsewhere).
 Never on sign-in, accounts, invitations, the tokens themselves (their
 handlers also take `SessionOnly`), creating or setting a campaign,
 `story/validate` (declaring playable is the GM's act, in Promptus), the
 table, the live session, player or screen routes, nor any route that
-spends AI budget. Widening the list is a decision, not a fix: the sweep
+spends AI budget, nor creating, importing, deleting or validating a
+map. Since `platform/propose-edits-by-claude` (decided 2026-10-11) it
+also reads Claude's own batches back (`GET …/proposals`), never decides
+one. Since `platform/edit-maps-by-claude` (decided 2026-10-11) it reads
+the atlas, a map as text (`…/sketch`), asks the engine on a map
+(`…/ask`: path, sight, what players see — read-only) and places by name
+(`…/place`: story edits the server resolves, proposed like the others).
+Widening the list is a decision, not a fix: the sweep
 in `gm_routes_test.rs` sends a token to every other GM route. A token
-write is the GM's own write (same edits, lock, all or nothing), so
-players see it as they would the same edit made on the review screen.
+write is checked like the GM's (same edits, lock, all or nothing) but
+is **proposed**, not applied — see « Claude proposes, the GM keeps ».
 
 ### Recaps reach the table only once published
 

@@ -30,6 +30,9 @@ fn maps() -> Vec<Map> {
         "maps/corsaires/pont-du-greyhound.yaml",
         "maps/brasier/cure-dent-coursive.yaml",
         "maps/brasier/abords-du-toboggan.yaml",
+        "maps/corsaires/cotes-bretagne-sud.yaml",
+        "maps/corsaires/port-louis-rues.yaml",
+        "maps/brasier/systeme-brasier.yaml",
     ]
     .iter()
     .map(|rel| Map::from_yaml(&read(rel)).unwrap())
@@ -144,6 +147,30 @@ fn rule_and_map_references_are_checked_against_the_library() {
     assert!(codes.contains(&"RULES_UNKNOWN_CLASS"), "{codes:?}");
     assert!(codes.contains(&"MAP_UNKNOWN"), "{codes:?}");
 
+    // A pin on a map nobody has, or off its grid, is reported where it is.
+    let text = read("campaigns/corsaires/campagne.yaml")
+        .replace(
+            "anchor: { map: port-louis-rues, at: [2, 1] }",
+            "anchor: { map: port-louis-haut, at: [2, 1] }",
+        )
+        .replace(
+            "anchor: { map: port-louis-rues, at: [17, 8] }",
+            "anchor: { map: port-louis-rues, at: [40, 8] }",
+        );
+    let issues = check(&from_yaml(&text).unwrap(), "corsaires");
+    let pins: Vec<(&str, &str)> = issues
+        .iter()
+        .filter(|i| i.path.starts_with("locations"))
+        .map(|i| (i.code, i.path.as_str()))
+        .collect();
+    assert_eq!(
+        pins,
+        [
+            ("MAP_UNKNOWN", "locations[1].anchor.map"),
+            ("ANCHOR_OFF_GRID", "locations[4].anchor.at"),
+        ]
+    );
+
     // The wrong rule system is named as such, not as a pile of misses.
     let issues = check(&campaign("campaigns/corsaires/campagne.yaml"), "brasier");
     assert_eq!(
@@ -160,4 +187,65 @@ fn rule_and_map_references_are_checked_against_the_library() {
     }
     let issues = check(&c, "brasier");
     assert_eq!(count(&issues, "MAP_ENTITY_UNKNOWN"), 2, "{issues:#?}");
+}
+
+#[test]
+fn npcs_clues_and_fights_placed_badly_are_reported_where_they_stand() {
+    use promptus_shared::maps::Cell;
+    use promptus_shared::story::{Anchor, Spot};
+
+    let mut c = campaign("campaigns/corsaires/campagne.yaml");
+    let quai = maps()
+        .into_iter()
+        .find(|m| m.id == "quai-port-louis")
+        .unwrap();
+    let wall = quai
+        .grid
+        .cells()
+        .find(|at| quai.grid.kind(*at).is_some_and(|k| k.wall))
+        .expect("the quay has a wall");
+    let floor = quai
+        .grid
+        .cells()
+        .find(|at| quai.grid.kind(*at).is_some_and(|k| !k.wall && !k.void))
+        .unwrap();
+    let spot = |at: Cell, scene: Option<&str>| Spot {
+        map: "quai-port-louis".into(),
+        at,
+        scene: scene.map(str::to_string),
+    };
+    c.npcs[0].spots = vec![
+        spot(floor, None),
+        spot(wall, None),
+        spot(floor, Some("sc_inventee")),
+    ];
+    c.clues[0].anchor = Some(Anchor {
+        map: "quai-port-louis".into(),
+        at: Cell::new(400, 0),
+    });
+    let fight = c.nodes.iter().position(|n| n.encounter.is_some()).unwrap();
+    c.nodes[fight].encounter.as_mut().unwrap().anchor = Some(Anchor {
+        map: "quai-de-brest".into(),
+        at: floor,
+    });
+    let issues = check(&c, "corsaires");
+    let placed: Vec<(&str, Severity, &str)> = issues
+        .iter()
+        .filter(|i| {
+            i.path.starts_with("npcs[0].spots")
+                || i.path.starts_with("clues[0].anchor")
+                || i.path.contains("encounter.anchor")
+        })
+        .map(|i| (i.code, i.severity, i.path.as_str()))
+        .collect();
+    let fight_path = format!("nodes[{fight}].encounter.anchor.map");
+    assert_eq!(
+        placed,
+        [
+            ("REF_DANGLING", Severity::Error, "npcs[0].spots[2].scene"),
+            ("SPOT_ON_WALL", Severity::Warning, "npcs[0].spots[1].at"),
+            ("ANCHOR_OFF_GRID", Severity::Error, "clues[0].anchor.at"),
+            ("MAP_UNKNOWN", Severity::Error, fight_path.as_str()),
+        ]
+    );
 }

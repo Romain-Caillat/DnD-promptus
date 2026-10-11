@@ -25,6 +25,7 @@ import { BattleScreen } from './BattleScreen'
 import { WorldMapTab } from '@/features/travel/PlayerTravel'
 import { eventLine } from './events'
 import { MapCanvas } from './MapCanvas'
+import { playerMarks } from './pins'
 import { useImage } from './useImage'
 import { useTileset } from './useTileset'
 
@@ -239,6 +240,7 @@ export function MapTab({
         fightEvents={board.fight?.events}
         className="max-h-[55dvh]"
         onCell={tapCell}
+        pins={fight ? [] : playerMarks(board.pins, board.clues)}
       />
       {!fight && me && <p className="text-caption text-mute">{t('map.walkHint')}</p>}
       {me?.ghost && <p className="text-caption text-mute">{t('map.ghost')}</p>}

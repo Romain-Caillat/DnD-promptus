@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mockApi, sentTo } from '@/test-utils'
-import { MapsPage } from './MapsPage'
+import { MapsDesk } from './MapsDesk'
 
 const STORY = {
   id: 'mine',
@@ -40,9 +40,9 @@ const MADE = (id: string, source: string) => ({
 
 function renderPage() {
   render(
-    <MemoryRouter initialEntries={['/campagnes/c1/cartes']}>
+    <MemoryRouter initialEntries={['/campagnes/c1/atlas?onglet=cartes']}>
       <Routes>
-        <Route path="/campagnes/:campaignId/cartes" element={<MapsPage />} />
+        <Route path="/campagnes/:campaignId/atlas" element={<MapsDesk campaignId="c1" live={0} />} />
         <Route path="/campagnes/:campaignId/cartes/:mapId" element={<p>éditeur ouvert</p>} />
       </Routes>
     </MemoryRouter>,
@@ -81,7 +81,7 @@ function api(extra: Parameters<typeof mockApi>[0] = {}) {
   })
 }
 
-describe('MapsPage', () => {
+describe('MapsDesk', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })

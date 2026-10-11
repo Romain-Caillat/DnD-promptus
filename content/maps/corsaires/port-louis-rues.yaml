@@ -1,0 +1,68 @@
+# Corsaires de la Couronne — Port-Louis, le quartier bas, la nuit de
+# l'acte 1 (campaign/pin-scenes-on-maps). Carte de lieu : cases de 5 m,
+# la taverne et le bureau du port au nord, les entrepôts et la cour du
+# marché noir au milieu, le chantier naval à l'est, les quais au sud et
+# l'appontement de La Mâchoire. Les scènes y sont épinglées par les lieux
+# de la campagne (`locations[].anchor`), jamais par les étiquettes.
+# INVENTÉ — à valider par Romain : la disposition est une ébauche.
+version: 1
+id: port-louis-rues
+name: Port-Louis, le quartier bas
+scale: place
+theme: port-1718
+ambience:
+  time: night
+  weather: fog
+  mood: port-de-nuit
+gm_notes: >-
+  Le quartier bas appartient aux marins après le couvre-feu. La garde ne
+  descend qu'en nombre ; la cour de Kerjean ne s'ouvre qu'à qui connaît
+  le mot.
+layers:
+  - { id: base, name: Quartier, visibility: all }
+grid:
+  legend:
+    "#": { terrain: pierre, wall: true }
+    ".": { terrain: pavés }
+    ",": { terrain: plancher }
+    "_": { terrain: planches }
+    "=": { terrain: passerelle }
+    "~": { terrain: eau, water: deep }
+  rows:
+    - "######################"
+    - "#,,,,#.#,,,,#..#,,,,,#"
+    - "#,,,,#.#,,,,#..#,,,,,#"
+    - "###,##.##,###..##,####"
+    - "......................"
+    - "......................"
+    - "##,##...##,##.#_______"
+    - "#,,,#...#,,,#.________"
+    - "#,,,#...#,,,#.#_______"
+    - "#####...#####.#_______"
+    - "......................"
+    - "______________________"
+    - "~~~~~~~~~~~~~~~~~~==~~"
+    - "~~~~~~~~~~~~~~~~~~==~~"
+props:
+  - { id: tonneaux-cour, kind: tonneaux, label: Tonneaux de contrebande, at: [6, 8], cover: half, blocks_movement: true }
+  - { id: bitte-quai, kind: bitte, label: Bitte d'amarrage, at: [12, 11], cover: half, blocks_movement: true }
+lights:
+  - { id: enseigne-perroquet, at: [3, 4], bright: 1, dim: 3, color: "#ffb35c", flicker: true }
+  - { id: lanterne-cour, at: [6, 6], bright: 1, dim: 2, color: "#ffb35c", flicker: true }
+  - { id: fanal-appontement, at: [19, 11], bright: 2, dim: 4, color: "#ffd27a", flicker: true }
+exits:
+  - { id: vers-le-quai, cells: [[17, 11], [18, 11], [19, 11]], to: quai-port-louis, label: Le quai de La Mâchoire }
+labels:
+  - { text: Le Perroquet Noyé, at: [2, 1] }
+  - { text: Le bureau du port, at: [10, 1] }
+  - { text: Entrepôt des douanes, at: [18, 1] }
+  - { text: La cour de Kerjean, at: [6, 7] }
+  - { text: Le chantier naval, at: [17, 8] }
+  - { text: Les quais, at: [8, 10] }
+starts:
+  - { id: pj-1, side: party, at: [1, 4] }
+  - { id: pj-2, side: party, at: [2, 4] }
+  - { id: pj-3, side: party, at: [3, 4] }
+  - { id: pj-4, side: party, at: [1, 5] }
+  - { id: pj-5, side: party, at: [2, 5] }
+  - { id: pj-6, side: party, at: [3, 5] }

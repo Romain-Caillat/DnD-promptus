@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, Navigate, useParams } from 'react-router'
 import { StatusBanner } from '@/components/game/StatusBanner'
 import { Btn, Panel } from '@/features/gm/live/ui'
-import { useLiveChanges } from '@/features/live/useLiveChanges'
 import { ApiError } from '@/lib/api'
 import { dollars } from '@/lib/generation'
 import { askImage, decideImage, drawMissing, fetchGmMedia, type GmMediaList, type MediaKind } from '@/lib/media'
@@ -21,21 +19,21 @@ const SECTIONS = [
 
 type PageState =
   | { kind: 'loading' }
-  | { kind: 'signed-out' }
   | { kind: 'not-found' }
   | { kind: 'error' }
   | { kind: 'ready'; story: Story; media: GmMediaList }
 
 /**
- * `/campagnes/:campaignId/medias` — `media/generate-images-and-video`:
+ * The Atlas's « Médias » drawer — `media/generate-images-and-video`:
  * every scene, NPC, adversary and place of the campaign with its
  * pixel-art image, and every act with its introduction video. The GM
  * draws what is missing in one background batch (its cost said first),
  * then keeps or redraws each one; nothing reaches the table unkept.
+ * `live` moves with the story and the background jobs (the Atlas hears
+ * them).
  */
-export function MediaPage() {
+export function MediaDesk({ campaignId, live: heard }: { campaignId: string; live: number }) {
   const { t } = useTranslation()
-  const { campaignId = '' } = useParams()
   const [state, setState] = useState<PageState>({ kind: 'loading' })
   const [version, setVersion] = useState(0)
   const [videos, setVideos] = useState(false)
@@ -50,34 +48,22 @@ export function MediaPage() {
       },
       (err: unknown) => {
         if (!live) return
-        if (err instanceof ApiError && err.status === 401) setState({ kind: 'signed-out' })
-        else if (err instanceof ApiError && err.status === 404) setState({ kind: 'not-found' })
+        if (err instanceof ApiError && err.status === 404) setState({ kind: 'not-found' })
         else setState({ kind: 'error' })
       },
     )
     return () => {
       live = false
     }
-  }, [campaignId, version])
+  }, [campaignId, version, heard])
 
-  useLiveChanges(campaignId, (topics) => {
-    if (topics.includes('desk') || topics.includes('story')) setVersion((v) => v + 1)
-  })
-
-  if (state.kind === 'signed-out') return <Navigate to="/connexion" replace />
-  const back = (
-    <Link className="text-caption text-mute-soft underline underline-offset-4" to={`/campagnes/${campaignId}`}>
-      {t('prep.back')}
-    </Link>
-  )
   if (state.kind !== 'ready') {
     return (
-      <main className="surface-table flex min-h-dvh flex-col gap-4 p-6 text-chalk">
-        {back}
+      <div className="flex flex-col gap-4">
         {state.kind === 'loading' && <p role="status">{t('prep.loading')}</p>}
         {state.kind === 'not-found' && <p role="alert">{t('prep.notFound')}</p>}
         {state.kind === 'error' && <p role="alert">{t('prep.error')}</p>}
-      </main>
+      </div>
     )
   }
 
@@ -101,9 +87,8 @@ export function MediaPage() {
   }
 
   return (
-    <main className="surface-table flex min-h-dvh flex-col gap-4 p-5 text-chalk">
-      {back}
-      <h1 className="type-title text-[24px]">{t('prep.media.title')}</h1>
+    <div className="flex flex-col gap-4">
+      <h2 className="type-title text-[20px]">{t('prep.media.title')}</h2>
       {!plan.configured && <StatusBanner tone="warn">{t('prep.generate.errors.AI_NOT_CONFIGURED')}</StatusBanner>}
       {error && (
         <p role="alert" className="text-body text-stat-atk">
@@ -141,7 +126,7 @@ export function MediaPage() {
         if (entities.length === 0) return null
         return (
           <section key={kind} className="flex flex-col gap-2" aria-label={t(`gmLive.media.kinds.${kind}`)}>
-            <h2 className="type-title text-[16px]">{t(`gmLive.media.kinds.${kind}`)}</h2>
+            <h3 className="type-title text-[16px]">{t(`gmLive.media.kinds.${kind}`)}</h3>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {entities.map((e) => (
                 <SubjectCard
@@ -159,6 +144,6 @@ export function MediaPage() {
           </section>
         )
       })}
-    </main>
+    </div>
   )
 }

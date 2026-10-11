@@ -8,6 +8,7 @@
 //! other (`MEMORY.md` §3). [`update_world`] wraps that for world writes.
 
 pub mod projection;
+pub mod revisions;
 pub mod rules_seen;
 
 use std::sync::Arc;
@@ -39,6 +40,13 @@ pub struct CampaignRow {
     /// When the GM last declared it playable (`campaign/review-story-graph`);
     /// `None` until then, and a session does not open.
     pub validated_at: Option<DateTime<Utc>>,
+    /// The preparation revision: how many story writes the journal holds
+    /// (`revisions`, `platform/stream-prep-edits`).
+    pub prep_revision: i64,
+    /// « Claude a la main » (`platform/propose-edits-by-claude`): the GM
+    /// lets writes with their token land directly instead of as
+    /// proposals (`prep::claude`).
+    pub claude_hand: bool,
     /// The rule system `story.rules` names: the campaign's own locked
     /// version, or the preset (`crate::rules`). `None` when the server
     /// has neither.
@@ -130,6 +138,8 @@ type Row = (
     Option<DateTime<Utc>>,
     DateTime<Utc>,
     Option<DateTime<Utc>>,
+    i64,
+    bool,
     Option<String>,
 );
 
@@ -144,6 +154,8 @@ fn from_row(
         archived_at,
         updated_at,
         validated_at,
+        prep_revision,
+        claude_hand,
         stored_rules,
     ): Row,
 ) -> CampaignRow {
@@ -160,6 +172,8 @@ fn from_row(
         archived_at,
         updated_at,
         validated_at,
+        prep_revision,
+        claude_hand,
         rules,
     }
 }
@@ -168,7 +182,7 @@ fn from_row(
 /// version its story names, when the campaign has its own.
 const COLUMNS: &str =
     "id, gm_id, story, world, player_count, ai_budget_cents, archived_at, updated_at,
-     validated_at,
+     validated_at, prep_revision, claude_hand,
      (SELECT rv.system FROM rule_versions rv
        WHERE rv.campaign_id = campaigns.id
          AND rv.version = (campaigns.story->'rules'->>'version')::int
@@ -396,9 +410,13 @@ pub async fn save_world(
     Ok(())
 }
 
-/// Replace the story of a campaign locked by [`lock`] in `tx`. The world
-/// is kept: ids are stable, so what was found stays found. Its live
-/// sockets hear of it when `tx` commits (`live::touch`).
+/// Replace the story of a campaign locked by [`lock`] in `tx`, `before`
+/// being the story read under that lock. The world is kept: ids are
+/// stable, so what was found stays found. When the story moved, the
+/// write takes the next preparation revision and leaves its line in the
+/// journal, by `author` (`revisions::record`). Its live sockets hear of
+/// it when `tx` commits (`live::touch`). Returns the revision written,
+/// `None` when nothing moved.
 ///
 /// # Errors
 ///
@@ -406,15 +424,28 @@ pub async fn save_world(
 pub async fn save_story(
     tx: &mut Transaction<'_, Postgres>,
     id: Uuid,
+    before: &Campaign,
     story: &Campaign,
-) -> Result<(), AppError> {
+    author: revisions::Author,
+) -> Result<Option<i64>, AppError> {
+    write_story(tx, id, before, story, author, None).await
+}
+
+async fn write_story(
+    tx: &mut Transaction<'_, Postgres>,
+    id: Uuid,
+    before: &Campaign,
+    story: &Campaign,
+    author: revisions::Author,
+    undoes: Option<i64>,
+) -> Result<Option<i64>, AppError> {
     sqlx::query("UPDATE campaigns SET story = $2 WHERE id = $1")
         .bind(id)
         .bind(Json(story))
         .execute(&mut **tx)
         .await?;
     live::touch(tx, id, &Topic::Story).await?;
-    Ok(())
+    revisions::record(tx, id, before, story, author, undoes).await
 }
 
 /// One world write by `gm` on campaign `id`, under the campaign lock:

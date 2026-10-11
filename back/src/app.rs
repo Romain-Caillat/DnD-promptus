@@ -121,6 +121,11 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             post(api::rule_versions::try_house_rule),
         )
         .route("/api/campaigns/{id}/story/edits", post(api::prep::edits))
+        .route("/api/campaigns/{id}/revisions", get(api::prep::revisions))
+        .route(
+            "/api/campaigns/{id}/revisions/{revision}/undo",
+            post(api::prep::undo),
+        )
         .route("/api/campaigns/{id}/readiness", get(api::prep::readiness))
         .route(
             "/api/campaigns/{id}/generation",
@@ -146,6 +151,17 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/workshop/{proposal}/reject",
             post(api::prep::reject),
         )
+        // platform/propose-edits-by-claude: Claude's batches, the GM's
+        // word on them, and « Claude a la main ».
+        .route(
+            "/api/campaigns/{id}/proposals",
+            get(api::prep::claude_proposals),
+        )
+        .route(
+            "/api/campaigns/{id}/proposals/{proposal}/decide",
+            post(api::prep::decide_claude),
+        )
+        .route("/api/campaigns/{id}/claude", put(api::prep::claude_hand))
         .route(
             "/api/campaigns/{id}/invite",
             get(api::table::invite)
@@ -337,12 +353,29 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
         )
         .route(
             "/api/campaigns/{id}/maps/{map}",
-            get(api::maps::get)
-                .put(api::maps::save)
-                .delete(api::maps::delete)
-                // The editor sends the whole map.
-                .layer(DefaultBodyLimit::max(4 * 1024 * 1024)),
+            get(api::maps::get).delete(api::maps::delete),
         )
+        // The editor and Claude send batches of operations
+        // (maps/edit-maps-by-ops), never the whole map.
+        .route("/api/campaigns/{id}/maps/{map}/ops", post(api::maps::edit))
+        // The map in words, for Claude (platform/edit-maps-by-claude).
+        .route(
+            "/api/campaigns/{id}/maps/{map}/sketch",
+            get(api::maps::sketch),
+        )
+        .route("/api/campaigns/{id}/maps/{map}/ask", post(api::maps::ask))
+        .route(
+            "/api/campaigns/{id}/maps/{map}/place",
+            post(api::maps::place),
+        )
+        // A map as the players would receive it now, through their own
+        // projection (maps/preview-as-player).
+        .route(
+            "/api/campaigns/{id}/maps/{map}/players",
+            get(api::board::as_players),
+        )
+        // Every map of the world and the campaign, nested (maps/browse-atlas).
+        .route("/api/campaigns/{id}/atlas", get(api::maps::atlas))
         .route(
             "/api/campaigns/{id}/maps/{map}/validate",
             post(api::maps::validate),

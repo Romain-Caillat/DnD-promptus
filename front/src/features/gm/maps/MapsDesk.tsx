@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, Navigate, useNavigate, useParams } from 'react-router'
+import { useNavigate } from 'react-router'
 import { Btn, Panel, field } from '@/features/gm/live/ui'
 import { ApiError } from '@/lib/api'
 import {
@@ -17,7 +17,6 @@ import { fetchReview, type Story } from '@/lib/prep'
 
 type PageState =
   | { kind: 'loading' }
-  | { kind: 'signed-out' }
   | { kind: 'not-found' }
   | { kind: 'error' }
   | { kind: 'ready'; listing: MapListing; story: Story }
@@ -50,16 +49,16 @@ function readFile(file: File, as: 'text' | 'dataUrl'): Promise<string> {
 }
 
 /**
- * `/campagnes/:campaignId/cartes` — the campaign's own maps: a blank one
+ * The Atlas's « Cartes » drawer — the campaign's own maps: a blank one
  * or a copy of the world's (maps/edit-map-gm), the model's draft for a
  * scene (maps/generate-map-llm), a Dungeondraft export or an image
  * aligned on a grid (maps/import-image-map). Each opens in the editor;
- * only a validated one reaches the table.
+ * only a validated one reaches the table. `live` moves with every
+ * preparation revision (a map added or changed elsewhere).
  */
-export function MapsPage() {
+export function MapsDesk({ campaignId, live: heard }: { campaignId: string; live: number }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { campaignId = '' } = useParams()
   const [state, setState] = useState<PageState>({ kind: 'loading' })
   const [version, setVersion] = useState(0)
   const [busy, setBusy] = useState(false)
@@ -80,30 +79,22 @@ export function MapsPage() {
       },
       (err: unknown) => {
         if (!live) return
-        if (err instanceof ApiError && err.status === 401) setState({ kind: 'signed-out' })
-        else if (err instanceof ApiError && err.status === 404) setState({ kind: 'not-found' })
+        if (err instanceof ApiError && err.status === 404) setState({ kind: 'not-found' })
         else setState({ kind: 'error' })
       },
     )
     return () => {
       live = false
     }
-  }, [campaignId, version])
+  }, [campaignId, version, heard])
 
-  if (state.kind === 'signed-out') return <Navigate to="/connexion" replace />
-  const back = (
-    <Link className="text-caption text-mute-soft underline underline-offset-4" to={`/campagnes/${campaignId}`}>
-      {t('prep.back')}
-    </Link>
-  )
   if (state.kind !== 'ready') {
     return (
-      <main className="surface-table flex min-h-dvh flex-col gap-4 p-6 text-chalk">
-        {back}
+      <div className="flex flex-col gap-4">
         {state.kind === 'loading' && <p role="status">{t('prep.loading')}</p>}
         {state.kind === 'not-found' && <p role="alert">{t('prep.notFound')}</p>}
         {state.kind === 'error' && <p role="alert">{t('prep.error')}</p>}
-      </main>
+      </div>
     )
   }
 
@@ -150,9 +141,8 @@ export function MapsPage() {
   }
 
   return (
-    <main className="surface-table flex min-h-dvh flex-col gap-4 p-5 text-chalk">
-      {back}
-      <h1 className="type-title text-[24px]">{t('maps.title')}</h1>
+    <div className="flex flex-col gap-4">
+      <h2 className="type-title text-[20px]">{t('maps.title')}</h2>
       {error && (
         <p role="alert" className="text-body text-stat-atk">
           {t(`maps.errors.${error.code}`, {
@@ -274,7 +264,7 @@ export function MapsPage() {
           onImport={(body) => void open(() => importMap(campaignId, body))}
         />
       )}
-    </main>
+    </div>
   )
 }
 

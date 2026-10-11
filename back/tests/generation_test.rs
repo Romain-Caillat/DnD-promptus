@@ -133,7 +133,7 @@ async fn a_pitch_becomes_a_campaign_the_gm_reviews_and_applies() {
     );
     assert_eq!(provider.calls(), ["generation:cast", "generation:scenes"]);
     // Validator green, rule system included.
-    assert_eq!(job["issues"], json!([]), "{}", job["issues"]);
+    assert_eq!(beyond_pins(&job), json!([]), "{}", job["issues"]);
     assert_eq!(job["steps"][1]["counts"]["nodes"], 7);
     // The invented faction, NPC and scene were removed.
     let removed = job["removed"].as_array().unwrap();
@@ -171,8 +171,27 @@ async fn a_pitch_becomes_a_campaign_the_gm_reviews_and_applies() {
     assert_eq!(r.body["data"]["job"]["status"], "applied");
     let detail = &r.body["data"]["campaign"];
     assert_eq!(detail["story"]["nodes"].as_array().unwrap().len(), 7);
-    assert_eq!(detail["issues"], json!([]));
+    assert_eq!(beyond_pins(detail), json!([]));
     assert!(detail["validatedAt"].is_null());
+    // Creation ends on the Atlas (gm/prep-on-atlas): the opening scene's
+    // place stands on the world's region.
+    let story = &detail["story"];
+    let opening = story["bible"]["start_node"]
+        .as_str()
+        .unwrap_or_else(|| story["nodes"][0]["id"].as_str().unwrap());
+    let node = story["nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|n| n["id"] == opening)
+        .unwrap();
+    let place = story["locations"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|l| l["id"] == node["location"])
+        .unwrap_or_else(|| panic!("{node}"));
+    assert_eq!(place["anchor"]["map"], "cotes-bretagne-sud", "{place}");
     let r = call(
         &app,
         Some(&token),
@@ -228,7 +247,7 @@ async fn the_validator_s_findings_go_back_to_the_model_and_its_repair_is_kept() 
         provider.calls(),
         ["generation:cast", "generation:scenes", "generation:repair"]
     );
-    assert_eq!(job["issues"], json!([]), "{}", job["issues"]);
+    assert_eq!(beyond_pins(&job), json!([]), "{}", job["issues"]);
     assert_eq!(job["repairs"], 1);
     // The repair's invented id was dropped.
     assert_eq!(job["dropped"], 1);
@@ -254,7 +273,7 @@ async fn an_answer_out_of_format_is_sent_back_once() {
         provider.calls(),
         ["generation:cast", "generation:cast", "generation:scenes"]
     );
-    assert_eq!(job["issues"], json!([]));
+    assert_eq!(beyond_pins(&job), json!([]));
 }
 
 #[tokio::test]
@@ -346,4 +365,17 @@ async fn another_gm_sees_and_applies_nothing() {
     // A pitch too short is refused before anything.
     let r = start(&app, &owner, &campaign, "Court").await;
     assert_eq!(r.body["error"]["code"], "PITCH_TOO_SHORT");
+}
+
+/// The findings of a job (or a campaign) but the scenes standing on no
+/// map: a generated campaign has none pinned yet, which the GM does in
+/// the atlas.
+fn beyond_pins(job: &Value) -> Value {
+    job["issues"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|i| i["code"] != "SCENE_WITHOUT_PLACE")
+        .cloned()
+        .collect()
 }

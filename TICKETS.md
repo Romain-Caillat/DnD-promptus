@@ -198,6 +198,31 @@ actuels : ce virage ne la remplace pas.
 `platform/stream-prep-edits` · `platform/propose-edits-by-claude` ·
 `platform/edit-maps-by-claude`
 
+**Ordre de construction** — Il suit les dépendances, pas la numérotation
+des phases : la phase 8 pose d'abord le socle. `platform/stream-prep-edits`
+(révision et journal communs, diffusion au MJ seul) →
+`maps/edit-maps-by-ops` (les cartes entrent dans ce même journal) →
+`maps/browse-atlas` et la coquille de l'écran Atlas →
+`campaign/pin-scenes-on-maps` → `campaign/place-cast-and-clues` →
+`campaign/draw-story-thread` → `platform/propose-edits-by-claude` →
+`platform/edit-maps-by-claude` → `maps/preview-as-player` puis la bascule
+`gm/prep-on-atlas` (les anciens écrans Préparer, Médias, Cartes et Vue
+joueurs disparaissent).
+
+**Hypothèses retenues** (validées par Romain) — L'épingle est portée par
+le **lieu** de l'histoire (`Location`, qui a déjà un parent) : un lieu
+gagne une ancre facultative sur une carte (carte + case ou zone), et la
+chaîne des parents donne région › lieu › rencontre ; plusieurs scènes
+partagent un lieu. L'étiquette de carte qui nomme une scène ne devient
+pas une seconde source. Les positions de PNJ, indices et rencontres sont
+de la préparation, rangées dans l'histoire (pas dans l'état de carte de
+la soirée), recopiées en pions quand la soirée ouvre la carte. **Un seul**
+système de révisions par campagne (numéro + journal : auteur, changements,
+inverse) pour l'histoire et les cartes. Le temps réel ne porte que des
+numéros ; la révision de préparation et l'activité de Claude ne partent
+que vers les sockets du MJ. Tout nouveau champ du format est facultatif :
+un ancien fichier s'importe toujours.
+
 *Tickets existants touchés* — `campaign/edit-scenes-in-one-place` (on y
 entre aussi par une épingle) ; `campaign/check-act-readiness` (alerte
 « scène sans lieu ») ; `maps/generate-map-llm` (part d'une épingle et
@@ -399,12 +424,21 @@ lit pourquoi. Le même panneau montre la configuration à coller dans
 Claude Desktop et la commande pour Claude Code, jeton compris juste
 après sa création. Testé de bout en bout côté serveur et côté outils
 (appels simulés) ; pas encore essayé depuis le vrai Claude Desktop.
-*Décision ouverte* — faut-il refuser les écritures par jeton pendant une
-soirée en cours ?
+*Mis à jour par `platform/stream-prep-edits`* : une écriture par jeton
+entre aussi dans le journal des révisions ; le MJ la voit arriver sur son
+écran de préparation ouvert et peut l'annuler tant que rien ne l'a
+recouverte. Elle s'applique toujours directement (les propositions
+viennent avec `platform/propose-edits-by-claude`).
+*Décision tranchée* (`platform/propose-edits-by-claude`, 11 octobre
+2026) — une écriture par jeton ne s'applique plus jamais d'elle-même :
+elle devient une proposition que le MJ garde ou jette dans Promptus.
+Pendant une soirée ouverte, Claude ne fait que proposer, même si le MJ
+lui a donné la main ; remplacer toute la campagne par un fichier n'est
+possible qu'avec la main, hors soirée.
 
 ---
 
-### `platform/preview-campaign-in-claude` · todo · à spécifier
+### `platform/preview-campaign-in-claude` · gelé — le premier panneau (récap des scènes et inventaire des assets) n’a jamais été construit ; le reste est abandonné
 
 **Pourquoi** — Quand Romain prépare sa campagne avec Claude Code
 (`platform/connect-claude-mcp`), il ne voit le résultat qu'en ouvrant
@@ -493,9 +527,18 @@ commande `/promptus`. Il lit les fichiers de campagne du dépôt (pas
 encore Promptus) et se met à jour quand Claude ou le MJ modifie le
 fichier. Pas encore regardé dans une vraie séance de préparation.
 
+*Décision* (`gm/prep-on-atlas`, 11 octobre 2026) — Gelé après son
+premier panneau, comme le jalon 4 l’annonçait : la vue en direct est
+devenue l’app. L’Atlas montre déjà, pendant que Claude écrit, ce qu’il
+propose (en pointillés sur la carte, bandeau « Claude écrit · sur … »),
+le fil des scènes, la jauge, les alertes et la vue joueurs. Aucun
+panneau n’existait encore dans Claude Code : si le besoin revient, seul
+le premier panneau (récap des scènes et inventaire des assets, pistes 1
+et 4) reste à faire, sans recalculer ce que Promptus calcule.
+
 ---
 
-### `platform/stream-prep-edits` · todo
+### `platform/stream-prep-edits` · doing — reste l'essai réel : Claude écrit depuis Claude Code, l'Atlas ouvert le montre sans recharger (bandeau sur la carte, « Modifié » dans le tiroir)
 
 **Pourquoi** — Quand Claude modifie la campagne par le serveur MCP,
 l'Atlas ouvert du MJ doit le montrer aussitôt, sans recharger.
@@ -514,14 +557,77 @@ sockets de la campagne, joueurs compris.
 ouvert le met en avant sans rechargement ; un téléphone joueur connecté
 à la même campagne ne reçoit ni l'activité ni la révision.
 
+**Étapes** — Numéro de révision de la campagne et journal (une ligne par
+écriture : auteur MJ, jeton ou co-MJ, ce qui a changé par identifiant,
+l'inverse), écrits au point unique où l'histoire est enregistrée, donc
+par toutes les écritures (modifications, import, atelier, génération,
+réglages, montée de version des règles) → route « ce qui a changé depuis
+N » et annulation d'une révision tant qu'aucune autre n'a touché les
+mêmes éléments → sujet temps réel réservé au MJ, filtré par spectateur
+(y compris l'état envoyé à la connexion) et signal d'activité quand un
+jeton écrit → écrans de préparation du MJ qui relisent à chaque révision
+et mettent en avant ce qui a changé.
+
+**Vérification** — Tests serveur : chaque écriture ajoute une révision
+avec le bon auteur ; le rattrapage rend ce qui a changé depuis N ;
+l'annulation rétablit l'état et est refusée quand une révision plus
+récente a touché les mêmes éléments ; une socket joueur et une socket
+TV ne reçoivent ni la révision ni l'activité, même à la connexion.
+Tests front : l'écran relit et met en avant. Essai réel : Claude Code
+écrit, l'écran ouvert le montre sans recharger.
+
 **Risques** — Une fuite de l'activité de Claude vers les joueurs
-révèle la préparation : un test sur la socket joueur le vérifie.
+révèle la préparation : un test sur la socket joueur le vérifie. Un
+journal qui garde l'état d'avant grossit avec la campagne : à surveiller,
+élaguer plus tard si besoin.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 
+*État* — Chaque écriture de la préparation, quel que soit son auteur,
+porte désormais un numéro de révision et laisse une ligne dans le journal
+de la campagne : qui a écrit (le MJ dans Promptus, Claude par son jeton,
+le co-MJ quand le MJ accepte une proposition de l'atelier ou une
+génération, le serveur quand il adopte une version des règles à
+l'ouverture d'une soirée), quels éléments ont bougé, et chacun tel qu'il
+était. Une écriture qui ne change rien ne prend pas de numéro. Le MJ
+peut demander « ce qui a changé depuis N » et annuler une révision tant
+qu'aucune révision plus récente n'a touché les mêmes éléments ;
+l'annulation remet seulement ce que cette révision avait touché, garde
+le reste, et devient elle-même une révision (on peut donc la défaire à
+son tour) ; ce que le serveur a fait seul ne s'annule pas, et un jeton ne
+peut ni lire le journal ni annuler. L'écran de préparation ouvert relit
+la campagne à chaque révision, met « Modifié » sur les scènes et fiches
+que Claude ou le co-MJ viennent de toucher, et affiche « Claude écrit ·
+sur … » avec un bouton Annuler tant que c'est possible. Les téléphones
+des joueurs et la TV ne reçoivent ni la révision ni l'activité de Claude,
+pas même à la connexion (testé sur une socket joueur et une socket TV) ;
+la présence (qui est connecté) part toujours vers tous, comme avant.
+Depuis la revue de l'Atlas, le bureau du MJ (cartes de la campagne,
+brouillons du co-MJ, images à valider, brouillon de règles, tour adverse
+proposé) est lui aussi réservé au MJ : quand Claude touche une carte,
+qu'il la propose ou l'écrive directement avec la main, rien ne bouge sur
+un téléphone ni sur la TV, qui ne se recharge plus pendant la
+préparation (testé sur une socket joueur et une socket TV).
+**Hypothèses retenues** : le journal garde l'état d'avant de chaque
+élément touché (pas de diff fin par champ) ; seul l'écran Préparer met en
+avant les changements pour l'instant, l'Atlas le reprendra ; l'activité
+ne porte qu'un numéro, le nom du lieu est lu dans le journal. **Reste** :
+l'essai réel depuis Claude Code. Les opérations de carte entrent
+désormais dans ce même journal et ce même numéro (`maps/edit-maps-by-ops`,
+cible `map:<id>`) ; l'écran Préparer affiche « Claude écrit · sur <nom de
+la carte> » pour un lot de carte, faute d'Atlas. Depuis
+`platform/propose-edits-by-claude`, l'Atlas montre le même bandeau ; une
+écriture de Claude n'y arrive directement que si le MJ lui a donné la
+main, sinon elle s'affiche comme une proposition en pointillés.
+
 ---
 
-### `platform/propose-edits-by-claude` · todo
+*Depuis `gm/prep-on-atlas`* — L’écran Préparer n’existe plus : l’Atlas
+porte le bandeau « Claude écrit · sur … » et son Annuler, et son tiroir
+met « Modifié » sur les scènes et fiches touchées. L’essai réel se fait
+donc dans l’Atlas, carte ou tiroir ouvert.
+
+### `platform/propose-edits-by-claude` · doing — reste l'essai réel avec Claude Code : Romain demande de peupler un lieu, voit les propositions en pointillés sans recharger, en jette une avec un mot, Claude en propose une autre, il garde le reste, rien n'a été visible des joueurs
 
 **Pourquoi** — Aujourd'hui une écriture par jeton vaut une écriture du
 MJ et s'applique tout de suite. Dans l'Atlas, Claude propose et le MJ
@@ -545,11 +651,75 @@ quatre éléments apparaissent en pointillés, il en jette un avec « trop
 évident », Claude en propose un autre, Romain garde le reste ; rien n'a
 été visible des joueurs avant.
 
+**Étapes** — Une écriture par jeton ne s'applique plus : elle crée un lot
+de propositions (on réutilise les propositions de l'atelier, accepter ou
+rejeter) avec son foyer sur la carte → l'Atlas dessine le lot appliqué
+virtuellement, en pointillés → garder, jeter avec un mot, tout garder :
+seule la session du MJ accepte, sous le verrou, et ce qui ne s'applique
+plus est refusé un par un → le mot de rejet revient à Claude par un outil
+MCP de lecture → mode « Claude a la main », réglé par le MJ, refusé
+pendant une soirée ouverte et sur un contenu déjà révélé, annulable par
+lot grâce au journal des révisions.
+
+**Vérification** — Tests serveur : un jeton ne change jamais l'histoire
+hors du mode « a la main » ; un jeton ne peut pas accepter ; accepter
+rejoue sous le verrou et refuse ce qui est devenu impossible ; le mode
+est refusé soirée ouverte. Test MCP : le mot de rejet est lu. Essai réel
+avec Claude Code.
+
+**Risques** — Un lot qui vieillit pendant que le MJ édite : accepter
+revalide tout contre l'état présent. Deux circuits de proposition (atelier
+du co-MJ, lot de Claude) qui divergent : un seul modèle de lot.
+
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+*État* — Quand Claude écrit avec le jeton du MJ, que ce soit une
+modification de l'histoire (une scène, un PNJ, une épingle, un indice
+posé) ou des gestes sur une carte, rien ne change dans la campagne : le
+serveur vérifie la demande comme si le MJ l'avait faite (une erreur
+revient tout de suite à Claude), puis la range dans un lot de
+propositions, avec le titre que Claude lui donne et l'endroit de la
+carte dont il parle. Claude peut ajouter à un lot encore en attente.
+Dans l'Atlas, le panneau commence par « Propositions de Claude » : chaque
+lot liste ses éléments ; le MJ en garde un, en jette un en laissant un
+mot (« trop évident »), ou garde ou jette tout ce qui reste ; « Voir sur
+la carte » l'emmène là où le lot travaille. Sur la carte, ce que le lot
+ajouterait (épingles, PNJ, indices, combats, flèches du fil, cases
+peintes) est dessiné en pointillés et marqué ▶ ; le toucher ouvre son lot.
+Garder rejoue l'élément sur la campagne telle qu'elle est à cet instant :
+un élément devenu impossible (le PNJ a été supprimé entre-temps, une case
+que le MJ a repeinte) est refusé et le dit, le reste est gardé. Seul le
+MJ, dans Promptus, peut garder ou jeter : un jeton ne le peut jamais.
+Claude relit le sort de ses lots et les mots du MJ avec un nouvel outil
+(« Lire la réponse du MJ »), et l'outil « Modifier l'histoire » lui dit
+désormais si c'est proposé ou appliqué, et pourquoi. L'écran Préparer
+signale les lots en attente et mène à l'Atlas ; l'atelier du co-MJ ne
+montre que les propositions du co-MJ. Rien d'un lot n'arrive aux joueurs
+ni aux écrans partagés, pas même le fait qu'il existe (testé).
+Le réglage « Claude a la main », dans le même panneau, laisse les
+écritures de Claude s'appliquer directement, chacune annulable depuis le
+bandeau « Claude a écrit · sur … » (une demande de Claude, une ligne du
+journal). Il ne peut pas être activé pendant une soirée ouverte ; et même
+activé, une écriture qui arrive pendant une soirée, ou qui touche ce que
+les joueurs connaissent déjà (une scène où la table est entrée, un indice
+trouvé, un PNJ rencontré, la carte montrée), reste proposée. Remplacer
+toute la campagne par un fichier demande la main. Cela tranche la
+décision ouverte de `platform/connect-claude-mcp`.
+*Interprétations à confirmer* : un élément est une modification ou un
+lot de gestes sur une carte (pas un regroupement par PNJ ou lieu) ;
+garder un élément est attribué au co-MJ dans le journal (« une
+proposition acceptée », comme l'atelier), pour que le geste du MJ ne
+s'affiche pas comme « Claude écrit » ; « annulable par lot » en mode
+main veut dire une demande de Claude = une ligne du journal, annulée
+comme les autres ; une suppression proposée n'est pas dessinée sur la
+carte, seulement listée. **Reste** l'essai réel depuis Claude Code. Le
+« Fini quand » parle du cimetière, qui n'existe dans aucun des deux
+mondes : proposition, faire l'essai sur Port-Louis (peupler le quartier
+des rues) à trancher par Romain.
 
 ---
 
-### `platform/edit-maps-by-claude` · todo
+### `platform/edit-maps-by-claude` · doing — reste l'essai réel depuis Claude Code : « ajoute un PNJ dans un lieu et deux indices sur un chemin » donne trois propositions bien placées, sans mur traversé ni PNJ dans l'eau
 
 **Pourquoi** — Claude ne voit pas les pixels : pour travailler sur
 l'Atlas il lui faut la carte en texte et des gestes qui ont du sens.
@@ -567,12 +737,65 @@ de `platform/propose-edits-by-claude`.
 indices sur le chemin de la colline » produit trois propositions bien
 placées sur la carte de Valombre, sans mur traversé ni PNJ dans l'eau.
 
+**Étapes** — Outils de lecture (atlas, carte ou zone en ASCII avec
+légende, questions au moteur) → opérations sémantiques résolues par le
+serveur (épingler, poser près de, poser sur le chemin) → ajout des routes
+de cartes à la liste des routes d'un jeton, décision consignée dans
+`MEMORY.md` (l'invariant « un jeton n'atteint que la préparation » est
+réécrit) → tout passe par le lot de `platform/propose-edits-by-claude`.
+
+**Vérification** — Le balayage des routes MJ reste vert avec la liste
+élargie ; tests serveur : une pose « près du comptoir » tombe sur une
+case libre et atteignable, jamais dans un mur ou dans l'eau ; tests MCP
+des outils. Essai réel depuis Claude Code.
+
 **Risques** — Le raisonnement spatial des modèles est faible sur les
 grilles : le serveur résout les positions, Claude choisit le sens. Un
 rendu en image pour Claude est reporté, à décider après une vraie
-séance.
+séance. Élargir les routes d'un jeton élargit ce qu'une fuite permet :
+écritures toujours en propositions, jamais pendant une soirée.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+*État* — Claude a maintenant cinq outils de carte. « Lire l'atlas »
+donne toutes les cartes rangées région › lieu › rencontre, avec sur
+chacune les scènes épinglées, les PNJ, indices et combats posés, les
+lieux de l'histoire et les scènes sans épingle. « Lire une carte en
+texte » montre une carte, ou une zone d'une grande carte, en caractères :
+des axes numérotés pour nommer une case, le sol de chaque signe (mur,
+eau, terrain) et un symbole sur chaque chose posée, avec sa légende.
+Les cartes du monde se lisent aussi. « Questions au moteur » répond au
+chemin le moins cher à pied et à son coût en mètres, à la ligne de vue et
+au couvert, et à ce que voient les joueurs depuis un endroit (leur carte,
+le reste dans le brouillard). « Poser sur une carte » épingle une scène
+ou un lieu, pose un PNJ, un indice ou un combat « près de » quelque chose
+qui a un nom (une étiquette, un décor, une porte, une sortie, un lieu
+épinglé, un PNJ déjà posé) ou « sur le chemin » entre deux endroits.
+Claude ne donne jamais de coordonnées : Promptus choisit la case, la plus
+proche en marchant depuis ce qui est nommé, jamais à travers un mur, ni
+sur un mur, ni dans l'eau, libre de tout ce qui est déjà posé ou proposé,
+et atteignable depuis l'entrée de la carte. Il dit à Claude où chaque
+chose est tombée. Un nom inconnu ou ambigu revient avec la liste de ce
+que la carte connaît. Tout passe par le lot de propositions : le MJ voit
+les poses en pointillés dans l'Atlas et les garde ou les jette. Enfin,
+« Redessiner une carte » envoie des gestes de carte (peindre, poser une
+porte…), relus et rejoués une fois si le MJ a touché le même endroit
+entre-temps, et proposés eux aussi. Le balayage des routes du MJ reste
+vert avec les quatre routes ouvertes au jeton (décision notée dans
+`MEMORY.md`). C'est testé côté serveur sur Port-Louis : une PNJ près du
+Perroquet Noyé et deux indices sur le chemin du quai, jamais dans un mur
+ni dans l'eau ; les outils MCP sont testés contre une API simulée.
+*Interprétations à confirmer* : épingler une scène épingle son lieu, et
+les autres scènes de ce lieu suivent ; si la scène n'a pas de lieu, ou si
+son lieu est déjà épinglé sur une autre carte, Promptus lui crée un lieu
+à elle, rangé dans l'ancien, pour ne pas arracher l'autre épingle.
+« Atteignable » veut dire atteignable depuis les départs du groupe ou les
+sorties de la carte. ⚠️ Sur une carte de région, la mer n'est qu'un
+terrain, pas de l'eau au sens des règles : la garde « jamais dans l'eau »
+n'y joue pas. **Reste** l'essai réel depuis Claude Code. Valombre et
+Oswin n'existent dans aucun des deux mondes : proposition, faire l'essai
+sur Port-Louis, Mère Goulven près du Perroquet Noyé et deux indices sur
+le chemin du quai (à trancher par Romain).
 
 ---
 
@@ -1528,6 +1751,15 @@ qui demande zéro erreur ; un import est validé d'office (le MJ l'a
 écrit), une campagne créée depuis un pitch ou générée attend le MJ.
 Vérifié sur l'acte 1 joué des Corsaires : le co-MJ place les indices
 manquants de la route du Greyhound et l'alerte disparaît.
+*Mis à jour par `platform/stream-prep-edits`* : l'écran suit la
+préparation en direct — ce que Claude ou le co-MJ viennent de toucher
+porte « Modifié », et un bandeau « Claude écrit · sur … » propose
+d'annuler sa dernière écriture tant que rien ne l'a recouverte.
+
+*Depuis `gm/prep-on-atlas`* — L’écran de relecture n’est plus une page :
+ses cinq onglets et l’atelier du co-MJ vivent dans le tiroir de l’Atlas
+(Scènes et actes, Bible, Fiches, Cohérence, Valider). Le graphe y devient
+une vue secondaire de la carte.
 
 ### `campaign/edit-scenes-in-one-place` · doing — reste une scène préparée pour de vrai sur les deux mondes, puis jouée
 
@@ -1591,7 +1823,9 @@ plus être acceptée.
 La jauge « prête à jouer » tient compte des cartes propres à la
 campagne une fois validées. Vérifié : `cargo test` (règle de
 modification, Corsaires et Brasier importés), Vitest de la fiche. Les
-pages Médias et Cartes restent.
+pages Médias et Cartes restent. Depuis `campaign/pin-scenes-on-maps`,
+on entre aussi dans la fiche par une épingle de l'Atlas : chaque scène
+de l'épingle ouvre Préparer sur sa fiche.
 
 ---
 
@@ -1654,7 +1888,12 @@ Vérifié : l'acte 1 du Brasier n'est pas prêt (une scène à moitié
 écrite, le secret du moteur donné une seule fois, l'abordage contre un
 adversaire absent des règles) ; l'acte 1 des Corsaires tel que joué
 signale la route du Greyhound seulement dans une scène facultative ;
-l'acte 1 réécrit des Corsaires est prêt.
+l'acte 1 réécrit des Corsaires est prêt. Depuis
+`campaign/pin-scenes-on-maps`, une scène qui ne se trouve sur aucune
+carte (sans lieu, ou aucun lieu épinglé en remontant) est dite à part,
+en alerte « scène sans lieu », sans compter dans la jauge ni empêcher
+l'acte d'être prêt : un rêve ou un souvenir y ont droit. Le lieu
+manquant n'est plus compté parmi les champs d'une scène.
 
 ### `campaign/track-factions-and-goals` · doing — reste une vraie soirée du Brasier où les jauges bougent, et la relecture des règles d'affinité par Romain
 
@@ -1744,7 +1983,7 @@ modification de règle (l'atelier arrive avec
 
 ---
 
-### `campaign/pin-scenes-on-maps` · todo
+### `campaign/pin-scenes-on-maps` · doing — reste l'essai réel sur les deux mondes : en soirée, toucher une épingle lance la scène, et les joueurs voient les épingles révélées sur leur téléphone
 
 **Pourquoi** — Le cœur de l'Atlas : une scène existe quelque part sur la
 carte.
@@ -1762,11 +2001,98 @@ carte de région et une carte de lieu ; en soirée, toucher une épingle
 lance la scène, et les joueurs voient les épingles révélées sur leur
 téléphone.
 
+**Étapes** — Le lieu de l'histoire gagne une ancre facultative (carte +
+case ou zone) et une scène désigne son lieu ; la chaîne des parents donne
+région › lieu › rencontre → l'étiquette de carte qui nomme une scène est
+dérivée de ces ancres ou retirée (bascule nette, décision écrite dans
+`docs/map-format.md`) → le validateur signale une scène sans lieu, sans
+bloquer → épingles numérotées dessinées sur la carte en hexagones et sur
+la carte en cases, qui ouvrent l'éditeur de scène → projection joueur :
+seules les épingles révélées → chaque pose écrit une révision du journal.
+
+**Vérification** — Test : un ancien fichier de campagne s'importe sans
+ancre ; une ancre vers une carte ou une case qui n'existe pas est
+signalée ; la projection joueur ne montre aucune épingle non révélée.
+Tests front sur les deux cartes. Essai réel sur les deux mondes.
+
+**Risques** — Deux sources pour la même épingle (l'étiquette de carte et
+le lieu) qui divergent : une seule reste. Le format exige les champs
+connus : tout nouveau champ est facultatif.
+
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+*État* — Livré et vérifié par les tests, pas encore essayé à la main.
+Un lieu de la campagne peut être épinglé sur une case d'une carte (du
+monde ou de la campagne), et chaque scène apparaît sur l'épingle du
+premier lieu épinglé en remontant ses lieux parents : sur la région,
+Port-Louis porte toutes les scènes de l'acte 1 ; sur la carte du
+quartier, la taverne porte ses trois scènes. Plusieurs scènes partagent
+donc une épingle, numérotées dans l'ordre de la campagne (« 1·2·6 »).
+Dans l'Atlas, les épingles sont dessinées sur la région en hexagones
+comme sur les cartes en cases ; en toucher une liste ses scènes, chacune
+ouvre sa fiche dans Préparer, ou la carte de combat de la scène, ou la
+fait générer et la rattache à la scène. L'outil « Épingler un lieu »
+pose, déplace ou retire une épingle d'une touche sur la case : c'est une
+modification de l'histoire comme une autre, inscrite au journal de
+préparation (Claude peut faire de même par ses modifications ciblées).
+Une scène sans lieu sur une carte (rêve, souvenir) reste permise : le
+validateur la signale, la jauge de l'acte la dit à part sans la compter,
+et l'Atlas la liste ; une épingle posée sur une carte qui n'existe pas
+ou hors de la grille est signalée. En soirée, les épingles de la carte
+montrée apparaissent sur la carte du MJ : en toucher une lance sa scène,
+ou propose de choisir quand plusieurs scènes s'y trouvent ; sur la carte
+en hexagones, l'épingle est en haut de la case, si bien que choisir une
+destination de voyage ne change pas. À l'arrivée d'un voyage, la scène
+ouverte est la première scène épinglée sur l'hexagone que la table n'a
+pas encore jouée. Les joueurs ne voient que les épingles des lieux où la
+table est déjà allée, hors du brouillard, avec seulement leur nom :
+jamais les scènes ni leurs numéros. Un ancien fichier de campagne
+s'importe tel quel. Contenu : nouvelle carte de lieu « Port-Louis, le
+quartier bas » (taverne, bureau du port, cour de Kerjean, chantier,
+quais, appontement de La Mâchoire), les dix scènes des Corsaires
+épinglées (région et quartier), les trois scènes du Brasier (la
+Carapace au Reliquaire, comme le disait la carte du système ; l'essaim
+à la sortie du Toboggan ; le Cure-Dent épinglé à la sortie du Toboggan
+pendant l'acte 1, ce qui y place la scène du Toboggan). Du coup l'Atlas
+range région › Port-Louis › quai pour les Corsaires et région › abords
+du Toboggan › coursive pour le Brasier. Décisions prises : l'étiquette
+de carte ne nomme plus de scène (bascule nette, retirée des cartes
+enregistrées) ; une épingle ne range pas les cartes entre elles, seules
+les sorties le font ; une épingle est une case, pas une zone ; la
+numérotation suit l'ordre des scènes de la campagne. À valider par
+Romain : la disposition du quartier de Port-Louis, le lieu
+« La sortie du Toboggan », le Reliquaire et le Cure-Dent épinglé pour
+l'acte 1. Une campagne importée avant ce lot garde les épingles que ses
+cartes donnaient, quand c'est possible sans en déplacer d'autres : une
+étiquette qui nommait une scène épingle le lieu de cette scène sur sa
+case, si ce lieu n'a pas encore d'épingle et ne contient aucun autre
+lieu (épingler un quartier ou tout un système y mettrait toutes les
+scènes qu'il contient) ; la première étiquette l'emporte. Sur la carte
+du monde des Corsaires, Port-Louis est épinglé là où l'étiquette
+« Port-Louis » ouvrait la scène du port de nuit, comme dans le fichier
+actuel. ⚠️ Ce qui se perd : une scène sans lieu, ou dont le lieu en
+contient d'autres, n'est plus sur aucune carte (le validateur et l'Atlas
+la signalent, le MJ épingle un lieu) ; dans le Brasier, la Carapace
+était rangée dans le système tout entier, elle n'a donc plus d'épingle
+et n'ouvre plus à l'arrivée au Reliquaire ; hors de ces étiquettes,
+une campagne importée avant ce lot n'a aucune autre épingle. Pour
+l'essai, réimporter le fichier des Corsaires et du Brasier par-dessus
+(l'état de la partie est gardé) donne toutes les épingles. Les
+étiquettes ont perdu leur scène partout où une carte est gardée : cartes
+de la campagne, carte posée sur la table, combat et bataille navale en
+cours, journal de préparation. Le co-MJ ne reçoit
+pas l'alerte « scène sans lieu », lui qui ne voit pas les cartes :
+l'onglet Cohérence renvoie vers l'Atlas plutôt que de lui demander une
+correction. Restent : l'essai réel en soirée sur les deux mondes ;
+l'écran TV reçoit les épingles visitées mais ne les dessine pas encore ;
+une épingle de Claude s'applique encore tout de suite
+(`platform/propose-edits-by-claude`) ; l'Atlas n'a pas encore de bouton
+pour annuler sa dernière épingle (le journal la garde, Préparer sait
+annuler les écritures de Claude seulement).
 
 ---
 
-### `campaign/draw-story-thread` · todo
+### `campaign/draw-story-thread` · doing — reste l'essai réel : le fil d'un acte des deux mondes affiché sur la région, puis une sortie ajoutée dans l'éditeur de scène qui le redessine sous les yeux du MJ
 
 **Pourquoi** — Voir la campagne d'un coup d'œil : où elle commence, où
 elle passe, où elle peut finir.
@@ -1781,11 +2107,65 @@ sont reliés par aucun chemin.
 région, une sortie ajoutée dans l'éditeur de scène redessine le fil
 sans autre geste.
 
+**Étapes** — Calcul pur du fil dans le crate partagé (sorties des scènes
+→ segments entre ancres, remontés au niveau de carte affiché par la
+chaîne des parents) → tracé sur les deux cartes, branches comprises →
+liste des scènes synchronisée avec la carte → alerte du validateur
+« deux scènes reliées sans chemin entre leurs lieux » → redessin à chaque
+révision reçue.
+
+**Vérification** — Tests du calcul : une sortie ajoutée ajoute un
+segment, une branche reste deux segments, une scène sans lieu ne casse
+rien ; test du validateur sur un chemin bloqué ; test front du redessin
+après une révision.
+
+**Risques** — Un fil illisible quand beaucoup de scènes partagent un
+lieu : regrouper par lieu. Un calcul de chemin coûteux sur une grande
+région : le faire à la demande, pas à chaque image.
+
+*État* — Dans l'Atlas, les épingles de scène sont reliées par le fil de
+la campagne, sur la région en hexagones comme sur une carte de lieu : une
+flèche ivoire pleine par couple de lieux qu'une sortie relie, dans chaque
+sens. Une scène qui mène à deux lieux dessine donc deux branches, et un
+retour se dessine à côté de l'aller au lieu de le recouvrir. Les scènes
+d'un même lieu partagent une épingle : les sorties entre elles restent
+dans l'épingle, sans trait. Une scène sans lieu ou hors de la carte ne
+casse rien, elle n'est simplement pas tracée. À côté de la carte, la
+liste « Le fil de la campagne » donne les scènes posées sur la carte,
+dans l'ordre, avec « départ » (rien de son acte n'y mène) et « fin
+possible » (aucune sortie ne reste dans son acte), et un filtre par acte.
+Toucher une scène de la liste allume ses flèches, choisit son épingle et
+amène la carte de lieu jusqu'à elle (🔴 non mesuré : ce défilement n'est
+vérifié par aucun test, l'environnement de test n'ayant pas de mise en
+page) ; toucher une épingle marque ses scènes dans la liste. Un acte
+choisi qui n'a aucune scène sur la carte ouverte revient à « tous les
+actes ». Le fil suit le calque « Histoire ». Il est
+recalculé à chaque lecture de l'Atlas et rien ne le stocke : une sortie
+ajoutée dans l'éditeur de scène, par Claude ou par le co-MJ redessine le
+fil dès que la révision arrive à l'écran, sans autre geste. Les joueurs
+et l'écran TV ne le reçoivent jamais.
+Le validateur avertit (jamais ne refuse) quand une sortie relie deux
+scènes qu'aucun chemin ne joint, et l'Atlas le dit en nommant la scène.
+**Hypothèse retenue** pour « chemin » : deux scènes sont jointes si
+leurs lieux ont un lieu commun en remontant les parents (la taverne et
+le port d'une même ville), ou si un lieu de chacune est posé sur la même
+carte sans qu'un mur les sépare (une porte laisse passer, les hexagones
+comptent leurs six voisins), ou sur deux cartes reliées par des sorties,
+dans un sens ou dans l'autre. Le chemin n'est calculé que pour cet
+avertissement, une passe par carte, pas à chaque image. Claude ne tente
+pas de le réparer. Aucun des deux mondes livrés ne déclenche
+l'avertissement. Tout cela est testé côté moteur, serveur et interface.
+⚠️ Sur la région des Corsaires, l'acte 1 tient presque entier dans
+l'épingle de Port-Louis : la région n'y montre qu'une flèche, vers
+Belle-Île. Les branches de l'acte (la nuit au port vers le marché noir,
+le chantier, la capitainerie et le quai) se voient sur la carte du
+quartier de Port-Louis. Reste l'essai réel sur les deux mondes.
+
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 
 ---
 
-### `campaign/place-cast-and-clues` · todo
+### `campaign/place-cast-and-clues` · doing — reste l'essai en soirée : Romain place Oswin et deux indices au cimetière, une rencontre à l'entrée de la crypte, et les retrouve au même endroit, révélables un par un
 
 **Pourquoi** — Écrire une scène, c'est aussi placer qui s'y trouve et ce
 qu'on y trouve.
@@ -1799,6 +2179,69 @@ vrai plan de combat, adversaires déjà placés.
 **Fini quand** — Romain place Oswin et deux indices au cimetière, une
 rencontre à l'entrée de la crypte, et les retrouve en soirée au même
 endroit, révélables un par un.
+
+**Étapes** — Positions de préparation dans l'histoire (PNJ, indice,
+rencontre : carte + case, éventuellement propres à une scène), champs
+facultatifs → pose, déplacement et retrait sur le calque du MJ, chacun
+une révision → calques allumables → pont vers la soirée : quand la soirée
+ouvre la carte, ces positions deviennent des pions cachés ; la
+révélation passe par les gestes existants (révéler un PNJ, un indice) →
+une rencontre ouvre son plan de combat, adversaires placés.
+
+**Vérification** — Tests : un ancien fichier s'importe ; ouvrir la carte
+en soirée crée les pions au bon endroit, cachés ; la projection joueur
+ne les montre qu'une fois révélés ; une position sur un mur est
+signalée. Essai réel en soirée.
+
+**Risques** — Deux copies d'une même position (préparation et soirée) :
+la préparation ne change jamais ce qui est déjà sur la table d'une
+soirée ouverte. Une fuite d'un PNJ non rencontré : la projection reste
+le seul passage.
+
+*État* — Dans l'Atlas, le MJ pose sur n'importe quelle carte (région en
+hexagones ou carte de lieu) un PNJ (pion rond à son initiale), un indice
+(losange) ou le combat d'une scène (carré noir barré). Il les déplace et
+les retire du panneau, et chaque geste est une ligne du journal de
+préparation, comme une épingle. Un PNJ peut être posé pour toutes les
+scènes jouées sur la carte, ou pour une seule. Il apparaît alors pâli.
+Quatre calques de l'histoire s'allument et s'éteignent à part des
+calques de la carte : Histoire (les épingles de scène), Personnages,
+Combats, Indices. Un combat dit combien d'adversaires son plan de combat
+place déjà (« 2 / 3 », en rouge s'il en manque, ce qui empêcherait de le
+lancer) et ouvre ce plan d'un geste. Un PNJ, un indice ou un combat posé
+dans un mur est signalé, jamais refusé. Hors de la carte ou sur une
+carte inconnue, c'est une erreur. Claude ne tente jamais de réparer ces
+cases.
+En soirée, montrer la carte y pose les PNJ prévus, cachés, à leur case.
+Ceux d'une scène précise arrivent quand cette scène s'ouvre pour la
+première fois. Une carte remontrée après une autre repart de zéro, mais
+un PNJ déjà rencontré y revient visible. Le geste « Les joueurs rencontrent Oswin » le fait
+apparaître aux joueurs avec son nom. Les indices sont des losanges pâles
+tant qu'ils ne sont pas trouvés : un toucher propose « Les joueurs le
+trouvent ». Une fois trouvé, l'indice s'affiche sur le téléphone à sa
+case, avec son texte (jamais son identifiant). Toucher le combat le
+lance. Ce qui est déjà sur la table d'une soirée ouverte ne bouge
+jamais quand la préparation change. Tout cela est testé côté serveur et
+interface, et un ancien fichier de campagne s'importe sans changement.
+**Hypothèses retenues** : les positions vivent dans l'histoire, à côté
+de ce qu'elles placent (le PNJ, l'indice, le combat de la scène), pas
+sur la carte. La scène d'un indice est la sienne. Un indice n'est pas un
+pion : on le révèle par le geste d'indice existant. La rencontre posée
+sur une carte de lieu ouvre le plan de combat déjà rattaché à la scène.
+**Pas fait** : placer d'un geste les adversaires qui manquent sur le
+plan. Le MJ les pose dans l'éditeur de carte, le compteur lui dit
+combien il en manque. L'écran TV ne dessine pas encore les indices
+trouvés. Un PNJ posé sur une région en hexagones reste un repère de
+préparation : la soirée n'y pose pas de pion (le groupe y voyage en un
+seul pion). ⚠️ « Montrer aux joueurs » sur un pion caché affiche son nom
+même si les joueurs ne l'ont pas rencontré (comportement antérieur, pour
+tout pion de PNJ) : pour une vraie rencontre, utiliser « Les joueurs
+rencontrent ». Masquer le nom tant que le PNJ n'est pas rencontré est à
+trancher.
+🔴 Aucun cimetière, aucune crypte et aucun Oswin n'existent dans le
+contenu des deux mondes. Pour l'essai, il faut soit créer ces cartes et
+ce PNJ, soit jouer la même chose sur Port-Louis, par exemple Mère
+Goulven au Perroquet Noyé. Le choix revient à Romain.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 
@@ -1904,6 +2347,10 @@ ici : c'est `maps/generate-map-llm`.
 
 ## Épic `media`
 
+*Depuis `gm/prep-on-atlas`* — Appliquer le brouillon ouvre l’Atlas, et la
+scène d’ouverture y est déjà posée sur la région du monde (même ligne du
+journal que le brouillon).
+
 ### `media/play-youtube-music` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — La musique fait l'ambiance, et YouTube impose un lecteur
@@ -1980,6 +2427,9 @@ serveur (aucune fonction d'IA n'aurait marché) ; `OPENROUTER_*` et
 La TV reprend les images de scène approuvées (`tv/show-evening`) ;
 pas encore la vidéo d'acte.
 
+*Depuis `gm/prep-on-atlas`* — Les images et vidéos se préparent dans le
+tiroir de l’Atlas (onglet Médias) ; l’ancien écran Médias est retiré.
+
 ---
 
 ## Épic `session`
@@ -2038,7 +2488,8 @@ la route joueur `GET /api/play/{campaign}/live` est branchée par
 `session/invite-and-join` (derrière `require_player`), et la création
 d'un personnage touche `Topic::Character` ; reste à
 appeler `live::touch` dans les prochaines écritures de
-fiches ; puis l'essai réel : ouvrir `/campagnes/<id>/vue-joueurs` sur le
+fiches ; puis l'essai réel : ouvrir la vue joueurs de l’Atlas (l’ancienne
+page `/vue-joueurs` y est entrée avec `gm/prep-on-atlas`) sur le
 téléphone, couper le Wi-Fi dix secondes pendant qu'une écriture passe
 depuis l'ordinateur, vérifier que la page revient seule à l'état exact.
 
@@ -2763,7 +3214,7 @@ n'a été vérifié que par sa logique, pas sous les doigts.
 
 ---
 
-### `gm/prep-on-atlas` · todo
+### `gm/prep-on-atlas` · doing — reste un acte préparé en entier dans l’Atlas, sur ordinateur et sur tablette (les six moments de la planche)
 
 **Pourquoi** — Préparer et jouer doivent se ressembler : la création
 finit sur la carte, et toute la préparation s'y fait.
@@ -2781,6 +3232,93 @@ dans un tiroir.
 Claude en direct » sont faisables dans l'app, sur ordinateur et sur
 tablette.
 
+**Étapes** — Coquille de l'écran (fil d'Ariane, calques, panneau
+contextuel, atlas en bas), posée avec `maps/browse-atlas` → chaque
+ticket du jalon y branche sa part → tiroir de ce qui n'a pas de lieu →
+fin de la création de campagne sur la région → bascule nette : les
+écrans Préparer, Médias, Cartes et Vue joueurs sont retirés, leurs liens
+mènent à l'Atlas. La planche Atlas n'étant pas disponible, on suit les
+planches Carte-MJ, Éditeur-Carte et Préparer-MJ et la direction visuelle
+de `MEMORY.md`.
+
+**Vérification** — Tests front de chaque panneau ; vérification à la
+main sur ordinateur et tablette (disposition choisie en JavaScript,
+comme l'écran de soirée). Essai réel : un acte préparé en entier dans
+l'Atlas.
+
+**Risques** — Un écran trop dense sur tablette : le panneau contextuel
+se replie. Retirer des écrans qui marchent : la bascule n'a lieu que
+quand l'Atlas fait tout ce qu'ils faisaient.
+
+*État* — La coquille est posée avec `maps/browse-atlas`, à l'adresse
+`/campagnes/:id/atlas` : fil d'Ariane, zone des calques, carte au centre,
+panneau de la carte à droite (échelle, origine, validée ou brouillon,
+notes du MJ, cartes où l'on entre, cartes d'à côté, lien vers l'éditeur
+ou vers la copie d'une carte du monde), bande de toutes les cartes en
+bas, et tiroir « Sans lieu » qui mène à la bible, aux scènes et actes, et
+aux fiches de l'écran Préparer (ouvert directement sur le bon
+onglet). Sur tablette, la carte se manie aux doigts et le panneau se
+replie. Les calques proposés sont pour l'instant ceux de la carte
+elle-même (par exemple « Secrets ») : les allumer ou les éteindre change
+seulement ce que voit le MJ. Absents à dessein, faute de ce qui les
+remplirait : la bascule « Vue MJ / Vue joueurs » (`maps/preview-as-player`),
+le fil de la campagne (les épingles
+de scène sont arrivées depuis avec `campaign/pin-scenes-on-maps` :
+numérotées sur la carte, elles listent leurs scènes dans le panneau, qui
+gagne l'outil « Épingler un lieu » et la liste des scènes sur aucune
+carte). Ni les factions ni une chronologie n'ont d'écran de préparation
+aujourd'hui : le tiroir ne les propose pas. L'Atlas se recharge seul
+quand une carte change (le MJ ailleurs ou Claude), mais n'affiche pas
+encore le bandeau « Claude écrit · sur … » : il viendra avec les lots de
+Claude, en réutilisant le même mécanisme que l'écran Préparer. Les
+anciens écrans restent en place.
+Depuis `campaign/place-cast-and-clues`, la rangée « Calques de
+l'histoire » allume ou éteint Histoire, Personnages, Combats et Indices.
+Le panneau gagne l'outil « Poser sur la carte » (PNJ, indice, combat) et
+le détail de ce qui est touché sur la carte.
+Depuis `campaign/draw-story-thread`, le fil de la campagne relie les
+épingles, et le panneau commence par la liste des scènes de la carte,
+synchronisée avec elle et filtrable par acte.
+Depuis `platform/propose-edits-by-claude`, le panneau commence par les
+propositions de Claude (garder, jeter avec un mot, tout garder, et le
+réglage « Claude a la main »), ce qu'elles ajouteraient est dessiné en
+pointillés marqués ▶ sur la carte, et le bandeau « Claude écrit · sur … »
+s'affiche au-dessus de la carte, avec son « Annuler ».
+
+Depuis `maps/preview-as-player`, la bascule « Vue MJ / Vue joueurs » est
+en haut de l’écran.
+*Bascule* (11 octobre 2026) — L’Atlas est maintenant le seul écran de
+préparation. Les écrans Préparer, Médias, Cartes et Vue joueurs sont
+retirés, leurs adresses n’existent plus, et tout ce qu’ils faisaient
+se fait dans l’Atlas :
+- le **tiroir** (ce qui n’a pas de lieu) ouvre, à la place de la carte,
+  Scènes et actes (graphe, fiche de scène, atelier du co-MJ), Bible,
+  Fiches, Cohérence, Valider (jauge, validation, invitation), Médias
+  (images et vidéos à dessiner, garder ou refaire) et Cartes de la
+  campagne (carte vierge, copie d’une carte du monde, carte générée pour
+  une scène, import) ; « Retour à la carte » le referme ; l’adresse garde
+  l’onglet et la scène ouverte ;
+- une scène touchée sur une épingle ou dans la liste ouvre sa fiche dans
+  le tiroir, et « L’épingler sur la carte » ramène sur la carte ;
+- la **vue joueurs** remplace l’ancien écran : la carte projetée par le
+  serveur, et à côté ce que disent les écrans des joueurs ;
+- l’éditeur de carte reste un outil à part, ouvert depuis l’Atlas, et il
+  y ramène sur la carte éditée ;
+- la page de la campagne ne propose plus que l’Atlas, la génération
+  (tant que la campagne n’est pas validée), la soirée, la table et les
+  règles : Règles, Table et Soirée restent à part.
+*Fin de la création* — Une campagne générée s’ouvre sur l’Atlas : en
+l’appliquant, sa scène d’ouverture est posée sur la région du monde (près
+du lieu de la région qui porte le nom de son lieu, sinon près du départ
+du groupe, sinon au milieu), dans la même ligne du journal que le
+brouillon, au nom du co-MJ ; une scène déjà épinglée n’est pas déplacée.
+Les autres lieux proposés autour en pointillés ne sont **pas faits** :
+les propositions dessinées sur la carte sont aujourd’hui celles de
+Claude (jeton), et y ajouter celles du co-MJ voudrait élargir ce
+mécanisme ; à trancher. Une campagne créée sans génération n’a pas de
+scène à poser.
+*Reste* — Les six moments de la planche joués sur ordinateur et sur
+tablette, un acte entier préparé dans l’Atlas.
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 
 ---
@@ -3249,7 +3787,11 @@ pinceaux sol, mur, eau, vide (glisser), portes (fermée → ouverte →
 verrouillée → retirée ; la case devient un mur), décors du jeu de tuiles,
 objets cachés, lumières, départs héros et adversaires, gomme ; tout peut
 aller sur le calque secret ; heure, météo, lumière de base et notes du
-MJ. Enregistrer repasse la carte en brouillon ; seule une carte validée
+MJ. Depuis `maps/edit-maps-by-ops`, il n'y a plus de bouton
+Enregistrer : chaque geste part aussitôt et s'enregistre, « Annuler mon
+dernier geste » le reprend par le journal de préparation, le nom et les
+notes partent quand on quitte le champ. Toute modification repasse la
+carte en brouillon ; seule une carte validée
 est proposée au plateau (avant les cartes du monde) et peut être montrée.
 Le serveur valide chaque enregistrement et répond en français. Une carte
 affichée à la table ne peut pas être supprimée. Révéler un calque ou un
@@ -3258,6 +3800,11 @@ encore de pinceau de brouillard. Pas encore essayé sur une vraie
 préparation.
 
 **Origine** — Planches « Cartes · trois échelles » et « Cartes · l'éditeur »
+
+*Depuis `gm/prep-on-atlas`* — La liste des cartes de la campagne (carte
+vierge, copie, génération, import) est l’onglet « Cartes de la
+campagne » du tiroir de l’Atlas ; l’éditeur ramène sur la carte éditée
+dans l’Atlas.
 
 ### `maps/generate-map-llm` · doing — reste une vraie carte générée avec la clé OpenRouter puis validée
 
@@ -3284,7 +3831,10 @@ fond et sorties, écarte un adversaire ou une caractéristique inventés
 chance avec les raisons en français, puis une erreur. La proposition
 arrive en brouillon dans l'éditeur et n'atteint la table qu'une fois
 validée. Écart : la carte n'est pas encore rattachée automatiquement au
-nœud (le MJ la choisit au plateau).
+nœud (le MJ la choisit au plateau). Depuis la fiche de scène et, avec
+`campaign/pin-scenes-on-maps`, depuis une épingle de l'Atlas
+(« Générer sa carte » sur une scène qui n'en a pas), la carte générée
+est rattachée à la scène, et l'Atlas l'ouvre aussitôt.
 
 **Origine** — Règles de design 1 et 2 (`CLAUDE.md`)
 
@@ -3408,7 +3958,7 @@ premières sessions réelles.
 
 ---
 
-### `maps/browse-atlas` · todo
+### `maps/browse-atlas` · doing — reste l'essai sur un iPad : de la région des Corsaires au quai de Port-Louis puis dans une rencontre, et retour, sans saccade
 
 **Pourquoi** — Les cartes existent déjà à trois échelles et se relient
 par leurs sorties ; il manque la façon d'y circuler.
@@ -3424,11 +3974,60 @@ l'atlas entier.
 de Port-Louis puis dans une rencontre, et revient à la région, sans
 saccade sur un iPad.
 
+**Étapes** — Arbre de l'atlas calculé par le serveur (cartes du monde et
+de la campagne, rattachées par les ancres des lieux et les sorties) →
+route MJ de lecture de l'arbre → fil d'Ariane et zoom avant / arrière sur
+la carte en hexagones et la carte en cases → rendu allégé pendant le
+mouvement → côté joueur, rien de neuf : il ne reçoit que la carte où il
+est.
+
+**Vérification** — Tests de l'arbre (une carte sans parent est une
+racine, pas de cycle) ; balayage des routes MJ ; tests front de la
+navigation. Essai réel sur un iPad.
+
+**Risques** — Des cycles dans les sorties : l'arbre s'appuie sur les
+ancres, pas sur les sorties seules. Des cartes lourdes sur tablette :
+image basse résolution pendant le geste.
+
+*État* — Le MJ a un écran Atlas (entrée « Atlas » sur la page de la
+campagne) qui range toutes les cartes du monde et de la campagne en un
+arbre : la région en hexagones, les lieux posés dessus, les rencontres
+dans un lieu. Une carte est rangée sous une autre quand celle-ci a une
+sortie vers elle **et** que l'échelle descend (région › lieu ›
+rencontre) ; une sortie entre deux cartes de même échelle, ou qui
+remonte, devient un lien « À côté ». Aucune boucle n'est donc possible,
+quoi que disent les sorties (règle écrite dans `docs/map-format.md` et
+`MEMORY.md`). Sur la carte, les cases qui ouvrent une autre carte sont
+cerclées en pointillés : les toucher y entre, comme les boutons
+« Entrer » du panneau. Le fil d'Ariane nomme l'échelle de chaque niveau ;
+« Ressortir » ramène là d'où l'on vient (même après un saut par la bande
+du bas ou un lien « À côté »), sinon à la carte parente. Quand le MJ fait
+glisser ou pince une carte en cases, elle est dessinée en demi-résolution
+et ses animations s'arrêtent le temps du geste, puis redeviennent nettes
+(vaut partout pour un glissé à la souris, et aux doigts là où la carte se
+manie aux doigts : l'Atlas et la carte de soirée du MJ sur tablette ; le
+téléphone du joueur garde son défilement natif). Côté joueur, rien de
+neuf : il ne reçoit toujours que la carte posée sur la table, par la
+projection (l'Atlas est une route MJ, absente des routes joueur et
+jeton). Hypothèses prises : les ancres des lieux de l'histoire n'existant
+pas encore, l'arbre ne lit que les sorties — une carte dessinée par le MJ
+reste une racine tant qu'aucune carte n'a de sortie vers elle (elles
+arrivent avec `campaign/pin-scenes-on-maps`). Dans les fichiers actuels,
+le quai de Port-Louis est une carte de rencontre et ses sorties mènent à
+des cartes qui n'existent pas : « entrer dans une rencontre depuis le
+quai » demande d'abord d'y rattacher une carte. 🔴 La fluidité sur iPad
+n'est pas mesurée. Depuis `campaign/pin-scenes-on-maps`, la région des
+Corsaires ouvre une nouvelle carte de lieu, « Port-Louis, le quartier
+bas », dont l'appontement ouvre le quai : région › lieu › rencontre
+existe désormais (et région › abords du Toboggan › coursive pour le
+Brasier). Les épingles des lieux ne rangent pas les cartes : seules les
+sorties le font (décision écrite dans `docs/map-format.md`).
+
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 
 ---
 
-### `maps/edit-maps-by-ops` · todo
+### `maps/edit-maps-by-ops` · doing — reste l'essai réel : le MJ peint un mur pendant que Claude pose un PNJ sur la même carte, et les deux restent
 
 **Pourquoi** — L'éditeur réenregistre aujourd'hui la carte entière : la
 dernière écriture gagne. Avec Claude qui écrit en même temps, il
@@ -3442,11 +4041,69 @@ révision et tout-ou-rien que les modifications d'histoire.
 **Fini quand** — Le MJ peint un mur pendant que Claude pose un PNJ sur
 la même carte : les deux changements restent.
 
+**Étapes** — Opérations sur une carte dans le crate partagé (peindre,
+poser, déplacer, retirer), validées comme la carte entière → route
+d'opérations avec la révision attendue, sous le verrou de la campagne ;
+chaque lot d'opérations entre dans le **même** journal que l'histoire
+(pas de version propre à la carte) → l'éditeur envoie des opérations au
+lieu de la carte entière (bascule nette) → une révision dépassée est
+refusée avec ce qui a changé, l'éditeur relit et rejoue.
+
+**Vérification** — Tests : deux lots concurrents sur des cases
+différentes restent tous deux ; un lot sur une révision dépassée qui
+touche la même case est refusé ; l'annulation d'un lot de carte passe par
+le journal. Tests front de l'éditeur.
+
+**Risques** — Une carte validée qu'une opération rend invalide : même
+règle qu'aujourd'hui, une modification retire la validation. Des lots
+très fins qui gonflent le journal : regrouper un geste en un lot.
+
+*État* — L'éditeur de carte n'envoie plus jamais la carte entière :
+chaque geste (un coup de pinceau, une porte, un objet posé, une gomme,
+un réglage d'ambiance, le nom, les notes) part aussitôt comme un petit
+lot d'opérations, avec le numéro de révision de la campagne lu à
+l'ouverture. Le serveur rejoue le lot sur la carte telle qu'elle est,
+sous le verrou de la campagne, tout ou rien, puis la vérifie comme une
+carte entière. Si quelqu'un d'autre a écrit entre-temps sur d'autres
+cases, les deux changements restent ; s'il a touché les mêmes cases ou
+le même objet, le serveur refuse le lot avec la carte à jour et n'écrit
+rien par-dessus ; l'éditeur recharge alors la carte et rejoue le geste
+une fois dessus (message « la carte a changé entre-temps »). Ce geste
+rejoué l'emporte donc sur ce que Claude venait de mettre sur ces cases
+(une porte touchée repart de son état à jour), et la ligne de Claude
+reste au journal. Ce que Claude écrit
+pendant que l'éditeur est ouvert arrive sans recharger. Chaque lot est
+une ligne du journal de préparation commun (auteur, cases et objets
+touchés, carte d'avant) ; « Annuler mon dernier geste » passe par ce
+journal, remet seulement les cases et objets de ce geste (ce que Claude
+a fait ailleurs reste), peut être répété geste après geste, et n'est
+refusé que si un lot plus récent a touché les mêmes cases. Créer,
+importer, générer ou supprimer une carte laisse aussi sa ligne. Un
+jeton personnel (Claude) peut lire les cartes de la campagne et envoyer
+des lots, mais ni créer, importer, supprimer ou valider une carte.
+Testé côté serveur : mur du MJ et PNJ de Claude sur la même révision →
+les deux restent ; même case → refus avec la carte fraîche ; annulation
+par le journal, deux fois de suite malgré un lot de Claude ailleurs, et refus
+quand un lot plus récent touche la même case ; l'ancien
+enregistrement de la carte entière ne répond plus.
+**Hypothèses retenues** : « poser un PNJ » sur une carte = un départ
+rattaché au PNJ (`entity`), seul moyen existant aujourd'hui ; les vraies
+positions de PNJ, indices et rencontres rangées dans l'histoire
+viendront avec `campaign/place-cast-and-clues`. Un lot de Claude
+s'applique encore tout de suite (il deviendra une proposition avec
+`platform/propose-edits-by-claude`), et aucun outil MCP n'écrit encore
+sur les cartes (`platform/edit-maps-by-claude` les a depuis branchés :
+« Redessiner une carte » et « Poser sur une carte »). Une modification
+d'histoire ne rend
+jamais un lot de carte périmé. Valider une carte n'entre pas dans le
+journal. **Reste** : l'essai réel avec Claude, dont les outils de carte
+sont maintenant branchés.
+
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 
 ---
 
-### `maps/preview-as-player` · todo
+### `maps/preview-as-player` · doing — reste, sur les deux mondes, la télé posée à côté de l’Atlas pour vérifier à l’œil que la vue joueurs est la même
 
 **Pourquoi** — Avant de lancer, le MJ vérifie ce qui partira sur la TV
 et les téléphones.
@@ -3457,5 +4114,46 @@ propositions de Claude disparaissent. Aucun filtre côté client.
 
 **Fini quand** — Sur les deux mondes, la vue joueurs de l'Atlas est
 identique, élément par élément, à ce que montre la TV pour le même état.
+
+**Étapes** — Route MJ qui rend une carte de l'Atlas par la projection
+des joueurs (la même fonction que leurs routes) → bascule « Vue MJ / Vue
+joueurs » dans l'Atlas, qui affiche ce que la route rend, rien de plus →
+les propositions de Claude, les épingles non révélées et les positions
+de préparation n'y apparaissent jamais.
+
+**Vérification** — Test serveur : la vue joueurs de l'Atlas égale la
+réponse de la route TV pour le même état, sur les deux mondes ; le
+balayage des fuites des routes joueur passe dessus. Essai réel : la TV à
+côté de l'Atlas.
+
+**Risques** — Un second filtre écrit côté client pour aller plus vite :
+interdit, la projection serveur est le seul passage.
+
+*État* — La bascule « Vue MJ / Vue joueurs » est en haut de l’Atlas.
+En vue joueurs, la carte est celle que le serveur envoie aux joueurs, et
+rien d’autre : brouillard, PNJ non rencontrés, indices non trouvés,
+épingles des lieux pas encore visités, numéros de scène et propositions
+de Claude n’y sont pas, parce que la projection ne les envoie jamais. Si
+la carte est sur la table, c’est exactement ce que reçoit la télé ; sinon,
+c’est ce que la télé montrerait si le MJ la montrait maintenant (le groupe
+sur ses départs, ou là où il est sur la région, le brouillard levé autour
+de lui), calculé sans rien écrire et sans soirée ouverte. Le texte le dit
+(« Sur la table en ce moment » ou « Pas encore sur la table »). À côté de
+la carte, le panneau montre ce que disent les écrans des joueurs : la
+campagne, son accroche, la scène ouverte, les indices trouvés et les
+personnages rencontrés (l’ancien écran « Vue joueurs » y est entré). La
+vue suit la soirée en direct. Un test serveur vérifie, sur les deux
+mondes, la région et un lieu, que l’aperçu d’une carte est identique à
+ce que la télé reçoit une fois la carte montrée, PNJ caché puis rencontré
+compris ; le balayage des fuites passe dessus. *Décision* : une carte de
+la campagne encore en brouillon n’a pas de vue joueurs (la table ne
+reçoit que des cartes validées) — l’Atlas le dit et renvoie vers la
+validation. Claude n’a pas cette route : il a déjà « ce que voient les
+joueurs depuis une case » dans `ask_map`. La télé dessine maintenant,
+elle aussi, les épingles des lieux visités et les indices trouvés
+qu’elle recevait sans les montrer. ⚠️ Une différence de dessin
+demeure : sur une région en hexagones, la télé dessine des cases
+carrées, là où l’Atlas et les téléphones dessinent des hexagones ; le
+contenu reçu est le même. Reste l’essai réel, la télé à côté de l’Atlas.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).

@@ -46,6 +46,7 @@ use crate::error::AppError;
 use crate::evening::session::{self, Status};
 use crate::live::{self, Topic};
 use crate::players::{self, CharacterStatus, Player, Role};
+use promptus_shared::story::{Campaign, WorldState, cast};
 
 /// How far a token walks in one drag out of a fight, in movement
 /// points: two moves of the fight's default (INTERPRETATION: exploring
@@ -291,7 +292,7 @@ pub fn character_token(character: Uuid) -> String {
 /// Put the validated characters of `campaign` on the party starts of
 /// `map` (those already on the board keep their cell when it exists).
 async fn party_tokens(
-    tx: &mut Transaction<'_, Postgres>,
+    db: impl PgExecutor<'_>,
     campaign: Uuid,
     map: &Map,
     before: &[Token],
@@ -303,7 +304,7 @@ async fn party_tokens(
          ORDER BY p.created_at",
     )
     .bind(campaign)
-    .fetch_all(&mut **tx)
+    .fetch_all(db)
     .await?;
     let mut starts = map
         .starts
@@ -430,10 +431,27 @@ pub(crate) async fn show_in(
             .unwrap_or_default()
     } else {
         (
-            party_tokens(tx, campaign, &map, &[]).await?,
+            party_tokens(&mut **tx, campaign, &map, &[]).await?,
             BTreeSet::new(),
         )
     };
+    let b = laid_out(row, map_id, map, tokens, revealed);
+    save(tx, campaign, &b).await?;
+    Ok(b)
+}
+
+/// The board a first show of `map` lays out, from the party's tokens and
+/// the cells already seen: the fog down, the NPCs the preparation placed
+/// set down (hidden unless met), the fog lifted from where the party
+/// stands. Shared by [`show_in`] and [`preview`], so the GM's preview is
+/// the table's own board.
+fn laid_out(
+    row: &CampaignRow,
+    map_id: &str,
+    map: Map,
+    tokens: Vec<Token>,
+    revealed: BTreeSet<Cell>,
+) -> Board {
     let mut b = Board {
         map_id: map_id.to_string(),
         map,
@@ -441,9 +459,169 @@ pub(crate) async fn show_in(
         revealed,
         tokens,
     };
+    if b.map.scale != Scale::World {
+        let spots = cast::standing_on(&row.story, map_id, row.world.current_node.as_deref());
+        b.set_down(&row.story, &row.world, &spots);
+    }
     b.reveal_from_party();
-    save(tx, campaign, &b).await?;
-    Ok(b)
+    b
+}
+
+/// What the table would have on screen with map `map_id` shown now
+/// (maps/preview-as-player): the board on the table when it is that
+/// map, else the board [`show`] would lay out — read only, no lock, no
+/// live session needed.
+///
+/// # Errors
+///
+/// 404 `NO_SUCH_MAP`; 409 `MAP_DRAFT` for a campaign map not validated
+/// yet (the table only ever receives validated maps); a database error.
+pub async fn preview(pool: &PgPool, row: &CampaignRow, map_id: &str) -> Result<Preview, AppError> {
+    if let Some(b) = current(pool, row.id).await?.filter(|b| b.map_id == map_id) {
+        return Ok(Preview::Shown(b));
+    }
+    let Some(map) = crate::campaign_maps::playable(pool, row.id, &row.story, map_id).await? else {
+        let draft: bool = sqlx::query_scalar(
+            "SELECT EXISTS (SELECT 1 FROM campaign_maps WHERE campaign_id = $1 AND id = $2)",
+        )
+        .bind(row.id)
+        .bind(map_id)
+        .fetch_one(pool)
+        .await?;
+        return Err(if draft {
+            AppError::Conflict("MAP_DRAFT")
+        } else {
+            AppError::NotFound("NO_SUCH_MAP")
+        });
+    };
+    let (tokens, revealed) = if map.scale == Scale::World {
+        crate::travel::board_parts_seen(pool, row.id, &map)
+            .await?
+            .unwrap_or_default()
+    } else {
+        (
+            party_tokens(pool, row.id, &map, &[]).await?,
+            BTreeSet::new(),
+        )
+    };
+    Ok(Preview::Fresh(laid_out(row, map_id, map, tokens, revealed)))
+}
+
+/// A board seen ahead by the GM: the one on the table, or one laid out.
+#[derive(Debug, Clone)]
+pub enum Preview {
+    Shown(Board),
+    Fresh(Board),
+}
+
+/// The token an NPC's spot sets down (campaign/place-cast-and-clues):
+/// its own prefix, so it never meets a token the GM placed (`{npc}-{n}`)
+/// or a fight's combatant.
+#[must_use]
+pub fn spot_token(npc: &str, index: usize) -> String {
+    format!("{SPOT_PREFIX}{npc}-{index}")
+}
+
+const SPOT_PREFIX: &str = "prep-";
+
+/// Whether `token` was set down from the preparation for `npc`.
+fn from_spot(token: &Token, npc: &str) -> bool {
+    token.kind == TokenKind::Npc && token.r#ref == npc && token.id.starts_with(SPOT_PREFIX)
+}
+
+impl Board {
+    /// Set down the NPCs the preparation placed on `spots`
+    /// (`story::cast`): hidden, unless the table already met them (a map
+    /// shown again after another). A spot off the grid, or whose token is
+    /// already there, is skipped. Returns whether a token was added.
+    fn set_down(
+        &mut self,
+        story: &Campaign,
+        world: &WorldState,
+        spots: &[(&String, usize, Cell)],
+    ) -> bool {
+        let mut added = false;
+        for (npc, index, at) in spots {
+            let id = spot_token(npc, *index);
+            let Some(n) = story.npc(npc) else { continue };
+            if !self.map.grid.contains(*at) || self.tokens.iter().any(|t| t.id == id) {
+                continue;
+            }
+            let mut t = Token::new(
+                id,
+                TokenKind::Npc,
+                n.id.clone(),
+                n.name.clone(),
+                *at,
+                Some(content::npc_look(story, npc)),
+            );
+            t.hidden = !world.revealed.contains(*npc);
+            self.tokens.push(t);
+            added = true;
+        }
+        added
+    }
+}
+
+/// A scene opens for the first time while a place's map is shown and no
+/// fight runs: the NPCs placed there for that scene alone join it,
+/// hidden. What is already on the table is never changed. Inside the
+/// caller's locked transaction.
+///
+/// # Errors
+///
+/// A database error.
+pub(crate) async fn scene_arrives(
+    tx: &mut Transaction<'_, Postgres>,
+    campaign: Uuid,
+    story: &Campaign,
+    world: &WorldState,
+    node: &str,
+) -> Result<(), AppError> {
+    if fight::live_id(&mut **tx, campaign).await?.is_some() {
+        return Ok(());
+    }
+    let Some(mut b) = current(&mut **tx, campaign).await? else {
+        return Ok(());
+    };
+    if b.map.scale == Scale::World {
+        return Ok(());
+    }
+    let spots = cast::arriving_with(story, &b.map_id, node);
+    if b.set_down(story, world, &spots) {
+        save(tx, campaign, &b).await?;
+    }
+    Ok(())
+}
+
+/// The players meet `npc`: the tokens the preparation set down for them
+/// come out of hiding, on the board shown. Inside the caller's locked
+/// transaction.
+///
+/// # Errors
+///
+/// A database error.
+pub(crate) async fn npc_met(
+    tx: &mut Transaction<'_, Postgres>,
+    campaign: Uuid,
+    npc: &str,
+) -> Result<(), AppError> {
+    let Some(mut b) = current(&mut **tx, campaign).await? else {
+        return Ok(());
+    };
+    let mut changed = false;
+    for t in b
+        .tokens
+        .iter_mut()
+        .filter(|t| from_spot(t, npc) && t.hidden)
+    {
+        t.hidden = false;
+        changed = true;
+    }
+    if changed {
+        save(tx, campaign, &b).await?;
+    }
+    Ok(())
 }
 
 /// Lock the board of `campaign` (under the campaign lock already held).

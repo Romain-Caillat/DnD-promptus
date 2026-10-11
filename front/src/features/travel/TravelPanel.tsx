@@ -6,6 +6,7 @@ import type { Cell, MapData } from '@/lib/board'
 import type { Tileset } from '@/lib/media'
 import { fetchGmTravel, gmTravelCommand, type GmTravel, type GmTravelCommand } from '@/lib/travel'
 import { cn } from '@/lib/utils'
+import type { PinMark } from '@/features/map/pins'
 import { HexMap, type HexRoute } from './HexMap'
 
 const same = (a: Cell, b: Cell) => a[0] === b[0] && a[1] === b[1]
@@ -24,11 +25,16 @@ export function TravelPanel({
   map,
   tileset,
   refreshKey,
+  pins,
+  onPin,
 }: {
   campaignId: string
   map: MapData
   tileset: Tileset | null
   refreshKey: unknown
+  /** The scenes pinned on the world map (campaign/pin-scenes-on-maps); a tap on a pin, not on its hex. */
+  pins?: readonly PinMark[]
+  onPin?: (key: string) => void
 }) {
   const { t } = useTranslation()
   const [data, setData] = useState<GmTravel | null>(null)
@@ -66,7 +72,7 @@ export function TravelPanel({
   if (!data || !tr) {
     return (
       <>
-        <HexMap map={map} tileset={tileset} party={null} />
+        <HexMap map={map} tileset={tileset} party={null} pins={pins} onPin={onPin} />
         <p className="text-caption text-mute">{t('travel.gm.noParty')}</p>
       </>
     )
@@ -107,6 +113,8 @@ export function TravelPanel({
         party={p.at}
         routes={routes}
         destination={j?.destination.at ?? null}
+        pins={pins}
+        onPin={onPin}
         onHex={underWay ? undefined : (cell) => void send({ kind: 'plan', to: cell })}
         className="max-h-[60vh]"
       />

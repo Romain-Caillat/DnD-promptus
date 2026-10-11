@@ -9,6 +9,8 @@
 //!   label (a throne, a campfire) becomes a blocking prop on plain
 //!   floor; anything else blocked becomes a wall of that terrain.
 //! - A cell with `childMapId` becomes an exit; other labels stay labels.
+//!   A cell's `sceneId` is dropped: a scene's spot on a map is its
+//!   place's anchor in the story (`campaign/pin-scenes-on-maps`).
 //! - Starting tokens become starts with no side (V1 had none).
 
 use std::collections::BTreeMap;
@@ -73,8 +75,6 @@ pub struct V1Cell {
     pub blocked: bool,
     #[serde(default)]
     pub label: Option<String>,
-    #[serde(default)]
-    pub scene_id: Option<String>,
     #[serde(default)]
     pub child_map_id: Option<String>,
 }
@@ -183,7 +183,6 @@ impl V1Map {
                 labels.push(Label {
                     text,
                     at: cell,
-                    scene: c.scene_id.clone(),
                     layer: BASE_LAYER.into(),
                 });
             }

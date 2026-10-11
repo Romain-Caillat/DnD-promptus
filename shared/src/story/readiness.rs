@@ -19,6 +19,7 @@ use serde::Serialize;
 use super::encounter::encounter_scenario;
 use super::library::Library;
 use super::model::{Campaign, Id, Importance, Node};
+use super::pins::is_pinned;
 use super::validate::MIN_CRITICAL_CLUE_NODES;
 use crate::combat::scenario::PolicyKind;
 use crate::combat::simulate::{SimParams, simulate};
@@ -46,7 +47,7 @@ pub struct Gap {
     pub name: String,
     /// `MISSING_FIELDS`, `FEW_PATHS`, `ONLY_OPTIONAL`, `NO_HOOK`,
     /// `NO_STATS`, `NO_TACTICS`, `NOT_STAGED`, `SIMULATION_FAILED`,
-    /// `NO_RULES`.
+    /// `NO_RULES`; `NO_PLACE` among the alerts.
     pub code: &'static str,
     /// The fields a scene lacks (`MISSING_FIELDS`).
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -76,6 +77,10 @@ pub struct ActReadiness {
     pub done: usize,
     pub total: usize,
     pub checks: Vec<Check>,
+    /// Said, never counted (`campaign/pin-scenes-on-maps`): a scene with
+    /// no spot on a map (`NO_PLACE`) is allowed — a dream, a memory — so
+    /// it neither lowers the gauge nor keeps the act from being ready.
+    pub alerts: Vec<Gap>,
 }
 
 /// The fields every scene carries (Romain's prep format, chain 2).
@@ -83,9 +88,6 @@ fn missing_fields(n: &Node) -> Vec<&'static str> {
     let mut out = Vec::new();
     if n.summary.trim().is_empty() {
         out.push("summary");
-    }
-    if n.location.is_none() {
-        out.push("location");
     }
     if n.ambience.mood.trim().is_empty() {
         out.push("ambience");
@@ -144,6 +146,18 @@ pub fn readiness(campaign: &Campaign, library: &Library<'_>) -> Vec<ActReadiness
             ];
             let done = checks.iter().map(|c| c.done).sum();
             let total = checks.iter().map(|c| c.total).sum();
+            let alerts = scenes
+                .iter()
+                .filter(|n| !is_pinned(campaign, n))
+                .map(|n| {
+                    gap(
+                        &n.id,
+                        &n.title,
+                        "NO_PLACE",
+                        format!("`{}` stands on no map", n.id),
+                    )
+                })
+                .collect();
             ActReadiness {
                 act: act.id.clone(),
                 title: act.title.clone(),
@@ -152,6 +166,7 @@ pub fn readiness(campaign: &Campaign, library: &Library<'_>) -> Vec<ActReadiness
                 done,
                 total,
                 checks,
+                alerts,
             }
         })
         .collect()
@@ -460,6 +475,26 @@ mod tests {
         let acts = gauge(CORSAIRES, CORSAIRES_RULES, QUAY);
         assert!(acts[0].ready, "{:#?}", acts[0]);
         assert_eq!(acts[0].done, acts[0].total);
+    }
+
+    #[test]
+    fn a_scene_with_no_place_is_said_but_does_not_unready_the_act() {
+        let rules = RuleSystem::from_yaml(CORSAIRES_RULES).unwrap();
+        let maps = [Map::from_yaml(QUAY).unwrap()];
+        let library = Library {
+            rules: Some(&rules),
+            maps: Some(&maps),
+        };
+        let mut c = from_yaml(CORSAIRES).unwrap();
+        assert!(readiness(&c, &library)[0].alerts.is_empty());
+        // A memory with no place at all.
+        let n = c.nodes.iter_mut().find(|n| n.id == "sc_anais").unwrap();
+        n.location = None;
+        let act = &readiness(&c, &library)[0];
+        assert!(act.ready, "{act:#?}");
+        assert_eq!(act.done, act.total);
+        let alerts: Vec<_> = act.alerts.iter().map(|g| (g.code, g.id.as_str())).collect();
+        assert_eq!(alerts, [("NO_PLACE", "sc_anais")]);
     }
 
     #[test]

@@ -166,17 +166,11 @@
       "tableSub": "Le lien, le message Discord, les joueurs installés",
       "evening": "Mener la soirée",
       "eveningSub": "La scène, la carte, les demandes, le co-MJ",
-      "playerView": "Ce que voient les joueurs",
-      "playerViewSub": "La vue des joueurs, en direct",
       "editRules": "Modifier les règles",
-      "review": "Relire et valider la campagne",
-      "reviewSub": "Graphe, fiches, cohérence, atelier du co-MJ",
       "generate": "Générer à partir d'une idée",
-      "generateSub": "Le co-MJ écrit un brouillon complet, vous l'appliquez puis le relisez",
-      "media": "Images et vidéos",
-      "mediaSub": "Dessiner les scènes, les PNJ et les lieux, filmer l'ouverture des actes, garder ce qui convient",
-      "maps": "Cartes",
-      "mapsSub": "Dessiner, générer ou importer les cartes de combat et d’exploration, puis les valider",
+      "generateSub": "Le co-MJ écrit un brouillon complet ; appliqué, il s'ouvre dans l'Atlas, la première scène posée sur la région",
+      "atlas": "Atlas",
+      "atlasSub": "Toute la préparation : les cartes de la région aux rencontres, les scènes posées dessus, la vue joueurs ; dans le tiroir, la bible, les fiches, la validation, les médias et les cartes de la campagne",
       "settings": "Réglages",
       "rules": "Règles",
       "save": "Enregistrer les réglages",
@@ -437,7 +431,6 @@
     },
     "playerView": {
       "kicker": "Ce que voient les joueurs",
-      "notFound": "Cette campagne est introuvable.",
       "scene": "Scène en cours",
       "noScene": "Aucune scène n'est ouverte.",
       "clues": "Indices trouvés",
@@ -1827,6 +1820,14 @@
       "fingers": "Un doigt touche, ou peint le brouillard avec Révéler et Cacher · deux doigts déplacent · pincer zoome. Rien ne part avant le relâcher.",
       "title": "La carte",
       "none": "Aucune carte montrée.",
+      "pin": "{{name}} — lancer : {{scenes}}",
+      "pinScenes": "Scènes de {{name}}",
+      "launch": "Lancer {{number}}. {{title}}",
+      "clue": "Indice à trouver : {{text}}",
+      "clueFound": "Indice trouvé : {{text}}",
+      "revealClue": "Les joueurs le trouvent : {{text}}",
+      "fight": "Combat : {{title}}",
+      "meet": "Les joueurs rencontrent {{name}}",
       "noMaps": "Pas de carte pour ce monde.",
       "show": "Montrer : {{name}}",
       "tool": {
@@ -2134,7 +2135,7 @@
       "removed_other": "{{count}} éléments inventés par le modèle ont été écartés",
       "apply": "Appliquer à la campagne",
       "applyHint": "Le brouillon remplace l'histoire de la campagne. Elle reste à relire et à valider avant la première soirée.",
-      "review": "Relire la campagne →",
+      "review": "Ouvrir l’Atlas →",
       "errors": {
         "action": "L'action n'a pas abouti. Réessayez.",
         "AI_BUDGET_EXCEEDED": "Le budget IA de la campagne ne suffit pas. Augmentez-le dans les réglages de la campagne.",
@@ -2166,7 +2167,6 @@
       },
       "fields": {
         "summary": "le résumé",
-        "location": "le lieu",
         "ambience": "l'ambiance",
         "read_aloud": "le texte à lire",
         "flow": "le déroulé",
@@ -2183,20 +2183,19 @@
         "NO_TACTICS": "« {{name}} » : aucune tactique pour les adversaires.",
         "NOT_STAGED": "« {{name}} » : le combat ne peut pas être simulé.",
         "SIMULATION_FAILED": "« {{name}} » : la simulation du combat a échoué.",
-        "NO_RULES": "« {{name}} » : pas de règles pour simuler le combat."
-      }
+        "NO_RULES": "« {{name}} » : pas de règles pour simuler le combat.",
+        "NO_PLACE": "« {{name}} » ne se trouve sur aucune carte (permis : rêve, souvenir)."
+      },
+      "alerts": "À savoir, sans compter dans la jauge"
     },
     "review": {
       "validated": "Validée",
       "notValidated": "À valider",
-      "tabs": "Sections de la préparation",
       "tab": {
-        "graph": "Graphe",
         "bible": "Bible",
         "sheets": "Fiches",
         "coherence_one": "Cohérence · {{count}}",
-        "coherence_other": "Cohérence · {{count}}",
-        "validate": "Valider"
+        "coherence_other": "Cohérence · {{count}}"
       },
       "errors": {
         "action": "Ça n'a pas marché. Réessayez.",
@@ -2204,7 +2203,10 @@
         "EDIT_UNKNOWN_TARGET": "Cet élément n'existe plus : rechargez la page.",
         "EDIT_ID_TAKEN": "Cet identifiant est déjà pris.",
         "CAMPAIGN_HAS_ERRORS": "Corrigez d'abord les erreurs de la campagne.",
-        "EDIT_SCENE_INVALID": "La scène nommerait quelque chose qui n'existe pas (adversaire, objet, scène, caractéristique) ou un lien qui n'est pas YouTube : rien n'a été enregistré."
+        "EDIT_SCENE_INVALID": "La scène nommerait quelque chose qui n'existe pas (adversaire, objet, scène, caractéristique) ou un lien qui n'est pas YouTube : rien n'a été enregistré.",
+        "REVISION_COVERED": "Une modification plus récente touche les mêmes éléments : annulez-la d'abord, ou corrigez à la main.",
+        "REVISION_NOT_UNDOABLE": "Cette modification ne s'annule pas.",
+        "REVISION_NOT_REVERTIBLE": "Ce qui serait remis ne rentre plus dans la campagne : corrigez à la main."
       },
       "graphTitle": "Graphe · {{count}} scènes en {{acts}} actes",
       "noScene": "Aucune scène pour l'instant.",
@@ -2265,6 +2267,7 @@
         "info": "Pour info"
       },
       "askFix": "Proposer une correction",
+      "pinInAtlas": "L’épingler sur la carte",
       "codes": {
         "ID_INVALID": "Un identifiant n'a pas le bon format.",
         "ID_DUPLICATE": "Deux éléments ont le même identifiant.",
@@ -2285,7 +2288,9 @@
         "REVELATION_NO_CLUE": "Aucun indice ne mène à une révélation.",
         "THREE_CLUE_RULE": "Une révélation essentielle a moins de trois indices dans des scènes différentes.",
         "KNOWLEDGE_NEVER_GIVEN": "Une scène demande une information que rien ne donne avant.",
-        "KNOWLEDGE_ONLY_OPTIONAL": "Une information nécessaire n'est donnée que dans des scènes facultatives."
+        "KNOWLEDGE_ONLY_OPTIONAL": "Une information nécessaire n'est donnée que dans des scènes facultatives.",
+        "SCENE_WITHOUT_PLACE": "Une scène ne se trouve sur aucune carte : permis pour un rêve ou un souvenir, à épingler sinon dans l’Atlas.",
+        "EXIT_WITHOUT_PATH": "Une sortie relie deux scènes dont les lieux ne sont reliés par aucun chemin sur les cartes."
       },
       "validateTitle": "Valider la campagne",
       "count": {
@@ -2308,6 +2313,14 @@
       "validateSub": "Elle devient jouable : la première soirée peut s'ouvrir",
       "validateBlocked_one": "{{count}} erreur à corriger d'abord",
       "validateBlocked_other": "{{count}} erreurs à corriger d'abord"
+    },
+    "changes": {
+      "writing": "Claude écrit · sur {{place}}",
+      "wrote": "Claude a écrit · sur {{place}}",
+      "writingNowhere": "Claude écrit…",
+      "undo": "Annuler",
+      "dismiss": "Fermer",
+      "fresh": "Modifié"
     },
     "scene": {
       "label": "Fiche de la scène « {{title}} »",
@@ -2663,11 +2676,181 @@
       "versionLocked": "v{{version}} · verrouillée le {{date}}",
       "versionDraft": "v{{version}} · brouillon",
       "played": "jouée"
+    },
+    "claude": {
+      "waiting_one": "Claude propose {{count}} lot de modifications : rien n’a changé avant que vous le gardiez.",
+      "waiting_other": "Claude propose {{count}} lots de modifications : rien n’a changé avant que vous les gardiez.",
+      "toAtlas": "Les voir sur la carte"
+    }
+  },
+  "atlas": {
+    "title": "Atlas",
+    "breadcrumb": "Où vous êtes dans l’atlas",
+    "empty": "Aucune carte : ni le monde ni la campagne n’en ont encore.",
+    "out": "Ressortir",
+    "fold": "Replier",
+    "unfold": "Panneau",
+    "drawer": "Tiroir",
+    "drawerTitle": "Le tiroir : ce qui n’a pas de lieu",
+    "backToMap": "Retour à la carte",
+    "place": {
+      "graph": "Scènes et actes",
+      "bible": "Bible",
+      "sheets": "Fiches",
+      "coherence": "Cohérence",
+      "validate": "Valider",
+      "medias": "Médias",
+      "cartes": "Cartes de la campagne"
+    },
+    "layers": "Calques",
+    "strip": "Toutes les cartes",
+    "scale": {
+      "world": "Région",
+      "place": "Lieu",
+      "encounter": "Rencontre"
+    },
+    "scaleShort": {
+      "world": "RÉG",
+      "place": "LIEU",
+      "encounter": "REN"
+    },
+    "origin": {
+      "world": "carte du monde",
+      "campaign": "carte de la campagne"
+    },
+    "inside": "On y entre",
+    "noInside": "Aucune carte ne s’ouvre ici pour l’instant.",
+    "enter": "Entrer : {{name}}",
+    "next": "À côté",
+    "goTo": "Aller à : {{name}}",
+    "edit": "Ouvrir dans l’éditeur de carte",
+    "copy": "Carte du monde : la copier dans la campagne pour la modifier",
+    "players": {
+      "switch": "Vue MJ ou vue joueurs",
+      "gm": "Vue MJ",
+      "players": "Vue joueurs",
+      "shown": "Sur la table en ce moment : c’est exactement ce que reçoivent la télé et les téléphones.",
+      "ahead": "Pas encore sur la table : c’est ce que recevraient la télé et les téléphones si vous la montriez maintenant.",
+      "errors": {
+        "MAP_DRAFT": "Cette carte est un brouillon : validez-la dans l’éditeur pour la montrer, et donc pour la voir comme les joueurs.",
+        "NO_SUCH_MAP": "Cette carte n’existe plus.",
+        "action": "La vue joueurs n’a pas pu être chargée. Réessayez."
+      }
+    },
+    "pins": {
+      "pin": "{{name}} — scènes : {{scenes}}",
+      "chosen": "Épingle : {{name}}",
+      "scene": "{{number}}. {{title}}",
+      "openMap": "Voir sa carte",
+      "generate": "Générer sa carte",
+      "move": "Déplacer l’épingle",
+      "remove": "Retirer l’épingle",
+      "tool": "Épingler un lieu",
+      "place": "Lieu à épingler",
+      "choose": "Choisir un lieu…",
+      "placed": "{{name}} (déjà épinglé)",
+      "pinHere": "Épingler sur cette carte",
+      "tapCell": "Touchez la case où se trouve « {{name}} ».",
+      "cancel": "Annuler",
+      "noPlaces": "La campagne n’a pas encore de lieu : ajoutez-en dans la préparation.",
+      "failed": "L’épingle n’a pas été posée ({{code}}). Réessayez.",
+      "unplaced": "Scènes sur aucune carte",
+      "issues": "Épingles et poses à revoir",
+      "issue": {
+        "MAP_UNKNOWN": "Un lieu, un PNJ, un indice ou un combat est posé sur une carte qui n’existe pas.",
+        "ANCHOR_OFF_GRID": "Un lieu, un PNJ, un indice ou un combat est posé hors de sa carte.",
+        "SPOT_ON_WALL": "Un PNJ, un indice ou un combat est posé dans un mur : déplacez-le.",
+        "EXIT_WITHOUT_PATH": "{{scene}} mène à une scène qu’aucun chemin ne relie : un mur les sépare, ou aucune sortie ne joint leurs cartes."
+      }
+    },
+    "thread": {
+      "title": "Le fil de la campagne",
+      "act": "Acte du fil",
+      "allActs": "Tous les actes",
+      "none": "Aucune scène ne se trouve sur cette carte.",
+      "start": "départ",
+      "end": "fin possible",
+      "segment": "De {{from}} à {{to}} : {{scenes}}"
+    },
+    "storyLayers": {
+      "label": "Calques de l’histoire",
+      "story": "Histoire",
+      "cast": "Personnages",
+      "fights": "Combats",
+      "clues": "Indices"
+    },
+    "cast": {
+      "tool": "Poser sur la carte",
+      "kind": "Ce que vous posez",
+      "kinds": { "npc": "PNJ", "clue": "Indice", "fight": "Combat" },
+      "choose": {
+        "npc": "Choisir un PNJ…",
+        "clue": "Choisir un indice…",
+        "fight": "Choisir le combat d’une scène…"
+      },
+      "none": {
+        "npc": "La campagne n’a pas encore de PNJ.",
+        "clue": "La campagne n’a pas encore d’indice.",
+        "fight": "Aucune scène n’a de combat."
+      },
+      "scene": "Pour quelle scène",
+      "everyScene": "Toutes les scènes sur cette carte",
+      "forScene": "Seulement pendant {{scene}}",
+      "alreadyPlaced": "{{name}} (déjà posé)",
+      "placeHere": "Poser sur cette carte",
+      "tapCell": "Touchez la case où poser « {{name}} ».",
+      "move": "Déplacer",
+      "remove": "Retirer de la carte",
+      "npcChosen": "PNJ : {{name}}",
+      "npcFor": "{{name}} — seulement pendant {{scene}}",
+      "clueChosen": "Indice posé ici",
+      "clue": "Indice : {{text}}",
+      "fight": "Combat de la scène {{number}}. {{title}}",
+      "fightChosen": "Combat : {{title}}",
+      "noPlan": "Cette scène n’a pas encore de plan de combat.",
+      "planUnknown": "Son plan de combat n’est pas dans l’atlas.",
+      "placed": "Adversaires déjà placés sur le plan : {{placed}} / {{total}}",
+      "openPlan": "Ouvrir le plan de combat"
+    },
+    "claude": {
+      "title": "Propositions de Claude",
+      "hand": "Claude a la main",
+      "handHint": "Les écritures de Claude s’appliquent directement, chacune annulable. Jamais pendant une soirée ouverte, ni sur ce que les joueurs connaissent déjà : elles restent alors proposées.",
+      "none": "Rien en attente. Ce que Claude écrit apparaît ici, en pointillés sur la carte, jusqu’à ce que vous le gardiez.",
+      "noneHand": "Rien en attente : Claude a la main, ses écritures s’appliquent directement.",
+      "untitled": "Proposition sans titre",
+      "focus": "Voir sur la carte",
+      "stale": "ne s’applique plus",
+      "keep": "Garder",
+      "discard": "Jeter",
+      "keepAll": "Tout garder",
+      "discardAll": "Tout jeter",
+      "word": "Un mot pour Claude",
+      "wordPlaceholder": "Pourquoi vous jetez (Claude le lira) : « trop évident »…",
+      "mapItem_one": "Carte « {{name}} » : {{count}} geste",
+      "mapItem_other": "Carte « {{name}} » : {{count}} gestes",
+      "edit": "Modification",
+      "setLine": "{{kind}} « {{name}} » · {{field}}",
+      "mark": "▶ Claude · {{title}}",
+      "status": {
+        "kept": "gardé",
+        "discarded": "jeté",
+        "refused": "refusé : ne s’appliquait plus",
+        "pending": "en attente"
+      },
+      "errors": {
+        "EVENING_OPEN": "Une soirée est ouverte : Claude ne peut pas avoir la main pendant le jeu.",
+        "PROPOSAL_ITEM_STALE": "Cet élément ne s’applique plus : la campagne a changé depuis. Jetez-le, ou gardez tout pour garder le reste.",
+        "PROPOSAL_ITEM_NEEDS_EARLIER": "Cet élément dépend d’un autre du même lot : gardez d’abord celui dont il dépend, ou gardez tout.",
+        "ITEM_ALREADY_DECIDED": "Cet élément est déjà tranché.",
+        "PROPOSAL_ALREADY_DECIDED": "Ce lot est déjà tranché.",
+        "action": "L’action a échoué ({{code}})."
+      }
     }
   },
   "maps": {
     "title": "Cartes de la campagne",
-    "back": "← Cartes de la campagne",
+    "back": "← Atlas",
     "mine": "Cartes de la campagne",
     "none": "Aucune carte pour l’instant : dessinez-en une, générez-la ou importez-la.",
     "notFound": "Cette carte n’existe pas.",
@@ -2740,14 +2923,22 @@
         "bright": "Plein jour"
       },
       "notes": "Notes du MJ",
-      "save": "Enregistrer",
-      "undo": "Annuler les changements",
+      "saving": "Enregistrement…",
+      "saved": "Chaque geste est enregistré",
+      "rebased": "La carte a changé entre-temps (Claude ou un autre écran) : elle est rechargée et votre geste rejoué dessus.",
+      "undo": "Annuler mon dernier geste",
       "validate": "Valider",
       "validateHint": "Seule une carte validée peut être montrée à la table. Toute modification la repasse en brouillon."
     },
     "errors": {
       "action": "L’action n’a pas abouti. Réessayez.",
       "MAP_INVALID": "La carte n’est pas valide.",
+      "MAP_OP_INVALID": "Ce geste ne s’applique pas à la carte.",
+      "MAP_STALE": "La carte a changé entre-temps sur les mêmes cases : rechargez-la et refaites votre geste.",
+      "BAD_BATCH": "Ce geste est vide ou trop grand.",
+      "REVISION_COVERED": "La carte a été modifiée depuis ce geste : il ne peut plus être annulé.",
+      "REVISION_NOT_UNDOABLE": "Ce geste ne peut pas être annulé.",
+      "REVISION_NOT_REVERTIBLE": "La carte a trop changé pour annuler ce geste.",
       "MAP_ON_THE_TABLE": "Cette carte est affichée à la table : retirez-la d’abord.",
       "BAD_SIZE": "Une carte fait entre 3 et 64 cases de côté.",
       "BAD_IMAGE": "Ce fichier n’est pas une image PNG, JPEG ou WEBP lisible.",

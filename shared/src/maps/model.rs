@@ -630,15 +630,14 @@ pub struct Exit {
     pub layer: String,
 }
 
-/// A name written on the map: a place, a zone, a building.
+/// A name written on the map: a place, a zone, a building. Only words:
+/// where a scene happens is its place's anchor in the story
+/// (`campaign/pin-scenes-on-maps`), never a label of the map.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Label {
     pub text: String,
     pub at: Cell,
-    /// Story-graph node this place opens.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub scene: Option<String>,
     #[serde(default = "base_layer", skip_serializing_if = "is_base_layer")]
     pub layer: String,
 }

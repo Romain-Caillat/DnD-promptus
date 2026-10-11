@@ -106,7 +106,7 @@ lights:
 exits:
   - { id: vers-les-rues, cells: [[0, 4], [0, 5]], to: port-louis-rues, arrive: depart-quai, label: Vers les rues }
 labels:
-  - { text: Appontement, at: [10, 10], scene: sc-quai }
+  - { text: Appontement, at: [10, 10] }
 starts:
   - { id: pj-1, side: party, at: [0, 5] }
   - { id: gueule-rouge, side: foes, at: [13, 6], entity: gueule-rouge, layer: embuscade }
@@ -127,6 +127,16 @@ starts:
 - **Lights**: radii in cells; `dim` ≥ `bright`.
 - **Exits** link cells to another map id; `arrive` names a start or exit
   there.
+- **Labels** are words written on the map, nothing more. Where a scene
+  happens is its place's `anchor` in the story (`docs/campaign-format.md`,
+  `locations`): a map never names a scene, so the pin has one source.
+  The `scene` a label once carried is gone: migration
+  `048_labels_without_scenes` first anchored the scene's place on the
+  label's cell when that place had no anchor and no place inside it
+  (and Port-Louis on the Corsaires' world map), then stripped the field
+  from every stored map. A scene whose place could not take the pin is
+  on no map until the GM pins a place. A V1 cell's `sceneId` is dropped
+  on import.
 - **Starts**: token positions; `side` is `party`, `foes` or `neutral`;
   ambushers go on a `gm` layer.
 
@@ -194,9 +204,128 @@ could be sailed with one guide and walked with another:
 
 Without a guide a world map travels by its cell flags: 1 step, 2 through
 difficult terrain or shallow water, nothing through walls, voids and
-deep water. Places are the map's `labels` (`scene` = the story node the
-place opens); an `exit` on a label's hex is the map the place opens on
-arrival. The party starts on the map's first `party` start.
+deep water. Places are the map's `labels`; an `exit` on a label's hex is
+the map the place opens on arrival, and the scene it opens is the first,
+in campaign order, of the scenes pinned on that hex (`story::pins`) the
+table has not entered yet. The party starts on the map's first `party`
+start.
+
+## Editing by operations
+
+The editor and Claude never write a map whole: they send batches of
+operations (paint, place, move, remove, erase, door, set) on the
+campaign revision they read — `shared/src/maps/edit.rs`, protocol in
+`docs/claude-mcp.md` under *Map operations*. The result goes through
+the same `Map::validate` as a file. Placed things get ids by prefix
+(`porte-n`, `decor-n`, `objet-n`, `lumiere-n`, `depart-n`); a new kind
+of cell takes the first free glyph of `.#,~_=:;+*%&@!?a…z A…Z 0…9`, and a
+glyph no cell uses leaves the legend.
+
+## The atlas: how maps nest
+
+The GM's Atlas (`maps/browse-atlas`, `shared/src/maps/atlas.rs`) shows
+every map of the world (`content/maps/<world>/`) and of the campaign
+(`campaign_maps`) as one tree — region in hexes › place › encounter —
+read from the maps' `exits`, never stored:
+
+- An exit from A to B makes A the **parent** of B only when B's `scale`
+  is strictly finer (`world` › `place` › `encounter`; a world map may
+  hold an encounter directly). The exit's `cells` are where B is
+  anchored on A: one hex on a region, a zone on a grid.
+- An exit between two maps of the same scale, or back up, is a **link**
+  (« à côté »), never an edge. Every edge goes down a scale, so the tree
+  has no cycle whatever the exits say.
+- An exit to a map neither the world nor the campaign has is ignored.
+- A map several exits lead down to keeps one parent: the nearest
+  coarser scale first (a place before the region for an encounter),
+  then a campaign map before a world map, then the smallest id. A map
+  no exit leads down to is a root; a campaign map shadows a world map
+  of the same id.
+
+`GET /api/campaigns/{id}/atlas` (GM only; a personal token reads it too, for Claude's `get_atlas`)
+answers `{revision, roots, maps: [{map, origin: world|campaign, parent:
+{map, exit}|null, children, links: [{to, exit}], backdrop, validated,
+pins}], places, unplaced, issues}`, maps whole, roots first then depth
+first. `pins` are the scenes standing on each map (`story::pins::Pin`:
+`{location, name, at, scenes: [{id, title, number, map?}]}`); `places`
+every place of the story with its `anchor`, for the pin tool; `unplaced`
+the scenes standing on no map; `issues` the anchors pointing at a map
+the atlas lacks or off its grid, and the NPCs, clues or fights set in a
+wall. Each map also carries `cast` (`story::cast::Cast`,
+`campaign/place-cast-and-clues`): `npcs: [{npc, name, index, at,
+scene?}]`, `clues: [{clue, text, at, scene}]`, `fights: [{scene, title,
+number, at, map?, opponents, placed?}]` — `placed` is how many opponents
+the battle plan's foe starts set down (fewer than `opponents` and the
+fight cannot open, `NO_START_LEFT`). `castable` lists every NPC (with its
+spots), clue, fight and scene for the placement tool. A player never
+receives it: the table shows the one map on the board, through the
+projection, which adds only the clues found (`clues: [{text, at}]`, no
+id) on cells out of the fog; placed NPCs are ordinary hidden tokens.
+
+Each map also carries `thread` (`story::thread::Thread`,
+`campaign/draw-story-thread`), computed from the scenes' exits at every
+read, never stored: `segments: [{from: {place, at}, to: {place, at},
+steps: [{from, to, act}]}]` — one per pair of pins an exit joins, in
+each direction, the exits between them as `steps` (scene ids, the act of
+the scene left) — and `stops: [{scene, place, act, start, end}]`, the
+scenes standing on the map in campaign order. A step whose two scenes
+share a pin, or one end of which has no pin on the map, is not a
+segment. `start`: no exit of the scene's act leads to it; `end`: none of
+its exits stays in its act. The atlas also lists the `acts` (`{id,
+title}`) for the thread's filter, and `issues` adds `EXIT_WITHOUT_PATH`
+(see `docs/campaign-format.md`). The thread is the GM's: no projection
+carries it.
+
+Claude's waiting batches (`platform/propose-edits-by-claude`) ride on
+the atlas too: `claude` lists them oldest first (the same `Proposal` as
+`GET …/proposals`: `id`, `prompt` (the title), `focus {map, at?}`,
+`items [{key, status, stale, word?, code?, change?, map?}]`), and
+`claudeHand` says whether Claude's writes land directly. Each map
+carries `proposed: [{proposal, pins, cast, thread, cells}]`: what one
+batch would add on it, computed on the story and the campaign's maps as
+the batch would leave them — the pins, NPC, clue and fight marks and
+thread segments that are not on the map as it is, and the cells its map
+operations touch. Drawn dotted and marked ▶, never stored; a removal
+proposed shows in the batch's items only.
+
+Pins never nest maps (`campaign/pin-scenes-on-maps`): a place's anchor
+puts scenes on a map, it does not say which map opens there. Nesting
+stays the exits' alone, so the « strictly finer scale » rule above is
+the only guard against cycles; a GM's own map hangs under another only
+if that map has an exit to it (a copy of a world map keeps the exits it
+had).
+
+### The players' view of a map
+
+The Atlas's « Vue MJ / Vue joueurs » switch (`maps/preview-as-player`)
+draws a map through the players' own projection, never a filter of the
+atlas: `GET /api/campaigns/{id}/maps/{map}/players` (GM session only, not
+open to a personal token — Claude asks `ask_map` with `view`) answers
+`{shown, board}`. `board` is the `BoardView` a player's screen and the
+shared screen receive (`campaigns::projection::board`, no character):
+
+- `shown: true` — the map is on the table: `board` is exactly what
+  `GET /api/tv/show` carries as `board`;
+- `shown: false` — `board` is the board a show of the map would lay out
+  now (`board::preview`, the same `laid_out` as `board::show`: the
+  party on its starts or where it stands on a region, the fog down then
+  lifted around it, the NPCs placed there set down hidden unless met),
+  read only: nothing written, no lock, no evening needed.
+
+So fog, NPCs not met, clues not found, pins of places not visited,
+scene numbers and Claude's proposals are absent because the projection
+never sends them. A campaign map not validated yet answers 409
+`MAP_DRAFT` (the table only ever receives validated maps); an unknown
+map 404 `NO_SUCH_MAP`.
+
+## A map as text
+
+Claude reads a map as text (`platform/edit-maps-by-claude`,
+`story::sketch`, `GET …/maps/{map}/sketch`): two ruler lines, then one
+line per row (`y`, then one character per cell — two on a hex map, odd
+rows shifted by one), the grid's own glyphs, and a symbol over each
+thing placed, listed in a legend. The format and the placement by name
+are in `docs/claude-mcp.md` (« Maps in words »).
 
 ## Universal VTT import
 

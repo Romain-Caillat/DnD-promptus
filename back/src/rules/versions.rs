@@ -32,6 +32,7 @@ use uuid::Uuid;
 use super::diff::{self, Line};
 use super::report::{self, Report, Version};
 use crate::auth::guard::{CurrentGm, owned_by};
+use crate::campaigns::revisions::Author;
 use crate::campaigns::{self, CampaignRow};
 use crate::content;
 use crate::error::AppError;
@@ -516,7 +517,7 @@ pub async fn adopt_newest(
     }
     let mut story = row.story.clone();
     story.rules.version = newest;
-    campaigns::save_story(tx, row.id, &story).await?;
+    campaigns::save_story(tx, row.id, &row.story, &story, Author::Server).await?;
     Ok(Some(newest))
 }
 

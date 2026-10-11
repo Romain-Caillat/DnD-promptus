@@ -669,7 +669,7 @@ pub async fn open_in(
         .filter(|b| b.map_id == map_id)
         .map(|b| b.tokens.clone())
         .unwrap_or_default();
-    let party = super::party_tokens(tx, campaign, &map, &kept).await?;
+    let party = super::party_tokens(&mut **tx, campaign, &map, &kept).await?;
     if party.is_empty() {
         return Err(AppError::Conflict("NO_PARTY"));
     }

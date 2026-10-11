@@ -43,7 +43,11 @@ const RULE_FILES: [&str; 3] = [
 /// The maps of the two worlds and the SRD, by rule system id
 /// (`content/maps/<rules>/<map>.yaml`): encounter and place maps, and
 /// each world's map in hexes (maps/travel-hex-world).
-const MAP_FILES: [(&str, &str); 10] = [
+const MAP_FILES: [(&str, &str); 11] = [
+    (
+        "corsaires",
+        include_str!("../../content/maps/corsaires/port-louis-rues.yaml"),
+    ),
     (
         "corsaires",
         include_str!("../../content/maps/corsaires/quai-port-louis.yaml"),

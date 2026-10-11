@@ -50,6 +50,8 @@ starts:
   - { id: chasseur-3, side: foes, at: [20, 9] }
   - { id: chasseur-4, side: foes, at: [22, 13] }
   - { id: chasseur-5, side: foes, at: [22, 2] }
+exits:
+  - { id: vers-coursive, cells: [[3, 8]], to: cure-dent-coursive, label: La coursive du Cure-Dent }
 labels:
   - { text: Sortie du Toboggan, at: [1, 8] }
   - { text: Ceinture de débris, at: [15, 4] }

@@ -37,7 +37,7 @@ type PageState =
  * writes an idea, sees what a generation costs at most, starts it and
  * follows its steps live; the draft says what it holds and what the
  * validator finds, and is applied only on the GM's word — then to
- * review on `/preparer`.
+ * review on the Atlas (`/atlas`).
  */
 export function GenerationPage() {
   const { t } = useTranslation()
@@ -116,7 +116,8 @@ export function GenerationPage() {
   function apply(job: GenerationJob) {
     void act(async () => {
       await applyGeneration(campaignId, job.id)
-      navigate(`/campagnes/${campaignId}/preparer`)
+      // Creation ends on the Atlas: the region, the first scene pinned on it.
+      navigate(`/campagnes/${campaignId}/atlas`)
     })
   }
 
@@ -297,7 +298,7 @@ function JobCard({
         </>
       )}
       {job.status === 'applied' && (
-        <Link className="text-caption underline underline-offset-4" to={`/campagnes/${campaignId}/preparer`}>
+        <Link className="text-caption underline underline-offset-4" to={`/campagnes/${campaignId}/atlas`}>
           {t('prep.generate.review')}
         </Link>
       )}

@@ -14,12 +14,15 @@ export interface Config {
 export class PromptusError extends Error {
   readonly status: number
   readonly code: string
+  /** The resource as it is now, when a write came on a stale revision (409 `MAP_STALE`). */
+  readonly fresh?: unknown
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, code: string, message: string, fresh?: unknown) {
     super(message)
     this.name = 'PromptusError'
     this.status = status
     this.code = code
+    if (fresh !== undefined) this.fresh = fresh
   }
 }
 
@@ -54,6 +57,35 @@ function explain(status: number, code: string, detail: string | null): string {
   if (code === 'TOKEN_NOT_ALLOWED') {
     return "Ce jeton n'ouvre pas cette action : il sert à la préparation des campagnes seulement."
   }
+  if (code === 'NO_SUCH_PROPOSAL') {
+    return "Ce lot de propositions n'existe pas dans cette campagne. list_proposals donne les lots et leurs identifiants."
+  }
+  if (code === 'PROPOSAL_ALREADY_DECIDED') {
+    return 'Le MJ a déjà tranché ce lot : propose dans un nouveau lot (sans proposal_id).'
+  }
+  if (code === 'CLAUDE_PROPOSES') {
+    return "Remplacer toute la campagne n'est possible que si le MJ t'a donné la main (« Claude a la main », " +
+      'hors soirée ouverte et sans toucher ce que les joueurs connaissent). Sinon, propose des modifications ' +
+      'ciblées avec apply_story_edits : le MJ les garde ou les jette dans Promptus.'
+  }
+  if (code === 'NO_SUCH_MAP') {
+    return "Carte introuvable dans cette campagne : get_atlas liste les cartes et leurs identifiants. " +
+      "Une carte du monde se lit et reçoit des épingles et des PNJ, mais ne se redessine pas : copie-la d'abord dans Promptus."
+  }
+  if (code === 'MAP_REF_UNKNOWN' || code === 'MAP_REF_AMBIGUOUS' || code === 'MAP_REF_OFF_GRID') {
+    return `Je ne sais pas de quoi tu parles sur cette carte (${code}) : nomme un élément de la légende ` +
+      `(get_map_text) par son identifiant ou son nom, ou une case « x,y ».${detail ? ` Détail du serveur : ${detail}` : ''}`
+  }
+  if (code.startsWith('PLACE_')) {
+    return `Placement impossible (${code}) : rien n'a été proposé, c'est tout ou rien.${detail ? ` Détail du serveur : ${detail}` : ''}`
+  }
+  if (code === 'MAP_STALE') {
+    return "La carte a changé au même endroit depuis ta lecture : relis-la (get_map_text) et propose à nouveau."
+  }
+  if (code === 'MAP_OP_INVALID' || code === 'MAP_INVALID' || code === 'BAD_BATCH') {
+    return `Opérations de carte refusées (${code}) : rien n'a été proposé.${detail ? ` Détail du serveur : ${detail}` : ''}`
+  }
+  if (code === 'TOO_MANY_PLACEMENTS') return 'Trop de placements en une fois (50 au plus) : découpe-les.'
   if (status === 404) {
     return "Campagne introuvable : l'identifiant est faux, ou la campagne appartient à un autre MJ. " +
       'Utilise list_campaigns pour retrouver les identifiants.'
@@ -101,10 +133,10 @@ export class Promptus {
     }
     const json: unknown = await response.json().catch(() => null)
     if (!response.ok) {
-      const error = (json as { error?: { code?: unknown; message?: unknown } } | null)?.error
+      const error = (json as { error?: { code?: unknown; message?: unknown; fresh?: unknown } } | null)?.error
       const code = typeof error?.code === 'string' ? error.code : 'UNEXPECTED'
       const detail = typeof error?.message === 'string' ? error.message : null
-      throw new PromptusError(response.status, code, explain(response.status, code, detail))
+      throw new PromptusError(response.status, code, explain(response.status, code, detail), error?.fresh)
     }
     if (typeof json !== 'object' || json === null || !('data' in json)) {
       throw new PromptusError(

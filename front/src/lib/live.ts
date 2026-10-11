@@ -23,10 +23,21 @@ export interface Presence {
 
 export type LiveStatus = 'connecting' | 'live' | 'reconnecting'
 
+/**
+ * A program wrote the campaign with the GM's token — Claude, through the
+ * MCP server (`platform/stream-prep-edits`). Sent to the GM's sockets
+ * only; the screen reads the journal at `revision` for what it touched.
+ */
+export interface LiveActivity {
+  author: 'token'
+  revision: number
+}
+
 type ServerMessage =
   | { type: 'ready' | 'resync'; versions: Record<string, number> }
   | { type: 'changed'; topic: string; version: number }
   | ({ type: 'presence' } & Presence)
+  | ({ type: 'activity' } & LiveActivity)
   | { type: 'pong' }
 
 /** The part of `WebSocket` this file uses, so tests can pass a fake. */
@@ -45,6 +56,8 @@ export interface LiveOptions {
   onChange: (topics: string[]) => void
   onPresence: (presence: Presence) => void
   onStatus: (status: LiveStatus) => void
+  /** Claude is writing (GM sockets only). */
+  onActivity?: (activity: LiveActivity) => void
   createSocket?: (url: string) => SocketLike
 }
 
@@ -188,6 +201,9 @@ export class LiveConnection {
         break
       case 'presence':
         this.options.onPresence({ gmOnline: msg.gmOnline, players: msg.players, screens: msg.screens ?? [] })
+        break
+      case 'activity':
+        this.options.onActivity?.({ author: msg.author, revision: msg.revision })
         break
       default:
         break

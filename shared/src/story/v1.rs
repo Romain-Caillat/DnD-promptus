@@ -524,6 +524,7 @@ pub fn import_v1(
                     faction,
                     location: None,
                     companion: false,
+                    spots: Vec::new(),
                     gm_notes: String::new(),
                 });
             }
@@ -557,6 +558,7 @@ pub fn import_v1(
                 name: e.name.clone(),
                 description,
                 parent: None,
+                anchor: None,
                 art: String::new(),
                 gm_notes: String::new(),
             }),
@@ -636,6 +638,7 @@ pub fn import_v1(
             on_victory: String::new(),
             on_defeat: String::new(),
             vehicles: None,
+            anchor: None,
         });
         c.nodes.push(Node {
             id: s.id,
@@ -716,6 +719,7 @@ pub fn import_v1(
                     difficulty: k.dc?,
                 })
             }),
+            anchor: None,
         })
         .collect();
     Ok(V1Import {

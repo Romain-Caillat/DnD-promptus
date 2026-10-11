@@ -9,7 +9,9 @@
 //! very end, where a campaign with errors (a reference to nothing, a
 //! duplicate id) is not declared playable.
 
+pub mod claude;
 pub mod generation;
+pub mod proposals;
 pub mod workshop;
 
 use promptus_shared::maps::Map;
@@ -18,6 +20,7 @@ use promptus_shared::story::{ActReadiness, Library, Severity, readiness, validat
 use uuid::Uuid;
 
 use crate::auth::guard::{CurrentGm, owned_by};
+use crate::campaigns::revisions::Author;
 use crate::campaigns::{self, CampaignRow};
 use crate::error::AppError;
 
@@ -42,7 +45,23 @@ pub(crate) fn edit_library(row: &CampaignRow) -> Library<'_> {
     }
 }
 
-/// The GM's edits, applied whole under the campaign lock. Returns the
+/// Whether a validator finding is the model's to act on. Where things
+/// stand on a map is not: a scene's place (`SCENE_WITHOUT_PLACE`), a pin,
+/// an NPC's spot, a clue's or a fight's mark standing nowhere or in a
+/// wall (campaign/place-cast-and-clues), two linked scenes no path joins
+/// (`EXIT_WITHOUT_PATH`, campaign/draw-story-thread). The GM places them in the atlas,
+/// on maps the model never sees — asking would spend AI budget on a cell
+/// it can only invent.
+pub(crate) fn for_the_model(issue: &promptus_shared::story::Issue) -> bool {
+    let on_a_map = issue.path.contains(".anchor") || issue.path.contains(".spots[");
+    !matches!(
+        issue.code,
+        "SCENE_WITHOUT_PLACE" | "SPOT_ON_WALL" | "ANCHOR_OFF_GRID" | "EXIT_WITHOUT_PATH"
+    ) && !on_a_map
+}
+
+/// The GM's edits, applied whole under the campaign lock and journaled
+/// as `author`'s (the GM in Promptus, or their token). Returns the
 /// campaign as stored and what changed.
 ///
 /// # Errors
@@ -55,22 +74,44 @@ pub(crate) fn edit_library(row: &CampaignRow) -> Library<'_> {
 pub async fn apply(
     pool: &sqlx::PgPool,
     gm: &CurrentGm,
+    author: Author,
     campaign: Uuid,
     edits: &[Edit],
 ) -> Result<(CampaignRow, Vec<Change>), AppError> {
+    let (done, ()) = apply_made(pool, gm, author, campaign, |_| Ok((edits.to_vec(), ()))).await?;
+    Ok(done)
+}
+
+/// [`apply`], the edits made by `make` on the story as it stands under
+/// the campaign lock: what `make` reads (an NPC's spots, the cells
+/// already taken) cannot change before its edits land — a placement by
+/// name sends an NPC's whole list of spots, which must not overwrite a
+/// concurrent change (`campaign_maps::survey::place`).
+///
+/// # Errors
+///
+/// As [`apply`], and `make`'s.
+pub async fn apply_made<T>(
+    pool: &sqlx::PgPool,
+    gm: &CurrentGm,
+    author: Author,
+    campaign: Uuid,
+    make: impl FnOnce(&promptus_shared::story::Campaign) -> Result<(Vec<Edit>, T), AppError>,
+) -> Result<((CampaignRow, Vec<Change>), T), AppError> {
+    let mut tx = pool.begin().await?;
+    let row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
+    let (edits, extra) = make(&row.story)?;
     if edits.len() > EDITS_MAX {
         return Err(AppError::BadRequest("TOO_MANY_EDITS"));
     }
-    let mut tx = pool.begin().await?;
-    let row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
     let (story, changes) =
-        edit::apply_with(&row.story, edits, &edit_library(&row)).map_err(|e| edit_error(&e))?;
-    campaigns::save_story(&mut tx, campaign, &story).await?;
+        edit::apply_with(&row.story, &edits, &edit_library(&row)).map_err(|e| edit_error(&e))?;
+    campaigns::save_story(&mut tx, campaign, &row.story, &story, author).await?;
     let row = campaigns::find(&mut *tx, campaign)
         .await?
         .ok_or(AppError::NotFound("NOT_FOUND"))?;
     tx.commit().await?;
-    Ok((row, changes))
+    Ok(((row, changes), extra))
 }
 
 /// Declare the campaign playable. A campaign with errors is not: the

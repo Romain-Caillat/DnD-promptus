@@ -1727,6 +1727,7 @@ locations:
     description: >-
       Port fortifié de Bretagne sud, face à Lorient, dominé par sa
       citadelle. La nuit, le quartier bas appartient aux marins.
+    anchor: { map: cotes-bretagne-sud, at: [5, 0] }
     art: >-
       Vue de trois quarts en pixel art : petite ville fortifiée au bord
       d'une rade, citadelle en étoile, toits d'ardoise, mâts serrés dans
@@ -1737,6 +1738,7 @@ locations:
       Taverne du quartier bas — poutres basses, sol collant de rhum, un
       perroquet empaillé et moisi au-dessus du bar.
     parent: lieu_port_louis
+    anchor: { map: port-louis-rues, at: [2, 1] }
     art: >-
       Façade en pixel art : maison basse à colombages noirs, enseigne
       peinte d'un perroquet vert la tête dans une chope, fenêtres jaunes
@@ -1747,6 +1749,7 @@ locations:
       Quais glissants, brouillard bas, lanternes qui se balancent ; il ne
       reste que les contrebandiers et ceux qui ont des affaires à régler.
     parent: lieu_port_louis
+    anchor: { map: port-louis-rues, at: [8, 10] }
     art: >-
       Vue de trois quarts en pixel art : quais de pierre luisants, bittes
       d'amarrage, lanternes ocre, navires à quai en ombres chinoises.
@@ -1754,6 +1757,7 @@ locations:
     name: Le marché noir de Kerjean
     description: Une arrière-cour coincée entre deux entrepôts, éclairée par des lanternes à huile.
     parent: lieu_port
+    anchor: { map: port-louis-rues, at: [6, 7] }
     art: >-
       Vue de trois quarts en pixel art : cour étroite entre deux murs de
       pierre, caisses en comptoir, armes et barils exposés, lanternes sur
@@ -1762,6 +1766,7 @@ locations:
     name: Le chantier naval
     description: Les cales sèches du port, à moitié dans l'ombre, et la remise de Vieux Thomas sur le quai.
     parent: lieu_port
+    anchor: { map: port-louis-rues, at: [17, 8] }
     art: >-
       Vue de trois quarts en pixel art : cale sèche avec un échafaudage,
       piles de planches, outils de charpentier, lanterne solitaire.
@@ -1771,6 +1776,7 @@ locations:
       Bâtiment officiel en pierre, blason de la marine royale au-dessus de
       la porte ; la porte de derrière est toujours entrouverte.
     parent: lieu_port
+    anchor: { map: port-louis-rues, at: [10, 1] }
     art: >-
       Vue de trois quarts en pixel art : petit bâtiment de pierre grise au
       blason fleurdelisé, porte de derrière entrouverte, rai de lumière
@@ -1781,6 +1787,7 @@ locations:
       Entre les entrepôts et l'appontement où La Mâchoire est amarrée —
       caisses empilées, cordages, flaques d'eau de mer.
     parent: lieu_port
+    anchor: { map: port-louis-rues, at: [18, 11] }
     art: >-
       Vue de trois quarts en pixel art : quai pavé entre trois entrepôts,
       caisses et tonneaux, appontement de planches vers un brick, fanal
@@ -1792,6 +1799,7 @@ locations:
       Le brick de l'équipage — solide mais fatigué, des traces de boulets
       mal rebouchées sur la coque et un gréement à resserrer.
     parent: lieu_port
+    anchor: { map: port-louis-rues, at: [19, 13] }
     art: >-
       Vue de côté en pixel art : brick à deux mâts à la coque noire
       rapiécée de planches plus claires, figure de proue en mâchoire de
@@ -1801,6 +1809,7 @@ locations:
     description: >-
       Grande île au large de Quiberon. Au sud, la côte sauvage et la
       pointe de Kerdonis ; au nord, la pointe des Poulains.
+    anchor: { map: cotes-bretagne-sud, at: [8, 10] }
     art: >-
       Carte du monde en hexagones pixel art : île allongée, falaises au
       sud, deux pointes marquées, flèches de courant vers l'est.

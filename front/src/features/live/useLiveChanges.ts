@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { LiveConnection, liveUrl, type LiveStatus, type LiveViewer, type Presence } from '@/lib/live'
+import { LiveConnection, liveUrl, type LiveActivity, type LiveStatus, type LiveViewer, type Presence } from '@/lib/live'
 
 export interface LiveState {
   status: LiveStatus
@@ -13,17 +13,21 @@ const NOBODY: Presence = { gmOnline: false, players: [], screens: [] }
  * mounted. `onChange` receives the topics that moved (`world`, `story`,
  * `character:<id>`…) and refetches them through the API — on each
  * change, and after a reconnection for everything missed meanwhile.
+ * `onActivity` hears Claude writing (the GM's socket only).
  */
 export function useLiveChanges(
   campaignId: string,
   onChange: (topics: string[]) => void,
   viewer: LiveViewer = 'gm',
+  onActivity?: (activity: LiveActivity) => void,
 ): LiveState {
   const [status, setStatus] = useState<LiveStatus>('connecting')
   const [presence, setPresence] = useState<Presence>(NOBODY)
   const onChangeRef = useRef(onChange)
+  const onActivityRef = useRef(onActivity)
   useEffect(() => {
     onChangeRef.current = onChange
+    onActivityRef.current = onActivity
   })
 
   useEffect(() => {
@@ -31,6 +35,7 @@ export function useLiveChanges(
       url: liveUrl(campaignId, window.location, viewer),
       onChange: (topics) => onChangeRef.current(topics),
       onPresence: setPresence,
+      onActivity: (activity) => onActivityRef.current?.(activity),
       onStatus: setStatus,
     })
     connection.start()

@@ -164,4 +164,29 @@ describe('TvStage', () => {
     expect(screen.getByText('− 4')).toBeInTheDocument()
     expect(screen.getByText('Hors de combat !')).toBeInTheDocument()
   })
+
+  it('draws the places the table went to and the clues it found, as the phones do', () => {
+    stubReducedMotion(true)
+    const board = {
+      map: {
+        id: 'rues',
+        name: 'Les rues',
+        scale: 'place' as const,
+        theme: 't',
+        ambience: {},
+        grid: { legend: { '.': { terrain: 'pave' } }, rows: ['....', '....', '....'] },
+      },
+      fog: false,
+      tokens: [],
+      reachable: [],
+      fight: null,
+      pins: [{ name: 'La taverne', at: [1, 1] as [number, number], current: true }],
+      clues: [{ text: 'Un sceau brisé', at: [2, 2] as [number, number] }],
+    }
+    const { container } = render(
+      <TvStage view={{ ...VIEW, session: { number: 4, status: 'live', startedAt: '' }, board }} media={null} highlight={null} />,
+    )
+    expect(container.querySelector('[data-pin="La taverne"]')).not.toBeNull()
+    expect(screen.getByLabelText('Un sceau brisé')).toBeInTheDocument()
+  })
 })

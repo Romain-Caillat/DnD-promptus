@@ -440,6 +440,11 @@ pub struct Encounter {
     /// boards another, on the scene's `map`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vehicles: Option<VehicleEncounter>,
+    /// Where the fight breaks out on a place's map (`campaign/place-cast-
+    /// and-clues`): a mark for the GM, which opens the scene's battle
+    /// plan (`Node::map`). Never shown to players.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub anchor: Option<Anchor>,
 }
 
 /// Ships against ships: the battle map, the party's ship and the enemy
@@ -570,6 +575,10 @@ pub struct Clue {
     pub source: Option<Id>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub check: Option<ClueCheck>,
+    /// Where it is found on a map (`campaign/place-cast-and-clues`): a
+    /// diamond on the GM's layer, shown to players once found.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub anchor: Option<Anchor>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -626,6 +635,10 @@ pub struct Npc {
     /// through a co-GM draft (`campaign/track-factions-and-goals`).
     #[serde(default, skip_serializing_if = "is_false")]
     pub companion: bool,
+    /// Where they stand on the maps (`campaign/place-cast-and-clues`):
+    /// copied as hidden tokens when the evening shows the map.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub spots: Vec<Spot>,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub gm_notes: String,
 }
@@ -712,11 +725,38 @@ pub struct Location {
     /// The place containing this one (a district, a ship).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<Id>,
+    /// Where it stands on a map (`campaign/pin-scenes-on-maps`): the pin
+    /// of every scene held here, or in a place inside this one that has
+    /// no anchor of its own (`story::pins`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub anchor: Option<Anchor>,
     /// The place, described for pixel art.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub art: String,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub gm_notes: String,
+}
+
+/// A place's spot on a map: a map of the world (`content/maps/`) or of
+/// the campaign, by id, and the cell its pin stands on. Checked against
+/// the maps supplied to `validate::validate_with`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Anchor {
+    pub map: String,
+    pub at: crate::maps::Cell,
+}
+
+/// Where an NPC stands on a map (`campaign/place-cast-and-clues`): the
+/// map and cell, and the scene it is for — none for every scene played
+/// on that map.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Spot {
+    pub map: String,
+    pub at: crate::maps::Cell,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scene: Option<Id>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

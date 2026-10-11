@@ -1,3 +1,4 @@
+import type { ClueMark, FightMark, Pin } from './maps'
 import type { CharacterLook, Facing } from '@/features/sprites/look'
 import { apiRequest } from './api'
 import type { GmBattle } from './battle'
@@ -62,8 +63,8 @@ export interface MapData {
     notes?: string | null
   }[]
   lights?: { id: string; at: Cell; bright: number; dim: number; color?: string | null; flicker?: boolean; layer?: string }[]
-  exits?: { id: string; cells: Cell[]; to: string; label?: string | null }[]
-  labels?: { text: string; at: Cell; scene?: string | null }[]
+  exits?: { id: string; cells: Cell[]; to: string; label?: string | null; layer?: string }[]
+  labels?: { text: string; at: Cell; layer?: string }[]
   starts?: { id: string; at: Cell; side?: string | null; entity?: string | null; layer?: string }[]
   /** An imported image behind the grid: decor only. */
   backdrop?: { image?: string | null; cell_px?: number | null; offset?: [number, number] | null } | null
@@ -181,6 +182,17 @@ export interface BoardView {
   tokens: TokenView[]
   reachable: ReachCell[]
   fight: FightView | null
+  /** The places of this map the table went to: a name and a cell (`projection::board::PinView`). */
+  pins?: PinView[]
+  /** The clues found on this map, where they lie: the text, never the id. */
+  clues?: { text: string; at: Cell }[]
+}
+
+export interface PinView {
+  name: string
+  at: Cell
+  /** The table is in one of its scenes now. */
+  current: boolean
 }
 
 export type Command =
@@ -281,6 +293,10 @@ interface GmEncounter {
 /** The GM's grid screen (`GET /api/campaigns/{id}/board`). */
 export interface GmBoard {
   board: Board | null
+  /** Every scene pinned on the map shown (campaign/pin-scenes-on-maps): a tap launches one. */
+  pins?: Pin[]
+  /** The clues and fights the preparation placed on the map shown, and the clues found. */
+  cast?: { clues: ClueMark[]; fights: FightMark[]; found: string[] }
   maps: { id: string; name: string; nodes: string[] }[]
   encounters: { node: string; title: string; map: string | null }[]
   encounter: GmEncounter | null

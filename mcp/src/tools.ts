@@ -1,8 +1,11 @@
 /**
  * The tools Claude sees. Descriptions are in French (the GM's language);
- * every write goes through the server, which validates it and applies it
- * whole or not at all. Nothing here reaches players: the GM still
- * reveals content at the table, from Promptus.
+ * every write goes through the server, which validates it whole or not
+ * at all, then **proposes** it to the GM (platform/propose-edits-by-
+ * claude): the GM keeps or discards each item in Promptus, and Claude
+ * reads the outcome and the GM's words with `list_proposals`. Only when
+ * the GM gave Claude the hand does a write land directly. Nothing here
+ * reaches players: the GM still reveals content at the table.
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
@@ -12,7 +15,7 @@ import { type Promptus, PromptusError } from './promptus'
 
 type Json = Record<string, unknown>
 
-interface Issue {
+export interface Issue {
   severity: string
   code: string
   path: string
@@ -28,15 +31,74 @@ interface CampaignDetail {
   updatedAt: string
 }
 
-const campaignId = z.string().min(1).describe("Identifiant de la campagne (donné par list_campaigns).")
+export interface ItemView {
+  key: string
+  status: 'pending' | 'kept' | 'discarded' | 'refused'
+  stale: boolean
+  word?: string
+  code?: string
+  edit?: Json
+  change?: Json
+  map?: { map: string; name: string; ops: number }
+}
 
-function text(value: unknown): CallToolResult {
+export interface ProposalView {
+  id: string
+  prompt: string
+  status: 'pending' | 'accepted' | 'rejected'
+  items: ItemView[]
+  changes: unknown[]
+  feedback?: string
+  createdAt: string
+}
+
+type EditsResult =
+  | { status: 'applied'; campaign: CampaignDetail; changes: unknown }
+  | { status: 'proposed'; why: string; proposal: ProposalView; issues: Issue[] }
+
+/** Why a write was proposed, in the GM's words. */
+export const WHY: Record<string, string> = {
+  proposals: 'le MJ garde la main : il gardera ou jettera chaque élément dans Promptus',
+  evening: 'une soirée est ouverte : rien ne s\'applique directement pendant le jeu',
+  revealed: 'cela touche ce que les joueurs connaissent déjà',
+  batch: 'ajouté au lot demandé',
+}
+
+const ITEM_STATUS: Record<ItemView['status'], string> = {
+  pending: 'en attente',
+  kept: 'gardé',
+  discarded: 'jeté',
+  refused: 'refusé (ne s\'appliquait plus)',
+}
+
+/** One of Claude's batches as Claude reads it back: what the GM did with each item, and why. */
+export function proposalReport(p: ProposalView): Json {
+  return {
+    id: p.id,
+    title: p.prompt,
+    status: { pending: 'en attente', accepted: 'tranché, au moins un élément gardé', rejected: 'tout jeté' }[p.status],
+    ...(p.feedback ? { word: p.feedback } : {}),
+    items: p.items.map((i) => ({
+      key: i.key,
+      status: ITEM_STATUS[i.status],
+      ...(i.word ? { word: i.word } : {}),
+      ...(i.code ? { refused: i.code } : {}),
+      ...(i.stale ? { stale: "ne s'applique plus à la campagne telle qu'elle est" } : {}),
+      ...(i.edit ? { edit: i.edit } : {}),
+      ...(i.map ? { map: `${i.map.name || i.map.map} (${i.map.ops} opération(s))` } : {}),
+    })),
+  }
+}
+
+export const campaignId = z.string().min(1).describe("Identifiant de la campagne (donné par list_campaigns).")
+
+export function text(value: unknown): CallToolResult {
   return {
     content: [{ type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value, null, 2) }],
   }
 }
 
-function failure(err: unknown): CallToolResult {
+export function failure(err: unknown): CallToolResult {
   const message = err instanceof PromptusError
     ? err.message
     : `Erreur inattendue du serveur MCP Promptus : ${err instanceof Error ? err.message : String(err)}`
@@ -44,7 +106,7 @@ function failure(err: unknown): CallToolResult {
 }
 
 /** Run `work`, turning any failure into a tool error the GM can read. */
-async function guarded(work: () => Promise<CallToolResult>): Promise<CallToolResult> {
+export async function guarded(work: () => Promise<CallToolResult>): Promise<CallToolResult> {
   try {
     return await work()
   } catch (err) {
@@ -131,19 +193,32 @@ export function scene(detail: CampaignDetail, sceneId: string): Json | null {
   }
 }
 
-const EDITS_HELP = `Applique des modifications ciblées à l'histoire d'une campagne, par identifiant, tout ou rien : \
-si une seule modification ne passe pas, aucune n'est appliquée et l'erreur dit laquelle (son index). \
-Rien n'atteint les joueurs : le MJ révèle toujours depuis Promptus.
+const EDITS_HELP = `Propose des modifications ciblées de l'histoire d'une campagne, par identifiant, vérifiées tout ou rien : \
+si une seule modification ne passe pas, rien n'est proposé et l'erreur dit laquelle (son index). \
+Par défaut elles forment un lot de propositions que le MJ garde ou jette, une à une, dans Promptus (l'Atlas les \
+dessine en pointillés) : rien ne change avant. Donne un titre court au lot (« title ») ; pour ajouter à un lot \
+encore en attente, passe son identifiant (« proposal_id »). list_proposals dit ce que le MJ a gardé et le mot qu'il \
+a laissé sur ce qu'il a jeté : propose autre chose en tenant compte de ce mot. Si le MJ t'a donné la main \
+(« Claude a la main »), elles s'appliquent directement — sauf pendant une soirée ouverte ou sur ce que les joueurs \
+connaissent déjà, où elles restent proposées. Rien n'atteint les joueurs : le MJ révèle toujours depuis Promptus.
 Chaque modification est un objet :
 - { "op": "set", "target": "<id ou bible ou campaign>", "field": "<champ, pointé pour aller dedans>", "value": <valeur> } \
 — par ex. { "op": "set", "target": "sc_quai", "field": "summary", "value": "…" }, \
-{ "op": "set", "target": "pnj_morel", "field": "stats.hit_points", "value": 12 }; "value": null efface le champ.
+{ "op": "set", "target": "pnj_morel", "field": "stats.hit_points", "value": 12 }; "value": null efface le champ. \
+Pour poser quelque chose sur une carte, préfère place_on_map : Promptus y choisit lui-même une case libre, au sec et \
+atteignable ; les coordonnées brutes ci-dessous ne servent qu'à corriger à la main. \
+Épingler un lieu sur une carte (ses scènes y apparaissent) : \
+{ "op": "set", "target": "lieu_quai", "field": "anchor", "value": { "map": "<id de carte>", "at": [x, y] } }. \
+Poser un PNJ sur une carte (toutes les scènes, ou une seule avec "scene") : \
+{ "op": "set", "target": "pnj_morel", "field": "spots", "value": [{ "map": "<id de carte>", "at": [x, y], "scene": "sc_quai" }] } \
+(la liste entière, relue d'abord) ; un indice : { "op": "set", "target": "cl_…", "field": "anchor", "value": { "map": "…", "at": [x, y] } } ; \
+le combat d'une scène : { "op": "set", "target": "sc_quai", "field": "encounter.anchor", "value": { "map": "…", "at": [x, y] } }.
 - { "op": "add", "kind": "<party_member|act|front|node|revelation|clue|npc|adversary|location|item|faction|goal>", "value": { "id": "…", … } } \
 — par ex. un indice : { "op": "add", "kind": "clue", "value": { "id": "cl_…", "revelation": "…", "node": "…", "text": "…" } }
 - { "op": "remove", "target": "<id>" }
 Les champs suivent le format de campagne de Promptus (en snake_case : read_aloud, key_points, player_hook…). \
 Lis d'abord la scène (get_scene) ou la campagne (get_campaign) pour connaître les identifiants. \
-La réponse donne ce qui a changé et le rapport du validateur après coup.`
+La réponse dit si c'est proposé ou appliqué, ce qui change et le rapport du validateur après coup.`
 
 export function registerTools(server: McpServer, promptus: () => Promptus) {
   const read = { readOnlyHint: true, openWorldHint: false }
@@ -244,17 +319,54 @@ export function registerTools(server: McpServer, promptus: () => Promptus) {
           .min(1)
           .max(200)
           .describe('Les modifications, appliquées dans l\'ordre, tout ou rien (200 au plus).'),
+        title: z
+          .string()
+          .max(200)
+          .optional()
+          .describe('Titre court du lot de propositions, lu par le MJ (par ex. « Peupler le cimetière »).'),
+        proposal_id: z
+          .string()
+          .optional()
+          .describe("Identifiant d'un lot encore en attente auquel ajouter ces modifications (donné par la réponse ou list_proposals)."),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
-    ({ campaign_id, edits }) =>
+    ({ campaign_id, edits, title, proposal_id }) =>
       guarded(async () => {
-        const result = await promptus().request<{ campaign: CampaignDetail; changes: unknown }>(
+        const result = await promptus().request<EditsResult>(
           'POST',
           `/campaigns/${encodeURIComponent(campaign_id)}/story/edits`,
-          { edits },
+          { edits, ...(title ? { title } : {}), ...(proposal_id ? { proposal: proposal_id } : {}) },
         )
-        return text({ changes: result.changes, issues: issueReport(result.campaign.issues) })
+        if (result.status === 'proposed') {
+          return text({
+            status: 'proposé',
+            why: WHY[result.why] ?? result.why,
+            proposal: { id: result.proposal.id, title: result.proposal.prompt, items: result.proposal.items.length },
+            changes: result.proposal.changes,
+            issues: issueReport(result.issues),
+            next: 'En attente du MJ dans Promptus. list_proposals dira ce qu\'il garde, et pourquoi il jette.',
+          })
+        }
+        return text({ status: 'appliqué', changes: result.changes, issues: issueReport(result.campaign.issues) })
+      }),
+  )
+
+  server.registerTool(
+    'list_proposals',
+    {
+      title: 'Lire la réponse du MJ',
+      description:
+        "Les derniers lots de propositions de Claude dans une campagne, les plus récents d'abord : titre, état (en attente, " +
+        'gardé, rejeté), et pour chaque élément ce que le MJ en a fait — gardé, jeté avec son mot, ou refusé parce qu\'il ' +
+        "ne s'appliquait plus (la campagne avait changé). Lis-le avant de proposer à nouveau, et tiens compte des mots du MJ.",
+      inputSchema: { campaign_id: campaignId },
+      annotations: read,
+    },
+    ({ campaign_id }) =>
+      guarded(async () => {
+        const batches = await promptus().request<ProposalView[]>('GET', `/campaigns/${encodeURIComponent(campaign_id)}/proposals`)
+        return text(batches.map(proposalReport))
       }),
   )
 
@@ -300,8 +412,10 @@ export function registerTools(server: McpServer, promptus: () => Promptus) {
       title: 'Remplacer la campagne par un YAML',
       description:
         "Remplace toute l'histoire d'une campagne existante par ce fichier YAML (format de Promptus, tel que donné par " +
-        "export_campaign_yaml). Tout ce qui n'est pas dans le fichier disparaît : pour une retouche, préfère " +
-        'apply_story_edits. Un YAML illisible est refusé sans rien changer ; la réponse donne le rapport du validateur.',
+        "export_campaign_yaml). Possible seulement quand le MJ t'a donné la main (« Claude a la main »), hors soirée " +
+        "ouverte et sans toucher ce que les joueurs connaissent : un fichier entier ne se propose pas élément par élément. " +
+        "Tout ce qui n'est pas dans le fichier disparaît : pour une retouche, préfère apply_story_edits. Un YAML " +
+        'illisible est refusé sans rien changer ; la réponse donne le rapport du validateur.',
       inputSchema: {
         campaign_id: campaignId,
         yaml: z.string().min(1).describe('Le fichier de campagne complet, en YAML.'),

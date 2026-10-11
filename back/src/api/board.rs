@@ -10,7 +10,9 @@
 //! - `POST /api/campaigns/{id}/fight/command` → `board::fight::GmCommand`;
 //! - `POST /api/campaigns/{id}/fight/loot` → `{ gives: [{ index, character }] }`;
 //! - `POST /api/campaigns/{id}/battle` → `{ node }`: open its ship battle;
-//! - `POST /api/campaigns/{id}/battle/command` → `board::battle::GmCommand`.
+//! - `POST /api/campaigns/{id}/battle/command` → `board::battle::GmCommand`;
+//! - `GET  /api/campaigns/{id}/maps/{map}/players` → that map as the
+//!   players would receive it now (maps/preview-as-player).
 //!
 //! Player (behind `require_player`, built by
 //! `campaigns::projection::board`):
@@ -26,6 +28,8 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use promptus_shared::maps::Cell;
+use promptus_shared::story::cast;
+use promptus_shared::story::pins::pins_on;
 use serde::Deserialize;
 use serde_json::json;
 use uuid::Uuid;
@@ -115,8 +119,28 @@ async fn gm_json(state: &AppState, row: &CampaignRow) -> Result<serde_json::Valu
         .filter(|n| n.encounter.as_ref().is_some_and(|e| e.vehicles.is_some()))
         .map(|n| json!({ "node": n.id, "title": n.title }))
         .collect();
+    // The scenes pinned on the map shown (campaign/pin-scenes-on-maps):
+    // a tap on one launches it.
+    let pins = b
+        .as_ref()
+        .map(|b| pins_on(&row.story, &b.map_id))
+        .unwrap_or_default();
+    // What the preparation placed there (campaign/place-cast-and-clues):
+    // the clues, found or not, and the fights a tap opens.
+    let cast = b
+        .as_ref()
+        .map(|b| cast::on_map(&row.story, &b.map_id, &[]))
+        .unwrap_or_default();
+    let found: Vec<&String> = cast
+        .clues
+        .iter()
+        .map(|c| &c.clue)
+        .filter(|c| row.world.found_clues.contains(*c))
+        .collect();
     Ok(json!({
         "board": b,
+        "pins": pins,
+        "cast": { "clues": cast.clues, "fights": cast.fights, "found": found },
         "maps": board::choices(&state.pool, row).await?,
         "encounters": encounters,
         "encounter": fight_json,
@@ -339,8 +363,42 @@ pub async fn seen_by(
         &Looker {
             character,
             rules: row.rules(),
+            story: Some((&row.story, &row.world)),
         },
     )))
+}
+
+/// `GET /api/campaigns/{id}/maps/{map}/players` — map `map` as the
+/// players would receive it now (maps/preview-as-player): the board on
+/// the table when it is that map — exactly what the shared screen gets
+/// (`seen_by` with no character) — else the board a show would lay out,
+/// through the same projection. `{ shown, board }`.
+///
+/// # Errors
+///
+/// 404, `NO_SUCH_MAP`; 409 `MAP_DRAFT`.
+pub async fn as_players(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path((id, map)): Path<(String, String)>,
+) -> Result<Response, AppError> {
+    let row = owned_row(&state, &gm, &id).await?;
+    let (shown, view) = match board::preview(&state.pool, &row, &map).await? {
+        board::Preview::Shown(_) => (true, seen_by(&state, row.id, None).await?),
+        board::Preview::Fresh(b) => (
+            false,
+            Some(project_board(
+                &b,
+                None,
+                &Looker {
+                    character: None,
+                    rules: row.rules(),
+                    story: Some((&row.story, &row.world)),
+                },
+            )),
+        ),
+    };
+    Ok(Json(json!({ "data": { "shown": shown, "board": view } })).into_response())
 }
 
 /// `GET /api/play/{campaign}/board`

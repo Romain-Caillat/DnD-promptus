@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { Promptus, readConfig } from './promptus'
+import { registerMapTools } from './maps'
 import { registerTools } from './tools'
 
 /**
@@ -11,9 +12,11 @@ export function createServer(env: Record<string, string | undefined>, fetchImpl:
   const server = new McpServer({ name: 'promptus', version: '0.1.0' })
   const config = readConfig(env)
   const client = config instanceof Error ? null : new Promptus(config, fetchImpl)
-  registerTools(server, () => {
+  const promptus = () => {
     if (client === null) throw config
     return client
-  })
+  }
+  registerTools(server, promptus)
+  registerMapTools(server, promptus)
   return server
 }

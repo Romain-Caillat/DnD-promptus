@@ -18,7 +18,8 @@
 //! - structure: front clocks of 4–6 steps, an opening node, nodes
 //!   reachable from it, exits that go somewhere else, loot that is
 //!   something, sane affinity bounds, music that is a YouTube link (or
-//!   a track still to choose);
+//!   a track still to choose), a scene with no spot on a map (no place,
+//!   or no place up its chain anchored: allowed, reported);
 //! - players: every party member has a hook in each act with scenes.
 //!
 //! Rule-system data (stats, difficulties, damage formulas) is checked
@@ -294,6 +295,11 @@ fn check_references(ck: &mut Checker<'_>, c: &Campaign) {
         if let Some(l) = &n.location {
             ck.reference(l, format!("{p}.location"), &[Kind::Location]);
         }
+        for (j, s) in n.spots.iter().enumerate() {
+            if let Some(scene) = &s.scene {
+                ck.reference(scene, format!("{p}.spots[{j}].scene"), &[Kind::Node]);
+            }
+        }
     }
     for (i, l) in c.locations.iter().enumerate() {
         if let Some(parent) = &l.parent {
@@ -369,6 +375,18 @@ fn check_structure(ck: &mut Checker<'_>, c: &Campaign) {
             }
         }
         check_music(ck, &n.ambience.music, &format!("{p}.ambience.music"));
+        // A scene with no spot on a map is allowed (a dream, a memory), and
+        // said, so it is a choice rather than an omission.
+        if !super::pins::is_pinned(c, n) {
+            let detail = match &n.location {
+                None => format!("`{}` has no place", n.id),
+                Some(l) => format!(
+                    "`{}` happens at `{l}`, which no place up its chain anchors on a map",
+                    n.id
+                ),
+            };
+            ck.warn("SCENE_WITHOUT_PLACE", format!("{p}.location"), detail);
+        }
     }
     for (i, a) in c.acts.iter().enumerate() {
         check_music(ck, &a.music, &format!("acts[{i}].music"));

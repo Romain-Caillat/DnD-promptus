@@ -33,7 +33,7 @@ pub const MAX_TEST_BODY: usize = 1024 * 1024;
 /// The origin the test "browser" opens the app at.
 pub const ORIGIN: &str = "http://localhost:4334";
 
-fn test_database_url() -> String {
+pub fn test_database_url() -> String {
     let url = std::env::var("TEST_DATABASE_URL").expect(
         "TEST_DATABASE_URL must be set to run integration tests \
          (copy .env.example to .env, then `bun run db:start`)",
@@ -368,6 +368,22 @@ pub async fn api_token(app: &Router, session: &str, name: &str) -> (String, Stri
         r.body["data"]["id"].as_str().unwrap().to_string(),
         r.body["data"]["secret"].as_str().unwrap().to_string(),
     )
+}
+
+/// « Claude a la main » on `campaign`, set by the GM behind `session`:
+/// Claude's writes with the token land directly instead of as proposals
+/// (`platform/propose-edits-by-claude`). For the tests about what a
+/// direct write does (the journal, the activity, concurrent writers).
+pub async fn claude_hand(app: &Router, session: &str, campaign: &str) {
+    let r = call(
+        app,
+        Some(session),
+        "PUT",
+        &format!("/api/campaigns/{campaign}/claude"),
+        Some(serde_json::json!({ "hand": true })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
 }
 
 /// A one-second 16 kHz mono 16-bit WAV, base64, whose samples are

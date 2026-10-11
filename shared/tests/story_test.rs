@@ -26,6 +26,7 @@ fn clue(id: &str, revelation: &str, node: &str) -> Clue {
         discovery: String::new(),
         source: None,
         check: None,
+        anchor: None,
     }
 }
 
@@ -64,6 +65,60 @@ fn export_then_import_is_an_identity() {
     // Empty optional fields stay out of the export.
     assert!(!exported.contains("gm_notes: ''"), "{exported}");
     assert!(!exported.contains("hidden: false"), "{exported}");
+}
+
+#[test]
+fn a_file_written_before_pins_still_imports_and_says_its_scenes_stand_nowhere() {
+    // The format before campaign/pin-scenes-on-maps: no place anchored.
+    let old: String = FIXTURE
+        .lines()
+        .filter(|l| !l.trim_start().starts_with("anchor:"))
+        .map(|l| format!("{l}\n"))
+        .collect();
+    assert_ne!(old, FIXTURE);
+    let c = from_yaml(&old).expect("an old file imports");
+    assert!(c.locations.iter().all(|l| l.anchor.is_none()));
+    // Reported, never refused: each scene is a warning, nothing else.
+    let issues = validate(&c);
+    assert_eq!(issues.len(), c.nodes.len(), "{issues:#?}");
+    assert!(
+        issues
+            .iter()
+            .all(|i| i.code == "SCENE_WITHOUT_PLACE" && i.severity == Severity::Warning)
+    );
+}
+
+#[test]
+fn placed_npcs_clues_and_fights_round_trip_and_a_file_without_them_still_imports() {
+    // campaign/place-cast-and-clues: the fixture as written before has no
+    // placement and still imports as it is.
+    let c = fixture();
+    assert!(c.npcs.iter().all(|n| n.spots.is_empty()));
+    assert!(c.clues.iter().all(|cl| cl.anchor.is_none()));
+    // Placed, the campaign exports and imports back to itself.
+    let mut placed = c.clone();
+    let at = promptus_shared::maps::Cell::new(2, 3);
+    placed.npcs[0].spots.push(promptus_shared::story::Spot {
+        map: "phare".into(),
+        at,
+        scene: Some(placed.nodes[0].id.clone()),
+    });
+    placed.clues[0].anchor = Some(promptus_shared::story::Anchor {
+        map: "phare".into(),
+        at,
+    });
+    if let Some(e) = placed.nodes.iter_mut().find_map(|n| n.encounter.as_mut()) {
+        e.anchor = Some(promptus_shared::story::Anchor {
+            map: "phare".into(),
+            at,
+        });
+    }
+    let text = to_yaml(&placed).unwrap();
+    assert!(text.contains("spots:"), "{text}");
+    assert_eq!(from_yaml(&text).unwrap(), placed);
+    // And the plain fixture's export carries none of the new keys.
+    let plain = to_yaml(&c).unwrap();
+    assert!(!plain.contains("spots:"), "{plain}");
 }
 
 #[test]

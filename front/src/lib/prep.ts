@@ -111,6 +111,33 @@ export interface ReviewCampaign {
   issues: StoryIssue[]
   validatedAt: string | null
   updatedAt: string
+  /** The preparation revision: ask the journal what changed since. */
+  revision: number
+  /** « Claude a la main »: Claude's writes land directly (platform/propose-edits-by-claude). */
+  claudeHand?: boolean
+}
+
+/** One entity a preparation write touched (`story::revision::Touch`). */
+export interface RevisionTouch {
+  op: 'add' | 'set' | 'remove'
+  kind: string
+  /** The entity's id, or `bible` / `campaign`. */
+  id: string
+  name?: string
+  /** Where it lands: a clue's scene, a scene's act. */
+  place?: string
+}
+
+/** One line of the preparation journal (`campaigns::revisions::Entry`). */
+export interface RevisionEntry {
+  revision: number
+  author: 'gm' | 'token' | 'copilot' | 'server'
+  target: string
+  changes: RevisionTouch[]
+  undoes?: number
+  undone: boolean
+  undoable: boolean
+  createdAt: string
 }
 
 /** One change by id (`story::edit::Edit`). */
@@ -133,14 +160,44 @@ export interface Change {
 
 export interface Proposal {
   id: string
+  /** `token`: Claude's batch (platform/propose-edits-by-claude). */
+  author?: 'copilot' | 'token'
+  /** What the GM asked the co-GM, or the title Claude gave its batch. */
   prompt: string
   reply: string
   changes: Change[]
   stale: boolean
   dropped: number
   status: 'pending' | 'accepted' | 'rejected'
+  /** Where on a map the batch is about. */
+  focus?: { map: string; at?: [number, number] }
+  items?: ProposalItem[]
+  /** The GM's word on the whole batch. */
+  feedback?: string
   createdAt: string
 }
+
+/** One item of a batch: a story edit or a batch of map operations, and the GM's word on it. */
+export interface ProposalItem {
+  /** `e<i>` (story edit) or `m<i>` (map operations). */
+  key: string
+  status: 'pending' | 'kept' | 'discarded' | 'refused'
+  /** Pending, but it no longer applies to the campaign as it is. */
+  stale: boolean
+  word?: string
+  code?: string
+  change?: Change
+  map?: { map: string; name: string; ops: number; touches: RevisionTouch[] }
+}
+
+/** The GM's word on Claude's batch: items kept, items discarded with a word, or everything left. */
+export interface ClaudeDecision {
+  keep?: string[]
+  discard?: string[]
+  word?: string
+  all?: 'keep' | 'discard'
+}
+
 
 export interface WorkshopAsk {
   prompt?: string
@@ -161,6 +218,19 @@ export function applyEdits(
   return apiRequest('POST', `${base(campaignId)}/story/edits`, { edits })
 }
 
+/** The journal after revision `since`, and the revision now. */
+export function fetchRevisions(
+  campaignId: string,
+  since: number,
+): Promise<{ revision: number; entries: RevisionEntry[] }> {
+  return apiRequest('GET', `${base(campaignId)}/revisions?since=${since}`)
+}
+
+/** Take back one revision; answers the campaign as it is now. */
+export function undoRevision(campaignId: string, revision: number): Promise<ReviewCampaign> {
+  return apiRequest<ReviewCampaign>('POST', `${base(campaignId)}/revisions/${revision}/undo`)
+}
+
 export function validateCampaign(campaignId: string): Promise<ReviewCampaign> {
   return apiRequest<ReviewCampaign>('POST', `${base(campaignId)}/story/validate`)
 }
@@ -179,6 +249,25 @@ export function decideProposal(
   accept: boolean,
 ): Promise<{ campaign: ReviewCampaign; proposal: Proposal }> {
   return apiRequest('POST', `${base(campaignId)}/workshop/${proposalId}/${accept ? 'accept' : 'reject'}`)
+}
+
+/** platform/propose-edits-by-claude — the GM keeps or discards items of Claude's batch. */
+export function decideClaude(
+  campaignId: string,
+  proposalId: string,
+  decision: ClaudeDecision,
+): Promise<{ campaign: ReviewCampaign; proposal: Proposal }> {
+  return apiRequest('POST', `${base(campaignId)}/proposals/${encodeURIComponent(proposalId)}/decide`, decision)
+}
+
+/** Claude's latest batches and the GM's word on each item. */
+export function listClaudeProposals(campaignId: string): Promise<Proposal[]> {
+  return apiRequest<Proposal[]>('GET', `${base(campaignId)}/proposals`)
+}
+
+/** « Claude a la main », on or off (refused while an evening is open). */
+export function setClaudeHand(campaignId: string, hand: boolean): Promise<ReviewCampaign> {
+  return apiRequest('PUT', `${base(campaignId)}/claude`, { hand })
 }
 
 /** The value at a dotted `path` of `entity`. */
@@ -271,6 +360,8 @@ export interface ActReadiness {
   done: number
   total: number
   checks: ReadinessCheck[]
+  /** Said, never counted: a scene standing on no map (`NO_PLACE`), allowed. */
+  alerts: ReadinessGap[]
 }
 
 export function fetchReadiness(campaignId: string): Promise<ActReadiness[]> {

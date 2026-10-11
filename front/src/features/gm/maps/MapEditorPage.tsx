@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useParams } from 'react-router'
 import { Btn, Panel, field } from '@/features/gm/live/ui'
+import { useLiveChanges } from '@/features/live/useLiveChanges'
 import { MapCanvas } from '@/features/map/MapCanvas'
 import { useImage } from '@/features/map/useImage'
 import { useTileset } from '@/features/map/useTileset'
 import { ApiError } from '@/lib/api'
-import type { Cell, MapData, TimeOfDay, TokenView, Weather } from '@/lib/board'
-import { fetchMap, gmBackdropUrl, saveMap, validateMap, type CampaignMap } from '@/lib/maps'
+import type { Cell, CellKind, MapData, TimeOfDay, TokenView, Weather } from '@/lib/board'
+import { editMap, fetchMap, gmBackdropUrl, validateMap, type CampaignMap, type MapOp } from '@/lib/maps'
 import { fetchGmMedia, gmImageUrl, type MediaList } from '@/lib/media'
-import { erase, paint, place, toggleDoor } from './edit'
+import { undoRevision } from '@/lib/prep'
 
 type Tool = 'floor' | 'wall' | 'water' | 'void' | 'door' | 'prop' | 'object' | 'light' | 'party' | 'foes' | 'erase'
 
@@ -26,38 +27,60 @@ type PageState =
   | { kind: 'error' }
   | { kind: 'ready'; saved: CampaignMap }
 
+const isMap = (v: unknown): v is CampaignMap =>
+  typeof v === 'object' && v !== null && 'map' in v && 'revision' in v
+
 /**
  * `/campagnes/:campaignId/cartes/:mapId` — maps/edit-map-gm: the GM
  * paints the ground, walls, water and holes, places doors, decor, hidden
  * objects, lights and starts (on the map's layer or the secrets one),
- * sets the time and weather, saves, then validates the map so it may be
- * shown at the table. An imported image stays behind the grid, the
- * walls veiled over it to trace them.
+ * sets the time and weather, then validates the map so it may be shown
+ * at the table. An imported image stays behind the grid, the walls
+ * veiled over it to trace them.
+ *
+ * maps/edit-maps-by-ops: each gesture is one batch of operations sent
+ * at once on the revision the map was read at; the server's map is the
+ * one shown. A batch refused as stale (someone — Claude — changed the
+ * same cells meanwhile) reloads the fresh map and is replayed once on
+ * it. What others write while the editor is open arrives live.
  */
 export function MapEditorPage() {
   const { t } = useTranslation()
   const { campaignId = '', mapId = '' } = useParams()
   const [state, setState] = useState<PageState>({ kind: 'loading' })
-  const [map, setMap] = useState<MapData | null>(null)
   const [media, setMedia] = useState<MediaList | null>(null)
   const [tool, setTool] = useState<Tool>('wall')
   const [material, setMaterial] = useState('')
   const [prop, setProp] = useState('')
   const [label, setLabel] = useState('')
   const [layer, setLayer] = useState('base')
+  const [name, setName] = useState<string | null>(null)
+  const [notes, setNotes] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [rebased, setRebased] = useState(false)
   const [error, setError] = useState<{
     code: string
     detail: string | null
   } | null>(null)
+  /** The map as the server last answered it. */
+  const current = useRef<CampaignMap | null>(null)
+  /** Gestures not yet sent, in order. */
+  const pending = useRef<MapOp[][]>([])
+  const flushing = useRef(false)
+  /** The revisions this editor wrote, newest last: what "undo" takes back. */
+  const [mine, setMine] = useState<number[]>([])
+
+  const adopt = useCallback((next: CampaignMap) => {
+    current.current = next
+    setState({ kind: 'ready', saved: next })
+  }, [])
 
   useEffect(() => {
     let live = true
     Promise.all([fetchMap(campaignId, mapId), fetchGmMedia(campaignId)]).then(
       ([saved, m]) => {
         if (!live) return
-        setState({ kind: 'ready', saved })
-        setMap(saved.map)
+        adopt(saved)
         setMedia(m)
       },
       (err: unknown) => {
@@ -70,14 +93,93 @@ export function MapEditorPage() {
     return () => {
       live = false
     }
-  }, [campaignId, mapId])
+  }, [campaignId, mapId, adopt])
 
+  const fail = (err: unknown) =>
+    setError(err instanceof ApiError ? { code: err.code, detail: err.detail } : { code: 'action', detail: null })
+
+  async function flush() {
+    if (flushing.current) return
+    flushing.current = true
+    setBusy(true)
+    while (pending.current.length > 0 && current.current) {
+      const ops = pending.current.shift()!
+      const send = (on: CampaignMap) => editMap(campaignId, mapId, on.revision, ops)
+      try {
+        let next: CampaignMap
+        try {
+          next = await send(current.current)
+        } catch (err) {
+          if (!(err instanceof ApiError && err.code === 'MAP_STALE' && isMap(err.fresh))) throw err
+          // Someone changed the same cells: reload, and replay on it.
+          adopt(err.fresh)
+          setRebased(true)
+          next = await send(err.fresh)
+        }
+        if (next.revision !== current.current.revision) setMine((m) => [...m, next.revision])
+        adopt(next)
+      } catch (err) {
+        fail(err)
+      }
+    }
+    flushing.current = false
+    setBusy(false)
+  }
+
+  function gesture(ops: MapOp[]) {
+    setError(null)
+    setRebased(false)
+    pending.current.push(ops)
+    void flush()
+  }
+
+  // What Claude (or another screen) writes arrives on the GM-only `prep`
+  // topic; a reply to the editor's own batch already carries it.
+  useLiveChanges(campaignId, (topics) => {
+    if (!topics.includes('prep') || flushing.current) return
+    fetchMap(campaignId, mapId).then(
+      (fresh) => {
+        if (!flushing.current && fresh.revision > (current.current?.revision ?? -1)) adopt(fresh)
+      },
+      () => {},
+    )
+  })
+
+  async function undo() {
+    const last = mine[mine.length - 1]
+    if (last === undefined) return
+    setBusy(true)
+    setError(null)
+    try {
+      await undoRevision(campaignId, last)
+      setMine((m) => m.slice(0, -1))
+      adopt(await fetchMap(campaignId, mapId))
+    } catch (err) {
+      fail(err)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function validate() {
+    setBusy(true)
+    setError(null)
+    try {
+      adopt(await validateMap(campaignId, mapId))
+    } catch (err) {
+      fail(err)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const map: MapData | null = state.kind === 'ready' ? state.saved.map : null
   const { tileset, atlases } = useTileset(map, media, (id) => gmImageUrl(campaignId, id))
   const backdrop = useImage(map?.backdrop?.image ? gmBackdropUrl(campaignId, mapId) : null)
 
   if (state.kind === 'signed-out') return <Navigate to="/connexion" replace />
   const back = (
-    <Link className="text-caption text-mute-soft underline underline-offset-4" to={`/campagnes/${campaignId}/cartes`}>
+    <Link className="text-caption text-mute-soft underline underline-offset-4" to={`/campagnes/${campaignId}/atlas?carte=${encodeURIComponent(mapId)}`}>
       {t('maps.back')}
     </Link>
   )
@@ -93,67 +195,47 @@ export function MapEditorPage() {
   }
 
   const { saved } = state
-  const dirty = JSON.stringify(map) !== JSON.stringify(saved.map)
   const materials = Object.entries(tileset?.materials ?? {})
   const props = Object.entries(tileset?.props ?? {})
   const ground = material || materials[0]?.[0] || Object.values(map.grid.legend)[0]?.terrain || 'sol'
   const propKind = prop || props[0]?.[0] || 'caisse'
 
   function brush(cells: Cell[]) {
-    const kind =
+    const kind: CellKind =
       tool === 'wall'
         ? { terrain: ground, wall: true }
         : tool === 'water'
-          ? { terrain: ground, water: 'deep' as const }
+          ? { terrain: ground, water: 'deep' }
           : tool === 'void'
             ? { terrain: ground, void: true }
             : { terrain: ground }
-    setMap((m) => (m ? paint(m, cells, kind) : m))
+    gesture([{ op: 'paint', cells, kind }])
   }
 
   function tap(c: Cell) {
-    setMap((m) => {
-      if (!m) return m
-      switch (tool) {
-        case 'door':
-          return toggleDoor(m, c, layer)
-        case 'prop':
-          return place(
-            m,
-            c,
-            {
-              kind: 'prop',
-              prop: propKind,
-              label: tileset?.props[propKind]?.name ?? propKind,
-            },
+    switch (tool) {
+      case 'door':
+        return gesture([{ op: 'door', at: c, layer }])
+      case 'prop':
+        return gesture([
+          {
+            op: 'place',
+            at: c,
+            thing: { kind: 'prop', prop: propKind, label: tileset?.props[propKind]?.name ?? propKind },
             layer,
-          )
-        case 'object':
-          return place(m, c, { kind: 'object', label: label.trim() }, layer)
-        case 'light':
-          return place(m, c, { kind: 'light' }, layer)
-        case 'party':
-        case 'foes':
-          return place(m, c, { kind: 'start', side: tool }, layer)
-        case 'erase':
-          return erase(m, c)
-        default:
-          return paint(m, [c], { terrain: ground })
-      }
-    })
-  }
-
-  async function act(run: () => Promise<CampaignMap>) {
-    setBusy(true)
-    setError(null)
-    try {
-      const next = await run()
-      setState({ kind: 'ready', saved: next })
-      setMap(next.map)
-    } catch (err) {
-      setError(err instanceof ApiError ? { code: err.code, detail: err.detail } : { code: 'action', detail: null })
-    } finally {
-      setBusy(false)
+          },
+        ])
+      case 'object':
+        return gesture([{ op: 'place', at: c, thing: { kind: 'object', label: label.trim() }, layer }])
+      case 'light':
+        return gesture([{ op: 'place', at: c, thing: { kind: 'light' }, layer }])
+      case 'party':
+      case 'foes':
+        return gesture([{ op: 'place', at: c, thing: { kind: 'start', side: tool }, layer }])
+      case 'erase':
+        return gesture([{ op: 'erase', at: c }])
+      default:
+        return gesture([{ op: 'paint', cells: [c], kind: { terrain: ground } }])
     }
   }
 
@@ -171,7 +253,15 @@ export function MapEditorPage() {
     moves: 0,
   }))
   const setAmbience = (patch: Partial<MapData['ambience']>) =>
-    setMap((m) => (m ? { ...m, ambience: { ...m.ambience, ...patch } } : m))
+    gesture([{ op: 'set', ambience: { ...map.ambience, ...patch } }])
+  const commitName = () => {
+    if (name !== null && name.trim() !== map.name) gesture([{ op: 'set', name }])
+    setName(null)
+  }
+  const commitNotes = () => {
+    if (notes !== null && notes !== (map.gm_notes ?? '')) gesture([{ op: 'set', notes }])
+    setNotes(null)
+  }
 
   return (
     <main className="surface-table flex min-h-dvh flex-col gap-4 p-5 text-chalk">
@@ -179,21 +269,33 @@ export function MapEditorPage() {
       <div className="flex flex-wrap items-baseline gap-3">
         <input
           className={`${field} type-title text-[16px]`}
-          value={map.name}
+          value={name ?? map.name}
           maxLength={80}
-          onChange={(e) => setMap({ ...map, name: e.target.value })}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={commitName}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur()
+          }}
           aria-label={t('maps.editor.name')}
         />
         <span className="text-caption text-mute-soft">
-          {saved.validatedAt && !dirty ? t('maps.validated') : t('maps.draft')}
+          {saved.validatedAt ? t('maps.validated') : t('maps.draft')}
+        </span>
+        <span className="text-caption text-mute-soft" role="status">
+          {busy ? t('maps.editor.saving') : t('maps.editor.saved')}
         </span>
       </div>
+      {rebased && (
+        <p role="status" className="text-body text-mute-soft">
+          {t('maps.editor.rebased')}
+        </p>
+      )}
       {error && (
         <p role="alert" className="text-body text-stat-atk">
           {t(`maps.errors.${error.code}`, {
             defaultValue: t('prep.generate.errors.action'),
           })}
-          {error.code === 'MAP_INVALID' && error.detail && <span className="block text-caption">{error.detail}</span>}
+          {(error.code === 'MAP_INVALID' || error.code === 'MAP_OP_INVALID') && error.detail && <span className="block text-caption">{error.detail}</span>}
         </p>
       )}
 
@@ -300,8 +402,9 @@ export function MapEditorPage() {
             </select>
             <textarea
               className={field}
-              value={map.gm_notes ?? ''}
-              onChange={(e) => setMap({ ...map, gm_notes: e.target.value || null })}
+              value={notes ?? map.gm_notes ?? ''}
+              onChange={(e) => setNotes(e.target.value)}
+              onBlur={commitNotes}
               placeholder={t('maps.editor.notes')}
               aria-label={t('maps.editor.notes')}
               rows={3}
@@ -309,17 +412,10 @@ export function MapEditorPage() {
           </Panel>
 
           <div className="flex flex-wrap gap-2">
-            <Btn main disabled={busy || !dirty} onClick={() => void act(() => saveMap(campaignId, map))}>
-              {t('maps.editor.save')}
-            </Btn>
-            <Btn disabled={busy || !dirty} onClick={() => setMap(saved.map)}>
+            <Btn disabled={busy || mine.length === 0} onClick={() => void undo()}>
               {t('maps.editor.undo')}
             </Btn>
-            <Btn
-              main
-              disabled={busy || dirty || Boolean(saved.validatedAt)}
-              onClick={() => void act(() => validateMap(campaignId, mapId))}
-            >
+            <Btn main disabled={busy || Boolean(saved.validatedAt)} onClick={() => void validate()}>
               {t('maps.editor.validate')}
             </Btn>
           </div>

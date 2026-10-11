@@ -55,6 +55,12 @@ const GM_ROUTES: &[(&str, &str)] = &[
     // Preparing: an edit, the campaign declared playable, then the
     // co-GM's workshop — each decision on a proposal stored just before.
     ("POST", "/api/campaigns/{campaign}/story/edits"),
+    // The journal, then the edit just made taken back.
+    ("GET", "/api/campaigns/{campaign}/revisions?since=0"),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/revisions/{revision}/undo",
+    ),
     ("GET", "/api/campaigns/{campaign}/readiness"),
     ("POST", "/api/campaigns/{campaign}/story/validate"),
     ("GET", "/api/campaigns/{campaign}/workshop"),
@@ -67,6 +73,14 @@ const GM_ROUTES: &[(&str, &str)] = &[
         "POST",
         "/api/campaigns/{campaign}/workshop/{proposal}/reject",
     ),
+    // Claude's batches (platform/propose-edits-by-claude): read, one
+    // decided, then « Claude a la main » given — before any evening.
+    ("GET", "/api/campaigns/{campaign}/proposals"),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/proposals/{proposal}/decide",
+    ),
+    ("PUT", "/api/campaigns/{campaign}/claude"),
     // A generation, on the campaign made unvalidated again, and a draft
     // applied (validated again after).
     ("GET", "/api/campaigns/{campaign}/generation"),
@@ -141,10 +155,18 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/maps/import"),
     ("POST", "/api/campaigns/{campaign}/maps/generate"),
     ("GET", "/api/campaigns/{campaign}/maps/{map}"),
-    ("PUT", "/api/campaigns/{campaign}/maps/{map}"),
+    ("POST", "/api/campaigns/{campaign}/maps/{map}/ops"),
+    ("GET", "/api/campaigns/{campaign}/maps/{map}/sketch"),
+    ("POST", "/api/campaigns/{campaign}/maps/{map}/ask"),
+    ("POST", "/api/campaigns/{campaign}/maps/{map}/place"),
     ("POST", "/api/campaigns/{campaign}/maps/{map}/validate"),
+    // Validated just above: the map as the players would receive it
+    // (maps/preview-as-player).
+    ("GET", "/api/campaigns/{campaign}/maps/{map}/players"),
     ("GET", "/api/campaigns/{campaign}/maps/{map}/backdrop"),
     ("DELETE", "/api/campaigns/{campaign}/maps/{map}"),
+    // The atlas: every map nested (maps/browse-atlas).
+    ("GET", "/api/campaigns/{campaign}/atlas"),
     // Images: list, draw one, then on an image stored just before.
     ("GET", "/api/campaigns/{campaign}/media"),
     ("POST", "/api/campaigns/{campaign}/media"),
@@ -252,6 +274,16 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             "aiBudgetCents": 100
         })),
         (_, p) if p.ends_with("/archive") => Some(serde_json::json!({ "archived": false })),
+        (_, p) if p.ends_with("/decide") => {
+            Some(serde_json::json!({ "all": "discard", "word": "Pas maintenant." }))
+        }
+        ("PUT", p) if p.ends_with("/claude") => Some(serde_json::json!({ "hand": true })),
+        ("POST", p) if p.ends_with("/maps/{map}/ask") => Some(serde_json::json!({
+            "question": "path", "from": "pj-1", "to": "6,8"
+        })),
+        ("POST", p) if p.ends_with("/maps/{map}/place") => Some(serde_json::json!({
+            "placements": [{ "what": "clue", "id": "cl_gwen", "near": "6,8" }]
+        })),
         (_, p) if p.ends_with("/story/edits") => Some(serde_json::json!({
             "edits": [{ "op": "set", "target": "bible", "field": "tone", "value": "Sombre." }]
         })),
@@ -381,6 +413,8 @@ struct Ids {
     date: String,
     /// A shop of the campaign, stored on first use; empty before.
     shop: String,
+    /// The campaign's latest preparation revision.
+    revision: String,
     screen: String,
 }
 
@@ -407,6 +441,7 @@ fn route_uri(path: &str, ids: &Ids) -> String {
             },
         )
         .replace("{screen}", &ids.screen)
+        .replace("{revision}", &ids.revision)
 }
 
 /// Every placeholder filled for `player` of `campaign`: a token of the
@@ -446,6 +481,7 @@ async fn ids_of(app: &Router, pool: &PgPool, token: &str, campaign: String, play
         map: "carte-inconnue".to_string(),
         shop: String::new(),
         screen: Uuid::new_v4().to_string(),
+        revision: "1".to_string(),
     }
 }
 
@@ -642,12 +678,31 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .unwrap()
             .to_string();
         }
+        if path.contains("{revision}") {
+            ids.revision =
+                sqlx::query_scalar::<_, i64>("SELECT prep_revision FROM campaigns WHERE id = $1")
+                    .bind(Uuid::parse_str(&ids.campaign).unwrap())
+                    .fetch_one(&pool)
+                    .await
+                    .unwrap()
+                    .to_string();
+        }
         if path.contains("{proposal}") {
+            // Claude's batches are decided on their own route.
+            let author = if path.contains("/proposals/") {
+                "token"
+            } else {
+                "copilot"
+            };
             ids.proposal = sqlx::query_scalar::<_, Uuid>(
-                "INSERT INTO story_proposals (campaign_id, prompt, edits)
-                 VALUES ($1, 'Rien.', '[]') RETURNING id",
+                "INSERT INTO story_proposals (campaign_id, prompt, edits, author)
+                 VALUES ($1, 'Rien.', CASE WHEN $2 = 'token'
+                   THEN '[{\"op\":\"set\",\"target\":\"bible\",\"field\":\"tone\",\"value\":\"Clair.\"}]'::jsonb
+                   ELSE '[]'::jsonb END, $2)
+                 RETURNING id",
             )
             .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .bind(author)
             .fetch_one(&pool)
             .await
             .unwrap()
@@ -792,10 +847,16 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             body_for(method, path)
         };
         let body = match (method, body) {
-            // The editor sends the whole map back.
-            (&"PUT", _) if path.ends_with("/maps/{map}") => {
+            // The editor sends one operation on the revision it read.
+            (&"POST", _) if path.ends_with("/maps/{map}/ops") => {
                 let uri = format!("/api/campaigns/{}/maps/{}", ids.campaign, ids.map);
-                Some(call(&app, Some(&token), "GET", &uri, None).await.body["data"]["map"].clone())
+                let read =
+                    call(&app, Some(&token), "GET", &uri, None).await.body["data"]["revision"]
+                        .clone();
+                Some(serde_json::json!({
+                    "revision": read,
+                    "ops": [{ "op": "set", "notes": "Balayage." }]
+                }))
             }
             // A hook needs a character of the table.
             (&"POST", Some(mut b)) if path.ends_with("/hooks") => {

@@ -41,13 +41,13 @@ grid:
     - "..s....:::....."
 exits:
   - { id: vers-reliquaire, cells: [[11, 7]], to: reliquaire-sereth, label: Le Reliquaire }
-  - { id: vers-coursive, cells: [[0, 1]], to: cure-dent-coursive, label: La coursive du Cure-Dent }
+  - { id: vers-toboggan, cells: [[0, 1]], to: abords-du-toboggan, label: Les abords du Toboggan }
 labels:
   - { text: Le Toboggan, at: [0, 1] }
   - { text: Le Brasier, at: [5, 6] }
   - { text: Le champ de débris, at: [3, 1] }
   - { text: La ceinture, at: [10, 4] }
-  - { text: "Le Reliquaire · station sereth", at: [11, 7], scene: sc_carapace_sereth }
+  - { text: "Le Reliquaire · station sereth", at: [11, 7] }
   - { text: Le marché flottant, at: [2, 10] }
   - { text: Avant-poste Vorr, at: [10, 1], layer: secrets }
 starts:

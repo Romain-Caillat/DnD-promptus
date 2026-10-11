@@ -201,7 +201,7 @@ mod tests {
         include_str!("../../content/themes/corsaires.yaml"),
         include_str!("../../content/themes/brasier.yaml"),
     ];
-    const MAPS: [&str; 9] = [
+    const MAPS: [&str; 10] = [
         include_str!("../../content/maps/corsaires/quai-port-louis.yaml"),
         include_str!("../../content/maps/brasier/cure-dent-coursive.yaml"),
         include_str!("../../content/maps/corsaires/large-de-belle-ile.yaml"),
@@ -211,6 +211,7 @@ mod tests {
         include_str!("../../content/maps/corsaires/le-palais.yaml"),
         include_str!("../../content/maps/brasier/systeme-brasier.yaml"),
         include_str!("../../content/maps/brasier/reliquaire-sereth.yaml"),
+        include_str!("../../content/maps/corsaires/port-louis-rues.yaml"),
     ];
 
     #[test]

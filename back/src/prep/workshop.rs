@@ -8,16 +8,16 @@
 
 use std::collections::BTreeMap;
 
-use chrono::{DateTime, Utc};
-use promptus_shared::story::edit::{self, Change, Edit};
+use promptus_shared::story::edit::{self, Edit};
 use promptus_shared::story::{Campaign, Issue, to_yaml, validate};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use sqlx::PgPool;
 use sqlx::types::Json;
 use uuid::Uuid;
 
 use crate::ai::{self, Ai, LlmRequest, ledger, templates};
 use crate::auth::guard::{CurrentGm, owned_by};
+use crate::campaigns::revisions::Author;
 use crate::campaigns::{self, CampaignRow};
 use crate::error::AppError;
 use crate::live::{self, Topic};
@@ -43,83 +43,16 @@ pub struct IssueRef {
     pub path: String,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Status {
-    Pending,
-    Accepted,
-    Rejected,
+pub use super::proposals::Proposal;
+use super::proposals::{COLUMNS, Decision, ItemStatus, Row, stored, view};
+
+/// A stored row of the workshop as the GM's screen reads it.
+fn proposal(row: &CampaignRow, r: Row) -> Result<Proposal, AppError> {
+    Ok(view(row, stored(r)?, &[]))
 }
 
-impl Status {
-    fn parse(s: &str) -> Result<Self, AppError> {
-        Ok(match s {
-            "pending" => Self::Pending,
-            "accepted" => Self::Accepted,
-            "rejected" => Self::Rejected,
-            other => return Err(AppError::Internal(format!("proposal status {other}"))),
-        })
-    }
-}
-
-/// A proposal as the GM's screen shows it.
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Proposal {
-    pub id: Uuid,
-    pub prompt: String,
-    pub reply: String,
-    pub edits: Vec<Edit>,
-    /// What the edits change, read against the campaign as it is now.
-    /// Empty when they no longer apply (`stale`).
-    pub changes: Vec<Change>,
-    /// The edits no longer apply to the campaign as it is now.
-    pub stale: bool,
-    /// Edits the co-GM wrote that were dropped (invented ids…).
-    pub dropped: i32,
-    pub status: Status,
-    pub created_at: DateTime<Utc>,
-}
-
-type Row = (
-    Uuid,
-    String,
-    String,
-    Json<Vec<Edit>>,
-    i32,
-    String,
-    DateTime<Utc>,
-);
-
-const COLUMNS: &str = "id, prompt, reply, edits, dropped, status, created_at";
-
-fn proposal(
-    row: &CampaignRow,
-    (id, prompt, reply, Json(edits), dropped, status, created_at): Row,
-) -> Result<Proposal, AppError> {
-    let status = Status::parse(&status)?;
-    let (changes, stale) = if status == Status::Pending {
-        match edit::apply_with(&row.story, &edits, &super::edit_library(row)) {
-            Ok((_, changes)) => (changes, false),
-            Err(_) => (Vec::new(), true),
-        }
-    } else {
-        (Vec::new(), false)
-    };
-    Ok(Proposal {
-        id,
-        prompt,
-        reply,
-        edits,
-        changes,
-        stale,
-        dropped,
-        status,
-        created_at,
-    })
-}
-
-/// The campaign's proposals, newest first.
+/// The co-GM's proposals, newest first (Claude's batches are read
+/// from the atlas and `prep::claude::list`).
 ///
 /// # Errors
 ///
@@ -131,7 +64,7 @@ pub async fn list(
 ) -> Result<Vec<Proposal>, AppError> {
     let row = owned_by(campaigns::find(pool, campaign).await?, gm)?;
     let rows: Vec<Row> = sqlx::query_as(&format!(
-        "SELECT {COLUMNS} FROM story_proposals WHERE campaign_id = $1
+        "SELECT {COLUMNS} FROM story_proposals WHERE campaign_id = $1 AND author = 'copilot'
          ORDER BY created_at DESC LIMIT 30"
     ))
     .bind(campaign)
@@ -216,7 +149,12 @@ pub async fn ask(
 ) -> Result<Proposal, AppError> {
     let prompt = crate::evening::clean_text(&ask.prompt, PROMPT_MAX)?;
     let row = owned_by(campaigns::find(pool, campaign).await?, gm)?;
-    let issues = validate(&row.story);
+    // What the co-GM may fix: an alert it cannot act on is neither shown
+    // to it nor askable (`ISSUE_GONE`), before any AI is spent.
+    let issues: Vec<Issue> = validate(&row.story)
+        .into_iter()
+        .filter(super::for_the_model)
+        .collect();
     let vars: BTreeMap<&str, String> = [
         ("context", context(&row.story, &issues)?),
         ("request", request(ask, &prompt, &row.story, &issues)?),
@@ -262,7 +200,7 @@ pub async fn ask(
     .bind(dropped)
     .fetch_one(&mut *tx)
     .await?;
-    live::touch(&mut tx, campaign, &Topic::Desk).await?;
+    live::touch(&mut tx, campaign, &Topic::Proposals).await?;
     tx.commit().await?;
     proposal(&row, stored)
 }
@@ -274,7 +212,7 @@ async fn locked(
 ) -> Result<Row, AppError> {
     let row: Option<Row> = sqlx::query_as(&format!(
         "SELECT {COLUMNS} FROM story_proposals
-         WHERE id = $1 AND campaign_id = $2 FOR UPDATE"
+         WHERE id = $1 AND campaign_id = $2 AND author = 'copilot' FOR UPDATE"
     ))
     .bind(id)
     .bind(campaign)
@@ -308,17 +246,31 @@ pub async fn decide(
     if accept {
         let (story, _) = edit::apply_with(&row.story, &stored.3.0, &super::edit_library(&row))
             .map_err(|_| AppError::Conflict("PROPOSAL_STALE"))?;
-        campaigns::save_story(&mut tx, campaign, &story).await?;
+        campaigns::save_story(&mut tx, campaign, &row.story, &story, Author::Copilot).await?;
     }
+    // Taken whole: every edit gets the same word.
+    let decision = Decision {
+        status: if accept {
+            ItemStatus::Kept
+        } else {
+            ItemStatus::Discarded
+        },
+        word: None,
+        code: None,
+    };
+    let decisions: std::collections::BTreeMap<String, Decision> = (0..stored.3.0.len())
+        .map(|i| (super::proposals::edit_key(i), decision.clone()))
+        .collect();
     let decided: Row = sqlx::query_as(&format!(
-        "UPDATE story_proposals SET status = $2, decided_at = now()
+        "UPDATE story_proposals SET status = $2, decisions = $3, decided_at = now()
          WHERE id = $1 RETURNING {COLUMNS}"
     ))
     .bind(id)
     .bind(if accept { "accepted" } else { "rejected" })
+    .bind(Json(&decisions))
     .fetch_one(&mut *tx)
     .await?;
-    live::touch(&mut tx, campaign, &Topic::Desk).await?;
+    live::touch(&mut tx, campaign, &Topic::Proposals).await?;
     let row = campaigns::find(&mut *tx, campaign)
         .await?
         .ok_or(AppError::NotFound("NOT_FOUND"))?;

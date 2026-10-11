@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { eventLine } from '@/features/map/events'
 import { MapCanvas } from '@/features/map/MapCanvas'
+import { gmMarks, type PinMark } from '@/features/map/pins'
 import { cellKey } from '@/features/map/render'
 import { readGrid } from '@/features/map/render'
 import { useImage } from '@/features/map/useImage'
 import { useTileset } from '@/features/map/useTileset'
 import type { Cell, Edit, GmBoard, GmCommand, TokenView, Weather, TimeOfDay } from '@/lib/board'
+import type { Reveal } from '@/lib/evening'
 import { gmBackdropUrl } from '@/lib/maps'
 import { gmImageUrl, type MediaList } from '@/lib/media'
 import { cn } from '@/lib/utils'
@@ -30,6 +32,16 @@ const TIMES: TimeOfDay[] = ['dawn', 'day', 'dusk', 'night']
  * tablet (gm/run-on-tablet) the map is handled by finger — one paints the
  * fog, two slide it, a pinch zooms — and the adversary's turn is three
  * big keys: validate the proposal, it flees, it passes.
+ *
+ * The scenes pinned on the map shown (campaign/pin-scenes-on-maps) stand
+ * on it, numbered: touching a pin launches its scene, or lists them when
+ * several share the place.
+ *
+ * What the preparation placed there (campaign/place-cast-and-clues): the
+ * NPCs are hidden tokens, set down when the map was shown, revealed one by
+ * one (the players meet them: their name, and the token appears); the
+ * clues are diamonds, faint until found, touched to reveal; a fight's
+ * crossed square, touched, opens it.
  */
 export function BoardPanel({
   campaignId,
@@ -41,6 +53,8 @@ export function BoardPanel({
   onStart,
   onCommand,
   onLoot,
+  onScene,
+  onReveal,
 }: {
   campaignId: string
   data: GmBoard
@@ -51,6 +65,10 @@ export function BoardPanel({
   onStart: (node: string) => void
   onCommand: (c: GmCommand) => void
   onLoot: (index: number, character: string) => void
+  /** Launch a scene (`reveal` scene): from a pin on the map. */
+  onScene?: (node: string) => void
+  /** Reveal what the preparation placed: an NPC met, a clue found. */
+  onReveal?: (r: Reveal) => void
 }) {
   const { t } = useTranslation()
   const [tool, setTool] = useState<Tool>('move')
@@ -61,6 +79,99 @@ export function BoardPanel({
   const backdrop = useImage(board?.map.backdrop?.image ? gmBackdropUrl(campaignId, board.mapId) : null)
   const enc = data.encounter
   const fighting = Boolean(enc?.live)
+  const [pinOpen, setPinOpen] = useState<string | null>(null)
+  const pins = data.pins ?? []
+  const launching = live && Boolean(onScene)
+  const marks = gmMarks(
+    pins,
+    (p) => t('gmLive.board.pin', { name: p.name, scenes: p.scenes.map((x) => `${x.number}. ${x.title}`).join(', ') }),
+    { picked: pinOpen },
+  )
+  const cast = data.cast
+  const found = new Set(cast?.found ?? [])
+  const castMarks: PinMark[] =
+    !cast || fighting
+      ? []
+      : [
+          ...cast.clues.map((c) => ({
+            key: `clue:${c.clue}`,
+            at: c.at,
+            label: '',
+            title: t(found.has(c.clue) ? 'gmLive.board.clueFound' : 'gmLive.board.clue', { text: c.text }),
+            shape: 'clue' as const,
+            faint: !found.has(c.clue),
+            picked: pinOpen === `clue:${c.clue}`,
+          })),
+          ...cast.fights.map((f) => ({
+            key: `fight:${f.scene}`,
+            at: f.at,
+            label: '',
+            title: t('gmLive.board.fight', { title: f.title }),
+            shape: 'fight' as const,
+            picked: pinOpen === `fight:${f.scene}`,
+          })),
+        ]
+  const allMarks = [...marks, ...castMarks]
+  /** A pin touched: its one scene starts, or its scenes are listed; a clue or a fight offers its gesture. */
+  function touchPin(place: string) {
+    if (place.startsWith('clue:') || place.startsWith('fight:')) {
+      setPinOpen((o) => (o === place ? null : place))
+      return
+    }
+    const pin = pins.find((p) => p.location === place)
+    if (!pin || !onScene) return
+    if (pin.scenes.length === 1) {
+      setPinOpen(null)
+      onScene(pin.scenes[0].id)
+    } else setPinOpen((o) => (o === place ? null : place))
+  }
+  const opened = pins.find((p) => p.location === pinOpen)
+  const clueOpen = pinOpen?.startsWith('clue:') ? cast?.clues.find((c) => `clue:${c.clue}` === pinOpen) : undefined
+  const fightOpen = pinOpen?.startsWith('fight:') ? cast?.fights.find((f) => `fight:${f.scene}` === pinOpen) : undefined
+  const markChooser = live && (clueOpen || fightOpen) && (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {clueOpen &&
+        (found.has(clueOpen.clue) ? (
+          <span className="text-caption text-mute-soft">{t('gmLive.board.clueFound', { text: clueOpen.text })}</span>
+        ) : (
+          <Btn
+            disabled={!onReveal}
+            onClick={() => {
+              setPinOpen(null)
+              onReveal?.({ kind: 'clue', clue: clueOpen.clue })
+            }}
+          >
+            {t('gmLive.board.revealClue', { text: clueOpen.text })}
+          </Btn>
+        ))}
+      {fightOpen && (
+        <Btn
+          onClick={() => {
+            setPinOpen(null)
+            onStart(fightOpen.scene)
+          }}
+        >
+          {t('gmLive.fight.start', { title: fightOpen.title })}
+        </Btn>
+      )}
+    </div>
+  )
+  const chooser = opened && launching && (
+    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('gmLive.board.pinScenes', { name: opened.name })}>
+      <span className="text-caption font-bold">{opened.name}</span>
+      {opened.scenes.map((sc) => (
+        <Btn
+          key={sc.id}
+          onClick={() => {
+            setPinOpen(null)
+            onScene?.(sc.id)
+          }}
+        >
+          {t('gmLive.board.launch', { number: sc.number, title: sc.title })}
+        </Btn>
+      ))}
+    </div>
+  )
 
   if (!board) {
     return (
@@ -77,7 +188,16 @@ export function BoardPanel({
         title={t('gmLive.board.title')}
         actions={<MapPicker data={data} live={live && !fighting} onShow={onShow} current={board.mapId} />}
       >
-        <TravelPanel campaignId={campaignId} map={board.map} tileset={tileset} refreshKey={data} />
+        <TravelPanel
+          campaignId={campaignId}
+          map={board.map}
+          tileset={tileset}
+          refreshKey={data}
+          pins={allMarks}
+          onPin={launching || live ? touchPin : undefined}
+        />
+        {chooser}
+        {markChooser}
       </Panel>
     )
   }
@@ -168,6 +288,8 @@ export function BoardPanel({
         fightEvents={enc?.events}
         className="max-h-[60vh]"
         touch={touch}
+        pins={fighting ? [] : allMarks}
+        onPin={(launching || live) && !fighting ? touchPin : undefined}
         onCell={tool === 'move' ? tap : undefined}
         onPaint={
           tool === 'move'
@@ -175,12 +297,19 @@ export function BoardPanel({
             : (cells) => onEdit(tool === 'reveal' ? { kind: 'revealCells', cells } : { kind: 'hideCells', cells })
         }
       />
+      {chooser}
+      {markChooser}
       {touch && <p className="text-caption text-mute-soft">{t('gmLive.board.fingers')}</p>}
       {board.map.gm_notes && <p className="text-caption text-mute-soft">{board.map.gm_notes}</p>}
       {sel && (
         <div className="flex flex-wrap items-center gap-1.5 text-caption">
           <span className="font-bold">{sel.name}</span>
           <span className="text-mute-soft">{t('gmLive.board.moveHint')}</span>
+          {sel.kind === 'npc' && sel.hidden && sel.id.startsWith('prep-') && onReveal && (
+            <Btn main onClick={() => onReveal({ kind: 'npc', npc: sel.ref })}>
+              {t('gmLive.board.meet', { name: sel.name })}
+            </Btn>
+          )}
           <Btn onClick={() => onEdit({ kind: 'tokenState', token: sel.id, hidden: !sel.hidden })}>
             {t(sel.hidden ? 'gmLive.board.showToken' : 'gmLive.board.hideToken')}
           </Btn>

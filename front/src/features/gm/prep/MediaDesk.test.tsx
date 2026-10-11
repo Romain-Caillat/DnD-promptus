@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mockApi, sentTo } from '@/test-utils'
-import { MediaPage } from './MediaPage'
+import { MediaDesk } from './MediaDesk'
 
 const STORY = {
   id: 'mine',
@@ -36,15 +36,15 @@ function plan(over: Record<string, unknown> = {}) {
 
 function renderPage() {
   render(
-    <MemoryRouter initialEntries={['/campagnes/c1/medias']}>
+    <MemoryRouter initialEntries={['/campagnes/c1/atlas?onglet=medias']}>
       <Routes>
-        <Route path="/campagnes/:campaignId/medias" element={<MediaPage />} />
+        <Route path="/campagnes/:campaignId/atlas" element={<MediaDesk campaignId="c1" live={0} />} />
       </Routes>
     </MemoryRouter>,
   )
 }
 
-describe('MediaPage', () => {
+describe('MediaDesk', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
