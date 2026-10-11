@@ -205,6 +205,7 @@ export function GmLivePage() {
       onCommand={(c) => void boardGesture(() => gmFightCommand(campaignId, c))}
       onLoot={(index, character) => void boardGesture(() => giveLoot(campaignId, [{ index, character }]))}
       onScene={(node) => void act(() => reveal(campaignId, { kind: 'scene', node }))}
+      onReveal={(r) => void act(() => reveal(campaignId, r))}
     />
   ) : null
   const feedback =

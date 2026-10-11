@@ -118,7 +118,7 @@ export function WorldMapTab({
         party={party}
         routes={routes}
         destination={j?.destinationAt ?? null}
-        pins={playerMarks(board.pins)}
+        pins={playerMarks(board.pins, board.clues)}
         className="max-h-[55dvh]"
       />
       {j && (

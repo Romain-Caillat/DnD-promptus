@@ -158,3 +158,65 @@ describe('BoardPanel, the scenes pinned on the map', () => {
     expect(onScene).toHaveBeenLastCalledWith('sc_fuite')
   })
 })
+
+describe('BoardPanel, what the preparation placed on the map', () => {
+  beforeEach(() => stubReducedMotion(true))
+  afterEach(() => vi.unstubAllGlobals())
+
+  const oswin = { id: 'prep-pnj_oswin-0', kind: 'npc', ref: 'pnj_oswin', name: 'Oswin', at: [0, 0], hidden: true, invisible: false }
+  const placed = {
+    board: { mapId: 'crypte', map: MAP, fog: false, revealed: [], tokens: [oswin] },
+    pins: [],
+    cast: {
+      clues: [
+        { clue: 'cl_tombe', text: 'Une tombe ouverte', at: [2, 1], scene: 'sc_a' },
+        { clue: 'cl_cloche', text: 'La cloche fêlée', at: [3, 0], scene: 'sc_a' },
+      ],
+      fights: [{ scene: 'sc_crypte', title: 'L’entrée de la crypte', number: 2, at: [3, 1], opponents: 3 }],
+      found: ['cl_cloche'],
+    },
+    maps: [],
+    encounters: [],
+    conditions: null,
+    encounter: null,
+  } as unknown as GmBoard
+
+  it('reveals a placed NPC and a clue one by one, and opens the fight from its mark', async () => {
+    const onReveal = vi.fn()
+    const onStart = vi.fn()
+    render(
+      <BoardPanel
+        campaignId="c1"
+        data={placed}
+        media={null}
+        live
+        onShow={() => {}}
+        onEdit={() => {}}
+        onStart={onStart}
+        onCommand={() => {}}
+        onLoot={() => {}}
+        onReveal={onReveal}
+      />,
+    )
+    // A clue already found is said so; the other is touched to reveal it.
+    expect(screen.getByRole('button', { name: 'Indice trouvé : La cloche fêlée' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Indice à trouver : Une tombe ouverte' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Les joueurs le trouvent : Une tombe ouverte' }))
+    expect(onReveal).toHaveBeenLastCalledWith({ kind: 'clue', clue: 'cl_tombe' })
+
+    // Oswin, set down hidden: chosen, the players meet him.
+    const canvas = screen.getByRole('img', { name: 'Carte : La crypte' })
+    canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: canvas.clientWidth, height: canvas.clientHeight }) as DOMRect
+    await userEvent.pointer([
+      { keys: '[MouseLeft>]', target: canvas, coords: { clientX: 1, clientY: 1 } },
+      { keys: '[/MouseLeft]', target: canvas, coords: { clientX: 1, clientY: 1 } },
+    ])
+    await userEvent.click(await screen.findByRole('button', { name: 'Les joueurs rencontrent Oswin' }))
+    expect(onReveal).toHaveBeenLastCalledWith({ kind: 'npc', npc: 'pnj_oswin' })
+
+    // The fight's mark opens the fight.
+    await userEvent.click(screen.getByRole('button', { name: 'Combat : L’entrée de la crypte' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Lancer : L’entrée de la crypte' }))
+    expect(onStart).toHaveBeenCalledWith('sc_crypte')
+  })
+})

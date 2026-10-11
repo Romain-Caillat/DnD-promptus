@@ -61,6 +61,15 @@ A scene's spot on a map is a story edit too (`campaign/pin-scenes-on-maps`):
 `"value": null` takes the pin off. Whether the map and the cell exist is
 reported by the atlas, not refused.
 
+NPCs, clues and fights are placed the same way (`campaign/place-cast-and-clues`):
+an NPC's `spots` is the whole list (`{ "op": "set", "target": "<npc>",
+"field": "spots", "value": [{ "map": "<map id>", "at": [x, y], "scene":
+"<node>" }] }`, `scene` left out for every scene on that map — read the
+list first, the set replaces it); a clue's `anchor` and a scene's
+`encounter.anchor` take `{ "map", "at" }` or `null`. A spot inside a wall
+is reported (`SPOT_ON_WALL`), never refused. Nothing placed reaches the
+table until the GM shows the map and reveals what is there.
+
 A token write is the GM's own write: same edit format, same lock, same
 all-or-nothing, and players see it exactly as they would see the same
 edit made on the review screen (only what the projection already

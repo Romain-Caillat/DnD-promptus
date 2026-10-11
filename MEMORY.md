@@ -406,6 +406,27 @@ the table entered, on cells out of the fog, as a name and a cell — never
 scene ids or numbers (a « 7 » says seven scenes exist). Pins never nest
 maps: the atlas tree stays the exits' alone.
 
+### Placed NPCs and clues are preparation, copied to the table on a fresh show
+
+Where an NPC stands, where a clue is found and where a fight breaks out
+live in the story (`Npc.spots`, `Clue.anchor`, `Encounter.anchor`,
+`campaign/place-cast-and-clues`), placed by story edits like a pin,
+read through `story::cast`. They reach the table one way only: when the
+evening shows a place's map fresh (`board::show_in`), each NPC spot for
+every scene or for the current one becomes a token `prep-<npc>-<index>`,
+hidden unless the table already met that NPC (a map shown again after
+another starts fresh, like every token on it); a spot for one scene joins the map shown when that
+scene first opens (`board::scene_arrives`). Showing the map already
+shown keeps its state, so editing the preparation never moves, adds or
+removes a token on an open evening's board — the board is evening state
+(`map_states`) and never writes back to the story. Revealing an NPC
+(`Reveal::Npc`) unhides its `prep-` tokens; a clue is never a token —
+players get the found ones, text and cell without the id, through
+`projection::board` (`clues`). A fight's mark is the GM's alone and
+opens `fight::start` on the scene. A spot in a wall is a warning
+(`SPOT_ON_WALL`), never refused, and none of these cells is the model's
+to fix (`prep::for_the_model`).
+
 ### The sheet and the play state are two things
 
 `characters.sheet` is what the player wrote and the GM reviewed; the

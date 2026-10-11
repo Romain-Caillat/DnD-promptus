@@ -186,7 +186,7 @@ export function HexMap({
             aria-label={p.title}
             aria-pressed={onPin && p.picked ? true : undefined}
             tabIndex={onPin ? 0 : undefined}
-            className={cn(onPin ? 'cursor-pointer' : 'pointer-events-none')}
+            className={cn(onPin ? 'cursor-pointer' : 'pointer-events-none', p.faint && 'opacity-50')}
             onClick={onPin ? () => onPin(p.key) : undefined}
             onKeyDown={
               onPin
@@ -199,11 +199,22 @@ export function HexMap({
                 : undefined
             }
           >
-            <rect x={cx - w / 2} y={y - 9} width={w} height={18} fill={paper} stroke={PIN_INK} strokeWidth={2} />
+            {p.shape === 'clue' ? (
+              <rect x={cx - 6} y={y - 6} width={12} height={12} fill={paper} stroke={PIN_INK} strokeWidth={2} transform={`rotate(45 ${cx} ${y})`} />
+            ) : p.shape === 'fight' ? (
+              <>
+                <rect x={cx - 9} y={y - 9} width={18} height={18} fill={PIN_INK} stroke={PIN_PAPER} strokeWidth={2} />
+                <path d={`M${cx - 5} ${y - 5}L${cx + 5} ${y + 5}M${cx + 5} ${y - 5}L${cx - 5} ${y + 5}`} stroke={PIN_PAPER} strokeWidth={2} />
+              </>
+            ) : p.shape === 'npc' ? (
+              <circle cx={cx} cy={y} r={9} fill={paper} stroke={PIN_INK} strokeWidth={2} />
+            ) : (
+              <rect x={cx - w / 2} y={y - 9} width={w} height={18} fill={paper} stroke={PIN_INK} strokeWidth={2} />
+            )}
             {p.picked && (
               <rect x={cx - w / 2 - 4} y={y - 13} width={w + 8} height={26} fill="none" stroke="#EDEDED" strokeWidth={2} strokeDasharray="3 3" />
             )}
-            {p.label && (
+            {p.label && p.shape !== 'clue' && p.shape !== 'fight' && (
               <text x={cx} y={y + 4} textAnchor="middle" className="text-[11px] font-bold" style={{ fill: ink }}>
                 {p.label}
               </text>

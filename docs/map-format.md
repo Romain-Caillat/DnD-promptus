@@ -246,8 +246,17 @@ first. `pins` are the scenes standing on each map (`story::pins::Pin`:
 `{location, name, at, scenes: [{id, title, number, map?}]}`); `places`
 every place of the story with its `anchor`, for the pin tool; `unplaced`
 the scenes standing on no map; `issues` the anchors pointing at a map
-the atlas lacks or off its grid. A player never receives it: the table
-shows the one map on the board, through the projection.
+the atlas lacks or off its grid, and the NPCs, clues or fights set in a
+wall. Each map also carries `cast` (`story::cast::Cast`,
+`campaign/place-cast-and-clues`): `npcs: [{npc, name, index, at,
+scene?}]`, `clues: [{clue, text, at, scene}]`, `fights: [{scene, title,
+number, at, map?, opponents, placed?}]` — `placed` is how many opponents
+the battle plan's foe starts set down (fewer than `opponents` and the
+fight cannot open, `NO_START_LEFT`). `castable` lists every NPC (with its
+spots), clue, fight and scene for the placement tool. A player never
+receives it: the table shows the one map on the board, through the
+projection, which adds only the clues found (`clues: [{text, at}]`, no
+id) on cells out of the fog; placed NPCs are ordinary hidden tokens.
 
 Pins never nest maps (`campaign/pin-scenes-on-maps`): a place's anchor
 puts scenes on a map, it does not say which map opens there. Nesting

@@ -26,6 +26,7 @@ const sheet = (
   backdrop: false,
   validated: true,
   pins: [],
+  cast: { npcs: [], clues: [], fights: [] },
   ...tree,
 })
 
@@ -68,6 +69,7 @@ const ATLAS = {
   places: [],
   unplaced: [],
   issues: [],
+  castable: { npcs: [], clues: [], fights: [], scenes: [] },
 }
 
 const ok = (data: unknown) => ({ status: 200, body: { data } })
@@ -276,5 +278,79 @@ describe('AtlasPage', () => {
     expect(sentTo(fetchMock, 'POST /api/campaigns/c1/story/edits')[1]).toEqual({
       edits: [{ op: 'set', target: 'sc_a', field: 'map', value: 'carte-arrivee' }],
     })
+  })
+
+  it('places an NPC for one scene, opens a fight’s battle plan, takes a clue off, and dims a story layer', async () => {
+    stubReducedMotion(true)
+    vi.stubGlobal('WebSocket', FakeSocket)
+    const cast = {
+      npcs: [{ npc: 'pnj_oswin', name: 'Oswin', index: 0, at: [1, 1] }],
+      clues: [{ clue: 'cl_tombe', text: 'Une tombe ouverte', at: [2, 2], scene: 'sc_a' }],
+      fights: [{ scene: 'sc_a', title: 'La crypte', number: 1, at: [3, 1], map: 'cale', opponents: 3, placed: 2 }],
+    }
+    const atlas = {
+      ...ATLAS,
+      roots: ['quai'],
+      maps: ATLAS.maps.map((m) => (m.map.id === 'quai' ? { ...m, cast } : m)),
+      castable: {
+        npcs: [{ id: 'pnj_oswin', name: 'Oswin', spots: [{ map: 'quai', at: [1, 1] }] }],
+        clues: [{ id: 'cl_tombe', text: 'Une tombe ouverte', scene: 'sc_a', anchor: { map: 'quai', at: [2, 2] } }],
+        fights: [{ scene: 'sc_a', title: 'La crypte', number: 1, map: 'cale', anchor: { map: 'quai', at: [3, 1] } }],
+        scenes: [{ id: 'sc_a', title: 'La crypte', number: 1 }],
+      },
+    }
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/atlas': () => ok(atlas),
+      'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
+      'POST /api/campaigns/c1/story/edits': () => ok({ campaign: {}, changes: [] }),
+    })
+    renderPage()
+    await screen.findByRole('img', { name: 'Carte : Le quai' })
+
+    // The NPC, the clue and the fight stand on the map; Personnages dims the NPC.
+    expect(screen.getByRole('button', { name: 'Oswin' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Indice : Une tombe ouverte' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Personnages' }))
+    expect(screen.queryByRole('button', { name: 'Oswin' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Personnages' }))
+
+    // Oswin for one scene only: a kind, an NPC, a scene, then the cell.
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Choisir un PNJ…' }), 'pnj_oswin')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Pour quelle scène' }), 'sc_a')
+    await userEvent.click(screen.getByRole('button', { name: 'Poser sur cette carte' }))
+    expect(screen.getByRole('status')).toHaveTextContent('Touchez la case où poser « Oswin ».')
+    const canvas = screen.getByRole('img', { name: 'Carte : Le quai' })
+    canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: canvas.clientWidth, height: canvas.clientHeight }) as DOMRect
+    fireEvent.pointerDown(canvas, { pointerId: 1, clientX: 1, clientY: 1 })
+    fireEvent.pointerUp(canvas, { pointerId: 1, clientX: 1, clientY: 1 })
+    await waitFor(() => expect(sentTo(fetchMock, 'POST /api/campaigns/c1/story/edits')).toHaveLength(1))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/story/edits')[0]).toEqual({
+      edits: [
+        {
+          op: 'set',
+          target: 'pnj_oswin',
+          field: 'spots',
+          value: [
+            { map: 'quai', at: [1, 1] },
+            { map: 'quai', at: [0, 0], scene: 'sc_a' },
+          ],
+        },
+      ],
+    })
+
+    // The clue comes off the map.
+    await userEvent.click(screen.getByRole('button', { name: 'Indice : Une tombe ouverte' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Retirer de la carte' }))
+    await waitFor(() => expect(sentTo(fetchMock, 'POST /api/campaigns/c1/story/edits')).toHaveLength(2))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/story/edits')[1]).toEqual({
+      edits: [{ op: 'set', target: 'cl_tombe', field: 'anchor', value: null }],
+    })
+
+    // The fight says what its battle plan places, and opens it.
+    await userEvent.click(screen.getByRole('button', { name: 'Combat de la scène 1. La crypte' }))
+    const fight = screen.getByRole('region', { name: 'Combat : La crypte' })
+    expect(within(fight).getByText('Adversaires déjà placés sur le plan : 2 / 3')).toBeInTheDocument()
+    await userEvent.click(within(fight).getByRole('button', { name: 'Ouvrir le plan de combat' }))
+    expect(await screen.findByRole('img', { name: 'Carte : La cale' })).toBeInTheDocument()
   })
 })

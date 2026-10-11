@@ -1,4 +1,4 @@
-import type { Cell, PinView } from '@/lib/board'
+import type { BoardView, Cell, PinView } from '@/lib/board'
 import type { Pin } from '@/lib/maps'
 
 /**
@@ -21,6 +21,14 @@ export interface PinMark {
   current?: boolean
   /** Chosen in the side panel. */
   picked?: boolean
+  /**
+   * What it stands for (campaign/place-cast-and-clues): a scene's pin
+   * when absent, an NPC (a round piece holding an initial), a clue (a
+   * diamond) or a fight (a black square, crossed).
+   */
+  shape?: 'npc' | 'clue' | 'fight'
+  /** Drawn faint: a clue not found yet, an NPC for another scene. */
+  faint?: boolean
 }
 
 /** The numbers of a pin's scenes: « 1·2·6 », « 1…9 » when there are many. */
@@ -46,7 +54,14 @@ export function gmMarks(
   }))
 }
 
-/** A player's pins: where the table went, by name only. */
-export function playerMarks(pins: readonly PinView[] | undefined): PinMark[] {
-  return (pins ?? []).map((p) => ({ key: p.name, at: p.at, label: '', title: p.name, caption: p.name, current: p.current }))
+/**
+ * A player's pins: where the table went, by name only — and the clues
+ * found on the map (campaign/place-cast-and-clues), diamonds named by
+ * what was learnt.
+ */
+export function playerMarks(pins: readonly PinView[] | undefined, clues?: BoardView['clues']): PinMark[] {
+  return [
+    ...(pins ?? []).map((p) => ({ key: p.name, at: p.at, label: '', title: p.name, caption: p.name, current: p.current })),
+    ...(clues ?? []).map((c, i) => ({ key: `clue:${i}`, at: c.at, label: '', title: c.text, shape: 'clue' as const })),
+  ]
 }

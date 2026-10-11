@@ -81,7 +81,7 @@ the catastrophe).
 | `checks` | Planned checks: `action`, `stat`, `difficulty`, `success`, `failure`, `natural_1`, `natural_20` |
 | `npcs` | `{ npc, role }` — who is there and what for |
 | `key_points` | What the GM must not forget (list) |
-| `encounter` | `opponents` (`{ who, count }`, `who` an adversary or an NPC with stats), `tactics` (list), `morale` (`{ when, then }`), `on_victory`, `on_defeat` |
+| `encounter` | `opponents` (`{ who, count }`, `who` an adversary or an NPC with stats), `tactics` (list), `morale` (`{ when, then }`), `on_victory`, `on_defeat`, `anchor` (`{ map, at }`: where the fight breaks out on a place's map, a GM mark that opens the scene's battle plan `map`) |
 | `loot` | `{ item, coins, found, hidden }` — an item, coins or both; `hidden` when only found by searching |
 | `xp` | `{ amount, reason }` |
 | `transition` | How the scene hands over, narrated |
@@ -98,7 +98,8 @@ words), `importance`: `critical` (needed to go on) or `optional`.
 **`clues`** — `id`, `revelation`, `node` (where it is placed), `text`
 (what the players learn — the only part they ever see), `discovery`
 (how it is found), `source` (an NPC, item or location id), `check`
-(`{ stat, difficulty }`).
+(`{ stat, difficulty }`), `anchor` (`{ map, at }`: where it is found on a
+map — a diamond for the GM, shown to players once found).
 
 ## The entities
 
@@ -107,7 +108,29 @@ words), `importance`: `critical` (needed to go on) or `optional`.
 them by), `traits` (list), `flaw`, `motivation`, `disposition`
 (`friendly`, `neutral`, `hostile`), `wants`, `hides`, `stats`,
 `inventory` (`{ item, quantity }`), `sells` (`{ item, price }`, a shop),
-`faction`, `location`, `gm_notes`.
+`faction`, `location`, `spots`, `gm_notes`.
+
+`spots` (optional, `campaign/place-cast-and-clues`) are where the NPC
+stands on the maps: `{ map, at, scene }`, `scene` a node id when the spot
+is for that scene only, left out for every scene played on the map.
+Preparation data, like a place's `anchor`: when the evening shows the map,
+each spot for every scene (or for the current one) becomes a token
+(`prep-<npc>-<index>`), **hidden** unless the table already met the NPC; a spot for a scene opened later joins the
+map shown when that scene first opens. Revealing the NPC (« les joueurs
+le rencontrent ») unhides those tokens. The table's tokens are evening
+state: editing a spot never moves a token already on an open evening's
+board. With the clues' and fights' `anchor`, a file written before them
+imports unchanged.
+
+```yaml
+npcs:
+  - id: pnj_oswin
+    name: Oswin
+    disposition: neutral
+    spots:
+      - { map: cimetiere, at: [4, 2] }
+      - { map: cimetiere, at: [9, 1], scene: sc_veillee }
+```
 
 **`stats`** (NPCs and adversaries) — `abilities` (map of the rule
 system's ability ids to scores), `armor_class`, `hit_points`, `attacks`
@@ -199,8 +222,9 @@ part is optional; what is not supplied is not checked.
 | `RULES_MISMATCH` | error | The rule system supplied is not the one `rules` names (nothing else is checked against it) |
 | `RULES_UNKNOWN_CLASS`, `RULES_UNKNOWN_ADVERSARY`, `RULES_UNKNOWN_ITEM`, `RULES_UNKNOWN_ABILITY` | error | A `class`, `from_rules` or check `stat` names nothing in the rule system |
 | `DIFFICULTY_OFF_SCALE` | warning | A planned or clue check difficulty that is none of the rule system's named difficulties |
-| `MAP_UNKNOWN` | error | A node's `map`, or a place's `anchor.map`, is no known map |
-| `ANCHOR_OFF_GRID` | error | A place's `anchor.at` is outside its map |
+| `MAP_UNKNOWN` | error | A node's `map`, or a place's, NPC spot's, clue's or fight's `anchor.map` / `map`, is no known map |
+| `ANCHOR_OFF_GRID` | error | A place's anchor, an NPC's spot, a clue's or a fight's anchor is outside its map |
+| `SPOT_ON_WALL` | warning | An NPC's spot, a clue's or a fight's anchor stands on a wall or void cell |
 | `MAP_ENTITY_UNKNOWN` | warning | A map a node uses places a token whose `entity` is no NPC or adversary of the campaign |
 
 Two more checks of the campaign alone came with the witness worlds:

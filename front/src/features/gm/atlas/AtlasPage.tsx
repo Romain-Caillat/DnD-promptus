@@ -11,11 +11,13 @@ import { HexMap } from '@/features/travel/HexMap'
 import { ApiError } from '@/lib/api'
 import type { Cell } from '@/lib/board'
 import { fetchAtlas, generateMap, gmBackdropUrl, type Atlas, type AtlasMap, type Pin } from '@/lib/maps'
-import { applyEdits } from '@/lib/prep'
+import { applyEdits, type Edit } from '@/lib/prep'
 import { fetchGmMedia, gmImageUrl, type MediaList } from '@/lib/media'
 import { TABLET_QUERY, useMediaQuery } from '@/lib/useMediaQuery'
 import { cn } from '@/lib/utils'
 import { canLeave, climb, depth, doorAt, doorCells, enter, index, leave, switchable, trail, withoutLayers } from './atlas'
+import { CastSection } from './CastSection'
+import { STORY_LAYERS, castMarks, placeEdit, readKey, removeEdit, type StoryLayer, type Target } from './cast'
 
 type PageState =
   | { kind: 'loading' }
@@ -48,6 +50,14 @@ const DRAWER = ['bible', 'graph', 'sheets'] as const
  * a cell, moves or removes it — a story edit, so a line of the journal.
  * A scene can generate its fight map from there (maps/generate-map-llm).
  *
+ * NPCs, clues and fights are placed the same way (campaign/place-cast-
+ * and-clues): round pieces, diamonds and crossed squares on the GM's
+ * layer, set down, moved or taken off by story edits; an NPC for every
+ * scene on the map or for one. The four story layers — Histoire (the
+ * pins), Personnages, Combats, Indices — light or dim apart from the
+ * map's own layers. A fight opens its battle plan and says how many
+ * opponents it already places.
+ *
  * GM only: a player receives the one map on the table, through the
  * board's projection, never the atlas.
  */
@@ -68,9 +78,10 @@ export function AtlasPage() {
   const [drawer, setDrawer] = useState(false)
   const tablet = useMediaQuery(TABLET_QUERY)
   const [panel, setPanel] = useState(true)
-  /** The pin chosen (its place), and the place being anchored by a tap. */
+  /** The mark chosen (a place's pin, or a cast key), and what the next tap sets down. */
   const [picked, setPicked] = useState<string | null>(null)
-  const [pinning, setPinning] = useState<string | null>(null)
+  const [placing, setPlacing] = useState<Target | null>(null)
+  const [lit, setLit] = useState<ReadonlySet<StoryLayer>>(new Set(STORY_LAYERS))
   const [choice, setChoice] = useState('')
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
@@ -146,19 +157,19 @@ export function AtlasPage() {
     setMotion(how)
     setHidden(new Set())
     setPicked(null)
-    setPinning(null)
+    setPlacing(null)
     const last = next[next.length - 1]
     if (last) setParams({ carte: last }, { replace: true })
   }
   const open = (id: string) => go(enter(here, id), 'in')
   const jump = (id: string) => go(enter(here, id), null)
   const out = () => go(leave(here, maps), 'out')
-  /** One story edit on a place's anchor (pin, move, remove), then the atlas again. */
-  async function anchor(place: string, value: { map: string; at: Cell } | null) {
+  /** One story edit placing something (pin, NPC, clue, fight), then the atlas again. */
+  async function send(edit: Edit) {
     setBusy(true)
     setFailed(null)
     try {
-      await applyEdits(campaignId, [{ op: 'set', target: place, field: 'anchor', value }])
+      await applyEdits(campaignId, [edit])
       setVersion((v) => v + 1)
     } catch (err) {
       setFailed(err instanceof ApiError ? err.code : 'action')
@@ -183,11 +194,11 @@ export function AtlasPage() {
   }
   const tap = (cell: Cell) => {
     if (!entry) return
-    if (pinning) {
-      const place = pinning
-      setPinning(null)
-      setPicked(place)
-      void anchor(place, { map: entry.map.id, at: cell })
+    if (placing) {
+      const target = placing
+      setPlacing(null)
+      if (target.kind === 'place') setPicked(target.id)
+      void send(placeEdit(state.atlas.castable, target, entry.map.id, cell))
       return
     }
     const to = doorAt(entry, cell)
@@ -202,8 +213,28 @@ export function AtlasPage() {
   const pins: Pin[] = entry?.pins ?? []
   const pinTitle = (p: Pin) =>
     t('atlas.pins.pin', { name: p.name, scenes: p.scenes.map((x) => `${x.number}. ${x.title}`).join(', ') })
-  const pinMarks = gmMarks(pins, pinTitle, { picked })
+  const sceneName = (id: string) => {
+    const sc = state.atlas.castable.scenes.find((x) => x.id === id)
+    return sc ? t('atlas.pins.scene', { number: sc.number, title: sc.title }) : id
+  }
+  const pinMarks = [
+    ...(lit.has('story') ? gmMarks(pins, pinTitle, { picked }) : []),
+    ...(entry
+      ? castMarks(
+          entry.cast,
+          lit,
+          {
+            npc: (name, scene) => (scene ? t('atlas.cast.npcFor', { name, scene: sceneName(scene) }) : name),
+            clue: (text) => t('atlas.cast.clue', { text }),
+            fight: (number, title) => t('atlas.cast.fight', { number, title }),
+          },
+          picked,
+        )
+      : []),
+  ]
   const chosen = pins.find((p) => p.location === picked) ?? null
+  const castPicked = picked ? readKey(picked) : null
+  const pinning = placing?.kind === 'place' ? placing.id : null
   const places = state.atlas.places
   const placeName = (id: string) => places.find((p) => p.id === id)?.name ?? id
   const sceneLink = (id: string) => `/campagnes/${campaignId}/preparer?onglet=graph&scene=${encodeURIComponent(id)}`
@@ -227,7 +258,7 @@ export function AtlasPage() {
           party={null}
           marks={marks}
           pins={pinMarks}
-          onPin={pinning ? undefined : pick}
+          onPin={placing ? undefined : pick}
           onHex={tap}
           className="max-h-[70dvh]"
         />
@@ -236,7 +267,7 @@ export function AtlasPage() {
           scene={{ map, tileset, atlases, tokens: [], backdrop, highlight: marks }}
           onCell={tap}
           pins={pinMarks}
-          onPin={pinning ? undefined : pick}
+          onPin={placing ? undefined : pick}
           touch={tablet}
           className="max-h-[70dvh]"
         />
@@ -274,16 +305,35 @@ export function AtlasPage() {
         placeName={placeName}
         onChoice={setChoice}
         onPin={(place) => {
-          setPinning(place)
+          setPlacing({ kind: 'place', id: place })
           setFailed(null)
         }}
-        onCancel={() => setPinning(null)}
+        onCancel={() => setPlacing(null)}
         onUnpin={(place) => {
           setPicked(null)
-          void anchor(place, null)
+          void send({ op: 'set', target: place, field: 'anchor', value: null })
         }}
         onOpenMap={(id) => go(enter(here, id), 'in')}
         onGenerate={(scene) => void generate(scene)}
+      />
+      <CastSection
+        cast={entry.cast}
+        castable={state.atlas.castable}
+        picked={castPicked}
+        placing={placing}
+        busy={busy}
+        maps={maps}
+        sceneLink={sceneLink}
+        onPlace={(target) => {
+          setPlacing(target)
+          setFailed(null)
+        }}
+        onCancel={() => setPlacing(null)}
+        onRemove={(p) => {
+          setPicked(null)
+          void send(removeEdit(state.atlas.castable, p))
+        }}
+        onOpenMap={(id) => go(enter(here, id), 'in')}
       />
       <h3 className="type-label text-mute-soft">{t('atlas.inside')}</h3>
       {entry.children.length === 0 ? (
@@ -377,6 +427,28 @@ export function AtlasPage() {
             ))}
           </nav>
         )}
+
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('atlas.storyLayers.label')}>
+          <span className="type-label text-mute-soft">{t('atlas.storyLayers.label')}</span>
+          {STORY_LAYERS.map((l) => (
+            <button
+              key={l}
+              type="button"
+              className="pixel-choice py-1 pr-2 pb-1.5 text-caption font-semibold"
+              aria-pressed={lit.has(l)}
+              onClick={() =>
+                setLit((s) => {
+                  const next = new Set(s)
+                  if (next.has(l)) next.delete(l)
+                  else next.add(l)
+                  return next
+                })
+              }
+            >
+              {t(`atlas.storyLayers.${l}`)}
+            </button>
+          ))}
+        </div>
 
         {layers.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('atlas.layers')}>

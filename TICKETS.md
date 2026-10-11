@@ -1996,7 +1996,7 @@ région : le faire à la demande, pas à chaque image.
 
 ---
 
-### `campaign/place-cast-and-clues` · todo
+### `campaign/place-cast-and-clues` · doing — reste l'essai en soirée : Romain place Oswin et deux indices au cimetière, une rencontre à l'entrée de la crypte, et les retrouve au même endroit, révélables un par un
 
 **Pourquoi** — Écrire une scène, c'est aussi placer qui s'y trouve et ce
 qu'on y trouve.
@@ -2028,6 +2028,51 @@ signalée. Essai réel en soirée.
 la préparation ne change jamais ce qui est déjà sur la table d'une
 soirée ouverte. Une fuite d'un PNJ non rencontré : la projection reste
 le seul passage.
+
+*État* — Dans l'Atlas, le MJ pose sur n'importe quelle carte (région en
+hexagones ou carte de lieu) un PNJ (pion rond à son initiale), un indice
+(losange) ou le combat d'une scène (carré noir barré). Il les déplace et
+les retire du panneau, et chaque geste est une ligne du journal de
+préparation, comme une épingle. Un PNJ peut être posé pour toutes les
+scènes jouées sur la carte, ou pour une seule. Il apparaît alors pâli.
+Quatre calques de l'histoire s'allument et s'éteignent à part des
+calques de la carte : Histoire (les épingles de scène), Personnages,
+Combats, Indices. Un combat dit combien d'adversaires son plan de combat
+place déjà (« 2 / 3 », en rouge s'il en manque, ce qui empêcherait de le
+lancer) et ouvre ce plan d'un geste. Un PNJ, un indice ou un combat posé
+dans un mur est signalé, jamais refusé. Hors de la carte ou sur une
+carte inconnue, c'est une erreur. Claude ne tente jamais de réparer ces
+cases.
+En soirée, montrer la carte y pose les PNJ prévus, cachés, à leur case.
+Ceux d'une scène précise arrivent quand cette scène s'ouvre pour la
+première fois. Une carte remontrée après une autre repart de zéro, mais
+un PNJ déjà rencontré y revient visible. Le geste « Les joueurs rencontrent Oswin » le fait
+apparaître aux joueurs avec son nom. Les indices sont des losanges pâles
+tant qu'ils ne sont pas trouvés : un toucher propose « Les joueurs le
+trouvent ». Une fois trouvé, l'indice s'affiche sur le téléphone à sa
+case, avec son texte (jamais son identifiant). Toucher le combat le
+lance. Ce qui est déjà sur la table d'une soirée ouverte ne bouge
+jamais quand la préparation change. Tout cela est testé côté serveur et
+interface, et un ancien fichier de campagne s'importe sans changement.
+**Hypothèses retenues** : les positions vivent dans l'histoire, à côté
+de ce qu'elles placent (le PNJ, l'indice, le combat de la scène), pas
+sur la carte. La scène d'un indice est la sienne. Un indice n'est pas un
+pion : on le révèle par le geste d'indice existant. La rencontre posée
+sur une carte de lieu ouvre le plan de combat déjà rattaché à la scène.
+**Pas fait** : placer d'un geste les adversaires qui manquent sur le
+plan. Le MJ les pose dans l'éditeur de carte, le compteur lui dit
+combien il en manque. L'écran TV ne dessine pas encore les indices
+trouvés. Un PNJ posé sur une région en hexagones reste un repère de
+préparation : la soirée n'y pose pas de pion (le groupe y voyage en un
+seul pion). ⚠️ « Montrer aux joueurs » sur un pion caché affiche son nom
+même si les joueurs ne l'ont pas rencontré (comportement antérieur, pour
+tout pion de PNJ) : pour une vraie rencontre, utiliser « Les joueurs
+rencontrent ». Masquer le nom tant que le PNJ n'est pas rencontré est à
+trancher.
+🔴 Aucun cimetière, aucune crypte et aucun Oswin n'existent dans le
+contenu des deux mondes. Pour l'essai, il faut soit créer ces cartes et
+ce PNJ, soit jouer la même chose sur Port-Louis, par exemple Mère
+Goulven au Perroquet Noyé. Le choix revient à Romain.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 
@@ -3040,8 +3085,7 @@ replie. Les calques proposés sont pour l'instant ceux de la carte
 elle-même (par exemple « Secrets ») : les allumer ou les éteindre change
 seulement ce que voit le MJ. Absents à dessein, faute de ce qui les
 remplirait : la bascule « Vue MJ / Vue joueurs » (`maps/preview-as-player`),
-les calques Histoire, Personnages, Combats, Indices
-(`campaign/place-cast-and-clues`), le fil de la campagne (les épingles
+le fil de la campagne (les épingles
 de scène sont arrivées depuis avec `campaign/pin-scenes-on-maps` :
 numérotées sur la carte, elles listent leurs scènes dans le panneau, qui
 gagne l'outil « Épingler un lieu » et la liste des scènes sur aucune
@@ -3051,6 +3095,10 @@ quand une carte change (le MJ ailleurs ou Claude), mais n'affiche pas
 encore le bandeau « Claude écrit · sur … » : il viendra avec les lots de
 Claude, en réutilisant le même mécanisme que l'écran Préparer. Les
 anciens écrans restent en place.
+Depuis `campaign/place-cast-and-clues`, la rangée « Calques de
+l'histoire » allume ou éteint Histoire, Personnages, Combats et Indices.
+Le panneau gagne l'outil « Poser sur la carte » (PNJ, indice, combat) et
+le détail de ce qui est touché sur la carte.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 

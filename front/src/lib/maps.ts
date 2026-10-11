@@ -52,6 +52,47 @@ export interface AtlasMap {
   validated: boolean
   /** The scenes standing on this map, by place (campaign/pin-scenes-on-maps). */
   pins: Pin[]
+  /** The NPCs, clues and fights placed on it (campaign/place-cast-and-clues). */
+  cast: Cast
+}
+
+/** Where a story entity stands on a map: a map and a cell. */
+interface Anchor {
+  map: string
+  at: Cell
+}
+
+/** An NPC's spot (`story::Spot`): for one scene, or every scene on the map. */
+export interface Spot extends Anchor {
+  scene?: string
+}
+
+/** What stands on one map (`story::cast::Cast`). */
+export interface Cast {
+  npcs: { npc: string; name: string; index: number; at: Cell; scene?: string }[]
+  clues: ClueMark[]
+  fights: FightMark[]
+}
+
+/** A clue's spot: what the players learn, and its scene. */
+export interface ClueMark {
+  clue: string
+  text: string
+  at: Cell
+  scene: string
+}
+
+/** Where a scene's fight breaks out, and its battle plan. */
+export interface FightMark {
+  scene: string
+  title: string
+  number: number
+  at: Cell
+  /** The battle plan: the scene's own map. */
+  map?: string
+  opponents: number
+  /** How many opponents the battle plan already places, when it is known. */
+  placed?: number
 }
 
 /** A scene on a pin (`story::pins::PinScene`): numbered as in the campaign. */
@@ -76,7 +117,7 @@ interface AtlasPlace {
   id: string
   name: string
   parent: string | null
-  anchor: { map: string; at: Cell } | null
+  anchor: Anchor | null
 }
 
 /** maps/browse-atlas — every map of the world and the campaign, roots first then depth first. */
@@ -88,8 +129,15 @@ export interface Atlas {
   places: AtlasPlace[]
   /** Scenes no place anchors on a map. */
   unplaced: PinScene[]
-  /** Pins standing nowhere (a map the atlas lacks, a cell off its grid). */
+  /** Pins and placements standing nowhere, or in a wall. */
   issues: { severity: string; code: string; path: string; detail: string }[]
+  /** What the GM can place (campaign/place-cast-and-clues). */
+  castable: {
+    npcs: { id: string; name: string; spots: Spot[] }[]
+    clues: { id: string; text: string; scene: string; anchor: Anchor | null }[]
+    fights: { scene: string; title: string; number: number; map: string | null; anchor: Anchor | null }[]
+    scenes: PinScene[]
+  }
 }
 
 export function fetchAtlas(campaignId: string): Promise<Atlas> {

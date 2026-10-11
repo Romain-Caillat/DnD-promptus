@@ -26,6 +26,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use promptus_shared::maps::Cell;
+use promptus_shared::story::cast;
 use promptus_shared::story::pins::pins_on;
 use serde::Deserialize;
 use serde_json::json;
@@ -122,9 +123,22 @@ async fn gm_json(state: &AppState, row: &CampaignRow) -> Result<serde_json::Valu
         .as_ref()
         .map(|b| pins_on(&row.story, &b.map_id))
         .unwrap_or_default();
+    // What the preparation placed there (campaign/place-cast-and-clues):
+    // the clues, found or not, and the fights a tap opens.
+    let cast = b
+        .as_ref()
+        .map(|b| cast::on_map(&row.story, &b.map_id, &[]))
+        .unwrap_or_default();
+    let found: Vec<&String> = cast
+        .clues
+        .iter()
+        .map(|c| &c.clue)
+        .filter(|c| row.world.found_clues.contains(*c))
+        .collect();
     Ok(json!({
         "board": b,
         "pins": pins,
+        "cast": { "clues": cast.clues, "fights": cast.fights, "found": found },
         "maps": board::choices(&state.pool, row).await?,
         "encounters": encounters,
         "encounter": fight_json,

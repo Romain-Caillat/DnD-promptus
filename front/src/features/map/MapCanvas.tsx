@@ -252,14 +252,32 @@ export function MapCanvas({
  */
 function PinButton({ pin, left, top, onPin }: { pin: PinMark; left: number; top: number; onPin?: (key: string) => void }) {
   const look = pin.current ? { background: '#0A0A0A', color: '#EDEDED' } : { background: '#EDEDED', color: '#0A0A0A' }
-  const body = (
-    <>
+  const ring = { outline: pin.picked ? '2px dashed #EDEDED' : undefined, outlineOffset: 2 }
+  const piece =
+    pin.shape === 'clue' ? (
+      <span className="block size-3.5 rotate-45 border-2" style={{ ...look, borderColor: '#0A0A0A', ...ring }} />
+    ) : pin.shape === 'fight' ? (
       <span
-        className="flex min-h-5 min-w-5 items-center justify-center border-2 px-1 text-[11px] leading-none font-bold"
-        style={{ ...look, borderColor: '#0A0A0A', outline: pin.picked ? '2px dashed #EDEDED' : undefined, outlineOffset: 2 }}
+        className="relative flex size-5 items-center justify-center border-2"
+        style={{ background: '#0A0A0A', borderColor: '#EDEDED', ...ring }}
+      >
+        <span className="absolute h-0.5 w-3.5 rotate-45" style={{ background: '#EDEDED' }} />
+        <span className="absolute h-0.5 w-3.5 -rotate-45" style={{ background: '#EDEDED' }} />
+      </span>
+    ) : (
+      <span
+        className={cn(
+          'flex min-h-5 min-w-5 items-center justify-center border-2 px-1 text-[11px] leading-none font-bold',
+          pin.shape === 'npc' && 'rounded-full',
+        )}
+        style={{ ...look, borderColor: '#0A0A0A', ...ring }}
       >
         {pin.label}
       </span>
+    )
+  const body = (
+    <>
+      {piece}
       {pin.caption && (
         <span
           className="mt-0.5 text-[11px] font-bold whitespace-nowrap"
@@ -270,7 +288,7 @@ function PinButton({ pin, left, top, onPin }: { pin: PinMark; left: number; top:
       )}
     </>
   )
-  const place = 'absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center'
+  const place = cn('absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center', pin.faint && 'opacity-50')
   return onPin ? (
     <button
       type="button"

@@ -240,7 +240,7 @@ export function MapTab({
         fightEvents={board.fight?.events}
         className="max-h-[55dvh]"
         onCell={tapCell}
-        pins={fight ? [] : playerMarks(board.pins)}
+        pins={fight ? [] : playerMarks(board.pins, board.clues)}
       />
       {!fight && me && <p className="text-caption text-mute">{t('map.walkHint')}</p>}
       {me?.ghost && <p className="text-caption text-mute">{t('map.ghost')}</p>}

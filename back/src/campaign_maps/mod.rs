@@ -35,6 +35,7 @@ use promptus_shared::maps::{
     Ambience, BASE_LAYER, Backdrop, CellKind, FORMAT_VERSION, Grid, Issue, Layer, Map, MapError,
     Scale, Visibility, Water, from_uvtt,
 };
+use promptus_shared::story::cast::{self, Cast};
 use promptus_shared::story::pins::{Pin, PinScene, is_pinned, pins_on};
 use promptus_shared::story::{Anchor, Campaign, anchor_issues};
 use serde::{Deserialize, Serialize};
@@ -406,8 +407,48 @@ pub struct AtlasView {
     pub places: Vec<AtlasPlace>,
     /// Scenes no place anchors on a map (a dream, a memory: allowed).
     pub unplaced: Vec<PinScene>,
-    /// Pins standing nowhere: a map the atlas lacks, a cell off its grid.
+    /// Pins and placements standing nowhere: a map the atlas lacks, a
+    /// cell off its grid, an NPC, clue or fight inside a wall.
     pub issues: Vec<promptus_shared::story::Issue>,
+    /// What the GM can place (campaign/place-cast-and-clues): every NPC,
+    /// clue and fight of the story, and the scenes an NPC's spot may be
+    /// for.
+    pub castable: Castable,
+}
+
+/// The story's NPCs, clues and fights, and where each is placed.
+#[derive(Debug, Clone, Serialize)]
+pub struct Castable {
+    pub npcs: Vec<CastNpc>,
+    pub clues: Vec<CastClue>,
+    pub fights: Vec<CastFight>,
+    /// Every scene, in campaign order.
+    pub scenes: Vec<PinScene>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CastNpc {
+    pub id: String,
+    pub name: String,
+    pub spots: Vec<promptus_shared::story::Spot>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CastClue {
+    pub id: String,
+    pub text: String,
+    pub scene: String,
+    pub anchor: Option<Anchor>,
+}
+
+/// A scene's fight (ship battles open from their own panel, not here).
+#[derive(Debug, Clone, Serialize)]
+pub struct CastFight {
+    pub scene: String,
+    pub title: String,
+    pub number: usize,
+    pub map: Option<String>,
+    pub anchor: Option<Anchor>,
 }
 
 /// A place of the story and where it is pinned.
@@ -433,6 +474,9 @@ pub struct AtlasMap {
     pub validated: bool,
     /// The scenes standing on this map, by place.
     pub pins: Vec<Pin>,
+    /// The NPCs, clues and fights placed on it (campaign/place-cast-and-
+    /// clues), each fight with how many opponents its battle plan places.
+    pub cast: Cast,
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -505,12 +549,17 @@ pub async fn atlas(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Atla
                 // A world map is always playable (`playable`).
                 validated: !campaign || mine.is_some_and(|m| m.validated_at.is_some()),
                 pins: pins_on(&row.story, &n.id),
+                cast: Cast::default(),
                 map,
             })
         })
         .collect::<Vec<_>>();
     let shown: Vec<Map> = maps.iter().map(|m| m.map.clone()).collect();
     let story = &row.story;
+    let mut maps = maps;
+    for m in &mut maps {
+        m.cast = cast::on_map(story, &m.map.id, &shown);
+    }
     Ok(AtlasView {
         revision: row.prep_revision,
         roots: built.roots,
@@ -532,6 +581,48 @@ pub async fn atlas(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Atla
             .map(|(i, n)| PinScene::of(i, n))
             .collect(),
         issues: anchor_issues(story, &shown),
+        castable: Castable {
+            npcs: story
+                .npcs
+                .iter()
+                .map(|n| CastNpc {
+                    id: n.id.clone(),
+                    name: n.name.clone(),
+                    spots: n.spots.clone(),
+                })
+                .collect(),
+            clues: story
+                .clues
+                .iter()
+                .map(|c| CastClue {
+                    id: c.id.clone(),
+                    text: c.text.clone(),
+                    scene: c.node.clone(),
+                    anchor: c.anchor.clone(),
+                })
+                .collect(),
+            fights: story
+                .nodes
+                .iter()
+                .enumerate()
+                .filter_map(|(i, n)| {
+                    let e = n.encounter.as_ref().filter(|e| e.vehicles.is_none())?;
+                    Some(CastFight {
+                        scene: n.id.clone(),
+                        title: n.title.clone(),
+                        number: i + 1,
+                        map: n.map.clone(),
+                        anchor: e.anchor.clone(),
+                    })
+                })
+                .collect(),
+            scenes: story
+                .nodes
+                .iter()
+                .enumerate()
+                .map(|(i, n)| PinScene::of(i, n))
+                .collect(),
+        },
         maps,
     })
 }

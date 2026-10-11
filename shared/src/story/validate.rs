@@ -295,6 +295,11 @@ fn check_references(ck: &mut Checker<'_>, c: &Campaign) {
         if let Some(l) = &n.location {
             ck.reference(l, format!("{p}.location"), &[Kind::Location]);
         }
+        for (j, s) in n.spots.iter().enumerate() {
+            if let Some(scene) = &s.scene {
+                ck.reference(scene, format!("{p}.spots[{j}].scene"), &[Kind::Node]);
+            }
+        }
     }
     for (i, l) in c.locations.iter().enumerate() {
         if let Some(parent) = &l.parent {

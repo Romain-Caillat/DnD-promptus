@@ -12,7 +12,7 @@ use std::collections::BTreeSet;
 
 use super::model::{Campaign, ClueCheck, PlannedCheck, StatBlock};
 use super::validate::{Issue, Severity, validate};
-use crate::maps::Map;
+use crate::maps::{Cell, Map};
 use crate::rules::RuleSystem;
 
 /// What a campaign may be checked against.
@@ -214,43 +214,75 @@ fn check_rules(issues: &mut Vec<Issue>, c: &Campaign, rules: &RuleSystem) {
     }
 }
 
-/// Pins standing nowhere: a place anchored on a map `maps` lacks, or on a
-/// cell outside it (`campaign/pin-scenes-on-maps`). Part of
+/// Pins and placements standing nowhere (`campaign/pin-scenes-on-maps`,
+/// `campaign/place-cast-and-clues`): a place, an NPC's spot, a clue or a
+/// fight anchored on a map `maps` lacks, or on a cell outside it; an NPC,
+/// a clue or a fight set on a wall (a warning: the GM moves it). Part of
 /// [`validate_with`]; the atlas, which holds every map, reports them too.
 #[must_use]
 pub fn anchor_issues(c: &Campaign, maps: &[Map]) -> Vec<Issue> {
     let mut issues = Vec::new();
+    let mut check = |who: &str, map: &str, at: Cell, path: String, walls: bool| match maps
+        .iter()
+        .find(|m| m.id == map)
+    {
+        None => push(
+            &mut issues,
+            Severity::Error,
+            "MAP_UNKNOWN",
+            format!("{path}.map"),
+            format!("`{who}` is anchored on `{map}`, which is not a known map"),
+        ),
+        Some(m) if !m.grid.contains(at) => push(
+            &mut issues,
+            Severity::Error,
+            "ANCHOR_OFF_GRID",
+            format!("{path}.at"),
+            format!(
+                "`{who}` is pinned at [{}, {}], outside map `{}` ({} × {})",
+                at.x,
+                at.y,
+                m.id,
+                m.grid.width(),
+                m.grid.height()
+            ),
+        ),
+        Some(m) if walls && m.grid.kind(at).is_some_and(|k| k.wall || k.void) => push(
+            &mut issues,
+            Severity::Warning,
+            "SPOT_ON_WALL",
+            format!("{path}.at"),
+            format!(
+                "`{who}` stands at [{}, {}] on map `{}`, inside a wall",
+                at.x, at.y, m.id
+            ),
+        ),
+        Some(_) => {}
+    };
     for (i, l) in c.locations.iter().enumerate() {
         let Some(a) = &l.anchor else { continue };
-        let path = format!("locations[{i}].anchor");
-        match maps.iter().find(|m| m.id == a.map) {
-            None => push(
-                &mut issues,
-                Severity::Error,
-                "MAP_UNKNOWN",
-                format!("{path}.map"),
-                format!(
-                    "`{}` is anchored on `{}`, which is not a known map",
-                    l.id, a.map
-                ),
-            ),
-            Some(m) if !m.grid.contains(a.at) => push(
-                &mut issues,
-                Severity::Error,
-                "ANCHOR_OFF_GRID",
-                format!("{path}.at"),
-                format!(
-                    "`{}` is pinned at [{}, {}], outside map `{}` ({} × {})",
-                    l.id,
-                    a.at.x,
-                    a.at.y,
-                    m.id,
-                    m.grid.width(),
-                    m.grid.height()
-                ),
-            ),
-            Some(_) => {}
+        check(&l.id, &a.map, a.at, format!("locations[{i}].anchor"), false);
+    }
+    for (i, n) in c.npcs.iter().enumerate() {
+        for (j, s) in n.spots.iter().enumerate() {
+            check(&n.id, &s.map, s.at, format!("npcs[{i}].spots[{j}]"), true);
         }
+    }
+    for (i, cl) in c.clues.iter().enumerate() {
+        let Some(a) = &cl.anchor else { continue };
+        check(&cl.id, &a.map, a.at, format!("clues[{i}].anchor"), true);
+    }
+    for (i, n) in c.nodes.iter().enumerate() {
+        let Some(a) = n.encounter.as_ref().and_then(|e| e.anchor.as_ref()) else {
+            continue;
+        };
+        check(
+            &n.id,
+            &a.map,
+            a.at,
+            format!("nodes[{i}].encounter.anchor"),
+            true,
+        );
     }
     issues
 }

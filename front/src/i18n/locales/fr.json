@@ -1832,6 +1832,11 @@
       "pin": "{{name}} — lancer : {{scenes}}",
       "pinScenes": "Scènes de {{name}}",
       "launch": "Lancer {{number}}. {{title}}",
+      "clue": "Indice à trouver : {{text}}",
+      "clueFound": "Indice trouvé : {{text}}",
+      "revealClue": "Les joueurs le trouvent : {{text}}",
+      "fight": "Combat : {{title}}",
+      "meet": "Les joueurs rencontrent {{name}}",
       "noMaps": "Pas de carte pour ce monde.",
       "show": "Montrer : {{name}}",
       "tool": {
@@ -2739,11 +2744,52 @@
       "noPlaces": "La campagne n’a pas encore de lieu : ajoutez-en dans la préparation.",
       "failed": "L’épingle n’a pas été posée ({{code}}). Réessayez.",
       "unplaced": "Scènes sur aucune carte",
-      "issues": "Épingles posées sur rien",
+      "issues": "Épingles et poses à revoir",
       "issue": {
-        "MAP_UNKNOWN": "Un lieu est épinglé sur une carte qui n’existe pas.",
-        "ANCHOR_OFF_GRID": "Un lieu est épinglé hors de sa carte."
+        "MAP_UNKNOWN": "Un lieu, un PNJ, un indice ou un combat est posé sur une carte qui n’existe pas.",
+        "ANCHOR_OFF_GRID": "Un lieu, un PNJ, un indice ou un combat est posé hors de sa carte.",
+        "SPOT_ON_WALL": "Un PNJ, un indice ou un combat est posé dans un mur : déplacez-le."
       }
+    },
+    "storyLayers": {
+      "label": "Calques de l’histoire",
+      "story": "Histoire",
+      "cast": "Personnages",
+      "fights": "Combats",
+      "clues": "Indices"
+    },
+    "cast": {
+      "tool": "Poser sur la carte",
+      "kind": "Ce que vous posez",
+      "kinds": { "npc": "PNJ", "clue": "Indice", "fight": "Combat" },
+      "choose": {
+        "npc": "Choisir un PNJ…",
+        "clue": "Choisir un indice…",
+        "fight": "Choisir le combat d’une scène…"
+      },
+      "none": {
+        "npc": "La campagne n’a pas encore de PNJ.",
+        "clue": "La campagne n’a pas encore d’indice.",
+        "fight": "Aucune scène n’a de combat."
+      },
+      "scene": "Pour quelle scène",
+      "everyScene": "Toutes les scènes sur cette carte",
+      "forScene": "Seulement pendant {{scene}}",
+      "alreadyPlaced": "{{name}} (déjà posé)",
+      "placeHere": "Poser sur cette carte",
+      "tapCell": "Touchez la case où poser « {{name}} ».",
+      "move": "Déplacer",
+      "remove": "Retirer de la carte",
+      "npcChosen": "PNJ : {{name}}",
+      "npcFor": "{{name}} — seulement pendant {{scene}}",
+      "clueChosen": "Indice posé ici",
+      "clue": "Indice : {{text}}",
+      "fight": "Combat de la scène {{number}}. {{title}}",
+      "fightChosen": "Combat : {{title}}",
+      "noPlan": "Cette scène n’a pas encore de plan de combat.",
+      "planUnknown": "Son plan de combat n’est pas dans l’atlas.",
+      "placed": "Adversaires déjà placés sur le plan : {{placed}} / {{total}}",
+      "openPlan": "Ouvrir le plan de combat"
     }
   },
   "maps": {

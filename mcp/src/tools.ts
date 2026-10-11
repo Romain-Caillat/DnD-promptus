@@ -139,7 +139,11 @@ Chaque modification est un objet :
 — par ex. { "op": "set", "target": "sc_quai", "field": "summary", "value": "…" }, \
 { "op": "set", "target": "pnj_morel", "field": "stats.hit_points", "value": 12 }; "value": null efface le champ. \
 Épingler un lieu sur une carte (ses scènes y apparaissent) : \
-{ "op": "set", "target": "lieu_quai", "field": "anchor", "value": { "map": "<id de carte>", "at": [x, y] } }.
+{ "op": "set", "target": "lieu_quai", "field": "anchor", "value": { "map": "<id de carte>", "at": [x, y] } }. \
+Poser un PNJ sur une carte (toutes les scènes, ou une seule avec "scene") : \
+{ "op": "set", "target": "pnj_morel", "field": "spots", "value": [{ "map": "<id de carte>", "at": [x, y], "scene": "sc_quai" }] } \
+(la liste entière, relue d'abord) ; un indice : { "op": "set", "target": "cl_…", "field": "anchor", "value": { "map": "…", "at": [x, y] } } ; \
+le combat d'une scène : { "op": "set", "target": "sc_quai", "field": "encounter.anchor", "value": { "map": "…", "at": [x, y] } }.
 - { "op": "add", "kind": "<party_member|act|front|node|revelation|clue|npc|adversary|location|item|faction|goal>", "value": { "id": "…", … } } \
 — par ex. un indice : { "op": "add", "kind": "clue", "value": { "id": "cl_…", "revelation": "…", "node": "…", "text": "…" } }
 - { "op": "remove", "target": "<id>" }

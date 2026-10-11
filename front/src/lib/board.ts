@@ -1,4 +1,4 @@
-import type { Pin } from './maps'
+import type { ClueMark, FightMark, Pin } from './maps'
 import type { CharacterLook, Facing } from '@/features/sprites/look'
 import { apiRequest } from './api'
 import type { GmBattle } from './battle'
@@ -184,6 +184,8 @@ export interface BoardView {
   fight: FightView | null
   /** The places of this map the table went to: a name and a cell (`projection::board::PinView`). */
   pins?: PinView[]
+  /** The clues found on this map, where they lie: the text, never the id. */
+  clues?: { text: string; at: Cell }[]
 }
 
 export interface PinView {
@@ -293,6 +295,8 @@ export interface GmBoard {
   board: Board | null
   /** Every scene pinned on the map shown (campaign/pin-scenes-on-maps): a tap launches one. */
   pins?: Pin[]
+  /** The clues and fights the preparation placed on the map shown, and the clues found. */
+  cast?: { clues: ClueMark[]; fights: FightMark[]; found: string[] }
   maps: { id: string; name: string; nodes: string[] }[]
   encounters: { node: string; title: string; map: string | null }[]
   encounter: GmEncounter | null

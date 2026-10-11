@@ -14,10 +14,14 @@
 //! hit points and the GM's notes removed, and the loot already given;
 //! the pins of the places whose scenes the table has entered, on cells
 //! it sees — a name and a cell, never the scenes
-//! (campaign/pin-scenes-on-maps).
+//! (campaign/pin-scenes-on-maps); the clues found on this map, on cells
+//! it sees — the text and the cell, never the clue's id
+//! (campaign/place-cast-and-clues). The NPCs the preparation placed are
+//! tokens like any other: hidden until the GM reveals them.
 //!
 //! Never: GM layers, GM notes, object checks, the backdrop prompt,
-//! fogged cells, hidden tokens, a pin of a place not visited yet,
+//! fogged cells, hidden tokens, a pin of a place not visited yet, a
+//! clue not found, a fight's mark,
 //! opponents' hit points, the co-GM's
 //! proposal, loot not handed out yet, a death the dice propose before
 //! the GM confirmed it (engine/save-against-death: the saves themselves
@@ -34,6 +38,7 @@ use promptus_shared::rules::events::Event;
 use promptus_shared::rules::model::{AreaShape, Targeting, ZeroHpRule};
 use promptus_shared::rules::sheet::Side;
 use promptus_shared::sprite::{CharacterLook, Direction};
+use promptus_shared::story::cast::on_map;
 use promptus_shared::story::pins::pins_on;
 use promptus_shared::story::{Campaign, WorldState};
 use serde::Serialize;
@@ -54,6 +59,18 @@ pub struct BoardView {
     /// The places of this map the table has been to (campaign/pin-scenes-
     /// on-maps): a pin holding a scene entered, on a cell out of the fog.
     pub pins: Vec<PinView>,
+    /// The clues found on this map (campaign/place-cast-and-clues), on
+    /// cells out of the fog: what was learnt and where — never the clue's
+    /// id, nor a clue not found yet.
+    pub clues: Vec<ClueView>,
+}
+
+/// A found clue where it lies.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClueView {
+    pub text: String,
+    pub at: Cell,
 }
 
 /// A pin as players see it: the place's name and its cell — never the
@@ -207,6 +224,26 @@ fn pins_seen(
                 .any(|s| world.current_node.as_deref() == Some(s.id.as_str())),
             name: p.name,
             at: p.at,
+        })
+        .collect()
+}
+
+/// The clues of `map` the table found, lying on a cell `seen`.
+fn clues_seen(
+    story: Option<(&Campaign, &WorldState)>,
+    map: &str,
+    seen: &dyn Fn(Cell) -> bool,
+) -> Vec<ClueView> {
+    let Some((campaign, world)) = story else {
+        return Vec::new();
+    };
+    on_map(campaign, map, &[])
+        .clues
+        .into_iter()
+        .filter(|c| world.found_clues.contains(&c.clue) && seen(c.at))
+        .map(|c| ClueView {
+            text: c.text,
+            at: c.at,
         })
         .collect()
 }
@@ -450,6 +487,7 @@ pub fn project_board(
         reachable,
         fight: encounter.map(|(e, ev)| fight_view(e, ev, looker, &seen)),
         pins: pins_seen(looker.story, &board.map_id, &seen),
+        clues: clues_seen(looker.story, &board.map_id, &seen),
     }
 }
 

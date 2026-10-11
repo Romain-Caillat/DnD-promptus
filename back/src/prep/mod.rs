@@ -43,12 +43,18 @@ pub(crate) fn edit_library(row: &CampaignRow) -> Library<'_> {
     }
 }
 
-/// Whether a validator finding is the model's to act on. A scene's spot
-/// on a map is not (`SCENE_WITHOUT_PLACE`): the GM pins it in the atlas,
-/// on maps the model never sees — asking would spend AI budget on an
-/// anchor it can only invent.
+/// Whether a validator finding is the model's to act on. Where things
+/// stand on a map is not: a scene's place (`SCENE_WITHOUT_PLACE`), a pin,
+/// an NPC's spot, a clue's or a fight's mark standing nowhere or in a
+/// wall (campaign/place-cast-and-clues). The GM places them in the atlas,
+/// on maps the model never sees — asking would spend AI budget on a cell
+/// it can only invent.
 pub(crate) fn for_the_model(issue: &promptus_shared::story::Issue) -> bool {
-    issue.code != "SCENE_WITHOUT_PLACE"
+    let on_a_map = issue.path.contains(".anchor") || issue.path.contains(".spots[");
+    !matches!(
+        issue.code,
+        "SCENE_WITHOUT_PLACE" | "SPOT_ON_WALL" | "ANCHOR_OFF_GRID"
+    ) && !on_a_map
 }
 
 /// The GM's edits, applied whole under the campaign lock and journaled

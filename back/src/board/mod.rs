@@ -46,6 +46,7 @@ use crate::error::AppError;
 use crate::evening::session::{self, Status};
 use crate::live::{self, Topic};
 use crate::players::{self, CharacterStatus, Player, Role};
+use promptus_shared::story::{Campaign, WorldState, cast};
 
 /// How far a token walks in one drag out of a fight, in movement
 /// points: two moves of the fight's default (INTERPRETATION: exploring
@@ -441,9 +442,123 @@ pub(crate) async fn show_in(
         revealed,
         tokens,
     };
+    if b.map.scale != Scale::World {
+        let spots = cast::standing_on(&row.story, map_id, row.world.current_node.as_deref());
+        b.set_down(&row.story, &row.world, &spots);
+    }
     b.reveal_from_party();
     save(tx, campaign, &b).await?;
     Ok(b)
+}
+
+/// The token an NPC's spot sets down (campaign/place-cast-and-clues):
+/// its own prefix, so it never meets a token the GM placed (`{npc}-{n}`)
+/// or a fight's combatant.
+#[must_use]
+pub fn spot_token(npc: &str, index: usize) -> String {
+    format!("{SPOT_PREFIX}{npc}-{index}")
+}
+
+const SPOT_PREFIX: &str = "prep-";
+
+/// Whether `token` was set down from the preparation for `npc`.
+fn from_spot(token: &Token, npc: &str) -> bool {
+    token.kind == TokenKind::Npc && token.r#ref == npc && token.id.starts_with(SPOT_PREFIX)
+}
+
+impl Board {
+    /// Set down the NPCs the preparation placed on `spots`
+    /// (`story::cast`): hidden, unless the table already met them (a map
+    /// shown again after another). A spot off the grid, or whose token is
+    /// already there, is skipped. Returns whether a token was added.
+    fn set_down(
+        &mut self,
+        story: &Campaign,
+        world: &WorldState,
+        spots: &[(&String, usize, Cell)],
+    ) -> bool {
+        let mut added = false;
+        for (npc, index, at) in spots {
+            let id = spot_token(npc, *index);
+            let Some(n) = story.npc(npc) else { continue };
+            if !self.map.grid.contains(*at) || self.tokens.iter().any(|t| t.id == id) {
+                continue;
+            }
+            let mut t = Token::new(
+                id,
+                TokenKind::Npc,
+                n.id.clone(),
+                n.name.clone(),
+                *at,
+                Some(content::npc_look(story, npc)),
+            );
+            t.hidden = !world.revealed.contains(*npc);
+            self.tokens.push(t);
+            added = true;
+        }
+        added
+    }
+}
+
+/// A scene opens for the first time while a place's map is shown and no
+/// fight runs: the NPCs placed there for that scene alone join it,
+/// hidden. What is already on the table is never changed. Inside the
+/// caller's locked transaction.
+///
+/// # Errors
+///
+/// A database error.
+pub(crate) async fn scene_arrives(
+    tx: &mut Transaction<'_, Postgres>,
+    campaign: Uuid,
+    story: &Campaign,
+    world: &WorldState,
+    node: &str,
+) -> Result<(), AppError> {
+    if fight::live_id(&mut **tx, campaign).await?.is_some() {
+        return Ok(());
+    }
+    let Some(mut b) = current(&mut **tx, campaign).await? else {
+        return Ok(());
+    };
+    if b.map.scale == Scale::World {
+        return Ok(());
+    }
+    let spots = cast::arriving_with(story, &b.map_id, node);
+    if b.set_down(story, world, &spots) {
+        save(tx, campaign, &b).await?;
+    }
+    Ok(())
+}
+
+/// The players meet `npc`: the tokens the preparation set down for them
+/// come out of hiding, on the board shown. Inside the caller's locked
+/// transaction.
+///
+/// # Errors
+///
+/// A database error.
+pub(crate) async fn npc_met(
+    tx: &mut Transaction<'_, Postgres>,
+    campaign: Uuid,
+    npc: &str,
+) -> Result<(), AppError> {
+    let Some(mut b) = current(&mut **tx, campaign).await? else {
+        return Ok(());
+    };
+    let mut changed = false;
+    for t in b
+        .tokens
+        .iter_mut()
+        .filter(|t| from_spot(t, npc) && t.hidden)
+    {
+        t.hidden = false;
+        changed = true;
+    }
+    if changed {
+        save(tx, campaign, &b).await?;
+    }
+    Ok(())
 }
 
 /// Lock the board of `campaign` (under the campaign lock already held).

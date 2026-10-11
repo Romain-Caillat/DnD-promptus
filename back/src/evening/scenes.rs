@@ -88,6 +88,8 @@ pub async fn reveal(
             world
                 .reveal_entity(story, npc)
                 .map_err(|_| AppError::BadRequest("UNKNOWN_NPC"))?;
+            // The tokens the preparation set down come out of hiding.
+            crate::board::npc_met(&mut tx, campaign, npc).await?;
             if first {
                 let text = met_line(story, npc);
                 knowledge::write(
@@ -228,9 +230,15 @@ async fn open_scene(
     campaign: Uuid,
     node: &str,
 ) -> Result<(), AppError> {
+    let first = !world.is_visited(node);
     world
         .enter_node(story, node)
         .map_err(|_| AppError::BadRequest("UNKNOWN_NODE"))?;
+    // campaign/place-cast-and-clues: who the preparation placed for this
+    // scene joins the map shown, hidden.
+    if first {
+        crate::board::scene_arrives(tx, campaign, story, world, node).await?;
+    }
     // gm/launch-session: the first scene ends « Précédemment… ».
     session::end_reading(tx, session_id).await?;
     let n = story
