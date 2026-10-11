@@ -58,7 +58,7 @@ function renderPage() {
     <MemoryRouter initialEntries={['/campagnes/c1/generer']}>
       <Routes>
         <Route path="/campagnes/:campaignId/generer" element={<GenerationPage />} />
-        <Route path="/campagnes/:campaignId/preparer" element={<p>La relecture</p>} />
+        <Route path="/campagnes/:campaignId/atlas" element={<p>L’Atlas</p>} />
       </Routes>
     </MemoryRouter>,
   )
@@ -100,7 +100,7 @@ describe('GenerationPage', () => {
     expect(within(card).getByText(/2 éléments inventés par le modèle ont été écartés/)).toBeInTheDocument()
 
     await userEvent.click(within(card).getByRole('button', { name: 'Appliquer à la campagne' }))
-    expect(await screen.findByText('La relecture')).toBeInTheDocument()
+    expect(await screen.findByText('L’Atlas')).toBeInTheDocument()
   })
 
   it('says why a generation failed, and starts none on a validated campaign', async () => {

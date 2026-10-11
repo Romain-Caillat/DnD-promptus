@@ -116,7 +116,8 @@ export function GenerationPage() {
   function apply(job: GenerationJob) {
     void act(async () => {
       await applyGeneration(campaignId, job.id)
-      navigate(`/campagnes/${campaignId}/preparer`)
+      // Creation ends on the Atlas: the region, the first scene pinned on it.
+      navigate(`/campagnes/${campaignId}/atlas`)
     })
   }
 
@@ -297,7 +298,7 @@ function JobCard({
         </>
       )}
       {job.status === 'applied' && (
-        <Link className="text-caption underline underline-offset-4" to={`/campagnes/${campaignId}/preparer`}>
+        <Link className="text-caption underline underline-offset-4" to={`/campagnes/${campaignId}/atlas`}>
           {t('prep.generate.review')}
         </Link>
       )}

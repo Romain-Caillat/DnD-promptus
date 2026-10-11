@@ -173,6 +173,25 @@ async fn a_pitch_becomes_a_campaign_the_gm_reviews_and_applies() {
     assert_eq!(detail["story"]["nodes"].as_array().unwrap().len(), 7);
     assert_eq!(beyond_pins(detail), json!([]));
     assert!(detail["validatedAt"].is_null());
+    // Creation ends on the Atlas (gm/prep-on-atlas): the opening scene's
+    // place stands on the world's region.
+    let story = &detail["story"];
+    let opening = story["bible"]["start_node"]
+        .as_str()
+        .unwrap_or_else(|| story["nodes"][0]["id"].as_str().unwrap());
+    let node = story["nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|n| n["id"] == opening)
+        .unwrap();
+    let place = story["locations"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|l| l["id"] == node["location"])
+        .unwrap_or_else(|| panic!("{node}"));
+    assert_eq!(place["anchor"]["map"], "cotes-bretagne-sud", "{place}");
     let r = call(
         &app,
         Some(&token),

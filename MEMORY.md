@@ -348,6 +348,21 @@ Every write to world state or combatants takes a row lock on the
 campaign (`SELECT … FOR UPDATE`) and re-reads inside the transaction.
 GM and players act concurrently; without it they overwrite each other.
 
+### The Atlas is the one preparation screen
+
+Since gm/prep-on-atlas the Atlas (`/campagnes/:id/atlas`) is where all
+preparation happens: what has no place on a map opens in its drawer
+(`?onglet=graph|bible|sheets|coherence|validate|medias|cartes`, with
+`?scene=`), the players' view is its switch (`?vue=joueurs`). The old
+pages (Préparer, Médias, Cartes, Vue joueurs) are gone, not hidden;
+Règles, Table, Soirée and the map editor stay apart. The drawer's
+components (`PrepDesk`, `MediaDesk`, `MapsDesk`) own no socket and no
+banner: the Atlas holds the one live channel and Claude's banner
+(`usePrepChanges`) and passes them counters. A new preparation tool is
+a drawer tab or a side-panel section, never a new page. A generated
+campaign is applied with its opening scene pinned on the region
+(`generation::pin_opening`), so creation ends on the map.
+
 ### Realtime carries no game data
 
 The live channel only says "this changed" (Postgres NOTIFY relayed to

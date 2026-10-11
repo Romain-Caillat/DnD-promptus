@@ -29,8 +29,11 @@
 use std::collections::BTreeMap;
 
 use chrono::{DateTime, Utc};
+use promptus_shared::maps::{Map, Scale, Side};
 use promptus_shared::rules::RuleSystem;
 use promptus_shared::story::edit::{self, Edit};
+use promptus_shared::story::pins::is_pinned;
+use promptus_shared::story::placing::{self, Placement, What};
 use promptus_shared::story::prune::prune;
 use promptus_shared::story::{
     Act, Adversary, Bible, Campaign, Clue, Faction, Front, Issue, Item, Library, Location, Node,
@@ -49,6 +52,50 @@ use crate::campaigns::revisions::Author;
 use crate::campaigns::{self, CampaignRow};
 use crate::error::AppError;
 use crate::live::{self, Topic};
+
+/// The opening scene of `story` pinned on `region`, so that a campaign
+/// just generated opens on the Atlas with its first scene on the map
+/// (gm/prep-on-atlas): near what the region calls by the scene's place
+/// name, else near the party's start, else in the middle — the server
+/// picks the cell as for Claude (`story::placing`). A scene already
+/// pinned, no region or no room leaves the story as it is: the GM pins
+/// it by hand.
+fn pin_opening(story: Campaign, region: Option<&Map>, rules: Option<&RuleSystem>) -> Campaign {
+    let Some(map) = region else { return story };
+    let opening = story
+        .bible
+        .start_node
+        .as_deref()
+        .and_then(|id| story.node(id))
+        .or_else(|| story.nodes.first());
+    let Some(node) = opening.filter(|n| !is_pinned(&story, n)) else {
+        return story;
+    };
+    let by_name = node
+        .location
+        .as_deref()
+        .and_then(|l| story.location(l))
+        .map(|l| l.name.clone())
+        .filter(|name| placing::lookup(&story, map, name).is_ok());
+    let start = map
+        .starts
+        .iter()
+        .find(|s| s.side == Some(Side::Party))
+        .map(|s| format!("{},{}", s.at.x, s.at.y));
+    let middle = format!("{},{}", map.grid.width() / 2, map.grid.height() / 2);
+    let ask = Placement {
+        what: What::Scene,
+        id: node.id.clone(),
+        scene: None,
+        near: Some(by_name.or(start).unwrap_or(middle)),
+        along: None,
+    };
+    let movement = crate::board::movement(rules, map);
+    placing::place(&story, map, movement, &[ask], &[])
+        .ok()
+        .and_then(|r| edit::apply(&story, &r.edits).ok())
+        .map_or(story, |(pinned, _)| pinned)
+}
 
 /// Repairs at most, after the first check.
 pub const MAX_REPAIRS: usize = 2;
@@ -1088,6 +1135,20 @@ pub async fn apply(
     story.world = row.story.world.clone();
     story.rules = row.story.rules.clone();
     story.party = row.story.party.clone();
+    // Creation ends on the Atlas (gm/prep-on-atlas): the opening scene
+    // is pinned on the region in the same journal line.
+    let own: Vec<Map> = crate::campaign_maps::all(&mut *tx, campaign)
+        .await?
+        .into_iter()
+        .map(|m| m.map)
+        .collect();
+    let world = |m: &&Map| m.scale == Scale::World;
+    let region = own
+        .iter()
+        .find(world)
+        .or_else(|| crate::content::maps(&story).find(world))
+        .cloned();
+    let story = pin_opening(story, region.as_ref(), row.rules());
     campaigns::save_story(&mut tx, campaign, &row.story, &story, Author::Copilot).await?;
     let applied: Row = sqlx::query_as(&format!(
         "UPDATE generation_jobs SET status = 'applied' WHERE id = $1 RETURNING {COLUMNS}"

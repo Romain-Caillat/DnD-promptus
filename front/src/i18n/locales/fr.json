@@ -166,19 +166,11 @@
       "tableSub": "Le lien, le message Discord, les joueurs installés",
       "evening": "Mener la soirée",
       "eveningSub": "La scène, la carte, les demandes, le co-MJ",
-      "playerView": "Ce que voient les joueurs",
-      "playerViewSub": "La vue des joueurs, en direct",
       "editRules": "Modifier les règles",
-      "review": "Relire et valider la campagne",
-      "reviewSub": "Graphe, fiches, cohérence, atelier du co-MJ",
       "generate": "Générer à partir d'une idée",
-      "generateSub": "Le co-MJ écrit un brouillon complet, vous l'appliquez puis le relisez",
-      "media": "Images et vidéos",
-      "mediaSub": "Dessiner les scènes, les PNJ et les lieux, filmer l'ouverture des actes, garder ce qui convient",
+      "generateSub": "Le co-MJ écrit un brouillon complet ; appliqué, il s'ouvre dans l'Atlas, la première scène posée sur la région",
       "atlas": "Atlas",
-      "atlasSub": "Toutes les cartes, de la région aux rencontres : on entre dans un lieu, on en ressort",
-      "maps": "Cartes",
-      "mapsSub": "Dessiner, générer ou importer les cartes de combat et d’exploration, puis les valider",
+      "atlasSub": "Toute la préparation : les cartes de la région aux rencontres, les scènes posées dessus, la vue joueurs ; dans le tiroir, la bible, les fiches, la validation, les médias et les cartes de la campagne",
       "settings": "Réglages",
       "rules": "Règles",
       "save": "Enregistrer les réglages",
@@ -439,7 +431,6 @@
     },
     "playerView": {
       "kicker": "Ce que voient les joueurs",
-      "notFound": "Cette campagne est introuvable.",
       "scene": "Scène en cours",
       "noScene": "Aucune scène n'est ouverte.",
       "clues": "Indices trouvés",
@@ -2144,7 +2135,7 @@
       "removed_other": "{{count}} éléments inventés par le modèle ont été écartés",
       "apply": "Appliquer à la campagne",
       "applyHint": "Le brouillon remplace l'histoire de la campagne. Elle reste à relire et à valider avant la première soirée.",
-      "review": "Relire la campagne →",
+      "review": "Ouvrir l’Atlas →",
       "errors": {
         "action": "L'action n'a pas abouti. Réessayez.",
         "AI_BUDGET_EXCEEDED": "Le budget IA de la campagne ne suffit pas. Augmentez-le dans les réglages de la campagne.",
@@ -2200,14 +2191,11 @@
     "review": {
       "validated": "Validée",
       "notValidated": "À valider",
-      "tabs": "Sections de la préparation",
       "tab": {
-        "graph": "Graphe",
         "bible": "Bible",
         "sheets": "Fiches",
         "coherence_one": "Cohérence · {{count}}",
-        "coherence_other": "Cohérence · {{count}}",
-        "validate": "Valider"
+        "coherence_other": "Cohérence · {{count}}"
       },
       "errors": {
         "action": "Ça n'a pas marché. Réessayez.",
@@ -2279,7 +2267,7 @@
         "info": "Pour info"
       },
       "askFix": "Proposer une correction",
-      "pinInAtlas": "L’épingler dans l’Atlas",
+      "pinInAtlas": "L’épingler sur la carte",
       "codes": {
         "ID_INVALID": "Un identifiant n'a pas le bon format.",
         "ID_DUPLICATE": "Deux éléments ont le même identifiant.",
@@ -2692,7 +2680,7 @@
     "claude": {
       "waiting_one": "Claude propose {{count}} lot de modifications : rien n’a changé avant que vous le gardiez.",
       "waiting_other": "Claude propose {{count}} lots de modifications : rien n’a changé avant que vous les gardiez.",
-      "toAtlas": "Les voir dans l’Atlas"
+      "toAtlas": "Les voir sur la carte"
     }
   },
   "atlas": {
@@ -2702,12 +2690,17 @@
     "out": "Ressortir",
     "fold": "Replier",
     "unfold": "Panneau",
-    "drawer": "Sans lieu",
-    "drawerTitle": "Ce qui n’a pas de lieu",
+    "drawer": "Tiroir",
+    "drawerTitle": "Le tiroir : ce qui n’a pas de lieu",
+    "backToMap": "Retour à la carte",
     "place": {
-      "bible": "La bible",
       "graph": "Scènes et actes",
-      "sheets": "Fiches : PNJ, adversaires, objets"
+      "bible": "Bible",
+      "sheets": "Fiches",
+      "coherence": "Cohérence",
+      "validate": "Valider",
+      "medias": "Médias",
+      "cartes": "Cartes de la campagne"
     },
     "layers": "Calques",
     "strip": "Toutes les cartes",
@@ -2857,7 +2850,7 @@
   },
   "maps": {
     "title": "Cartes de la campagne",
-    "back": "← Cartes de la campagne",
+    "back": "← Atlas",
     "mine": "Cartes de la campagne",
     "none": "Aucune carte pour l’instant : dessinez-en une, générez-la ou importez-la.",
     "notFound": "Cette carte n’existe pas.",

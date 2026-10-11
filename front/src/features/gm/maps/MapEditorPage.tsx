@@ -179,7 +179,7 @@ export function MapEditorPage() {
 
   if (state.kind === 'signed-out') return <Navigate to="/connexion" replace />
   const back = (
-    <Link className="text-caption text-mute-soft underline underline-offset-4" to={`/campagnes/${campaignId}/cartes`}>
+    <Link className="text-caption text-mute-soft underline underline-offset-4" to={`/campagnes/${campaignId}/atlas?carte=${encodeURIComponent(mapId)}`}>
       {t('maps.back')}
     </Link>
   )

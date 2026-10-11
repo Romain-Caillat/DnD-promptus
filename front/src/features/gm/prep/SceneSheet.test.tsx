@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mockApi, sentTo, stubReducedMotion } from '@/test-utils'
-import { ReviewPage } from './ReviewPage'
+import { useState } from 'react'
+import { PrepDesk } from './PrepDesk'
 
 const SHIPS = { map: 'large-de-belle-ile', ship: 'la_machoire', ships: [{ ship: 'hms_greyhound' }] }
 
@@ -51,11 +52,28 @@ const COMMON = {
   'GET /api/campaigns/c1/readiness': () => ({ status: 200, body: { data: [] } }),
 }
 
+/** The drawer's « Scènes et actes » tab, the scene chosen kept as the Atlas keeps it. */
+function Graph() {
+  const [scene, setScene] = useState<string | null>(null)
+  return (
+    <PrepDesk
+      campaignId="c1"
+      tab="graph"
+      scene={scene}
+      live={0}
+      proposals={0}
+      fresh={new Set()}
+      onScene={setScene}
+      onMap={() => {}}
+    />
+  )
+}
+
 function renderPage() {
   render(
-    <MemoryRouter initialEntries={['/campagnes/c1/preparer']}>
+    <MemoryRouter initialEntries={['/campagnes/c1/atlas?onglet=graph']}>
       <Routes>
-        <Route path="/campagnes/:campaignId/preparer" element={<ReviewPage />} />
+        <Route path="/campagnes/:campaignId/atlas" element={<Graph />} />
       </Routes>
     </MemoryRouter>,
   )

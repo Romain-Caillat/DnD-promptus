@@ -94,6 +94,10 @@ class FakeSocket {
   push(msg: unknown) {
     act(() => this.onmessage?.({ data: JSON.stringify(msg) }))
   }
+
+  drop() {
+    act(() => this.onclose?.())
+  }
 }
 
 function renderPage() {
@@ -243,7 +247,7 @@ describe('AtlasPage', () => {
     // The scene standing nowhere is said, and opens its sheet.
     expect(screen.getByRole('link', { name: '4. Le rêve' })).toHaveAttribute(
       'href',
-      '/campagnes/c1/preparer?onglet=graph&scene=sc_reve',
+      '/campagnes/c1/atlas?carte=region&onglet=graph&scene=sc_reve',
     )
 
     // On the place map, the tavern's pin lists its two scenes.
@@ -253,7 +257,7 @@ describe('AtlasPage', () => {
     const chosen = screen.getByRole('region', { name: 'Épingle : La taverne' })
     expect(within(chosen).getByRole('link', { name: '1. L’arrivée' })).toHaveAttribute(
       'href',
-      '/campagnes/c1/preparer?onglet=graph&scene=sc_a',
+      '/campagnes/c1/atlas?carte=quai&onglet=graph&scene=sc_a',
     )
     // A scene with its fight map opens it; one without may generate it.
     expect(within(chosen).getByRole('button', { name: 'Voir sa carte' })).toBeInTheDocument()
@@ -620,5 +624,55 @@ describe('AtlasPage', () => {
     // Back to the GM's view.
     await userEvent.click(screen.getByRole('button', { name: 'Vue MJ' }))
     expect(await screen.findByRole('button', { name: /Port-Louis — scènes : 1\. L’arrivée/ })).toBeInTheDocument()
+  })
+
+  it('keeps the players’ view live next to the table, and catches up after a cut', async () => {
+    stubReducedMotion(true)
+    vi.stubGlobal('WebSocket', FakeSocket)
+    FakeSocket.all = []
+    const last = () => FakeSocket.all[FakeSocket.all.length - 1]
+    let clues: string[] = []
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/atlas': () => ok(ATLAS),
+      'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
+      'GET /api/campaigns/c1/maps/region/players': () =>
+        ok({
+          shown: true,
+          board: { map: ATLAS.maps[0].map, fog: true, tokens: [], reachable: [], fight: null, pins: [], clues: [] },
+        }),
+      'GET /api/campaigns/c1/player-view': () =>
+        ok({ title: 'Le Phare de Kerbrume', world: 'Côte bretonne, 1718', playerHook: '', scene: null, clues, npcs: [] }),
+    })
+    render(
+      <MemoryRouter initialEntries={['/campagnes/c1/atlas?vue=joueurs']}>
+        <Routes>
+          <Route path="/campagnes/:campaignId/atlas" element={<AtlasPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('heading', { name: 'Le Phare de Kerbrume' })).toBeInTheDocument()
+    expect(screen.getByText("Aucun indice trouvé pour l'instant.")).toBeInTheDocument()
+    expect(screen.getByText('Connexion…')).toBeInTheDocument()
+    last().push({ type: 'ready', versions: {} })
+    expect(screen.getByText('En direct')).toBeInTheDocument()
+    last().push({ type: 'presence', gmOnline: true, players: ['p1', 'p2'] })
+    expect(screen.getByText('2 joueurs connectés')).toBeInTheDocument()
+
+    // The GM reveals a clue: both the map and the text are read again.
+    clues = ['Une lanterne brisée']
+    last().push({ type: 'changed', topic: 'world', version: 1 })
+    expect(await screen.findByText('Une lanterne brisée')).toBeInTheDocument()
+    expect(sentTo(fetchMock, 'GET /api/campaigns/c1/maps/region/players').length).toBeGreaterThan(1)
+
+    // The network drops while two more clues are found.
+    last().drop()
+    expect(screen.getByText('Reconnexion…')).toBeInTheDocument()
+    clues = ['Une lanterne brisée', 'Un registre raturé', 'Des pas dans le sable']
+    await act(() => new Promise((r) => setTimeout(r, 600)))
+    last().push({ type: 'ready', versions: { world: 3 } })
+    expect(screen.getByText('En direct')).toBeInTheDocument()
+    expect(await screen.findByText('Des pas dans le sable')).toBeInTheDocument()
+    expect(screen.getByText('Un registre raturé')).toBeInTheDocument()
   })
 })

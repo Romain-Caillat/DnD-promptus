@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Panel } from '@/features/gm/live/ui'
+import { LiveIndicator } from '@/features/live/LiveIndicator'
+import type { LiveState } from '@/features/live/useLiveChanges'
 import { MapCanvas } from '@/features/map/MapCanvas'
 import { playerMarks } from '@/features/map/pins'
 import { HexMap } from '@/features/travel/HexMap'
@@ -97,9 +99,11 @@ export function PlayersMap({
 /**
  * Beside the players' map, what their screens say now (the player
  * view, `GET …/player-view`): the campaign, its hook, the scene open,
- * the clues found and the characters met.
+ * the clues found and the characters met — with the live channel's
+ * state and how many players are connected, so the GM can leave it open
+ * next to the table.
  */
-export function PlayersSection({ campaignId, version }: { campaignId: string; version: number }) {
+export function PlayersSection({ campaignId, version, live }: { campaignId: string; version: number; live: LiveState }) {
   const { t } = useTranslation()
   const [view, setView] = useState<PlayerView | null | 'error'>(null)
   useEffect(() => {
@@ -119,6 +123,10 @@ export function PlayersSection({ campaignId, version }: { campaignId: string; ve
 
   return (
     <Panel title={t('gm.playerView.kicker')}>
+      <div className="flex flex-wrap items-center gap-3">
+        <p className="text-caption text-mute-soft">{t('live.players', { count: live.presence.players.length })}</p>
+        <LiveIndicator status={live.status} />
+      </div>
       {view === null && <p role="status">{t('prep.loading')}</p>}
       {view === 'error' && <p role="alert">{t('prep.error')}</p>}
       {view && view !== 'error' && (

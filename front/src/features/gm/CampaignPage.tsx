@@ -205,12 +205,6 @@ export function CampaignPage() {
               subtitle={t('gm.campaign.atlasSub')}
               onClick={() => navigate(`${base}/atlas`)}
             />
-            <CardButton
-              icon="eye"
-              title={t('gm.campaign.review')}
-              subtitle={t('gm.campaign.reviewSub')}
-              onClick={() => navigate(`${base}/preparer`)}
-            />
             {!campaign.validatedAt && (
               <CardButton
                 variant="dark"
@@ -220,19 +214,6 @@ export function CampaignPage() {
                 onClick={() => navigate(`${base}/generer`)}
               />
             )}
-            <CardButton
-              variant="dark"
-              icon="image"
-              title={t('gm.campaign.media')}
-              subtitle={t('gm.campaign.mediaSub')}
-              onClick={() => navigate(`${base}/medias`)}
-            />
-            <CardButton
-              icon="map"
-              title={t('gm.campaign.maps')}
-              subtitle={t('gm.campaign.mapsSub')}
-              onClick={() => navigate(`${base}/cartes`)}
-            />
             <CardButton
               icon="arrow"
               title={t('gm.campaign.evening')}
@@ -245,13 +226,6 @@ export function CampaignPage() {
               title={t('gm.campaign.table')}
               subtitle={t('gm.campaign.tableSub')}
               onClick={() => navigate(`${base}/table`)}
-            />
-            <CardButton
-              variant="dark"
-              icon="eye"
-              title={t('gm.campaign.playerView')}
-              subtitle={t('gm.campaign.playerViewSub')}
-              onClick={() => navigate(`${base}/vue-joueurs`)}
             />
 
             <section className="surface-slab flex flex-col gap-2 p-4">

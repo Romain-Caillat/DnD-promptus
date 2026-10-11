@@ -1,9 +1,9 @@
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { mockApi, sentTo } from '@/test-utils'
-import { ReviewPage } from './ReviewPage'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { mockApi, sentTo, stubReducedMotion } from '@/test-utils'
+import { AtlasPage } from '@/features/gm/atlas/AtlasPage'
 
 const ALERT = {
   severity: 'warning',
@@ -100,18 +100,47 @@ const NOT_READY = {
 }
 const READY = { ...NOT_READY, ready: true, done: 5, checks: [], alerts: [] }
 
-function renderPage(at = '/campagnes/c1/preparer') {
+/** The Atlas around the drawer: no map, the two scenes for the banner. */
+const ATLAS = {
+  revision: 4,
+  roots: [],
+  maps: [],
+  places: [],
+  unplaced: [],
+  issues: [],
+  castable: {
+    npcs: [],
+    clues: [],
+    fights: [],
+    scenes: [
+      { id: 'sc_quai', title: 'Le quai', number: 1 },
+      { id: 'sc_bureau', title: 'Le bureau de Morel', number: 2 },
+    ],
+  },
+  acts: [],
+}
+const AROUND = {
+  'GET /api/campaigns/c1/atlas': () => ({ status: 200, body: { data: ATLAS } }),
+  'GET /api/campaigns/c1/media': () => ({ status: 200, body: { data: { theme: null, assets: [] } } }),
+  'GET /api/campaigns/c1/proposals': () => ({ status: 200, body: { data: [] } }),
+}
+
+/** The preparation lives in the Atlas's drawer (gm/prep-on-atlas). */
+function renderPage(at = '/campagnes/c1/atlas?onglet=graph') {
   render(
     <MemoryRouter initialEntries={[at]}>
       <Routes>
-        <Route path="/campagnes/:campaignId/preparer" element={<ReviewPage />} />
+        <Route path="/campagnes/:campaignId/atlas" element={<AtlasPage />} />
         <Route path="/campagnes/:campaignId/table" element={<p>La table</p>} />
       </Routes>
     </MemoryRouter>,
   )
 }
 
-describe('ReviewPage', () => {
+describe('PrepDesk, in the Atlas’s drawer', () => {
+  beforeEach(() => {
+    stubReducedMotion(true)
+  })
   afterEach(() => {
     vi.unstubAllGlobals()
   })
@@ -126,6 +155,7 @@ describe('ReviewPage', () => {
       issues: [],
     })
     const api = mockApi({
+      ...AROUND,
       'GET /api/campaigns/c1': () => ({ status: 200, body: { data: campaign() } }),
       'GET /api/campaigns/c1/workshop': () => ({ status: 200, body: { data: [] } }),
       'GET /api/campaigns/c1/readiness': () => ({ status: 200, body: { data: [READY] } }),
@@ -157,7 +187,7 @@ describe('ReviewPage', () => {
     ])
 
     // The alert: the co-GM proposes a clue, the GM accepts it.
-    await userEvent.click(screen.getByRole('button', { name: /Cohérence · 1/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cohérence' }))
     expect(screen.getByText(/moins de trois indices/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Proposer une correction' }))
     expect(sentTo(api, 'POST /api/campaigns/c1/workshop')).toEqual([
@@ -184,6 +214,7 @@ describe('ReviewPage', () => {
     let current = campaign({ revision: 4 })
     let journal: unknown[] = []
     const api = mockApi({
+      ...AROUND,
       'GET /api/campaigns/c1': () => ({ status: 200, body: { data: current } }),
       'GET /api/campaigns/c1/workshop': () => ({ status: 200, body: { data: [] } }),
       'GET /api/campaigns/c1/readiness': () => ({ status: 200, body: { data: [READY] } }),
@@ -236,6 +267,7 @@ describe('ReviewPage', () => {
 
   it('does not validate a campaign with errors', async () => {
     mockApi({
+      ...AROUND,
       'GET /api/campaigns/c1': () => ({
         status: 200,
         body: {
@@ -259,8 +291,9 @@ describe('ReviewPage', () => {
     expect(screen.getByText('« Le rêve de Borin » ne se trouve sur aucune carte (permis : rêve, souvenir).')).toBeInTheDocument()
   })
 
-  it('opens on the scene of an Atlas pin, and sends a scene with no spot to the Atlas, not to the co-GM', async () => {
+  it('opens on the scene of an Atlas pin, and sends a scene with no spot to the map, not to the co-GM', async () => {
     mockApi({
+      ...AROUND,
       'GET /api/campaigns/c1': () => ({
         status: 200,
         body: {
@@ -272,11 +305,13 @@ describe('ReviewPage', () => {
       'GET /api/campaigns/c1/workshop': () => ({ status: 200, body: { data: [] } }),
       'GET /api/campaigns/c1/readiness': () => ({ status: 200, body: { data: [READY] } }),
     })
-    renderPage('/campagnes/c1/preparer?onglet=graph&scene=sc_bureau')
+    renderPage('/campagnes/c1/atlas?onglet=graph&scene=sc_bureau')
 
     expect(await screen.findByRole('region', { name: 'Fiche de la scène « Le bureau de Morel »' })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: /Cohérence · 1/ }))
-    expect(screen.getByRole('link', { name: 'L’épingler dans l’Atlas' })).toHaveAttribute('href', '/campagnes/c1/atlas')
+    await userEvent.click(screen.getByRole('button', { name: 'Cohérence' }))
     expect(screen.queryByRole('button', { name: 'Proposer une correction' })).not.toBeInTheDocument()
+    // Pinning it is the map's: the drawer closes on it.
+    await userEvent.click(screen.getByRole('button', { name: 'L’épingler sur la carte' }))
+    expect(await screen.findByText('Aucune carte : ni le monde ni la campagne n’en ont encore.')).toBeInTheDocument()
   })
 })

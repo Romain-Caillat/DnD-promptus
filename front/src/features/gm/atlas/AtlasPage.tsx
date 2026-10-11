@@ -18,6 +18,9 @@ import { cn } from '@/lib/utils'
 import { canLeave, climb, depth, doorAt, doorCells, enter, index, leave, switchable, trail, withoutLayers } from './atlas'
 import { ClaudeBanner } from '@/features/gm/prep/ClaudeBanner'
 import { usePrepChanges } from '@/features/gm/prep/usePrepChanges'
+import { MapsDesk } from '@/features/gm/maps/MapsDesk'
+import { MediaDesk } from '@/features/gm/prep/MediaDesk'
+import { PREP_TABS, PrepDesk, type PrepTab } from '@/features/gm/prep/PrepDesk'
 import { CastSection } from './CastSection'
 import { batchOf, proposedMarks } from './claude'
 import { ClaudeSection } from './ClaudeSection'
@@ -36,11 +39,20 @@ type PageState =
 type ScaleName = 'world' | 'place' | 'encounter'
 const scaleOf = (m: AtlasMap): ScaleName => m.map.scale ?? 'encounter'
 
+/** The live topics the drawer's tabs are read from. */
+const DESK_TOPICS = ['story', 'prep', 'desk']
+
 /** The live topics what the players see is built from. */
 const SEEN_TOPICS = ['map', 'world', 'story', 'prep']
 
-/** What has no place on a map, and the preparation tab that holds it. */
-const DRAWER = ['bible', 'graph', 'sheets'] as const
+/**
+ * The drawer (`?onglet=`): what has no place on a map — the scenes and
+ * acts with their sheets, the bible, the sheets, the coherence, the
+ * validation — then the campaign's images and its own maps.
+ */
+const DRAWER = [...PREP_TABS, 'medias', 'cartes'] as const
+type DrawerTab = (typeof DRAWER)[number]
+const isPrep = (tab: DrawerTab): tab is PrepTab => (PREP_TABS as readonly string[]).includes(tab)
 
 /**
  * `/campagnes/:campaignId/atlas` — maps/browse-atlas and the shell of
@@ -49,9 +61,16 @@ const DRAWER = ['bible', 'graph', 'sheets'] as const
  * place by tapping where it opens on its parent (or from the side
  * panel), and zooming out goes back where they came from. The
  * breadcrumb, the map's own layers, the side panel and the strip of
- * every map at the bottom frame it; a drawer leads to what has no place
- * (bible, scenes and acts, sheets). On a tablet the map is handled
- * with the fingers and the side panel folds away.
+ * every map at the bottom frame it. On a tablet the map is handled with
+ * the fingers and the side panel folds away.
+ *
+ * It is the one preparation screen (gm/prep-on-atlas): its drawer opens,
+ * in place of the map, what has no place on one — scenes and acts with
+ * their sheet and the co-GM's workshop, bible, sheets, coherence,
+ * validation — then the images and the campaign's own maps (`?onglet=`,
+ * `?scene=`). « Vue joueurs » (maps/preview-as-player, `?vue=joueurs`)
+ * draws the map as the server projects it for the players, and beside
+ * it what their screens say.
  *
  * The scenes stand on the maps as numbered pins (campaign/pin-scenes-
  * on-maps), carried by their places in the story: tapping one lists its
@@ -120,6 +139,12 @@ export function AtlasPage() {
   /** « Vue MJ / Vue joueurs » (maps/preview-as-player), kept in `?vue=joueurs`. */
   const players = params.get('vue') === 'joueurs'
   const [seen, setSeen] = useState(0)
+  /** The drawer's tab open instead of the map, and the scene chosen in it. */
+  const tab = DRAWER.find((x) => x === params.get('onglet')) ?? null
+  const deskScene = params.get('scene')
+  /** What the drawer hears live: the story and the jobs, then the co-GM's and Claude's batches. */
+  const [deskLive, setDeskLive] = useState(0)
+  const [batchesLive, setBatchesLive] = useState(0)
 
   useEffect(() => {
     let live = true
@@ -165,10 +190,12 @@ export function AtlasPage() {
   const { tileset, atlases } = useTileset(entry?.map ?? null, media, (id) => gmImageUrl(campaignId, id))
   const backdrop = useImage(entry?.backdrop && entry.map.backdrop?.image ? gmBackdropUrl(campaignId, entry.map.id) : null)
   const playersMap = usePlayersMap(campaignId, shownId, players)
-  useLiveChanges(
+  const live = useLiveChanges(
     campaignId,
     (topics) => {
       if (topics.includes('prep') || topics.includes('proposals')) setVersion((v) => v + 1)
+      if (topics.some((x) => DESK_TOPICS.includes(x))) setDeskLive((v) => v + 1)
+      if (topics.includes('proposals')) setBatchesLive((v) => v + 1)
       // What players see moves with the table (map, world) and the story.
       if (players && topics.some((x) => SEEN_TOPICS.includes(x))) {
         void playersMap.reload()
@@ -209,7 +236,16 @@ export function AtlasPage() {
     setScene(null)
     setFocus(null)
     const last = next[next.length - 1]
-    if (last) setParams(players ? { carte: last, vue: 'joueurs' } : { carte: last }, { replace: true })
+    if (last) query({ carte: last, onglet: null, scene: null })
+  }
+  /** Change some of the address's parameters, keep the others (`null` removes one). */
+  function query(patch: Record<string, string | null>) {
+    const next = new URLSearchParams(params)
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === null) next.delete(key)
+      else next.set(key, value)
+    }
+    setParams(next, { replace: true })
   }
   const open = (id: string) => go(enter(here, id), 'in')
   const jump = (id: string) => go(enter(here, id), null)
@@ -273,6 +309,7 @@ export function AtlasPage() {
     try {
       await changes.undo()
       setVersion((v) => v + 1)
+      setDeskLive((v) => v + 1)
     } catch (err) {
       setClaudeFailed(err instanceof ApiError ? err.code : 'action')
     } finally {
@@ -394,16 +431,36 @@ export function AtlasPage() {
     const sc = i ? state.atlas.castable.scenes[Number(i[1])] : undefined
     return sc ? t('atlas.pins.scene', { number: sc.number, title: sc.title }) : ''
   }
-  const sceneLink = (id: string) => `/campagnes/${campaignId}/preparer?onglet=graph&scene=${encodeURIComponent(id)}`
+  const sceneLink = (id: string) => {
+    const at = new URLSearchParams({ ...(shownId ? { carte: shownId } : {}), onglet: 'graph', scene: id })
+    return `/campagnes/${campaignId}/atlas?${at.toString()}`
+  }
 
   /** Switch « Vue MJ / Vue joueurs »: the map's own id stays in the address. */
   const switchView = (on: boolean) => {
-    const next: Record<string, string> = shownId ? { carte: shownId } : {}
-    if (on) next.vue = 'joueurs'
-    setParams(next, { replace: true })
+    query({ carte: shownId, vue: on ? 'joueurs' : null, onglet: null, scene: null })
     setPicked(null)
     setPlacing(null)
   }
+  const openTab = (next: DrawerTab | null) => query({ carte: shownId, onglet: next, scene: null })
+
+  const desk =
+    tab === null ? null : isPrep(tab) ? (
+      <PrepDesk
+        campaignId={campaignId}
+        tab={tab}
+        scene={deskScene}
+        live={deskLive}
+        proposals={batchesLive}
+        fresh={changes.fresh}
+        onScene={(id) => query({ scene: id })}
+        onMap={() => openTab(null)}
+      />
+    ) : tab === 'medias' ? (
+      <MediaDesk campaignId={campaignId} live={deskLive} />
+    ) : (
+      <MapsDesk campaignId={campaignId} live={deskLive} />
+    )
 
   const mapView = !entry || !map ? (
     <p className="text-body text-mute-soft">{t('atlas.empty')}</p>
@@ -565,9 +622,9 @@ export function AtlasPage() {
           {t('atlas.edit')}
         </Link>
       ) : (
-        <Link className="text-caption text-chalk underline underline-offset-4" to={`/campagnes/${campaignId}/cartes`}>
+        <button type="button" className="self-start text-caption text-chalk underline underline-offset-4" onClick={() => openTab('cartes')}>
           {t('atlas.copy')}
-        </Link>
+        </button>
       )}
     </Panel>
   )
@@ -616,7 +673,7 @@ export function AtlasPage() {
             <Btn disabled={!canLeave(here, maps)} onClick={out}>
               {t('atlas.out')}
             </Btn>
-            <Btn aria-expanded={drawer} onClick={() => setDrawer((d) => !d)}>
+            <Btn aria-expanded={drawer || tab !== null} onClick={() => setDrawer((d) => !d)}>
               {t('atlas.drawer')}
             </Btn>
             {tablet && !panel && (
@@ -634,46 +691,55 @@ export function AtlasPage() {
           onUndo={() => void undoClaude()}
         />
 
-        {drawer && (
+        {(drawer || tab !== null) && (
           <nav aria-label={t('atlas.drawerTitle')} className="surface-slab flex flex-wrap items-center gap-2 p-3">
             <span className="type-label text-mute-soft">{t('atlas.drawerTitle')}</span>
-            {DRAWER.map((tab) => (
-              <Link
-                key={tab}
-                className="pixel-key pixel-key-dark pixel-cursor min-h-8 py-1 pr-2.5 pb-2 text-label"
-                to={`/campagnes/${campaignId}/preparer?onglet=${tab}`}
+            {DRAWER.map((x) => (
+              <button
+                key={x}
+                type="button"
+                className="pixel-tab py-1.5 pb-2"
+                aria-current={tab === x ? 'page' : undefined}
+                onClick={() => openTab(x)}
               >
-                {t(`atlas.place.${tab}`)}
-              </Link>
+                {t(`atlas.place.${x}`)}
+              </button>
             ))}
+            {tab !== null && (
+              <Btn className="ml-auto" onClick={() => openTab(null)}>
+                {t('atlas.backToMap')}
+              </Btn>
+            )}
           </nav>
         )}
 
-        {!players && (
-        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('atlas.storyLayers.label')}>
-          <span className="type-label text-mute-soft">{t('atlas.storyLayers.label')}</span>
-          {STORY_LAYERS.map((l) => (
-            <button
-              key={l}
-              type="button"
-              className="pixel-choice py-1 pr-2 pb-1.5 text-caption font-semibold"
-              aria-pressed={lit.has(l)}
-              onClick={() =>
-                setLit((s) => {
-                  const next = new Set(s)
-                  if (next.has(l)) next.delete(l)
-                  else next.add(l)
-                  return next
-                })
-              }
-            >
-              {t(`atlas.storyLayers.${l}`)}
-            </button>
-          ))}
-        </div>
+        {desk}
+
+        {!players && tab === null && (
+          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('atlas.storyLayers.label')}>
+            <span className="type-label text-mute-soft">{t('atlas.storyLayers.label')}</span>
+            {STORY_LAYERS.map((l) => (
+              <button
+                key={l}
+                type="button"
+                className="pixel-choice py-1 pr-2 pb-1.5 text-caption font-semibold"
+                aria-pressed={lit.has(l)}
+                onClick={() =>
+                  setLit((s) => {
+                    const next = new Set(s)
+                    if (next.has(l)) next.delete(l)
+                    else next.add(l)
+                    return next
+                  })
+                }
+              >
+                {t(`atlas.storyLayers.${l}`)}
+              </button>
+            ))}
+          </div>
         )}
 
-        {!players && layers.length > 0 && (
+        {!players && tab === null && layers.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('atlas.layers')}>
             <span className="type-label text-mute-soft">{t('atlas.layers')}</span>
             {layers.map((l) => (
@@ -697,10 +763,12 @@ export function AtlasPage() {
           </div>
         )}
 
-        <div className={cn('grid min-h-0 flex-1 gap-3', (!tablet || panel) && 'lg:grid-cols-[minmax(0,1fr)_320px]')}>
-          <div className="min-w-0 overflow-hidden">{mapView}</div>
-          {(!tablet || panel) && (players ? <PlayersSection campaignId={campaignId} version={seen} /> : side)}
-        </div>
+        {tab === null && (
+          <div className={cn('grid min-h-0 flex-1 gap-3', (!tablet || panel) && 'lg:grid-cols-[minmax(0,1fr)_320px]')}>
+            <div className="min-w-0 overflow-hidden">{mapView}</div>
+            {(!tablet || panel) && (players ? <PlayersSection campaignId={campaignId} version={seen} live={live} /> : side)}
+          </div>
+        )}
 
         <nav aria-label={t('atlas.strip')} className="flex gap-1.5 overflow-x-auto pb-1">
           {state.atlas.maps.map((m) => (

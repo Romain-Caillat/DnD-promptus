@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
+import { useNavigate } from 'react-router'
 import { CardButton } from '@/components/game/CardButton'
 import { StatusBanner } from '@/components/game/StatusBanner'
 import { Btn, Panel } from '@/features/gm/live/ui'
-import { useLiveChanges } from '@/features/live/useLiveChanges'
 import { ApiError } from '@/lib/api'
 import {
   applyEdits,
@@ -22,16 +21,15 @@ import { cn } from '@/lib/utils'
 import { EntityForm, type FieldDef } from './EntityForm'
 import { Gauge, Readiness, useReadiness } from './Readiness'
 import { SceneSheet } from './SceneSheet'
-import { ClaudeBanner, useClaudeWaiting } from './ClaudeBanner'
-import { usePrepChanges } from './usePrepChanges'
+import { useClaudeWaiting } from './ClaudeBanner'
 import { Workshop, useWorkshop } from './Workshop'
 
-const TABS = ['graph', 'bible', 'sheets', 'coherence', 'validate'] as const
-type Tab = (typeof TABS)[number]
+/** The drawer's preparation tabs, in the order the Atlas lists them. */
+export const PREP_TABS = ['graph', 'bible', 'sheets', 'coherence', 'validate'] as const
+export type PrepTab = (typeof PREP_TABS)[number]
 
 type PageState =
   | { kind: 'loading' }
-  | { kind: 'signed-out' }
   | { kind: 'not-found' }
   | { kind: 'error' }
   | { kind: 'ready'; campaign: ReviewCampaign }
@@ -73,75 +71,73 @@ const SHEET_KINDS = ['npcs', 'adversaries', 'items'] as const
 type SheetKind = (typeof SHEET_KINDS)[number]
 
 /**
- * `/campagnes/:campaignId/preparer` — the GM reviews a campaign
- * (campaign/review-story-graph, planche « Préparer », moments 6 to 8
- * and 10): the graph of scenes and clues, the bible, the sheets, the
- * coherence alerts, and the validation that makes it playable. The
- * co-GM's workshop stays on the left: it proposes, the GM accepts or
- * rejects.
+ * The Atlas's drawer for what has no place on a map (campaign/review-
+ * story-graph, planche « Préparer », moments 6 to 8 and 10, now inside
+ * gm/prep-on-atlas): the graph of scenes and clues with the scene sheet,
+ * the bible, the sheets, the coherence alerts, and the validation that
+ * makes the campaign playable. The co-GM's workshop stays on the left: it
+ * proposes, the GM accepts or rejects.
+ *
+ * The Atlas owns the address (`?onglet=`, `?scene=`), the live channel
+ * and Claude's banner: `live` moves with the story, `proposals` with the
+ * co-GM's and Claude's batches, `fresh` names what someone else just
+ * changed.
  */
-export function ReviewPage() {
+export function PrepDesk({
+  campaignId,
+  tab,
+  scene: selected,
+  live,
+  proposals,
+  fresh,
+  onScene: setSelected,
+  onMap,
+}: {
+  campaignId: string
+  tab: PrepTab
+  scene: string | null
+  live: number
+  proposals: number
+  fresh: ReadonlySet<string>
+  onScene: (id: string | null) => void
+  /** Back to the map (Claude's batches are kept there). */
+  onMap: () => void
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { campaignId = '' } = useParams()
   const [state, setState] = useState<PageState>({ kind: 'loading' })
-  // `?onglet=bible` opens a tab directly (the Atlas's drawer links here);
-  // `?scene=` opens a scene's sheet (a pin of the Atlas,
-  // campaign/pin-scenes-on-maps).
-  const [params] = useSearchParams()
-  const [tab, setTab] = useState<Tab>(() => TABS.find((x) => x === params.get('onglet')) ?? 'graph')
-  const [selected, setSelected] = useState<string | null>(() => params.get('scene'))
-  const [version, setVersion] = useState(0)
-  const [workshopVersion, setWorkshopVersion] = useState(0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<{ code: string; detail: string | null } | null>(null)
 
   useEffect(() => {
-    let live = true
+    let on = true
     fetchReview(campaignId).then(
       (campaign) => {
-        if (live) setState({ kind: 'ready', campaign })
+        if (on) setState({ kind: 'ready', campaign })
       },
       (err: unknown) => {
-        if (!live) return
-        if (err instanceof ApiError && err.status === 401) setState({ kind: 'signed-out' })
-        else if (err instanceof ApiError && err.status === 404) setState({ kind: 'not-found' })
+        if (!on) return
+        if (err instanceof ApiError && err.status === 404) setState({ kind: 'not-found' })
         else setState({ kind: 'error' })
       },
     )
     return () => {
-      live = false
+      on = false
     }
-  }, [campaignId, version])
-
-  const changes = usePrepChanges(campaignId, state.kind === 'ready' ? state.campaign.revision : null)
-  useLiveChanges(
-    campaignId,
-    (topics) => {
-      if (topics.includes('story')) setVersion((v) => v + 1)
-      if (topics.includes('proposals')) setWorkshopVersion((v) => v + 1)
-      changes.onTopics(topics)
-    },
-    'gm',
-    changes.onActivity,
-  )
+  }, [campaignId, live])
 
   const adopt = useCallback((campaign: ReviewCampaign) => setState({ kind: 'ready', campaign }), [])
-  const workshop = useWorkshop(campaignId, workshopVersion, adopt)
-  const claudeWaiting = useClaudeWaiting(campaignId, workshopVersion)
+  const workshop = useWorkshop(campaignId, proposals, adopt)
+  const claudeWaiting = useClaudeWaiting(campaignId, proposals)
   const acts = useReadiness(campaignId, state.kind === 'ready' ? state.campaign.updatedAt : '')
 
-  if (state.kind === 'signed-out') return <Navigate to="/connexion" replace />
   if (state.kind !== 'ready') {
     return (
-      <main className="surface-table flex min-h-dvh flex-col gap-4 p-6 text-chalk">
-        <Link className="text-caption text-mute-soft underline underline-offset-4" to={`/campagnes/${campaignId}`}>
-          {t('prep.back')}
-        </Link>
+      <div className="flex flex-col gap-4">
         {state.kind === 'loading' && <p role="status">{t('prep.loading')}</p>}
         {state.kind === 'not-found' && <p role="alert">{t('prep.notFound')}</p>}
         {state.kind === 'error' && <p role="alert">{t('prep.error')}</p>}
-      </main>
+      </div>
     )
   }
 
@@ -154,19 +150,6 @@ export function ReviewPage() {
     setError(null)
     try {
       adopt((await applyEdits(campaignId, edits)).campaign)
-    } catch (err) {
-      setError(err instanceof ApiError ? { code: err.code, detail: err.detail } : { code: 'action', detail: null })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function undoClaude() {
-    setBusy(true)
-    setError(null)
-    try {
-      const campaign = await changes.undo()
-      if (campaign) adopt(campaign)
     } catch (err) {
       setError(err instanceof ApiError ? { code: err.code, detail: err.detail } : { code: 'action', detail: null })
     } finally {
@@ -193,136 +176,105 @@ export function ReviewPage() {
   )
 
   return (
-    <main className="surface-table flex min-h-dvh flex-col text-chalk">
-      <header className="flex flex-wrap items-center gap-4 border-b border-line px-5 py-3 text-caption text-mute-soft">
-        <Link className="underline underline-offset-4" to={`/campagnes/${campaignId}`}>
-          {t('prep.back')}
-        </Link>
-        <h1 className="type-title text-[16px] text-chalk">{story.title}</h1>
+    <div className="flex flex-col gap-4">
+      <p className="flex flex-wrap items-center gap-2 text-caption text-mute-soft">
         <span className="rounded-md border border-line-strong px-2 py-0.5 text-[11px] font-semibold">
           {campaign.validatedAt ? t('prep.review.validated') : t('prep.review.notValidated')}
         </span>
-        <nav className="ml-auto flex gap-1" aria-label={t('prep.review.tabs')}>
-          {TABS.map((id) => (
-            <button
-              key={id}
-              type="button"
-              aria-current={tab === id ? 'page' : undefined}
-              className={cn(
-                'pixel-tab py-1.5 pb-2',
-              )}
-              onClick={() => setTab(id)}
-            >
-              {id === 'coherence'
-                ? t('prep.review.tab.coherence', { count: campaign.issues.length })
-                : t(`prep.review.tab.${id}`)}
-            </button>
-          ))}
-        </nav>
-      </header>
-
-      <div className="flex flex-col gap-4 p-5">
-        <ClaudeBanner
-          changes={changes}
-          busy={busy}
-          sceneTitle={(id) => story.nodes?.find((n) => n.id === id)?.title}
-          onUndo={() => void undoClaude()}
-        />
-        {claudeWaiting > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBanner tone="wait" className="flex-1">
-              {t('prep.claude.waiting', { count: claudeWaiting })}
-            </StatusBanner>
-            <Link className="text-caption text-chalk underline underline-offset-4" to={`/campagnes/${campaignId}/atlas`}>
-              {t('prep.claude.toAtlas')}
-            </Link>
-          </div>
-        )}
-        {error && (
-          <p role="alert" className="text-body text-stat-atk">
-            {t(`prep.review.errors.${error.code}`, { defaultValue: t('prep.review.errors.action') })}
-            {error.code === 'EDIT_SCENE_INVALID' && error.detail && (
-              <span className="block font-mono text-caption">{error.detail}</span>
-            )}
-          </p>
-        )}
-        <div
-          className={cn(
-            'grid gap-4',
-            sceneOpen
-              ? 'lg:grid-cols-[1fr_440px] xl:grid-cols-[300px_1fr_460px]'
-              : 'xl:grid-cols-[340px_1fr_340px]',
-          )}
-        >
-          {/* With a scene open on a tablet, the graph and its sheet side by side; the co-GM below. */}
-          <div className={cn('flex min-w-0 flex-col', sceneOpen && 'lg:order-last lg:col-span-2 xl:order-none xl:col-span-1')}>
-            <Workshop workshop={workshop} story={story} node={selectedNode?.id ?? null} />
-          </div>
-
-          <section className="flex min-w-0 flex-col gap-4">
-            {tab === 'graph' && (
-              <Graph story={story} acts={acts} selected={selected} fresh={changes.fresh} onSelect={setSelected} />
-            )}
-            {tab === 'bible' && (
-              <EntityForm
-                key={`bible${campaign.updatedAt}`}
-                title={t('prep.review.tab.bible')}
-                target="bible"
-                entity={story.bible}
-                fields={BIBLE_FIELDS}
-                busy={busy}
-                onSave={save}
-              />
-            )}
-            {tab === 'sheets' && (
-              <Sheets story={story} selected={selected} fresh={changes.fresh} onSelect={setSelected} />
-            )}
-            {tab === 'coherence' && (
-              <Coherence
-                story={story}
-                issues={campaign.issues}
-                atlas={`/campagnes/${campaignId}/atlas`}
-                onAsk={(issue) => void workshop.send({ issue: { code: issue.code, path: issue.path } })}
-              />
-            )}
-            {tab === 'validate' && <Readiness acts={acts} />}
-            {tab === 'validate' && (
-              <Validate
-                campaign={campaign}
-                busy={busy}
-                onValidate={() => void validate()}
-                onInvite={() => navigate(`/campagnes/${campaignId}/table`)}
-              />
-            )}
-          </section>
-
-          <aside className="flex flex-col gap-4">
-            {tab === 'graph' && selectedNode && (
-              <SceneSheet
-                key={selectedNode.id}
-                campaignId={campaignId}
-                story={story}
-                node={selectedNode}
-                version={campaign.updatedAt}
-                busy={busy}
-                onSave={save}
-              />
-            )}
-            {tab === 'sheets' && selectedSheet && (
-              <EntityForm
-                key={`${selectedSheet.entity.id}${campaign.updatedAt}`}
-                title={nameOf(selectedSheet.entity)}
-                target={selectedSheet.entity.id}
-                entity={selectedSheet.entity}
-                fields={SHEET_FIELDS[selectedSheet.kind]}
-                busy={busy}
-                onSave={save}
-              />
-            )}
-          </aside>
+        {t('prep.review.tab.coherence', { count: campaign.issues.length })}
+      </p>
+      {claudeWaiting > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBanner tone="wait" className="flex-1">
+            {t('prep.claude.waiting', { count: claudeWaiting })}
+          </StatusBanner>
+          <Btn onClick={onMap}>{t('prep.claude.toAtlas')}</Btn>
         </div>
+      )}
+      {error && (
+        <p role="alert" className="text-body text-stat-atk">
+          {t(`prep.review.errors.${error.code}`, { defaultValue: t('prep.review.errors.action') })}
+          {error.code === 'EDIT_SCENE_INVALID' && error.detail && (
+            <span className="block font-mono text-caption">{error.detail}</span>
+          )}
+        </p>
+      )}
+      <div
+        className={cn(
+          'grid gap-4',
+          sceneOpen
+            ? 'lg:grid-cols-[1fr_440px] xl:grid-cols-[300px_1fr_460px]'
+            : 'xl:grid-cols-[340px_1fr_340px]',
+        )}
+      >
+        {/* With a scene open on a tablet, the graph and its sheet side by side; the co-GM below. */}
+        <div className={cn('flex min-w-0 flex-col', sceneOpen && 'lg:order-last lg:col-span-2 xl:order-none xl:col-span-1')}>
+          <Workshop workshop={workshop} story={story} node={selectedNode?.id ?? null} />
+        </div>
+
+        <section className="flex min-w-0 flex-col gap-4">
+          {tab === 'graph' && (
+            <Graph story={story} acts={acts} selected={selected} fresh={fresh} onSelect={setSelected} />
+          )}
+          {tab === 'bible' && (
+            <EntityForm
+              key={`bible${campaign.updatedAt}`}
+              title={t('prep.review.tab.bible')}
+              target="bible"
+              entity={story.bible}
+              fields={BIBLE_FIELDS}
+              busy={busy}
+              onSave={save}
+            />
+          )}
+          {tab === 'sheets' && (
+            <Sheets story={story} selected={selected} fresh={fresh} onSelect={setSelected} />
+          )}
+          {tab === 'coherence' && (
+            <Coherence
+              story={story}
+              issues={campaign.issues}
+              onMap={onMap}
+              onAsk={(issue) => void workshop.send({ issue: { code: issue.code, path: issue.path } })}
+            />
+          )}
+          {tab === 'validate' && <Readiness acts={acts} />}
+          {tab === 'validate' && (
+            <Validate
+              campaign={campaign}
+              busy={busy}
+              onValidate={() => void validate()}
+              onInvite={() => navigate(`/campagnes/${campaignId}/table`)}
+            />
+          )}
+        </section>
+
+        <aside className="flex flex-col gap-4">
+          {tab === 'graph' && selectedNode && (
+            <SceneSheet
+              key={selectedNode.id}
+              campaignId={campaignId}
+              story={story}
+              node={selectedNode}
+              version={campaign.updatedAt}
+              busy={busy}
+              onSave={save}
+            />
+          )}
+          {tab === 'sheets' && selectedSheet && (
+            <EntityForm
+              key={`${selectedSheet.entity.id}${campaign.updatedAt}`}
+              title={nameOf(selectedSheet.entity)}
+              target={selectedSheet.entity.id}
+              entity={selectedSheet.entity}
+              fields={SHEET_FIELDS[selectedSheet.kind]}
+              busy={busy}
+              onSave={save}
+            />
+          )}
+        </aside>
       </div>
-    </main>
+    </div>
   )
 }
 
@@ -437,13 +389,13 @@ function Sheets({
 function Coherence({
   story,
   issues,
-  atlas,
+  onMap,
   onAsk,
 }: {
   story: Story
   issues: StoryIssue[]
-  /** Where a scene is pinned on a map. */
-  atlas: string
+  /** Back to the map, where a scene is pinned. */
+  onMap: () => void
   onAsk: (issue: StoryIssue) => void
 }) {
   const { t } = useTranslation()
@@ -472,9 +424,9 @@ function Coherence({
               <span className="font-mono text-[11px] text-mute-soft">{i.detail}</span>
               {i.code === 'SCENE_WITHOUT_PLACE' ? (
                 // A spot on a map is pinned in the Atlas, never asked of the co-GM.
-                <Link className="self-end text-caption text-chalk underline underline-offset-4" to={atlas}>
+                <Btn className="self-end" onClick={onMap}>
                   {t('prep.review.pinInAtlas')}
-                </Link>
+                </Btn>
               ) : (
                 <Btn className="self-end" onClick={() => onAsk(i)}>
                   {t('prep.review.askFix')}

@@ -438,7 +438,7 @@ possible qu'avec la main, hors soirée.
 
 ---
 
-### `platform/preview-campaign-in-claude` · todo · à spécifier
+### `platform/preview-campaign-in-claude` · gelé — le premier panneau (récap des scènes et inventaire des assets) n’a jamais été construit ; le reste est abandonné
 
 **Pourquoi** — Quand Romain prépare sa campagne avec Claude Code
 (`platform/connect-claude-mcp`), il ne voit le résultat qu'en ouvrant
@@ -527,9 +527,18 @@ commande `/promptus`. Il lit les fichiers de campagne du dépôt (pas
 encore Promptus) et se met à jour quand Claude ou le MJ modifie le
 fichier. Pas encore regardé dans une vraie séance de préparation.
 
+*Décision* (`gm/prep-on-atlas`, 11 octobre 2026) — Gelé après son
+premier panneau, comme le jalon 4 l’annonçait : la vue en direct est
+devenue l’app. L’Atlas montre déjà, pendant que Claude écrit, ce qu’il
+propose (en pointillés sur la carte, bandeau « Claude écrit · sur … »),
+le fil des scènes, la jauge, les alertes et la vue joueurs. Aucun
+panneau n’existait encore dans Claude Code : si le besoin revient, seul
+le premier panneau (récap des scènes et inventaire des assets, pistes 1
+et 4) reste à faire, sans recalculer ce que Promptus calcule.
+
 ---
 
-### `platform/stream-prep-edits` · doing — reste l'essai réel : Claude écrit depuis Claude Code, l'écran de préparation ouvert le montre sans recharger
+### `platform/stream-prep-edits` · doing — reste l'essai réel : Claude écrit depuis Claude Code, l'Atlas ouvert le montre sans recharger (bandeau sur la carte, « Modifié » dans le tiroir)
 
 **Pourquoi** — Quand Claude modifie la campagne par le serveur MCP,
 l'Atlas ouvert du MJ doit le montrer aussitôt, sans recharger.
@@ -606,6 +615,11 @@ la carte> » pour un lot de carte, faute d'Atlas. Depuis
 main, sinon elle s'affiche comme une proposition en pointillés.
 
 ---
+
+*Depuis `gm/prep-on-atlas`* — L’écran Préparer n’existe plus : l’Atlas
+porte le bandeau « Claude écrit · sur … » et son Annuler, et son tiroir
+met « Modifié » sur les scènes et fiches touchées. L’essai réel se fait
+donc dans l’Atlas, carte ou tiroir ouvert.
 
 ### `platform/propose-edits-by-claude` · doing — reste l'essai réel avec Claude Code : Romain demande de peupler un lieu, voit les propositions en pointillés sans recharger, en jette une avec un mot, Claude en propose une autre, il garde le reste, rien n'a été visible des joueurs
 
@@ -1736,6 +1750,11 @@ préparation en direct — ce que Claude ou le co-MJ viennent de toucher
 porte « Modifié », et un bandeau « Claude écrit · sur … » propose
 d'annuler sa dernière écriture tant que rien ne l'a recouverte.
 
+*Depuis `gm/prep-on-atlas`* — L’écran de relecture n’est plus une page :
+ses cinq onglets et l’atelier du co-MJ vivent dans le tiroir de l’Atlas
+(Scènes et actes, Bible, Fiches, Cohérence, Valider). Le graphe y devient
+une vue secondaire de la carte.
+
 ### `campaign/edit-scenes-in-one-place` · doing — reste une scène préparée pour de vrai sur les deux mondes, puis jouée
 
 **Pourquoi** — Romain se perd dans la préparation : une scène est
@@ -2307,6 +2326,10 @@ ici : c'est `maps/generate-map-llm`.
 
 ## Épic `media`
 
+*Depuis `gm/prep-on-atlas`* — Appliquer le brouillon ouvre l’Atlas, et la
+scène d’ouverture y est déjà posée sur la région du monde (même ligne du
+journal que le brouillon).
+
 ### `media/play-youtube-music` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — La musique fait l'ambiance, et YouTube impose un lecteur
@@ -2383,6 +2406,9 @@ serveur (aucune fonction d'IA n'aurait marché) ; `OPENROUTER_*` et
 La TV reprend les images de scène approuvées (`tv/show-evening`) ;
 pas encore la vidéo d'acte.
 
+*Depuis `gm/prep-on-atlas`* — Les images et vidéos se préparent dans le
+tiroir de l’Atlas (onglet Médias) ; l’ancien écran Médias est retiré.
+
 ---
 
 ## Épic `session`
@@ -2441,7 +2467,8 @@ la route joueur `GET /api/play/{campaign}/live` est branchée par
 `session/invite-and-join` (derrière `require_player`), et la création
 d'un personnage touche `Topic::Character` ; reste à
 appeler `live::touch` dans les prochaines écritures de
-fiches ; puis l'essai réel : ouvrir `/campagnes/<id>/vue-joueurs` sur le
+fiches ; puis l'essai réel : ouvrir la vue joueurs de l’Atlas (l’ancienne
+page `/vue-joueurs` y est entrée avec `gm/prep-on-atlas`) sur le
 téléphone, couper le Wi-Fi dix secondes pendant qu'une écriture passe
 depuis l'ordinateur, vérifier que la page revient seule à l'état exact.
 
@@ -3166,7 +3193,7 @@ n'a été vérifié que par sa logique, pas sous les doigts.
 
 ---
 
-### `gm/prep-on-atlas` · doing — reste l'écran complet (scènes, lots de Claude, vue joueurs), la fin de la création sur la région, la bascule qui retire Préparer, Médias, Cartes et Vue joueurs, puis un acte préparé en entier dans l'Atlas
+### `gm/prep-on-atlas` · doing — reste un acte préparé en entier dans l’Atlas, sur ordinateur et sur tablette (les six moments de la planche)
 
 **Pourquoi** — Préparer et jouer doivent se ressembler : la création
 finit sur la carte, et toute la préparation s'y fait.
@@ -3237,6 +3264,40 @@ réglage « Claude a la main »), ce qu'elles ajouteraient est dessiné en
 pointillés marqués ▶ sur la carte, et le bandeau « Claude écrit · sur … »
 s'affiche au-dessus de la carte, avec son « Annuler ».
 
+Depuis `maps/preview-as-player`, la bascule « Vue MJ / Vue joueurs » est
+en haut de l’écran.
+*Bascule* (11 octobre 2026) — L’Atlas est maintenant le seul écran de
+préparation. Les écrans Préparer, Médias, Cartes et Vue joueurs sont
+retirés, leurs adresses n’existent plus, et tout ce qu’ils faisaient
+se fait dans l’Atlas :
+- le **tiroir** (ce qui n’a pas de lieu) ouvre, à la place de la carte,
+  Scènes et actes (graphe, fiche de scène, atelier du co-MJ), Bible,
+  Fiches, Cohérence, Valider (jauge, validation, invitation), Médias
+  (images et vidéos à dessiner, garder ou refaire) et Cartes de la
+  campagne (carte vierge, copie d’une carte du monde, carte générée pour
+  une scène, import) ; « Retour à la carte » le referme ; l’adresse garde
+  l’onglet et la scène ouverte ;
+- une scène touchée sur une épingle ou dans la liste ouvre sa fiche dans
+  le tiroir, et « L’épingler sur la carte » ramène sur la carte ;
+- la **vue joueurs** remplace l’ancien écran : la carte projetée par le
+  serveur, et à côté ce que disent les écrans des joueurs ;
+- l’éditeur de carte reste un outil à part, ouvert depuis l’Atlas, et il
+  y ramène sur la carte éditée ;
+- la page de la campagne ne propose plus que l’Atlas, la génération
+  (tant que la campagne n’est pas validée), la soirée, la table et les
+  règles : Règles, Table et Soirée restent à part.
+*Fin de la création* — Une campagne générée s’ouvre sur l’Atlas : en
+l’appliquant, sa scène d’ouverture est posée sur la région du monde (près
+du lieu de la région qui porte le nom de son lieu, sinon près du départ
+du groupe, sinon au milieu), dans la même ligne du journal que le
+brouillon, au nom du co-MJ ; une scène déjà épinglée n’est pas déplacée.
+Les autres lieux proposés autour en pointillés ne sont **pas faits** :
+les propositions dessinées sur la carte sont aujourd’hui celles de
+Claude (jeton), et y ajouter celles du co-MJ voudrait élargir ce
+mécanisme ; à trancher. Une campagne créée sans génération n’a pas de
+scène à poser.
+*Reste* — Les six moments de la planche joués sur ordinateur et sur
+tablette, un acte entier préparé dans l’Atlas.
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 
 ---
@@ -3718,6 +3779,11 @@ encore de pinceau de brouillard. Pas encore essayé sur une vraie
 préparation.
 
 **Origine** — Planches « Cartes · trois échelles » et « Cartes · l'éditeur »
+
+*Depuis `gm/prep-on-atlas`* — La liste des cartes de la campagne (carte
+vierge, copie, génération, import) est l’onglet « Cartes de la
+campagne » du tiroir de l’Atlas ; l’éditeur ramène sur la carte éditée
+dans l’Atlas.
 
 ### `maps/generate-map-llm` · doing — reste une vraie carte générée avec la clé OpenRouter puis validée
 

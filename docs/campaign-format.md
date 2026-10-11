@@ -254,7 +254,7 @@ its chain). Alerts count neither in `done`/`total` nor against `ready`.
 
 ## Editing by id
 
-The review screen (`/campagnes/:id/preparer`) and the co-GM's workshop
+The Atlas and its drawer (`/campagnes/:id/atlas?onglet=…`, gm/prep-on-atlas) and the co-GM's workshop
 change a stored campaign with **edits by id** (`story::edit`,
 `POST /api/campaigns/{id}/story/edits`), applied whole or not at all:
 
