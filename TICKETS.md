@@ -2365,6 +2365,48 @@ les Corsaires (pitch, accroche, acte 1, descente jusqu'au quai, soirée
 lancée depuis l'en-tête).
 
 
+### `campaign/tidy-atlas-layout` · todo
+
+**Pourquoi** — Depuis `campaign/write-story-by-map-scale`, le panneau
+latéral de l'Atlas empile « L'idée » puis le panneau de la carte : il
+faut défiler longtemps pour atteindre l'un ou l'autre, et 320 px sont
+étroits pour écrire un pitch. Au-dessus de la carte, quatre rangées
+(en-tête et actions, bandeau d'état, fil d'Ariane et bascules, deux
+rangées de calques) mangent la hauteur avant le premier hexagone.
+
+**Périmètre**
+
+- **Panneau latéral en onglets** : « L'idée » (à l'échelle la plus
+  large seulement), « La carte » (fil de l'histoire, personnages,
+  HD-2D, ce que le panneau montre aujourd'hui) et « Claude » (ses lots,
+  avec le nombre en attente en pastille). Un seul onglet visible à la
+  fois ; le choix est dans l'URL (`?panneau=`). À l'échelle la plus
+  large on arrive sur « L'idée », ailleurs sur « La carte ». Un lot de
+  Claude qui arrive allume la pastille sans changer d'onglet.
+- **« L'idée » prend de la largeur** : quand l'onglet est ouvert, le
+  panneau s'élargit (la carte rétrécit), assez pour écrire un pitch.
+- **Gagner de la hauteur au-dessus de la carte** :
+  - titre, état et actions sur une seule rangée ;
+  - le bandeau « En préparation · rien n'est montré… » devient le texte
+    de la puce d'état (au survol / au toucher), plus une rangée ;
+  - « Vue MJ / Vue joueurs » et « Plan / HD-2D » en deux sélecteurs
+    segmentés compacts sur la rangée du fil d'Ariane ;
+  - les calques de l'histoire et ceux de la carte sur une seule rangée
+    (ou repliés dans un menu « Calques »).
+- Sur tablette, le panneau replié reste replié ; les onglets sont en
+  haut du panneau quand il s'ouvre.
+
+**Fini quand** — Sur l'écran de Romain (ordinateur portable), la carte
+de la région des Corsaires commence dans le premier tiers de l'écran,
+on passe de « L'idée » à « La carte » à « Claude » d'un clic sans
+défiler, et le pitch s'écrit sans être à l'étroit. Tests à jour, lint et
+tests passent.
+
+**Origine** — Romain, 11 octobre 2026, au premier essai de l'Atlas
+comme point d'entrée : « C'est étrange d'avoir l'idée puis en dessous
+la carte. Je préférerais que ce soit un switch de tabs. Et je pense en
+termes d'UX qu'on peut améliorer et gagner de la place. »
+
 ## Épic `ai`
 
 ### `ai/route-llm-provider` · doing — reste la soirée du jalon jouée pour de vrai
