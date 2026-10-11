@@ -34,10 +34,12 @@ type PageState =
   | { kind: 'error' }
   | { kind: 'ready'; campaign: ReviewCampaign }
 
+/**
+ * What of the bible has no map (campaign/write-story-by-map-scale): the
+ * pitch, the hook, the tone and the themes are « L'idée », written on
+ * the widest map, never a second time here.
+ */
 const BIBLE_FIELDS: FieldDef[] = [
-  { path: 'pitch', multiline: true },
-  { path: 'tone' },
-  { path: 'player_hook', multiline: true },
   { path: 'truths', lines: true },
   { path: 'secrets', lines: true },
   { path: 'art_direction', multiline: true },
@@ -225,7 +227,9 @@ export function PrepDesk({
               fields={BIBLE_FIELDS}
               busy={busy}
               onSave={save}
-            />
+            >
+              <p className="text-caption text-mute-soft">{t('prep.review.bibleHint')}</p>
+            </EntityForm>
           )}
           {tab === 'sheets' && (
             <Sheets story={story} selected={selected} fresh={fresh} onSelect={setSelected} />

@@ -11,7 +11,7 @@ type MeState = { kind: 'loading' } | { kind: 'signed-out' } | { kind: 'error' } 
 
 /**
  * `/` — the GM's home. Without a session it sends to `/connexion`;
- * it lists the campaigns, each reopening its campaign page.
+ * it lists the campaigns, each reopening its Atlas.
  */
 export function GmHomePage() {
   const { t } = useTranslation()

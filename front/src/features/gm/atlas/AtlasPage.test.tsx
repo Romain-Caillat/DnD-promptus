@@ -76,6 +76,26 @@ const ATLAS = {
 
 const ok = (data: unknown) => ({ status: 200, body: { data } })
 
+/** The campaign itself, which « L'idée » and the header read. */
+const CAMPAIGN = {
+  'GET /api/campaigns/c1': () =>
+    ok({
+      id: 'c1',
+      story: {
+        id: 'corsaires',
+        title: 'Les Corsaires',
+        rules: { id: 'corsaires', version: 1 },
+        bible: { pitch: 'La Couronne trahit ses corsaires.' },
+      },
+      issues: [],
+      settings: { playerCount: 4, aiBudgetCents: 0 },
+      archivedAt: null,
+      updatedAt: '2026-10-11T10:00:00Z',
+      revision: 3,
+    }),
+  'GET /api/rule-systems': () => ok([]),
+}
+
 /** The browser's WebSocket, played by the test. */
 class FakeSocket {
   static all: FakeSocket[] = []
@@ -124,6 +144,7 @@ describe('AtlasPage', () => {
     stubReducedMotion(true)
     vi.stubGlobal('WebSocket', FakeSocket)
     mockApi({
+      ...CAMPAIGN,
       'GET /api/campaigns/c1/atlas': () => ok(ATLAS),
       'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
     })
@@ -134,10 +155,14 @@ describe('AtlasPage', () => {
     expect(crumbs()).toEqual(['Région · Les côtes'])
     expect(container.querySelector('[data-mark="1,0"]')).not.toBeNull()
     expect(screen.getByRole('button', { name: 'Ressortir' })).toBeDisabled()
+    // The widest scale carries the campaign's idea (campaign/write-story-by-map-scale)…
+    expect(await screen.findByRole('region', { name: 'L’idée' })).toBeInTheDocument()
 
     fireEvent.click(container.querySelector('[data-hex="1,0"]')!)
     await screen.findByRole('img', { name: 'Carte : Le quai' })
     expect(crumbs()).toEqual(['Région · Les côtes', 'Lieu · Le quai'])
+    // …a place, its scenes and NPCs, not the idea.
+    expect(screen.queryByRole('region', { name: 'L’idée' })).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Entrer : La cale' }))
     await screen.findByRole('img', { name: 'Carte : La cale' })
@@ -167,6 +192,7 @@ describe('AtlasPage', () => {
     FakeSocket.all = []
     let atlas: typeof ATLAS = ATLAS
     mockApi({
+      ...CAMPAIGN,
       'GET /api/campaigns/c1/atlas': () => ok(atlas),
       'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
     })
@@ -189,6 +215,7 @@ describe('AtlasPage', () => {
     stubReducedMotion(true, [TABLET_QUERY])
     vi.stubGlobal('WebSocket', FakeSocket)
     mockApi({
+      ...CAMPAIGN,
       'GET /api/campaigns/c1/atlas': () => ok({ ...ATLAS, roots: ['quai'] }),
       'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
     })
@@ -231,6 +258,7 @@ describe('AtlasPage', () => {
       unplaced: [{ id: 'sc_reve', title: 'Le rêve', number: 4 }],
     }
     const fetchMock = mockApi({
+      ...CAMPAIGN,
       'GET /api/campaigns/c1/atlas': () => ok(atlas),
       'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
       'POST /api/campaigns/c1/story/edits': () => {
@@ -266,7 +294,7 @@ describe('AtlasPage', () => {
     // The pin tool: a place, then the cell — one story edit on its anchor.
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Lieu à épingler' }), 'l_crypte')
     await userEvent.click(screen.getByRole('button', { name: 'Épingler sur cette carte' }))
-    expect(screen.getByRole('status')).toHaveTextContent('Touchez la case où se trouve « La crypte ».')
+    expect(screen.getByText('Touchez la case où se trouve « La crypte ».')).toBeInTheDocument()
     const canvas = screen.getByRole('img', { name: 'Carte : Le quai' })
     canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: canvas.clientWidth, height: canvas.clientHeight }) as DOMRect
     fireEvent.pointerDown(canvas, { pointerId: 1, clientX: 1, clientY: 1 })
@@ -306,6 +334,7 @@ describe('AtlasPage', () => {
       },
     }
     const fetchMock = mockApi({
+      ...CAMPAIGN,
       'GET /api/campaigns/c1/atlas': () => ok(atlas),
       'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
       'POST /api/campaigns/c1/story/edits': () => ok({ campaign: {}, changes: [] }),
@@ -324,7 +353,7 @@ describe('AtlasPage', () => {
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Choisir un PNJ…' }), 'pnj_oswin')
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Pour quelle scène' }), 'sc_a')
     await userEvent.click(screen.getByRole('button', { name: 'Poser sur cette carte' }))
-    expect(screen.getByRole('status')).toHaveTextContent('Touchez la case où poser « Oswin ».')
+    expect(screen.getByText('Touchez la case où poser « Oswin ».')).toBeInTheDocument()
     const canvas = screen.getByRole('img', { name: 'Carte : Le quai' })
     canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: canvas.clientWidth, height: canvas.clientHeight }) as DOMRect
     fireEvent.pointerDown(canvas, { pointerId: 1, clientX: 1, clientY: 1 })
@@ -415,6 +444,7 @@ describe('AtlasPage', () => {
       ],
     }
     mockApi({
+      ...CAMPAIGN,
       'GET /api/campaigns/c1/atlas': () => ok(atlas),
       'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
     })
@@ -477,6 +507,7 @@ describe('AtlasPage', () => {
     stubReducedMotion(true)
     vi.stubGlobal('WebSocket', FakeSocket)
     mockApi({
+      ...CAMPAIGN,
       'GET /api/campaigns/c1/atlas': () =>
         ok({
           ...ATLAS,
@@ -522,6 +553,7 @@ describe('AtlasPage', () => {
       ),
     }
     const fetchMock = mockApi({
+      ...CAMPAIGN,
       'GET /api/campaigns/c1/atlas': () => ok(atlas),
       'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
       'POST /api/campaigns/c1/proposals/p1/decide': () => ok({ campaign: {}, proposal: batch }),
@@ -591,6 +623,7 @@ describe('AtlasPage', () => {
       },
     }
     const fetchMock = mockApi({
+      ...CAMPAIGN,
       'GET /api/campaigns/c1/atlas': () => ok(atlas),
       'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
       'GET /api/campaigns/c1/maps/region/players': () => ok(seen),
@@ -633,6 +666,7 @@ describe('AtlasPage', () => {
     const last = () => FakeSocket.all[FakeSocket.all.length - 1]
     let clues: string[] = []
     const fetchMock = mockApi({
+      ...CAMPAIGN,
       'GET /api/campaigns/c1/atlas': () => ok(ATLAS),
       'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
       'GET /api/campaigns/c1/maps/region/players': () =>
@@ -690,6 +724,7 @@ describe('AtlasPage', () => {
       ],
     }
     const api = mockApi({
+      ...CAMPAIGN,
       'GET /api/campaigns/c1/atlas': () => ok(ATLAS),
       'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
       'GET /api/campaigns/c1/elements?map=quai': () => ok(needs),

@@ -2286,7 +2286,7 @@ téléphones. **Pas fait** : la TV (elle ne montre que la soirée : il faut
 prototype, les façades. **Reste** l'essai réel pendant une préparation
 avec Claude, et la tenue sur un iPad.
 
-### `campaign/write-story-by-map-scale` · todo
+### `campaign/write-story-by-map-scale` · doing — reste l'essai réel de Romain
 
 **Pourquoi** — Sur la page de la campagne, l'Atlas est une carte-bouton
 parmi d'autres (« Mener la soirée », « Inviter la table », « Règles »),
@@ -2331,6 +2331,39 @@ l'en-tête — sans repasser par une page de réglages. Tests à jour,
 Corsaires : « Atlas devrait pas être une catégorie, mais un point de
 départ. On écrit l'histoire aux différents niveaux de granularité de la
 map. La map globale est l'idée, le pitch, le titre, l'univers. »
+
+*État* — Codé et testé sur la branche `claude/atlas-first`. `/campagnes/:id`
+est l'Atlas lui-même (même composant que `/campagnes/:id/atlas`, qui
+marche toujours) : la page de réglages `CampaignPage` est supprimée, et
+tous les liens existants (accueil, liste des campagnes, retours des
+autres pages) arrivent donc sur l'Atlas. Il s'ouvre sur la première
+racine à l'échelle la plus large que l'atlas contient. L'en-tête porte
+le titre de la campagne, son état, « Mener la soirée », « Inviter la
+table », « Règles » et « Archiver » (avec confirmation) / « Désarchiver » ;
+le bandeau d'état est sous l'en-tête, au-dessus de la carte. Le panneau
+« L'idée » (`atlas/IdeaSection.tsx`) édite titre, univers, idée,
+accroche, ton et thèmes, puis les actes (titre, en bref, ouverture,
+clôture) et les fronts (nom, menace, description, horloge), avec les
+réglages techniques repliés (joueurs, budget IA, système de règles en
+lecture). L'onglet « Bible » du tiroir ne garde que vérités, secrets et
+direction artistique. Les éléments de Claude en attente sur `campaign`,
+`bible`, un acte ou un front s'affichent en pointillés sous le champ
+concerné, gardés ou jetés sur place ; ce que quelqu'un d'autre vient de
+changer porte « Modifié » ; la campagne est relue à chaque révision
+(`prep`, `proposals`), sans écraser ce que le MJ est en train de taper.
+**Hypothèses retenues** : « l'échelle la plus large » est celle de la
+carte la plus large *présente* dans l'atlas (une campagne sans région
+mais avec des lieux écrit son idée sur ses lieux racines) ; le titre,
+l'univers, l'idée, l'accroche, les joueurs et le budget passent toujours
+par `PUT …/settings`, le ton et les thèmes par des modifications de la
+bible (deux lignes du journal quand les deux changent) ; une horloge de
+front s'édite une étape par ligne, chaque étape gardant la description
+de celle qu'elle remplace au même rang ; on ajoute un acte ou un front
+mais on n'en retire pas depuis « L'idée » (les scènes d'un acte
+retiré resteraient orphelines). **Reste** l'essai réel de Romain sur
+les Corsaires (pitch, accroche, acte 1, descente jusqu'au quai, soirée
+lancée depuis l'en-tête).
+
 
 ## Épic `ai`
 

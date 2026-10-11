@@ -41,14 +41,34 @@ interface CampaignPlan {
   aiBudgetCents: number
 }
 
-/** A campaign as its page reads it (the story is much larger; only what the page shows is typed). */
+/** An act of the story, as « L'idée » edits it. */
+export interface StoryAct {
+  id: string
+  title: string
+  summary?: string
+  opening?: string
+  closing?: string
+}
+
+/** A front: a threat and its clock of four to six steps. */
+export interface StoryFront {
+  id: string
+  name: string
+  goal: string
+  description?: string
+  steps: { label: string; description?: string }[]
+}
+
+/** A campaign as the Atlas reads it (the story is much larger; only what « L'idée » shows is typed). */
 export interface CampaignDetail {
   id: string
   story: {
     title: string
     world?: string
     rules: RulesRef
-    bible: { pitch?: string; player_hook?: string }
+    bible: { pitch?: string; player_hook?: string; tone?: string; themes?: string[] }
+    acts?: StoryAct[]
+    fronts?: StoryFront[]
   }
   settings: CampaignPlan
   archivedAt: string | null
@@ -56,7 +76,7 @@ export interface CampaignDetail {
   validatedAt?: string | null
 }
 
-/** What the GM edits on the campaign page. */
+/** What the settings route saves (`PUT …/settings`): « L'idée » and the table's size and budget. */
 export interface CampaignSettings extends CampaignPlan {
   title: string
   world: string

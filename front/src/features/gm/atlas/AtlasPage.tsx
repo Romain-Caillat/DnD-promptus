@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, Navigate, useParams, useSearchParams } from 'react-router'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
+import { StatusBanner } from '@/components/game/StatusBanner'
 import { Btn, Panel, TouchScreen, field } from '@/features/gm/live/ui'
 import { useLiveChanges } from '@/features/live/useLiveChanges'
 import { MapCanvas } from '@/features/map/MapCanvas'
@@ -9,6 +10,7 @@ import { useImage } from '@/features/map/useImage'
 import { useTileset } from '@/features/map/useTileset'
 import { HexMap } from '@/features/travel/HexMap'
 import { ApiError } from '@/lib/api'
+import { archiveCampaign, fetchCampaign, type CampaignDetail } from '@/lib/campaigns'
 import type { Cell } from '@/lib/board'
 import { fetchAtlas, generateMap, gmBackdropUrl, type Atlas, type AtlasMap, type Pin, type ThreadStop } from '@/lib/maps'
 import { applyEdits, decideClaude, setClaudeHand, type ClaudeDecision, type Edit, type Proposal } from '@/lib/prep'
@@ -17,7 +19,21 @@ import { fetchNeeds, type Needs } from '@/lib/elements'
 import { buildSceneOnce } from '@/features/hd2d/build'
 import { TABLET_QUERY, useMediaQuery } from '@/lib/useMediaQuery'
 import { cn } from '@/lib/utils'
-import { canLeave, climb, depth, doorAt, doorCells, enter, index, leave, switchable, trail, withoutLayers } from './atlas'
+import {
+  atWidest,
+  canLeave,
+  climb,
+  depth,
+  doorAt,
+  doorCells,
+  enter,
+  index,
+  leave,
+  switchable,
+  trail,
+  widestRoot,
+  withoutLayers,
+} from './atlas'
 import { ClaudeBanner } from '@/features/gm/prep/ClaudeBanner'
 import { usePrepChanges } from '@/features/gm/prep/usePrepChanges'
 import { MapsDesk } from '@/features/gm/maps/MapsDesk'
@@ -28,6 +44,7 @@ import { batchOf, proposedMarks } from './claude'
 import { ClaudeSection } from './ClaudeSection'
 import { STORY_LAYERS, castMarks, placeEdit, readKey, removeEdit, type StoryLayer, type Target } from './cast'
 import { Hd2dSection } from './Hd2dSection'
+import { IdeaSection } from './IdeaSection'
 import { ThreadSection } from './ThreadSection'
 import { PlayersMap, PlayersSection, usePlayersMap } from './PlayersView'
 
@@ -60,8 +77,19 @@ const DRAWER = [...PREP_TABS, 'medias', 'cartes'] as const
 type DrawerTab = (typeof DRAWER)[number]
 const isPrep = (tab: DrawerTab): tab is PrepTab => (PREP_TABS as readonly string[]).includes(tab)
 
+const dateFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' })
+
 /**
- * `/campagnes/:campaignId/atlas` — maps/browse-atlas and the shell of
+ * `/campagnes/:campaignId` (and `…/atlas`) — entering a campaign opens
+ * its Atlas on the widest map (campaign/write-story-by-map-scale): the
+ * story is written at each scale of the maps. At the widest, « L'idée »
+ * in the side panel holds the campaign's title, universe, idea, hook,
+ * tone and themes, then its acts and fronts, the table's settings folded
+ * below; a campaign with no map shows « L'idée » alone and the way to
+ * its maps. The header carries the campaign's actions (the evening, the
+ * table, the rules, the shelf) and its state stands above the map.
+ *
+ * maps/browse-atlas and the shell of
  * gm/prep-on-atlas: every map of the world and the campaign, nested by
  * their exits (region in hexes › place › encounter). The GM enters a
  * place by tapping where it opens on its parent (or from the side
@@ -119,9 +147,15 @@ const isPrep = (tab: DrawerTab): tab is PrepTab => (PREP_TABS as readonly string
  */
 export function AtlasPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { campaignId = '' } = useParams()
   const [params, setParams] = useSearchParams()
   const [state, setState] = useState<PageState>({ kind: 'loading' })
+  /** The campaign itself: « L'idée », its state and its actions; `null` until read. */
+  const [campaign, setCampaign] = useState<CampaignDetail | null>(null)
+  const [confirmArchive, setConfirmArchive] = useState(false)
+  const [shelfBusy, setShelfBusy] = useState(false)
+  const [shelfFailed, setShelfFailed] = useState(false)
   const [version, setVersion] = useState(0)
   const [media, setMedia] = useState<MediaList | null>(null)
   /** The maps walked through, the last shown; seeded from `?carte=`. */
@@ -183,6 +217,20 @@ export function AtlasPage() {
     }
   }, [campaignId, version])
 
+  // Read again with the atlas: Claude's writes and the GM's decisions move « L'idée » too.
+  useEffect(() => {
+    let live = true
+    fetchCampaign(campaignId).then(
+      (c) => {
+        if (live) setCampaign(c)
+      },
+      () => {},
+    )
+    return () => {
+      live = false
+    }
+  }, [campaignId, version])
+
   useEffect(() => {
     let live = true
     fetchGmMedia(campaignId).then(
@@ -203,8 +251,8 @@ export function AtlasPage() {
 
   const atlas = state.kind === 'ready' ? state.atlas : null
   const maps = useMemo(() => (atlas ? index(atlas) : new Map<string, AtlasMap>()), [atlas])
-  // The map shown: the last walked that still exists, else the first root.
-  const shownId = [...walk].reverse().find((id) => maps.has(id)) ?? atlas?.roots[0] ?? null
+  // The map shown: the last walked that still exists, else the widest root.
+  const shownId = [...walk].reverse().find((id) => maps.has(id)) ?? (atlas ? widestRoot(atlas, maps) : null)
   const entry = shownId ? (maps.get(shownId) ?? null) : null
   const map = entry ? withoutLayers(entry.map, hidden) : null
   const { tileset, atlases } = useTileset(entry?.map ?? null, media, (id) => gmImageUrl(campaignId, id))
@@ -247,8 +295,8 @@ export function AtlasPage() {
 
   if (state.kind === 'signed-out') return <Navigate to="/connexion" replace />
   const back = (
-    <Link className="text-caption text-mute-soft underline underline-offset-4" to={`/campagnes/${campaignId}`}>
-      {t('prep.back')}
+    <Link className="text-caption text-mute-soft underline underline-offset-4" to="/">
+      {t('gm.campaign.back')}
     </Link>
   )
   if (state.kind !== 'ready') {
@@ -352,6 +400,19 @@ export function AtlasPage() {
       setClaudeFailed(err instanceof ApiError ? err.code : 'action')
     } finally {
       setClaudeBusy(false)
+    }
+  }
+  /** Shelve the campaign, or take it off the shelf. */
+  async function shelve(archived: boolean) {
+    setShelfBusy(true)
+    setShelfFailed(false)
+    try {
+      setCampaign(await archiveCampaign(campaignId, archived))
+      setConfirmArchive(false)
+    } catch {
+      setShelfFailed(true)
+    } finally {
+      setShelfBusy(false)
     }
   }
   /** A batch's focus: its map, and the cell it is about. */
@@ -606,6 +667,41 @@ export function AtlasPage() {
     </div>
   )
 
+  const claudeSection = (
+    <ClaudeSection
+      batches={state.atlas.claude ?? []}
+      picked={batch}
+      hand={state.atlas.claudeHand ?? false}
+      busy={claudeBusy}
+      failed={claudeFailed}
+      onPick={setBatch}
+      onFocus={focusOn}
+      onDecide={(p, d) => void decide(p, d)}
+      onHand={(on) => void hand(on)}
+    />
+  )
+  // The widest scale carries the campaign's idea; with no map at all, it stands alone.
+  const idea =
+    campaign && !players && (!entry || atWidest(state.atlas, entry)) ? (
+      <IdeaSection
+        key={campaign.id}
+        campaignId={campaignId}
+        campaign={campaign}
+        fresh={changes.fresh}
+        claude={{
+          batches: state.atlas.claude ?? [],
+          busy: claudeBusy,
+          onPick: setBatch,
+          onDecide: (p, d) => void decide(p, d),
+        }}
+        onSaved={(c) => {
+          setCampaign(c)
+          setVersion((v) => v + 1)
+        }}
+      />
+    ) : null
+  const base = `/campagnes/${encodeURIComponent(campaignId)}`
+
   const side = entry && (
     <Panel
       title={entry.map.name}
@@ -624,17 +720,7 @@ export function AtlasPage() {
       {entry.map.gm_notes && <p className="text-body text-chalk-soft">{entry.map.gm_notes}</p>}
       {scene3d && <Hd2dSection scene={scene3d} busy={mediaBusy} failed={mediaFailed} onDecide={(a, k) => void decideMedia(a, k)} />}
       {hd2d && flatOnly && <p className="text-caption text-mute-soft">{t('atlas.hd2d.world')}</p>}
-      <ClaudeSection
-        batches={state.atlas.claude ?? []}
-        picked={batch}
-        hand={state.atlas.claudeHand ?? false}
-        busy={claudeBusy}
-        failed={claudeFailed}
-        onPick={setBatch}
-        onFocus={focusOn}
-        onDecide={(p, d) => void decide(p, d)}
-        onHand={(on) => void hand(on)}
-      />
+      {claudeSection}
       <ThreadSection
         stops={stops}
         acts={actsHere}
@@ -739,7 +825,49 @@ export function AtlasPage() {
       <main className="surface-table flex min-h-dvh flex-col gap-3 p-4 text-chalk sm:p-5">
         <header className="flex flex-wrap items-center gap-3">
           {back}
-          <h1 className="type-title text-[16px]">{t('atlas.title')}</h1>
+          <h1 className="type-title text-[16px]">{campaign?.story.title ?? t('atlas.title')}</h1>
+          {campaign && (
+            <span className="rounded-md border border-line-strong px-2 py-0.5 text-[11px] font-semibold text-mute-soft">
+              {campaign.archivedAt ? t('gm.campaigns.status.archived') : t('gm.campaigns.status.prep')}
+            </span>
+          )}
+          <div className="ml-auto flex flex-wrap gap-1.5" role="group" aria-label={t('gm.campaign.actions')}>
+            <Btn main onClick={() => navigate(`${base}/soiree`)}>
+              {t('gm.campaign.evening')}
+            </Btn>
+            <Btn onClick={() => navigate(`${base}/table`)}>{t('gm.campaign.table')}</Btn>
+            <Btn onClick={() => navigate(`${base}/regles`)}>{t('gm.campaign.rules')}</Btn>
+            {campaign &&
+              (campaign.archivedAt ? (
+                <Btn disabled={shelfBusy} onClick={() => void shelve(false)}>
+                  {t('gm.campaign.unarchive')}
+                </Btn>
+              ) : (
+                <Btn
+                  disabled={shelfBusy}
+                  onClick={() => (confirmArchive ? void shelve(true) : setConfirmArchive(true))}
+                >
+                  {confirmArchive ? t('gm.campaign.confirmArchive') : t('gm.campaign.archive')}
+                </Btn>
+              ))}
+          </div>
+        </header>
+
+        {shelfFailed && (
+          <p role="alert" className="text-caption text-stat-atk">
+            {t('gm.campaign.actionError')}
+          </p>
+        )}
+        {campaign &&
+          (campaign.archivedAt ? (
+            <StatusBanner tone="warn">
+              {t('gm.campaign.bannerArchived', { date: dateFormat.format(new Date(campaign.archivedAt)) })}
+            </StatusBanner>
+          ) : (
+            <StatusBanner tone="listen">{t('gm.campaign.bannerPrep')}</StatusBanner>
+          ))}
+
+        <div className="flex flex-wrap items-center gap-3">
           <nav aria-label={t('atlas.breadcrumb')} className="flex min-w-0 flex-wrap items-center gap-1.5">
             {crumbs.map((c, i) => (
               <span key={c.map.id} className="flex items-center gap-1.5">
@@ -807,7 +935,7 @@ export function AtlasPage() {
               </Btn>
             )}
           </div>
-        </header>
+        </div>
 
         <ClaudeBanner
           changes={changes}
@@ -888,10 +1016,34 @@ export function AtlasPage() {
           </div>
         )}
 
-        {tab === null && (
+        {tab === null && !entry && (
+          // No map yet: « L'idée » alone, and the way to the campaign's maps.
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,640px)_320px]">
+            {idea ?? <p className="text-body text-mute-soft">{t('atlas.empty')}</p>}
+            <div className="flex flex-col gap-3">
+              <Panel title={t('gm.idea.noMap')}>
+                <p className="text-caption text-mute-soft">{t('gm.idea.noMapSub')}</p>
+                <Btn main className="self-start" onClick={() => openTab('cartes')}>
+                  {t('gm.idea.toMaps')}
+                </Btn>
+              </Panel>
+              <div className="surface-slab p-3.5">{claudeSection}</div>
+            </div>
+          </div>
+        )}
+
+        {tab === null && entry && (
           <div className={cn('grid min-h-0 flex-1 gap-3', (!tablet || panel) && 'lg:grid-cols-[minmax(0,1fr)_320px]')}>
             <div className="min-w-0 overflow-hidden">{mapView}</div>
-            {(!tablet || panel) && (players ? <PlayersSection campaignId={campaignId} version={seen} live={live} /> : side)}
+            {(!tablet || panel) &&
+              (players ? (
+                <PlayersSection campaignId={campaignId} version={seen} live={live} />
+              ) : (
+                <div className="flex min-w-0 flex-col gap-3">
+                  {idea}
+                  {side}
+                </div>
+              ))}
           </div>
         )}
 

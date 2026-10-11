@@ -383,6 +383,14 @@ banner: the Atlas holds the one live channel and Claude's banner
 a drawer tab or a side-panel section, never a new page. A generated
 campaign is applied with its opening scene pinned on the region
 (`generation::pin_opening`), so creation ends on the map.
+Since campaign/write-story-by-map-scale entering a campaign is entering
+its Atlas: `/campagnes/:id` renders it (no settings page), on the
+widest map. The story is written at the scale it belongs to: the
+widest map's side panel holds « L'idée » (title, universe, idea, hook,
+tone, themes, acts, fronts; the table's settings folded), places and
+encounters their scenes, cast and fights. The drawer's bible keeps only
+what has no map (truths, secrets, art direction): a field is edited in
+one place, never two.
 
 ### Realtime carries no game data
 

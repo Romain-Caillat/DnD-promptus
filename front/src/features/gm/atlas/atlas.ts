@@ -92,3 +92,23 @@ export function leave(walk: readonly string[], maps: Map<string, AtlasMap>): str
 export function canLeave(walk: readonly string[], maps: Map<string, AtlasMap>): boolean {
   return walk.length > 1 || Boolean(maps.get(walk[0] ?? '')?.parent)
 }
+
+/** World, place, encounter: the lower, the wider. */
+const WIDTH = { world: 0, place: 1, encounter: 2 } as const
+const width = (m: AtlasMap) => WIDTH[m.map.scale ?? 'encounter']
+
+/**
+ * The map a campaign opens on (campaign/write-story-by-map-scale): the
+ * first root at the widest scale the atlas holds — the region for the
+ * Corsaires. `null` when there is no map at all.
+ */
+export function widestRoot(atlas: Atlas, maps: Map<string, AtlasMap>): string | null {
+  const roots = atlas.roots.flatMap((id) => maps.get(id) ?? [])
+  if (roots.length === 0) return null
+  return roots.reduce((best, m) => (width(m) < width(best) ? m : best)).map.id
+}
+
+/** Whether `entry` stands at the widest scale of the atlas: there, the story is the campaign's idea. */
+export function atWidest(atlas: Atlas, entry: AtlasMap): boolean {
+  return atlas.maps.every((m) => width(entry) <= width(m))
+}

@@ -1,7 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router'
 import { SignInPage } from '@/features/auth/SignInPage'
 import { AtlasPage } from '@/features/gm/atlas/AtlasPage'
-import { CampaignPage } from '@/features/gm/CampaignPage'
 import { GmHomePage } from '@/features/gm/GmHomePage'
 import { GmTablePage } from '@/features/gm/GmTablePage'
 import { GmLivePage } from '@/features/gm/live/GmLivePage'
@@ -29,7 +28,7 @@ export default function App() {
         <Route path="/partie/:campaignId" element={<PlayerHomePage />} />
         <Route path="/partie/:campaignId/personnage" element={<CharacterCreatorPage />} />
         <Route path="/partie/:campaignId/regles" element={<RulesPage />} />
-        <Route path="/campagnes/:campaignId" element={<CampaignPage />} />
+        <Route path="/campagnes/:campaignId" element={<AtlasPage />} />
         <Route path="/campagnes/:campaignId/table" element={<GmTablePage />} />
         <Route path="/campagnes/:campaignId/soiree" element={<GmLivePage />} />
         <Route path="/campagnes/:campaignId/regles" element={<RulesEditorPage />} />

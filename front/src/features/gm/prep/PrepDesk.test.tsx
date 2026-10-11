@@ -39,6 +39,8 @@ function campaign(
       npcs: [{ id: 'pnj_morel', name: over.morel ?? 'Morel', disposition: 'neutral', motivation: 'Survivre.' }],
     },
     issues: over.issues ?? [ALERT],
+    settings: { playerCount: 4, aiBudgetCents: 0 },
+    archivedAt: null,
     validatedAt: over.validatedAt ?? null,
     updatedAt: '2026-10-06T10:00:00Z',
     revision: over.revision ?? 0,
@@ -123,6 +125,7 @@ const AROUND = {
   'GET /api/campaigns/c1/atlas': () => ({ status: 200, body: { data: ATLAS } }),
   'GET /api/campaigns/c1/media': () => ({ status: 200, body: { data: { theme: null, assets: [] } } }),
   'GET /api/campaigns/c1/proposals': () => ({ status: 200, body: { data: [] } }),
+  'GET /api/rule-systems': () => ({ status: 200, body: { data: [] } }),
 }
 
 /** The preparation lives in the Atlas's drawer (gm/prep-on-atlas). */
@@ -310,8 +313,8 @@ describe('PrepDesk, in the Atlas’s drawer', () => {
     expect(await screen.findByRole('region', { name: 'Fiche de la scène « Le bureau de Morel »' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Cohérence' }))
     expect(screen.queryByRole('button', { name: 'Proposer une correction' })).not.toBeInTheDocument()
-    // Pinning it is the map's: the drawer closes on it.
+    // Pinning it is the map's: the drawer closes on it — here, a campaign with no map yet.
     await userEvent.click(screen.getByRole('button', { name: 'L’épingler sur la carte' }))
-    expect(await screen.findByText('Aucune carte : ni le monde ni la campagne n’en ont encore.')).toBeInTheDocument()
+    expect(await screen.findByRole('region', { name: 'Pas encore de carte' })).toBeInTheDocument()
   })
 })

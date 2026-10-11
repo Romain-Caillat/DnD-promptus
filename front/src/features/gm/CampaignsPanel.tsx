@@ -22,7 +22,7 @@ type ListState =
  * The GM's campaigns as cards (board « Préparer », moment 1): the one
  * worked on last in ivory, the others in black, then « Nouvelle
  * campagne » and the YAML import; archived campaigns below. Each card
- * reopens its campaign page.
+ * reopens its Atlas.
  */
 export function CampaignsPanel({ gmName }: { gmName: string }) {
   const { t } = useTranslation()
