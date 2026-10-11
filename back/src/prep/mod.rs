@@ -78,19 +78,40 @@ pub async fn apply(
     campaign: Uuid,
     edits: &[Edit],
 ) -> Result<(CampaignRow, Vec<Change>), AppError> {
+    let (done, ()) = apply_made(pool, gm, author, campaign, |_| Ok((edits.to_vec(), ()))).await?;
+    Ok(done)
+}
+
+/// [`apply`], the edits made by `make` on the story as it stands under
+/// the campaign lock: what `make` reads (an NPC's spots, the cells
+/// already taken) cannot change before its edits land — a placement by
+/// name sends an NPC's whole list of spots, which must not overwrite a
+/// concurrent change (`campaign_maps::survey::place`).
+///
+/// # Errors
+///
+/// As [`apply`], and `make`'s.
+pub async fn apply_made<T>(
+    pool: &sqlx::PgPool,
+    gm: &CurrentGm,
+    author: Author,
+    campaign: Uuid,
+    make: impl FnOnce(&promptus_shared::story::Campaign) -> Result<(Vec<Edit>, T), AppError>,
+) -> Result<((CampaignRow, Vec<Change>), T), AppError> {
+    let mut tx = pool.begin().await?;
+    let row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
+    let (edits, extra) = make(&row.story)?;
     if edits.len() > EDITS_MAX {
         return Err(AppError::BadRequest("TOO_MANY_EDITS"));
     }
-    let mut tx = pool.begin().await?;
-    let row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
     let (story, changes) =
-        edit::apply_with(&row.story, edits, &edit_library(&row)).map_err(|e| edit_error(&e))?;
+        edit::apply_with(&row.story, &edits, &edit_library(&row)).map_err(|e| edit_error(&e))?;
     campaigns::save_story(&mut tx, campaign, &row.story, &story, author).await?;
     let row = campaigns::find(&mut *tx, campaign)
         .await?
         .ok_or(AppError::NotFound("NOT_FOUND"))?;
     tx.commit().await?;
-    Ok((row, changes))
+    Ok(((row, changes), extra))
 }
 
 /// Declare the campaign playable. A campaign with errors is not: the

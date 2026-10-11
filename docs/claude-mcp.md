@@ -139,7 +139,7 @@ taking it back always works. With it, a token write lands directly
 line of the journal (one MCP call, one revision) — except while an
 evening is open and on what players already know (a scene entered, a
 clue found, an NPC or adversary met, a faction or goal known, a place
-where an entered scene stands, the map on the table's board): then it
+where an entered scene stands or one containing it, the map on the table's board): then it
 is proposed. A whole file over the campaign (`PUT …/import`) cannot be
 proposed item by item: with a token it is refused (409
 `CLAUDE_PROPOSES`) unless Claude has the hand. This closes the open

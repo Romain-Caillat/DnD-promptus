@@ -95,15 +95,36 @@ pub fn revealed(story: &Campaign, world: &WorldState, kind: Kind, id: &str) -> b
         Kind::Npc | Kind::Adversary => world.revealed.contains(id),
         Kind::Faction => world.known_factions.contains(id),
         Kind::Goal => world.goals.contains_key(id),
+        // The place of an entered scene, or a place containing it: the
+        // pin players see is the first anchored place up the `parent`
+        // chain (`story::pins`), named after that place.
         Kind::Location => story
             .nodes
             .iter()
-            .any(|n| n.location.as_deref() == Some(id) && entered(&n.id)),
+            .filter(|n| entered(&n.id))
+            .any(|n| within(story, n.location.as_deref(), id)),
         // Players always read the campaign's title and universe, the
         // bible's hook and the party (`projection::project_for_players`).
         Kind::Campaign | Kind::Bible | Kind::PartyMember => true,
         _ => false,
     }
+}
+
+/// Whether place `place` is `id` or lies inside it, following `parent`
+/// (a loop in the chain stops the walk).
+fn within(story: &Campaign, place: Option<&str>, id: &str) -> bool {
+    let mut seen = std::collections::BTreeSet::new();
+    let mut at = place;
+    while let Some(p) = at {
+        if p == id {
+            return true;
+        }
+        if !seen.insert(p) {
+            return false;
+        }
+        at = story.location(p).and_then(|l| l.parent.as_deref());
+    }
+    false
 }
 
 /// Whether `after` touches anything players know of `row`.
@@ -727,6 +748,13 @@ mod tests {
         if let Some(place) = &node.location {
             assert!(revealed(&story, &world, Kind::Location, place));
         }
+        // The place containing it is known too: the pin players see may
+        // be that place's (the fixture's tavern stands in the port).
+        let place = node.location.as_deref().and_then(|l| story.location(l));
+        let parent = place
+            .and_then(|l| l.parent.clone())
+            .expect("a nested place");
+        assert!(revealed(&story, &world, Kind::Location, &parent));
         let clue = &story.clues[0].id;
         assert!(!revealed(&story, &world, Kind::Clue, clue));
         world.found_clues.insert(clue.clone());

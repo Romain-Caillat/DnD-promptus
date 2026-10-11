@@ -238,7 +238,7 @@ read from the maps' `exits`, never stored:
   no exit leads down to is a root; a campaign map shadows a world map
   of the same id.
 
-`GET /api/campaigns/{id}/atlas` (GM only, not open to a personal token)
+`GET /api/campaigns/{id}/atlas` (GM only; a personal token reads it too, for Claude's `get_atlas`)
 answers `{revision, roots, maps: [{map, origin: world|campaign, parent:
 {map, exit}|null, children, links: [{to, exit}], backdrop, validated,
 pins}], places, unplaced, issues}`, maps whole, roots first then depth

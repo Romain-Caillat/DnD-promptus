@@ -37,7 +37,7 @@ type PageState =
  * writes an idea, sees what a generation costs at most, starts it and
  * follows its steps live; the draft says what it holds and what the
  * validator finds, and is applied only on the GM's word — then to
- * review on `/preparer`.
+ * review on the Atlas (`/atlas`).
  */
 export function GenerationPage() {
   const { t } = useTranslation()

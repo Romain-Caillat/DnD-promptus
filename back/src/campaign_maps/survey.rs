@@ -200,12 +200,16 @@ pub async fn place(
     let map = map_of(pool, &row, id).await?;
     let rules = crate::board::movement(row.rules(), &map);
     if author != Author::Token {
-        let resolved = placing::place(&row.story, &map, rules, &ask.placements, &[])
-            .map_err(|e| place_error(&e))?;
-        let done = crate::prep::apply(pool, gm, author, campaign, &resolved.edits).await?;
+        // Resolved under the lock, on the story the edits apply to.
+        let (done, placed) = crate::prep::apply_made(pool, gm, author, campaign, |story| {
+            let resolved = placing::place(story, &map, rules, &ask.placements, &[])
+                .map_err(|e| place_error(&e))?;
+            Ok((resolved.edits, resolved.placed))
+        })
+        .await?;
         return Ok(Placing {
             outcome: Outcome::Applied(done),
-            placed: resolved.placed,
+            placed,
         });
     }
     let more = proposed_cells(pool, &row, &map, ask.proposal).await?;

@@ -488,7 +488,8 @@ Everything about batches moves the GM-only `proposals` topic, never
 directly, journaled as `token` and undone line by line; the GM's
 session sets it, never while an evening is open, and a write that comes
 during an evening or touches what players know (`claude::revealed`:
-entered scenes and their places, found clues, met NPCs, known factions
+entered scenes, their places and the places containing them — a pin
+players see may be the parent's —, found clues, met NPCs, known factions
 and goals, the map on the board) is proposed anyway. A whole file over
 the campaign with a token needs the hand (409 `CLAUDE_PROPOSES`).
 Writing `campaigns.story` or a map from a token anywhere else skips the
