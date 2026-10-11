@@ -224,9 +224,11 @@ remplis**. Pour chaque hub, il faut des PNJ et leurs dialogues à choix,
 des quêtes secondaires, des mini-jeux habillés, une occasion par stat, les
 branches d'échec et la convergence vers le fil.
 
-## 13. Écarts avec la vision actuelle (CLAUDE.md)
+## 13. Écarts avec la vision précédente
 
-| Règle actuelle | Dans cette bible |
+`CLAUDE.md` a été mis à jour en conséquence.
+
+| Règle précédente | Dans cette bible |
 |---|---|
 | 1. Le MJ a le dernier mot, rien n'atteint les joueurs sans validation | Le jeu narre seul dans un cadre préparé. Le MJ intervient seulement par override. |
 | 2. L'IA en prépa et en direct, toujours derrière une validation | En direct, l'IA raconte sans validation, mais ne sort jamais de la structure préparée. |

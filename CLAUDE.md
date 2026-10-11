@@ -4,30 +4,47 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Vision
 
-**Promptus** is a self-hosted narrative engine for tabletop RPGs, played
-**fully remote**: the game master (GM) prepares and runs the campaign,
-an LLM co-GM proposes, and every player plays from their own screen —
-most often a phone.
+**Promptus** is a self-hosted, multiplayer tactical RPG in the spirit of
+DnD, played **fully remote and live** — a "Baldur's Gate 3"-style game
+rather than a tool for a game master. An **Author** prepares the
+campaign with the AI; at the table **the game narrates**, voices the
+NPCs and arbitrates the rules; the players (the Author included) play
+from their own PC. The GM steps back: invisible overrides live, story
+rewrites between chapters through Claude + the MCP.
 
-The app plans and generates the campaign (story graph, NPCs, maps,
-images, video, music cues); the GM reviews and edits it; at the table
-the GM drives the session, validates the co-GM's proposals and reveals
-content to the players.
+- **Loop**: hub (free exploration, each player alone: NPCs, side quests,
+  mini-games) → thread (group reunited: reveal, combat) → milestone.
+- **Combat**: DnD 5e rules with Fire Emblem readability (grid, hit %
+  preview), fought in place; tactical top view, HD-2D for the blows.
+- **Look**: true HD-2D (Octopath Traveler, Triangle Strategy); sprites
+  and tiles from PixelLab, portraits and key scenes from an image AI.
+- **Scale**: short campaigns (4–6 chapters, levels 1–5), one chapter
+  per evening, everyone connected; one-shot as the test format.
+
+The game bible (`docs/bible.md`, French) is the reference for every
+gameplay decision.
 
 ### Design rules (non-negotiable)
 
-1. **The GM has the last word.** The AI proposes, the GM validates.
-   Nothing reaches the players without validation.
-2. **AI works in prep and live**, always behind that validation.
-3. **Rules are clear.** A player always sees what they can do; the
-   actions offered are derived from the campaign's rule system.
+1. **Fixed structure, live voice.** Everything that *can happen* is
+   prepared before play (scenes, choices, consequences, failure
+   branches). Live, the AI only narrates and voices those branches; it
+   never invents one. Players pick from choices, never free text.
+2. **The GM keeps an override**, invisible to players (pause, force or
+   cancel a roll or action, move a character, trigger convergence), and
+   rewrites the story between chapters.
+3. **Rules are clear.** A player always sees what they can do and what
+   each stat brings, in and out of combat; the actions offered are
+   derived from the campaign's rule system. Every stat matters in and
+   out of combat, and every hub offers an opportunity per stat.
 4. **No mock.** A feature is done only when it is usable end to end in
    a real session. "Shipped, never tried for real" is a status, not done.
 5. **French first.** Interface and generated content in French.
-6. **Phone first for players.** The player screen is designed for a
-   phone; the GM screen for a laptop or tablet.
+6. **PC first for players** (keyboard/mouse and gamepad). Phone play is
+   set aside for now.
 
-Source of these decisions: `archive/bmad/planning-artifacts/vision-v2-decisions.md`.
+Source of these decisions: `docs/bible.md` (brainstorm of 2026-10-11),
+which supersedes `archive/bmad/planning-artifacts/vision-v2-decisions.md`.
 
 ## Status — rewrite in progress
 
@@ -42,6 +59,11 @@ The design is done (`archive/tickets/design.md`): the canvas boards are
 the visual specification (`docs/design/README.md`), and `TICKETS.md`
 orders the code work in three milestones, each ending with a real
 session played.
+
+**The vision changed after that design** (GM at the center → GM-light
+game, phone → PC, true HD-2D). The canvas boards, `TICKETS.md` and the
+target stack predate `docs/bible.md` and must be re-checked against it;
+the 3D engine for HD-2D is still to be chosen.
 
 ## Tech Stack (target)
 
