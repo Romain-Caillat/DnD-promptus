@@ -2286,6 +2286,52 @@ téléphones. **Pas fait** : la TV (elle ne montre que la soirée : il faut
 prototype, les façades. **Reste** l'essai réel pendant une préparation
 avec Claude, et la tenue sur un iPad.
 
+### `campaign/write-story-by-map-scale` · todo
+
+**Pourquoi** — Sur la page de la campagne, l'Atlas est une carte-bouton
+parmi d'autres (« Mener la soirée », « Inviter la table », « Règles »),
+à côté d'un formulaire de réglages. Or l'histoire s'écrit à chaque
+échelle de carte : l'Atlas n'est pas une rubrique, c'est le point de
+départ de la préparation.
+
+**Périmètre** — Chaque échelle de carte porte la part de l'histoire qui
+lui correspond, et s'écrit là :
+
+- **L'échelle la plus large** (`world` dans le code : la région en
+  hexagones pour les Corsaires) porte **l'idée de la campagne** — titre,
+  univers, idée (MJ seul), accroche (lue par les joueurs), ton, thèmes —
+  puis **les actes et les fronts**. Un panneau « L'idée » dans le panneau
+  latéral de l'Atlas les montre et les édite, avec les réglages
+  techniques repliés en dessous (nombre de joueurs, budget IA).
+- **Le lieu** porte ses scènes et ses PNJ ; **la rencontre**, son
+  combat, ses indices et son butin — c'est déjà le cas, inchangé.
+- **Entrer dans une campagne, c'est ouvrir l'Atlas** : `/campagnes/:id`
+  mène à l'Atlas sur sa carte la plus large. La page de réglages
+  disparaît ; ses actions passent dans l'en-tête de l'Atlas (« Mener la
+  soirée », « Inviter la table », « Règles », « Archiver » /
+  « Désarchiver ») et son bandeau d'état (en préparation, archivée)
+  au-dessus de la carte.
+- **Une campagne sans carte** ouvre l'Atlas sur le panneau « L'idée »
+  seul, avec le chemin vers ses cartes (onglet « Cartes » du tiroir).
+- L'onglet « Bible » du tiroir garde ce qui n'a pas de carte (vérités,
+  secrets, direction artistique) ; un champ édité dans « L'idée » n'est
+  pas édité une seconde fois ailleurs.
+- Les modifications de Claude par le MCP (`apply_story_edits` sur
+  `bible`, `campaign`, un acte, un front) apparaissent dans « L'idée »
+  sans recharger, en proposition quand Claude n'a pas la main, comme
+  le reste de l'Atlas.
+
+**Fini quand** — Romain ouvre les Corsaires depuis l'accueil, arrive sur
+l'Atlas, retravaille le pitch, l'accroche et l'acte 1 sur la carte la
+plus large, descend jusqu'au quai de Port-Louis, lance la soirée depuis
+l'en-tête — sans repasser par une page de réglages. Tests à jour,
+`bun run lint` et `bun run test` passent.
+
+**Origine** — Romain, 11 octobre 2026, en reprenant l'acte 1 des
+Corsaires : « Atlas devrait pas être une catégorie, mais un point de
+départ. On écrit l'histoire aux différents niveaux de granularité de la
+map. La map globale est l'idée, le pitch, le titre, l'univers. »
+
 ## Épic `ai`
 
 ### `ai/route-llm-provider` · doing — reste la soirée du jalon jouée pour de vrai
