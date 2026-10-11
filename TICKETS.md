@@ -43,6 +43,12 @@ vraie plateforme, en jouant, et s'itère.
 
 ## Ordre de construction
 
+**Priorité de Romain (11 octobre 2026).** Le travail porte d'abord sur
+la nouvelle création de campagne, branchée sur PixelLab et le rendu
+HD-2D : `campaign/start-from-a-scene`, `campaign/generate-scene-visuals`,
+`campaign/preview-scene-in-hd2d`, et l'épic `hd2d` qui les porte. Le
+reste de l'ordre ci-dessous attend.
+
 La méthode derrière cet ordre — quatre chaînes (règles, campagne,
 soirée, retour) tirées des deux parties que Romain a menées à la main —
 est dans `docs/lecons-des-parties.md`.
@@ -75,8 +81,7 @@ joueurs en fin de soirée (`session/collect-player-feedback`) disent que
 les règles étaient claires, que chacun a eu son moment, et que chacun
 sait quoi faire ensuite. Le monde joué n'est pas encore choisi.
 
-**Phase 0 · Le socle** — `platform/scaffold-workspace` ·
-`platform/run-ci` · `platform/sign-in-gm` · `platform/deploy-self-hosted` ·
+**Phase 0 · Le socle** — `platform/deploy-self-hosted` ·
 `ui/write-design-tokens`
 
 **Phase 1 · Les deux mondes en données, sans interface** — le moteur,
@@ -243,101 +248,13 @@ avec des éléments PixelLab).
 **HD-2D (décidé le 11 octobre, pas encore placé dans un jalon)** —
 `media/choose-pixellab-plan` · `hd2d/build-pixellab-asset-pack` ·
 `hd2d/render-board-in-three` · `hd2d/show-pixellab-characters` ·
-`hd2d/stage-combat-actions` · `hd2d/retire-flat-renderers`. Romain
-dit où ils entrent dans l'ordre de construction.
+`hd2d/stage-combat-actions` · `hd2d/retire-flat-renderers`. Priorité
+avec la nouvelle création de campagne (voir « Priorité de Romain » en
+tête de l'ordre de construction).
 
 ---
 
 ## Épic `platform`
-
-### `platform/scaffold-workspace` · doing — reste le simulateur iOS (Mac)
-
-**Pourquoi** — Démarrer la réécriture sur la même base que Devotion.
-
-**Périmètre** — Workspace Cargo (`back/`, `shared/`, `src-tauri/`),
-`front/` React + Vite + shadcn + i18n, scripts Bun (`dev`, `test`,
-`db:start`…), `docker-compose.dev.yml` (Postgres 17), base de test
-séparée (`TEST_DATABASE_URL`), `.env.example`.
-
-**Fini quand** — `bun run dev` lance base, serveur et interface ;
-`bun run test` passe ; l'app Tauri s'ouvre sur le simulateur iOS.
-
-**Origine** — Alignement sur Devotion
-
-**État** — Squelette en place et vérifié dans PCT 105 : `bun run dev`
-lance Postgres 17, le serveur Axum (`:4333`, rechargé par bacon) et
-Vite (`:4334`) ; la page d'accueil, en français via `t()`, interroge
-`GET /api/health`, qui vérifie la base (503 `DATABASE_UNAVAILABLE`
-sinon). `bun run test` passe (3 tests Rust contre la base de test
-`promptus_test`, 2 tests Vitest) ; `bun run lint` (fmt, clippy
-`-D warnings`, ESLint avec la règle « aucun texte en dur », tsc, knip)
-passe ; l'app Tauri compile en debug et en release (`tauri build
---no-bundle`). **Reste** : ouvrir l'app sur le simulateur iOS, ce qui
-demande macOS (`tauri ios init` puis `bun run dev:ios` sur le Mac de
-Romain). Les icônes Tauri sont provisoires.
-
-### `platform/run-ci` · doing — reste le premier passage sur GitHub
-
-**Périmètre** — CI GitHub calquée sur Devotion : fmt, clippy, tests
-Rust contre Postgres, lint + typecheck + tests front, gitleaks.
-
-**Fini quand** — Chaque PR est vérifiée.
-
-**Origine** — Alignement sur Devotion
-
-**État** — `.github/workflows/ci.yml` écrit, sur chaque PR et chaque
-push sur `main`, en trois jobs : `rust` (dépendances système de Tauri,
-création de `promptus_test` par `scripts/create-test-db.sql` dans un
-service Postgres 17, `cargo fmt --all --check`, clippy `--workspace
---all-targets -D warnings`, `cargo test --workspace`), `front` (Bun
-1.4.2 comme dans PCT 105 : ESLint, `tsc -b`, knip, Vitest, sous Bun
-via `--bun`) et `secrets` (gitleaks 8.30.1, binaire épinglé et vérifié
-par somme SHA-256, sur tout l'historique). Le fichier passe
-`actionlint` (avec shellcheck), et chaque commande a été rejouée dans
-PCT 105 avec les mêmes variables — seule différence, le port 5433 d'un
-Postgres 17 jetable à la place du service. **Reste** : le premier
-passage sur GitHub (pousser, regarder les trois jobs passer), puis
-rendre les trois jobs obligatoires dans la protection de `main`.
-
-### `platform/sign-in-gm` · doing — reste une vraie cérémonie en HTTPS
-
-**Pourquoi** — Le V1 laissait les pages MJ ouvertes à tous.
-
-**Périmètre** — Compte MJ avec passkey (comme Devotion) ; chaque route
-MJ exige la session du MJ propriétaire de la campagne ; les joueurs
-restent sans compte (jeton haché, `session/invite-and-join`).
-
-**Fini quand** — Un test parcourt chaque route MJ sans session, puis
-avec le compte d'un autre MJ : toutes refusent.
-
-**Origine** — `MEMORY.md` §4
-
-**État** — Livré côté serveur et interface, vérifié dans PCT 105. Un
-MJ n'a ni mot de passe ni e-mail : un nom affiché et une ou plusieurs
-passkeys découvrables (webauthn-rs 0.5, vérification de l'utilisateur
-exigée), donc la connexion ne demande aucun identifiant. Session côté
-serveur (`gm_sessions`, jeton aléatoire de 256 bits stocké en SHA-256,
-30 jours) dans un cookie `promptus_gm` `HttpOnly`, `SameSite=Strict`,
-`Path=/api`, `Secure` dès que `PUBLIC_ORIGIN` est en HTTPS. Le premier
-compte exige le **code de démarrage** (aléatoire, affiché dans le
-journal du serveur au démarrage tant qu'aucun MJ n'existe, ou fixé par
-`GM_SETUP_TOKEN`) ; les suivants, une **invitation** à usage unique
-(7 jours, hachée, révocable) créée par un MJ connecté. Toutes les routes
-MJ (`/api/me`, `/api/auth/sign-out`, `/api/gm-invites`…) passent par le
-middleware `require_gm` (401 `UNAUTHENTICATED`) ; une ressource d'un
-autre MJ répond 404, comme une ressource inexistante (`owned_by` dans
-`back/src/auth/guard.rs`, prêt pour les campagnes). Interface :
-`/connexion`, `/inscription` (code prérempli par le lien d'invitation),
-accueil MJ avec invitations et déconnexion. Tests : les cérémonies avec
-un authentificateur logiciel (inscription, connexion, rejeu, course
-entre deux premiers comptes, invitation utilisée, révoquée ou expirée,
-passkey d'un autre MJ), le balayage de chaque route MJ sans session,
-avec un faux cookie, une session expirée ou fermée, puis avec un autre
-MJ. **Reste** : une vraie cérémonie dans un navigateur (Safari iOS,
-Chrome) une fois l'app servie en HTTPS (`platform/deploy-self-hosted`),
-puis archiver. Hors périmètre, à décider : récupérer un compte dont la
-passkey est perdue, ajouter une seconde passkey, limiter le débit des
-routes publiques, les passkeys dans l'app Tauri.
 
 ### `platform/deploy-self-hosted` · doing — reste le choix de l'hôte et la mise en ligne
 
@@ -2259,6 +2176,73 @@ Goulven au Perroquet Noyé. Le choix revient à Romain.
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 
 ---
+
+### `campaign/start-from-a-scene` · todo
+
+**Pourquoi** — La création actuelle (`/campagnes/nouvelle` puis
+`/generer`) demande un formulaire avant toute idée, fait saisir l'idée
+deux fois, demande le budget IA trop tôt et aboutit à une campagne
+vide. Un MJ part d'une image de scène, pas d'un formulaire.
+
+**Périmètre** — Le parcours de la planche « Créer · la campagne de
+Romain (refonte) » du canevas, en remplacement des deux pages
+actuelles : (1) départ d'une idée, d'un fichier ou d'une page blanche ;
+(2) une scène écrite comme on la raconte, d'ouverture ou de fin, dont
+le co-MJ lit l'univers et le ton, corrigeables ; (3) autour d'elle, des
+cartes proposées (le lieu, deux PNJ, trois indices, une tension et son
+horloge de 6 étapes), chacune gardée, modifiée ou jetée ; la jauge
+« Ta prochaine soirée » en 7 points ; (4) les indices gardés deviennent
+des scènes proposées en pointillés, à rebours si l'on est parti de la
+fin ; (5) les règles demandées au premier combat ; (6) « Jouable » : le
+titre et l'accroche ne sont demandés qu'à ce moment-là, pour inviter la
+table, et « Écrire tout l'arc » reste une option chiffrée. Rien n'est
+gardé sans le MJ (règle 1) ; le coût IA est affiché à chaque
+proposition.
+
+**Fini quand** — Romain prépare sa prochaine soirée dans l'app en
+partant d'une scène, sans passer par l'ancien formulaire, et la jauge
+dit « Jouable ».
+
+**Origine** — Demande de Romain, 10 octobre 2026 ; planche « Créer · la
+campagne de Romain (refonte) », page « MJ · Créer » du canevas.
+
+### `campaign/generate-scene-visuals` · todo
+
+**Pourquoi** — Une carte gardée doit pouvoir devenir ce que la table
+verra : le lieu en HD-2D, les PNJ en pixel art, sans que le MJ dessine.
+
+**Périmètre** — Dans la création, une carte « lieu » gardée propose sa
+carte de grille (`maps/generate-map-llm`) et la liste des éléments
+PixelLab qui lui manquent dans le thème (`hd2d/build-pixellab-asset-pack`) ;
+une carte « PNJ » gardée propose son personnage PixelLab
+(`hd2d/show-pixellab-characters`). Chaque lot annonce son coût en
+générations avant de partir, et rien ne s'affiche aux joueurs sans
+validation du MJ. Ce qui existe déjà dans le thème est réutilisé, pas
+regénéré.
+
+**Fini quand** — Pour la scène d'ouverture de la prochaine soirée,
+Romain obtient depuis la création le lieu et ses PNJ en éléments
+PixelLab validés, avec le coût total affiché.
+
+**Origine** — Priorité de Romain, 11 octobre 2026 ; devis PixelLab du
+même jour.
+
+### `campaign/preview-scene-in-hd2d` · todo
+
+**Pourquoi** — Le MJ doit voir la scène comme la table la verra avant
+de la dire prête.
+
+**Périmètre** — Pendant la création, la scène gardée s'ouvre dans le
+rendu HD-2D (`hd2d/render-board-in-three`), avec ses éléments générés
+et ses PNJ posés à leur place ; ce qui manque encore est signalé
+plutôt que caché. La jauge « Ta prochaine soirée » compte « la scène
+se voit » parmi ses points.
+
+**Fini quand** — La scène d'ouverture de la prochaine soirée se
+regarde dans l'app comme le prototype du quai
+(`docs/design/hd2d/quai.html`), sur ordinateur et sur la TV.
+
+**Origine** — Priorité de Romain, 11 octobre 2026.
 
 ## Épic `ai`
 
