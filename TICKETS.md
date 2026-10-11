@@ -39,6 +39,7 @@ vraie plateforme, en jouant, et s'itère.
 | `tv` | L'écran partagé : TV du salon ou fenêtre partagée sur Discord |
 | `characters` | Chaque joueur crée son personnage pixel et le voit marcher dans les 4 directions |
 | `maps` | Des cartes à trois échelles, dessinées automatiquement en vue 3/4, dans tous les univers |
+| `hd2d` | Le plateau en HD-2D façon Octopath : scène Three.js, éléments PixelLab, combat mis en scène |
 
 ## Ordre de construction
 
@@ -236,8 +237,14 @@ Plus tard, sans jalon : `maps/support-hex-combat`.
 **Sprites générés (essai d'octobre, hors jalon)** —
 `media/generate-sprites-on-mannequin` · `media/draw-key-poses` ·
 `media/write-pixel-art-skill` · `characters/show-generated-sprites-on-plan`
-· `characters/choose-sprite-source` (décision ouverte, à trancher avant
-de brancher quoi que ce soit dans l'app).
+· `characters/choose-sprite-source` (tranché le 11 octobre : HD-2D
+avec des éléments PixelLab).
+
+**HD-2D (décidé le 11 octobre, pas encore placé dans un jalon)** —
+`media/choose-pixellab-plan` · `hd2d/build-pixellab-asset-pack` ·
+`hd2d/render-board-in-three` · `hd2d/show-pixellab-characters` ·
+`hd2d/stage-combat-actions` · `hd2d/retire-flat-renderers`. Romain
+dit où ils entrent dans l'ordre de construction.
 
 ---
 
@@ -3739,7 +3746,7 @@ tiennent avec les tuiles.
 
 **Origine** — Demande de Romain, 10 et 11 octobre 2026 ; page « Fondations · Sprites » du canevas, `scripts/pixel-art/README.md`.
 
-### `characters/choose-sprite-source` · todo — décision ouverte
+### `characters/choose-sprite-source` · done — HD-2D avec des éléments PixelLab
 
 **Pourquoi** — L'essai généré contredit trois décisions de `MEMORY.md`
 §2 : la vue de profil façon Terraria, le personnage décrit en calques et
@@ -3767,11 +3774,153 @@ tenues. Limites : même carrure pour tous sans réglage des proportions,
 arme incluse dans le dessin. Pas encore testé : proportions sur mesure,
 animations, sprite de carte redessiné à partir d'un portrait de 256 px.
 
-**Fini quand** — Romain tranche après
-`characters/show-generated-sprites-on-plan`, et `MEMORY.md` §2 est mis
-à jour en conséquence.
+**Prototype HD-2D (11 octobre)** — La bagarre du quai des Corsaires
+(acte 1, scène 4) montée en Three.js à partir de la carte
+`quai-port-louis` : lumière des lanternes, brouillard, ombres, flou de
+profondeur, une passe de combat avec les vrais jets
+(`scripts/pixel-art/work/hd2d/quai.html`, artefact « Quai de
+Port-Louis »). Test PixelLab de 9 générations dedans : Gueule-Rouge et
+un marin animés, une façade d'entrepôt (excellente pour 1 génération),
+des lanternes, une texture de face de caisse. Romain a préféré les
+caisses en boîtes 3D texturées aux caisses en image plate.
+
+**Décision (Romain, 11 octobre)** — Option (d). La plateforme rend en
+HD-2D avec Three.js, et les éléments viennent de PixelLab : ce qui a du
+volume est une forme 3D texturée par des images vues de face ; les
+personnages et ce qui est fin ou irrégulier sont des images plates.
+`MEMORY.md` §2 est à jour. Reste à écrire les tickets qui remplacent la
+vue de profil, les calques et le rendu serveur, et à choisir un
+abonnement PixelLab : l'essai gratuit (17 générations restantes) ne
+donne pas accès aux tuiles haut de gamme ni aux kits de bâtiment.
 
 **Origine** — Demande de Romain, 10 et 11 octobre 2026 ; page « Fondations · Sprites » du canevas, `scripts/pixel-art/README.md`.
+
+## Épic `hd2d`
+
+Décision : `MEMORY.md` §2 (« the platform renders in HD-2D »).
+Prototype de référence : la bagarre du quai des Corsaires,
+`scripts/pixel-art/work/hd2d/quai.html` (artefact « Quai de
+Port-Louis »). Règle de forme : ce qui a du volume est une forme 3D
+texturée par des images PixelLab vues de face ; les personnages et ce
+qui est fin ou irrégulier sont des images plates tournées vers la
+caméra.
+
+Règle commune : **la grille porte toujours les règles**. La scène 3D
+n'est qu'une projection des données que le serveur a déjà filtrées
+(brouillard, pions cachés, calques du MJ) ; le serveur reste seul juge
+du déplacement, de la portée et de la ligne de vue.
+
+### `media/choose-pixellab-plan` · todo — décision de Romain
+
+**Pourquoi** — L'essai gratuit (40 générations, 17 restantes) ne donne
+pas accès aux tuiles haut de gamme ni aux kits de bâtiment, et une
+scène complète coûte environ 120 à 145 générations.
+
+**Périmètre** — Choisir l'abonnement ; estimer le coût d'un monde (le
+port des Corsaires, le Cure-Dent du Brasier) en comptant ce qui se
+réutilise d'une scène à l'autre ; vérifier dans les conditions de
+PixelLab que les images générées peuvent servir dans Promptus
+auto-hébergé.
+
+**Fini quand** — L'abonnement est pris ou refusé, avec le budget par
+monde noté dans `MEMORY.md`.
+
+**Origine** — Devis du 11 octobre 2026 (test à 8 générations, puis la
+texture de caisse).
+
+### `hd2d/build-pixellab-asset-pack` · todo
+
+**Pourquoi** — La scène n'est belle qu'avec des éléments cohérents
+entre eux, et le MJ ne doit pas les fabriquer à la main.
+
+**Périmètre** — Pour un thème (`content/themes/`), la liste de ce
+qu'il faut générer : une texture vue de face par matière de sol et de
+mur, par face d'accessoire en volume (caisse, tonneau, coque), une
+façade par type de bâtiment, une image plate par accessoire fin
+(lanterne, cordage, enseigne). Génération par le MCP PixelLab, couleurs
+ramenées sur la palette du thème (`reduce_colors`), validation par le
+MJ comme les autres images (`media_assets`). Le coût en générations est
+annoncé avant chaque lot.
+
+**Fini quand** — Le thème `port-1718` des Corsaires et un thème du
+Brasier ont tous leurs éléments, validés par Romain.
+
+**Origine** — Prototype du quai ; test PixelLab du 11 octobre 2026
+(`work/pixellab/test8/`).
+
+### `hd2d/render-board-in-three` · todo
+
+**Pourquoi** — C'est le cœur de la décision : le plateau devient une
+scène 3D éclairée au lieu d'un dessin plat.
+
+**Périmètre** — Une scène Three.js construite à partir de `MapData` qui
+remplace le canvas de `front/src/features/map/` partout où il sert
+(`BoardPanel`, `TvStage`, `BattleScreen`, `PlayersView`) : sols texturés,
+murs et bâtiments en volumes, accessoires selon la règle de forme, eau,
+lumières de la carte (`lights`, qui vacillent), ambiance (heure, brume),
+caméra inclinée qui suit l'action, ombres, halo, flou de profondeur.
+Une vue à plat de secours pour un appareil trop faible.
+
+**Fini quand** — `quai-port-louis` et une carte du Brasier sont rendues
+par l'app à partir de leur grille, sans image préparée, à 60 images/s
+sur un téléphone milieu de gamme et sur la TV, brouillard et pions
+cachés respectés côté joueur.
+
+**Origine** — Décision du 11 octobre 2026 ; prototype du quai.
+
+### `hd2d/show-pixellab-characters` · todo — à spécifier pour le créateur
+
+**Pourquoi** — Les personnages sont ce que les joueurs regardent le
+plus ; ceux de PixelLab sont nettement meilleurs que nos calques.
+
+**Périmètre** — Chaque personnage et adversaire est une image plate
+PixelLab dans la scène : 4 directions, animations repos, marche,
+attaque, coup reçu et chute, l'ouest obtenu par miroir de l'est.
+**À spécifier :** ce que devient le créateur de personnage
+(`characters/build-character-creator`), sans doute une description et
+un choix parmi des propositions générées, et qui paie les générations.
+
+**Fini quand** — Les six PJ et les adversaires d'une scène de chaque
+monde témoin s'affichent et s'animent sur téléphone, écran MJ et TV.
+
+**Origine** — Décision du 11 octobre 2026 ; Gueule-Rouge et le marin
+du test PixelLab.
+
+### `hd2d/stage-combat-actions` · todo
+
+**Pourquoi** — Le prototype a montré que la mise en scène d'une action
+(élan, coup, dégâts affichés, jet expliqué) rend les règles lisibles,
+ce qui manquait à la table des Corsaires.
+
+**Périmètre** — Les événements de combat déjà émis par le serveur
+(`battleEvents.ts`) pilotent la scène : déplacement, attaque au corps à
+corps, tir, soin, coup raté, chute, fuite ; dégâts et jet affichés
+au-dessus des personnages avec le calcul (« d20 13 + FOR 2 = 15 contre
+CA 9 ») ; la caméra cadre l'acteur et sa cible. Respecte
+`prefers-reduced-motion`.
+
+**Fini quand** — Un tour complet de la bagarre du quai, joué dans
+l'app, se lit sur le téléphone d'un joueur sans explication du MJ.
+
+**Origine** — Prototype du quai.
+
+### `hd2d/retire-flat-renderers` · todo
+
+**Pourquoi** — Deux rendus ne doivent pas cohabiter à l'écran.
+
+**Périmètre** — Une fois les trois tickets précédents faits : retirer
+le rendu 2D des cartes et le rendu serveur des personnages, mettre à
+jour `MEMORY.md` §2 (vue de profil, personnage décrit en calques,
+rendu par le serveur seul), et reprendre ou archiver les tickets qu'ils
+rendent caducs : `characters/render-layered-sprite`,
+`characters/walk-in-four-directions`,
+`characters/show-generated-sprites-on-plan`,
+`maps/render-three-quarter-tiles`, `media/draw-key-poses`.
+
+**Fini quand** — Plus aucun écran n'utilise l'ancien rendu, et
+`MEMORY.md` ne décrit plus que le nouveau.
+
+**Origine** — Décision du 11 octobre 2026.
 
 ## Épic `maps`
 
