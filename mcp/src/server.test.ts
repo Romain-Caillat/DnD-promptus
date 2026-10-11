@@ -112,10 +112,16 @@ describe('promptus MCP server', () => {
       'get_map_text',
       'get_readiness',
       'get_scene',
+      'get_theme_needs',
       'import_campaign_yaml',
+      'import_pixellab_asset',
       'list_campaigns',
       'list_proposals',
+      'list_rule_systems',
       'place_on_map',
+      'propose_scene',
+      'propose_tension',
+      'start_campaign',
     ])
     const edits = tools.find((t) => t.name === 'apply_story_edits')!
     expect(edits.description).toContain('tout ou rien')
@@ -181,6 +187,8 @@ describe('promptus MCP server', () => {
     const r = JSON.parse((await call(c, 'get_readiness', { campaign_id: 'c1' })).text)
     expect(r.issues).toMatchObject({ errors: 1, warnings: 1 })
     expect(r.acts[0].done).toBe(3)
+    expect(r.playable.verdict).toBe('Pas encore jouable')
+    expect(r.playable.missing).toEqual(['1 erreur(s) du validateur', "la jauge de « La brume » n'est pas pleine"])
   })
 
   it('passes the edits to the server as they are, and reports what changed', async () => {
@@ -531,5 +539,176 @@ describe('promptus MCP server', () => {
     const r = await call(c, 'list_campaigns')
     expect(r.isError).toBe(true)
     expect(r.text).toContain('PROMPTUS_URL et PROMPTUS_TOKEN doivent être définis')
+  })
+
+  describe('preparing with Claude (campaign/prepare-with-claude)', () => {
+    const PROPOSED = (items: number) => ({
+      status: 202,
+      body: {
+        data: {
+          status: 'proposed',
+          why: 'proposals',
+          proposal: { id: 'p1', prompt: 'lot', status: 'pending', items: Array.from({ length: items }, (_, i) => ({ key: `e${i}`, status: 'pending', stale: false })), changes: [], createdAt: '' },
+          issues: [],
+        },
+      },
+    })
+
+    it('says « Jouable » once nothing is missing', async () => {
+      const api = mockFetch({
+        'GET /campaigns/c1': () => ({ status: 200, body: { data: { ...DETAIL, issues: [] } } }),
+        'GET /campaigns/c1/readiness': () => ({ status: 200, body: { data: [{ act: 'acte_1', title: 'La brume', ready: true }] } }),
+      })
+      const c = await connect(ENV, api.fetchImpl)
+      const r = JSON.parse((await call(c, 'get_readiness', { campaign_id: 'c1' })).text)
+      expect(r.playable.verdict).toBe('Jouable')
+    })
+
+    it('starts a campaign from one scene, the rules left for the first fight', async () => {
+      const api = mockFetch({
+        'GET /rule-systems': () => ({ status: 200, body: { data: [{ id: 'corsaires', version: 1, name: 'Corsaires' }] } }),
+        'POST /campaigns/import': () => ({ status: 201, body: { data: { id: 'c9', story: {}, issues: [] } } }),
+      })
+      const c = await connect(ENV, api.fetchImpl)
+      const r = await call(c, 'start_campaign', {
+        title: 'La Mâchoire',
+        world: 'Bretagne, 1718',
+        tone: 'Sel et poudre',
+        scene: { title: 'La bagarre du quai', summary: 'Six contre six.', ending: true },
+      })
+      expect(r.isError).toBe(false)
+      const out = JSON.parse(r.text)
+      expect(out).toMatchObject({ id: 'c9', scene: { id: 'sc_la_bagarre_du_quai', ending: true } })
+      expect(out.rules.provisional).toBeDefined()
+      const story = JSON.parse((api.sent.at(-1)!.body as { yaml: string }).yaml)
+      expect(story).toMatchObject({
+        id: 'la_machoire',
+        rules: { id: 'corsaires', version: 1 },
+        bible: { tone: 'Sel et poudre', start_node: 'sc_la_bagarre_du_quai' },
+        nodes: [{ id: 'sc_la_bagarre_du_quai', act: 'acte_1', title: 'La bagarre du quai' }],
+      })
+    })
+
+    it('proposes a tension with its clock, never applies it', async () => {
+      const api = mockFetch({
+        'GET /campaigns/c1': () => ({ status: 200, body: { data: DETAIL } }),
+        'POST /campaigns/c1/story/edits': () => PROPOSED(1),
+      })
+      const c = await connect(ENV, api.fetchImpl)
+      const steps = ['Rumeurs', 'Menaces', 'Incendie', 'Arrestations', 'Blocus', 'Le port tombe'].map((label) => ({ label }))
+      const r = JSON.parse((await call(c, 'propose_tension', { campaign_id: 'c1', name: 'La Compagnie', goal: 'Racheter le port', steps })).text)
+      expect(r).toMatchObject({ status: 'proposé', front: 'front_la_compagnie', clock: 6 })
+      const body = api.sent.at(-1)!.body as { edits: { value: { steps: unknown[] } }[]; title: string }
+      expect(body.edits[0]!.value.steps).toHaveLength(6)
+      expect(body.title).toBe('Tension : La Compagnie')
+      expect((await call(c, 'propose_tension', { campaign_id: 'c1', name: 'x', goal: 'y', steps: steps.slice(0, 3) })).isError).toBe(true)
+    })
+
+    it('proposes a scene backwards from the end, with the clue found there, as the new opening', async () => {
+      const api = mockFetch({
+        'GET /campaigns/c1': () => ({ status: 200, body: { data: DETAIL } }),
+        'POST /campaigns/c1/story/edits': () => PROPOSED(3),
+      })
+      const c = await connect(ENV, api.fetchImpl)
+      const r = JSON.parse(
+        (await call(c, 'propose_scene', {
+          campaign_id: 'c1',
+          scene: { title: 'Le naufrage', summary: 'Une coque échouée.' },
+          before: 'sc_auberge',
+          opening: true,
+          clues: ['cl_filet'],
+        })).text,
+      )
+      expect(r).toMatchObject({ status: 'proposé', scene: 'sc_le_naufrage', direction: 'à rebours' })
+      const { edits } = api.sent.at(-1)!.body as { edits: unknown[] }
+      expect(edits).toEqual([
+        { op: 'add', kind: 'node', value: { id: 'sc_le_naufrage', act: 'acte_1', title: 'Le naufrage', summary: 'Une coque échouée.', exits: [{ to: 'sc_auberge', label: "L'auberge" }] } },
+        { op: 'set', target: 'bible', field: 'start_node', value: 'sc_le_naufrage' },
+        { op: 'set', target: 'cl_filet', field: 'node', value: 'sc_le_naufrage' },
+      ])
+    })
+
+    it('adds an exit to the scene before when going forward, keeping its others', async () => {
+      const api = mockFetch({
+        'GET /campaigns/c1': () => ({ status: 200, body: { data: DETAIL } }),
+        'POST /campaigns/c1/story/edits': () => PROPOSED(2),
+      })
+      const c = await connect(ENV, api.fetchImpl)
+      await call(c, 'propose_scene', { campaign_id: 'c1', scene: { title: 'Quai', summary: 'Encore.' }, after: 'sc_auberge', exit_label: 'Suivre la lanterne' })
+      const { edits } = api.sent.at(-1)!.body as { edits: unknown[] }
+      // `sc_quai` exists: the new id is numbered.
+      expect(edits[1]).toEqual({
+        op: 'set',
+        target: 'sc_auberge',
+        field: 'exits',
+        value: [{ to: 'sc_quai', label: 'Le quai' }, { to: 'sc_quai_2', label: 'Suivre la lanterne' }],
+      })
+      const unknown = await call(c, 'propose_scene', { campaign_id: 'c1', scene: { title: 'x', summary: '' }, after: 'sc_nulle_part' })
+      expect(unknown.isError).toBe(true)
+      expect(unknown.text).toContain('sc_auberge')
+      const unlinked = await call(c, 'propose_scene', { campaign_id: 'c1', scene: { title: 'x', summary: '' } })
+      expect(unlinked.isError).toBe(true)
+    })
+
+    it('serves the preparation skill as a prompt', async () => {
+      const c = await connect(ENV, mockFetch({}).fetchImpl)
+      const { prompts } = await c.listPrompts()
+      expect(prompts.map((p) => p.name)).toContain('preparer_soiree')
+      const got = await c.getPrompt({ name: 'preparer_soiree', arguments: { depart: 'des corsaires' } })
+      const body = (got.messages[0]!.content as { text: string }).text
+      expect(body).toContain('# Préparer ma prochaine soirée')
+      expect(body).not.toContain('name: preparer-soiree')
+      expect(body).toContain('Départ du MJ : des corsaires')
+    })
+  })
+
+  describe('PixelLab (campaign/import-pixellab-assets)', () => {
+    it('says what is missing, how to draw it and what it costs, and never asks for the rest', async () => {
+      const api = mockFetch({
+        'GET /campaigns/c1/elements': () => ({
+          status: 200,
+          body: {
+            data: {
+              tileset: 'port-1718',
+              palette: ['#5d5850'],
+              generations: 7,
+              needs: [
+                { kind: 'element', subject: 'port-1718/material/pavés', name: 'Sol · Pavés', form: 'texture', status: 'missing', generations: 1 },
+                { kind: 'element', subject: 'port-1718/wall', name: 'Murs', form: 'texture', status: 'approved', generations: 0 },
+                { kind: 'character', subject: 'pnj_morel', name: 'Morel', form: 'character', status: 'missing', generations: 6 },
+              ],
+            },
+          },
+        }),
+      })
+      const c = await connect(ENV, api.fetchImpl)
+      const r = JSON.parse((await call(c, 'get_theme_needs', { campaign_id: 'c1', map_id: 'quai' })).text)
+      expect(r.missing.map((m: { subject: string }) => m.subject)).toEqual(['port-1718/material/pavés', 'pnj_morel'])
+      expect(r.missing[0].how).toContain('view: side')
+      expect(r.already).toEqual([{ subject: 'port-1718/wall', name: 'Murs', status: 'gardé par le MJ (ne pas regénérer)' }])
+      expect(r.next).toContain('7 génération(s)')
+      expect(api.sent[0]!.key).toBe('GET /campaigns/c1/elements')
+    })
+
+    it('drops an image in, pending, and explains a slot already filled', async () => {
+      let first = true
+      const api = mockFetch({
+        'POST /campaigns/c1/media/import': () => {
+          if (first) {
+            first = false
+            return { status: 201, body: { data: { id: 'a1', status: 'pending', meta: { name: 'Sol · Pavés' } } } }
+          }
+          return { status: 409, body: { error: { code: 'ELEMENT_EXISTS', message: 'x' } } }
+        },
+      })
+      const c = await connect(ENV, api.fetchImpl)
+      const args = { campaign_id: 'c1', kind: 'element', subject: 'port-1718/material/pavés', url: 'https://api.pixellab.ai/x.png', generations: 1 }
+      const ok = JSON.parse((await call(c, 'import_pixellab_asset', args)).text)
+      expect(ok).toMatchObject({ status: 'en attente du MJ', id: 'a1' })
+      expect(api.sent[0]!.body).toEqual({ kind: 'element', subject: 'port-1718/material/pavés', url: 'https://api.pixellab.ai/x.png', generations: 1 })
+      const again = await call(c, 'import_pixellab_asset', args)
+      expect(again.isError).toBe(true)
+      expect(again.text).toContain('ne regénère pas')
+    })
   })
 })

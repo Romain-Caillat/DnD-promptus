@@ -10,6 +10,7 @@
 //! report.
 
 pub mod combat;
+pub mod elements;
 pub mod issue;
 pub mod maps;
 pub mod rules;

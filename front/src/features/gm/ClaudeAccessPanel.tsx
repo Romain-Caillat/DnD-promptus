@@ -193,6 +193,7 @@ export function ClaudeAccessPanel() {
           </li>
           <li>{t('gm.claude.help.paths')}</li>
           <li>{t('gm.claude.help.scope')}</li>
+          <li>{t('gm.claude.help.skill')}</li>
         </ol>
       </details>
     </section>

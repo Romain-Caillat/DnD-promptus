@@ -173,6 +173,11 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/media/batch"),
     ("GET", "/api/campaigns/{campaign}/media/{asset}/image"),
     ("POST", "/api/campaigns/{campaign}/media/{asset}/decision"),
+    // PixelLab: what the theme lacks, an element brought in, a
+    // character's frame (campaign/import-pixellab-assets).
+    ("GET", "/api/campaigns/{campaign}/elements"),
+    ("POST", "/api/campaigns/{campaign}/media/import"),
+    ("GET", "/api/campaigns/{campaign}/media/{asset}/frames/0"),
     // Each on a draft of the co-GM written just before.
     ("POST", "/api/campaigns/{campaign}/session/copilot"),
     ("POST", "/api/campaigns/{campaign}/session/copilot/voice"),
@@ -245,6 +250,8 @@ const GM_ROUTES: &[(&str, &str)] = &[
 ];
 
 const FIXTURE: &str = include_str!("../../content/fixtures/phare-de-kerbrume.yaml");
+/// A 2 × 2 red PNG, base64.
+const TINY_PNG: &str = "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEUlEQVR4nGM4ISf3H4QZYAwARzQIDWbIDqkAAAAASUVORK5CYII=";
 const CORSAIRES_RULES: &str = include_str!("../../content/rules/corsaires/v1.yaml");
 
 /// The body a route needs to succeed, so the control sweep proves the
@@ -262,7 +269,11 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             "title": "Sweep",
             "rules": { "id": "corsaires", "version": 1 }
         })),
-        (_, p) if p.ends_with("/import") && !p.ends_with("/maps/import") => {
+        (_, p)
+            if p.ends_with("/import")
+                && !p.ends_with("/maps/import")
+                && !p.ends_with("/media/import") =>
+        {
             Some(serde_json::json!({ "yaml": FIXTURE }))
         }
         (_, p) if p.ends_with("/settings") => Some(serde_json::json!({
@@ -354,6 +365,11 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
         }
         (_, p) if p.ends_with("/fight/loot") => Some(serde_json::json!({
             "gives": [{ "index": 0, "character": Uuid::nil() }]
+        })),
+        (_, p) if p.ends_with("/media/import") => Some(serde_json::json!({
+            "kind": "element",
+            "subject": "port-1718/material/pavés",
+            "url": format!("data:image/png;base64,{TINY_PNG}")
         })),
         ("POST", p) if p.ends_with("/media") => {
             Some(serde_json::json!({ "kind": "scene", "subject": "sc_crique" }))
@@ -768,6 +784,14 @@ async fn every_gm_route_refuses_without_a_valid_session() {
             .await
             .unwrap()
             .to_string();
+            sqlx::query(
+                "INSERT INTO media_frames (asset_id, animation, direction, idx, mime, image)
+                 VALUES ($1, 'idle', 'south', 0, 'image/png', '\\x89504e47')",
+            )
+            .bind(Uuid::parse_str(&ids.asset).unwrap())
+            .execute(&pool)
+            .await
+            .unwrap();
         }
         if path.ends_with("/previously/next") {
             sqlx::query(

@@ -295,9 +295,11 @@ campaign created from a pitch, or generated, waits for the GM.
 
 ## Generated from a pitch
 
-`/campagnes/:id/generer` (`ai/generate-campaign`,
+`POST /api/campaigns/{id}/generation` (`ai/generate-campaign`,
 `back/src/prep/generation.rs`) turns the GM's idea into a whole
-campaign, in a background job the screen follows live:
+campaign, in a background job. Its screen (`/campagnes/:id/generer`) was
+retired by `campaign/prepare-with-claude`: campaigns are now prepared in
+conversation with Claude; the job stays for the evaluation (`bun run eval`):
 
 | Step | The model writes | Template |
 |------|------------------|----------|

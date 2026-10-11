@@ -11,16 +11,6 @@ export interface CampaignForm {
   budget: string
 }
 
-/** A new campaign: Romain's table of six, no AI spending yet. */
-export const EMPTY_FORM: CampaignForm = {
-  title: '',
-  world: '',
-  pitch: '',
-  playerHook: '',
-  playerCount: '6',
-  budget: '0',
-}
-
 export function formOf(detail: CampaignDetail): CampaignForm {
   return {
     title: detail.story.title,

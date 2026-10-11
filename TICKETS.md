@@ -52,7 +52,8 @@ dans Promptus), `campaign/watch-prep-in-hd2d` (l'Atlas devient le
 visualiseur HD-2D), avec l'épic `hd2d` qui les porte. L'ordre :
 le premier, puis `hd2d/render-board-in-three` et le troisième, puis le
 deuxième une fois l'abonnement PixelLab pris. Le reste de l'ordre
-ci-dessous attend.
+ci-dessous attend. Les trois sont construits (11 octobre 2026) ; restent
+leurs essais réels, et la TV qui attend `hd2d/render-board-in-three`.
 
 La méthode derrière cet ordre — quatre chaînes (règles, campagne,
 soirée, retour) tirées des deux parties que Romain a menées à la main —
@@ -2114,7 +2115,7 @@ Goulven au Perroquet Noyé. Le choix revient à Romain.
 
 ---
 
-### `campaign/prepare-with-claude` · todo
+### `campaign/prepare-with-claude` · doing — reste l'essai réel : Romain prépare sa prochaine soirée avec son Claude, de la première scène à « Jouable »
 
 **Pourquoi** — La création actuelle (`/campagnes/nouvelle` puis
 `/generer`) demande un formulaire avant toute idée, fait saisir l'idée
@@ -2148,7 +2149,33 @@ formulaire dans l'app.
 · la campagne de Romain (refonte) », page « MJ · Créer » du canevas ;
 `docs/claude-mcp.md`.
 
-### `campaign/import-pixellab-assets` · todo
+*État* — Le skill « Préparer ma prochaine soirée » est dans
+`mcp/skills/preparer-soiree/` ; le serveur MCP le sert aussi comme
+invite (`preparer_soiree`), donc Claude Desktop et Claude Code l'ont sans
+rien installer. Il suit les six moments : départ (idée, campagne
+existante ou fichier), une scène racontée puis l'univers et le ton à
+confirmer, autour d'elle un lieu, deux PNJ, trois indices et une tension
+avec son horloge, les indices gardés devenus scènes (à rebours depuis la
+fin si l'on est parti d'elle), les règles au premier combat, « Jouable »
+puis le titre et l'accroche. Nouveaux outils MCP : `start_campaign`
+(une scène et l'univers confirmé deviennent une campagne, sans
+formulaire ; les règles sont provisoires jusqu'au premier combat),
+`propose_tension` (un front et son horloge de 6 étapes, proposé),
+`propose_scene` (une scène reliée en avant ou à rebours, éventuellement
+la nouvelle ouverture, avec ses indices, proposée élément par élément),
+`list_rule_systems` ; `get_readiness` dit désormais « Jouable » ou ce
+qui manque. Les pages `/campagnes/nouvelle` et `/generer` sont retirées :
+la carte « Préparer avec Claude » de l'accueil mène à l'accès pour
+Claude, l'import d'un fichier YAML reste. Essayé de bout en bout en
+local par un vrai client MCP : campagne née d'une scène de fin, tension
+et scène à rebours proposées, lues dans `list_proposals`. Testé côté MCP
+et serveur. **Hypothèses retenues** : la première scène crée la campagne
+directement (il n'y a rien sur quoi proposer) ; la campagne joue le
+premier système de règles connu tant que le MJ n'a pas choisi ; les
+routes serveur de création et de génération restent, sans écran, pour
+l'évaluation et les tests. **Reste** l'essai réel avec Romain.
+
+### `campaign/import-pixellab-assets` · doing — reste l'essai réel avec un vrai abonnement PixelLab (`media/choose-pixellab-plan`)
 
 **Pourquoi** — Ce que Claude prépare doit devenir ce que la table verra
 (le lieu en HD-2D, les PNJ en pixel art) sans que Romain dessine ni
@@ -2174,7 +2201,39 @@ par Romain, avec le coût total annoncé avant chaque lot.
 **Origine** — Priorité de Romain, 11 octobre 2026 ; test PixelLab du même
 jour. Dépend de `media/choose-pixellab-plan`.
 
-### `campaign/watch-prep-in-hd2d` · todo
+*État* — Deux outils MCP. `get_theme_needs` liste, pour une carte, ce que
+le rendu HD-2D attend du thème : la texture de chaque sol utilisé, des
+murs, des deux faces (côté, dessus) de chaque accessoire en volume,
+l'image plate de chaque accessoire fin, et le personnage de chaque PNJ
+posé sur la carte (ou d'un PNJ donné) ; chacun manque, en attente ou
+gardé, avec son coût en générations (1 par image, 6 par personnage :
+une estimation) et la palette du thème. `import_pixellab_asset` dépose
+une image par son adresse : le serveur la télécharge lui-même, depuis
+PixelLab seulement (`PIXELLAB_HOSTS`, `pixellab.ai` par défaut) ou une
+adresse `data:`, vérifie que c'est un PNG raisonnable, ramène les
+couleurs d'un élément sur la palette du thème (un personnage garde les
+siennes) et la range dans `media_assets`, en attente : le MJ la garde ou
+la jette comme les autres images. Un personnage arrive avec toutes ses
+images (directions et animations). Un emplacement qui a déjà une image
+en attente ou gardée est refusé (`ELEMENT_EXISTS`) : rien ne se
+regénère, sauf si le MJ demande de remplacer. Le skill enchaîne les deux
+MCP : liste, coût annoncé, accord du MJ, génération, dépôt. Les joueurs
+voient un élément une fois gardé, un personnage une fois le PNJ
+rencontré. Testé côté serveur (téléchargement refusé hors PixelLab,
+palette, doublon, personnage et ses images, jeton qui ne décide pas) et
+MCP. **Hypothèses retenues** : les emplacements d'un thème sont
+`<tileset>/material/<id>`, `<tileset>/wall`, `<tileset>/prop/<id>/side`
+et `/top` pour un volume, `<tileset>/prop/<id>` pour un accessoire fin,
+`<tileset>/facade/<type>` (une façade n'est pas déduite de la carte : elle
+se dépose seulement) ; qui est volume ou plat se décide par la forme de
+l'accessoire dans le thème (caisse, tonneau, trappe… volume ; cordage,
+mât, échelle… plat). **Pas fait** : le rendu des animations des
+personnages (`hd2d/show-pixellab-characters`), les façades dans la
+scène. **Reste** l'essai réel avec l'abonnement PixelLab : les adresses
+que renvoie le MCP de PixelLab sont-elles bien sur `pixellab.ai` ? Sinon,
+ajouter leur hôte à `PIXELLAB_HOSTS`.
+
+### `campaign/watch-prep-in-hd2d` · doing — reste l'essai réel à côté de Claude, sur la TV (attend `hd2d/render-board-in-three`) et 60 images/s sur un iPad
 
 **Pourquoi** — L'éditeur devient un visualiseur : Romain édite la
 campagne avec Claude et voit le rendu.
@@ -2195,6 +2254,33 @@ ordinateur et sur la TV.
 **Origine** — Romain, 11 octobre 2026 : « Je vois bien l'éditeur plus
 devenir un visualisateur. J'édite la campagne avec Claude et je vois le
 rendu. »
+
+*État* — L'Atlas a un sélecteur « Plan / HD-2D » (`?rendu=hd2d`). En
+HD-2D, la carte d'un lieu ou d'une rencontre devient une scène Three.js
+construite depuis sa grille : sols texturés, murs en volumes, eau plus
+basse, accessoires en volume (boîtes texturées) ou plats selon leur
+forme, lumières de la carte qui vacillent, heure et brume de son
+ambiance, ombres. Les éléments PixelLab du thème y sont posés ; ce qui
+manque est peint avec les couleurs du thème et listé à côté (« Ce qui
+manque encore », avec le coût en générations), jamais caché ; une image
+PixelLab en attente pulse dans la scène et se garde ou se jette d'un
+toucher dans le panneau. Les épingles, PNJ (avec leur personnage
+PixelLab s'il existe), indices et combats sont des pièces debout ; ce
+que Claude propose flotte translucide, en pointillés, marqué ▶ ; toucher
+une proposition ouvre son lot et une barre « Garder / Jeter » au-dessus
+de la scène. La scène se reconstruit à chaque révision et à chaque image
+reçue, sans recharger, et garde le point de vue du MJ. Vérifié dans un
+vrai Chromium sur le quai de Port-Louis : un PNJ placé par le jeton de
+Claude apparaît sous les yeux, translucide et marqué ▶. Sans WebGL,
+l'Atlas le dit et le plan reste à un toucher. Testé (modèle de scène,
+Atlas). **Hypothèses retenues** : une région en hexagones reste en plan ;
+la vue est celle du MJ (les pièces cachées aux joueurs y sont) ; le
+rendu vit dans `front/src/features/hd2d/`, que
+`hd2d/render-board-in-three` reprendra pour le plateau, la TV et les
+téléphones. **Pas fait** : la TV (elle ne montre que la soirée : il faut
+`hd2d/render-board-in-three`), le flou de profondeur et le halo du
+prototype, les façades. **Reste** l'essai réel pendant une préparation
+avec Claude, et la tenue sur un iPad.
 
 ## Épic `ai`
 
@@ -2300,6 +2386,12 @@ ici : c'est `maps/generate-map-llm`.
 scène d’ouverture y est déjà posée sur la région du monde (même ligne du
 journal que le brouillon).
 
+
+*Depuis `campaign/prepare-with-claude`* — La page `/campagnes/:id/generer`
+et son bouton sont retirés : une campagne se prépare désormais en
+conversation avec Claude. La génération reste côté serveur (routes,
+évaluation `bun run eval`), sans écran. À trancher par Romain : garder
+ce ticket pour l'évaluation seule, ou l'archiver.
 ### `media/play-youtube-music` · doing — reste la soirée du jalon jouée pour de vrai
 
 **Pourquoi** — La musique fait l'ambiance, et YouTube impose un lecteur
@@ -3796,6 +3888,11 @@ murs et bâtiments en volumes, accessoires selon la règle de forme, eau,
 lumières de la carte (`lights`, qui vacillent), ambiance (heure, brume),
 caméra inclinée qui suit l'action, ombres, halo, flou de profondeur.
 Une vue à plat de secours pour un appareil trop faible.
+
+*Point de départ* — `front/src/features/hd2d/` (Atlas,
+`campaign/watch-prep-in-hd2d`) construit déjà la scène depuis la grille
+et le thème ; reste à la brancher sur le plateau, la TV et les
+téléphones, avec la projection joueur, et à ajouter flou et halo.
 
 **Fini quand** — `quai-port-louis` et une carte du Brasier sont rendues
 par l'app à partir de leur grille, sans image préparée, à 60 images/s

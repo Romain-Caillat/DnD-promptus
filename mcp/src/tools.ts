@@ -193,6 +193,23 @@ export function scene(detail: CampaignDetail, sceneId: string): Json | null {
   }
 }
 
+/**
+ * « Jouable » (campaign/prepare-with-claude, moment 6): no validator
+ * error and the first act's gauge full. The GM still declares it
+ * playable in Promptus; this only says whether it is time to.
+ */
+export function playable(issues: Issue[], acts: { title: string; ready: boolean }[]): Json {
+  const errors = issues.filter((i) => i.severity === 'error').length
+  const first = acts[0]
+  const missing: string[] = []
+  if (errors > 0) missing.push(`${errors} erreur(s) du validateur`)
+  if (!first) missing.push('aucun acte')
+  else if (!first.ready) missing.push(`la jauge de « ${first.title} » n'est pas pleine`)
+  return missing.length === 0
+    ? { verdict: 'Jouable', next: "Fixe avec le MJ le titre et l'accroche, puis il déclare la campagne jouable dans Promptus." }
+    : { verdict: 'Pas encore jouable', missing }
+}
+
 const EDITS_HELP = `Propose des modifications ciblées de l'histoire d'une campagne, par identifiant, vérifiées tout ou rien : \
 si une seule modification ne passe pas, rien n'est proposé et l'erreur dit laquelle (son index). \
 Par défaut elles forment un lot de propositions que le MJ garde ou jette, une à une, dans Promptus (l'Atlas les \
@@ -302,8 +319,11 @@ export function registerTools(server: McpServer, promptus: () => Promptus) {
       guarded(async () => {
         const id = encodeURIComponent(campaign_id)
         const detail = await promptus().request<CampaignDetail>('GET', `/campaigns/${id}`)
-        const acts = await promptus().request<unknown>('GET', `/campaigns/${id}/readiness`)
-        return text({ issues: issueReport(detail.issues, 100), acts })
+        const acts = await promptus().request<{ act: string; title: string; ready: boolean }[]>(
+          'GET',
+          `/campaigns/${id}/readiness`,
+        )
+        return text({ playable: playable(detail.issues, acts), issues: issueReport(detail.issues, 100), acts })
       }),
   )
 

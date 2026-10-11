@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router'
 import { Btn, Panel, TouchScreen, field } from '@/features/gm/live/ui'
@@ -12,7 +12,9 @@ import { ApiError } from '@/lib/api'
 import type { Cell } from '@/lib/board'
 import { fetchAtlas, generateMap, gmBackdropUrl, type Atlas, type AtlasMap, type Pin, type ThreadStop } from '@/lib/maps'
 import { applyEdits, decideClaude, setClaudeHand, type ClaudeDecision, type Edit, type Proposal } from '@/lib/prep'
-import { fetchGmMedia, gmImageUrl, type MediaList } from '@/lib/media'
+import { decideImage, fetchGmMedia, gmImageUrl, type MediaList } from '@/lib/media'
+import { fetchNeeds, type Needs } from '@/lib/elements'
+import { buildScene } from '@/features/hd2d/build'
 import { TABLET_QUERY, useMediaQuery } from '@/lib/useMediaQuery'
 import { cn } from '@/lib/utils'
 import { canLeave, climb, depth, doorAt, doorCells, enter, index, leave, switchable, trail, withoutLayers } from './atlas'
@@ -25,8 +27,12 @@ import { CastSection } from './CastSection'
 import { batchOf, proposedMarks } from './claude'
 import { ClaudeSection } from './ClaudeSection'
 import { STORY_LAYERS, castMarks, placeEdit, readKey, removeEdit, type StoryLayer, type Target } from './cast'
+import { Hd2dSection } from './Hd2dSection'
 import { ThreadSection } from './ThreadSection'
 import { PlayersMap, PlayersSection, usePlayersMap } from './PlayersView'
+
+/** Three.js weighs half a megabyte: only a GM who opens the HD-2D view loads it. */
+const Hd2dView = lazy(() => import('@/features/hd2d/Hd2dView').then((m) => ({ default: m.Hd2dView })))
 
 type PageState =
   | { kind: 'loading' }
@@ -101,6 +107,13 @@ const isPrep = (tab: DrawerTab): tab is PrepTab => (PREP_TABS as readonly string
  * main » lets its writes land directly; the banner then says what it
  * wrote, and takes it back.
  *
+ * « HD-2D » (campaign/watch-prep-in-hd2d, `?rendu=hd2d`) turns the map
+ * shown into the scene as the table will see it: the grid in 3D, the
+ * theme's PixelLab elements, the NPCs' figures, and Claude's proposals
+ * floating dotted until kept — rebuilt at every revision, so the GM
+ * watches Claude prepare. What it still lacks is listed beside it, and
+ * the PixelLab images waiting are kept or discarded there.
+ *
  * GM only: a player receives the one map on the table, through the
  * board's projection, never the atlas.
  */
@@ -138,6 +151,11 @@ export function AtlasPage() {
   const [claudeFailed, setClaudeFailed] = useState<string | null>(null)
   /** « Vue MJ / Vue joueurs » (maps/preview-as-player), kept in `?vue=joueurs`. */
   const players = params.get('vue') === 'joueurs'
+  /** « Plan / HD-2D » (campaign/watch-prep-in-hd2d), kept in `?rendu=hd2d`. */
+  const hd2d = params.get('rendu') === 'hd2d'
+  const [needs, setNeeds] = useState<Needs | null>(null)
+  const [mediaBusy, setMediaBusy] = useState(false)
+  const [mediaFailed, setMediaFailed] = useState<string | null>(null)
   const [seen, setSeen] = useState(0)
   /** The drawer's tab open instead of the map, and the scene chosen in it. */
   const tab = DRAWER.find((x) => x === params.get('onglet')) ?? null
@@ -175,7 +193,8 @@ export function AtlasPage() {
     return () => {
       live = false
     }
-  }, [campaignId])
+    // A PixelLab image brought in or decided moves the `desk` topic.
+  }, [campaignId, deskLive])
 
   // A map added, changed or removed (the GM elsewhere, Claude) moves the
   // GM-only `prep` topic; Claude's batches, the GM-only `proposals`.
@@ -190,6 +209,24 @@ export function AtlasPage() {
   const { tileset, atlases } = useTileset(entry?.map ?? null, media, (id) => gmImageUrl(campaignId, id))
   const backdrop = useImage(entry?.backdrop && entry.map.backdrop?.image ? gmBackdropUrl(campaignId, entry.map.id) : null)
   const playersMap = usePlayersMap(campaignId, shownId, players)
+  const flatOnly = entry ? scaleOf(entry) === 'world' : true
+
+  // What the scene lacks from PixelLab, read again at every revision and image.
+  useEffect(() => {
+    if (!hd2d || !shownId || flatOnly) return
+    let live = true
+    fetchNeeds(campaignId, shownId).then(
+      (n) => {
+        if (live) setNeeds(n)
+      },
+      () => {
+        if (live) setNeeds(null)
+      },
+    )
+    return () => {
+      live = false
+    }
+  }, [campaignId, shownId, hd2d, flatOnly, version, deskLive])
   const live = useLiveChanges(
     campaignId,
     (topics) => {
@@ -443,6 +480,38 @@ export function AtlasPage() {
     setPlacing(null)
   }
   const openTab = (next: DrawerTab | null) => query({ carte: shownId, onglet: next, scene: null })
+  const switchRender = (on: boolean) => query({ carte: shownId, rendu: on ? 'hd2d' : null })
+  /** The GM's word on a PixelLab image, from beside the scene. */
+  async function decideMedia(asset: string, keep: boolean) {
+    setMediaBusy(true)
+    setMediaFailed(null)
+    try {
+      await decideImage(campaignId, asset, keep)
+      setDeskLive((v) => v + 1)
+    } catch (err) {
+      setMediaFailed(err instanceof ApiError ? err.code : 'action')
+    } finally {
+      setMediaBusy(false)
+    }
+  }
+  const scene3d =
+    hd2d && !players && entry && map && !flatOnly
+      ? buildScene({
+          map,
+          tileset,
+          needs: needs?.tileset === map.theme || needs?.tileset === null ? needs : null,
+          assets: media?.assets ?? [],
+          marks: [...pinMarks, ...claudeMarks.pins],
+          proposedCells: claudeMarks.cells,
+          imageUrl: (id) => gmImageUrl(campaignId, id),
+          npcOf: (key) => {
+            const k = readKey(key)
+            return k?.kind === 'npc' ? k.id : null
+          },
+          batchOf,
+        })
+      : null
+  const pickedBatch = (state.atlas.claude ?? []).find((p) => p.id === batch) ?? null
 
   const desk =
     tab === null ? null : isPrep(tab) ? (
@@ -464,6 +533,24 @@ export function AtlasPage() {
 
   const mapView = !entry || !map ? (
     <p className="text-body text-mute-soft">{t('atlas.empty')}</p>
+  ) : scene3d ? (
+    <div key={`hd2d-${entry.map.id}`} className="flex min-w-0 flex-col gap-2">
+      {pickedBatch && (
+        <div role="group" aria-label={t('atlas.hd2d.claude', { title: pickedBatch.prompt || t('atlas.claude.untitled') })} className="surface-slab flex flex-wrap items-center gap-2 p-2">
+          <span className="text-caption text-chalk">{t('atlas.hd2d.claude', { title: pickedBatch.prompt || t('atlas.claude.untitled') })}</span>
+          <Btn main disabled={claudeBusy} onClick={() => void decide(pickedBatch, { all: 'keep' })}>
+            {t('atlas.hd2d.keepAll')}
+          </Btn>
+          <Btn disabled={claudeBusy} onClick={() => void decide(pickedBatch, { all: 'discard' })}>
+            {t('atlas.hd2d.discardAll')}
+          </Btn>
+          {tablet && !panel && <Btn onClick={() => setPanel(true)}>{t('atlas.hd2d.details')}</Btn>}
+        </div>
+      )}
+      <Suspense fallback={<p role="status" className="text-body text-mute-soft">{t('prep.loading')}</p>}>
+        <Hd2dView scene={scene3d} onMark={placing ? undefined : onMark} className="max-h-[70dvh]" />
+      </Suspense>
+    </div>
   ) : players ? (
     <PlayersMap state={playersMap.state} tileset={tileset} atlases={atlases} backdrop={backdrop} touch={tablet} />
   ) : (
@@ -519,6 +606,8 @@ export function AtlasPage() {
         {entry.validated ? t('maps.validated') : t('maps.draft')}
       </p>
       {entry.map.gm_notes && <p className="text-body text-chalk-soft">{entry.map.gm_notes}</p>}
+      {scene3d && <Hd2dSection scene={scene3d} busy={mediaBusy} failed={mediaFailed} onDecide={(a, k) => void decideMedia(a, k)} />}
+      {hd2d && flatOnly && <p className="text-caption text-mute-soft">{t('atlas.hd2d.world')}</p>}
       <ClaudeSection
         batches={state.atlas.claude ?? []}
         picked={batch}
@@ -670,6 +759,26 @@ export function AtlasPage() {
                 {t('atlas.players.players')}
               </button>
             </div>
+            {!players && (
+              <div className="flex gap-1" role="group" aria-label={t('atlas.hd2d.switch')}>
+                <button
+                  type="button"
+                  className="pixel-choice py-1 pr-2 pb-1.5 text-caption font-semibold"
+                  aria-pressed={!hd2d}
+                  onClick={() => switchRender(false)}
+                >
+                  {t('atlas.hd2d.plan')}
+                </button>
+                <button
+                  type="button"
+                  className="pixel-choice py-1 pr-2 pb-1.5 text-caption font-semibold"
+                  aria-pressed={hd2d}
+                  onClick={() => switchRender(true)}
+                >
+                  {t('atlas.hd2d.hd2d')}
+                </button>
+              </div>
+            )}
             <Btn disabled={!canLeave(here, maps)} onClick={out}>
               {t('atlas.out')}
             </Btn>

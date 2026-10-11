@@ -14,6 +14,7 @@ pub mod eval;
 pub mod evening;
 pub mod live;
 pub mod media;
+pub mod pixellab;
 pub mod players;
 pub mod prep;
 pub mod rule_systems;

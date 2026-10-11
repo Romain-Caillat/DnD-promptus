@@ -398,6 +398,14 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/media/{asset}/decision",
             post(api::media::decide),
         )
+        // campaign/import-pixellab-assets: what the theme lacks, an image
+        // brought from PixelLab, a character's frames.
+        .route("/api/campaigns/{id}/elements", get(api::media::needs))
+        .route("/api/campaigns/{id}/media/import", post(api::media::import))
+        .route(
+            "/api/campaigns/{id}/media/{asset}/frames/{n}",
+            get(api::media::gm_frame),
+        )
         .route(
             "/api/campaigns/{id}/session/copilot",
             post(api::evening::copilot_ask),

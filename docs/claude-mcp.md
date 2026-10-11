@@ -48,6 +48,9 @@ anything else is 403 `TOKEN_NOT_ALLOWED`.
 | `POST /api/campaigns/{id}/maps/{map}/ask` | `ask_map` (path and cost, line of sight, what players see) |
 | `POST /api/campaigns/{id}/maps/{map}/place` | `place_on_map` (pins, NPCs, clues, fights placed by name — proposed too) |
 | `GET /api/campaigns/{id}/proposals` | `list_proposals` (Claude's batches and the GM's word on each item) |
+| `GET /api/rule-systems` | `list_rule_systems`, `start_campaign` (below, « Preparing with Claude ») |
+| `GET /api/campaigns/{id}/elements` | `get_theme_needs` (below, « PixelLab ») |
+| `POST /api/campaigns/{id}/media/import` | `import_pixellab_asset` (pending, below) |
 
 Deliberately excluded: sign-in, accounts, the token routes, creating
 an empty campaign, archiving / setting a campaign, `story/validate`
@@ -157,6 +160,76 @@ screen hears the revision on the GM-only `prep` live topic, plus an
 (`POST …/revisions/{n}/undo`) while no later revision touched the same
 entities. Players' and screens' sockets never hear either. The journal
 and undo routes are not token routes: a token never takes back a write.
+
+## Preparing with Claude (`campaign/prepare-with-claude`)
+
+A new campaign is no longer a form in the app (`/campagnes/nouvelle`
+and `/generer` are gone; the YAML import stays): the GM prepares in
+conversation, the Atlas open beside to watch and keep. The skill
+`mcp/skills/preparer-soiree/SKILL.md` walks Claude through the six
+moments of the board « Créer · la campagne de Romain (refonte) » — a
+start (an idea, a campaign, a file), one scene told by the GM (opening
+or ending) and the universe and tone drawn from it, a place, two NPCs,
+three clues and a tension with its clock around it, the kept clues
+turned into scenes (backwards from the end when it started there), the
+rules at the first fight, « Jouable » then the title and hook. The MCP
+server also serves it as the prompt `preparer_soiree` (same text), so
+Claude Desktop and Claude Code reach it without installing anything;
+installing the skill (`~/.claude/skills/preparer-soiree/` for Claude
+Code, a zip of the folder in Claude Desktop's Skills) lets Claude pick
+it up on « préparons la prochaine soirée ».
+
+The tools of those moments (`mcp/src/prepare.ts`), all built on the
+routes above:
+
+- `start_campaign` — one scene and the confirmed universe and tone
+  become a new campaign (`POST /campaigns/import` with a JSON story,
+  JSON being YAML): act `acte_1`, the scene as `start_node`, the first
+  rule system known unless the GM chose (`list_rule_systems`), changed
+  later with `set campaign rules`. It lands in preparation, not proposed:
+  there is nothing yet to propose over.
+- `propose_tension` — a front with a clock of 4 to 6 steps (6 by
+  default), one proposed item.
+- `propose_scene` — a scene linked to an existing one: `after` adds an
+  exit to it on the scene before (the whole list, read first), `before`
+  makes the new scene exit to it (backwards), `opening` sets it as
+  `bible.start_node`, `clues` moves kept clues into it. One batch, items
+  kept or discarded one by one.
+- `get_readiness` adds `playable`: « Jouable » when the validator has no
+  error and the first act's gauge is full, else what is missing. The GM
+  still declares the campaign playable in Promptus.
+
+## PixelLab (`campaign/import-pixellab-assets`)
+
+The GM's Claude holds the PixelLab MCP too. For a place or an NPC kept,
+`get_theme_needs` (`GET …/elements?map=&npc=`, `back/src/pixellab.rs`)
+lists what the HD-2D scene still needs: every **element** of the
+tileset the map uses (`shared::elements`: `<tileset>/material/<id>`,
+`<tileset>/wall`, `<tileset>/prop/<id>/side|top` for a prop with volume,
+`<tileset>/prop/<id>` for a thin one; `<tileset>/facade/<kind>` is
+accepted on import) and the **character** of each NPC standing on it,
+each `missing`, `pending` or `approved` with its generations (an
+estimate: 1 an image, 6 a character), plus the tileset's palette. Claude
+announces the total and waits for the GM's yes before generating.
+
+`import_pixellab_asset` (`POST …/media/import`) hands an image over:
+`{ kind: "element", subject, url }` or `{ kind: "character", subject:
+<npc>, frames: [{ url, direction, animation?, index? }] }` (80 frames at
+most), with `description`, `generations`, `replace`. The server fetches
+the bytes itself — `https` on `PIXELLAB_HOSTS` only (PixelLab's
+`pixellab.ai` and its subdomains by default; redirects must stay there),
+or a `data:image/png;base64,` URL — 4 MB and 1024 px a side at most,
+PNG only; an element's colours are brought onto the tileset's palette
+(`palette: false` to keep them), a character keeps its own. The image
+lands in `media_assets` as `pending` (`source = 'pixellab'`, `origin`,
+`meta`: form, name, generations, frames; frames in `media_frames`,
+`GET …/media/{asset}/frames/{n}`), and the GM keeps or discards it like
+any image (`…/decision`, session only). A slot that already has an
+image waiting or kept is refused, 409 `ELEMENT_EXISTS`: what the theme
+holds is reused, never generated again, unless the GM asked to replace
+it (`replace: true`; the waiting one is discarded, a kept one is retired
+when the new one is kept). Players see an element once kept (decor,
+like a tileset) and a character once its NPC is met.
 
 ## The MCP server (`mcp/`)
 

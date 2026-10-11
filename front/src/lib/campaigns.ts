@@ -64,8 +64,6 @@ export interface CampaignSettings extends CampaignPlan {
   playerHook: string
 }
 
-export type NewCampaign = CampaignSettings & { rules: RulesRef }
-
 /** A campaign's rule system and the stat names it brings, when the server has it. */
 export function presetOf(presets: RulePreset[], rules: RulesRef): RulePreset | undefined {
   return presets.find((p) => p.id === rules.id && p.version === rules.version)
@@ -77,10 +75,6 @@ export function listCampaigns(): Promise<CampaignSummary[]> {
 
 export function listRulePresets(): Promise<RulePreset[]> {
   return apiRequest<RulePreset[]>('GET', '/rule-systems')
-}
-
-export function createCampaign(input: NewCampaign): Promise<CampaignDetail> {
-  return apiRequest<CampaignDetail>('POST', '/campaigns', input)
 }
 
 export function importCampaign(yaml: string): Promise<{ id: string }> {

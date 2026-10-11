@@ -675,4 +675,50 @@ describe('AtlasPage', () => {
     expect(await screen.findByText('Des pas dans le sable')).toBeInTheDocument()
     expect(screen.getByText('Un registre raturé')).toBeInTheDocument()
   })
+
+  it('shows the scene in HD-2D, what it lacks, and keeps a PixelLab image with one tap (campaign/watch-prep-in-hd2d)', async () => {
+    stubReducedMotion(true)
+    vi.stubGlobal('WebSocket', FakeSocket)
+    FakeSocket.all = []
+    let needs = {
+      tileset: 't',
+      palette: [],
+      generations: 1,
+      needs: [
+        { kind: 'element', subject: 't/material/herbe', name: 'Sol · Herbe', form: 'texture', status: 'missing', asset: null, generations: 1 },
+        { kind: 'element', subject: 't/wall', name: 'Murs · Le port', form: 'texture', status: 'pending', asset: 'a-mur', generations: 0 },
+      ],
+    }
+    const api = mockApi({
+      'GET /api/campaigns/c1/atlas': () => ok(ATLAS),
+      'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
+      'GET /api/campaigns/c1/elements?map=quai': () => ok(needs),
+      'POST /api/campaigns/c1/media/a-mur/decision': () => {
+        needs = { ...needs, needs: [needs.needs[0]!, { ...needs.needs[1]!, status: 'approved' }] }
+        return { status: 204 }
+      },
+    })
+    render(
+      <MemoryRouter initialEntries={['/campagnes/c1/atlas?carte=quai&rendu=hd2d']}>
+        <Routes>
+          <Route path="/campagnes/:campaignId/atlas" element={<AtlasPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    // No WebGL here: the scene says so, the side panel still works.
+    await screen.findByText(/ne sait pas dessiner la scène en 3D/)
+    expect(screen.getByRole('button', { name: 'HD-2D' })).toHaveAttribute('aria-pressed', 'true')
+    const missing = await screen.findByRole('list', { name: 'Ce qui manque encore' })
+    expect(within(missing).getByText('Sol · Herbe')).toBeInTheDocument()
+    expect(screen.getByText(/1 génération/)).toBeInTheDocument()
+
+    expect(screen.getByText('Murs · Le port')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Garder' }))
+    expect(sentTo(api, 'POST /api/campaigns/c1/media/a-mur/decision')).toEqual([{ approve: true }])
+    await waitFor(() => expect(screen.queryByText('Murs · Le port')).toBeNull())
+
+    // Back to the plan: the flat map again.
+    await userEvent.click(screen.getByRole('button', { name: 'Plan' }))
+    await screen.findByRole('img', { name: 'Carte : Le quai' })
+  })
 })

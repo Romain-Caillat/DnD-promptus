@@ -24,10 +24,12 @@ async fn last_used(pool: &PgPool, id: &str) -> Option<chrono::DateTime<chrono::U
         .unwrap()
 }
 
-/// Every in-scope route with a body that makes it succeed, on `campaign`.
+/// Every in-scope route with a body that makes it succeed, on `campaign`;
+/// the first two belong to no campaign.
 fn scoped_calls(campaign: &str) -> Vec<(&'static str, String, Option<serde_json::Value>)> {
     vec![
         ("GET", "/api/campaigns".to_string(), None),
+        ("GET", "/api/rule-systems".to_string(), None),
         ("GET", format!("/api/campaigns/{campaign}"), None),
         ("GET", format!("/api/campaigns/{campaign}/export"), None),
         (
@@ -224,7 +226,7 @@ async fn a_token_is_its_gms_alone() {
     let (marc_token_id, marc_secret) = common::api_token(&app, &marc, "Claude de Marc").await;
 
     // Marc's token does not see Romain's campaign: 404, like a missing one.
-    for (method, uri, body) in scoped_calls(&romains).into_iter().skip(1) {
+    for (method, uri, body) in scoped_calls(&romains).into_iter().skip(2) {
         let r = call_with_token(&app, &marc_secret, method, &uri, body).await;
         assert_eq!(r.status, StatusCode::NOT_FOUND, "{method} {uri}");
     }

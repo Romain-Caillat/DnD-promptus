@@ -83,8 +83,8 @@ export function CampaignsPanel({ gmName }: { gmName: string }) {
           </li>
         ))}
         <li className="flex">
-          <Link
-            to="/campagnes/nouvelle"
+          <a
+            href="#acces-claude"
             className="flex min-h-56 flex-1 flex-col items-center justify-center gap-2 rounded-panel border-2 border-dashed border-line-dashed p-4 text-center text-chalk-soft transition-colors hover:border-chalk hover:text-chalk"
           >
             <span aria-hidden className="type-title text-[56px] leading-none">
@@ -92,7 +92,7 @@ export function CampaignsPanel({ gmName }: { gmName: string }) {
             </span>
             <span className="type-title text-[16px]">{t('gm.campaigns.new')}</span>
             <span className="max-w-56 text-caption text-mute">{t('gm.campaigns.newHint')}</span>
-          </Link>
+          </a>
         </li>
         <li className="flex">
           <label className="flex min-h-56 flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-panel border border-line p-4 text-center text-mute-soft focus-within:border-chalk">

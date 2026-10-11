@@ -43,7 +43,7 @@ use crate::prep::proposals::Focus;
 pub const PLACEMENTS_MAX: usize = 50;
 
 /// Map `id` of `row`: its own, else its world's.
-async fn map_of(pool: &PgPool, row: &CampaignRow, id: &str) -> Result<Map, AppError> {
+pub(crate) async fn map_of(pool: &PgPool, row: &CampaignRow, id: &str) -> Result<Map, AppError> {
     match one(pool, row.id, id).await {
         Ok(m) => Ok(m.map),
         Err(AppError::NotFound(_)) => content::map(&row.story, id)

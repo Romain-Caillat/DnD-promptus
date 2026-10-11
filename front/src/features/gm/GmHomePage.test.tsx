@@ -95,7 +95,7 @@ describe('GmHomePage', () => {
     const brasier = within(shelf).getByRole('link', { name: /Le Brasier/ })
     expect(brasier).toHaveAttribute('href', '/campagnes/c2')
     expect(brasier).toHaveTextContent('Aucun joueur installé · 4 prévus')
-    expect(screen.getByRole('link', { name: /Nouvelle campagne/ })).toHaveAttribute('href', '/campagnes/nouvelle')
+    expect(screen.getByRole('link', { name: /Préparer avec Claude/ })).toHaveAttribute('href', '#acces-claude')
   })
 
   it('signs out and returns to the sign-in page', async () => {

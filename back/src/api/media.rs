@@ -8,7 +8,13 @@
 //! - `POST /api/campaigns/{id}/media/batch` → `media::BatchAsk`: draw
 //!   every missing one in the background (202);
 //! - `GET  /api/campaigns/{id}/media/{asset}/image` → its bytes;
-//! - `POST /api/campaigns/{id}/media/{asset}/decision` → `{ approve }`.
+//! - `POST /api/campaigns/{id}/media/{asset}/decision` → `{ approve }`;
+//! - `GET  /api/campaigns/{id}/elements?map=&npc=` → what the theme and
+//!   the cast still lack from PixelLab (`pixellab::Needs`);
+//! - `POST /api/campaigns/{id}/media/import` → `pixellab::ImportAsk`: an
+//!   image Claude brings from PixelLab, pending (201);
+//! - `GET  /api/campaigns/{id}/media/{asset}/frames/{n}` → a character's
+//!   n-th frame (the order of its `meta.frames`).
 //!
 //! Player (behind `require_player`):
 //! - `GET /api/play/{campaign}/media` → the approved images whose subject
@@ -20,7 +26,7 @@
 //! asks for the file in pieces and plays nothing without it.
 
 use axum::Json;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, HeaderValue, StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use serde::Deserialize;
@@ -34,6 +40,7 @@ use crate::campaigns::{self, CampaignRow};
 use crate::content;
 use crate::error::AppError;
 use crate::media::{self, Ask, BatchAsk};
+use crate::pixellab::{self, ImportAsk, NeedsQuery};
 use crate::state::AppState;
 
 fn parse_id(raw: &str) -> Result<Uuid, AppError> {
@@ -213,6 +220,52 @@ pub async fn decide(
     )
     .await?;
     Ok(StatusCode::NO_CONTENT.into_response())
+}
+
+/// `GET /api/campaigns/{id}/elements`
+///
+/// # Errors
+///
+/// The codes of `pixellab::needs`.
+pub async fn needs(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path(id): Path<String>,
+    Query(query): Query<NeedsQuery>,
+) -> Result<Response, AppError> {
+    let needs = pixellab::needs(&state.pool, &gm, parse_id(&id)?, &query).await?;
+    Ok(Json(json!({ "data": needs })).into_response())
+}
+
+/// `POST /api/campaigns/{id}/media/import` — the image, pending (201).
+///
+/// # Errors
+///
+/// The codes of `pixellab::import`.
+pub async fn import(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    Path(id): Path<String>,
+    Body(ask): Body<ImportAsk>,
+) -> Result<Response, AppError> {
+    let a = pixellab::import(&state.pool, &gm, parse_id(&id)?, &ask).await?;
+    Ok((StatusCode::CREATED, Json(json!({ "data": a }))).into_response())
+}
+
+/// `GET /api/campaigns/{id}/media/{asset}/frames/{n}`
+///
+/// # Errors
+///
+/// 404 `NO_SUCH_ASSET`.
+pub async fn gm_frame(
+    State(state): State<AppState>,
+    gm: CurrentGm,
+    headers: HeaderMap,
+    Path((id, asset, n)): Path<(String, String, usize)>,
+) -> Result<Response, AppError> {
+    let row = owned_row(&state, &gm, &id).await?;
+    let bytes = pixellab::frame(&state.pool, row.id, parse_id(&asset)?, n).await?;
+    Ok(image_response(&headers, bytes, "image/png".into()))
 }
 
 /// The images player `p` may see.

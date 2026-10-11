@@ -85,6 +85,21 @@ function explain(status: number, code: string, detail: string | null): string {
   if (code === 'MAP_OP_INVALID' || code === 'MAP_INVALID' || code === 'BAD_BATCH') {
     return `Opérations de carte refusées (${code}) : rien n'a été proposé.${detail ? ` Détail du serveur : ${detail}` : ''}`
   }
+  if (code === 'ELEMENT_EXISTS') {
+    return 'Cet emplacement a déjà une image, en attente ou gardée par le MJ : réutilise-la, ne regénère pas. ' +
+      'Remplace-la (replace) seulement si le MJ le demande.'
+  }
+  if (code === 'ELEMENT_UNKNOWN') {
+    return `Emplacement inconnu du thème : get_theme_needs donne les emplacements valides.${detail ? ` Détail du serveur : ${detail}` : ''}`
+  }
+  if (code === 'IMAGE_URL_REFUSED') {
+    return `Promptus ne télécharge que depuis PixelLab (https) ou une adresse data:image/png;base64.${detail ? ` Détail du serveur : ${detail}` : ''}`
+  }
+  if (code === 'IMAGE_INVALID' || code === 'IMAGE_TOO_LARGE' || code === 'IMAGE_FETCH_FAILED') {
+    return `L'image n'a pas pu être reprise (${code}) : rien n'a été déposé.${detail ? ` Détail du serveur : ${detail}` : ''}`
+  }
+  if (code === 'NO_SUCH_NPC') return "Pas de PNJ ni d'adversaire de ce nom dans la campagne : get_campaign les liste."
+  if (code === 'NO_THEME') return `Le système de règles de la campagne n'a pas de thème pour le rendu HD-2D.${detail ? ` Détail du serveur : ${detail}` : ''}`
   if (code === 'TOO_MANY_PLACEMENTS') return 'Trop de placements en une fois (50 au plus) : découpe-les.'
   if (status === 404) {
     return "Campagne introuvable : l'identifiant est faux, ou la campagne appartient à un autre MJ. " +

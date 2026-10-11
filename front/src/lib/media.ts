@@ -1,7 +1,11 @@
 import { apiRequest } from './api'
 
-/** `intro` is an act's introduction: a video. */
-export type MediaKind = 'scene' | 'npc' | 'adversary' | 'location' | 'item' | 'tileset' | 'intro'
+/**
+ * `intro` is an act's introduction: a video. `element` and `character`
+ * come from PixelLab (campaign/import-pixellab-assets): a slot of the
+ * theme the HD-2D scene draws, and an NPC's figure.
+ */
+export type MediaKind = 'scene' | 'npc' | 'adversary' | 'location' | 'item' | 'tileset' | 'intro' | 'element' | 'character'
 
 type Pattern =
   | 'plain'
@@ -61,6 +65,10 @@ export interface Asset {
   status?: 'drawing' | 'pending' | 'approved' | 'rejected'
   error?: string | null
   createdAt?: string
+  /** `pixellab` when Claude brought it from PixelLab. */
+  source?: 'model' | 'pixellab'
+  /** A PixelLab image's slot name, form and frames. */
+  meta?: { name?: string; form?: string; frames?: { n: number; animation: string; direction: string; index: number }[] }
 }
 
 export interface MediaList {

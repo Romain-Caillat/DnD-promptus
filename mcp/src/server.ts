@@ -1,6 +1,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { Promptus, readConfig } from './promptus'
 import { registerMapTools } from './maps'
+import { registerPixellabTools } from './pixellab'
+import { registerPrepareTools } from './prepare'
 import { registerTools } from './tools'
 
 /**
@@ -18,5 +20,7 @@ export function createServer(env: Record<string, string | undefined>, fetchImpl:
   }
   registerTools(server, promptus)
   registerMapTools(server, promptus)
+  registerPrepareTools(server, promptus)
+  registerPixellabTools(server, promptus)
   return server
 }

@@ -53,6 +53,11 @@ pub enum Kind {
     Tileset,
     /// An act's introduction: a video.
     Intro,
+    /// One slot of the theme the HD-2D scene draws, brought from
+    /// PixelLab (`shared::elements`, campaign/import-pixellab-assets).
+    Element,
+    /// An NPC's or adversary's figure from PixelLab, with its frames.
+    Character,
 }
 
 impl Kind {
@@ -66,6 +71,8 @@ impl Kind {
             Self::Item => "item",
             Self::Tileset => "tileset",
             Self::Intro => "intro",
+            Self::Element => "element",
+            Self::Character => "character",
         }
     }
 
@@ -84,6 +91,8 @@ impl Kind {
             "item" => Self::Item,
             "tileset" => Self::Tileset,
             "intro" => Self::Intro,
+            "element" => Self::Element,
+            "character" => Self::Character,
             other => return Err(AppError::Internal(format!("media kind {other}"))),
         })
     }
@@ -101,6 +110,9 @@ impl Kind {
                  each tile showing one combination of edges (autotiling), three-quarter view lighting"
             }
             Self::Intro => "Opening cinematic of an act",
+            // Brought from PixelLab, never drawn by the model.
+            Self::Element => "HD-2D element",
+            Self::Character => "Character figure",
         }
     }
 }
@@ -139,9 +151,14 @@ pub struct Asset {
     /// Why the model failed, when it did (French, for the GM).
     pub error: Option<String>,
     pub created_at: DateTime<Utc>,
+    /// `model` (drawn by the image model) or `pixellab` (imported).
+    pub source: String,
+    /// An element's form and slot name, the generations it cost, a
+    /// character's frames (`pixellab::Meta`); `{}` for a model's image.
+    pub meta: serde_json::Value,
 }
 
-type Row = (
+pub(crate) type Row = (
     Uuid,
     String,
     String,
@@ -149,6 +166,8 @@ type Row = (
     String,
     Option<String>,
     DateTime<Utc>,
+    String,
+    serde_json::Value,
 );
 
 /// A row with its bytes and type.
@@ -160,13 +179,16 @@ type ImageRow = (
     String,
     Option<String>,
     DateTime<Utc>,
+    String,
+    serde_json::Value,
     Option<Vec<u8>>,
     Option<String>,
 );
 
-const COLUMNS: &str = "id, kind, subject, direction, status, error, created_at";
+pub(crate) const COLUMNS: &str =
+    "id, kind, subject, direction, status, error, created_at, source, meta";
 
-fn asset(r: Row) -> Result<Asset, AppError> {
+pub(crate) fn asset(r: Row) -> Result<Asset, AppError> {
     Ok(Asset {
         id: r.0,
         kind: Kind::parse(&r.1)?,
@@ -175,6 +197,8 @@ fn asset(r: Row) -> Result<Asset, AppError> {
         status: Status::parse(&r.4)?,
         error: r.5,
         created_at: r.6,
+        source: r.7,
+        meta: r.8,
     })
 }
 
@@ -234,6 +258,8 @@ fn description(
                 .unwrap_or_default();
             format!("{}: {scene}", a.title)
         }),
+        // Only ever imported (campaign/import-pixellab-assets).
+        Kind::Element | Kind::Character => None,
     }
 }
 
@@ -799,9 +825,13 @@ pub async fn image(
     .fetch_optional(db)
     .await?;
     let r = row.ok_or(AppError::NotFound("NO_SUCH_ASSET"))?;
-    let bytes = r.7.clone().ok_or(AppError::NotFound("NO_SUCH_ASSET"))?;
-    let mime = r.8.clone().unwrap_or_else(|| "image/png".into());
-    Ok((asset((r.0, r.1, r.2, r.3, r.4, r.5, r.6))?, bytes, mime))
+    let bytes = r.9.ok_or(AppError::NotFound("NO_SUCH_ASSET"))?;
+    let mime = r.10.unwrap_or_else(|| "image/png".into());
+    Ok((
+        asset((r.0, r.1, r.2, r.3, r.4, r.5, r.6, r.7, r.8))?,
+        bytes,
+        mime,
+    ))
 }
 
 /// Whether the players may see the subject of `a`.
@@ -820,13 +850,14 @@ pub fn shown_to_players(
     };
     match a.kind {
         Kind::Scene => entered(&a.subject),
-        Kind::Npc | Kind::Adversary => world.revealed.contains(&a.subject),
+        Kind::Npc | Kind::Adversary | Kind::Character => world.revealed.contains(&a.subject),
         Kind::Location => story
             .nodes
             .iter()
             .any(|n| n.location.as_deref() == Some(a.subject.as_str()) && entered(&n.id)),
         Kind::Item => given_items.contains(&a.subject),
-        Kind::Tileset => true,
+        // A theme's element is decor, like a tileset.
+        Kind::Tileset | Kind::Element => true,
         Kind::Intro => story
             .nodes
             .iter()

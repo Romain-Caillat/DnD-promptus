@@ -77,15 +77,16 @@
         "code": "Claude Code : lance cette commande dans un terminal.",
         "codeLabel": "Commande pour Claude Code",
         "paths": "Remplace /CHEMIN/VERS par l’emplacement de Promptus sur ton ordinateur. Si Claude ne trouve pas bun, mets son chemin complet (la commande « which bun » le donne).",
-        "scope": "Un jeton qui fuit donne la main sur la préparation de tes campagnes : révoque-le ici, il est refusé aussitôt."
+        "scope": "Un jeton qui fuit donne la main sur la préparation de tes campagnes : révoque-le ici, il est refusé aussitôt.",
+        "skill": "Pour préparer ta prochaine soirée, choisis dans Claude l’invite « Préparer ma prochaine soirée » du serveur promptus, ou installe le skill du dossier mcp/skills/preparer-soiree (Claude Code : copie-le dans ~/.claude/skills ; Claude Desktop : Réglages › Capacités › Skills, envoie le dossier zippé). Puis raconte une scène."
       }
     },
     "campaigns": {
       "title": "Mes campagnes",
       "kicker": "{{name}} · MJ",
-      "none": "Aucune campagne pour l’instant : commence la première.",
-      "new": "Nouvelle campagne",
-      "newHint": "Un titre, un univers, des règles, un pitch. Tu relis tout avant que tes joueurs ne voient quoi que ce soit.",
+      "none": "Aucune campagne pour l’instant : prépare la première avec Claude.",
+      "new": "Préparer avec Claude",
+      "newHint": "Raconte une scène à ton Claude : il propose le reste, tu gardes ou tu jettes dans l’Atlas. Donne-lui d’abord l’accès, plus bas.",
       "import": "Importer un fichier YAML",
       "importHint": "Une campagne déjà écrite (export de Promptus).",
       "importing": "Import…",
@@ -104,34 +105,17 @@
       "rulesRef": "{{id}} v{{version}}"
     },
     "newCampaign": {
-      "title": "Nouvelle campagne",
-      "back": "Mes campagnes",
-      "steps": {
-        "world": "L’univers",
-        "rules": "Les règles",
-        "pitch": "Le pitch"
-      },
       "world": {
-        "title": "L’univers",
-        "kicker": "le nom de la campagne et le monde où elle se joue",
         "titleLabel": "Titre",
         "titlePlaceholder": "Les Cendres de Valombre",
         "worldLabel": "Univers",
-        "worldPlaceholder": "Fantasy, une ville minière au pied d’une colline",
-        "note": "Tes joueurs lisent le titre et l’univers en rejoignant la campagne."
+        "worldPlaceholder": "Fantasy, une ville minière au pied d’une colline"
       },
       "rules": {
-        "title": "Les règles",
-        "kicker": "les actions des joueurs en découlent",
-        "pick": "Partir de",
         "abilities": "Les six caractéristiques",
-        "derived": "{{hp}} et {{ac}}",
-        "note": "Les règles sont des données : la fiche et les actions des joueurs en découlent. La campagne garde la version choisie.",
-        "loadError": "Les systèmes de règles n’ont pas pu être chargés. Réessayez."
+        "derived": "{{hp}} et {{ac}}"
       },
       "pitch": {
-        "title": "Le pitch",
-        "kicker": "quelques phrases suffisent",
         "pitchLabel": "Ton idée · pour toi seul",
         "pitchPlaceholder": "Une ville minière qui enterre ses morts deux fois. Sous la colline, une crypte que personne n’ose ouvrir.",
         "hookLabel": "L’accroche · ce que lisent les joueurs",
@@ -141,12 +125,6 @@
         "budgetLabel": "Budget IA ($)",
         "budgetHint": "Le plafond des dépenses IA de la campagne. 0 : aucune dépense."
       },
-      "next": "Suivant",
-      "nextSub": "Étape {{step}} sur 3",
-      "previous": "Retour",
-      "create": "Créer la campagne",
-      "createSub": "Vide : tu la prépares ensuite",
-      "creating": "Création…",
       "errors": {
         "TITLE_REQUIRED": "Donne un titre à la campagne.",
         "INVALID_PLAYER_COUNT": "Le nombre de joueurs va de 1 à 12.",
@@ -167,8 +145,6 @@
       "evening": "Mener la soirée",
       "eveningSub": "La scène, la carte, les demandes, le co-MJ",
       "editRules": "Modifier les règles",
-      "generate": "Générer à partir d'une idée",
-      "generateSub": "Le co-MJ écrit un brouillon complet ; appliqué, il s'ouvre dans l'Atlas, la première scène posée sur la région",
       "atlas": "Atlas",
       "atlasSub": "Toute la préparation : les cartes de la région aux rencontres, les scènes posées dessus, la vue joueurs ; dans le tiroir, la bible, les fiches, la validation, les médias et les cartes de la campagne",
       "settings": "Réglages",
@@ -2011,7 +1987,9 @@
         "location": "Lieu",
         "item": "Objet",
         "tileset": "Matière de carte",
-        "intro": "Vidéo d'introduction"
+        "intro": "Vidéo d'introduction",
+        "element": "Élément HD-2D (PixelLab)",
+        "character": "Personnage (PixelLab)"
       },
       "subject": "Sujet",
       "direction": "Un mot de direction (plus sombre, de face…)",
@@ -2078,64 +2056,7 @@
       }
     },
     "generate": {
-      "title": "Générer la campagne",
-      "validated": "Cette campagne est déjà validée : la génération prépare une campagne neuve, avant sa relecture.",
-      "formTitle": "Votre idée",
-      "pitch": "L'idée, en une ou deux phrases au moins",
-      "tone": "Ton",
-      "themes": "Thèmes",
-      "constraints": "Contraintes (ce qu'il faut, ce qu'il ne faut pas)",
-      "length": "Format",
-      "lengths": {
-        "one_shot": "Partie unique",
-        "short": "Courte (3 à 5 soirées)",
-        "long": "Longue (8 soirées et plus)"
-      },
       "cost": "Coût estimé : au plus {{estimate}} $ · reste {{left}} $ sur le budget IA de la campagne.",
-      "start": "Lancer la génération",
-      "running": "Génération en cours…",
-      "jobs": "Générations",
-      "none": "Aucune génération pour l'instant. Rien n'arrive dans la campagne sans votre accord.",
-      "spent": "{{cost}} $",
-      "status": {
-        "running": "En cours",
-        "succeeded": "Brouillon prêt",
-        "failed": "Échec",
-        "applied": "Appliquée"
-      },
-      "steps": {
-        "cast": "Bible, actes, menaces et fiches",
-        "scenes": "Scènes, révélations et indices",
-        "check": "Vérification et corrections"
-      },
-      "stepDone": "{{label}} — {{counts}}",
-      "counts": {
-        "cast": "{{npcs}} PNJ, {{adversaries}} adversaires, {{locations}} lieux",
-        "scenes": "{{nodes}} scènes, {{clues}} indices",
-        "check": "{{errors}} erreurs, {{warnings}} avertissements, {{repairs}} corrections"
-      },
-      "drafted": {
-        "nodes_one": "{{count}} scène",
-        "nodes_other": "{{count}} scènes",
-        "revelations_one": "{{count}} révélation",
-        "revelations_other": "{{count}} révélations",
-        "clues_one": "{{count}} indice",
-        "clues_other": "{{count}} indices",
-        "npcs_one": "{{count}} PNJ",
-        "npcs_other": "{{count}} PNJ",
-        "adversaries_one": "{{count}} adversaire",
-        "adversaries_other": "{{count}} adversaires",
-        "locations_one": "{{count}} lieu",
-        "locations_other": "{{count}} lieux"
-      },
-      "optional": " (facultative)",
-      "green": "Le validateur ne trouve rien à redire.",
-      "issues": "Le validateur relève {{errors}} erreurs et {{warnings}} avertissements : vous les reprendrez à la relecture.",
-      "removed_one": "{{count}} élément inventé par le modèle a été écarté",
-      "removed_other": "{{count}} éléments inventés par le modèle ont été écartés",
-      "apply": "Appliquer à la campagne",
-      "applyHint": "Le brouillon remplace l'histoire de la campagne. Elle reste à relire et à valider avant la première soirée.",
-      "review": "Ouvrir l’Atlas →",
       "errors": {
         "action": "L'action n'a pas abouti. Réessayez.",
         "AI_BUDGET_EXCEEDED": "Le budget IA de la campagne ne suffit pas. Augmentez-le dans les réglages de la campagne.",
@@ -2684,6 +2605,30 @@
     }
   },
   "atlas": {
+    "hd2d": {
+      "switch": "Rendu de la carte",
+      "plan": "Plan",
+      "hd2d": "HD-2D",
+      "label": "La scène en HD-2D : glisser pour tourner autour, pincer pour s’approcher, toucher une pièce pour la choisir",
+      "unavailable": "Cet appareil ne sait pas dessiner la scène en 3D. Le plan reste à un toucher.",
+      "world": "Une région se parcourt en hexagones : le rendu HD-2D est celui des lieux et des rencontres.",
+      "title": "La scène en HD-2D",
+      "hint": "Ce que Claude écrit apparaît ici sans recharger : en pointillés et marqué ▶ tant que vous ne l’avez pas gardé.",
+      "claude": "▶ Claude · {{title}}",
+      "keepAll": "Garder",
+      "discardAll": "Jeter",
+      "details": "Le détail",
+      "missing": "Ce qui manque encore",
+      "missingNone": "Rien ne manque : chaque élément et chaque PNJ de la scène a son image.",
+      "missingHint": "Dessiné avec les couleurs du thème en attendant. Demandez à Claude de le générer chez PixelLab : {{count}} génération(s).",
+      "missingElement": "{{name}}",
+      "missingCharacter": "{{name}} · sans personnage",
+      "pending": "Images PixelLab à valider",
+      "pendingHint": "Elles pulsent dans la scène tant que vous ne les avez ni gardées ni jetées.",
+      "keep": "Garder",
+      "discard": "Jeter",
+      "failed": "L’action a échoué ({{code}})."
+    },
     "title": "Atlas",
     "breadcrumb": "Où vous êtes dans l’atlas",
     "empty": "Aucune carte : ni le monde ni la campagne n’en ont encore.",

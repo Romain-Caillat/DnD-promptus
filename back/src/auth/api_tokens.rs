@@ -62,6 +62,14 @@ pub const TOKEN_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{id}/maps/{map}/ask"),
     ("POST", "/api/campaigns/{id}/maps/{map}/place"),
     ("GET", "/api/campaigns/{id}/proposals"),
+    // campaign/prepare-with-claude: the rule systems a campaign may play,
+    // chosen with the GM at the first fight.
+    ("GET", "/api/rule-systems"),
+    // campaign/import-pixellab-assets: what the theme lacks, and an image
+    // Claude generated at PixelLab, brought in pending (no AI budget
+    // spent here: PixelLab bills the GM's own account).
+    ("GET", "/api/campaigns/{id}/elements"),
+    ("POST", "/api/campaigns/{id}/media/import"),
 ];
 
 /// Whether a token may call `method` on the route matched as `path`.

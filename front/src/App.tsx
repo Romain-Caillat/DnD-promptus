@@ -6,9 +6,7 @@ import { GmHomePage } from '@/features/gm/GmHomePage'
 import { GmTablePage } from '@/features/gm/GmTablePage'
 import { GmLivePage } from '@/features/gm/live/GmLivePage'
 import { MapEditorPage } from '@/features/gm/maps/MapEditorPage'
-import { NewCampaignPage } from '@/features/gm/NewCampaignPage'
 import { PairScreenPage } from '@/features/gm/PairScreenPage'
-import { GenerationPage } from '@/features/gm/prep/GenerationPage'
 import { RulesEditorPage } from '@/features/gm/rules/RulesEditorPage'
 import { HealthPage } from '@/features/health/HealthPage'
 import { CharacterCreatorPage } from '@/features/play/creator/CharacterCreatorPage'
@@ -31,12 +29,10 @@ export default function App() {
         <Route path="/partie/:campaignId" element={<PlayerHomePage />} />
         <Route path="/partie/:campaignId/personnage" element={<CharacterCreatorPage />} />
         <Route path="/partie/:campaignId/regles" element={<RulesPage />} />
-        <Route path="/campagnes/nouvelle" element={<NewCampaignPage />} />
         <Route path="/campagnes/:campaignId" element={<CampaignPage />} />
         <Route path="/campagnes/:campaignId/table" element={<GmTablePage />} />
         <Route path="/campagnes/:campaignId/soiree" element={<GmLivePage />} />
         <Route path="/campagnes/:campaignId/regles" element={<RulesEditorPage />} />
-        <Route path="/campagnes/:campaignId/generer" element={<GenerationPage />} />
         <Route path="/campagnes/:campaignId/atlas" element={<AtlasPage />} />
         <Route path="/campagnes/:campaignId/cartes/:mapId" element={<MapEditorPage />} />
         <Route path="*" element={<GmHomePage />} />

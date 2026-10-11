@@ -538,6 +538,44 @@ locked, on the story the batch would leave), so an NPC's whole `spots`
 list is read where it is written. World maps flag no water (the sea is
 a terrain): there « never in the water » is not enforced.
 
+### A campaign starts in conversation, not in a form
+
+Since `campaign/prepare-with-claude` (decided 2026-10-11) there is no
+creation form nor generation page in the app: the GM prepares with
+their Claude (`mcp/skills/preparer-soiree`, also the MCP prompt
+`preparer_soiree`) and watches the Atlas; a written YAML still imports.
+A campaign is born from one scene (`start_campaign`, not proposed:
+nothing to propose over yet); everything after it is proposed. The
+rules are chosen at the first fight, the title and hook last.
+`POST /api/campaigns` and the generation routes stay for the eval and
+the tests, without a screen.
+
+### Promptus fetches PixelLab images itself, and never twice
+
+Claude hands an address, never bytes it made up
+(`campaign/import-pixellab-assets`, `back/src/pixellab.rs`): the server
+fetches `https` on `PIXELLAB_HOSTS` only (redirects included) or a
+`data:image/png;base64,` URL, PNG, 4 MB and 1024 px at most — anything
+else is refused before a byte is read, so the token cannot make the
+server call the home network. A theme element's colours are brought
+onto its tileset's palette (`shared::elements::reduce_to_palette`), a
+character keeps its own. Every image lands `pending`, decided by the GM
+like the others. One slot of the theme (`<tileset>/<slot>`) or one NPC
+has at most one image waiting or kept: a second is 409
+`ELEMENT_EXISTS` unless the call replaces it — what the theme holds is
+reused, never regenerated (the generations cost Romain's money).
+
+### The Atlas's HD-2D view is a projection of the same data
+
+`campaign/watch-prep-in-hd2d`: `front/src/features/hd2d/build.ts` turns
+the map, its tileset, the PixelLab needs and the Atlas's own marks
+(Claude's included) into a scene description, and `Hd2dView` draws it
+with Three.js. It reads nothing the flat Atlas does not; the grid still
+carries the rules. A missing element is drawn from the theme's colours
+and listed, never hidden; a pending one pulses; Claude's marks float
+translucent with ▶. The view is rebuilt on the scene's content, not on
+every render, and keeps the GM's camera across Claude's writes.
+
 ### The sheet and the play state are two things
 
 `characters.sheet` is what the player wrote and the GM reviewed; the
@@ -621,6 +659,11 @@ one. Since `platform/edit-maps-by-claude` (decided 2026-10-11) it reads
 the atlas, a map as text (`…/sketch`), asks the engine on a map
 (`…/ask`: path, sight, what players see — read-only) and places by name
 (`…/place`: story edits the server resolves, proposed like the others).
+Since `campaign/prepare-with-claude` and `campaign/import-pixellab-
+assets` (decided 2026-10-11) it lists the rule systems, lists what the
+theme lacks (`…/elements`) and brings a PixelLab image in
+(`…/media/import`, pending — no AI budget of Promptus is spent: PixelLab
+bills the GM's own account); it never decides an image.
 Widening the list is a decision, not a fix: the sweep
 in `gm_routes_test.rs` sends a token to every other GM route. A token
 write is checked like the GM's (same edits, lock, all or nothing) but

@@ -68,7 +68,7 @@ export function GmHomePage() {
           </header>
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 p-5">
             <CampaignsPanel gmName={me.gm.displayName} />
-            <div className="surface-slab max-w-2xl p-4">
+            <div id="acces-claude" className="surface-slab max-w-2xl scroll-mt-4 p-4">
               <ClaudeAccessPanel />
             </div>
           </div>
