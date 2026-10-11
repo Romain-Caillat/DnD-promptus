@@ -1,0 +1,23 @@
+{
+  "name": "promptus-pixel-art",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Turns images from a diffusion model into clean pixel art: real grid, shared palette, transparent background.",
+  "scripts": {
+    "generate": "bun run src/generate.ts",
+    "normalize": "bun run src/cli.ts normalize",
+    "sheet": "bun run src/cli.ts sheet",
+    "palette": "bun run src/cli.ts palette",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "@types/pngjs": "^6.0.5",
+    "typescript": "~6.0"
+  }
+}

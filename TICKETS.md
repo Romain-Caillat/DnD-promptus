@@ -233,6 +233,12 @@ devient une vue secondaire) ; `platform/preview-campaign-in-claude`
 
 Plus tard, sans jalon : `maps/support-hex-combat`.
 
+**Sprites générés (essai d'octobre, hors jalon)** —
+`media/generate-sprites-on-mannequin` · `media/draw-key-poses` ·
+`media/write-pixel-art-skill` · `characters/show-generated-sprites-on-plan`
+· `characters/choose-sprite-source` (décision ouverte, à trancher avant
+de brancher quoi que ce soit dans l'app).
+
 ---
 
 ## Épic `platform`
@@ -2432,6 +2438,87 @@ tiroir de l’Atlas (onglet Médias) ; l’ancien écran Médias est retiré.
 
 ---
 
+### `media/generate-sprites-on-mannequin` · doing — reste la génération lancée depuis PCT 105, et le regard de Romain sur la page Sprites
+
+**Pourquoi** — Les sprites dessinés cellule par cellule (à la main ou par
+Claude) manquent de volume. Un modèle d'image fait bien mieux, à
+condition d'imposer un format commun pour que tous les personnages
+tiennent ensemble : même taille, même palette, mêmes animations.
+
+**Périmètre** — La chaîne `scripts/pixel-art/` : un mannequin OpenPose
+en trois gabarits (petit ≈ 36 px, moyen ≈ 48, grand ≈ 60) ; la
+génération sur ComfyUI (tour de Romain, RTX 3080 Ti) avec SDXL, la LoRA
+Pixel Art XL et ControlNet union, les trois vues (face, profil, dos)
+dans une seule image, mains vides ; la normalisation (grille de 8 px,
+palette maison de 32 couleurs, fond, ombre et miettes retirés) ; les
+armes générées à part ; des planches de 80 × 80 px, 7 animations ×
+4 directions.
+
+**Fini quand** — Un nouveau personnage passe de sa description à sa
+planche animée en une commande depuis PCT 105, et Romain valide le rendu
+des quatre personnages d'essai sur la page « Fondations · Sprites ».
+
+**Origine** — Demande de Romain, 10 et 11 octobre 2026 ; page « Fondations · Sprites » du canevas, `scripts/pixel-art/README.md`.
+
+**État** — Fait le 11 octobre : mannequins, palette maison
+(`HOUSE_32`), normalisation, découpe des vues, rig d'animation (repos,
+marche, brandir, attaque, soin, touché, mort), planches de quatre
+personnages d'essai (gobelin, nain, clerc, orque) publiées sur la page
+« Fondations · Sprites » ; typecheck et deux tests `bun test` au vert.
+Reste : `generate.ts` n'a jamais tourné depuis PCT 105, car le pare-feu
+Windows de la tour n'admet que l'hôte `192.168.1.34` — il faut y ajouter
+`192.168.1.192` (les générations de l'essai sont passées par un script
+Python temporaire sur l'hôte). Les limites : les mouvements restent de
+un à trois pixels, les bras ne bougent pas de profil, et une génération
+sur trois environ est utilisable. Rien n'est commité.
+
+### `media/draw-key-poses` · doing — reste le profil et le dos
+
+**Pourquoi** — Le rig déplace des morceaux d'un à trois pixels : une
+attaque ou un sort lisibles demandent un bras qui se lève vraiment.
+
+**Périmètre** — Des poses clés dessinées par le modèle (élan, frappe,
+incantation), d'abord de face puis de profil et de dos. Méthode : la vue
+de face existante dans le panneau de gauche, le panneau de droite masqué
+et complété, ControlNet sur la pose clé (`KEY_POSES` dans
+`src/pose.ts`), IP-Adapter sur la référence. L'arme se pose au poignet
+du squelette. Les rangées « attaque » et « soin » utilisent ces poses.
+
+**Fini quand** — L'attaque et le soin des quatre personnages d'essai
+montrent des poses dessinées, de face et de profil, sur la page Sprites.
+
+**Origine** — Demande de Romain, 10 et 11 octobre 2026 ; page « Fondations · Sprites » du canevas, `scripts/pixel-art/README.md`.
+
+**État** — De face, c'est fait et branché (11 octobre). Un panneau
+complété par passe : à deux panneaux sur trois, les couleurs partent.
+Graines retenues — élan : clerc 2, gobelin 5, nain 2, orque 6 ;
+frappe : clerc 2, gobelin 4, nain 2, orque 6 ; soin : clerc 2, nain 2,
+orque 1, gobelin 2. L'orque a demandé six graines avant de lever le
+bras, le gobelin quatre avant de venir seul. Les chemins sont dans
+`work/cast.json` (champ `keys`) ; le rig dessine la pose entière à la
+place des morceaux, l'arme au poignet du squelette, et ne garde que la
+forme principale du panneau (des bouts de voisins y entrent). Page
+Sprites mise à jour (v100). Reste : le profil et le dos, et des
+couleurs d'orque qui diffèrent un peu entre repos et poses clés.
+
+### `media/write-pixel-art-skill` · todo
+
+**Pourquoi** — Claude doit pouvoir enchaîner seul : décrire, générer,
+choisir la bonne graine, normaliser, animer, publier.
+
+**Périmètre** — Un skill de projet (`.claude/skills/pixel-art/`) : quand
+s'en servir, les commandes, les critères pour retenir une graine (une
+vraie face dans la première colonne, pas de mini-personnages collés,
+pas d'arme dans les mains) et les pièges de `MEMORY.md` §4.
+
+**Fini quand** — Dans une nouvelle session, « fais-moi un squelette
+archer » donne une planche animée publiée sur la page Sprites, sans
+aide.
+
+**Dépend de** — `media/generate-sprites-on-mannequin` (le pare-feu).
+
+**Origine** — Demande de Romain, 10 et 11 octobre 2026 ; page « Fondations · Sprites » du canevas, `scripts/pixel-art/README.md`.
+
 ## Épic `session`
 
 Le direct : comment une table se réunit et ce qui circule entre les
@@ -3634,6 +3721,57 @@ et de dos (`shared/tests/golden/<monde>/marche.png`, ou `/reference`) et
 dit ce qui cloche.
 
 ---
+
+### `characters/show-generated-sprites-on-plan` · todo
+
+**Pourquoi** — Juger les sprites générés là où ils serviront : sur la
+carte, à côté des tuiles.
+
+**Périmètre** — Dans le canevas, les composants `Plan` et `Sprite`
+affichent les planches générées pour les personnages qui en ont une
+(nain → Borin, clerc → Lyra, gobelin, orque → le chef), à l'échelle des
+cases (52 à 58 px), avec repos, attaque et touché. Les autres gardent
+leur sprite actuel.
+
+**Fini quand** — Les planches « Atlas » et « Carte » montrent les
+nouveaux sprites, et Romain dit si l'échelle et la vue de trois-quarts
+tiennent avec les tuiles.
+
+**Origine** — Demande de Romain, 10 et 11 octobre 2026 ; page « Fondations · Sprites » du canevas, `scripts/pixel-art/README.md`.
+
+### `characters/choose-sprite-source` · todo — décision ouverte
+
+**Pourquoi** — L'essai généré contredit trois décisions de `MEMORY.md`
+§2 : la vue de profil façon Terraria, le personnage décrit en calques et
+dessiné par le serveur, et les attaques animées sur le sprite entier.
+Deux sources de sprites ne peuvent pas cohabiter à l'écran.
+
+**Options** — (a) garder les calques pour les personnages des joueurs
+(le créateur) et générer PNJ et monstres, au risque de deux styles ;
+(b) tout générer, et le créateur devient une description plus un choix
+parmi des propositions, ce qui perd l'édition fine et le rendu serveur
+unique ; (c) se servir du modèle pour concevoir les pièces des packs,
+puis les reporter en calques. ; (d) **HD-2D façon Octopath Traveler** (idée de
+Romain, 11 octobre) : des personnages en pixel art posés comme des
+panneaux plats dans une scène 3D Three.js, la 3D apportant lumière,
+ombres, flou de profondeur. Variante : sprites de 64 px sur le plateau,
+portrait détaillé de 256 px en gros plan (action, dialogue, fiche, écran
+TV). Remet en cause la vue de profil et le rendu serveur unique ; à
+maquetter sur le canevas avant de trancher.
+
+**Test PixelLab (11 octobre)** — Les quatre personnages d'essai en
+4 directions, 64 px, mode standard (`work/pixellab/`, 4 générations ;
+26 restent sur l'essai gratuit, une génération à la fois). Bien
+meilleur que notre chaîne : contour net, directions cohérentes, armes
+tenues. Limites : même carrure pour tous sans réglage des proportions,
+arme incluse dans le dessin. Pas encore testé : proportions sur mesure,
+animations, sprite de carte redessiné à partir d'un portrait de 256 px.
+
+**Fini quand** — Romain tranche après
+`characters/show-generated-sprites-on-plan`, et `MEMORY.md` §2 est mis
+à jour en conséquence.
+
+**Origine** — Demande de Romain, 10 et 11 octobre 2026 ; page « Fondations · Sprites » du canevas, `scripts/pixel-art/README.md`.
 
 ## Épic `maps`
 
