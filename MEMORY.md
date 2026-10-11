@@ -471,6 +471,20 @@ the campaign with a token needs the hand (409 `CLAUDE_PROPOSES`).
 Writing `campaigns.story` or a map from a token anywhere else skips the
 GM's word.
 
+### Claude places by name, the server picks the cell
+
+Claude never sends a cell it chose for a pin, an NPC, a clue or a fight
+(`platform/edit-maps-by-claude`): it names a thing (« près du
+comptoir ») or a path, and `story::placing` walks out from it — never
+through a wall — to the first cell that is standable, out of water
+(shallow included, unlike `standable`), free of every mark, start,
+object, prop, exit and door (and of marks still proposed) and
+reachable from the party's starts or the exits. The result is ordinary
+story edits, resolved inside `prep::claude::story_edits_with` (campaign
+locked, on the story the batch would leave), so an NPC's whole `spots`
+list is read where it is written. World maps flag no water (the sea is
+a terrain): there « never in the water » is not enforced.
+
 ### The sheet and the play state are two things
 
 `characters.sheet` is what the player wrote and the GM reviewed; the
@@ -550,7 +564,11 @@ table, the live session, player or screen routes, nor any route that
 spends AI budget, nor creating, importing, deleting or validating a
 map. Since `platform/propose-edits-by-claude` (decided 2026-10-11) it
 also reads Claude's own batches back (`GET …/proposals`), never decides
-one. Widening the list is a decision, not a fix: the sweep
+one. Since `platform/edit-maps-by-claude` (decided 2026-10-11) it reads
+the atlas, a map as text (`…/sketch`), asks the engine on a map
+(`…/ask`: path, sight, what players see — read-only) and places by name
+(`…/place`: story edits the server resolves, proposed like the others).
+Widening the list is a decision, not a fix: the sweep
 in `gm_routes_test.rs` sends a token to every other GM route. A token
 write is checked like the GM's (same edits, lock, all or nothing) but
 is **proposed**, not applied — see « Claude proposes, the GM keeps ».

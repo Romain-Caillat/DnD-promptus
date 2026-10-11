@@ -15,7 +15,7 @@ import { type Promptus, PromptusError } from './promptus'
 
 type Json = Record<string, unknown>
 
-interface Issue {
+export interface Issue {
   severity: string
   code: string
   path: string
@@ -31,7 +31,7 @@ interface CampaignDetail {
   updatedAt: string
 }
 
-interface ItemView {
+export interface ItemView {
   key: string
   status: 'pending' | 'kept' | 'discarded' | 'refused'
   stale: boolean
@@ -42,7 +42,7 @@ interface ItemView {
   map?: { map: string; name: string; ops: number }
 }
 
-interface ProposalView {
+export interface ProposalView {
   id: string
   prompt: string
   status: 'pending' | 'accepted' | 'rejected'
@@ -57,7 +57,7 @@ type EditsResult =
   | { status: 'proposed'; why: string; proposal: ProposalView; issues: Issue[] }
 
 /** Why a write was proposed, in the GM's words. */
-const WHY: Record<string, string> = {
+export const WHY: Record<string, string> = {
   proposals: 'le MJ garde la main : il gardera ou jettera chaque élément dans Promptus',
   evening: 'une soirée est ouverte : rien ne s\'applique directement pendant le jeu',
   revealed: 'cela touche ce que les joueurs connaissent déjà',
@@ -90,15 +90,15 @@ export function proposalReport(p: ProposalView): Json {
   }
 }
 
-const campaignId = z.string().min(1).describe("Identifiant de la campagne (donné par list_campaigns).")
+export const campaignId = z.string().min(1).describe("Identifiant de la campagne (donné par list_campaigns).")
 
-function text(value: unknown): CallToolResult {
+export function text(value: unknown): CallToolResult {
   return {
     content: [{ type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value, null, 2) }],
   }
 }
 
-function failure(err: unknown): CallToolResult {
+export function failure(err: unknown): CallToolResult {
   const message = err instanceof PromptusError
     ? err.message
     : `Erreur inattendue du serveur MCP Promptus : ${err instanceof Error ? err.message : String(err)}`
@@ -106,7 +106,7 @@ function failure(err: unknown): CallToolResult {
 }
 
 /** Run `work`, turning any failure into a tool error the GM can read. */
-async function guarded(work: () => Promise<CallToolResult>): Promise<CallToolResult> {
+export async function guarded(work: () => Promise<CallToolResult>): Promise<CallToolResult> {
   try {
     return await work()
   } catch (err) {
@@ -205,6 +205,8 @@ Chaque modification est un objet :
 - { "op": "set", "target": "<id ou bible ou campaign>", "field": "<champ, pointé pour aller dedans>", "value": <valeur> } \
 — par ex. { "op": "set", "target": "sc_quai", "field": "summary", "value": "…" }, \
 { "op": "set", "target": "pnj_morel", "field": "stats.hit_points", "value": 12 }; "value": null efface le champ. \
+Pour poser quelque chose sur une carte, préfère place_on_map : Promptus y choisit lui-même une case libre, au sec et \
+atteignable ; les coordonnées brutes ci-dessous ne servent qu'à corriger à la main. \
 Épingler un lieu sur une carte (ses scènes y apparaissent) : \
 { "op": "set", "target": "lieu_quai", "field": "anchor", "value": { "map": "<id de carte>", "at": [x, y] } }. \
 Poser un PNJ sur une carte (toutes les scènes, ou une seule avec "scene") : \

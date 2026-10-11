@@ -291,6 +291,15 @@ the only guard against cycles; a GM's own map hangs under another only
 if that map has an exit to it (a copy of a world map keeps the exits it
 had).
 
+## A map as text
+
+Claude reads a map as text (`platform/edit-maps-by-claude`,
+`story::sketch`, `GET …/maps/{map}/sketch`): two ruler lines, then one
+line per row (`y`, then one character per cell — two on a hex map, odd
+rows shifted by one), the grid's own glyphs, and a symbol over each
+thing placed, listed in a legend. The format and the placement by name
+are in `docs/claude-mcp.md` (« Maps in words »).
+
 ## Universal VTT import
 
 `maps::from_uvtt` reads a Universal VTT export (`.dd2vtt`, `.uvtt`,

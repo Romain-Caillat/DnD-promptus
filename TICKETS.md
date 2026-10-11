@@ -699,7 +699,7 @@ des rues) à trancher par Romain.
 
 ---
 
-### `platform/edit-maps-by-claude` · todo
+### `platform/edit-maps-by-claude` · doing — reste l'essai réel depuis Claude Code : « ajoute un PNJ dans un lieu et deux indices sur un chemin » donne trois propositions bien placées, sans mur traversé ni PNJ dans l'eau
 
 **Pourquoi** — Claude ne voit pas les pixels : pour travailler sur
 l'Atlas il lui faut la carte en texte et des gestes qui ont du sens.
@@ -736,6 +736,46 @@ séance. Élargir les routes d'un jeton élargit ce qu'une fuite permet :
 écritures toujours en propositions, jamais pendant une soirée.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+*État* — Claude a maintenant cinq outils de carte. « Lire l'atlas »
+donne toutes les cartes rangées région › lieu › rencontre, avec sur
+chacune les scènes épinglées, les PNJ, indices et combats posés, les
+lieux de l'histoire et les scènes sans épingle. « Lire une carte en
+texte » montre une carte, ou une zone d'une grande carte, en caractères :
+des axes numérotés pour nommer une case, le sol de chaque signe (mur,
+eau, terrain) et un symbole sur chaque chose posée, avec sa légende.
+Les cartes du monde se lisent aussi. « Questions au moteur » répond au
+chemin le moins cher à pied et à son coût en mètres, à la ligne de vue et
+au couvert, et à ce que voient les joueurs depuis un endroit (leur carte,
+le reste dans le brouillard). « Poser sur une carte » épingle une scène
+ou un lieu, pose un PNJ, un indice ou un combat « près de » quelque chose
+qui a un nom (une étiquette, un décor, une porte, une sortie, un lieu
+épinglé, un PNJ déjà posé) ou « sur le chemin » entre deux endroits.
+Claude ne donne jamais de coordonnées : Promptus choisit la case, la plus
+proche en marchant depuis ce qui est nommé, jamais à travers un mur, ni
+sur un mur, ni dans l'eau, libre de tout ce qui est déjà posé ou proposé,
+et atteignable depuis l'entrée de la carte. Il dit à Claude où chaque
+chose est tombée. Un nom inconnu ou ambigu revient avec la liste de ce
+que la carte connaît. Tout passe par le lot de propositions : le MJ voit
+les poses en pointillés dans l'Atlas et les garde ou les jette. Enfin,
+« Redessiner une carte » envoie des gestes de carte (peindre, poser une
+porte…), relus et rejoués une fois si le MJ a touché le même endroit
+entre-temps, et proposés eux aussi. Le balayage des routes du MJ reste
+vert avec les quatre routes ouvertes au jeton (décision notée dans
+`MEMORY.md`). C'est testé côté serveur sur Port-Louis : une PNJ près du
+Perroquet Noyé et deux indices sur le chemin du quai, jamais dans un mur
+ni dans l'eau ; les outils MCP sont testés contre une API simulée.
+*Interprétations à confirmer* : épingler une scène épingle son lieu, et
+les autres scènes de ce lieu suivent ; si la scène n'a pas de lieu, ou si
+son lieu est déjà épinglé sur une autre carte, Promptus lui crée un lieu
+à elle, rangé dans l'ancien, pour ne pas arracher l'autre épingle.
+« Atteignable » veut dire atteignable depuis les départs du groupe ou les
+sorties de la carte. ⚠️ Sur une carte de région, la mer n'est qu'un
+terrain, pas de l'eau au sens des règles : la garde « jamais dans l'eau »
+n'y joue pas. **Reste** l'essai réel depuis Claude Code. Valombre et
+Oswin n'existent dans aucun des deux mondes : proposition, faire l'essai
+sur Port-Louis, Mère Goulven près du Perroquet Noyé et deux indices sur
+le chemin du quai (à trancher par Romain).
 
 ---
 
@@ -3965,11 +4005,12 @@ positions de PNJ, indices et rencontres rangées dans l'histoire
 viendront avec `campaign/place-cast-and-clues`. Un lot de Claude
 s'applique encore tout de suite (il deviendra une proposition avec
 `platform/propose-edits-by-claude`), et aucun outil MCP n'écrit encore
-sur les cartes (`platform/edit-maps-by-claude`). Une modification
+sur les cartes (`platform/edit-maps-by-claude` les a depuis branchés :
+« Redessiner une carte » et « Poser sur une carte »). Une modification
 d'histoire ne rend
 jamais un lot de carte périmé. Valider une carte n'entre pas dans le
-journal. **Reste** : l'essai réel avec Claude, une fois ses outils de
-carte branchés.
+journal. **Reste** : l'essai réel avec Claude, dont les outils de carte
+sont maintenant branchés.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 

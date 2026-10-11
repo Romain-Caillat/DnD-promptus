@@ -40,9 +40,13 @@ anything else is 403 `TOKEN_NOT_ALLOWED`.
 | `POST /api/campaigns/{id}/story/edits` | `apply_story_edits` (proposed, below) |
 | `GET /api/campaigns/{id}/export` | `export_campaign_yaml` |
 | `PUT /api/campaigns/{id}/import` | `import_campaign_yaml` (only with « Claude a la main », below) |
-| `GET /api/campaigns/{id}/maps` | — (MCP tools: `platform/edit-maps-by-claude`) |
-| `GET /api/campaigns/{id}/maps/{map}` | — (idem; the answer carries `revision`) |
-| `POST /api/campaigns/{id}/maps/{map}/ops` | — (idem; a batch of map operations, below — proposed too) |
+| `GET /api/campaigns/{id}/maps` | — (the campaign's own maps; `get_atlas` covers them all) |
+| `GET /api/campaigns/{id}/maps/{map}` | `edit_map` (reads the `revision` first) |
+| `POST /api/campaigns/{id}/maps/{map}/ops` | `edit_map` (a batch of map operations, below — proposed too) |
+| `GET /api/campaigns/{id}/atlas` | `get_atlas` (every map nested, what stands on each, the places, the scenes without a pin) |
+| `GET /api/campaigns/{id}/maps/{map}/sketch` | `get_map_text` (the map as text, below; a world map too) |
+| `POST /api/campaigns/{id}/maps/{map}/ask` | `ask_map` (path and cost, line of sight, what players see) |
+| `POST /api/campaigns/{id}/maps/{map}/place` | `place_on_map` (pins, NPCs, clues, fights placed by name — proposed too) |
 | `GET /api/campaigns/{id}/proposals` | `list_proposals` (Claude's batches and the GM's word on each item) |
 
 Deliberately excluded: sign-in, accounts, the token routes, creating
@@ -173,6 +177,9 @@ second, younger MCP crate and a compile on the Mac for no gain.
   the edits were proposed (and why) or applied; `list_proposals` gives
   Claude's batches back with what the GM kept, discarded (and the word)
   or saw refused.
+- The map tools (`mcp/src/maps.ts`, `platform/edit-maps-by-claude`):
+  `get_atlas`, `get_map_text`, `ask_map`, `place_on_map`, `edit_map`
+  (below, « Maps in words »).
 - Tests: `cd mcp && bun test` — a real MCP client over the SDK's
   in-memory transport, the API stubbed by a mocked `fetch`. CI runs them
   with `tsc --noEmit` (job `mcp`).
@@ -238,3 +245,78 @@ cells}`) and the GM may take it back from the journal; a token write's
 is proposed (above): the body may carry `title` and `proposal`, the
 answer is `202` with the batch; it applies at once only when Claude has
 the hand and the map is not on the table.
+
+## Maps in words (`platform/edit-maps-by-claude`)
+
+Claude does not see pixels. It reads and places by name, and the server
+does the geometry (`shared/src/story/sketch.rs`, `placing.rs`;
+`back/src/campaign_maps/survey.rs`). A map is looked up among the
+campaign's own maps, then its world's (`content::map`): a world map is
+read and receives pins and NPCs, but is never redrawn.
+
+**`GET …/maps/{map}/sketch?x=&y=&w=&h=`** — the map as text, the whole
+map or a zone (80 × 50 cells at most; `cut` says the zone is smaller
+than the map). `rows` are two ruler lines (tens and units of `x`), then
+one line per row, its `y` right-aligned on three characters and a
+space, then one character per cell — the grid's own glyph, or a symbol
+over what is placed there. Hex maps take two characters per cell and
+shift odd rows by one (odd-r offset). `terrain` is the grid's legend for
+the glyphs drawn (`terrain`, `wall`, `void`, `water`, `difficult`,
+`elevation`). `legend` lists every mark in the zone: `{symbol, kind:
+pin|npc|clue|fight|exit|door|prop|object|start|label, id, name, cells,
+layer?: all|gm|players, note?}` — the preparation's marks first, in
+capitals and digits, the map's things in lowercase and punctuation,
+never a glyph of the grid's legend; a party's starts without an entity
+share one mark. The words (« Épingle », « mur ») are the MCP server's.
+
+**`POST …/maps/{map}/ask`** — `{question: "path", from, to}`,
+`{question: "sight", from, to}` or `{question: "view", from}`.
+References are strings: a cell `"x,y"`, or by exact id, then by name,
+then by a part of a name (accents, case and a leading article aside) a
+prop, object, door, exit (label or destination), label, start (id or
+entity) of the map, or a pin (its place or one of its scenes), a placed
+NPC or a placed clue. Two different things at one level answer 400
+`MAP_REF_AMBIGUOUS` with the candidates in `message`; nothing answers
+`MAP_REF_UNKNOWN` with what the map knows; a cell off the grid
+`MAP_REF_OFF_GRID`. Answers: `path` (the walk from the cell nearest
+`from` to the cell nearest `to`, both ends included, `cost` in cells of
+movement under the campaign's movement rules, `meters`; no `cost` when
+there is no walk); `sight` (`viewer`, `target`, `visible`, `cover`,
+`cells`, `meters`); `view` (`viewer`, `seen` cells, `light`, and a
+`sketch` of the players' projection fogged beyond what they see).
+
+**`POST …/maps/{map}/place`** — `{placements: [{what, id, scene?, near?
+| along?: {from, to}}], title?, proposal?}`, 50 at most, all or nothing.
+`what`: `scene` (its place's `anchor`), `place`, `npc` (one more spot;
+`scene` for one scene only), `clue`, `fight` (the scene's
+`encounter.anchor`; not a ship battle, `PLACE_NO_FIGHT`). The server
+walks out from the reference and takes the first cell that is
+standable and out of water (shallow or deep), free (no mark of the
+preparation, start, object, prop, exit or door, and no mark still
+proposed in another waiting batch) and reachable from the party's
+starts and the exits (any cell when the map has neither); it never
+walks through a wall, so « near the counter » stays on the counter's
+side. Placements `along` the same path are spread evenly on the walk
+between its two ends, in order. Pinning a scene anchors its place (the
+place's other scenes follow, `with`); a scene with no place, or whose
+place is pinned on another map, gets a place of its own (`created`,
+`lieu_<scene>`, inside the old one) so the other pin stays; pinning a
+`place` pinned elsewhere is refused (`PLACE_ANCHORED_ELSEWHERE`). The
+result is the story edits the GM would make (`set anchor`, `set spots`
+with the whole list, `set encounter.anchor`, `add location`): from the
+GM's session they apply; with the token they go through
+`prep::claude::story_edits_with`, resolved under the campaign lock on
+the story the named batch would leave, so they are proposed like any
+of Claude's edits. The answer is that of `story/edits` plus `placed:
+[{what, id, name, at, near, steps, terrain, created?, with?}]`. Errors:
+`PLACE_MALFORMED`, `PLACE_UNKNOWN_ENTITY`, `PLACE_NO_ROOM` (no free,
+dry, reachable cell), `PLACE_NO_PATH`, the reference codes,
+`TOO_MANY_PLACEMENTS`, with an English `message` naming the placement's
+index.
+
+`edit_map` reads the map's `revision`, sends the operations, and on 409
+`MAP_STALE` replays once on `error.fresh.revision`.
+
+⚠️ World maps flag no water: their sea is a terrain (`mer`), so
+« never in the water » holds on place and encounter maps, whose water is
+flagged, not on a region's hexes.

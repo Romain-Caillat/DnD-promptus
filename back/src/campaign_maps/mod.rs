@@ -24,6 +24,7 @@
 //! shown, `MEMORY.md` §3).
 
 pub mod generate;
+pub mod survey;
 
 use std::collections::BTreeMap;
 

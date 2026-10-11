@@ -30,7 +30,10 @@ use crate::error::AppError;
 /// back, never decides one. The story, and the
 /// campaign's maps by operations (`maps/edit-maps-by-ops`): reading them
 /// and sending batches, which journal as the token's and never
-/// overwrite the GM's concurrent change. Not creating, importing,
+/// overwrite the GM's concurrent change. Since
+/// `platform/edit-maps-by-claude`, the atlas, a map as text, the
+/// engine's questions on it and placements by name (story edits, so
+/// proposed like the others). Not creating, importing,
 /// deleting or validating a map, nor its backdrop image. Paths are the router's
 /// own (`MatchedPath`). Creating a campaign from a YAML file is in: the
 /// GM may write a campaign with Claude and have it land as a new one.
@@ -54,6 +57,10 @@ pub const TOKEN_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/campaigns/{id}/maps"),
     ("GET", "/api/campaigns/{id}/maps/{map}"),
     ("POST", "/api/campaigns/{id}/maps/{map}/ops"),
+    ("GET", "/api/campaigns/{id}/atlas"),
+    ("GET", "/api/campaigns/{id}/maps/{map}/sketch"),
+    ("POST", "/api/campaigns/{id}/maps/{map}/ask"),
+    ("POST", "/api/campaigns/{id}/maps/{map}/place"),
     ("GET", "/api/campaigns/{id}/proposals"),
 ];
 

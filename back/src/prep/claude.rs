@@ -239,6 +239,40 @@ pub async fn story_edits(
     if edits.len() > EDITS_MAX {
         return Err(AppError::BadRequest("TOO_MANY_EDITS"));
     }
+    let (outcome, ()) = story_edits_with(pool, gm, campaign, meta, |_| {
+        Ok(Made {
+            edits: edits.to_vec(),
+            focus: None,
+            extra: (),
+        })
+    })
+    .await?;
+    Ok(outcome)
+}
+
+/// The edits Claude's write makes, computed on the story they apply to,
+/// and where on a map they are about.
+pub struct Made<T> {
+    pub edits: Vec<Edit>,
+    pub focus: Option<Focus>,
+    pub extra: T,
+}
+
+/// [`story_edits`], the edits made by `make` on the story they apply to
+/// — the campaign locked, with what the batch named by `meta` already
+/// proposes — so that what it reads (an NPC's spots, the cells already
+/// taken) cannot change before it lands (`platform/edit-maps-by-claude`).
+///
+/// # Errors
+///
+/// As [`story_edits`], and `make`'s.
+pub async fn story_edits_with<T>(
+    pool: &PgPool,
+    gm: &CurrentGm,
+    campaign: Uuid,
+    meta: &Meta,
+    make: impl FnOnce(&Campaign) -> Result<Made<T>, AppError>,
+) -> Result<(Outcome<(CampaignRow, Vec<Change>)>, T), AppError> {
     let mut tx = pool.begin().await?;
     let row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
     let library = edit_library(&row);
@@ -253,6 +287,19 @@ pub async fn story_edits(
     let base = existing
         .as_ref()
         .map_or_else(|| row.story.clone(), |s| virtual_of(&row, s, &maps).story);
+    let made = make(&base)?;
+    if made.edits.len() > EDITS_MAX {
+        return Err(AppError::BadRequest("TOO_MANY_EDITS"));
+    }
+    let edits = made.edits.as_slice();
+    let mut focused;
+    let meta = if made.focus.is_some() {
+        focused = meta.clone();
+        focused.focus = made.focus;
+        &focused
+    } else {
+        meta
+    };
     let (after, changes) = edit::apply_with(&base, edits, &library).map_err(|e| edit_error(&e))?;
     let why = match &existing {
         Some(_) => Why::Batch,
@@ -264,7 +311,7 @@ pub async fn story_edits(
                     .await?
                     .ok_or(AppError::NotFound("NOT_FOUND"))?;
                 tx.commit().await?;
-                return Ok(Outcome::Applied((row, changes)));
+                return Ok((Outcome::Applied((row, changes)), made.extra));
             }
         },
     };
@@ -272,11 +319,14 @@ pub async fn story_edits(
     let all = proposals::maps_for(&mut *tx, campaign, &[&s]).await?;
     tx.commit().await?;
     let issues = validate(&after);
-    Ok(Outcome::Proposed {
-        proposal: Box::new(view(&row, s, &all)),
-        why,
-        issues,
-    })
+    Ok((
+        Outcome::Proposed {
+            proposal: Box::new(view(&row, s, &all)),
+            why,
+            issues,
+        },
+        made.extra,
+    ))
 }
 
 /// Whether map `id` is on the table's board now: players have seen it.

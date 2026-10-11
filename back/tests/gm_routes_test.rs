@@ -156,6 +156,9 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/maps/generate"),
     ("GET", "/api/campaigns/{campaign}/maps/{map}"),
     ("POST", "/api/campaigns/{campaign}/maps/{map}/ops"),
+    ("GET", "/api/campaigns/{campaign}/maps/{map}/sketch"),
+    ("POST", "/api/campaigns/{campaign}/maps/{map}/ask"),
+    ("POST", "/api/campaigns/{campaign}/maps/{map}/place"),
     ("POST", "/api/campaigns/{campaign}/maps/{map}/validate"),
     ("GET", "/api/campaigns/{campaign}/maps/{map}/backdrop"),
     ("DELETE", "/api/campaigns/{campaign}/maps/{map}"),
@@ -272,6 +275,12 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             Some(serde_json::json!({ "all": "discard", "word": "Pas maintenant." }))
         }
         ("PUT", p) if p.ends_with("/claude") => Some(serde_json::json!({ "hand": true })),
+        ("POST", p) if p.ends_with("/maps/{map}/ask") => Some(serde_json::json!({
+            "question": "path", "from": "pj-1", "to": "6,8"
+        })),
+        ("POST", p) if p.ends_with("/maps/{map}/place") => Some(serde_json::json!({
+            "placements": [{ "what": "clue", "id": "cl_gwen", "near": "6,8" }]
+        })),
         (_, p) if p.ends_with("/story/edits") => Some(serde_json::json!({
             "edits": [{ "op": "set", "target": "bible", "field": "tone", "value": "Sombre." }]
         })),

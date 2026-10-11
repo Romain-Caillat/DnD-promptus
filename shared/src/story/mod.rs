@@ -12,6 +12,8 @@
 //! - [`pins`] — where the scenes stand on the maps, from their places;
 //! - [`cast`] — the NPCs, clues and fights placed on the maps;
 //! - [`thread`] — the thread of the scenes' exits, drawn between their pins;
+//! - [`sketch`] — a map as text, for Claude;
+//! - [`placing`] — placing by name on a map, and the engine's questions;
 //! - [`prune`] — dropping the ids a model invented;
 //! - [`recap`] — what a session changed, and the recaps drawn from it;
 //! - [`v1`] — importer for V1 campaigns (entities YAML + story JSON).
@@ -22,10 +24,12 @@ pub mod encounter;
 pub mod library;
 pub mod model;
 pub mod pins;
+pub mod placing;
 pub mod prune;
 pub mod readiness;
 pub mod recap;
 pub mod revision;
+pub mod sketch;
 pub mod thread;
 pub mod v1;
 pub mod validate;
