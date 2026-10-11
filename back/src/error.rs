@@ -64,6 +64,25 @@ impl AppError {
     pub fn internal(context: &str, e: impl std::fmt::Display) -> Self {
         Self::Internal(format!("{context}: {e}"))
     }
+
+    /// The machine-readable code the wire carries.
+    #[must_use]
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::BadRequest(code)
+            | Self::Unauthorized(code)
+            | Self::Forbidden(code)
+            | Self::NotFound(code)
+            | Self::Conflict(code)
+            | Self::TooManyRequests(code)
+            | Self::ServiceUnavailable(code)
+            | Self::Invalid { code, .. }
+            | Self::Upstream { code, .. }
+            | Self::Refused { code, .. }
+            | Self::Stale { code, .. } => code,
+            Self::Internal(_) => "INTERNAL_ERROR",
+        }
+    }
 }
 
 impl IntoResponse for AppError {

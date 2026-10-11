@@ -120,7 +120,7 @@ fn campaign_map((Json(map), source, node, backdrop, validated_at, updated_at): R
 }
 
 impl CampaignMap {
-    fn at(mut self, revision: i64) -> Self {
+    pub(crate) fn at(mut self, revision: i64) -> Self {
         self.revision = revision;
         self
     }
@@ -417,6 +417,37 @@ pub struct AtlasView {
     pub castable: Castable,
     /// The acts, in order, for the thread's act filter.
     pub acts: Vec<AtlasAct>,
+    /// Claude's batches still waiting on the GM
+    /// (`platform/propose-edits-by-claude`), oldest first; each map says
+    /// what they would add on it (`AtlasMap::proposed`).
+    pub claude: Vec<crate::prep::proposals::Proposal>,
+    /// « Claude a la main »: Claude's writes land directly.
+    pub claude_hand: bool,
+}
+
+/// What one of Claude's batches would add on a map, applied virtually:
+/// drawn dotted, never stored (platform/propose-edits-by-claude).
+#[derive(Debug, Clone, Serialize)]
+pub struct Proposed {
+    pub proposal: Uuid,
+    /// Pins, NPCs, clues and fights, and thread arrows, that are not on
+    /// the map as it is.
+    pub pins: Vec<Pin>,
+    pub cast: Cast,
+    pub thread: Vec<promptus_shared::story::thread::Segment>,
+    /// The cells its map operations touch.
+    pub cells: Vec<promptus_shared::maps::Cell>,
+}
+
+impl Proposed {
+    fn is_empty(&self) -> bool {
+        self.pins.is_empty()
+            && self.cast.npcs.is_empty()
+            && self.cast.clues.is_empty()
+            && self.cast.fights.is_empty()
+            && self.thread.is_empty()
+            && self.cells.is_empty()
+    }
 }
 
 /// An act, as the thread's filter names it.
@@ -490,6 +521,8 @@ pub struct AtlasMap {
     /// The scenes' exits drawn between its pins (campaign/draw-story-
     /// thread), and the scenes standing on it.
     pub thread: Thread,
+    /// What Claude's waiting batches would add on it.
+    pub proposed: Vec<Proposed>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -564,6 +597,7 @@ pub async fn atlas(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Atla
                 pins: pins_on(&row.story, &n.id),
                 thread: thread_on(&row.story, &n.id),
                 cast: Cast::default(),
+                proposed: Vec::new(),
                 map,
             })
         })
@@ -574,7 +608,29 @@ pub async fn atlas(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Atla
     for m in &mut maps {
         m.cast = cast::on_map(story, &m.map.id, &shown);
     }
+    let own_maps: Vec<Map> = own.iter().map(|m| m.map.clone()).collect();
+    let pending = crate::prep::claude::pending(pool, &row, &own_maps).await?;
+    for (p, after, after_maps) in &pending {
+        let after_shown: Vec<Map> = shown
+            .iter()
+            .map(|m| {
+                after_maps
+                    .iter()
+                    .find(|x| x.id == m.id)
+                    .unwrap_or(m)
+                    .clone()
+            })
+            .collect();
+        for m in &mut maps {
+            let proposed = proposed_on(m, p, after, &after_shown);
+            if !proposed.is_empty() {
+                m.proposed.push(proposed);
+            }
+        }
+    }
     Ok(AtlasView {
+        claude: pending.into_iter().map(|(p, _, _)| p).collect(),
+        claude_hand: row.claude_hand,
         revision: row.prep_revision,
         roots: built.roots,
         places: story
@@ -650,6 +706,54 @@ pub async fn atlas(pool: &PgPool, gm: &CurrentGm, campaign: Uuid) -> Result<Atla
         },
         maps,
     })
+}
+
+/// What batch `p` adds on map `m`: the marks of the campaign it would
+/// leave (`after`, its maps `after_maps`) that `m` does not hold yet.
+fn proposed_on(
+    m: &AtlasMap,
+    p: &crate::prep::proposals::Proposal,
+    after: &Campaign,
+    after_maps: &[Map],
+) -> Proposed {
+    let id = &m.map.id;
+    let cast = cast::on_map(after, id, after_maps);
+    Proposed {
+        proposal: p.id,
+        pins: pins_on(after, id)
+            .into_iter()
+            .filter(|x| !m.pins.contains(x))
+            .collect(),
+        cast: Cast {
+            npcs: cast
+                .npcs
+                .into_iter()
+                .filter(|x| !m.cast.npcs.contains(x))
+                .collect(),
+            clues: cast
+                .clues
+                .into_iter()
+                .filter(|x| !m.cast.clues.contains(x))
+                .collect(),
+            fights: cast
+                .fights
+                .into_iter()
+                .filter(|x| !m.cast.fights.contains(x))
+                .collect(),
+        },
+        thread: thread_on(after, id)
+            .segments
+            .into_iter()
+            .filter(|x| !m.thread.segments.contains(x))
+            .collect(),
+        cells: p
+            .items
+            .iter()
+            .filter_map(|i| i.map.as_ref())
+            .filter(|i| &i.map == id)
+            .flat_map(|i| i.touches.iter().flat_map(|t| t.cells.iter().copied()))
+            .collect(),
+    }
 }
 
 /// A blank map, or a copy of one of the world's.
@@ -783,11 +887,18 @@ fn blank(
 
 /// A batch of operations on one map, and the campaign revision the
 /// sender read the map at.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Batch {
     pub revision: i64,
     pub ops: Vec<MapOp>,
+    /// Claude's batch (`platform/propose-edits-by-claude`): its title,
+    /// the batch of proposals to add it to, where it is about. Ignored
+    /// from the GM's session.
+    #[serde(default, skip_serializing)]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing)]
+    pub proposal: Option<Uuid>,
 }
 
 /// The most operations one batch carries: one gesture of the editor is
@@ -834,21 +945,60 @@ pub async fn edit(
     id: &str,
     batch: &Batch,
 ) -> Result<CampaignMap, AppError> {
+    let mut tx = pool.begin().await?;
+    let row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
+    let edited = edit_locked(&mut tx, &row, author, id, batch).await?;
+    tx.commit().await?;
+    Ok(edited)
+}
+
+/// [`edit`] inside `tx`, the campaign `row` locked: what Claude's batch
+/// kept by the GM replays (`prep::claude`) under the same rules.
+///
+/// # Errors
+///
+/// As [`edit`].
+pub async fn edit_locked(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    row: &CampaignRow,
+    author: Author,
+    id: &str,
+    batch: &Batch,
+) -> Result<CampaignMap, AppError> {
+    let before = one(&mut **tx, row.id, id).await?.at(row.prep_revision);
+    let Some(after) = prepare(tx, row, &before, batch).await? else {
+        return Ok(before);
+    };
+    write(tx, row.id, &before.map, &after, author, None).await
+}
+
+/// Check `batch` on map `before` (read in `tx`, the campaign `row`
+/// locked) as [`edit`] does, and the map it makes; `None` when it
+/// changes nothing. Nothing is written: Claude's batches are checked
+/// this way before they are proposed.
+///
+/// # Errors
+///
+/// As [`edit`].
+pub async fn prepare(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    row: &CampaignRow,
+    before: &CampaignMap,
+    batch: &Batch,
+) -> Result<Option<Map>, AppError> {
     if batch.ops.is_empty() || batch.ops.len() > MAX_OPS {
         return Err(AppError::BadRequest("BAD_BATCH"));
     }
-    let mut tx = pool.begin().await?;
-    let row = owned_by(campaigns::lock(&mut tx, campaign).await?, gm)?;
-    let before = one(&mut *tx, campaign, id).await?.at(row.prep_revision);
+    let id = &before.map.id;
     let stale = || AppError::Stale {
         code: "MAP_STALE",
-        fresh: serde_json::to_value(&before).unwrap_or_default(),
+        fresh: serde_json::to_value(before).unwrap_or_default(),
     };
     if batch.revision > row.prep_revision {
         return Err(stale());
     }
     let later = if batch.revision < row.prep_revision {
-        revisions::map_lines_since(&mut tx, campaign, id, batch.revision).await?
+        revisions::map_lines_since(tx, row.id, id, batch.revision).await?
     } else {
         vec![]
     };
@@ -868,12 +1018,20 @@ pub async fn edit(
             stale()
         });
     }
-    if touched.is_empty() {
-        return Ok(before);
-    }
-    let edited = write(&mut tx, campaign, &before.map, &after, author, None).await?;
-    tx.commit().await?;
-    Ok(edited)
+    Ok((!touched.is_empty()).then_some(after))
+}
+
+/// A map of `campaign` as stored, read in `tx` or on the pool.
+///
+/// # Errors
+///
+/// 404 `NO_SUCH_MAP`; a database error.
+pub async fn read(
+    db: impl PgExecutor<'_>,
+    campaign: Uuid,
+    id: &str,
+) -> Result<CampaignMap, AppError> {
+    one(db, campaign, id).await
 }
 
 /// The one write of a map's content, in `tx` with the campaign locked:

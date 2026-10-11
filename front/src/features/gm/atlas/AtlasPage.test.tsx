@@ -485,4 +485,72 @@ describe('AtlasPage', () => {
     const issues = await screen.findByRole('list', { name: 'Épingles et poses à revoir' })
     expect(issues).toHaveTextContent('1. L’arrivée mène à une scène qu’aucun chemin ne relie')
   })
+
+  it('draws Claude’s batch dotted, keeps or discards its items with a word, and hears a new one arrive', async () => {
+    stubReducedMotion(true)
+    vi.stubGlobal('WebSocket', FakeSocket)
+    FakeSocket.all = []
+    const crypt = { location: 'l_crypte', name: 'La crypte', at: [2, 2], scenes: [{ id: 'sc_c', title: 'La crypte', number: 3 }] }
+    const batch = {
+      id: 'p1',
+      author: 'token',
+      prompt: 'Peupler le cimetière',
+      reply: '',
+      changes: [],
+      stale: false,
+      dropped: 0,
+      status: 'pending',
+      focus: { map: 'region', at: [2, 2] },
+      items: [
+        { key: 'e0', status: 'pending', stale: false, change: { op: 'set', kind: 'location', id: 'l_crypte', name: 'La crypte', field: 'anchor' } },
+        { key: 'e1', status: 'pending', stale: false, change: { op: 'add', kind: 'clue', id: 'cl_os', name: 'Un os' } },
+      ],
+      createdAt: '2026-10-11T10:00:00Z',
+    }
+    let atlas: Record<string, unknown> = {
+      ...ATLAS,
+      claude: [batch],
+      claudeHand: false,
+      maps: ATLAS.maps.map((m) =>
+        m.map.id === 'region'
+          ? { ...m, proposed: [{ proposal: 'p1', pins: [crypt], cast: { npcs: [], clues: [], fights: [] }, thread: [], cells: [] }] }
+          : m,
+      ),
+    }
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/atlas': () => ok(atlas),
+      'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
+      'POST /api/campaigns/c1/proposals/p1/decide': () => ok({ campaign: {}, proposal: batch }),
+      'PUT /api/campaigns/c1/claude': () => ({ status: 409, body: { error: { code: 'EVENING_OPEN', message: '' } } }),
+    })
+    const { container } = renderPage()
+
+    // The proposed pin is Claude's, dotted; a tap opens its batch.
+    const pin = await screen.findByRole('button', { name: /▶ Claude · La crypte — scènes/ })
+    expect(pin.getAttribute('data-proposed')).toBe('true')
+    expect(container.querySelectorAll('[data-proposed]')).toHaveLength(1)
+    fireEvent.click(pin)
+    const panel = screen.getByRole('region', { name: 'Propositions de Claude' })
+    expect(within(panel).getByRole('button', { name: '▶ Claude · Peupler le cimetière' })).toHaveAttribute('aria-pressed', 'true')
+
+    // One item discarded with a word, then everything left kept.
+    await userEvent.type(within(panel).getByRole('textbox', { name: 'Un mot pour Claude' }), 'trop évident')
+    await userEvent.click(within(panel).getAllByRole('button', { name: 'Jeter' })[1])
+    await userEvent.click(within(panel).getByRole('button', { name: 'Tout garder' }))
+    await waitFor(() => expect(sentTo(fetchMock, 'POST /api/campaigns/c1/proposals/p1/decide')).toHaveLength(2))
+    expect(sentTo(fetchMock, 'POST /api/campaigns/c1/proposals/p1/decide')).toEqual([
+      { discard: ['e1'], word: 'trop évident' },
+      { all: 'keep' },
+    ])
+
+    // The hand cannot be given during an evening: said, not hidden.
+    await userEvent.click(within(panel).getByRole('button', { name: 'Claude a la main' }))
+    expect(await within(panel).findByRole('alert')).toHaveTextContent('Une soirée est ouverte')
+
+    // A new batch arrives on the GM-only topic.
+    atlas = { ...atlas, claude: [batch, { ...batch, id: 'p2', prompt: 'Deux indices sur la colline' }] }
+    FakeSocket.all[0].push({ type: 'ready', versions: { proposals: 1 } })
+    FakeSocket.all[0].push({ type: 'changed', topic: 'proposals', version: 2 })
+    expect(await within(panel).findByRole('button', { name: '▶ Claude · Deux indices sur la colline' })).toBeInTheDocument()
+  })
 })

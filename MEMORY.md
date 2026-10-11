@@ -347,8 +347,9 @@ the session's sockets, plus presence). Clients refetch through the API,
 so the projection is never bypassed.
 
 Some of it is the GM's alone (`platform/stream-prep-edits`): the `prep`
-topic (the preparation revision) and the `activity` message (a token
-wrote: « Claude écrit »). The socket filters per viewer
+topic (the preparation revision), the `proposals` topic (batches of the
+co-GM and Claude, `platform/propose-edits-by-claude`) and the
+`activity` message (a token wrote: « Claude écrit »). The socket filters per viewer
 (`live::visible_to`, `socket::out_for`), **including the versions sent
 on `ready` and `resync`** — filtering only the changes would still hand
 a player the prep revision at connection. Activity carries a kind and a
@@ -441,6 +442,35 @@ its places is a warning (`EXIT_WITHOUT_PATH`), never a refusal, and not
 the model's to fix (`prep::for_the_model`); the walk is one flood fill
 per map, made only when a check needs it.
 
+### Claude proposes, the GM keeps
+
+A write with the GM's token (`Credential::Token`) on the story or a map
+never lands by itself (`platform/propose-edits-by-claude`): `prep::claude`
+checks it exactly like the GM's, then stores it as a batch in
+`story_proposals` (`author = 'token'` — the co-GM workshop's table, one
+model of batch, never a second circuit), an item per story edit (`e<i>`)
+and per map batch (`m<i>`). Only the GM's session decides
+(`SessionOnly` on `…/proposals/{id}/decide` and the workshop's accept
+and reject): kept items replay under the campaign lock on the campaign
+as it is then — map items through `campaign_maps::prepare`, the
+editor's own staleness rule — journaled as `copilot`, so the GM's own
+gesture never shows as « Claude écrit »; keeping one named item that no
+longer applies refuses the decision, keeping everything left refuses
+such items one by one. Discarding keeps the GM's word for Claude
+(`GET …/proposals`). A batch is shown applied virtually
+(`proposals::virtual_of`, the atlas's `proposed`), never stored so.
+Everything about batches moves the GM-only `proposals` topic, never
+`desk` (still broadcast) nor `prep` (whose version is the revision).
+« Claude a la main » (`campaigns.claude_hand`) lets token writes land
+directly, journaled as `token` and undone line by line; the GM's
+session sets it, never while an evening is open, and a write that comes
+during an evening or touches what players know (`claude::revealed`:
+entered scenes and their places, found clues, met NPCs, known factions
+and goals, the map on the board) is proposed anyway. A whole file over
+the campaign with a token needs the hand (409 `CLAUDE_PROPOSES`).
+Writing `campaigns.story` or a map from a token anywhere else skips the
+GM's word.
+
 ### The sheet and the play state are two things
 
 `characters.sheet` is what the player wrote and the GM reviewed; the
@@ -518,10 +548,12 @@ handlers also take `SessionOnly`), creating or setting a campaign,
 `story/validate` (declaring playable is the GM's act, in Promptus), the
 table, the live session, player or screen routes, nor any route that
 spends AI budget, nor creating, importing, deleting or validating a
-map. Widening the list is a decision, not a fix: the sweep
+map. Since `platform/propose-edits-by-claude` (decided 2026-10-11) it
+also reads Claude's own batches back (`GET …/proposals`), never decides
+one. Widening the list is a decision, not a fix: the sweep
 in `gm_routes_test.rs` sends a token to every other GM route. A token
-write is the GM's own write (same edits, lock, all or nothing), so
-players see it as they would the same edit made on the review screen.
+write is checked like the GM's (same edits, lock, all or nothing) but
+is **proposed**, not applied — see « Claude proposes, the GM keeps ».
 
 ### Recaps reach the table only once published
 

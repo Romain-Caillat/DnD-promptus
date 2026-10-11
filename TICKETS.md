@@ -429,8 +429,12 @@ entre aussi dans le journal des révisions ; le MJ la voit arriver sur son
 écran de préparation ouvert et peut l'annuler tant que rien ne l'a
 recouverte. Elle s'applique toujours directement (les propositions
 viennent avec `platform/propose-edits-by-claude`).
-*Décision ouverte* — faut-il refuser les écritures par jeton pendant une
-soirée en cours ?
+*Décision tranchée* (`platform/propose-edits-by-claude`, 11 octobre
+2026) — une écriture par jeton ne s'applique plus jamais d'elle-même :
+elle devient une proposition que le MJ garde ou jette dans Promptus.
+Pendant une soirée ouverte, Claude ne fait que proposer, même si le MJ
+lui a donné la main ; remplacer toute la campagne par un fichier n'est
+possible qu'avec la main, hors soirée.
 
 ---
 
@@ -596,11 +600,14 @@ ne porte qu'un numéro, le nom du lieu est lu dans le journal. **Reste** :
 l'essai réel depuis Claude Code. Les opérations de carte entrent
 désormais dans ce même journal et ce même numéro (`maps/edit-maps-by-ops`,
 cible `map:<id>`) ; l'écran Préparer affiche « Claude écrit · sur <nom de
-la carte> » pour un lot de carte, faute d'Atlas.
+la carte> » pour un lot de carte, faute d'Atlas. Depuis
+`platform/propose-edits-by-claude`, l'Atlas montre le même bandeau ; une
+écriture de Claude n'y arrive directement que si le MJ lui a donné la
+main, sinon elle s'affiche comme une proposition en pointillés.
 
 ---
 
-### `platform/propose-edits-by-claude` · todo
+### `platform/propose-edits-by-claude` · doing — reste l'essai réel avec Claude Code : Romain demande de peupler un lieu, voit les propositions en pointillés sans recharger, en jette une avec un mot, Claude en propose une autre, il garde le reste, rien n'a été visible des joueurs
 
 **Pourquoi** — Aujourd'hui une écriture par jeton vaut une écriture du
 MJ et s'applique tout de suite. Dans l'Atlas, Claude propose et le MJ
@@ -645,6 +652,50 @@ revalide tout contre l'état présent. Deux circuits de proposition (atelier
 du co-MJ, lot de Claude) qui divergent : un seul modèle de lot.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
+
+*État* — Quand Claude écrit avec le jeton du MJ, que ce soit une
+modification de l'histoire (une scène, un PNJ, une épingle, un indice
+posé) ou des gestes sur une carte, rien ne change dans la campagne : le
+serveur vérifie la demande comme si le MJ l'avait faite (une erreur
+revient tout de suite à Claude), puis la range dans un lot de
+propositions, avec le titre que Claude lui donne et l'endroit de la
+carte dont il parle. Claude peut ajouter à un lot encore en attente.
+Dans l'Atlas, le panneau commence par « Propositions de Claude » : chaque
+lot liste ses éléments ; le MJ en garde un, en jette un en laissant un
+mot (« trop évident »), ou garde ou jette tout ce qui reste ; « Voir sur
+la carte » l'emmène là où le lot travaille. Sur la carte, ce que le lot
+ajouterait (épingles, PNJ, indices, combats, flèches du fil, cases
+peintes) est dessiné en pointillés et marqué ▶ ; le toucher ouvre son lot.
+Garder rejoue l'élément sur la campagne telle qu'elle est à cet instant :
+un élément devenu impossible (le PNJ a été supprimé entre-temps, une case
+que le MJ a repeinte) est refusé et le dit, le reste est gardé. Seul le
+MJ, dans Promptus, peut garder ou jeter : un jeton ne le peut jamais.
+Claude relit le sort de ses lots et les mots du MJ avec un nouvel outil
+(« Lire la réponse du MJ »), et l'outil « Modifier l'histoire » lui dit
+désormais si c'est proposé ou appliqué, et pourquoi. L'écran Préparer
+signale les lots en attente et mène à l'Atlas ; l'atelier du co-MJ ne
+montre que les propositions du co-MJ. Rien d'un lot n'arrive aux joueurs
+ni aux écrans partagés, pas même le fait qu'il existe (testé).
+Le réglage « Claude a la main », dans le même panneau, laisse les
+écritures de Claude s'appliquer directement, chacune annulable depuis le
+bandeau « Claude a écrit · sur … » (une demande de Claude, une ligne du
+journal). Il ne peut pas être activé pendant une soirée ouverte ; et même
+activé, une écriture qui arrive pendant une soirée, ou qui touche ce que
+les joueurs connaissent déjà (une scène où la table est entrée, un indice
+trouvé, un PNJ rencontré, la carte montrée), reste proposée. Remplacer
+toute la campagne par un fichier demande la main. Cela tranche la
+décision ouverte de `platform/connect-claude-mcp`.
+*Interprétations à confirmer* : un élément est une modification ou un
+lot de gestes sur une carte (pas un regroupement par PNJ ou lieu) ;
+garder un élément est attribué au co-MJ dans le journal (« une
+proposition acceptée », comme l'atelier), pour que le geste du MJ ne
+s'affiche pas comme « Claude écrit » ; « annulable par lot » en mode
+main veut dire une demande de Claude = une ligne du journal, annulée
+comme les autres ; une suppression proposée n'est pas dessinée sur la
+carte, seulement listée. **Reste** l'essai réel depuis Claude Code. Le
+« Fini quand » parle du cimetière, qui n'existe dans aucun des deux
+mondes : proposition, faire l'essai sur Port-Louis (peupler le quartier
+des rues) à trancher par Romain.
 
 ---
 
@@ -3140,6 +3191,11 @@ le détail de ce qui est touché sur la carte.
 Depuis `campaign/draw-story-thread`, le fil de la campagne relie les
 épingles, et le panneau commence par la liste des scènes de la carte,
 synchronisée avec elle et filtrable par acte.
+Depuis `platform/propose-edits-by-claude`, le panneau commence par les
+propositions de Claude (garder, jeter avec un mot, tout garder, et le
+réglage « Claude a la main »), ce qu'elles ajouteraient est dessiné en
+pointillés marqués ▶ sur la carte, et le bandeau « Claude écrit · sur … »
+s'affiche au-dessus de la carte, avec son « Annuler ».
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).
 

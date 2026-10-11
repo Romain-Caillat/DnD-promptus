@@ -272,6 +272,18 @@ title}`) for the thread's filter, and `issues` adds `EXIT_WITHOUT_PATH`
 (see `docs/campaign-format.md`). The thread is the GM's: no projection
 carries it.
 
+Claude's waiting batches (`platform/propose-edits-by-claude`) ride on
+the atlas too: `claude` lists them oldest first (the same `Proposal` as
+`GET …/proposals`: `id`, `prompt` (the title), `focus {map, at?}`,
+`items [{key, status, stale, word?, code?, change?, map?}]`), and
+`claudeHand` says whether Claude's writes land directly. Each map
+carries `proposed: [{proposal, pins, cast, thread, cells}]`: what one
+batch would add on it, computed on the story and the campaign's maps as
+the batch would leave them — the pins, NPC, clue and fight marks and
+thread segments that are not on the map as it is, and the cells its map
+operations touch. Drawn dotted and marked ▶, never stored; a removal
+proposed shows in the batch's items only.
+
 Pins never nest maps (`campaign/pin-scenes-on-maps`): a place's anchor
 puts scenes on a map, it does not say which map opens there. Nesting
 stays the exits' alone, so the « strictly finer scale » rule above is

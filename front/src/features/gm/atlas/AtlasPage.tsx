@@ -11,12 +11,16 @@ import { HexMap } from '@/features/travel/HexMap'
 import { ApiError } from '@/lib/api'
 import type { Cell } from '@/lib/board'
 import { fetchAtlas, generateMap, gmBackdropUrl, type Atlas, type AtlasMap, type Pin, type ThreadStop } from '@/lib/maps'
-import { applyEdits, type Edit } from '@/lib/prep'
+import { applyEdits, decideClaude, setClaudeHand, type ClaudeDecision, type Edit, type Proposal } from '@/lib/prep'
 import { fetchGmMedia, gmImageUrl, type MediaList } from '@/lib/media'
 import { TABLET_QUERY, useMediaQuery } from '@/lib/useMediaQuery'
 import { cn } from '@/lib/utils'
 import { canLeave, climb, depth, doorAt, doorCells, enter, index, leave, switchable, trail, withoutLayers } from './atlas'
+import { ClaudeBanner } from '@/features/gm/prep/ClaudeBanner'
+import { usePrepChanges } from '@/features/gm/prep/usePrepChanges'
 import { CastSection } from './CastSection'
+import { batchOf, proposedMarks } from './claude'
+import { ClaudeSection } from './ClaudeSection'
 import { STORY_LAYERS, castMarks, placeEdit, readKey, removeEdit, type StoryLayer, type Target } from './cast'
 import { ThreadSection } from './ThreadSection'
 
@@ -66,6 +70,14 @@ const DRAWER = ['bible', 'graph', 'sheets'] as const
  * tapped marks its scenes in the list. Every revision received redraws
  * it — an exit added in the scene editor appears with no other gesture.
  *
+ * Claude works live (platform/propose-edits-by-claude): what it writes
+ * with the GM's token waits in batches, drawn dotted on the maps and
+ * marked ▶ — pins, NPCs, clues, fights, thread arrows, the cells its map
+ * operations touch — until the GM keeps an item, discards one with a
+ * word Claude reads back, or keeps everything left. « Claude a la
+ * main » lets its writes land directly; the banner then says what it
+ * wrote, and takes it back.
+ *
  * GM only: a player receives the one map on the table, through the
  * board's projection, never the atlas.
  */
@@ -97,6 +109,10 @@ export function AtlasPage() {
   const [act, setAct] = useState<string | null>(null)
   const [scene, setScene] = useState<string | null>(null)
   const [focus, setFocus] = useState<Cell | null>(null)
+  /** Claude's batch chosen on the map or in the panel, and the panel's own gestures. */
+  const [batch, setBatch] = useState<string | null>(null)
+  const [claudeBusy, setClaudeBusy] = useState(false)
+  const [claudeFailed, setClaudeFailed] = useState<string | null>(null)
 
   useEffect(() => {
     let live = true
@@ -130,10 +146,17 @@ export function AtlasPage() {
   }, [campaignId])
 
   // A map added, changed or removed (the GM elsewhere, Claude) moves the
-  // GM-only `prep` topic.
-  useLiveChanges(campaignId, (topics) => {
-    if (topics.includes('prep')) setVersion((v) => v + 1)
-  })
+  // GM-only `prep` topic; Claude's batches, the GM-only `proposals`.
+  const changes = usePrepChanges(campaignId, state.kind === 'ready' ? state.atlas.revision : null)
+  useLiveChanges(
+    campaignId,
+    (topics) => {
+      if (topics.includes('prep') || topics.includes('proposals')) setVersion((v) => v + 1)
+      changes.onTopics(topics)
+    },
+    'gm',
+    changes.onActivity,
+  )
 
   const atlas = state.kind === 'ready' ? state.atlas : null
   const maps = useMemo(() => (atlas ? index(atlas) : new Map<string, AtlasMap>()), [atlas])
@@ -206,6 +229,56 @@ export function AtlasPage() {
       setBusy(false)
     }
   }
+  /** The GM's word on one of Claude's batches, then the atlas again. */
+  async function decide(p: Proposal, decision: ClaudeDecision) {
+    setClaudeBusy(true)
+    setClaudeFailed(null)
+    try {
+      await decideClaude(campaignId, p.id, decision)
+      setVersion((v) => v + 1)
+    } catch (err) {
+      setClaudeFailed(err instanceof ApiError ? err.code : 'action')
+    } finally {
+      setClaudeBusy(false)
+    }
+  }
+  async function hand(on: boolean) {
+    setClaudeBusy(true)
+    setClaudeFailed(null)
+    try {
+      await setClaudeHand(campaignId, on)
+      setVersion((v) => v + 1)
+    } catch (err) {
+      setClaudeFailed(err instanceof ApiError ? err.code : 'action')
+    } finally {
+      setClaudeBusy(false)
+    }
+  }
+  async function undoClaude() {
+    setClaudeBusy(true)
+    setClaudeFailed(null)
+    try {
+      await changes.undo()
+      setVersion((v) => v + 1)
+    } catch (err) {
+      setClaudeFailed(err instanceof ApiError ? err.code : 'action')
+    } finally {
+      setClaudeBusy(false)
+    }
+  }
+  /** A batch's focus: its map, and the cell it is about. */
+  const focusOn = (p: Proposal) => {
+    setBatch(p.id)
+    if (!p.focus) return
+    if (maps.has(p.focus.map) && p.focus.map !== shownId) go(enter(here, p.focus.map), 'in')
+    setFocus(p.focus.at ?? null)
+  }
+  /** A tap on a mark: Claude's opens its batch, the campaign's is picked. */
+  const onMark = (key: string) => {
+    const of = batchOf(key)
+    if (of) setBatch((b) => (b === of ? null : of))
+    else pick(key)
+  }
   const tap = (cell: Cell) => {
     if (!entry) return
     if (placing) {
@@ -259,6 +332,20 @@ export function AtlasPage() {
   const pinning = placing?.kind === 'place' ? placing.id : null
   const places = state.atlas.places
   const placeName = (id: string) => places.find((p) => p.id === id)?.name ?? id
+  const claudeMarks = proposedMarks(
+    entry?.proposed ?? [],
+    lit,
+    {
+      pin: (p) => t('atlas.claude.mark', { title: pinTitle(p) }),
+      npc: (name, scene) =>
+        t('atlas.claude.mark', { title: scene ? t('atlas.cast.npcFor', { name, scene: sceneName(scene) }) : name }),
+      clue: (text) => t('atlas.claude.mark', { title: t('atlas.cast.clue', { text }) }),
+      fight: (number, title) => t('atlas.claude.mark', { title: t('atlas.cast.fight', { number, title }) }),
+      segment: (from, to) =>
+        t('atlas.claude.mark', { title: t('atlas.thread.segment', { from: placeName(from), to: placeName(to), scenes: '' }) }),
+    },
+    batch,
+  )
   const actsHere = state.atlas.acts.filter((a) => entry?.thread.stops.some((s) => s.act === a.id))
   // An act chosen on another map, or whose scenes left this one, falls back to every act.
   const shownAct = act !== null && actsHere.some((a) => a.id === act) ? act : null
@@ -313,21 +400,21 @@ export function AtlasPage() {
           map={map}
           tileset={tileset}
           party={null}
-          marks={marks}
-          pins={pinMarks}
-          thread={threadMarks}
-          onPin={placing ? undefined : pick}
+          marks={[...marks, ...claudeMarks.cells]}
+          pins={[...pinMarks, ...claudeMarks.pins]}
+          thread={[...threadMarks, ...claudeMarks.thread]}
+          onPin={placing ? undefined : onMark}
           onHex={tap}
           className="max-h-[70dvh]"
         />
       ) : (
         <MapCanvas
-          scene={{ map, tileset, atlases, tokens: [], backdrop, highlight: marks }}
+          scene={{ map, tileset, atlases, tokens: [], backdrop, highlight: [...marks, ...claudeMarks.cells] }}
           onCell={tap}
-          pins={pinMarks}
-          thread={threadMarks}
+          pins={[...pinMarks, ...claudeMarks.pins]}
+          thread={[...threadMarks, ...claudeMarks.thread]}
           focus={focus}
-          onPin={placing ? undefined : pick}
+          onPin={placing ? undefined : onMark}
           touch={tablet}
           className="max-h-[70dvh]"
         />
@@ -351,6 +438,17 @@ export function AtlasPage() {
         {entry.validated ? t('maps.validated') : t('maps.draft')}
       </p>
       {entry.map.gm_notes && <p className="text-body text-chalk-soft">{entry.map.gm_notes}</p>}
+      <ClaudeSection
+        batches={state.atlas.claude ?? []}
+        picked={batch}
+        hand={state.atlas.claudeHand ?? false}
+        busy={claudeBusy}
+        failed={claudeFailed}
+        onPick={setBatch}
+        onFocus={focusOn}
+        onDecide={(p, d) => void decide(p, d)}
+        onHand={(on) => void hand(on)}
+      />
       <ThreadSection
         stops={stops}
         acts={actsHere}
@@ -486,6 +584,13 @@ export function AtlasPage() {
             )}
           </div>
         </header>
+
+        <ClaudeBanner
+          changes={changes}
+          busy={claudeBusy}
+          sceneTitle={(id) => state.atlas.castable.scenes.find((x) => x.id === id)?.title}
+          onUndo={() => void undoClaude()}
+        />
 
         {drawer && (
           <nav aria-label={t('atlas.drawerTitle')} className="surface-slab flex flex-wrap items-center gap-2 p-3">

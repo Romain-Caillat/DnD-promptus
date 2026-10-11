@@ -281,7 +281,12 @@ export function MapCanvas({
  */
 function PinButton({ pin, left, top, onPin }: { pin: PinMark; left: number; top: number; onPin?: (key: string) => void }) {
   const look = pin.current ? { background: '#0A0A0A', color: '#EDEDED' } : { background: '#EDEDED', color: '#0A0A0A' }
-  const ring = { outline: pin.picked ? '2px dashed #EDEDED' : undefined, outlineOffset: 2 }
+  // Claude's proposal: dotted edge, see-through, until the GM keeps it.
+  const ring = {
+    outline: pin.picked ? '2px dashed #EDEDED' : undefined,
+    outlineOffset: 2,
+    ...(pin.proposed ? { borderStyle: 'dotted' as const, opacity: 0.75 } : {}),
+  }
   const piece =
     pin.shape === 'clue' ? (
       <span className="block size-3.5 rotate-45 border-2" style={{ ...look, borderColor: '#0A0A0A', ...ring }} />
@@ -307,6 +312,15 @@ function PinButton({ pin, left, top, onPin }: { pin: PinMark; left: number; top:
   const body = (
     <>
       {piece}
+      {pin.proposed && (
+        <span
+          className="absolute -top-2 -right-2 text-[10px] leading-none font-bold"
+          style={{ color: '#f2f2f2', textShadow: '0 0 3px #0a0a0a, 0 0 3px #0a0a0a' }}
+          aria-hidden="true"
+        >
+          ▶
+        </span>
+      )}
       {pin.caption && (
         <span
           className="mt-0.5 text-[11px] font-bold whitespace-nowrap"
@@ -326,12 +340,20 @@ function PinButton({ pin, left, top, onPin }: { pin: PinMark; left: number; top:
       aria-label={pin.title}
       aria-pressed={pin.picked || undefined}
       data-pin={pin.key}
+      data-proposed={pin.proposed || undefined}
       onClick={() => onPin(pin.key)}
     >
       {body}
     </button>
   ) : (
-    <span className={cn(place, 'pointer-events-none')} style={{ left, top }} role="img" aria-label={pin.title} data-pin={pin.key}>
+    <span
+      className={cn(place, 'pointer-events-none')}
+      style={{ left, top }}
+      role="img"
+      aria-label={pin.title}
+      data-pin={pin.key}
+      data-proposed={pin.proposed || undefined}
+    >
       {body}
     </span>
   )

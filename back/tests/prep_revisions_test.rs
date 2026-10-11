@@ -15,6 +15,15 @@ fn set_name(target: &str, name: &str) -> Value {
     json!({ "edits": [{ "op": "set", "target": target, "field": "name", "value": name }] })
 }
 
+/// A token for Claude, with the hand: its writes land directly, which is
+/// what the journal and the activity are about (otherwise they are
+/// proposed, `claude_proposals_test.rs`).
+async fn claude(t: &common::live::Table) -> String {
+    let (_, secret) = common::api_token(&t.router, &t.token, "Claude").await;
+    common::claude_hand(&t.router, &t.token, &t.campaign.to_string()).await;
+    secret
+}
+
 async fn npc_name(t: &common::live::Table, id: &str) -> String {
     let r = call(
         &t.router,
@@ -38,7 +47,7 @@ async fn npc_name(t: &common::live::Table, id: &str) -> String {
 #[tokio::test]
 async fn each_writer_leaves_its_line_and_the_gm_catches_up_since_a_revision() {
     let t = table(LiveConfig::default()).await;
-    let (_, secret) = common::api_token(&t.router, &t.token, "Claude").await;
+    let secret = claude(&t).await;
     let edits = format!("/api/campaigns/{}/story/edits", t.campaign);
 
     let r = call(
@@ -106,7 +115,7 @@ async fn each_writer_leaves_its_line_and_the_gm_catches_up_since_a_revision() {
 #[tokio::test]
 async fn an_undo_puts_back_what_one_revision_touched_until_a_later_one_covers_it() {
     let t = table(LiveConfig::default()).await;
-    let (_, secret) = common::api_token(&t.router, &t.token, "Claude").await;
+    let secret = claude(&t).await;
     let edits = format!("/api/campaigns/{}/story/edits", t.campaign);
     let undo = |rev: i64| format!("/api/campaigns/{}/revisions/{rev}/undo", t.campaign);
     let gwen = npc_name(&t, "pnj_gwen").await;
@@ -192,7 +201,7 @@ async fn seen_until_world(ws: &mut Socket, version: i64) -> Vec<String> {
 #[tokio::test]
 async fn the_revision_and_claudes_activity_reach_the_gm_and_no_player_or_screen() {
     let t = table(LiveConfig::default()).await;
-    let (_, secret) = common::api_token(&t.router, &t.token, "Claude").await;
+    let secret = claude(&t).await;
     let edits = format!("/api/campaigns/{}/story/edits", t.campaign);
     // One revision before anyone connects, so the versions sent on
     // connection hold the `prep` topic.
@@ -228,6 +237,7 @@ async fn the_revision_and_claudes_activity_reach_the_gm_and_no_player_or_screen(
     for ws in [&mut phone, &mut screen] {
         let versions = ready(ws).await;
         assert!(versions.get("prep").is_none(), "{versions}");
+        assert!(versions.get("proposals").is_none(), "{versions}");
         assert_eq!(
             versions["story"], 1,
             "the story itself is theirs to refetch"
@@ -264,7 +274,7 @@ async fn the_revision_and_claudes_activity_reach_the_gm_and_no_player_or_screen(
 #[tokio::test]
 async fn claudes_activity_names_the_revision_it_wrote() {
     let t = table(LiveConfig::default()).await;
-    let (_, secret) = common::api_token(&t.router, &t.token, "Claude").await;
+    let secret = claude(&t).await;
     let edits = format!("/api/campaigns/{}/story/edits", t.campaign);
     let mut gm = t.connect().await;
     ready(&mut gm).await;

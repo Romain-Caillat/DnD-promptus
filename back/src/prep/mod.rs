@@ -9,7 +9,9 @@
 //! very end, where a campaign with errors (a reference to nothing, a
 //! duplicate id) is not declared playable.
 
+pub mod claude;
 pub mod generation;
+pub mod proposals;
 pub mod workshop;
 
 use promptus_shared::maps::Map;

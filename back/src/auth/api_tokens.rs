@@ -23,7 +23,11 @@ use super::tokens::{hash_token, random_token};
 use crate::error::AppError;
 
 /// What a token reaches: campaign preparation only, read and write,
-/// with the same checks as the review screen — the story, and the
+/// with the same checks as the review screen. Since
+/// `platform/propose-edits-by-claude` a write is **proposed** (a batch
+/// the GM keeps or discards in Promptus, `prep::claude`) unless the GM
+/// gave Claude the hand; the token reads its batches and the GM's words
+/// back, never decides one. The story, and the
 /// campaign's maps by operations (`maps/edit-maps-by-ops`): reading them
 /// and sending batches, which journal as the token's and never
 /// overwrite the GM's concurrent change. Not creating, importing,
@@ -50,6 +54,7 @@ pub const TOKEN_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/campaigns/{id}/maps"),
     ("GET", "/api/campaigns/{id}/maps/{map}"),
     ("POST", "/api/campaigns/{id}/maps/{map}/ops"),
+    ("GET", "/api/campaigns/{id}/proposals"),
 ];
 
 /// Whether a token may call `method` on the route matched as `path`.

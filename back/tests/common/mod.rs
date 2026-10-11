@@ -370,6 +370,22 @@ pub async fn api_token(app: &Router, session: &str, name: &str) -> (String, Stri
     )
 }
 
+/// « Claude a la main » on `campaign`, set by the GM behind `session`:
+/// Claude's writes with the token land directly instead of as proposals
+/// (`platform/propose-edits-by-claude`). For the tests about what a
+/// direct write does (the journal, the activity, concurrent writers).
+pub async fn claude_hand(app: &Router, session: &str, campaign: &str) {
+    let r = call(
+        app,
+        Some(session),
+        "PUT",
+        &format!("/api/campaigns/{campaign}/claude"),
+        Some(serde_json::json!({ "hand": true })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::OK, "{}", r.body);
+}
+
 /// A one-second 16 kHz mono 16-bit WAV, base64, whose samples are
 /// `text` (padded with spaces): the fake provider hears that text
 /// (`copilot/listen-by-voice`). An empty `text` is a second of silence.

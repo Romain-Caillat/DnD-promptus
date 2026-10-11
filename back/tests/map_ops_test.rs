@@ -67,6 +67,9 @@ async fn prep() -> Prep {
     let (_, gm) = common::signed_in_gm(&pool, "Romain").await;
     let campaign = common::imported_campaign(&app, &gm, FIXTURE).await;
     let (_, claude) = common::api_token(&app, &gm, "Claude").await;
+    // Claude's batches land directly here: the subject is two writers
+    // on one map (platform/propose-edits-by-claude proposes otherwise).
+    common::claude_hand(&app, &gm, &campaign).await;
     let r = call(
         &app,
         Some(&gm),

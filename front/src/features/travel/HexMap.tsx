@@ -193,6 +193,9 @@ export function HexMap({
           <g
             key={`pin${p.key}`}
             data-pin={p.key}
+            data-proposed={p.proposed || undefined}
+            strokeDasharray={p.proposed ? '2 2' : undefined}
+            opacity={p.proposed ? 0.8 : undefined}
             role={onPin ? 'button' : 'img'}
             aria-label={p.title}
             aria-pressed={onPin && p.picked ? true : undefined}
@@ -224,6 +227,11 @@ export function HexMap({
             )}
             {p.picked && (
               <rect x={cx - w / 2 - 4} y={y - 13} width={w + 8} height={26} fill="none" stroke="#EDEDED" strokeWidth={2} strokeDasharray="3 3" />
+            )}
+            {p.proposed && (
+              <text x={cx + 9} y={y - 8} className="text-[9px] font-bold" style={{ fill: PIN_PAPER }} aria-hidden="true">
+                ▶
+              </text>
             )}
             {p.label && p.shape !== 'clue' && p.shape !== 'fight' && (
               <text x={cx} y={y + 4} textAnchor="middle" className="text-[11px] font-bold" style={{ fill: ink }}>

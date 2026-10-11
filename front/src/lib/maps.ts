@@ -1,5 +1,6 @@
 import { apiRequest } from './api'
 import type { Cell, CellKind, MapData } from './board'
+import type { Proposal } from './prep'
 
 /** One of the campaign's own maps (`campaign_maps::CampaignMap`). */
 export interface CampaignMap {
@@ -56,6 +57,18 @@ export interface AtlasMap {
   cast: Cast
   /** The scenes' exits between its pins (campaign/draw-story-thread). */
   thread: Thread
+  /** What Claude's waiting batches would add on it, drawn dotted (platform/propose-edits-by-claude). */
+  proposed?: Proposed[]
+}
+
+/** One of Claude's batches applied virtually on a map: only what the map does not hold yet. */
+export interface Proposed {
+  proposal: string
+  pins: Pin[]
+  cast: Cast
+  thread: Thread['segments']
+  /** The cells its map operations touch. */
+  cells: Cell[]
 }
 
 /**
@@ -166,6 +179,10 @@ export interface Atlas {
   }
   /** The acts in order, for the thread's filter. */
   acts: { id: string; title: string }[]
+  /** Claude's batches waiting on the GM, oldest first (platform/propose-edits-by-claude). */
+  claude?: Proposal[]
+  /** « Claude a la main »: Claude's writes land directly. */
+  claudeHand?: boolean
 }
 
 export function fetchAtlas(campaignId: string): Promise<Atlas> {

@@ -73,6 +73,14 @@ const GM_ROUTES: &[(&str, &str)] = &[
         "POST",
         "/api/campaigns/{campaign}/workshop/{proposal}/reject",
     ),
+    // Claude's batches (platform/propose-edits-by-claude): read, one
+    // decided, then « Claude a la main » given — before any evening.
+    ("GET", "/api/campaigns/{campaign}/proposals"),
+    (
+        "POST",
+        "/api/campaigns/{campaign}/proposals/{proposal}/decide",
+    ),
+    ("PUT", "/api/campaigns/{campaign}/claude"),
     // A generation, on the campaign made unvalidated again, and a draft
     // applied (validated again after).
     ("GET", "/api/campaigns/{campaign}/generation"),
@@ -260,6 +268,10 @@ fn body_for(method: &str, path: &str) -> Option<Value> {
             "aiBudgetCents": 100
         })),
         (_, p) if p.ends_with("/archive") => Some(serde_json::json!({ "archived": false })),
+        (_, p) if p.ends_with("/decide") => {
+            Some(serde_json::json!({ "all": "discard", "word": "Pas maintenant." }))
+        }
+        ("PUT", p) if p.ends_with("/claude") => Some(serde_json::json!({ "hand": true })),
         (_, p) if p.ends_with("/story/edits") => Some(serde_json::json!({
             "edits": [{ "op": "set", "target": "bible", "field": "tone", "value": "Sombre." }]
         })),
@@ -664,11 +676,21 @@ async fn every_gm_route_refuses_without_a_valid_session() {
                     .to_string();
         }
         if path.contains("{proposal}") {
+            // Claude's batches are decided on their own route.
+            let author = if path.contains("/proposals/") {
+                "token"
+            } else {
+                "copilot"
+            };
             ids.proposal = sqlx::query_scalar::<_, Uuid>(
-                "INSERT INTO story_proposals (campaign_id, prompt, edits)
-                 VALUES ($1, 'Rien.', '[]') RETURNING id",
+                "INSERT INTO story_proposals (campaign_id, prompt, edits, author)
+                 VALUES ($1, 'Rien.', CASE WHEN $2 = 'token'
+                   THEN '[{\"op\":\"set\",\"target\":\"bible\",\"field\":\"tone\",\"value\":\"Clair.\"}]'::jsonb
+                   ELSE '[]'::jsonb END, $2)
+                 RETURNING id",
             )
             .bind(Uuid::parse_str(&ids.campaign).unwrap())
+            .bind(author)
             .fetch_one(&pool)
             .await
             .unwrap()

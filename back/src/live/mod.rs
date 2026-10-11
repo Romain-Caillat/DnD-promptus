@@ -75,6 +75,11 @@ pub enum Topic {
     /// The preparation journal (`prep_revisions`): its version is the
     /// campaign's revision. The GM's only ([`visible_to`]).
     Prep,
+    /// The batches of proposals (`story_proposals`): the co-GM's
+    /// workshop and Claude's (`platform/propose-edits-by-claude`). The
+    /// GM's only ([`visible_to`]): nothing of a batch reaches players or
+    /// shared screens, not even that one exists.
+    Proposals,
 }
 
 impl Topic {
@@ -93,19 +98,22 @@ impl Topic {
             Self::Desk => "desk".to_string(),
             Self::Screens => "screens".to_string(),
             Self::Prep => PREP.to_string(),
+            Self::Proposals => PROPOSALS.to_string(),
         }
     }
 }
 
 /// The key of [`Topic::Prep`].
 const PREP: &str = "prep";
+/// The key of [`Topic::Proposals`].
+const PROPOSALS: &str = "proposals";
 
 /// Whether `viewer` may hear of `topic` (a [`Topic::key`]): the
-/// preparation is the GM's, players and shared screens never learn that
-/// it moved.
+/// preparation and its proposals are the GM's, players and shared
+/// screens never learn that they moved.
 #[must_use]
 pub fn visible_to(viewer: &Viewer, topic: &str) -> bool {
-    matches!(viewer, Viewer::Gm(_)) || topic != PREP
+    matches!(viewer, Viewer::Gm(_)) || (topic != PREP && topic != PROPOSALS)
 }
 
 /// Who wrote a preparation change, as the GM's screen is told. Numbers

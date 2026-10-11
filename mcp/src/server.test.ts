@@ -98,7 +98,7 @@ const DETAIL = {
 }
 
 describe('promptus MCP server', () => {
-  it('offers the seven preparation tools, described in French', async () => {
+  it('offers the preparation tools, described in French', async () => {
     const c = await connect(ENV, mockFetch({}).fetchImpl)
     const { tools } = await c.listTools()
     expect(tools.map((t) => t.name).sort()).toEqual([
@@ -110,9 +110,11 @@ describe('promptus MCP server', () => {
       'get_scene',
       'import_campaign_yaml',
       'list_campaigns',
+      'list_proposals',
     ])
     const edits = tools.find((t) => t.name === 'apply_story_edits')!
     expect(edits.description).toContain('tout ou rien')
+    expect(edits.description).toContain('list_proposals')
     expect(edits.inputSchema.required).toEqual(['campaign_id', 'edits'])
   })
 
@@ -181,7 +183,7 @@ describe('promptus MCP server', () => {
     const api = mockFetch({
       'POST /campaigns/c1/story/edits': () => ({
         status: 200,
-        body: { data: { campaign: { ...DETAIL, issues: [] }, changes: [{ kind: 'added', id: 'cl_quai' }] } },
+        body: { data: { status: 'applied', campaign: { ...DETAIL, issues: [] }, changes: [{ kind: 'added', id: 'cl_quai' }] } },
       }),
     })
     const c = await connect(ENV, api.fetchImpl)
@@ -189,9 +191,95 @@ describe('promptus MCP server', () => {
     expect(r.isError).toBe(false)
     expect(api.sent[0]!.body).toEqual({ edits: [edit] })
     expect(JSON.parse(r.text)).toEqual({
+      status: 'appliqué',
       changes: [{ kind: 'added', id: 'cl_quai' }],
       issues: { errors: 0, warnings: 0, list: [] },
     })
+  })
+
+  it('proposes the edits in a titled batch the GM decides on', async () => {
+    const edit = { op: 'set', target: 'pnj_morel', field: 'name', value: 'Morel le Borgne' }
+    const api = mockFetch({
+      'POST /campaigns/c1/story/edits': () => ({
+        status: 202,
+        body: {
+          data: {
+            status: 'proposed',
+            why: 'proposals',
+            proposal: {
+              id: 'p1',
+              prompt: 'Peupler le cimetière',
+              status: 'pending',
+              items: [{ key: 'e0', status: 'pending', stale: false, edit }],
+              changes: [{ op: 'set', kind: 'npc', id: 'pnj_morel' }],
+              createdAt: '2026-10-11T10:00:00Z',
+            },
+            issues: [],
+          },
+        },
+      }),
+    })
+    const c = await connect(ENV, api.fetchImpl)
+    const r = await call(c, 'apply_story_edits', {
+      campaign_id: 'c1',
+      edits: [edit],
+      title: 'Peupler le cimetière',
+      proposal_id: 'p0',
+    })
+    expect(r.isError).toBe(false)
+    expect(api.sent[0]!.body).toEqual({ edits: [edit], title: 'Peupler le cimetière', proposal: 'p0' })
+    const out = JSON.parse(r.text)
+    expect(out.status).toBe('proposé')
+    expect(out.proposal).toEqual({ id: 'p1', title: 'Peupler le cimetière', items: 1 })
+    expect(out.why).toContain('le MJ garde la main')
+    expect(out.next).toContain('list_proposals')
+  })
+
+  it("reads back what the GM kept, and the word on what was thrown away", async () => {
+    const api = mockFetch({
+      'GET /campaigns/c1/proposals': () => ({
+        status: 200,
+        body: {
+          data: [
+            {
+              id: 'p1',
+              prompt: 'Peupler le cimetière',
+              status: 'pending',
+              changes: [],
+              createdAt: '2026-10-11T10:00:00Z',
+              items: [
+                { key: 'e0', status: 'kept', stale: false, edit: { op: 'add', kind: 'npc' } },
+                { key: 'e1', status: 'discarded', stale: false, word: 'trop évident', edit: { op: 'add', kind: 'clue' } },
+                { key: 'e2', status: 'refused', stale: false, code: 'EDIT_UNKNOWN_TARGET' },
+                { key: 'm0', status: 'pending', stale: true, map: { map: 'crypte', name: 'La crypte', ops: 2 } },
+              ],
+            },
+          ],
+        },
+      }),
+    })
+    const c = await connect(ENV, api.fetchImpl)
+    const r = await call(c, 'list_proposals', { campaign_id: 'c1' })
+    expect(r.isError).toBe(false)
+    const [batch] = JSON.parse(r.text)
+    expect(batch.title).toBe('Peupler le cimetière')
+    expect(batch.items[0].status).toBe('gardé')
+    expect(batch.items[1]).toMatchObject({ status: 'jeté', word: 'trop évident' })
+    expect(batch.items[2].refused).toBe('EDIT_UNKNOWN_TARGET')
+    expect(batch.items[3].map).toBe('La crypte (2 opération(s))')
+    expect(batch.items[3].stale).toBeDefined()
+    expect(api.sent[0]!.auth).toBe('Bearer promptus_aaaaaaaa')
+  })
+
+  it('says a whole file needs the hand', async () => {
+    const api = mockFetch({
+      'PUT /campaigns/c1/import': () => ({ status: 409, body: { error: { code: 'CLAUDE_PROPOSES', message: '' } } }),
+    })
+    const c = await connect(ENV, api.fetchImpl)
+    const r = await call(c, 'import_campaign_yaml', { campaign_id: 'c1', yaml: 'id: phare\n' })
+    expect(r.isError).toBe(true)
+    expect(r.text).toContain('Claude a la main')
+    expect(r.text).toContain('apply_story_edits')
   })
 
   it("explains a refused edit with the server's reason", async () => {

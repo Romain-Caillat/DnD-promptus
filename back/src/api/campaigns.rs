@@ -54,6 +54,8 @@ pub(crate) struct CampaignDetail {
     /// The preparation revision (`platform/stream-prep-edits`): what the
     /// screen holds, to ask the journal what changed since.
     revision: i64,
+    /// « Claude a la main » (`platform/propose-edits-by-claude`).
+    claude_hand: bool,
 }
 
 pub(crate) fn detail(row: CampaignRow) -> CampaignDetail {
@@ -67,6 +69,7 @@ pub(crate) fn detail(row: CampaignRow) -> CampaignDetail {
         updated_at: row.updated_at,
         validated_at: row.validated_at,
         revision: row.prep_revision,
+        claude_hand: row.claude_hand,
     }
 }
 
@@ -313,6 +316,11 @@ pub async fn import_replace(
     let mut tx = state.pool.begin().await?;
     let row = owned_by(campaigns::lock(&mut tx, id).await?, &gm)?;
     let story = parse(&input.yaml)?;
+    // A whole file cannot be proposed item by item: with the token, only
+    // when Claude has the hand (`platform/propose-edits-by-claude`).
+    if credential == Credential::Token {
+        crate::prep::claude::may_replace(&mut tx, &row, &story).await?;
+    }
     campaigns::save_story(&mut tx, id, &row.story, &story, credential.into()).await?;
     let row = campaigns::find(&mut *tx, id)
         .await?

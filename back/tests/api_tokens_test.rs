@@ -39,10 +39,11 @@ fn scoped_calls(campaign: &str) -> Vec<(&'static str, String, Option<serde_json:
             "POST",
             format!("/api/campaigns/{campaign}/story/edits"),
             Some(json!({ "edits": [
-                { "op": "set", "target": "bible", "field": "tone", "value": "Sombre." }
+                { "op": "set", "target": "lieu_phare", "field": "name", "value": "Le phare noir" }
             ] })),
         ),
         ("GET", format!("/api/campaigns/{campaign}/readiness"), None),
+        ("GET", format!("/api/campaigns/{campaign}/proposals"), None),
     ]
 }
 
@@ -104,6 +105,9 @@ async fn a_token_prepares_its_gms_campaign_then_dies_when_revoked() {
     let (_, session) = common::signed_in_gm(&pool, "Romain").await;
     let campaign = common::imported_campaign(&app, &session, FIXTURE).await;
     let (id, secret) = common::api_token(&app, &session, "Claude").await;
+    // Direct writes (Claude has the hand): the subject here is the
+    // token's reach, not proposals (claude_proposals_test.rs).
+    common::claude_hand(&app, &session, &campaign).await;
 
     for (method, uri, body) in scoped_calls(&campaign) {
         let r = call_with_token(&app, &secret, method, &uri, body).await;
@@ -139,7 +143,9 @@ async fn a_token_prepares_its_gms_campaign_then_dies_when_revoked() {
         None,
     )
     .await;
-    assert_eq!(r.body["data"]["story"]["bible"]["tone"], "Sombre.");
+    let places = r.body["data"]["story"]["locations"].as_array().unwrap();
+    let phare = places.iter().find(|l| l["id"] == "lieu_phare").unwrap();
+    assert_eq!(phare["name"], "Le phare noir");
     // The list shows the token's last use.
     assert!(last_used(&pool, &id).await.is_some(), "last use stamped");
     let r = call(&app, Some(&session), "GET", "/api/gm-tokens", None).await;

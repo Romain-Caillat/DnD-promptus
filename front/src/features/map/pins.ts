@@ -29,6 +29,11 @@ export interface PinMark {
   shape?: 'npc' | 'clue' | 'fight'
   /** Drawn faint: a clue not found yet, an NPC for another scene. */
   faint?: boolean
+  /**
+   * Claude proposes it (platform/propose-edits-by-claude): drawn dotted
+   * and marked ▶ until the GM keeps it.
+   */
+  proposed?: boolean
 }
 
 /** The numbers of a pin's scenes: « 1·2·6 », « 1…9 » when there are many. */
@@ -81,4 +86,6 @@ export interface ThreadMark {
   lit?: boolean
   /** Something else is chosen. */
   faint?: boolean
+  /** Claude proposes it: drawn dotted, the mark of Claude's proposals. */
+  proposed?: boolean
 }

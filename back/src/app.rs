@@ -151,6 +151,17 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/workshop/{proposal}/reject",
             post(api::prep::reject),
         )
+        // platform/propose-edits-by-claude: Claude's batches, the GM's
+        // word on them, and « Claude a la main ».
+        .route(
+            "/api/campaigns/{id}/proposals",
+            get(api::prep::claude_proposals),
+        )
+        .route(
+            "/api/campaigns/{id}/proposals/{proposal}/decide",
+            post(api::prep::decide_claude),
+        )
+        .route("/api/campaigns/{id}/claude", put(api::prep::claude_hand))
         .route(
             "/api/campaigns/{id}/invite",
             get(api::table::invite)

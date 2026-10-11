@@ -42,8 +42,9 @@ function arrow(a: Pt, b: Pt, inset: number): { d: string; head: string } | null 
  * The thread's segments (campaign/draw-story-thread), as SVG for the hex
  * map and the grid map alike: each one way, an arrow, so a scene leading
  * to two places draws two branches and a way back draws beside the way
- * out. Solid, never dotted: dots are routes and Claude's proposals. Only
- * drawn — a tap goes through to the map and the pins.
+ * out. Solid, never dotted: dots are routes and Claude's proposals — an
+ * arrow Claude proposes (`proposed`) is the one drawn dotted. Only drawn —
+ * a tap goes through to the map and the pins.
  */
 export function ThreadLines({ marks, point, inset }: { marks: readonly ThreadMark[]; point: (cell: Cell) => Pt; inset: number }) {
   return (
@@ -53,11 +54,24 @@ export function ThreadLines({ marks, point, inset }: { marks: readonly ThreadMar
         if (!path) return null
         const width = m.lit ? 4 : 2.5
         return (
-          <g key={m.key} data-thread={m.key} data-lit={m.lit || undefined} opacity={m.faint ? 0.3 : 1}>
+          <g
+            key={m.key}
+            data-thread={m.key}
+            data-lit={m.lit || undefined}
+            data-proposed={m.proposed || undefined}
+            opacity={m.faint ? 0.3 : 1}
+          >
             <title>{m.title}</title>
-            <path d={path.d} fill="none" stroke={INK} strokeWidth={width + 3} strokeLinecap="round" />
+            {!m.proposed && <path d={path.d} fill="none" stroke={INK} strokeWidth={width + 3} strokeLinecap="round" />}
             <polygon points={path.head} fill={INK} stroke={INK} strokeWidth={3} strokeLinejoin="round" />
-            <path d={path.d} fill="none" stroke={PAPER} strokeWidth={width} strokeLinecap="round" />
+            <path
+              d={path.d}
+              fill="none"
+              stroke={PAPER}
+              strokeWidth={width}
+              strokeLinecap="round"
+              strokeDasharray={m.proposed ? '2 6' : undefined}
+            />
             <polygon points={path.head} fill={PAPER} />
           </g>
         )

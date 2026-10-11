@@ -43,6 +43,10 @@ pub struct CampaignRow {
     /// The preparation revision: how many story writes the journal holds
     /// (`revisions`, `platform/stream-prep-edits`).
     pub prep_revision: i64,
+    /// « Claude a la main » (`platform/propose-edits-by-claude`): the GM
+    /// lets writes with their token land directly instead of as
+    /// proposals (`prep::claude`).
+    pub claude_hand: bool,
     /// The rule system `story.rules` names: the campaign's own locked
     /// version, or the preset (`crate::rules`). `None` when the server
     /// has neither.
@@ -135,6 +139,7 @@ type Row = (
     DateTime<Utc>,
     Option<DateTime<Utc>>,
     i64,
+    bool,
     Option<String>,
 );
 
@@ -150,6 +155,7 @@ fn from_row(
         updated_at,
         validated_at,
         prep_revision,
+        claude_hand,
         stored_rules,
     ): Row,
 ) -> CampaignRow {
@@ -167,6 +173,7 @@ fn from_row(
         updated_at,
         validated_at,
         prep_revision,
+        claude_hand,
         rules,
     }
 }
@@ -175,7 +182,7 @@ fn from_row(
 /// version its story names, when the campaign has its own.
 const COLUMNS: &str =
     "id, gm_id, story, world, player_count, ai_budget_cents, archived_at, updated_at,
-     validated_at, prep_revision,
+     validated_at, prep_revision, claude_hand,
      (SELECT rv.system FROM rule_versions rv
        WHERE rv.campaign_id = campaigns.id
          AND rv.version = (campaigns.story->'rules'->>'version')::int

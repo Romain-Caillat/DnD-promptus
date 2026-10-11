@@ -54,6 +54,17 @@ function explain(status: number, code: string, detail: string | null): string {
   if (code === 'TOKEN_NOT_ALLOWED') {
     return "Ce jeton n'ouvre pas cette action : il sert à la préparation des campagnes seulement."
   }
+  if (code === 'NO_SUCH_PROPOSAL') {
+    return "Ce lot de propositions n'existe pas dans cette campagne. list_proposals donne les lots et leurs identifiants."
+  }
+  if (code === 'PROPOSAL_ALREADY_DECIDED') {
+    return 'Le MJ a déjà tranché ce lot : propose dans un nouveau lot (sans proposal_id).'
+  }
+  if (code === 'CLAUDE_PROPOSES') {
+    return "Remplacer toute la campagne n'est possible que si le MJ t'a donné la main (« Claude a la main », " +
+      'hors soirée ouverte et sans toucher ce que les joueurs connaissent). Sinon, propose des modifications ' +
+      'ciblées avec apply_story_edits : le MJ les garde ou les jette dans Promptus.'
+  }
   if (status === 404) {
     return "Campagne introuvable : l'identifiant est faux, ou la campagne appartient à un autre MJ. " +
       'Utilise list_campaigns pour retrouver les identifiants.'

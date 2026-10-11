@@ -149,8 +149,14 @@ pub async fn edit(
     Path((id, map)): Path<(String, String)>,
     Body(batch): Body<Batch>,
 ) -> Result<Response, AppError> {
+    let campaign = parse_id(&id)?;
+    if credential == Credential::Token {
+        let outcome =
+            crate::prep::claude::map_ops(&state.pool, &gm, campaign, &map, &batch).await?;
+        return Ok(super::prep::proposed(outcome, |m| data(StatusCode::OK, m)));
+    }
     let author = Author::from(credential);
-    let m = campaign_maps::edit(&state.pool, &gm, author, parse_id(&id)?, &map, &batch).await?;
+    let m = campaign_maps::edit(&state.pool, &gm, author, campaign, &map, &batch).await?;
     Ok(data(StatusCode::OK, m))
 }
 

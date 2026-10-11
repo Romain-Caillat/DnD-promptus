@@ -22,7 +22,8 @@ import { cn } from '@/lib/utils'
 import { EntityForm, type FieldDef } from './EntityForm'
 import { Gauge, Readiness, useReadiness } from './Readiness'
 import { SceneSheet } from './SceneSheet'
-import { usePrepChanges, type PrepChanges } from './usePrepChanges'
+import { ClaudeBanner, useClaudeWaiting } from './ClaudeBanner'
+import { usePrepChanges } from './usePrepChanges'
 import { Workshop, useWorkshop } from './Workshop'
 
 const TABS = ['graph', 'bible', 'sheets', 'coherence', 'validate'] as const
@@ -118,7 +119,7 @@ export function ReviewPage() {
     campaignId,
     (topics) => {
       if (topics.includes('story')) setVersion((v) => v + 1)
-      if (topics.includes('desk')) setWorkshopVersion((v) => v + 1)
+      if (topics.includes('proposals')) setWorkshopVersion((v) => v + 1)
       changes.onTopics(topics)
     },
     'gm',
@@ -127,6 +128,7 @@ export function ReviewPage() {
 
   const adopt = useCallback((campaign: ReviewCampaign) => setState({ kind: 'ready', campaign }), [])
   const workshop = useWorkshop(campaignId, workshopVersion, adopt)
+  const claudeWaiting = useClaudeWaiting(campaignId, workshopVersion)
   const acts = useReadiness(campaignId, state.kind === 'ready' ? state.campaign.updatedAt : '')
 
   if (state.kind === 'signed-out') return <Navigate to="/connexion" replace />
@@ -220,7 +222,22 @@ export function ReviewPage() {
       </header>
 
       <div className="flex flex-col gap-4 p-5">
-        <ClaudeBanner story={story} changes={changes} busy={busy} onUndo={() => void undoClaude()} />
+        <ClaudeBanner
+          changes={changes}
+          busy={busy}
+          sceneTitle={(id) => story.nodes?.find((n) => n.id === id)?.title}
+          onUndo={() => void undoClaude()}
+        />
+        {claudeWaiting > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBanner tone="wait" className="flex-1">
+              {t('prep.claude.waiting', { count: claudeWaiting })}
+            </StatusBanner>
+            <Link className="text-caption text-chalk underline underline-offset-4" to={`/campagnes/${campaignId}/atlas`}>
+              {t('prep.claude.toAtlas')}
+            </Link>
+          </div>
+        )}
         {error && (
           <p role="alert" className="text-body text-stat-atk">
             {t(`prep.review.errors.${error.code}`, { defaultValue: t('prep.review.errors.action') })}
@@ -306,47 +323,6 @@ export function ReviewPage() {
         </div>
       </div>
     </main>
-  )
-}
-
-/**
- * Claude's latest write on this campaign (platform/stream-prep-edits):
- * « Claude écrit · sur … » while it writes, then what it wrote, with a
- * way to take it back while nothing covered it.
- */
-function ClaudeBanner({
-  story,
-  changes,
-  busy,
-  onUndo,
-}: {
-  story: Story
-  changes: PrepChanges
-  busy: boolean
-  onUndo: () => void
-}) {
-  const { t } = useTranslation()
-  const { claude } = changes
-  if (!claude) return null
-  const touch = claude.touch
-  // A clue is named by the scene it lands in.
-  const scene = touch?.kind === 'clue' && touch.place ? story.nodes?.find((n) => n.id === touch.place) : undefined
-  const place = scene?.title ?? (touch ? touch.name || touch.id : null)
-  const text = place
-    ? t(claude.live ? 'prep.changes.writing' : 'prep.changes.wrote', { place })
-    : t('prep.changes.writingNowhere')
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <StatusBanner tone={claude.live ? 'wait' : 'listen'} className="flex-1">
-        {text}
-      </StatusBanner>
-      {claude.undoable && (
-        <Btn disabled={busy} onClick={onUndo}>
-          {t('prep.changes.undo')}
-        </Btn>
-      )}
-      <Btn onClick={changes.dismiss}>{t('prep.changes.dismiss')}</Btn>
-    </div>
   )
 }
 
