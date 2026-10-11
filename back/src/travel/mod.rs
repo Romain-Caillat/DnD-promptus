@@ -271,10 +271,7 @@ async fn locked_or_start(
     if let Some(row) = row {
         return Ok(Some(from_row(row)));
     }
-    let guide = content::guide(map);
-    let size = party_size(&members(&mut **tx, campaign).await?);
-    let supplies = guide.supplies.per_person_per_day * size * START_DAYS;
-    let Some(party) = Party::start(map, i32::try_from(supplies).unwrap_or(i32::MAX)) else {
+    let Some(party) = start_party(&mut **tx, campaign, map).await? else {
         return Ok(None);
     };
     sqlx::query("INSERT INTO travels (campaign_id, map_id, party) VALUES ($1, $2, $3)")
@@ -290,6 +287,42 @@ async fn locked_or_start(
         proposal: None,
         version: 1,
     }))
+}
+
+/// The party as it first stands on `map`: on its party start, with the
+/// guide's supplies for the members. `None` when the map has no party
+/// start.
+async fn start_party(
+    db: impl PgExecutor<'_>,
+    campaign: Uuid,
+    map: &Map,
+) -> Result<Option<Party>, AppError> {
+    let guide = content::guide(map);
+    let size = party_size(&members(db, campaign).await?);
+    let supplies = guide.supplies.per_person_per_day * size * START_DAYS;
+    Ok(Party::start(
+        map,
+        i32::try_from(supplies).unwrap_or(i32::MAX),
+    ))
+}
+
+/// [`board_parts`] read only (maps/preview-as-player): the party where
+/// it stands on `map`, else where a first show would set it — nothing
+/// written, nothing locked.
+///
+/// # Errors
+///
+/// A database error.
+pub(crate) async fn board_parts_seen(
+    pool: &PgPool,
+    campaign: Uuid,
+    map: &Map,
+) -> Result<Option<(Vec<Token>, BTreeSet<Cell>)>, AppError> {
+    let party = match get(pool, campaign, &map.id).await? {
+        Some(t) => Some(t.party),
+        None => start_party(pool, campaign, map).await?,
+    };
+    Ok(party.map(|p| (vec![party_token(p.at)], p.revealed)))
 }
 
 /// The party's token on a world map.

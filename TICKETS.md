@@ -4016,7 +4016,7 @@ sont maintenant branchés.
 
 ---
 
-### `maps/preview-as-player` · todo
+### `maps/preview-as-player` · doing — reste, sur les deux mondes, la télé posée à côté de l’Atlas pour vérifier à l’œil que la vue joueurs est la même
 
 **Pourquoi** — Avant de lancer, le MJ vérifie ce qui partira sur la TV
 et les téléphones.
@@ -4041,5 +4041,28 @@ côté de l'Atlas.
 
 **Risques** — Un second filtre écrit côté client pour aller plus vite :
 interdit, la projection serveur est le seul passage.
+
+*État* — La bascule « Vue MJ / Vue joueurs » est en haut de l’Atlas.
+En vue joueurs, la carte est celle que le serveur envoie aux joueurs, et
+rien d’autre : brouillard, PNJ non rencontrés, indices non trouvés,
+épingles des lieux pas encore visités, numéros de scène et propositions
+de Claude n’y sont pas, parce que la projection ne les envoie jamais. Si
+la carte est sur la table, c’est exactement ce que reçoit la télé ; sinon,
+c’est ce que la télé montrerait si le MJ la montrait maintenant (le groupe
+sur ses départs, ou là où il est sur la région, le brouillard levé autour
+de lui), calculé sans rien écrire et sans soirée ouverte. Le texte le dit
+(« Sur la table en ce moment » ou « Pas encore sur la table »). À côté de
+la carte, le panneau montre ce que disent les écrans des joueurs : la
+campagne, son accroche, la scène ouverte, les indices trouvés et les
+personnages rencontrés (l’ancien écran « Vue joueurs » y est entré). La
+vue suit la soirée en direct. Un test serveur vérifie, sur les deux
+mondes, la région et un lieu, que l’aperçu d’une carte est identique à
+ce que la télé reçoit une fois la carte montrée, PNJ caché puis rencontré
+compris ; le balayage des fuites passe dessus. *Décision* : une carte de
+la campagne encore en brouillon n’a pas de vue joueurs (la table ne
+reçoit que des cartes validées) — l’Atlas le dit et renvoie vers la
+validation. Claude n’a pas cette route : il a déjà « ce que voient les
+joueurs depuis une case » dans `ask_map`. Reste l’essai réel, la télé à
+côté de l’Atlas.
 
 **Origine** — Demande de Romain, 10 octobre 2026 ; planche « Atlas · préparer avec Claude en direct » (page « MJ · Créer, préparer »).

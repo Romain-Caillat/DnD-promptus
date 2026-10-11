@@ -291,6 +291,29 @@ the only guard against cycles; a GM's own map hangs under another only
 if that map has an exit to it (a copy of a world map keeps the exits it
 had).
 
+### The players' view of a map
+
+The Atlas's « Vue MJ / Vue joueurs » switch (`maps/preview-as-player`)
+draws a map through the players' own projection, never a filter of the
+atlas: `GET /api/campaigns/{id}/maps/{map}/players` (GM session only, not
+open to a personal token — Claude asks `ask_map` with `view`) answers
+`{shown, board}`. `board` is the `BoardView` a player's screen and the
+shared screen receive (`campaigns::projection::board`, no character):
+
+- `shown: true` — the map is on the table: `board` is exactly what
+  `GET /api/tv/show` carries as `board`;
+- `shown: false` — `board` is the board a show of the map would lay out
+  now (`board::preview`, the same `laid_out` as `board::show`: the
+  party on its starts or where it stands on a region, the fog down then
+  lifted around it, the NPCs placed there set down hidden unless met),
+  read only: nothing written, no lock, no evening needed.
+
+So fog, NPCs not met, clues not found, pins of places not visited,
+scene numbers and Claude's proposals are absent because the projection
+never sends them. A campaign map not validated yet answers 409
+`MAP_DRAFT` (the table only ever receives validated maps); an unknown
+map 404 `NO_SUCH_MAP`.
+
 ## A map as text
 
 Claude reads a map as text (`platform/edit-maps-by-claude`,

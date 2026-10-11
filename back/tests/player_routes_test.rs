@@ -693,6 +693,24 @@ async fn no_player_route_leaks_what_only_the_gm_may_see() {
     );
 }
 
+/// maps/preview-as-player — the GM's « Vue joueurs » of the Atlas goes
+/// through the same projection: on the marked table, neither the map on
+/// the table nor the region laid out ahead carries anything GM-only.
+#[tokio::test]
+async fn the_gms_players_view_of_a_map_leaks_nothing_either() {
+    let pool = common::test_pool().await;
+    let app = common::app(pool.clone());
+    let t = marked_table(&app, &pool).await;
+    for (map, shown) in [("quai-port-louis", true), ("cotes-bretagne-sud", false)] {
+        let uri = format!("/api/campaigns/{}/maps/{map}/players", t.campaign);
+        let r = call(&app, Some(&t.gm), "GET", &uri, None).await;
+        assert_eq!(r.status, StatusCode::OK, "{uri}: {}", r.body);
+        assert_eq!(r.body["data"]["shown"], shown, "{uri}");
+        assert!(r.body["data"]["board"].is_object(), "{uri}: {}", r.body);
+        assert_clean(&uri, &r.body);
+    }
+}
+
 #[tokio::test]
 async fn seated_routes_refuse_whoever_has_no_seat_at_that_table() {
     let pool = common::test_pool().await;

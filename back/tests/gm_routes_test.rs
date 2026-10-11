@@ -160,6 +160,9 @@ const GM_ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/campaigns/{campaign}/maps/{map}/ask"),
     ("POST", "/api/campaigns/{campaign}/maps/{map}/place"),
     ("POST", "/api/campaigns/{campaign}/maps/{map}/validate"),
+    // Validated just above: the map as the players would receive it
+    // (maps/preview-as-player).
+    ("GET", "/api/campaigns/{campaign}/maps/{map}/players"),
     ("GET", "/api/campaigns/{campaign}/maps/{map}/backdrop"),
     ("DELETE", "/api/campaigns/{campaign}/maps/{map}"),
     // The atlas: every map nested (maps/browse-atlas).

@@ -292,7 +292,7 @@ pub fn character_token(character: Uuid) -> String {
 /// Put the validated characters of `campaign` on the party starts of
 /// `map` (those already on the board keep their cell when it exists).
 async fn party_tokens(
-    tx: &mut Transaction<'_, Postgres>,
+    db: impl PgExecutor<'_>,
     campaign: Uuid,
     map: &Map,
     before: &[Token],
@@ -304,7 +304,7 @@ async fn party_tokens(
          ORDER BY p.created_at",
     )
     .bind(campaign)
-    .fetch_all(&mut **tx)
+    .fetch_all(db)
     .await?;
     let mut starts = map
         .starts
@@ -431,10 +431,27 @@ pub(crate) async fn show_in(
             .unwrap_or_default()
     } else {
         (
-            party_tokens(tx, campaign, &map, &[]).await?,
+            party_tokens(&mut **tx, campaign, &map, &[]).await?,
             BTreeSet::new(),
         )
     };
+    let b = laid_out(row, map_id, map, tokens, revealed);
+    save(tx, campaign, &b).await?;
+    Ok(b)
+}
+
+/// The board a first show of `map` lays out, from the party's tokens and
+/// the cells already seen: the fog down, the NPCs the preparation placed
+/// set down (hidden unless met), the fog lifted from where the party
+/// stands. Shared by [`show_in`] and [`preview`], so the GM's preview is
+/// the table's own board.
+fn laid_out(
+    row: &CampaignRow,
+    map_id: &str,
+    map: Map,
+    tokens: Vec<Token>,
+    revealed: BTreeSet<Cell>,
+) -> Board {
     let mut b = Board {
         map_id: map_id.to_string(),
         map,
@@ -447,8 +464,54 @@ pub(crate) async fn show_in(
         b.set_down(&row.story, &row.world, &spots);
     }
     b.reveal_from_party();
-    save(tx, campaign, &b).await?;
-    Ok(b)
+    b
+}
+
+/// What the table would have on screen with map `map_id` shown now
+/// (maps/preview-as-player): the board on the table when it is that
+/// map, else the board [`show`] would lay out — read only, no lock, no
+/// live session needed.
+///
+/// # Errors
+///
+/// 404 `NO_SUCH_MAP`; 409 `MAP_DRAFT` for a campaign map not validated
+/// yet (the table only ever receives validated maps); a database error.
+pub async fn preview(pool: &PgPool, row: &CampaignRow, map_id: &str) -> Result<Preview, AppError> {
+    if let Some(b) = current(pool, row.id).await?.filter(|b| b.map_id == map_id) {
+        return Ok(Preview::Shown(b));
+    }
+    let Some(map) = crate::campaign_maps::playable(pool, row.id, &row.story, map_id).await? else {
+        let draft: bool = sqlx::query_scalar(
+            "SELECT EXISTS (SELECT 1 FROM campaign_maps WHERE campaign_id = $1 AND id = $2)",
+        )
+        .bind(row.id)
+        .bind(map_id)
+        .fetch_one(pool)
+        .await?;
+        return Err(if draft {
+            AppError::Conflict("MAP_DRAFT")
+        } else {
+            AppError::NotFound("NO_SUCH_MAP")
+        });
+    };
+    let (tokens, revealed) = if map.scale == Scale::World {
+        crate::travel::board_parts_seen(pool, row.id, &map)
+            .await?
+            .unwrap_or_default()
+    } else {
+        (
+            party_tokens(pool, row.id, &map, &[]).await?,
+            BTreeSet::new(),
+        )
+    };
+    Ok(Preview::Fresh(laid_out(row, map_id, map, tokens, revealed)))
+}
+
+/// A board seen ahead by the GM: the one on the table, or one laid out.
+#[derive(Debug, Clone)]
+pub enum Preview {
+    Shown(Board),
+    Fresh(Board),
 }
 
 /// The token an NPC's spot sets down (campaign/place-cast-and-clues):

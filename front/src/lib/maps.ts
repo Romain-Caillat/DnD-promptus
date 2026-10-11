@@ -1,5 +1,5 @@
 import { apiRequest } from './api'
-import type { Cell, CellKind, MapData } from './board'
+import type { BoardView, Cell, CellKind, MapData } from './board'
 import type { Proposal } from './prep'
 
 /** One of the campaign's own maps (`campaign_maps::CampaignMap`). */
@@ -187,6 +187,20 @@ export interface Atlas {
 
 export function fetchAtlas(campaignId: string): Promise<Atlas> {
   return apiRequest<Atlas>('GET', `/campaigns/${encodeURIComponent(campaignId)}/atlas`)
+}
+
+/** maps/preview-as-player — a map as the players would receive it now: the board on the table, or the one a show would lay out. */
+export interface PlayersMap {
+  /** The map is the one on the table. */
+  shown: boolean
+  board: BoardView
+}
+
+export function fetchPlayersMap(campaignId: string, mapId: string): Promise<PlayersMap> {
+  return apiRequest<PlayersMap>(
+    'GET',
+    `/campaigns/${encodeURIComponent(campaignId)}/maps/${encodeURIComponent(mapId)}/players`,
+  )
 }
 
 export type MapImport =

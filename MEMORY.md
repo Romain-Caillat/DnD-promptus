@@ -295,6 +295,14 @@ in one pure function (`projectPlayerView`) and every player route went
 through it. Keep a **single projection point** on the server; never
 filter on the client.
 
+The GM's preview of what players see goes through the same point:
+the Atlas's « Vue joueurs » (`maps/preview-as-player`) calls
+`GET …/maps/{map}/players`, which projects the board on the table or
+the board a show would lay out (`board::preview` and `board::show` share
+`laid_out`) with no character, like the shared screen. The front draws
+what it receives and nothing else — a client-side filter of the atlas
+"to go faster" is the bug this rule forbids.
+
 A token's last move (`trail`) goes through the same projection: cut to
 the cells the player sees, like an opponent's `Moved` event — a walk
 through the fog must not draw where it came from. Screens replay only a

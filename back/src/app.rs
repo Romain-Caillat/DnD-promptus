@@ -368,6 +368,12 @@ pub fn router(state: AppState, allowed_origins: &[String]) -> Router {
             "/api/campaigns/{id}/maps/{map}/place",
             post(api::maps::place),
         )
+        // A map as the players would receive it now, through their own
+        // projection (maps/preview-as-player).
+        .route(
+            "/api/campaigns/{id}/maps/{map}/players",
+            get(api::board::as_players),
+        )
         // Every map of the world and the campaign, nested (maps/browse-atlas).
         .route("/api/campaigns/{id}/atlas", get(api::maps::atlas))
         .route(

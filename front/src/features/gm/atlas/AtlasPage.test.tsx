@@ -553,4 +553,72 @@ describe('AtlasPage', () => {
     FakeSocket.all[0].push({ type: 'changed', topic: 'proposals', version: 2 })
     expect(await within(panel).findByRole('button', { name: '▶ Claude · Deux indices sur la colline' })).toBeInTheDocument()
   })
+
+  it('shows the players’ view from the server alone: no scene numbers, no proposals, refreshed live', async () => {
+    stubReducedMotion(true)
+    vi.stubGlobal('WebSocket', FakeSocket)
+    FakeSocket.all = []
+    const town = { location: 'l_ville', name: 'Port-Louis', at: [1, 0], scenes: [{ id: 'sc_a', title: 'L’arrivée', number: 1 }] }
+    const crypt = { location: 'l_crypte', name: 'La crypte', at: [2, 2], scenes: [{ id: 'sc_c', title: 'La crypte', number: 3 }] }
+    const atlas = {
+      ...ATLAS,
+      claude: [],
+      maps: ATLAS.maps.map((m) =>
+        m.map.id === 'region'
+          ? {
+              ...m,
+              pins: [town],
+              proposed: [{ proposal: 'p1', pins: [crypt], cast: { npcs: [], clues: [], fights: [] }, thread: [], cells: [] }],
+            }
+          : m,
+      ),
+    }
+    // What the server's projection sends: the visited pin by its name, a found clue by its text.
+    let seen = {
+      shown: false,
+      board: {
+        map: { id: 'region', name: 'Les côtes', scale: 'world', theme: 't', ambience: {}, grid: grid(4, 3) },
+        fog: true,
+        tokens: [{ id: 'groupe', kind: 'character', name: 'Le groupe', at: [0, 0] }],
+        reachable: [],
+        fight: null,
+        pins: [{ name: 'Port-Louis', at: [1, 0], current: true }],
+        clues: [],
+      },
+    }
+    const fetchMock = mockApi({
+      'GET /api/campaigns/c1/atlas': () => ok(atlas),
+      'GET /api/campaigns/c1/media': () => ok({ theme: null, assets: [] }),
+      'GET /api/campaigns/c1/maps/region/players': () => ok(seen),
+      'GET /api/campaigns/c1/player-view': () =>
+        ok({ title: 'Les Corsaires', world: 'Bretagne', playerHook: 'Une lettre de marque.', scene: null, clues: ['Un sceau brisé'], npcs: [] }),
+    })
+    const { container } = renderPage()
+
+    // The GM's view: the pin with its scene numbers, Claude's dotted one.
+    await screen.findByRole('button', { name: /Port-Louis — scènes : 1\. L’arrivée/ })
+    expect(container.querySelectorAll('[data-proposed]')).toHaveLength(1)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Vue joueurs' }))
+    await screen.findByText(/télé et les téléphones montreraient/)
+    expect(sentTo(fetchMock, 'GET /api/campaigns/c1/maps/region/players')).toHaveLength(1)
+    // Only what the route returned: the pin by its name, no number, nothing of Claude's.
+    expect(container.querySelectorAll('[data-proposed]')).toHaveLength(0)
+    expect(screen.queryByText(/L’arrivée/)).toBeNull()
+    expect(screen.queryByRole('button', { name: /scènes/ })).toBeNull()
+    expect(screen.queryByRole('group', { name: 'Calques de l’histoire' })).toBeNull()
+    // Beside it, what the players' screens say.
+    expect(await screen.findByText('Une lettre de marque.')).toBeInTheDocument()
+    expect(screen.getByText('Un sceau brisé')).toBeInTheDocument()
+
+    // The table moves: the view follows.
+    seen = { ...seen, shown: true }
+    FakeSocket.all[0].push({ type: 'ready', versions: { map: 1 } })
+    FakeSocket.all[0].push({ type: 'changed', topic: 'map', version: 2 })
+    expect(await screen.findByText(/Sur la table en ce moment/)).toBeInTheDocument()
+
+    // Back to the GM's view.
+    await userEvent.click(screen.getByRole('button', { name: 'Vue MJ' }))
+    expect(await screen.findByRole('button', { name: /Port-Louis — scènes : 1\. L’arrivée/ })).toBeInTheDocument()
+  })
 })

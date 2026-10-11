@@ -23,6 +23,7 @@ import { batchOf, proposedMarks } from './claude'
 import { ClaudeSection } from './ClaudeSection'
 import { STORY_LAYERS, castMarks, placeEdit, readKey, removeEdit, type StoryLayer, type Target } from './cast'
 import { ThreadSection } from './ThreadSection'
+import { PlayersMap, PlayersSection, usePlayersMap } from './PlayersView'
 
 type PageState =
   | { kind: 'loading' }
@@ -34,6 +35,9 @@ type PageState =
 /** The three scales, as the breadcrumb names them. */
 type ScaleName = 'world' | 'place' | 'encounter'
 const scaleOf = (m: AtlasMap): ScaleName => m.map.scale ?? 'encounter'
+
+/** The live topics what the players see is built from. */
+const SEEN_TOPICS = ['map', 'world', 'story', 'prep']
 
 /** What has no place on a map, and the preparation tab that holds it. */
 const DRAWER = ['bible', 'graph', 'sheets'] as const
@@ -113,6 +117,9 @@ export function AtlasPage() {
   const [batch, setBatch] = useState<string | null>(null)
   const [claudeBusy, setClaudeBusy] = useState(false)
   const [claudeFailed, setClaudeFailed] = useState<string | null>(null)
+  /** « Vue MJ / Vue joueurs » (maps/preview-as-player), kept in `?vue=joueurs`. */
+  const players = params.get('vue') === 'joueurs'
+  const [seen, setSeen] = useState(0)
 
   useEffect(() => {
     let live = true
@@ -148,15 +155,6 @@ export function AtlasPage() {
   // A map added, changed or removed (the GM elsewhere, Claude) moves the
   // GM-only `prep` topic; Claude's batches, the GM-only `proposals`.
   const changes = usePrepChanges(campaignId, state.kind === 'ready' ? state.atlas.revision : null)
-  useLiveChanges(
-    campaignId,
-    (topics) => {
-      if (topics.includes('prep') || topics.includes('proposals')) setVersion((v) => v + 1)
-      changes.onTopics(topics)
-    },
-    'gm',
-    changes.onActivity,
-  )
 
   const atlas = state.kind === 'ready' ? state.atlas : null
   const maps = useMemo(() => (atlas ? index(atlas) : new Map<string, AtlasMap>()), [atlas])
@@ -166,6 +164,21 @@ export function AtlasPage() {
   const map = entry ? withoutLayers(entry.map, hidden) : null
   const { tileset, atlases } = useTileset(entry?.map ?? null, media, (id) => gmImageUrl(campaignId, id))
   const backdrop = useImage(entry?.backdrop && entry.map.backdrop?.image ? gmBackdropUrl(campaignId, entry.map.id) : null)
+  const playersMap = usePlayersMap(campaignId, shownId, players)
+  useLiveChanges(
+    campaignId,
+    (topics) => {
+      if (topics.includes('prep') || topics.includes('proposals')) setVersion((v) => v + 1)
+      // What players see moves with the table (map, world) and the story.
+      if (players && topics.some((x) => SEEN_TOPICS.includes(x))) {
+        void playersMap.reload()
+        setSeen((v) => v + 1)
+      }
+      changes.onTopics(topics)
+    },
+    'gm',
+    changes.onActivity,
+  )
 
   if (state.kind === 'signed-out') return <Navigate to="/connexion" replace />
   const back = (
@@ -196,7 +209,7 @@ export function AtlasPage() {
     setScene(null)
     setFocus(null)
     const last = next[next.length - 1]
-    if (last) setParams({ carte: last }, { replace: true })
+    if (last) setParams(players ? { carte: last, vue: 'joueurs' } : { carte: last }, { replace: true })
   }
   const open = (id: string) => go(enter(here, id), 'in')
   const jump = (id: string) => go(enter(here, id), null)
@@ -383,8 +396,19 @@ export function AtlasPage() {
   }
   const sceneLink = (id: string) => `/campagnes/${campaignId}/preparer?onglet=graph&scene=${encodeURIComponent(id)}`
 
+  /** Switch « Vue MJ / Vue joueurs »: the map's own id stays in the address. */
+  const switchView = (on: boolean) => {
+    const next: Record<string, string> = shownId ? { carte: shownId } : {}
+    if (on) next.vue = 'joueurs'
+    setParams(next, { replace: true })
+    setPicked(null)
+    setPlacing(null)
+  }
+
   const mapView = !entry || !map ? (
     <p className="text-body text-mute-soft">{t('atlas.empty')}</p>
+  ) : players ? (
+    <PlayersMap state={playersMap.state} tileset={tileset} atlases={atlases} backdrop={backdrop} touch={tablet} />
   ) : (
     <div
       key={entry.map.id}
@@ -570,7 +594,25 @@ export function AtlasPage() {
               </span>
             ))}
           </nav>
-          <div className="ml-auto flex gap-1.5">
+          <div className="ml-auto flex flex-wrap gap-1.5">
+            <div className="flex gap-1" role="group" aria-label={t('atlas.players.switch')}>
+              <button
+                type="button"
+                className="pixel-choice py-1 pr-2 pb-1.5 text-caption font-semibold"
+                aria-pressed={!players}
+                onClick={() => switchView(false)}
+              >
+                {t('atlas.players.gm')}
+              </button>
+              <button
+                type="button"
+                className="pixel-choice py-1 pr-2 pb-1.5 text-caption font-semibold"
+                aria-pressed={players}
+                onClick={() => switchView(true)}
+              >
+                {t('atlas.players.players')}
+              </button>
+            </div>
             <Btn disabled={!canLeave(here, maps)} onClick={out}>
               {t('atlas.out')}
             </Btn>
@@ -607,6 +649,7 @@ export function AtlasPage() {
           </nav>
         )}
 
+        {!players && (
         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('atlas.storyLayers.label')}>
           <span className="type-label text-mute-soft">{t('atlas.storyLayers.label')}</span>
           {STORY_LAYERS.map((l) => (
@@ -628,8 +671,9 @@ export function AtlasPage() {
             </button>
           ))}
         </div>
+        )}
 
-        {layers.length > 0 && (
+        {!players && layers.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('atlas.layers')}>
             <span className="type-label text-mute-soft">{t('atlas.layers')}</span>
             {layers.map((l) => (
@@ -655,7 +699,7 @@ export function AtlasPage() {
 
         <div className={cn('grid min-h-0 flex-1 gap-3', (!tablet || panel) && 'lg:grid-cols-[minmax(0,1fr)_320px]')}>
           <div className="min-w-0 overflow-hidden">{mapView}</div>
-          {(!tablet || panel) && side}
+          {(!tablet || panel) && (players ? <PlayersSection campaignId={campaignId} version={seen} /> : side)}
         </div>
 
         <nav aria-label={t('atlas.strip')} className="flex gap-1.5 overflow-x-auto pb-1">

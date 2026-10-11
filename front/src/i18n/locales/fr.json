@@ -2732,6 +2732,18 @@
     "goTo": "Aller à : {{name}}",
     "edit": "Ouvrir dans l’éditeur de carte",
     "copy": "Carte du monde : la copier dans la campagne pour la modifier",
+    "players": {
+      "switch": "Vue MJ ou vue joueurs",
+      "gm": "Vue MJ",
+      "players": "Vue joueurs",
+      "shown": "Sur la table en ce moment : la télé et les téléphones montrent exactement ceci.",
+      "ahead": "Pas encore sur la table : voici ce que la télé et les téléphones montreraient si vous la montriez maintenant.",
+      "errors": {
+        "MAP_DRAFT": "Cette carte est un brouillon : validez-la dans l’éditeur pour la montrer, et donc pour la voir comme les joueurs.",
+        "NO_SUCH_MAP": "Cette carte n’existe plus.",
+        "action": "La vue joueurs n’a pas pu être chargée. Réessayez."
+      }
+    },
     "pins": {
       "pin": "{{name}} — scènes : {{scenes}}",
       "chosen": "Épingle : {{name}}",
