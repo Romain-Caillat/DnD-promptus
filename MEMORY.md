@@ -15,6 +15,32 @@ memory. If someone would re-litigate it in six months, it is.
 
 ---
 
+## 0. The pivot to the game bible (October 2026)
+
+On 11 October 2026 Promptus became a GM-light, "Baldur's Gate"-style
+game (`docs/bible.md`): an Author prepares, the game narrates live, the
+GM keeps an invisible override. The old backlog is frozen in
+`archive/tickets/backlog-avant-bible.md`. Where this file and the bible
+disagree, **the bible wins**. These entries are superseded, and stay
+below only as history until their ticket rewrites them:
+
+- *Fully remote first* (§1): still remote and live, but **PC first**;
+  no TV, no shared screen, no co-GM listening.
+- *Nothing reaches players without the GM* (§3): the narrator
+  (`narrator/voice-prepared-branches`) speaks without validation, but
+  only voices prepared branches. Choices, rolls and consequences come
+  from the story graph, never from the model. Invented ids are still
+  dropped.
+- *A death is always the GM's* (§3): death follows the rule system and
+  the Author's difficulty setting (`engine/set-death-difficulty`).
+- *Rules are data* holds. The witness worlds' rule systems are
+  rewritten close to DnD 5e, without its complexity
+  (`engine/rewrite-corsaires-rules`).
+- *The player projection* (§3) holds, and becomes **per player**:
+  knowledge is private until shared (`session/project-private-knowledge`).
+
+---
+
 ## 1. Settled decisions
 
 - **Rewrite, not migration.** V1 (Next.js) is frozen in

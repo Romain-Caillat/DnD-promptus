@@ -55,15 +55,17 @@ and demo campaign are the specification to port. What shipped is
 summarized in `archive/tickets/v1.md`.
 
 The rewrite follows the Devotion model (same stack, same conventions).
-The design is done (`archive/tickets/design.md`): the canvas boards are
-the visual specification (`docs/design/README.md`), and `TICKETS.md`
-orders the code work in three milestones, each ending with a real
-session played.
+About 115k lines were built for the GM-centric vision; that backlog is
+frozen in `archive/tickets/backlog-avant-bible.md` and its code is the
+starting point of the new tickets.
 
-**The vision changed after that design** (GM at the center → GM-light
-game, phone → PC, true HD-2D). The canvas boards, `TICKETS.md` and the
-target stack predate `docs/bible.md` and must be re-checked against it;
-the 3D engine for HD-2D is still to be chosen.
+**The vision changed on 11 October 2026** (`docs/bible.md`: GM-light
+game, PC first, true HD-2D in Three.js). `TICKETS.md` now orders the
+work in two milestones: the Corsaires one-shot (tavern hub → thread →
+dock brawl), then a short campaign. Each phase starts with its mockups
+(`docs/design/v2/`); the older canvas boards (`docs/design/README.md`)
+remain a style reference, not a specification. `MEMORY.md` §0 lists
+the decisions the bible supersedes.
 
 ## Tech Stack (target)
 
