@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Chakra+Petch:wght@400;600&family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@1,500&display=swap">
+<style>
+/* Playable board for design/draw-explore-screen (TICKETS.md).
+   Frame and Octopath skin from cadre-pc.html (MEMORY.md §0). Single dark
+   look on purpose: a lit scene framed like a game screen. */
+:root {
+  --ink: #0a0a0a; --page: #111214; --page-2: #1a1c20; --text: #ededed; --muted: #9a9a9a;
+  --hp: #FF4D5E; --ac: #3D9BFF; --gold: #d8ac5c; --gold-soft: #7c6338; --cream: #f3e6c8;
+  --f-pixel: "Silkscreen", "Chakra Petch", monospace; --f-sans: "Chakra Petch", system-ui, sans-serif;
+  --f-title: "Cinzel", Georgia, serif; --f-narr: "Cormorant Garamond", Georgia, serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--page); color: var(--text); font: 16px/1.5 var(--f-sans); }
+.page { max-width: 1280px; margin: 0 auto; padding: 24px 16px 64px; }
+header.top h1 { font: 700 28px/1.2 var(--f-title); margin: 0 0 4px; }
+header.top p { margin: 0; color: var(--muted); }
+code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; color: #cfcfcf; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; margin: 20px 0 12px; align-items: center; }
+.seg { display: inline-flex; align-items: center; gap: 8px; }
+.seg > span { font: 12px var(--f-pixel); color: var(--muted); text-transform: uppercase; }
+.seg .opts { display: inline-flex; border: 2px solid #333; }
+.seg button { font: 600 14px var(--f-sans); color: var(--text); background: var(--page-2); border: 0; padding: 6px 12px; cursor: pointer; }
+.seg button + button { border-left: 2px solid #333; }
+.seg button[aria-pressed="true"] { background: var(--cream); color: var(--ink); }
+.seg button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.hint { color: var(--muted); font-size: 14px; margin: 0 0 8px; }
+.hint b { color: var(--text); }
+
+.frame-wrap { width: 100%; position: relative; background: #000; border: 2px solid #2a2a2a; overflow: hidden; cursor: crosshair; touch-action: manipulation; }
+.frame-wrap:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.screen { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; background: #120b07; }
+
+/* ---------- world (1920 × 1080), depth sorted by z-index = feet y ---------- */
+.world { position: absolute; inset: 0; }
+.w { position: absolute; }
+.wall { left: 0; top: 0; width: 1920px; height: 540px; z-index: 1;
+  background: linear-gradient(#140c08 0 22px, transparent 22px) 0 70px / 100% 170px repeat-y,
+    repeating-linear-gradient(90deg, #2b1b12 0 58px, #24160f 58px 62px, #2e1d13 62px 120px), #2a1a12; }
+.floor-clip { left: 0; top: 520px; width: 1920px; height: 560px; overflow: hidden; perspective: 900px; z-index: 2; }
+.floor { position: absolute; left: -600px; top: -40px; width: 3120px; height: 1100px; transform: rotateX(58deg); transform-origin: 50% 0;
+  background: repeating-linear-gradient(0deg, #1e130c 0 4px, transparent 4px 86px),
+    repeating-linear-gradient(90deg, #3f2a1b 0 230px, #382517 230px 236px, #432d1d 236px 470px); }
+.window { left: 190px; top: 150px; width: 200px; height: 230px; z-index: 3; background: linear-gradient(#5c7a8f, #2f4656); border: 14px solid #160e09; }
+.window::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 46%, #160e09 46% 54%, transparent 54%), linear-gradient(transparent 46%, #160e09 46% 54%, transparent 54%); }
+.shaft { left: 150px; top: 370px; width: 520px; height: 520px; z-index: 3; background: linear-gradient(170deg, rgba(150,190,215,.20), transparent 70%); clip-path: polygon(10% 0, 45% 0, 100% 100%, 30% 100%); mix-blend-mode: screen; pointer-events: none; }
+.shelf { left: 1200px; top: 250px; width: 520px; height: 14px; z-index: 3; background: #160e09; box-shadow: 0 90px 0 #160e09; }
+.bottles { left: 1215px; top: 196px; width: 500px; height: 54px; z-index: 3;
+  background: linear-gradient(90deg, #3d6b3a 0 14px, transparent 14px 40px, #7a2f2a 40px 52px, transparent 52px 78px, #c8a24a 78px 90px, transparent 90px 120px) 0 0 / 120px 54px repeat-x; }
+.bottles.b2 { top: 286px; filter: hue-rotate(60deg) brightness(.9); }
+.parrot { left: 1430px; top: 120px; width: 46px; height: 60px; z-index: 3; background: #3e7d3a; border: 6px solid #141010; border-radius: 40% 40% 20% 20%; }
+.parrot::after { content: ""; position: absolute; left: 24px; top: 10px; width: 8px; height: 8px; background: #e8d36a; box-shadow: 10px 6px 0 -1px #c06a2a; }
+.counter-top { left: 1150px; top: 560px; width: 600px; height: 40px; background: #7a5233; border-top: 6px solid #9b6d45; z-index: 600; }
+.counter { left: 1150px; top: 600px; width: 600px; height: 150px; background: repeating-linear-gradient(90deg, #5a3a22 0 96px, #4a2f1b 96px 102px); border-bottom: 10px solid #2a1a10; z-index: 760; }
+.table { width: 240px; height: 70px; background: #6b4528; border-top: 8px solid #87593a; border-bottom: 12px solid #3a2414; border-radius: 4px; }
+.table::before, .table::after { content: ""; position: absolute; bottom: -64px; width: 18px; height: 54px; background: #3a2414; }
+.table::before { left: 26px; } .table::after { right: 26px; }
+.t1 { left: 380px; top: 690px; z-index: 780; }
+.t2 { left: 760px; top: 840px; width: 280px; z-index: 930; }
+.dice { left: 470px; top: 694px; width: 12px; height: 12px; z-index: 781; background: #ededed; box-shadow: 18px 4px 0 #ededed, 9px -6px 0 #d9d9d9; }
+.mug { width: 18px; height: 22px; background: #b98a4a; border: 3px solid #141010; }
+.m1 { left: 820px; top: 830px; z-index: 931; } .m2 { left: 900px; top: 836px; z-index: 931; } .m3 { left: 1260px; top: 538px; z-index: 601; }
+.candle { width: 10px; height: 18px; background: #e9dcc0; }
+.candle::before { content: ""; position: absolute; left: 2px; top: -9px; width: 6px; height: 9px; background: #ffd27a; border-radius: 50% 50% 30% 30%; }
+.glow { width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: 50%; z-index: 5000; pointer-events: none; background: radial-gradient(rgba(255,170,70,.40), rgba(255,140,40,.11) 40%, transparent 70%); mix-blend-mode: screen; }
+.light { left: 0; top: 0; width: 1920px; height: 1080px; z-index: 5001; pointer-events: none; background: radial-gradient(ellipse at 50% 55%, transparent 40%, rgba(0,0,0,.55) 100%); }
+.tilt { left: 0; width: 1920px; z-index: 5002; pointer-events: none; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.tilt.top { top: 0; height: 300px; mask-image: linear-gradient(#000, transparent); -webkit-mask-image: linear-gradient(#000, transparent); }
+.tilt.bot { bottom: 0; height: 200px; mask-image: linear-gradient(transparent, #000); -webkit-mask-image: linear-gradient(transparent, #000); }
+@media (prefers-reduced-motion: no-preference) { .glow { animation: flicker 3.2s ease-in-out infinite; } .marker { animation: bob 1.4s ease-in-out infinite; } }
+@keyframes flicker { 0%,100% { opacity: 1; } 40% { opacity: .82; } 55% { opacity: .95; } 70% { opacity: .78; } }
+@keyframes bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+
+.actor { width: 60px; height: 84px; }
+.actor .body { position: absolute; inset: 0; image-rendering: pixelated; background-size: 100% 100%; }
+.actor.left .body { transform: scaleX(-1); }
+.actor.walk .body { animation: step .32s steps(2) infinite; }
+@keyframes step { 0% { translate: 0 0; } 100% { translate: 0 -4px; } }
+.actor::before { content: ""; position: absolute; left: 6px; bottom: -8px; width: 48px; height: 12px; border-radius: 50%; background: rgba(0,0,0,.45); }
+.actor.me::before { left: -6px; width: 72px; height: 22px; bottom: -13px; background: transparent; border: 3px solid rgba(243,230,200,.6); }
+.actor.near .body { filter: drop-shadow(0 0 0 var(--gold)) drop-shadow(2px 0 0 var(--gold)) drop-shadow(-2px 0 0 var(--gold)) drop-shadow(0 -2px 0 var(--gold)); }
+.prop-near { outline: 3px solid var(--gold); outline-offset: 6px; }
+/* floating labels: never bare text on decor */
+.wlabel, .marker { z-index: 6000; pointer-events: none; }
+.wlabel { transform: translate(-50%, -100%); font: 15px var(--f-pixel); color: #fff; white-space: nowrap;
+  text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 0 3px 6px rgba(0,0,0,.8); }
+.wlabel.npc { color: var(--cream); }
+.marker { margin: -30px 0 0 -15px; width: 30px; height: 30px; display: grid; place-items: center; font: 18px var(--f-pixel); color: var(--gold); background: #0e1628; box-shadow: 0 0 0 2px var(--gold), 0 4px 0 2px #000; }
+.marker.found { color: #0e1628; background: var(--gold); box-shadow: 0 0 0 2px #0e1628, 0 0 18px 4px rgba(216,172,92,.65); }
+.target-dot { width: 18px; height: 8px; margin: -4px 0 0 -9px; border: 2px solid var(--cream); border-radius: 50%; z-index: 590; opacity: .8; pointer-events: none; }
+
+/* ---------- UI (Octopath skin) ---------- */
+.ui { position: absolute; inset: 0; pointer-events: none; --m: 24px; z-index: 9000; }
+.ui > * { position: absolute; }
+.panel { background: linear-gradient(rgba(14,22,40,.82), rgba(8,12,24,.86)); box-shadow: 0 0 0 1px var(--gold), inset 0 0 0 3px rgba(8,12,24,.9), inset 0 0 0 4px var(--gold-soft); border-radius: 2px; color: var(--text); }
+.key { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; font: 500 15px var(--f-title); color: var(--gold); background: rgba(8,12,24,.9); box-shadow: inset 0 0 0 1px var(--gold); border-radius: 3px; }
+.key.pad { border-radius: 50%; width: 30px; padding: 0; }
+.mbtn { display: flex; align-items: center; gap: 10px; font: 500 16px var(--f-title); letter-spacing: .04em; color: var(--text); padding: 8px 12px; background: linear-gradient(rgba(14,22,40,.82), rgba(8,12,24,.86)); box-shadow: 0 0 0 1px var(--gold-soft); }
+.mbtn .key { min-width: 24px; height: 24px; font-size: 12px; padding: 0 6px; }
+.mbtn .key.pad { width: 24px; min-width: 24px; }
+.ptitle { font: 500 13px var(--f-title); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.big { font: 700 20px var(--f-title); color: var(--cream); }
+.place { left: var(--m); top: var(--m); padding: 10px 16px; display: grid; gap: 2px; }
+.menus { right: var(--m); top: var(--m); display: flex; gap: 10px; }
+.toasts { left: 50%; top: calc(var(--m) + 76px); transform: translateX(-50%); display: grid; gap: 8px; justify-items: center; width: 760px; }
+.toast { display: flex; align-items: center; gap: 12px; padding: 10px 16px; font: 500 17px/1.35 var(--f-title); color: var(--cream); background: linear-gradient(rgba(14,22,40,.92), rgba(8,12,24,.94)); box-shadow: 0 0 0 1px var(--gold); max-width: 760px; }
+.toast .tag { font: 13px var(--f-pixel); color: var(--ink); background: var(--gold); padding: 2px 6px; white-space: nowrap; }
+.toast .narr { font: italic 500 20px/1.3 var(--f-narr); }
+.toast.leave { opacity: 0; transition: opacity .4s; }
+.vitals { left: var(--m); bottom: var(--m); padding: 12px 16px 12px 12px; display: grid; grid-template-columns: 72px auto; gap: 4px 14px; align-items: center; }
+.portrait { grid-row: span 3; width: 72px; height: 72px; image-rendering: pixelated; background: #1b2236 center / 100% 100% no-repeat; box-shadow: 0 0 0 1px var(--gold-soft); }
+.hearts { display: flex; gap: 3px; } .hearts svg { width: 21px; height: 18px; display: block; }
+.vrow { display: flex; align-items: center; gap: 12px; font: 15px var(--f-pixel); }
+.gem { display: inline-flex; align-items: center; gap: 6px; }
+.badge { font: 12px var(--f-pixel); padding: 2px 6px; color: var(--ink); background: var(--cream); }
+.party { left: var(--m); bottom: calc(var(--m) + 112px); padding: 10px 14px; display: grid; gap: 8px; min-width: 300px; }
+.pm { display: grid; grid-template-columns: 36px 1fr; gap: 0 10px; align-items: center; }
+.pm .face { grid-row: span 2; width: 36px; height: 36px; image-rendering: pixelated; background: #1b2236 center / 100% 100%; box-shadow: 0 0 0 1px var(--gold-soft); }
+.pm b { font: 600 15px var(--f-sans); } .pm span { font: 13px var(--f-sans); color: var(--muted); }
+.prompt { left: 50%; bottom: calc(var(--m) + 96px); transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 10px 18px; font: 500 18px var(--f-title); letter-spacing: .03em; white-space: nowrap; transition: opacity .15s; }
+.prompt.off { opacity: 0; }
+.prompt small { font: 13px var(--f-sans); color: var(--muted); letter-spacing: 0; }
+.helper { right: var(--m); bottom: var(--m); padding: 10px 14px; font: 14px var(--f-sans); color: var(--muted); display: flex; gap: 10px; align-items: center; transition: opacity .6s; }
+.helper.off { opacity: 0; }
+
+/* ---------- board text ---------- */
+section.doc { margin-top: 36px; }
+section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.rule { background: var(--page-2); padding: 14px 16px; border-left: 3px solid var(--gold); }
+.rule b { font: 13px var(--f-pixel); color: var(--gold); display: block; margin-bottom: 4px; }
+.rule p { margin: 0; color: #d6d6d6; }
+.cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.cmp div { background: var(--page-2); padding: 14px 16px; }
+.cmp h3 { margin: 0 0 6px; font: 600 16px var(--f-sans); }
+.cmp ul { margin: 0; padding-left: 18px; color: #d6d6d6; }
+.ask { background: var(--page-2); padding: 16px 20px; border: 1px solid var(--gold); box-shadow: inset 0 0 0 3px var(--page-2), inset 0 0 0 4px var(--gold-soft); }
+.ask ol { margin: 8px 0 0; padding-left: 20px; } .ask li + li { margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <h1>Exploration · le Perroquet Noyé</h1>
+    <p>Ticket <code>design/draw-explore-screen</code> · planche jouable, dans le cadre validé (<code>cadre-pc.html</code>, habillage Octopath). Corsaires, acte 1, scène <code>sc_perroquet</code>.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="Réglages de la planche">
+    <div class="seg"><span>Vu par</span><div class="opts" data-ctl="who">
+      <button type="button" data-v="yann" aria-pressed="true">Yann · Perception 11</button>
+      <button type="button" data-v="lea" aria-pressed="false">Léa · Perception 15</button>
+    </div></div>
+    <div class="seg"><span>Appareil</span><div class="opts" data-ctl="device">
+      <button type="button" data-v="kb" aria-pressed="true">Clavier / souris</button>
+      <button type="button" data-v="pad" aria-pressed="false">Manette</button>
+    </div></div>
+  </div>
+  <p class="hint">Clique dans l'écran, puis <b>ZQSD</b> (ou les flèches, ou un clic au sol) pour te déplacer, et <b>E</b> pour interagir. Une manette branchée marche aussi : stick gauche et <b>A</b>.</p>
+
+  <div class="frame-wrap" id="wrap" tabindex="0" aria-label="Écran de jeu : la taverne du Perroquet Noyé">
+    <div class="screen" id="screen">
+      <div class="world" id="world">
+        <div class="w wall"></div><div class="w window"></div><div class="w shelf"></div>
+        <div class="w bottles"></div><div class="w bottles b2"></div><div class="w parrot"></div>
+        <div class="w floor-clip"><div class="floor"></div></div>
+        <div class="w shaft"></div>
+        <div class="w counter-top"></div><div class="w counter"></div><div class="w mug m3"></div>
+        <div class="w candle" style="left:1560px;top:544px;z-index:601"></div>
+        <div class="w table t1" id="t1"></div><div class="w dice"></div>
+        <div class="w candle" style="left:560px;top:674px;z-index:781"></div>
+        <div class="w table t2"></div><div class="w mug m1"></div><div class="w mug m2"></div>
+        <div class="w candle" style="left:960px;top:824px;z-index:931"></div>
+        <div class="w glow" style="left:1565px;top:540px"></div>
+        <div class="w glow" style="left:565px;top:670px"></div>
+        <div class="w glow" style="left:965px;top:820px"></div>
+        <div class="w glow" style="left:1100px;top:250px;opacity:.6"></div>
+        <div class="w light"></div><div class="w tilt top"></div><div class="w tilt bot"></div>
+        <div class="w target-dot" id="dot" hidden></div>
+      </div>
+
+      <div class="ui">
+        <div class="place panel"><span class="ptitle">Chapitre 1 · Les lettres de marque</span><span class="big">Le Perroquet Noyé</span></div>
+        <nav class="menus" aria-hidden="true">
+          <span class="mbtn"><span class="key" data-kb="J" data-pad="☰">J</span>Journal</span>
+          <span class="mbtn"><span class="key" data-kb="I" data-pad="☰">I</span>Inventaire</span>
+          <span class="mbtn"><span class="key" data-kb="C" data-pad="☰">C</span>Fiche</span>
+          <span class="mbtn"><span class="key" data-kb="Échap" data-pad="☰">Échap</span>Menu</span>
+        </nav>
+        <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+        <div class="party panel" id="party"><span class="ptitle">Le groupe</span></div>
+        <div class="vitals panel" id="vitals">
+          <div class="portrait" id="portrait"></div>
+          <div><span class="big" style="font-size:18px" id="vname"></span> <span style="color:var(--muted);font-size:14px" id="vclass"></span></div>
+          <div class="hearts" id="hearts"></div>
+          <div class="vrow">
+            <span class="gem"><svg width="18" height="20" viewBox="0 0 9 10" shape-rendering="crispEdges" aria-hidden="true"><path fill="#0a0a0a" d="M0 0h9v6h-1v2h-2v1h-1v1h-1v-1h-1v-1h-2v-2h-1z"/><path fill="#3D9BFF" d="M1 1h7v5h-1v1h-1v1h-1v1h-1v-1h-1v-1h-1v-1h-1z"/></svg><span style="color:var(--ac)" id="vac"></span></span>
+            <span style="color:var(--hp)" id="vhp"></span>
+            <span class="badge" id="vperc"></span>
+          </div>
+        </div>
+        <div class="prompt panel off" id="prompt"><span class="key" id="pkey">E</span><span id="ptext"></span></div>
+        <div class="helper panel" id="helper"><span class="key" data-kb="ZQSD" data-pad="L">ZQSD</span>se déplacer · <span class="key" data-kb="E" data-pad="A">E</span>interagir</div>
+      </div>
+    </div>
+  </div>
+
+  <section class="doc">
+    <h2>La même taverne, deux joueurs</h2>
+    <div class="cmp">
+      <div><h3>Yann · Bretteur · Perception passive 11</h3><ul>
+        <li><b>[!]</b> sur Mère Goulven : elle a des rumeurs (et une ardoise).</li>
+        <li><b>[?]</b> sur la table de dés : un mini-jeu.</li>
+        <li>Fañch n'est qu'un marin attablé avec Anaïs. On peut lui parler, mais rien ne le signale.</li>
+      </ul></div>
+      <div><h3>Léa · Vigie · Perception passive 15</h3><ul>
+        <li>Tout ce que voit Yann.</li>
+        <li><b>[!] doré sur Fañch</b> (seuil 13) : à sa première entrée dans la salle, le narrateur le lui signale, en privé. La découverte va dans <b>son</b> journal, et Yann n'en sait rien tant qu'elle ne l'a pas partagée.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="doc">
+    <h2>Les règles de l'exploration</h2>
+    <div class="rules">
+      <div class="rule"><b>Déplacement</b><p>Libre, sans cases : ZQSD, flèches, clic au sol ou stick gauche. Les murs, le comptoir et les tables bloquent. La profondeur suit les pieds : on passe derrière une table et devant une autre.</p></div>
+      <div class="rule"><b>Autres joueurs</b><p>On les voit bouger en direct, leur nom au-dessus de la tête. Le groupe (à gauche) dit où sont ceux qui ne sont pas dans la salle.</p></div>
+      <div class="rule"><b>Trois sortes de choses</b><p><b>[!]</b> quête ou information, <b>[?]</b> mini-jeu, et ce qui n'a pas de marqueur (René, Jacquot) : il faut s'approcher pour le découvrir.</p></div>
+      <div class="rule"><b>Perception passive</b><p>Un élément peut avoir un seuil. Sous ce seuil, il n'existe pas pour le joueur : le serveur ne l'envoie pas. Au-dessus, son marqueur est doré, et le narrateur l'annonce une fois.</p></div>
+      <div class="rule"><b>Interagir</b><p>À portée (environ 1,5 m), la chose la plus proche s'entoure d'or et une seule action s'affiche. Une touche, pas de menu.</p></div>
+      <div class="rule"><b>Ce qui suit</b><p>Interagir ouvre la fenêtre G : un dialogue (<code>design/draw-dialogue-screen</code>) ou un mini-jeu (jalon 2). Ici, une notification le remplace.</p></div>
+    </div>
+  </section>
+
+  <section class="doc">
+    <div class="ask">
+      <b>À trancher par Romain</b>
+      <ol>
+        <li><b>Les noms des PNJ</b> : toujours affichés, seulement à portée (comme ici), ou seulement une fois qu'on les connaît (« Marin » tant que Fañch ne s'est pas présenté) ?</li>
+        <li><b>Une découverte par la Perception</b> : marqueur doré + une phrase du narrateur (comme ici), ou marqueur seul, sans annonce ?</li>
+        <li><b>Courir</b> (Maj ou stick enfoncé) : utile dans une taverne, ou on garde une seule vitesse ?</li>
+      </ol>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  // ---------- pixel sprites drawn in code (placeholders until PixelLab) ----------
+  var BODY = ["..KKKKKK..", ".KHHHHHHK.", ".KHSSSSHK.", ".KSKSSKSK.", ".KSSSSSSK.", "..KKSSKK..",
+    ".KCCAACCK.", "KSCCAACCSK", "KSCCCCCCSK", ".KCCCCCCK.", ".KPPPPPPK.", ".KPPKKPPK.", ".KBBKKBBK.", "..KK..KK.."];
+  var LOOKS = {
+    yann:    { H: "#2b1a10", S: "#e2b48c", C: "#8c1f2b", A: "#e9dcc0", P: "#2a2a3a", B: "#3a2414" },
+    lea:     { H: "#c7742f", S: "#f0c9a0", C: "#2f5d4a", A: "#d8c27a", P: "#3a3226", B: "#2a1a10" },
+    max:     { H: "#151515", S: "#b9825a", C: "#4a4f5a", A: "#d0a040", P: "#2a2a2a", B: "#1a1a1a" },
+    romain:  { H: "#6b4a2a", S: "#e2b48c", C: "#1f3d6b", A: "#ededed", P: "#3a2a1a", B: "#2a1a10" },
+    goulven: { H: "#9a9a9a", S: "#e8b896", C: "#6b3a5a", A: "#ededed", P: "#4a3a2a", B: "#2a1a10" },
+    jacquot: { H: "#d9d9d9", S: "#d9a07a", C: "#5a4a2a", A: "#8a7a5a", P: "#3a3a2a", B: "#2a1a10" },
+    rene:    { H: "#e0c060", S: "#f0c9a0", C: "#3a5a8a", A: "#e9dcc0", P: "#5a4a3a", B: "#2a1a10" },
+    fanch:   { H: "#3a2a1a", S: "#c99870", C: "#2a2a2a", A: "#8c1f2b", P: "#2a2a3a", B: "#1a1a1a" },
+    anais:   { H: "#5a2a1a", S: "#f0c9a0", C: "#8a6a3a", A: "#ededed", P: "#6b3a5a", B: "#2a1a10" }
+  };
+  function draw(look, rows) {
+    var c = document.createElement("canvas"); c.width = 10; c.height = rows.length;
+    var g = c.getContext("2d");
+    rows.forEach(function (row, y) { for (var x = 0; x < row.length; x++) { var ch = row[x]; if (ch === ".") continue; g.fillStyle = ch === "K" ? "#141010" : look[ch]; g.fillRect(x, y, 1, 1); } });
+    return c.toDataURL();
+  }
+  var FULL = {}, HEAD = {};
+  Object.keys(LOOKS).forEach(function (k) { FULL[k] = draw(LOOKS[k], BODY); HEAD[k] = draw(LOOKS[k], BODY.slice(0, 10)); });
+
+  // ---------- data: players, NPCs, things (as the server would send them to one player) ----------
+  var PLAYERS = {
+    yann:   { name: "Yann", cls: "Bretteur niv. 1", hp: 24, max: 30, ac: 15, perc: 11, x: 1240, y: 900 },
+    lea:    { name: "Léa", cls: "Vigie niv. 1", hp: 18, max: 22, ac: 14, perc: 15, x: 700, y: 980 },
+    max:    { name: "Max", cls: "Canonnier", x: 330, y: 760, where: "Aux dés, ici" },
+    romain: { name: "Romain", cls: "Navigateur", x: 250, y: 720, where: "Près de la fenêtre, ici", path: [[250, 720], [250, 990], [640, 1000], [660, 860], [250, 860]] }
+  };
+  // x, y = feet. reach = where the player stands to interact.
+  var NPCS = [
+    { id: "goulven", name: "Mère Goulven", x: 1410, y: 562, reach: [1410, 800], marker: "!", act: "Parler à Mère Goulven",
+      on: "Dialogue avec Mère Goulven → planche suivante (design/draw-dialogue-screen)." },
+    { id: "jacquot", name: "Jacquot le Sourd", x: 830, y: 684, reach: [830, 720], act: "Parler à Jacquot",
+      on: "Jacquot vous regarde, plisse les yeux, et parle beaucoup trop fort. → dialogue." },
+    { id: "rene", name: "René, à la vielle", x: 1820, y: 724, reach: [1820, 760], act: "Écouter René jouer",
+      on: "René massacre un air breton, puis vous lance un regard en coin. → dialogue." },
+    { id: "fanch", name: "Fañch", x: 830, y: 829, reach: [[830, 800], [830, 965]], act: "Aborder Fañch", hidden: { perc: 13,
+      seen: "Le marin attablé avec Anaïs regarde un peu trop votre table.", journal: "Fañch observe la table du groupe." },
+      on: "Fañch pose la main sur son couteau, sourire aux lèvres. → dialogue." },
+    { id: "anais", name: "Anaïs", x: 960, y: 829, reach: [[960, 800], [960, 965]], act: "Saluer Anaïs",
+      on: "Anaïs vous rend un salut poli, sans lâcher Fañch des yeux. → dialogue." }
+  ];
+  var PROPS = [{ id: "dice", el: "t1", name: "Table de dés", x: 500, y: 790, reach: [500, 820], marker: "?", act: "Jouer aux dés avec Max",
+    on: "Mini-jeu « Les Os du Pendu » (jalon 2, minigames/play-dice)." }];
+  // walkable floor and obstacles, in feet coordinates
+  var BOUNDS = { x0: 40, x1: 1880, y0: 640, y1: 1050 };
+  var BLOCKS = [[1130, 560, 1770, 790], [370, 680, 640, 800], [740, 820, 1060, 950]];
+
+  var world = document.getElementById("world");
+  function el(cls, html) { var d = document.createElement("div"); d.className = "w " + cls; if (html != null) d.innerHTML = html; world.appendChild(d); return d; }
+  function makeActor(key) { var a = el("actor", '<div class="body"></div>'); a.querySelector(".body").style.backgroundImage = "url(" + FULL[key] + ")"; return a; }
+  function place(a, x, y) { a.style.left = x - 30 + "px"; a.style.top = y - 84 + "px"; a.style.zIndex = Math.round(y); }
+
+  Object.keys(PLAYERS).forEach(function (k) {
+    var p = PLAYERS[k]; p.el = makeActor(k); p.label = el("wlabel"); p.label.textContent = p.name; p.i = 0;
+  });
+  NPCS.forEach(function (n) {
+    n.el = makeActor(n.id); place(n.el, n.x, n.y);
+    if (n.id === "goulven") n.el.style.zIndex = 590; // behind the counter
+    n.label = el("wlabel npc"); n.label.textContent = n.name;
+    n.label.style.left = n.x + "px"; n.label.style.top = n.y - 132 + "px";
+    if (n.marker || n.hidden) { n.mk = el("marker"); n.mk.textContent = "!"; n.mk.style.left = n.x + "px"; n.mk.style.top = n.y - 92 + "px"; }
+  });
+  PROPS.forEach(function (p) {
+    p.el = document.getElementById(p.el);
+    p.mk = el("marker"); p.mk.textContent = p.marker; p.mk.style.left = "476px"; p.mk.style.top = "690px";
+    p.label = el("wlabel npc"); p.label.textContent = p.name; p.label.style.left = "500px"; p.label.style.top = "650px";
+  });
+
+  // ---------- state ----------
+  var state = { who: "yann", device: "kb", keys: {}, target: null, near: null, seen: {}, last: performance.now(), padA: false, moved: false };
+  function me() { return PLAYERS[state.who]; }
+  function canSee(n) { return !n.hidden || me().perc >= n.hidden.perc; }
+
+  // ---------- HUD ----------
+  var HEART = "M1 0h2v1h1v-1h2v1h1v3h-1v1h-1v1h-1v1h-1v-1h-1v-1h-1v-1h-1v-3h1z";
+  function renderHud() {
+    var p = me();
+    document.getElementById("portrait").style.backgroundImage = "url(" + HEAD[state.who] + ")";
+    document.getElementById("vname").textContent = p.name;
+    document.getElementById("vclass").textContent = "· " + p.cls;
+    document.getElementById("vac").textContent = p.ac;
+    document.getElementById("vhp").textContent = "♥ " + p.hp + "/" + p.max;
+    document.getElementById("vperc").textContent = "Perception " + p.perc;
+    var per = p.max > 20 ? p.max / 10 : 2, n = Math.min(10, Math.ceil(p.max / per)), full = Math.round(p.hp / per), h = "";
+    for (var i = 0; i < n; i++) h += '<svg viewBox="-0.5 -0.5 8 8" shape-rendering="crispEdges" aria-hidden="true"><path d="' + HEART + '" fill="' + (i < full ? "#FF4D5E" : "#2a2a2a") + '" stroke="#0a0a0a"/></svg>';
+    document.getElementById("hearts").innerHTML = h;
+    document.getElementById("hearts").setAttribute("aria-label", p.hp + " points de vie sur " + p.max);
+    var party = document.getElementById("party");
+    party.innerHTML = '<span class="ptitle">Le groupe</span>';
+    Object.keys(PLAYERS).filter(function (k) { return k !== state.who; }).forEach(function (k) {
+      var o = PLAYERS[k];
+      party.insertAdjacentHTML("beforeend", '<div class="pm"><div class="face" style="background-image:url(' + HEAD[k] + ')"></div><b>' + o.name + " · " + o.cls.replace(/ niv\. \d/, "") + "</b><span>" + (o.where || "Dans la salle, ici") + "</span></div>");
+    });
+    Object.keys(PLAYERS).forEach(function (k) { PLAYERS[k].el.classList.toggle("me", k === state.who); PLAYERS[k].label.style.display = k === state.who ? "none" : ""; });
+  }
+  function renderKeys() {
+    document.querySelectorAll(".key[data-kb]").forEach(function (k) { k.textContent = state.device === "pad" ? k.dataset.pad : k.dataset.kb; k.classList.toggle("pad", state.device === "pad"); });
+    var pk = document.getElementById("pkey"); pk.textContent = state.device === "pad" ? "A" : "E"; pk.classList.toggle("pad", state.device === "pad");
+    document.querySelectorAll('[data-ctl="device"] button').forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.v === state.device)); });
+  }
+  function toast(html, ms) {
+    var box = document.getElementById("toasts");
+    if (box.lastChild && box.lastChild.dataset.html === html && !box.lastChild.classList.contains("leave")) return; // same line twice: keep one
+    var t = document.createElement("div"); t.className = "toast"; t.innerHTML = html; t.dataset.html = html; box.appendChild(t);
+    while (box.children.length > 3) box.removeChild(box.firstChild);
+    setTimeout(function () { t.classList.add("leave"); setTimeout(function () { t.remove(); }, 400); }, ms || 4200);
+  }
+  function setDevice(d) { if (state.device !== d) { state.device = d; renderKeys(); } }
+
+  // ---------- perception reveal (once per player, private) ----------
+  function revealFor(who) {
+    NPCS.forEach(function (n) {
+      if (!n.hidden || !canSee(n) || state.seen[who + n.id]) return;
+      state.seen[who + n.id] = true;
+      setTimeout(function () {
+        if (state.who !== who) return;
+        toast('<span class="tag">Perception ' + me().perc + '</span><span class="narr">' + n.hidden.seen + "</span>", 6000);
+        setTimeout(function () { if (state.who === who) toast('<span class="tag">Journal</span>' + n.hidden.journal + ' <span class="key" style="min-width:auto">Partager</span>', 5000); }, 1400);
+      }, 700);
+    });
+  }
+  function renderVisibility() {
+    NPCS.forEach(function (n) {
+      if (!n.mk) return;
+      var vis = canSee(n);
+      n.mk.style.display = vis ? "" : "none";
+      n.mk.classList.toggle("found", !!n.hidden && vis);
+    });
+  }
+
+  // ---------- movement ----------
+  function blocked(x, y) {
+    if (x < BOUNDS.x0 || x > BOUNDS.x1 || y < BOUNDS.y0 || y > BOUNDS.y1) return true;
+    for (var i = 0; i < BLOCKS.length; i++) { var b = BLOCKS[i]; if (x > b[0] && x < b[2] && y > b[1] && y < b[3]) return true; }
+    return false;
+  }
+  function tryMove(p, dx, dy) {
+    var moved = false;
+    if (dx && !blocked(p.x + dx, p.y)) { p.x += dx; moved = true; }
+    if (dy && !blocked(p.x, p.y + dy)) { p.y += dy; moved = true; }
+    return moved;
+  }
+  function interactables() {
+    return NPCS.map(function (n) { return n; }).concat(PROPS);
+  }
+  function findNear() {
+    var p = me(), best = null, bd = 130;
+    interactables().forEach(function (t) { var d = Math.hypot(reachOf(t)[0] - p.x, reachOf(t)[1] - p.y); if (d < bd) { bd = d; best = t; } });
+    return best;
+  }
+  // a thing may be reached from several spots (both sides of a table): the closest one counts
+  function reachOf(t) {
+    var list = typeof t.reach[0] === "number" ? [t.reach] : t.reach, p = me();
+    return list.reduce(function (a, b) { return Math.hypot(b[0] - p.x, b[1] - p.y) < Math.hypot(a[0] - p.x, a[1] - p.y) ? b : a; });
+  }
+  function interact() {
+    if (!state.near) return;
+    toast('<span class="tag">' + state.near.name + "</span>" + state.near.on);
+  }
+
+  var SPEED = 320; // px per second
+  function frame(now) {
+    var dt = Math.min(0.05, (now - state.last) / 1000); state.last = now;
+    var p = me(), vx = 0, vy = 0, k = state.keys;
+    if (k.z || k.w || k.arrowup) vy -= 1; if (k.s || k.arrowdown) vy += 1;
+    if (k.q || k.a || k.arrowleft) vx -= 1; if (k.d || k.arrowright) vx += 1;
+    var pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    for (var i = 0; i < pads.length; i++) {
+      var g = pads[i]; if (!g) continue;
+      var ax = g.axes[0] || 0, ay = g.axes[1] || 0;
+      if (Math.hypot(ax, ay) > 0.25) { vx = ax; vy = ay; setDevice("pad"); state.target = null; }
+      var a = g.buttons[0] && g.buttons[0].pressed;
+      if (a && !state.padA) { setDevice("pad"); interact(); }
+      state.padA = a;
+    }
+    if (vx || vy) state.target = null;
+    else if (state.target) {
+      var tx = state.target[0] - p.x, ty = state.target[1] - p.y, d = Math.hypot(tx, ty);
+      if (d < 6) { state.target = null; document.getElementById("dot").hidden = true; } else { vx = tx / d; vy = ty / d; }
+    }
+    var walking = false;
+    if (vx || vy) {
+      var len = Math.hypot(vx, vy); if (len > 1) { vx /= len; vy /= len; }
+      walking = tryMove(p, vx * SPEED * dt, vy * SPEED * 0.8 * dt);
+      if (!walking && state.target) { state.target = null; document.getElementById("dot").hidden = true; }
+      if (vx < -0.1) p.el.classList.add("left"); if (vx > 0.1) p.el.classList.remove("left");
+      if (walking && !state.moved) { state.moved = true; setTimeout(function () { document.getElementById("helper").classList.add("off"); }, 2500); }
+    }
+    p.el.classList.toggle("walk", walking);
+    // Romain walks his loop: other players move live
+    var r = PLAYERS.romain;
+    if (state.who !== "romain" && r.path) {
+      var wp = r.path[r.i], ddx = wp[0] - r.x, ddy = wp[1] - r.y, dd = Math.hypot(ddx, ddy);
+      if (dd < 4) r.i = (r.i + 1) % r.path.length;
+      else { r.x += ddx / dd * 110 * dt; r.y += ddy / dd * 110 * dt; r.el.classList.toggle("left", ddx < 0); }
+      r.el.classList.toggle("walk", dd >= 4);
+    }
+    Object.keys(PLAYERS).forEach(function (key) { var o = PLAYERS[key]; place(o.el, o.x, o.y); o.label.style.left = o.x + "px"; o.label.style.top = o.y - 96 + "px"; });
+    // nearest thing: gold outline, its name, one action
+    var near = findNear();
+    if (near !== state.near) {
+      if (state.near) { (state.near.el.classList.contains("table") ? state.near.el.classList.remove("prop-near") : state.near.el.classList.remove("near")); }
+      state.near = near;
+      if (near) { (near.el.classList.contains("table") ? near.el.classList.add("prop-near") : near.el.classList.add("near")); }
+      var pr = document.getElementById("prompt");
+      pr.classList.toggle("off", !near);
+      if (near) document.getElementById("ptext").textContent = near.act;
+    }
+    NPCS.forEach(function (n) { n.label.style.display = (n === state.near || (n.mk && n.mk.style.display !== "none" && n.marker)) ? "" : "none"; });
+    PROPS.forEach(function (t) { t.label.style.display = t === state.near ? "" : "none"; });
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- input ----------
+  var wrap = document.getElementById("wrap"), screen = document.getElementById("screen");
+  var MOVE = { z: 1, q: 1, s: 1, d: 1, w: 1, a: 1, arrowup: 1, arrowdown: 1, arrowleft: 1, arrowright: 1 };
+  function inGame() { return document.activeElement === wrap; }
+  window.addEventListener("keydown", function (e) {
+    if (!inGame()) return;
+    var k = e.key.toLowerCase();
+    if (MOVE[k]) { state.keys[k] = true; e.preventDefault(); setDevice("kb"); }
+    if (k === "e" || k === "enter") { e.preventDefault(); setDevice("kb"); interact(); }
+  });
+  window.addEventListener("keyup", function (e) { state.keys[e.key.toLowerCase()] = false; });
+  wrap.addEventListener("blur", function () { state.keys = {}; });
+  wrap.addEventListener("pointerdown", function (e) {
+    wrap.focus();
+    var r = screen.getBoundingClientRect(), s = r.width / 1920;
+    var x = (e.clientX - r.left) / s, y = (e.clientY - r.top) / s;
+    var hit = interactables().filter(function (t) { return Math.hypot(t.x - x, (t.y - 40) - y) < 60 || (t === state.near && Math.hypot(reachOf(t)[0] - x, reachOf(t)[1] - y) < 60); })[0];
+    if (hit && hit === state.near) { interact(); return; }
+    var tx = hit ? reachOf(hit)[0] : x, ty = hit ? reachOf(hit)[1] : Math.max(BOUNDS.y0, y);
+    state.target = [tx, ty]; setDevice("kb");
+    var dot = document.getElementById("dot"); dot.hidden = false; dot.style.left = tx + "px"; dot.style.top = ty + "px";
+  });
+  window.addEventListener("gamepadconnected", function () { setDevice("pad"); });
+
+  document.querySelectorAll(".opts").forEach(function (group) {
+    group.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      group.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      if (group.dataset.ctl === "device") { state.device = b.dataset.v; renderKeys(); }
+      if (group.dataset.ctl === "who") {
+        state.who = b.dataset.v; state.target = null; state.near = null;
+        document.querySelectorAll(".near").forEach(function (x) { x.classList.remove("near"); });
+        document.querySelectorAll(".prop-near").forEach(function (x) { x.classList.remove("prop-near"); });
+        document.getElementById("prompt").classList.add("off");
+        document.getElementById("toasts").innerHTML = "";
+        renderHud(); renderVisibility(); revealFor(state.who);
+      }
+      wrap.focus();
+    });
+  });
+
+  function layout() { var k = wrap.clientWidth / 1920; screen.style.transform = "scale(" + k + ")"; wrap.style.height = 1080 * k + "px"; }
+  new ResizeObserver(layout).observe(wrap);
+  layout(); renderHud(); renderKeys(); renderVisibility(); revealFor(state.who);
+  requestAnimationFrame(function (t) { state.last = t; frame(t); });
+})();
+</script>
+</body>
+</html>
