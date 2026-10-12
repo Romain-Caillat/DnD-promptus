@@ -57,46 +57,27 @@ code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; color: #cfc
 
 /* the world: authored at 1920×1080, scaled to cover the screen */
 .world { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform: translate(-50%, -50%) scale(var(--ws, 1)); }
-.w { position: absolute; }
-.wall { left: 0; top: 0; width: 1920px; height: 540px;
-  background:
-    linear-gradient(#140c08 0 22px, transparent 22px) 0 70px / 100% 170px repeat-y,
-    repeating-linear-gradient(90deg, #2b1b12 0 58px, #24160f 58px 62px, #2e1d13 62px 120px),
-    #2a1a12; }
+.w { position: absolute; image-rendering: pixelated; }
+.wall { left: 0; top: 0; width: 1920px; height: 540px; background: url(assets/taverne/mur.png) 0 0 / 672px 560px repeat-x, #2a1a12; }
 .floor-clip { left: 0; top: 520px; width: 1920px; height: 560px; overflow: hidden; perspective: 900px; }
-.floor { position: absolute; left: -600px; top: -40px; width: 3120px; height: 1100px; transform: rotateX(58deg); transform-origin: 50% 0;
-  background:
-    repeating-linear-gradient(0deg, #1e130c 0 4px, transparent 4px 86px),
-    repeating-linear-gradient(90deg, #3f2a1b 0 230px, #382517 230px 236px, #432d1d 236px 470px); }
-.window { left: 190px; top: 150px; width: 200px; height: 230px; background: linear-gradient(#5c7a8f, #2f4656); border: 14px solid #160e09; box-shadow: inset 0 0 0 4px #160e09; }
-.window::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 46%, #160e09 46% 54%, transparent 54%), linear-gradient(transparent 46%, #160e09 46% 54%, transparent 54%); }
+.floor { position: absolute; left: -600px; top: -40px; width: 3120px; height: 1100px; transform: rotateX(58deg); transform-origin: 50% 0; image-rendering: pixelated; background: url(assets/taverne/sol.png) 0 0 / 256px 256px; }
+.window { left: 150px; top: 90px; width: 320px; height: 373px; background: url(assets/taverne/fenetre.png) 0 0 / 100% 100%; }
 .shaft { left: 150px; top: 370px; width: 520px; height: 520px; background: linear-gradient(170deg, rgba(150,190,215,.20), transparent 70%); clip-path: polygon(10% 0, 45% 0, 100% 100%, 30% 100%); mix-blend-mode: screen; }
-.shelf { left: 1200px; top: 250px; width: 520px; height: 14px; background: #160e09; box-shadow: 0 90px 0 #160e09; }
-.bottles { left: 1215px; top: 196px; width: 500px; height: 54px;
-  background:
-    linear-gradient(90deg, #3d6b3a 0 14px, transparent 14px 40px, #7a2f2a 40px 52px, transparent 52px 78px, #c8a24a 78px 90px, transparent 90px 120px) 0 0 / 120px 54px repeat-x;
-  box-shadow: 0 90px 0 -0px transparent; }
-.bottles.b2 { top: 286px; filter: hue-rotate(60deg) brightness(.9); }
-.parrot { left: 1430px; top: 120px; width: 46px; height: 60px; background: #3e7d3a; border: 6px solid #141010; border-radius: 40% 40% 20% 20%; }
-.parrot::after { content: ""; position: absolute; left: 24px; top: 10px; width: 8px; height: 8px; background: #e8d36a; box-shadow: 10px 6px 0 -1px #c06a2a; }
-.counter-top { left: 1150px; top: 560px; width: 600px; height: 40px; background: #7a5233; border-top: 6px solid #9b6d45; }
-.counter { left: 1150px; top: 600px; width: 600px; height: 150px; background: repeating-linear-gradient(90deg, #5a3a22 0 96px, #4a2f1b 96px 102px); border-bottom: 10px solid #2a1a10; }
-.table { width: 240px; height: 70px; background: #6b4528; border-top: 8px solid #87593a; border-bottom: 12px solid #3a2414; border-radius: 4px; }
-.table::before, .table::after { content: ""; position: absolute; bottom: -64px; width: 18px; height: 54px; background: #3a2414; }
-.table::before { left: 26px; } .table::after { right: 26px; }
-.t1 { left: 380px; top: 690px; }
-.t2 { left: 760px; top: 840px; width: 280px; }
-.dice { left: 470px; top: 694px; width: 12px; height: 12px; background: #ededed; box-shadow: 18px 4px 0 #ededed, 9px -6px 0 #d9d9d9; }
-.mug { width: 18px; height: 22px; background: #b98a4a; border: 3px solid #141010; }
-.m1 { left: 820px; top: 830px; } .m2 { left: 900px; top: 836px; } .m3 { left: 1260px; top: 538px; }
-.candle { width: 10px; height: 18px; background: #e9dcc0; }
-.candle::before { content: ""; position: absolute; left: 2px; top: -9px; width: 6px; height: 9px; background: #ffd27a; border-radius: 50% 50% 30% 30%; }
+.shelf { left: 1200px; top: 200px; width: 512px; height: 256px; background: url(assets/taverne/etagere.png) 0 0 / 100% 100%; }
+.parrot { left: 1392px; top: 60px; width: 128px; height: 160px; background: url(assets/taverne/perroquet.png) 0 0 / 100% 100%; }
+.counter { left: 1125px; top: 520px; width: 640px; height: 240px; background: url(assets/taverne/comptoir.png) 0 0 / 100% 100%; }
+.table { background: url(assets/taverne/table.png) 0 0 / 100% 100%; }
+.t1 { left: 380px; top: 704px; width: 240px; height: 120px; }
+.t2 { left: 760px; top: 834px; width: 280px; height: 140px; }
+.dice { left: 470px; top: 736px; width: 12px; height: 12px; background: #ededed; box-shadow: 18px 4px 0 #ededed, 9px -6px 0 #d9d9d9; }
+.candle { width: 64px; height: 96px; background: url(assets/taverne/chandelle.png) 0 0 / 100% 100%; }
 .glow { width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: 50%; background: radial-gradient(rgba(255,170,70,.42), rgba(255,140,40,.12) 40%, transparent 70%); mix-blend-mode: screen; }
 @media (prefers-reduced-motion: no-preference) { .glow { animation: flicker 3.2s ease-in-out infinite; } .marker { animation: bob 1.4s ease-in-out infinite; } }
 @keyframes flicker { 0%,100% { opacity: 1; } 40% { opacity: .82; } 55% { opacity: .95; } 70% { opacity: .78; } }
 @keyframes bob { 0%,100% { transform: translate(-50%, -100%); } 50% { transform: translate(-50%, calc(-100% - 6px)); } }
-.sprite { width: 60px; height: 84px; image-rendering: pixelated; background-size: 100% 100%; }
-.sprite::after { content: ""; position: absolute; left: 6px; bottom: -8px; width: 48px; height: 12px; border-radius: 50%; background: rgba(0,0,0,.45); z-index: -1; }
+/* PixelLab sheet (assets/sprites/<id>.png): 92 px cells at 1.5x, row 0 = still south/east/north/west */
+.sprite { width: 138px; height: 138px; image-rendering: pixelated; background-size: 1104px auto; }
+.sprite::after { content: ""; position: absolute; left: 42px; top: 112px; width: 48px; height: 12px; border-radius: 50%; background: rgba(0,0,0,.45); z-index: -1; }
 .me-ring { width: 76px; height: 22px; margin-left: -8px; border: 3px solid rgba(237,237,237,.55); border-radius: 50%; }
 .light { left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none;
   background: radial-gradient(ellipse at 50% 55%, transparent 40%, rgba(0,0,0,.55) 100%); }
@@ -246,30 +227,23 @@ td .key { margin-right: 4px; }
         <div class="w wall"></div>
         <div class="w window"></div>
         <div class="w shelf"></div>
-        <div class="w bottles"></div>
-        <div class="w bottles b2"></div>
         <div class="w parrot"></div>
         <div class="w floor-clip"><div class="floor"></div></div>
         <div class="w shaft"></div>
         <div class="w sprite" data-who="goulven" style="left:1380px;top:478px"></div>
-        <div class="w counter-top"></div>
         <div class="w counter"></div>
-        <div class="w mug m3"></div>
-        <div class="w candle" style="left:1560px;top:544px"></div>
+        <div class="w candle" style="left:1530px;top:484px"></div>
         <div class="w table t1"></div>
         <div class="w dice"></div>
-        <div class="w candle" style="left:560px;top:674px"></div>
         <div class="w sprite" data-who="jacquot" style="left:800px;top:600px"></div>
         <div class="w sprite" data-who="romain" style="left:250px;top:640px"></div>
-        <div class="w sprite" data-who="max" style="left:330px;top:676px"></div>
+        <div class="w sprite" data-who="max" data-dir="east" style="left:330px;top:676px"></div>
         <div class="w me-ring" style="left:1236px;top:810px"></div>
-        <div class="w sprite" data-who="me" style="left:1236px;top:740px"></div>
+        <div class="w sprite" data-who="me" data-dir="north" style="left:1236px;top:740px"></div>
         <div class="w table t2"></div>
-        <div class="w mug m1"></div><div class="w mug m2"></div>
-        <div class="w candle" style="left:960px;top:824px"></div>
-        <div class="w glow" style="left:1565px;top:540px"></div>
-        <div class="w glow" style="left:565px;top:670px"></div>
-        <div class="w glow" style="left:965px;top:820px"></div>
+        <div class="w glow" style="left:1561px;top:528px"></div>
+        <div class="w glow" style="left:454px;top:740px"></div>
+        <div class="w glow" style="left:845px;top:880px"></div>
         <div class="w glow" style="left:1100px;top:250px;opacity:.6"></div>
         <div class="w light"></div>
         <div class="w tilt top"></div>
@@ -411,42 +385,18 @@ td .key { margin-right: 4px; }
 
 <script>
 (function () {
-  // Pixel sprites drawn in code (placeholders until PixelLab characters).
-  var BODY = [
-    "..KKKKKK..", ".KHHHHHHK.", ".KHSSSSHK.", ".KSKSSKSK.", ".KSSSSSSK.", "..KKSSKK..",
-    ".KCCAACCK.", "KSCCAACCSK", "KSCCCCCCSK", ".KCCCCCCK.", ".KPPPPPPK.", ".KPPKKPPK.",
-    ".KBBKKBBK.", "..KK..KK.."
-  ];
-  var LOOKS = {
-    me:      { H: "#2b1a10", S: "#e2b48c", C: "#8c1f2b", A: "#e9dcc0", P: "#2a2a3a", B: "#3a2414" },
-    lea:     { H: "#c7742f", S: "#f0c9a0", C: "#2f5d4a", A: "#d8c27a", P: "#3a3226", B: "#2a1a10" },
-    max:     { H: "#151515", S: "#b9825a", C: "#4a4f5a", A: "#d0a040", P: "#2a2a2a", B: "#1a1a1a" },
-    romain:  { H: "#6b4a2a", S: "#e2b48c", C: "#1f3d6b", A: "#ededed", P: "#3a2a1a", B: "#2a1a10" },
-    goulven: { H: "#9a9a9a", S: "#e8b896", C: "#6b3a5a", A: "#ededed", P: "#4a3a2a", B: "#2a1a10" },
-    jacquot: { H: "#d9d9d9", S: "#d9a07a", C: "#5a4a2a", A: "#8a7a5a", P: "#3a3a2a", B: "#2a1a10" }
-  };
-  function draw(look, rows) {
-    var c = document.createElement("canvas");
-    c.width = 10; c.height = rows.length;
-    var g = c.getContext("2d");
-    rows.forEach(function (row, y) {
-      for (var x = 0; x < row.length; x++) {
-        var ch = row[x];
-        if (ch === ".") continue;
-        g.fillStyle = ch === "K" ? "#141010" : look[ch];
-        g.fillRect(x, y, 1, 1);
-      }
-    });
-    return c.toDataURL();
-  }
-  var full = {}, head = {};
-  Object.keys(LOOKS).forEach(function (k) {
-    full[k] = draw(LOOKS[k], BODY);
-    head[k] = draw(LOOKS[k], BODY.slice(0, 10)); // head and shoulders, 10 × 10
+  // PixelLab sprites and portraits (assets/). Positions in the markup are the
+  // feet minus (30, 84), as authored for the old 60 x 84 box.
+  var DIRS = ["south", "east", "north", "west"], ID = { me: "yann" };
+  document.querySelectorAll("[data-who]").forEach(function (el) {
+    var id = ID[el.dataset.who] || el.dataset.who, col = DIRS.indexOf(el.dataset.dir || "south");
+    var fx = parseFloat(el.style.left) + 30, fy = parseFloat(el.style.top) + 84;
+    el.style.left = fx - 66 + "px"; el.style.top = fy - 118.5 + "px";
+    el.style.backgroundImage = "url(assets/sprites/" + id + ".png)";
+    el.style.backgroundPosition = -col * 138 + "px 0";
   });
-  document.querySelectorAll("[data-who]").forEach(function (el) { el.style.backgroundImage = "url(" + full[el.dataset.who] + ")"; });
-  document.querySelectorAll("[data-face]").forEach(function (el) { el.style.backgroundImage = "url(" + head[el.dataset.face] + ")"; });
-  document.getElementById("portrait").style.backgroundImage = "url(" + head.me + ")";
+  document.querySelectorAll("[data-face]").forEach(function (el) { el.style.backgroundImage = "url(assets/portraits/" + el.dataset.face + ".png)"; });
+  document.getElementById("portrait").style.backgroundImage = "url(assets/portraits/yann.png)";
 
   // Hearts: 30 HP max -> ten hearts of 3 HP (MEMORY.md §2), 24 HP -> eight full.
   var HEART = "M1 0h2v1h1v-1h2v1h1v3h-1v1h-1v1h-1v1h-1v-1h-1v-1h-1v-1h-1v-3h1z";

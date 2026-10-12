@@ -86,30 +86,12 @@ du joueur.
 
 ## 3. Ce qui reste à faire
 
-### Tout de suite : PixelLab dans les planches
+### Fait : PixelLab dans les planches (12 octobre 2026)
 
-La session qui a écrit cette note n'avait ni le MCP PixelLab, ni la
-clé d'API, et `api.pixellab.ai` était bloqué par le réseau. Avec le
-MCP :
-
-1. **Annoncer le coût avant de générer** (palier « Pixel Apprentice » :
-   2 000 générations par cycle, remise à zéro le 11 de chaque mois).
-2. **Personnages** (règle de forme de l'épic `hd2d` : image plate, vue
-   de côté, 4 directions, repos et marche au moins) : Yann (Bretteur),
-   Léa (Vigie), Max (Canonnier), Romain (Navigateur), Mère Goulven,
-   Jacquot le Sourd, René (gamin à la vielle), Fañch, Anaïs. Les
-   apparences sont dans `campagne.yaml` (champs `appearance` et
-   `portrait` des PNJ).
-3. **Portraits** : Mère Goulven en trois expressions (neutre, méfiante,
-   ravie) pour le dialogue, et un buste par joueur pour D et F.
-4. **La taverne** (textures vues de face et accessoires plats, palette
-   du thème `port-1718`) : sol de planches, mur de bois et poutres,
-   comptoir, tables, étagères à bouteilles, perroquet empaillé,
-   chandelles, fenêtre. Voir le champ `art` de `sc_perroquet`.
-5. Ranger les images dans `docs/design/v2/assets/`, remplacer les
-   sprites dessinés en code de `cadre-pc.html` et `exploration.html`
-   (fonctions `BODY` / `LOOKS` / `draw`), puis lancer
-   `node docs/design/v2/check.cjs` et regarder les captures.
+9 personnages animés (repos + marche, 4 directions), 7 bustes dont
+Mère Goulven en 3 expressions, la taverne en 8 images ; 178
+générations. Rangés dans `docs/design/v2/assets/` (voir son
+`README.md`), branchés dans `cadre-pc.html` et `exploration.html`.
 
 ### Ensuite, phase 1 du jalon 1 (`TICKETS.md`)
 

@@ -22,8 +22,8 @@ decisions also go to `MEMORY.md` §0 and to the tickets they affect.
   from `MEMORY.md` §2.
 - Real campaign content only (`content/campaigns/corsaires/`): names,
   lines, checks and clues come from the scene being drawn.
-- Sprites are drawn in code (`BODY` / `LOOKS`) until PixelLab images
-  replace them (`docs/reprise.md`, "PixelLab").
+- Sprites, portraits and the tavern are PixelLab images in `assets/`
+  (`assets/README.md`: sheet layout, character ids, what was generated).
 
 ## Checking a board
 
@@ -32,3 +32,11 @@ node docs/design/v2/check.cjs   # page errors, overflow at 390 px, one screensho
 ```
 
 Look at the screenshots: the check finds errors, not overlaps.
+
+There is no Node or Playwright on the Proxmox host. In PCT 105, with
+Playwright installed under `/root/pw` (`bun add playwright` then
+`bunx playwright install --with-deps chromium`):
+
+```bash
+pct exec 105 -- bash -lc 'cd /mnt/storage/DnD-promptus && NODE_PATH=/root/pw/node_modules bun docs/design/v2/check.cjs'
+```

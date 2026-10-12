@@ -41,35 +41,20 @@ code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; color: #cfc
 
 /* ---------- world (1920 × 1080), depth sorted by z-index = feet y ---------- */
 .world { position: absolute; inset: 0; }
-.w { position: absolute; }
-.wall { left: 0; top: 0; width: 1920px; height: 540px; z-index: 1;
-  background: linear-gradient(#140c08 0 22px, transparent 22px) 0 70px / 100% 170px repeat-y,
-    repeating-linear-gradient(90deg, #2b1b12 0 58px, #24160f 58px 62px, #2e1d13 62px 120px), #2a1a12; }
+.w { position: absolute; image-rendering: pixelated; }
+.wall { left: 0; top: 0; width: 1920px; height: 540px; z-index: 1; background: url(assets/taverne/mur.png) 0 0 / 672px 560px repeat-x, #2a1a12; }
 .floor-clip { left: 0; top: 520px; width: 1920px; height: 560px; overflow: hidden; perspective: 900px; z-index: 2; }
-.floor { position: absolute; left: -600px; top: -40px; width: 3120px; height: 1100px; transform: rotateX(58deg); transform-origin: 50% 0;
-  background: repeating-linear-gradient(0deg, #1e130c 0 4px, transparent 4px 86px),
-    repeating-linear-gradient(90deg, #3f2a1b 0 230px, #382517 230px 236px, #432d1d 236px 470px); }
-.window { left: 190px; top: 150px; width: 200px; height: 230px; z-index: 3; background: linear-gradient(#5c7a8f, #2f4656); border: 14px solid #160e09; }
-.window::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 46%, #160e09 46% 54%, transparent 54%), linear-gradient(transparent 46%, #160e09 46% 54%, transparent 54%); }
+.floor { position: absolute; left: -600px; top: -40px; width: 3120px; height: 1100px; transform: rotateX(58deg); transform-origin: 50% 0; image-rendering: pixelated; background: url(assets/taverne/sol.png) 0 0 / 256px 256px; }
+.window { left: 150px; top: 90px; width: 320px; height: 373px; z-index: 3; background: url(assets/taverne/fenetre.png) 0 0 / 100% 100%; }
 .shaft { left: 150px; top: 370px; width: 520px; height: 520px; z-index: 3; background: linear-gradient(170deg, rgba(150,190,215,.20), transparent 70%); clip-path: polygon(10% 0, 45% 0, 100% 100%, 30% 100%); mix-blend-mode: screen; pointer-events: none; }
-.shelf { left: 1200px; top: 250px; width: 520px; height: 14px; z-index: 3; background: #160e09; box-shadow: 0 90px 0 #160e09; }
-.bottles { left: 1215px; top: 196px; width: 500px; height: 54px; z-index: 3;
-  background: linear-gradient(90deg, #3d6b3a 0 14px, transparent 14px 40px, #7a2f2a 40px 52px, transparent 52px 78px, #c8a24a 78px 90px, transparent 90px 120px) 0 0 / 120px 54px repeat-x; }
-.bottles.b2 { top: 286px; filter: hue-rotate(60deg) brightness(.9); }
-.parrot { left: 1430px; top: 120px; width: 46px; height: 60px; z-index: 3; background: #3e7d3a; border: 6px solid #141010; border-radius: 40% 40% 20% 20%; }
-.parrot::after { content: ""; position: absolute; left: 24px; top: 10px; width: 8px; height: 8px; background: #e8d36a; box-shadow: 10px 6px 0 -1px #c06a2a; }
-.counter-top { left: 1150px; top: 560px; width: 600px; height: 40px; background: #7a5233; border-top: 6px solid #9b6d45; z-index: 600; }
-.counter { left: 1150px; top: 600px; width: 600px; height: 150px; background: repeating-linear-gradient(90deg, #5a3a22 0 96px, #4a2f1b 96px 102px); border-bottom: 10px solid #2a1a10; z-index: 760; }
-.table { width: 240px; height: 70px; background: #6b4528; border-top: 8px solid #87593a; border-bottom: 12px solid #3a2414; border-radius: 4px; }
-.table::before, .table::after { content: ""; position: absolute; bottom: -64px; width: 18px; height: 54px; background: #3a2414; }
-.table::before { left: 26px; } .table::after { right: 26px; }
-.t1 { left: 380px; top: 690px; z-index: 780; }
-.t2 { left: 760px; top: 840px; width: 280px; z-index: 930; }
-.dice { left: 470px; top: 694px; width: 12px; height: 12px; z-index: 781; background: #ededed; box-shadow: 18px 4px 0 #ededed, 9px -6px 0 #d9d9d9; }
-.mug { width: 18px; height: 22px; background: #b98a4a; border: 3px solid #141010; }
-.m1 { left: 820px; top: 830px; z-index: 931; } .m2 { left: 900px; top: 836px; z-index: 931; } .m3 { left: 1260px; top: 538px; z-index: 601; }
-.candle { width: 10px; height: 18px; background: #e9dcc0; }
-.candle::before { content: ""; position: absolute; left: 2px; top: -9px; width: 6px; height: 9px; background: #ffd27a; border-radius: 50% 50% 30% 30%; }
+.shelf { left: 1200px; top: 200px; width: 512px; height: 256px; z-index: 3; background: url(assets/taverne/etagere.png) 0 0 / 100% 100%; }
+.parrot { left: 1392px; top: 60px; width: 128px; height: 160px; z-index: 4; background: url(assets/taverne/perroquet.png) 0 0 / 100% 100%; }
+.counter { left: 1125px; top: 520px; width: 640px; height: 240px; z-index: 760; background: url(assets/taverne/comptoir.png) 0 0 / 100% 100%; }
+.table { background: url(assets/taverne/table.png) 0 0 / 100% 100%; }
+.t1 { left: 380px; top: 704px; width: 240px; height: 120px; z-index: 780; }
+.t2 { left: 760px; top: 834px; width: 280px; height: 140px; z-index: 930; }
+.dice { left: 470px; top: 736px; width: 12px; height: 12px; z-index: 781; background: #ededed; box-shadow: 18px 4px 0 #ededed, 9px -6px 0 #d9d9d9; }
+.candle { width: 64px; height: 96px; background: url(assets/taverne/chandelle.png) 0 0 / 100% 100%; }
 .glow { width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: 50%; z-index: 5000; pointer-events: none; background: radial-gradient(rgba(255,170,70,.40), rgba(255,140,40,.11) 40%, transparent 70%); mix-blend-mode: screen; }
 .light { left: 0; top: 0; width: 1920px; height: 1080px; z-index: 5001; pointer-events: none; background: radial-gradient(ellipse at 50% 55%, transparent 40%, rgba(0,0,0,.55) 100%); }
 .tilt { left: 0; width: 1920px; z-index: 5002; pointer-events: none; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
@@ -79,13 +64,11 @@ code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; color: #cfc
 @keyframes flicker { 0%,100% { opacity: 1; } 40% { opacity: .82; } 55% { opacity: .95; } 70% { opacity: .78; } }
 @keyframes bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -6px; } }
 
-.actor { width: 60px; height: 84px; }
-.actor .body { position: absolute; inset: 0; image-rendering: pixelated; background-size: 100% 100%; }
-.actor.left .body { transform: scaleX(-1); }
-.actor.walk .body { animation: step .32s steps(2) infinite; }
-@keyframes step { 0% { translate: 0 0; } 100% { translate: 0 -4px; } }
-.actor::before { content: ""; position: absolute; left: 6px; bottom: -8px; width: 48px; height: 12px; border-radius: 50%; background: rgba(0,0,0,.45); }
-.actor.me::before { left: -6px; width: 72px; height: 22px; bottom: -13px; background: transparent; border: 3px solid rgba(243,230,200,.6); }
+/* 92 px PixelLab cell at 1.5x; feet at (66, 118.5) in the box */
+.actor { width: 138px; height: 138px; }
+.actor .body { position: absolute; inset: 0; image-rendering: pixelated; background-size: 1104px auto; }
+.actor::before { content: ""; position: absolute; left: 42px; top: 112px; width: 48px; height: 12px; border-radius: 50%; background: rgba(0,0,0,.45); }
+.actor.me::before { left: 30px; width: 72px; height: 22px; top: 107px; background: transparent; border: 3px solid rgba(243,230,200,.6); }
 .actor.near .body { filter: drop-shadow(0 0 0 var(--gold)) drop-shadow(2px 0 0 var(--gold)) drop-shadow(-2px 0 0 var(--gold)) drop-shadow(0 -2px 0 var(--gold)); }
 .prop-near { outline: 3px solid var(--gold); outline-offset: 6px; }
 /* floating labels: never bare text on decor */
@@ -169,18 +152,15 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
     <div class="screen" id="screen">
       <div class="world" id="world">
         <div class="w wall"></div><div class="w window"></div><div class="w shelf"></div>
-        <div class="w bottles"></div><div class="w bottles b2"></div><div class="w parrot"></div>
+        <div class="w parrot"></div>
         <div class="w floor-clip"><div class="floor"></div></div>
         <div class="w shaft"></div>
-        <div class="w counter-top"></div><div class="w counter"></div><div class="w mug m3"></div>
-        <div class="w candle" style="left:1560px;top:544px;z-index:601"></div>
+        <div class="w counter"></div><div class="w candle" style="left:1530px;top:484px;z-index:761"></div>
         <div class="w table t1" id="t1"></div><div class="w dice"></div>
-        <div class="w candle" style="left:560px;top:674px;z-index:781"></div>
-        <div class="w table t2"></div><div class="w mug m1"></div><div class="w mug m2"></div>
-        <div class="w candle" style="left:960px;top:824px;z-index:931"></div>
-        <div class="w glow" style="left:1565px;top:540px"></div>
-        <div class="w glow" style="left:565px;top:670px"></div>
-        <div class="w glow" style="left:965px;top:820px"></div>
+        <div class="w table t2"></div>
+        <div class="w glow" style="left:1561px;top:528px"></div>
+        <div class="w glow" style="left:454px;top:740px"></div>
+        <div class="w glow" style="left:845px;top:880px"></div>
         <div class="w glow" style="left:1100px;top:250px;opacity:.6"></div>
         <div class="w light"></div><div class="w tilt top"></div><div class="w tilt bot"></div>
         <div class="w target-dot" id="dot" hidden></div>
@@ -255,48 +235,38 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
 
 <script>
 (function () {
-  // ---------- pixel sprites drawn in code (placeholders until PixelLab) ----------
-  var BODY = ["..KKKKKK..", ".KHHHHHHK.", ".KHSSSSHK.", ".KSKSSKSK.", ".KSSSSSSK.", "..KKSSKK..",
-    ".KCCAACCK.", "KSCCAACCSK", "KSCCCCCCSK", ".KCCCCCCK.", ".KPPPPPPK.", ".KPPKKPPK.", ".KBBKKBBK.", "..KK..KK.."];
-  var LOOKS = {
-    yann:    { H: "#2b1a10", S: "#e2b48c", C: "#8c1f2b", A: "#e9dcc0", P: "#2a2a3a", B: "#3a2414" },
-    lea:     { H: "#c7742f", S: "#f0c9a0", C: "#2f5d4a", A: "#d8c27a", P: "#3a3226", B: "#2a1a10" },
-    max:     { H: "#151515", S: "#b9825a", C: "#4a4f5a", A: "#d0a040", P: "#2a2a2a", B: "#1a1a1a" },
-    romain:  { H: "#6b4a2a", S: "#e2b48c", C: "#1f3d6b", A: "#ededed", P: "#3a2a1a", B: "#2a1a10" },
-    goulven: { H: "#9a9a9a", S: "#e8b896", C: "#6b3a5a", A: "#ededed", P: "#4a3a2a", B: "#2a1a10" },
-    jacquot: { H: "#d9d9d9", S: "#d9a07a", C: "#5a4a2a", A: "#8a7a5a", P: "#3a3a2a", B: "#2a1a10" },
-    rene:    { H: "#e0c060", S: "#f0c9a0", C: "#3a5a8a", A: "#e9dcc0", P: "#5a4a3a", B: "#2a1a10" },
-    fanch:   { H: "#3a2a1a", S: "#c99870", C: "#2a2a2a", A: "#8c1f2b", P: "#2a2a3a", B: "#1a1a1a" },
-    anais:   { H: "#5a2a1a", S: "#f0c9a0", C: "#8a6a3a", A: "#ededed", P: "#6b3a5a", B: "#2a1a10" }
-  };
-  function draw(look, rows) {
-    var c = document.createElement("canvas"); c.width = 10; c.height = rows.length;
-    var g = c.getContext("2d");
-    rows.forEach(function (row, y) { for (var x = 0; x < row.length; x++) { var ch = row[x]; if (ch === ".") continue; g.fillStyle = ch === "K" ? "#141010" : look[ch]; g.fillRect(x, y, 1, 1); } });
-    return c.toDataURL();
+  // ---------- PixelLab sprites (assets/sprites/<id>.png, packed by row) ----------
+  // A sheet is 8 columns of 92 px cells: row 0 = still (south, east, north, west),
+  // rows 1-4 = breathing idle by direction (4 frames), rows 5-8 = walk by direction (8 frames).
+  // Drawn at 1.5x: the feet sit at y 79 of a cell, centred at x 44.
+  var CELL = 92, K = 1.5, FEET_X = 44, FEET_Y = 79, DIRS = ["south", "east", "north", "west"];
+  var ANIMS = { idle: { row: 1, frames: 4, fps: 5 }, walk: { row: 5, frames: 8, fps: 12 } };
+  function sheet(id) { return "assets/sprites/" + id + ".png"; }
+  function face(id) { return "assets/portraits/" + id + ".png"; }
+  function pose(a, anim, dir, t) {
+    var A = ANIMS[anim], d = DIRS.indexOf(dir), f = Math.floor(t * A.fps) % A.frames;
+    a.body.style.backgroundPosition = -f * CELL * K + "px " + -(A.row + d) * CELL * K + "px";
   }
-  var FULL = {}, HEAD = {};
-  Object.keys(LOOKS).forEach(function (k) { FULL[k] = draw(LOOKS[k], BODY); HEAD[k] = draw(LOOKS[k], BODY.slice(0, 10)); });
 
   // ---------- data: players, NPCs, things (as the server would send them to one player) ----------
   var PLAYERS = {
-    yann:   { name: "Yann", cls: "Bretteur niv. 1", hp: 24, max: 30, ac: 15, perc: 11, x: 1240, y: 900 },
-    lea:    { name: "Léa", cls: "Vigie niv. 1", hp: 18, max: 22, ac: 14, perc: 15, x: 700, y: 980 },
-    max:    { name: "Max", cls: "Canonnier", x: 330, y: 760, where: "Aux dés, ici" },
-    romain: { name: "Romain", cls: "Navigateur", x: 250, y: 720, where: "Près de la fenêtre, ici", path: [[250, 720], [250, 990], [640, 1000], [660, 860], [250, 860]] }
+    yann:   { name: "Yann", cls: "Bretteur niv. 1", hp: 24, max: 30, ac: 15, perc: 11, x: 1240, y: 900, dir: "north" },
+    lea:    { name: "Léa", cls: "Vigie niv. 1", hp: 18, max: 22, ac: 14, perc: 15, x: 700, y: 980, dir: "north" },
+    max:    { name: "Max", cls: "Canonnier", x: 330, y: 760, dir: "east", where: "Aux dés, ici" },
+    romain: { name: "Romain", cls: "Navigateur", x: 250, y: 720, dir: "south", where: "Près de la fenêtre, ici", path: [[250, 720], [250, 990], [640, 1000], [660, 860], [250, 860]] }
   };
   // x, y = feet. reach = where the player stands to interact.
   var NPCS = [
-    { id: "goulven", name: "Mère Goulven", x: 1410, y: 562, reach: [1410, 800], marker: "!", act: "Parler à Mère Goulven",
+    { id: "goulven", name: "Mère Goulven", x: 1410, y: 562, dir: "south", reach: [1410, 800], marker: "!", act: "Parler à Mère Goulven",
       on: "Dialogue avec Mère Goulven → planche suivante (design/draw-dialogue-screen)." },
-    { id: "jacquot", name: "Jacquot le Sourd", x: 830, y: 684, reach: [830, 720], act: "Parler à Jacquot", alias: "Vieux marin ivre", actAlias: "Parler au vieux marin",
+    { id: "jacquot", name: "Jacquot le Sourd", x: 830, y: 684, dir: "south", reach: [830, 720], act: "Parler à Jacquot", alias: "Vieux marin ivre", actAlias: "Parler au vieux marin",
       on: "Jacquot vous regarde, plisse les yeux, et parle beaucoup trop fort. → dialogue." },
-    { id: "rene", name: "René, à la vielle", x: 1820, y: 724, reach: [1820, 760], act: "Écouter René jouer", alias: "Gamin à la vielle", actAlias: "Écouter le gamin jouer",
+    { id: "rene", name: "René, à la vielle", x: 1820, y: 724, dir: "south", reach: [1820, 760], act: "Écouter René jouer", alias: "Gamin à la vielle", actAlias: "Écouter le gamin jouer",
       on: "René massacre un air breton, puis vous lance un regard en coin. → dialogue." },
-    { id: "fanch", name: "Fañch", x: 830, y: 829, reach: [[830, 800], [830, 965]], act: "Aborder Fañch", alias: "Marin", actAlias: "Aborder le marin", hidden: { perc: 13,
+    { id: "fanch", name: "Fañch", x: 830, y: 878, dir: "east", reach: [[830, 800], [830, 965]], act: "Aborder Fañch", alias: "Marin", actAlias: "Aborder le marin", hidden: { perc: 13,
       seen: "Le marin attablé avec la jeune femme regarde un peu trop votre table.", journal: "Un marin, attablé avec une jeune femme, observe la table du groupe." },
       on: "Fañch pose la main sur son couteau, sourire aux lèvres. → dialogue." },
-    { id: "anais", name: "Anaïs", x: 960, y: 829, reach: [[960, 800], [960, 965]], act: "Saluer Anaïs", alias: "Jeune femme", actAlias: "Saluer la jeune femme",
+    { id: "anais", name: "Anaïs", x: 960, y: 878, dir: "west", reach: [[960, 800], [960, 965]], act: "Saluer Anaïs", alias: "Jeune femme", actAlias: "Saluer la jeune femme",
       on: "Anaïs vous rend un salut poli, sans lâcher Fañch des yeux. → dialogue." }
   ];
   var PROPS = [{ id: "dice", el: "t1", name: "Table de dés", x: 500, y: 790, reach: [500, 820], marker: "?", act: "Jouer aux dés avec Max",
@@ -307,8 +277,8 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
 
   var world = document.getElementById("world");
   function el(cls, html) { var d = document.createElement("div"); d.className = "w " + cls; if (html != null) d.innerHTML = html; world.appendChild(d); return d; }
-  function makeActor(key) { var a = el("actor", '<div class="body"></div>'); a.querySelector(".body").style.backgroundImage = "url(" + FULL[key] + ")"; return a; }
-  function place(a, x, y) { a.style.left = x - 30 + "px"; a.style.top = y - 84 + "px"; a.style.zIndex = Math.round(y); }
+  function makeActor(key) { var a = el("actor", '<div class="body"></div>'); a.body = a.querySelector(".body"); a.body.style.backgroundImage = "url(" + sheet(key) + ")"; return a; }
+  function place(a, x, y) { a.style.left = x - FEET_X * K + "px"; a.style.top = y - FEET_Y * K + "px"; a.style.zIndex = Math.round(y); }
 
   Object.keys(PLAYERS).forEach(function (k) {
     var p = PLAYERS[k]; p.el = makeActor(k); p.label = el("wlabel"); p.label.textContent = p.name; p.i = 0;
@@ -317,8 +287,8 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
     n.el = makeActor(n.id); place(n.el, n.x, n.y);
     if (n.id === "goulven") n.el.style.zIndex = 590; // behind the counter
     n.label = el("wlabel npc");
-    n.label.style.left = n.x + "px"; n.label.style.top = n.y - 132 + "px";
-    if (n.marker || n.hidden) { n.mk = el("marker"); n.mk.textContent = "!"; n.mk.style.left = n.x + "px"; n.mk.style.top = n.y - 92 + "px"; }
+    n.label.style.left = n.x + "px"; n.label.style.top = n.y - 146 + "px";
+    if (n.marker || n.hidden) { n.mk = el("marker"); n.mk.textContent = "!"; n.mk.style.left = n.x + "px"; n.mk.style.top = n.y - 108 + "px"; }
   });
   PROPS.forEach(function (p) {
     p.el = document.getElementById(p.el);
@@ -335,7 +305,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
   var HEART = "M1 0h2v1h1v-1h2v1h1v3h-1v1h-1v1h-1v1h-1v-1h-1v-1h-1v-1h-1v-3h1z";
   function renderHud() {
     var p = me();
-    document.getElementById("portrait").style.backgroundImage = "url(" + HEAD[state.who] + ")";
+    document.getElementById("portrait").style.backgroundImage = "url(" + face(state.who) + ")";
     document.getElementById("vname").textContent = p.name;
     document.getElementById("vclass").textContent = "· " + p.cls;
     document.getElementById("vac").textContent = p.ac;
@@ -349,7 +319,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
     party.innerHTML = '<span class="ptitle">Le groupe</span>';
     Object.keys(PLAYERS).filter(function (k) { return k !== state.who; }).forEach(function (k) {
       var o = PLAYERS[k];
-      party.insertAdjacentHTML("beforeend", '<div class="pm"><div class="face" style="background-image:url(' + HEAD[k] + ')"></div><b>' + o.name + " · " + o.cls.replace(/ niv\. \d/, "") + "</b><span>" + (o.where || "Dans la salle, ici") + "</span></div>");
+      party.insertAdjacentHTML("beforeend", '<div class="pm"><div class="face" style="background-image:url(' + face(k) + ')"></div><b>' + o.name + " · " + o.cls.replace(/ niv\. \d/, "") + "</b><span>" + (o.where || "Dans la salle, ici") + "</span></div>");
     });
     Object.keys(PLAYERS).forEach(function (k) { PLAYERS[k].el.classList.toggle("me", k === state.who); PLAYERS[k].label.style.display = k === state.who ? "none" : ""; });
   }
@@ -430,6 +400,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
   }
 
   var SPEED = 320; // px per second
+  function dirOf(vx, vy) { return Math.abs(vx) > Math.abs(vy) ? (vx < 0 ? "west" : "east") : (vy < 0 ? "north" : "south"); }
   function frame(now) {
     var dt = Math.min(0.05, (now - state.last) / 1000); state.last = now;
     var p = me(), vx = 0, vy = 0, k = state.keys;
@@ -454,19 +425,21 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
       var len = Math.hypot(vx, vy); if (len > 1) { vx /= len; vy /= len; }
       walking = tryMove(p, vx * SPEED * dt, vy * SPEED * 0.8 * dt);
       if (!walking && state.target) { state.target = null; document.getElementById("dot").hidden = true; }
-      if (vx < -0.1) p.el.classList.add("left"); if (vx > 0.1) p.el.classList.remove("left");
+      if (walking) p.dir = dirOf(vx, vy);
       if (walking && !state.moved) { state.moved = true; setTimeout(function () { document.getElementById("helper").classList.add("off"); }, 2500); }
     }
-    p.el.classList.toggle("walk", walking);
+    p.walking = walking;
     // Romain walks his loop: other players move live
     var r = PLAYERS.romain;
     if (state.who !== "romain" && r.path) {
       var wp = r.path[r.i], ddx = wp[0] - r.x, ddy = wp[1] - r.y, dd = Math.hypot(ddx, ddy);
       if (dd < 4) r.i = (r.i + 1) % r.path.length;
-      else { r.x += ddx / dd * 110 * dt; r.y += ddy / dd * 110 * dt; r.el.classList.toggle("left", ddx < 0); }
-      r.el.classList.toggle("walk", dd >= 4);
+      else { r.x += ddx / dd * 110 * dt; r.y += ddy / dd * 110 * dt; r.dir = dirOf(ddx, ddy); }
+      r.walking = dd >= 4;
     }
-    Object.keys(PLAYERS).forEach(function (key) { var o = PLAYERS[key]; place(o.el, o.x, o.y); o.label.style.left = o.x + "px"; o.label.style.top = o.y - 96 + "px"; });
+    var t = now / 1000;
+    NPCS.forEach(function (n) { pose(n.el, "idle", n.dir, t); });
+    Object.keys(PLAYERS).forEach(function (key) { var o = PLAYERS[key]; place(o.el, o.x, o.y); pose(o.el, o.walking ? "walk" : "idle", o.dir, t); o.label.style.left = o.x + "px"; o.label.style.top = o.y - 108 + "px"; });
     // nearest thing: gold outline, its name, one action
     var near = findNear();
     if (near !== state.near) {
