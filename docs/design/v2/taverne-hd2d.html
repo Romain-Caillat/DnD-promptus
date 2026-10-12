@@ -210,7 +210,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
   // the picture is exactly the painting; when the camera follows the player,
   // the layers slide against each other (parallax).
   // ======================================================================
-  var IW = 688, IH = 384, D0 = 716, ZMAX = 80, ZOOM = 1.5;
+  var IW = 688, IH = 384, D0 = 716, ZMAX = 80, ZOOM = 1.35;
   var C0 = new THREE.Vector3(IW / 2, IH / 2, D0);
   function Z(y) { return Math.max(0, (y - 190) / (IH - 190)) * ZMAX; }       // depth of a point on the floor
   function H(y) { return 84 + (y - 260) * (34 / 120); }                        // a standing figure's height, in picture px (a door is ~100)
@@ -341,7 +341,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
     romain: { name: "Romain", cls: "Navigateur", x: 335, y: 370, dir: "east", where: "Près de la fenêtre, ici", path: [[335, 370], [535, 370], [535, 380], [335, 380]] }
   };
   var NPCS = [
-    { id: "goulven", name: "Mère Goulven", x: 505, y: 250, h: 128, dir: "south", reach: [505, 300], marker: "!", act: "Parler à Mère Goulven",
+    { id: "goulven", name: "Mère Goulven", x: 505, y: 250, h: 118, dir: "south", reach: [505, 300], marker: "!", act: "Parler à Mère Goulven",
       on: "Dialogue avec Mère Goulven → planche dialogue.html." },
     { id: "jacquot", name: "Jacquot le Sourd", x: 232, y: 268, dir: "south", reach: [232, 280], act: "Parler à Jacquot", alias: "Vieux marin ivre", actAlias: "Parler au vieux marin",
       on: "Jacquot vous regarde, plisse les yeux, et parle beaucoup trop fort. → dialogue." },
@@ -529,7 +529,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
     }
     // camera: follows the player within the picture, eased
     // the camera frames the player (a little above the feet), never past the picture's edges
-    var wantX = Math.max(HW, Math.min(IW - HW, p.x)), wantY = Math.max(HH, Math.min(IH - HH, IH - p.y + 70));
+    var wantX = Math.max(HW, Math.min(IW - HW, p.x)), wantY = Math.max(HH, Math.min(IH - HH, IH - p.y + 95));
     if (!state.framed) { camX = wantX; camY = wantY; state.framed = true; }
     camX += (wantX - camX) * Math.min(1, dt * 3); camY += (wantY - camY) * Math.min(1, dt * 3);
     camera.position.set(camX, camY, D0); camera.lookAt(camX, camY, 0);

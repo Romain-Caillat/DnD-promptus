@@ -85,6 +85,9 @@ Yann south and Léa west, which keep the first template walk (in its frames
 5–8 the figure shrinks a little). Every row is set on its own lowest pixel,
 because the `skeleton-v3` canvas places the figure higher than the stills.
 The players have no idle animation: generation was stopped on 12 October.
+The NPC lineup cropped Goulven's, Fañch's and Anaïs's heads flat at the
+top: their frames got a few rows added by hand above the flat top, each
+narrower than the one below and outlined, so the head is round again.
 
 ## `quai/` — an abandoned try
 
