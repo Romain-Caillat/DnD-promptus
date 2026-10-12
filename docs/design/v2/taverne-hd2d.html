@@ -210,7 +210,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
   // the picture is exactly the painting; when the camera follows the player,
   // the layers slide against each other (parallax).
   // ======================================================================
-  var IW = 688, IH = 384, D0 = 716, ZMAX = 70, ZOOM = 1.1;
+  var IW = 688, IH = 384, D0 = 716, ZMAX = 80, ZOOM = 1.5;
   var C0 = new THREE.Vector3(IW / 2, IH / 2, D0);
   function Z(y) { return Math.max(0, (y - 190) / (IH - 190)) * ZMAX; }       // depth of a point on the floor
   function H(y) { return 85 + (y - 260) * (35 / 120); }                        // a standing figure's height, in picture px (a door is ~100)
@@ -519,8 +519,10 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
       r.walking = dd >= 1.5;
     }
     // camera: follows the player within the picture, eased
-    var wantX = Math.max(HW, Math.min(IW - HW, C0.x + (p.x - C0.x) * 0.6)), wantY = Math.max(HH, Math.min(IH - HH, C0.y + ((IH - p.y) - C0.y) * 0.5));
-    camX += (wantX - camX) * Math.min(1, dt * 2.5); camY += (wantY - camY) * Math.min(1, dt * 2.5);
+    // the camera frames the player (a little above the feet), never past the picture's edges
+    var wantX = Math.max(HW, Math.min(IW - HW, p.x)), wantY = Math.max(HH, Math.min(IH - HH, IH - p.y + 70));
+    if (!state.framed) { camX = wantX; camY = wantY; state.framed = true; }
+    camX += (wantX - camX) * Math.min(1, dt * 3); camY += (wantY - camY) * Math.min(1, dt * 3);
     camera.position.set(camX, camY, D0); camera.lookAt(camX, camY, 0);
     // life: flames, dust, smoke
     flames.forEach(function (f) { var fl = 0.82 + 0.12 * Math.sin(t * 9 + f.ph) + 0.08 * Math.sin(t * 23 + f.ph * 3); f.s.material.opacity = fl; if (f.light) f.light.intensity = 1.0 * fl; });
