@@ -102,6 +102,14 @@ Mère Goulven en 3 expressions, la taverne en 8 images ; 178
 générations. Rangés dans `docs/design/v2/assets/` (voir son
 `README.md`), branchés dans `cadre-pc.html` et `exploration.html`.
 
+### Fait : la HD-2D vérifiée (12 octobre 2026)
+
+`docs/design/v2/taverne-hd2d.html` : l'image PixelLab de la taverne
+rendue jouable (recette dans `MEMORY.md` §0, ticket
+`hd2d/build-level-from-key-art`). Romain : « avec la taverne, on est
+bon ». La génération est arrêtée ; il reste environ 1 400 générations
+jusqu'au 11 novembre.
+
 ### Ensuite, phase 1 du jalon 1 (`TICKETS.md`)
 
 ```

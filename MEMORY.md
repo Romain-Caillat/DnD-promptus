@@ -72,6 +72,13 @@ below only as history until their ticket rewrites them:
      reference for movement and reach.
   6. **Life**: candle halos with point lights that light passing
      characters, dust, smoke, bloom, light depth blur.
+  **The key art faces the place**, laid out like its map: the map's far
+  rows at the back of the picture, the near ones in front, so depth is
+  the picture's height and a grid falls on it undistorted. A first quay
+  (`docs/design/v2/assets/quai/`) ran its street diagonally to a vanishing
+  point: moving was sideways along a thin strip, and the grid would have
+  been skewed. Say the framing in the prompt ("seen from the front, the
+  far side parallel to the picture").
   This replaces, for the look of places, the "volumes are textured 3D
   boxes" rule of §2. It does not yet say how combat grids sit on a
   painted plate (`design/draw-combat-planes`).

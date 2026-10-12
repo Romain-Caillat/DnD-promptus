@@ -80,8 +80,19 @@ plus the input (2 generations each), one `idle` row. Cell sizes vary;
 | Max | `72ad587f-5c3b-4c66-a0f1-f585005c3c4d` |
 | Romain | `844163e7-7997-427f-8da4-1221222db592` |
 
-The walk is uneven: in frames 5–8 the figure shrinks a little and the
-swordsman loses his cutlass. The players have no idle animation yet.
+The walk is the steadier `skeleton-v3` one (`walk2` on PixelLab), except
+Yann south and Léa west, which keep the first template walk (in its frames
+5–8 the figure shrinks a little). Every row is set on its own lowest pixel,
+because the `skeleton-v3` canvas places the figure higher than the stills.
+The players have no idle animation: generation was stopped on 12 October.
+
+## `quai/` — an abandoned try
+
+`quai.png` (25) and `quai-vide.png` (25, its "customs" sign repainted
+"DOUANES" by hand) were the second level of the recipe. Dropped: the
+street runs diagonally to a vanishing point, which breaks movement and
+would distort the combat grid (`MEMORY.md` §0). The crew lineup made for
+it (25) was never downloaded.
 
 `hd2d-data.js` carries the backdrop and these sheets as data URLs, because
 WebGL refuses images read from `file://`. Rebuild it after changing any of
