@@ -44,20 +44,31 @@ code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; color: #cfc
 /* ---------- world: the tavern of exploration.html, darkened and blurred behind the window ---------- */
 .world { position: absolute; inset: 0; filter: blur(3px) brightness(.42) saturate(.8); }
 .w { position: absolute; image-rendering: pixelated; }
-.wall { left: 0; top: 0; width: 1920px; height: 540px; background: url(assets/taverne/mur.png) 0 0 / 672px 560px repeat-x, #2a1a12; }
-.floor-clip { left: 0; top: 520px; width: 1920px; height: 560px; overflow: hidden; perspective: 900px; }
-.floor { position: absolute; left: -600px; top: -40px; width: 3120px; height: 1100px; transform: rotateX(58deg); transform-origin: 50% 0; image-rendering: pixelated; background: url(assets/taverne/sol.png) 0 0 / 256px 256px; }
-.window { left: 150px; top: 90px; width: 320px; height: 373px; background: url(assets/taverne/fenetre.png) 0 0 / 100% 100%; }
-.shelf { left: 1200px; top: 200px; width: 512px; height: 256px; background: url(assets/taverne/etagere.png) 0 0 / 100% 100%; }
-.parrot { left: 1392px; top: 60px; width: 128px; height: 160px; background: url(assets/taverne/perroquet.png) 0 0 / 100% 100%; }
-.counter { left: 1125px; top: 520px; width: 640px; height: 240px; background: url(assets/taverne/comptoir.png) 0 0 / 100% 100%; }
+.wall { left: 0; top: 0; width: 1920px; height: 460px; background: url(assets/taverne/mur.png) 0 70px / 480px 400px repeat-x, #140c08; }
+.floor-clip { left: 0; top: 430px; width: 1920px; height: 650px; overflow: hidden; perspective: 900px; }
+.floor { position: absolute; left: -600px; top: -40px; width: 3120px; height: 1100px; transform: rotateX(58deg); transform-origin: 50% 0; image-rendering: pixelated; background: url(assets/taverne/sol.png) 0 0 / 320px 320px; }
+.window { left: 170px; top: 110px; width: 240px; height: 280px; background: url(assets/taverne/fenetre.png) 0 0 / 100% 100%; }
+.shelf { left: 1170px; top: 190px; width: 640px; height: 320px; background: url(assets/taverne/etagere.png) 0 0 / 100% 100%; }
+.parrot { left: 1420px; top: 15px; width: 160px; height: 200px; background: url(assets/taverne/perroquet.png) 0 0 / 100% 100%; }
+.counter { left: 1150px; top: 430px; width: 640px; height: 240px; background: url(assets/taverne/comptoir.png) 0 0 / 100% 100%; }
 .table { background: url(assets/taverne/table.png) 0 0 / 100% 100%; }
-.t1 { left: 380px; top: 704px; width: 240px; height: 120px; }
-.t2 { left: 760px; top: 834px; width: 280px; height: 140px; }
-.candle { width: 64px; height: 96px; background: url(assets/taverne/chandelle.png) 0 0 / 100% 100%; }
-.glow { width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: 50%; background: radial-gradient(rgba(255,170,70,.42), rgba(255,140,40,.12) 40%, transparent 70%); mix-blend-mode: screen; }
-/* PixelLab sheet: 92 px cells at 1.5x, row 0 = still south/east/north/west; feet at (66, 118.5) */
-.sprite { width: 138px; height: 138px; background-size: 1104px auto; }
+.t1 { left: 250px; top: 590px; width: 400px; height: 200px; }
+.t2 { left: 690px; top: 760px; width: 400px; height: 200px; }
+.candle { width: 80px; height: 120px; background: url(assets/taverne/chandelle.png) 0 0 / 100% 100%; }
+.smoke { left: -600px; width: 3120px; height: 70px; pointer-events: none; mix-blend-mode: screen; opacity: .55;
+  background: radial-gradient(60px 30px at 10% 50%, rgba(150,165,190,.22), transparent), radial-gradient(160px 26px at 30% 45%, rgba(150,165,190,.18), transparent),
+    radial-gradient(120px 30px at 52% 55%, rgba(150,165,190,.2), transparent), radial-gradient(200px 24px at 74% 50%, rgba(150,165,190,.16), transparent),
+    linear-gradient(transparent, rgba(140,155,180,.12) 40%, rgba(140,155,180,.12) 60%, transparent); }
+.puddle { height: 26px; border-radius: 50%; pointer-events: none; mix-blend-mode: screen;
+  background: radial-gradient(closest-side, rgba(255,180,90,.42), rgba(255,140,40,.12) 55%, rgba(40,25,12,0) 100%); }
+@media (prefers-reduced-motion: no-preference) { .puddle { animation: flicker 3.2s ease-in-out infinite; }
+  .smoke { animation: drift 46s ease-in-out infinite alternate; } .smoke.s2 { animation-duration: 63s; animation-direction: alternate-reverse; } }
+@keyframes drift { from { translate: 0 0; } to { translate: 520px 6px; } }
+@keyframes flicker { 0%,100% { opacity: 1; } 40% { opacity: .82; } 55% { opacity: .95; } 70% { opacity: .78; } }
+.glow { width: 560px; height: 560px; margin: -280px 0 0 -280px; border-radius: 50%; background: radial-gradient(rgba(255,170,70,.42), rgba(255,140,40,.12) 40%, transparent 70%); mix-blend-mode: screen; }
+/* PixelLab sheet (assets/sprites/<id>.png): 92 px cells at 2.5x, the scale of every image in the room;
+   row 0 = still south/east/north/west; feet at (110, 197.5) in the box */
+.sprite { width: 230px; height: 230px; image-rendering: pixelated; background-size: 1840px auto; }
 .dim { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 70%, rgba(0,0,0,.1), rgba(0,0,0,.55)); pointer-events: none; }
 
 /* ---------- UI (Octopath skin) ---------- */
@@ -173,19 +184,26 @@ pre.graph { background: var(--page-2); padding: 14px 16px; overflow-x: auto; fon
       <div class="world" aria-hidden="true">
         <div class="w wall"></div><div class="w window"></div><div class="w shelf"></div><div class="w parrot"></div>
         <div class="w floor-clip"><div class="floor"></div></div>
-        <div class="w sprite" data-who="goulven" data-feet="1410,562"></div>
-        <div class="w counter"></div><div class="w candle" style="left:1530px;top:484px"></div>
-        <div class="w sprite" data-who="romain" data-feet="250,720"></div>
-        <div class="w sprite" data-who="max" data-dir="east" data-feet="330,760"></div>
+        <div class="w puddle" style="left:560px;top:830px;width:150px"></div>
+        <div class="w puddle" style="left:1120px;top:990px;width:190px"></div>
+        <div class="w puddle" style="left:1500px;top:740px;width:120px"></div>
+        <div class="w sprite" data-who="goulven" data-feet="1470,565"></div>
+        <div class="w counter"></div><div class="w candle" style="left:1600px;top:430px"></div>
+        <div class="w sprite" data-who="romain" data-feet="170,650"></div>
+        <div class="w sprite" data-who="jacquot" data-feet="930,650"></div>
+        <div class="w sprite" data-who="rene" data-feet="1855,660"></div>
+        <div class="w sprite" data-who="max" data-dir="east" data-feet="310,730"></div>
         <div class="w table t1"></div>
-        <div class="w sprite" data-who="jacquot" data-feet="830,684"></div>
-        <div class="w sprite" data-who="rene" data-feet="1820,724"></div>
-        <div class="w sprite" data-who="fanch" data-dir="east" data-feet="830,878"></div>
-        <div class="w sprite" data-who="anais" data-dir="west" data-feet="960,878"></div>
+        <div class="w sprite" data-who="yann" data-dir="north" data-feet="1470,720"></div>
+        <div class="w sprite" data-who="lea" data-dir="north" data-feet="1660,760"></div>
+        <div class="w sprite" data-who="fanch" data-dir="east" data-feet="790,900"></div>
+        <div class="w sprite" data-who="anais" data-dir="west" data-feet="1000,900"></div>
         <div class="w table t2"></div>
-        <div class="w sprite" data-who="yann" data-dir="north" data-feet="1410,800"></div>
-        <div class="w sprite" data-who="lea" data-dir="north" data-feet="1540,830"></div>
-        <div class="w glow" style="left:1561px;top:528px"></div><div class="w glow" style="left:454px;top:740px"></div><div class="w glow" style="left:845px;top:880px"></div>
+        <div class="w glow" style="left:1640px;top:448px"></div>
+        <div class="w glow" style="left:315px;top:648px"></div>
+        <div class="w glow" style="left:755px;top:818px"></div>
+        <div class="w glow" style="left:1100px;top:250px;opacity:.6"></div>
+        <div class="w smoke" style="top:140px"></div><div class="w smoke s2" style="top:330px"></div><div class="w smoke" style="top:520px;opacity:.35"></div>
       </div>
       <div class="dim"></div>
 
@@ -273,9 +291,9 @@ pre.graph { background: var(--page-2); padding: 14px 16px; overflow-x: auto; fon
   var DIRS = ["south", "east", "north", "west"];
   document.querySelectorAll("[data-who]").forEach(function (el) {
     var f = el.dataset.feet.split(",").map(Number), col = DIRS.indexOf(el.dataset.dir || "south");
-    el.style.left = f[0] - 66 + "px"; el.style.top = f[1] - 118.5 + "px";
+    el.style.left = f[0] - 110 + "px"; el.style.top = f[1] - 197.5 + "px";
     el.style.backgroundImage = "url(assets/sprites/" + el.dataset.who + ".png)";
-    el.style.backgroundPosition = -col * 138 + "px 0";
+    el.style.backgroundPosition = -col * 230 + "px 0";
   });
   function face(id) { return "url(assets/portraits/" + id + ".png)"; }
   var EXPR = { neutre: "goulven-neutre", mefiante: "goulven-mefiante", ravie: "goulven-ravie" };

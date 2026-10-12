@@ -17,7 +17,9 @@ packed into one sheet per character (8 columns of 92 × 92 cells):
 | 1–4 | `breathing-idle` (4 frames), south, east, north, west |
 | 5–8 | `walking-8-frames` (8 frames), south, east, north, west |
 
-The feet sit at about (44, 79) in a cell. The boards draw them at 1.5×.
+The feet sit at about (44, 79) in a cell. The boards draw every image of
+the room at 2.5× (one PixelLab pixel = 2.5 px of the 1920 × 1080 screen),
+so characters, props and walls share one pixel size.
 
 | Sheet | Who | PixelLab character id |
 | --- | --- | --- |

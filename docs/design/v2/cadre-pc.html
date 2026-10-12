@@ -58,32 +58,42 @@ code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; color: #cfc
 /* the world: authored at 1920×1080, scaled to cover the screen */
 .world { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform: translate(-50%, -50%) scale(var(--ws, 1)); }
 .w { position: absolute; image-rendering: pixelated; }
-.wall { left: 0; top: 0; width: 1920px; height: 540px; background: url(assets/taverne/mur.png) 0 0 / 672px 560px repeat-x, #2a1a12; }
-.floor-clip { left: 0; top: 520px; width: 1920px; height: 560px; overflow: hidden; perspective: 900px; }
-.floor { position: absolute; left: -600px; top: -40px; width: 3120px; height: 1100px; transform: rotateX(58deg); transform-origin: 50% 0; image-rendering: pixelated; background: url(assets/taverne/sol.png) 0 0 / 256px 256px; }
-.window { left: 150px; top: 90px; width: 320px; height: 373px; background: url(assets/taverne/fenetre.png) 0 0 / 100% 100%; }
+.wall { left: 0; top: 0; width: 1920px; height: 460px; background: url(assets/taverne/mur.png) 0 70px / 480px 400px repeat-x, #140c08; }
+.floor-clip { left: 0; top: 430px; width: 1920px; height: 650px; overflow: hidden; perspective: 900px; }
+.floor { position: absolute; left: -600px; top: -40px; width: 3120px; height: 1100px; transform: rotateX(58deg); transform-origin: 50% 0; image-rendering: pixelated; background: url(assets/taverne/sol.png) 0 0 / 320px 320px; }
+.window { left: 170px; top: 110px; width: 240px; height: 280px; background: url(assets/taverne/fenetre.png) 0 0 / 100% 100%; }
 .shaft { left: 150px; top: 370px; width: 520px; height: 520px; background: linear-gradient(170deg, rgba(150,190,215,.20), transparent 70%); clip-path: polygon(10% 0, 45% 0, 100% 100%, 30% 100%); mix-blend-mode: screen; }
-.shelf { left: 1200px; top: 200px; width: 512px; height: 256px; background: url(assets/taverne/etagere.png) 0 0 / 100% 100%; }
-.parrot { left: 1392px; top: 60px; width: 128px; height: 160px; background: url(assets/taverne/perroquet.png) 0 0 / 100% 100%; }
-.counter { left: 1125px; top: 520px; width: 640px; height: 240px; background: url(assets/taverne/comptoir.png) 0 0 / 100% 100%; }
+.shelf { left: 1170px; top: 190px; width: 640px; height: 320px; background: url(assets/taverne/etagere.png) 0 0 / 100% 100%; }
+.parrot { left: 1420px; top: 15px; width: 160px; height: 200px; background: url(assets/taverne/perroquet.png) 0 0 / 100% 100%; }
+.counter { left: 1150px; top: 430px; width: 640px; height: 240px; background: url(assets/taverne/comptoir.png) 0 0 / 100% 100%; }
 .table { background: url(assets/taverne/table.png) 0 0 / 100% 100%; }
-.t1 { left: 380px; top: 704px; width: 240px; height: 120px; }
-.t2 { left: 760px; top: 834px; width: 280px; height: 140px; }
-.dice { left: 470px; top: 736px; width: 12px; height: 12px; background: #ededed; box-shadow: 18px 4px 0 #ededed, 9px -6px 0 #d9d9d9; }
-.candle { width: 64px; height: 96px; background: url(assets/taverne/chandelle.png) 0 0 / 100% 100%; }
-.glow { width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: 50%; background: radial-gradient(rgba(255,170,70,.42), rgba(255,140,40,.12) 40%, transparent 70%); mix-blend-mode: screen; }
+.t1 { left: 250px; top: 590px; width: 400px; height: 200px; }
+.t2 { left: 690px; top: 760px; width: 400px; height: 200px; }
+.dice { left: 455px; top: 668px; width: 16px; height: 16px; background: #ededed; box-shadow: 24px 6px 0 #ededed, 12px -8px 0 #d9d9d9; }
+.candle { width: 80px; height: 120px; background: url(assets/taverne/chandelle.png) 0 0 / 100% 100%; }
+.glow { width: 560px; height: 560px; margin: -280px 0 0 -280px; border-radius: 50%; background: radial-gradient(rgba(255,170,70,.42), rgba(255,140,40,.12) 40%, transparent 70%); mix-blend-mode: screen; }
 @media (prefers-reduced-motion: no-preference) { .glow { animation: flicker 3.2s ease-in-out infinite; } .marker { animation: bob 1.4s ease-in-out infinite; } }
+.smoke { left: -600px; width: 3120px; height: 70px; pointer-events: none; mix-blend-mode: screen; opacity: .55;
+  background: radial-gradient(60px 30px at 10% 50%, rgba(150,165,190,.22), transparent), radial-gradient(160px 26px at 30% 45%, rgba(150,165,190,.18), transparent),
+    radial-gradient(120px 30px at 52% 55%, rgba(150,165,190,.2), transparent), radial-gradient(200px 24px at 74% 50%, rgba(150,165,190,.16), transparent),
+    linear-gradient(transparent, rgba(140,155,180,.12) 40%, rgba(140,155,180,.12) 60%, transparent); }
+.puddle { height: 26px; border-radius: 50%; pointer-events: none; mix-blend-mode: screen;
+  background: radial-gradient(closest-side, rgba(255,180,90,.42), rgba(255,140,40,.12) 55%, rgba(40,25,12,0) 100%); }
+@media (prefers-reduced-motion: no-preference) { .puddle { animation: flicker 3.2s ease-in-out infinite; }
+  .smoke { animation: drift 46s ease-in-out infinite alternate; } .smoke.s2 { animation-duration: 63s; animation-direction: alternate-reverse; } }
+@keyframes drift { from { translate: 0 0; } to { translate: 520px 6px; } }
 @keyframes flicker { 0%,100% { opacity: 1; } 40% { opacity: .82; } 55% { opacity: .95; } 70% { opacity: .78; } }
 @keyframes bob { 0%,100% { transform: translate(-50%, -100%); } 50% { transform: translate(-50%, calc(-100% - 6px)); } }
-/* PixelLab sheet (assets/sprites/<id>.png): 92 px cells at 1.5x, row 0 = still south/east/north/west */
-.sprite { width: 138px; height: 138px; image-rendering: pixelated; background-size: 1104px auto; }
-.sprite::after { content: ""; position: absolute; left: 42px; top: 112px; width: 48px; height: 12px; border-radius: 50%; background: rgba(0,0,0,.45); z-index: -1; }
-.me-ring { width: 76px; height: 22px; margin-left: -8px; border: 3px solid rgba(237,237,237,.55); border-radius: 50%; }
+/* PixelLab sheet (assets/sprites/<id>.png): 92 px cells at 2.5x, the scale of every image in the room;
+   row 0 = still south/east/north/west; feet at (110, 197.5) in the box */
+.sprite { width: 230px; height: 230px; image-rendering: pixelated; background-size: 1840px auto; }
+.sprite::after { content: ""; position: absolute; left: 70px; top: 189px; width: 80px; height: 18px; border-radius: 50%; background: rgba(0,0,0,.45); z-index: -1; }
+.me-ring { width: 104px; height: 30px; border: 3px solid rgba(237,237,237,.55); border-radius: 50%; }
 .light { left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none;
   background: radial-gradient(ellipse at 50% 55%, transparent 40%, rgba(0,0,0,.55) 100%); }
-.tilt { left: 0; width: 1920px; pointer-events: none; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
-.tilt.top { top: 0; height: 300px; mask-image: linear-gradient(#000, transparent); -webkit-mask-image: linear-gradient(#000, transparent); }
-.tilt.bot { bottom: 0; height: 220px; mask-image: linear-gradient(transparent, #000); -webkit-mask-image: linear-gradient(transparent, #000); }
+.tilt { left: 0; width: 1920px; pointer-events: none; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+.tilt.top { top: 0; height: 180px; mask-image: linear-gradient(#000, transparent); -webkit-mask-image: linear-gradient(#000, transparent); }
+.tilt.bot { bottom: 0; height: 120px; mask-image: linear-gradient(transparent, #000); -webkit-mask-image: linear-gradient(transparent, #000); }
 
 /* labels floating in the world: never bare text on decor */
 .wlabel { transform: translate(-50%, -100%); font: calc(15px / var(--ws, 1)) var(--f-pixel); color: #fff; white-space: nowrap;
@@ -230,29 +240,36 @@ td .key { margin-right: 4px; }
         <div class="w parrot"></div>
         <div class="w floor-clip"><div class="floor"></div></div>
         <div class="w shaft"></div>
-        <div class="w sprite" data-who="goulven" style="left:1380px;top:478px"></div>
+        <div class="w puddle" style="left:560px;top:830px;width:150px"></div>
+        <div class="w puddle" style="left:1120px;top:990px;width:190px"></div>
+        <div class="w puddle" style="left:1500px;top:740px;width:120px"></div>
+        <div class="w sprite" data-who="goulven" data-feet="1470,565"></div>
         <div class="w counter"></div>
-        <div class="w candle" style="left:1530px;top:484px"></div>
+        <div class="w candle" style="left:1600px;top:430px"></div>
+        <div class="w sprite" data-who="romain" data-feet="170,650"></div>
+        <div class="w sprite" data-who="jacquot" data-feet="930,650"></div>
+        <div class="w sprite" data-who="rene" data-feet="1855,660"></div>
+        <div class="w sprite" data-who="max" data-dir="east" data-feet="310,730"></div>
         <div class="w table t1"></div>
         <div class="w dice"></div>
-        <div class="w sprite" data-who="jacquot" style="left:800px;top:600px"></div>
-        <div class="w sprite" data-who="romain" style="left:250px;top:640px"></div>
-        <div class="w sprite" data-who="max" data-dir="east" style="left:330px;top:676px"></div>
-        <div class="w me-ring" style="left:1236px;top:810px"></div>
-        <div class="w sprite" data-who="me" data-dir="north" style="left:1236px;top:740px"></div>
+        <div class="w sprite" data-who="fanch" data-dir="east" data-feet="790,900"></div>
+        <div class="w sprite" data-who="anais" data-dir="west" data-feet="1000,900"></div>
+        <div class="w me-ring" style="left:1198px;top:905px"></div>
+        <div class="w sprite" data-who="me" data-dir="north" data-feet="1250,920"></div>
         <div class="w table t2"></div>
-        <div class="w glow" style="left:1561px;top:528px"></div>
-        <div class="w glow" style="left:454px;top:740px"></div>
-        <div class="w glow" style="left:845px;top:880px"></div>
+        <div class="w glow" style="left:1640px;top:448px"></div>
+        <div class="w glow" style="left:315px;top:648px"></div>
+        <div class="w glow" style="left:755px;top:818px"></div>
         <div class="w glow" style="left:1100px;top:250px;opacity:.6"></div>
+        <div class="w smoke" style="top:140px"></div><div class="w smoke s2" style="top:330px"></div><div class="w smoke" style="top:520px;opacity:.35"></div>
         <div class="w light"></div>
         <div class="w tilt top"></div>
         <div class="w tilt bot"></div>
-        <div class="w marker" style="left:1410px;top:462px">!</div>
-        <div class="w wlabel" style="left:1410px;top:420px">Mère Goulven</div>
-        <div class="w marker" style="left:476px;top:676px">?</div>
-        <div class="w wlabel" style="left:280px;top:628px">Romain</div>
-        <div class="w wlabel" style="left:360px;top:664px;transform:translate(-50%,-100%) translateY(-28px)">Max</div>
+        <div class="w marker" style="left:1470px;top:385px">!</div>
+        <div class="w wlabel" style="left:1470px;top:343px">Mère Goulven</div>
+        <div class="w marker" style="left:450px;top:640px">?</div>
+        <div class="w wlabel" style="left:170px;top:470px">Romain</div>
+        <div class="w wlabel" style="left:310px;top:550px">Max</div>
       </div>
 
       <div class="ui safe" id="ui">
@@ -385,15 +402,13 @@ td .key { margin-right: 4px; }
 
 <script>
 (function () {
-  // PixelLab sprites and portraits (assets/). Positions in the markup are the
-  // feet minus (30, 84), as authored for the old 60 x 84 box.
+  // PixelLab sprites and portraits (assets/). data-feet = where the feet stand.
   var DIRS = ["south", "east", "north", "west"], ID = { me: "yann" };
   document.querySelectorAll("[data-who]").forEach(function (el) {
-    var id = ID[el.dataset.who] || el.dataset.who, col = DIRS.indexOf(el.dataset.dir || "south");
-    var fx = parseFloat(el.style.left) + 30, fy = parseFloat(el.style.top) + 84;
-    el.style.left = fx - 66 + "px"; el.style.top = fy - 118.5 + "px";
+    var id = ID[el.dataset.who] || el.dataset.who, col = DIRS.indexOf(el.dataset.dir || "south"), f = el.dataset.feet.split(",").map(Number);
+    el.style.left = f[0] - 110 + "px"; el.style.top = f[1] - 197.5 + "px";
     el.style.backgroundImage = "url(assets/sprites/" + id + ".png)";
-    el.style.backgroundPosition = -col * 138 + "px 0";
+    el.style.backgroundPosition = -col * 230 + "px 0";
   });
   document.querySelectorAll("[data-face]").forEach(function (el) { el.style.backgroundImage = "url(assets/portraits/" + el.dataset.face + ".png)"; });
   document.getElementById("portrait").style.backgroundImage = "url(assets/portraits/yann.png)";
