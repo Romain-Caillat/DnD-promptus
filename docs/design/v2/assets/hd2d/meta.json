@@ -1,0 +1,210 @@
+{
+ "goulven": {
+  "cw": 136,
+  "ch": 214,
+  "cols": 5,
+  "rows": {
+   "idle": [
+    0,
+    5
+   ]
+  },
+  "feet": [
+   68,
+   209
+  ],
+  "height": 206
+ },
+ "jacquot": {
+  "cw": 103,
+  "ch": 161,
+  "cols": 5,
+  "rows": {
+   "idle": [
+    0,
+    5
+   ]
+  },
+  "feet": [
+   51,
+   156
+  ],
+  "height": 152
+ },
+ "rene": {
+  "cw": 127,
+  "ch": 211,
+  "cols": 5,
+  "rows": {
+   "idle": [
+    0,
+    5
+   ]
+  },
+  "feet": [
+   63,
+   206
+  ],
+  "height": 202
+ },
+ "fanch": {
+  "cw": 110,
+  "ch": 214,
+  "cols": 5,
+  "rows": {
+   "idle": [
+    0,
+    5
+   ]
+  },
+  "feet": [
+   55,
+   209
+  ],
+  "height": 205
+ },
+ "anais": {
+  "cw": 90,
+  "ch": 213,
+  "cols": 5,
+  "rows": {
+   "idle": [
+    0,
+    5
+   ]
+  },
+  "feet": [
+   45,
+   208
+  ],
+  "height": 204
+ },
+ "yann": {
+  "cw": 96,
+  "ch": 184,
+  "cols": 8,
+  "rows": {
+   "still": [
+    0,
+    4
+   ],
+   "walk_south": [
+    1,
+    8
+   ],
+   "walk_east": [
+    2,
+    8
+   ],
+   "walk_north": [
+    3,
+    8
+   ],
+   "walk_west": [
+    4,
+    8
+   ]
+  },
+  "feet": [
+   48,
+   178
+  ],
+  "height": 173
+ },
+ "lea": {
+  "cw": 76,
+  "ch": 184,
+  "cols": 8,
+  "rows": {
+   "still": [
+    0,
+    4
+   ],
+   "walk_south": [
+    1,
+    8
+   ],
+   "walk_east": [
+    2,
+    8
+   ],
+   "walk_north": [
+    3,
+    8
+   ],
+   "walk_west": [
+    4,
+    8
+   ]
+  },
+  "feet": [
+   38,
+   178
+  ],
+  "height": 173
+ },
+ "romain": {
+  "cw": 100,
+  "ch": 184,
+  "cols": 8,
+  "rows": {
+   "still": [
+    0,
+    4
+   ],
+   "walk_south": [
+    1,
+    8
+   ],
+   "walk_east": [
+    2,
+    8
+   ],
+   "walk_north": [
+    3,
+    8
+   ],
+   "walk_west": [
+    4,
+    8
+   ]
+  },
+  "feet": [
+   49,
+   178
+  ],
+  "height": 173
+ },
+ "max": {
+  "cw": 112,
+  "ch": 184,
+  "cols": 8,
+  "rows": {
+   "still": [
+    0,
+    4
+   ],
+   "walk_south": [
+    1,
+    8
+   ],
+   "walk_east": [
+    2,
+    8
+   ],
+   "walk_north": [
+    3,
+    8
+   ],
+   "walk_west": [
+    4,
+    8
+   ]
+  },
+  "feet": [
+   55,
+   178
+  ],
+  "height": 173
+ }
+}

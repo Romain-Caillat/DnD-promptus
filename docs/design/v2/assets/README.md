@@ -59,16 +59,30 @@ the tavern full, every character of `sc_perroquet` and the four players.
 `a-vide.png` (25) is the same room emptied, made with `a-salle.png` as
 reference and style: it is the backdrop of `taverne-hd2d.html`.
 
-`hd2d-data.js` carries `a-vide.png` and the nine sheets as data URLs,
-because WebGL refuses images read from `file://`. Regenerate it after
-changing any of them:
+`persos-joueurs.png` and `persos-pnj.png` (25 each, plus 25 for a first NPC
+sheet cut at the head) are the nine characters redrawn in the key art's
+style, as lineups facing the viewer; `perso-<id>.png` are the cut-outs, the
+feet the lineups cropped extended by hand (last row repeated, a dark sole).
 
-```bash
-cd docs/design/v2 && python3 - <<'PY'
-import base64
-out = ["window.HD2D_IMG = {"]
-for rel in ["maquette/a-vide.png"] + ["sprites/%s.png" % n for n in "yann lea max romain goulven jacquot rene fanch anais".split()]:
-    out.append('  "%s": "data:image/png;base64,%s",' % (rel, base64.b64encode(open("assets/" + rel, "rb").read()).decode()))
-open("assets/hd2d-data.js", "w").write("\n".join(out + ["};"]) + "\n")
-PY
-```
+## `hd2d/` — the characters of `taverne-hd2d.html`
+
+Players: PixelLab v3 characters rotated from `perso-<id>.png` (2–3
+generations each), then `walking-8-frames` in 4 directions (1 per
+direction). Rows: `still` (south, east, north, west) and `walk_<dir>`.
+NPCs face the viewer only: `animate_image` on `perso-<id>.png`, 4 frames
+plus the input (2 generations each), one `idle` row. Cell sizes vary;
+`meta.json` gives each sheet's cell, rows and feet.
+
+| Who | v3 character id |
+| --- | --- |
+| Yann | `e40ffbad-82b1-4a60-8b75-4a4c3313a709` |
+| Léa | `f86e7420-8753-45d1-8c10-e9e3d467aed1` |
+| Max | `72ad587f-5c3b-4c66-a0f1-f585005c3c4d` |
+| Romain | `844163e7-7997-427f-8da4-1221222db592` |
+
+The walk is uneven: in frames 5–8 the figure shrinks a little and the
+swordsman loses his cutlass. The players have no idle animation yet.
+
+`hd2d-data.js` carries the backdrop and these sheets as data URLs, because
+WebGL refuses images read from `file://`. Rebuild it after changing any of
+them: `python3 docs/design/v2/assets/hd2d/build-data.py`.

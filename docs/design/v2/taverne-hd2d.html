@@ -213,7 +213,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
   var IW = 688, IH = 384, D0 = 716, ZMAX = 80, ZOOM = 1.5;
   var C0 = new THREE.Vector3(IW / 2, IH / 2, D0);
   function Z(y) { return Math.max(0, (y - 190) / (IH - 190)) * ZMAX; }       // depth of a point on the floor
-  function H(y) { return 85 + (y - 260) * (35 / 120); }                        // a standing figure's height, in picture px (a door is ~100)
+  function H(y) { return 72 + (y - 260) * (28 / 120); }                        // a standing figure's height, in picture px (a door is ~100)
   function at(px, py, z) {                                                     // picture point -> world, at depth z
     var k = (D0 - z) / D0;
     return new THREE.Vector3(C0.x + (px - C0.x) * k, C0.y + ((IH - py) - C0.y) * k, z);
@@ -291,32 +291,41 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
     scene.add(sm); smoke.push(sm);
   }
 
-  // ---------- characters: PixelLab sheets (8 x 9 cells of 92 px, see assets/README.md) ----------
-  var CELL = 92, FEET_X = 44, FEET_Y = 79, DIRS = ["south", "east", "north", "west"];
-  var ANIMS = { idle: { row: 1, frames: 4, fps: 5 }, walk: { row: 5, frames: 8, fps: 12 } };
+  // ---------- characters: sheets drawn in the key art's style (assets/hd2d/, meta in hd2d-data.js) ----------
+  // A sheet has one row per animation: players "still" (south, east, north, west) and
+  // "walk_<dir>" (8 frames); NPCs "idle" (5 frames). REF is the height in sheet pixels
+  // of a standing adult: the NPC lineup was drawn larger than the players' one.
+  var DIRS = ["south", "east", "north", "west"], META = window.HD2D_META, REF = { player: 175, npc: 205 };
   var sheetTex = {};
-  function sheet(id) { if (!sheetTex[id]) { var t = tex("sprites/" + id + ".png"); t.repeat.set(1 / 8, 1 / 9); sheetTex[id] = t; } var c = sheetTex[id].clone(); c.needsUpdate = true; return c; }
+  function sheet(id) {
+    if (!sheetTex[id]) { var m = META[id], t = tex("hd2d/" + id + ".png"); t.minFilter = THREE.LinearFilter; t.repeat.set(1 / m.cols, 1 / Object.keys(m.rows).length); sheetTex[id] = t; }
+    var c = sheetTex[id].clone(); c.needsUpdate = true; return c;
+  }
   function face(id) { return "assets/portraits/" + id + ".png"; }
   var blobT = radial([[0, "rgba(0,0,0,.6)"], [0.6, "rgba(0,0,0,.35)"], [1, "rgba(0,0,0,0)"]]);
   var ringT = (function () { var c = document.createElement("canvas"); c.width = 64; c.height = 32; var g = c.getContext("2d"); g.strokeStyle = "rgba(243,230,200,.75)"; g.lineWidth = 3; g.beginPath(); g.ellipse(32, 16, 28, 12, 0, 0, Math.PI * 2); g.stroke(); return new THREE.CanvasTexture(c); })();
-  function makeActor(key) {
-    var map = sheet(key);
-    var geo = new THREE.PlaneGeometry(1, 1); geo.translate(0.5 - FEET_X / CELL, 0.5 - (CELL - FEET_Y) / CELL, 0);
+  function makeActor(key, kind) {
+    var m = META[key], map = sheet(key);
+    var geo = new THREE.PlaneGeometry(m.cw, m.ch); geo.translate(m.cw / 2 - m.feet[0], m.feet[1] - m.ch / 2, 0);
     var mat = new THREE.MeshLambertMaterial({ map: map, alphaTest: 0.5, emissive: "#000000" });
     var mesh = new THREE.Mesh(geo, mat); scene.add(mesh);
     var blob = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.35), new THREE.MeshBasicMaterial({ map: blobT, transparent: true, depthWrite: false })); scene.add(blob);
     var ring = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.5), new THREE.MeshBasicMaterial({ map: ringT, transparent: true, depthWrite: false })); ring.visible = false; scene.add(ring);
-    return { mesh: mesh, map: map, mat: mat, blob: blob, ring: ring, classList: { toggle: function (c, on) { if (c === "me") ring.visible = on; }, add: function (c) { if (c === "near") mat.emissive.set("#1c1404"); }, remove: function (c) { if (c === "near") mat.emissive.set("#000000"); }, contains: function () { return false; } } };
+    return { key: key, meta: m, ref: REF[kind], mesh: mesh, map: map, mat: mat, blob: blob, ring: ring, classList: { toggle: function (c, on) { if (c === "me") ring.visible = on; }, add: function (c) { if (c === "near") mat.emissive.set("#1c1404"); }, remove: function (c) { if (c === "near") mat.emissive.set("#000000"); }, contains: function () { return false; } } };
   }
   function place(a, x, y) {
-    var z = Z(y), k = (D0 - z) / D0, size = CELL * (a.h || H(y)) / 66 * k;
-    a.mesh.position.copy(at(x, y, z)); a.mesh.scale.set(size, size, 1);
-    a.blob.position.copy(at(x, y, z - 0.4)); a.blob.scale.set(size * 0.36, size * 0.36, 1);
-    a.ring.position.copy(at(x, y, z - 0.3)); a.ring.scale.set(size * 0.5, size * 0.5, 1);
+    var z = Z(y), k = (D0 - z) / D0, s = (a.h || H(y)) / a.ref * k, w = (a.h || H(y)) * 0.42 * k;
+    a.mesh.position.copy(at(x, y, z)); a.mesh.scale.set(s, s, 1);
+    a.blob.position.copy(at(x, y, z - 0.4)); a.blob.scale.set(w, w, 1);
+    a.ring.position.copy(at(x, y, z - 0.3)); a.ring.scale.set(w * 1.3, w * 1.3, 1);
   }
+  // players: walk_<dir> while moving, the still of their direction otherwise; NPCs: their idle loop
   function pose(a, anim, dir, t) {
-    var A = ANIMS[anim], d = DIRS.indexOf(dir), f = Math.floor(t * A.fps) % A.frames;
-    a.map.offset.set(f / 8, 1 - (A.row + d + 1) / 9);
+    var m = a.meta, row, f;
+    if (m.rows.idle) { row = m.rows.idle[0]; f = Math.floor(t * 4 + a.mesh.id) % m.rows.idle[1]; }
+    else if (anim === "walk") { row = m.rows["walk_" + dir][0]; f = Math.floor(t * 10) % m.rows["walk_" + dir][1]; }
+    else { row = m.rows.still[0]; f = DIRS.indexOf(dir); }
+    a.map.offset.set(f / m.cols, 1 - (row + 1) / Object.keys(m.rows).length);
   }
   // screen position (1920 x 1080) of a picture point at a floor depth
   function screenOf(x, y, lift) {
@@ -327,12 +336,12 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
   // ---------- data: players, NPCs, things (picture px, feet) ----------
   var PLAYERS = {
     yann:   { name: "Yann", cls: "Bretteur niv. 1", hp: 24, max: 30, ac: 15, perc: 11, x: 405, y: 356, dir: "north" },
-    lea:    { name: "Léa", cls: "Vigie niv. 1", hp: 18, max: 22, ac: 14, perc: 15, x: 312, y: 372, dir: "north" },
+    lea:    { name: "Léa", cls: "Vigie niv. 1", hp: 18, max: 22, ac: 14, perc: 15, x: 485, y: 378, dir: "north" },
     max:    { name: "Max", cls: "Canonnier", x: 258, y: 282, dir: "east", where: "Aux dés, ici" },
     romain: { name: "Romain", cls: "Navigateur", x: 335, y: 370, dir: "east", where: "Près de la fenêtre, ici", path: [[335, 370], [535, 370], [535, 380], [335, 380]] }
   };
   var NPCS = [
-    { id: "goulven", name: "Mère Goulven", x: 505, y: 250, h: 125, dir: "south", reach: [505, 300], marker: "!", act: "Parler à Mère Goulven",
+    { id: "goulven", name: "Mère Goulven", x: 505, y: 250, h: 112, dir: "south", reach: [505, 300], marker: "!", act: "Parler à Mère Goulven",
       on: "Dialogue avec Mère Goulven → planche dialogue.html." },
     { id: "jacquot", name: "Jacquot le Sourd", x: 232, y: 268, dir: "south", reach: [232, 280], act: "Parler à Jacquot", alias: "Vieux marin ivre", actAlias: "Parler au vieux marin",
       on: "Jacquot vous regarde, plisse les yeux, et parle beaucoup trop fort. → dialogue." },
@@ -354,9 +363,9 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
   function el(cls, html) { var d = document.createElement("div"); d.className = cls; if (html != null) d.innerHTML = html; world.appendChild(d); return d; }
   function setAt(node, x, y, lift) { var s = screenOf(x, y, lift); node.style.left = s[0] + "px"; node.style.top = s[1] + "px"; }
 
-  Object.keys(PLAYERS).forEach(function (k) { var p = PLAYERS[k]; p.el = makeActor(k); p.label = el("wlabel"); p.label.textContent = p.name; p.i = 0; });
+  Object.keys(PLAYERS).forEach(function (k) { var p = PLAYERS[k]; p.el = makeActor(k, "player"); p.label = el("wlabel"); p.label.textContent = p.name; p.i = 0; });
   NPCS.forEach(function (n) {
-    n.el = makeActor(n.id); n.el.h = n.h; place(n.el, n.x, n.y);
+    n.el = makeActor(n.id, "npc"); n.el.h = n.h; place(n.el, n.x, n.y);
     n.label = el("wlabel npc");
     if (n.marker || n.hidden) { n.mk = el("marker"); n.mk.textContent = "!"; }
   });
