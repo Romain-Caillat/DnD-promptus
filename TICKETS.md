@@ -78,7 +78,7 @@ raconte sans que Romain ait eu à intervenir, sauf par le panneau MJ.
 Les joueurs disent ensuite que les règles étaient claires et que chacun
 a eu son moment.
 
-**Phase 1 · Maquettes et règles** — `design/set-pc-game-frame` ·
+**Phase 1 · Maquettes et règles** — `design/write-frame-tokens` ·
 `design/draw-explore-screen` · `design/draw-dialogue-screen` ·
 `design/draw-combat-planes` · `design/draw-journal-and-sheet` ·
 `design/draw-lobby-and-creator` · `design/draw-gm-panel` ·
@@ -132,21 +132,20 @@ Les maquettes viennent avant le code de chaque phase. Une maquette est
 un fichier HTML statique dans `docs/design/v2/`, construit à partir de
 `docs/design/hd2d/quai.html`, avec des données des Corsaires.
 
-### `design/set-pc-game-frame` · todo
+### `design/write-frame-tokens` · todo
 
-**Pourquoi** — Tous les écrans partagent un cadre : le monde HD-2D en
-plein écran et une interface par-dessus. Il faut le fixer avant de
-dessiner les écrans.
+**Pourquoi** — Le cadre validé (habillage Octopath) doit vivre dans le
+code, pas seulement dans une maquette.
 
-**Périmètre** — Résolutions cibles (1920×1080, 1366×768), zones fixes
-de l'interface (barre du haut, PV en bas à gauche, invite d'action,
-fenêtres), typographie lisible sur le décor, focus visible pour la
-manette, raccourcis clavier affichés. Reprendre ou remplacer les tokens
-existants (`ui/write-design-tokens`) pour un jeu PC.
+**Périmètre** — Porter dans `front/src/styles/tokens.css` l'habillage B
+de `docs/design/v2/cadre-pc.html` : panneaux, double filet doré,
+boutons, touches clavier et manette, curseur de focus, notifications,
+et les zones du cadre (le panneau MJ décale le jeu). La page
+`/reference` les montre. Les couleurs et les formes des stats ne
+changent pas.
 
-**Fini quand** — Romain a validé une page de référence du cadre.
-
-**Origine** — Bible §1, §10. *Point de départ* — `front/src/features/theme`, `docs/design/hd2d/quai.html`.
+**Fini quand** — La page `/reference` montre le cadre comme la
+maquette, et Romain l'a relue. **Origine** — Bible §10 ; `MEMORY.md` §0. *Point de départ* — `ui/write-design-tokens`, `ui/adopt-pixel-menu` (gelés).
 
 ### `design/draw-explore-screen` · todo
 

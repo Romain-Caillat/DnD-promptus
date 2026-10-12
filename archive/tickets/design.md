@@ -16,3 +16,9 @@ quelle planche dessine quel écran : `docs/user-journeys.md`.
 
 Clos le 4 octobre 2026 : « le reste devra se tester avec la plateforme
 réelle et itéré dessus » (Romain).
+
+## Après la bible (maquettes v2, `docs/design/v2/`)
+
+| Ticket | Ce qui a été livré |
+| --- | --- |
+| `design/set-pc-game-frame` | `cadre-pc.html` : les zones A à H sur la taverne du Perroquet Noyé, clavier et manette, 1920 × 1080 et 1366 × 768, vue MJ. Validé le 12 octobre 2026 : habillage B · Octopath, groupe en colonne à gauche, ZQSD (`MEMORY.md` §0). Le report dans le code passe à `design/write-frame-tokens` |

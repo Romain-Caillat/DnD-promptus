@@ -38,6 +38,16 @@ below only as history until their ticket rewrites them:
   (`engine/rewrite-corsaires-rules`).
 - *The player projection* (§3) holds, and becomes **per player**:
   knowledge is private until shared (`session/project-private-knowledge`).
+- *The interface chrome is a pixel menu* (§2) is replaced on the game
+  screen by the **Octopath skin** (decided 12 October 2026, board
+  `docs/design/v2/cadre-pc.html`): translucent night-blue panels, a
+  double gold rule, Cinzel titles, Cormorant narration, Chakra Petch for
+  the interface and Silkscreen for labels and numbers. Kept from §2:
+  stat colours **and** shapes, pixel hearts and cells, sprites in colour.
+  The frame's zones (place, menus, notifications, my character, action
+  prompt, party in a column on the left, window, GM panel on the right
+  that shifts the whole game left) are in that board. Movement defaults
+  to ZQSD (AZERTY), with WASD in the options.
 
 ---
 
