@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taverne HD-2D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Chakra+Petch:wght@400;600&family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@1,500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="assets/hd2d-data.js"></script>
+<style>
+/* HD-2D board built from the PixelLab key art (assets/maquette/a-vide.png), playable like exploration.html.
+   Frame and Octopath skin from cadre-pc.html (MEMORY.md §0). Single dark
+   look on purpose: a lit scene framed like a game screen. */
+:root {
+  --ink: #0a0a0a; --page: #111214; --page-2: #1a1c20; --text: #ededed; --muted: #9a9a9a;
+  --hp: #FF4D5E; --ac: #3D9BFF; --gold: #d8ac5c; --gold-soft: #7c6338; --cream: #f3e6c8;
+  --f-pixel: "Silkscreen", "Chakra Petch", monospace; --f-sans: "Chakra Petch", system-ui, sans-serif;
+  --f-title: "Cinzel", Georgia, serif; --f-narr: "Cormorant Garamond", Georgia, serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--page); color: var(--text); font: 16px/1.5 var(--f-sans); }
+.page { max-width: 1280px; margin: 0 auto; padding: 24px 16px 64px; }
+header.top h1 { font: 700 28px/1.2 var(--f-title); margin: 0 0 4px; }
+header.top p { margin: 0; color: var(--muted); }
+code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; color: #cfcfcf; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; margin: 20px 0 12px; align-items: center; }
+.seg { display: inline-flex; align-items: center; gap: 8px; }
+.seg > span { font: 12px var(--f-pixel); color: var(--muted); text-transform: uppercase; }
+.seg .opts { display: inline-flex; border: 2px solid #333; }
+.seg button { font: 600 14px var(--f-sans); color: var(--text); background: var(--page-2); border: 0; padding: 6px 12px; cursor: pointer; }
+.seg button + button { border-left: 2px solid #333; }
+.seg button[aria-pressed="true"] { background: var(--cream); color: var(--ink); }
+.seg button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.hint { color: var(--muted); font-size: 14px; margin: 0 0 8px; }
+.hint b { color: var(--text); }
+
+.frame-wrap { width: 100%; position: relative; background: #000; border: 2px solid #2a2a2a; overflow: hidden; cursor: crosshair; touch-action: manipulation; }
+.frame-wrap:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.screen { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; background: #120b07; }
+
+/* ---------- world: a Three.js canvas rendered at 1920 x 1080 ---------- */
+#gl { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+@media (prefers-reduced-motion: no-preference) { .marker { animation: bob 1.4s ease-in-out infinite; } }
+@keyframes bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+/* floating labels: never bare text on decor */
+.wlabel, .marker { position: absolute; z-index: 6000; pointer-events: none; }
+.wlabel { transform: translate(-50%, -100%); font: 15px var(--f-pixel); color: #fff; white-space: nowrap;
+  text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 0 3px 6px rgba(0,0,0,.8); }
+.wlabel.npc { color: var(--cream); }
+.marker { margin: -30px 0 0 -15px; width: 30px; height: 30px; display: grid; place-items: center; font: 18px var(--f-pixel); color: var(--gold); background: #0e1628; box-shadow: 0 0 0 2px var(--gold), 0 4px 0 2px #000; }
+.marker.found { color: #0e1628; background: var(--gold); box-shadow: 0 0 0 2px #0e1628, 0 0 18px 4px rgba(216,172,92,.65); }
+.target-dot { position: absolute; width: 18px; height: 8px; margin: -4px 0 0 -9px; border: 2px solid var(--cream); border-radius: 50%; z-index: 590; opacity: .8; pointer-events: none; }
+
+/* ---------- UI (Octopath skin) ---------- */
+.ui { position: absolute; inset: 0; pointer-events: none; --m: 24px; z-index: 9000; }
+.ui > * { position: absolute; }
+.panel { background: linear-gradient(rgba(14,22,40,.82), rgba(8,12,24,.86)); box-shadow: 0 0 0 1px var(--gold), inset 0 0 0 3px rgba(8,12,24,.9), inset 0 0 0 4px var(--gold-soft); border-radius: 2px; color: var(--text); }
+.key { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; font: 500 15px var(--f-title); color: var(--gold); background: rgba(8,12,24,.9); box-shadow: inset 0 0 0 1px var(--gold); border-radius: 3px; }
+.key.pad { border-radius: 50%; width: 30px; padding: 0; }
+.mbtn { display: flex; align-items: center; gap: 10px; font: 500 16px var(--f-title); letter-spacing: .04em; color: var(--text); padding: 8px 12px; background: linear-gradient(rgba(14,22,40,.82), rgba(8,12,24,.86)); box-shadow: 0 0 0 1px var(--gold-soft); }
+.mbtn .key { min-width: 24px; height: 24px; font-size: 12px; padding: 0 6px; }
+.mbtn .key.pad { width: 24px; min-width: 24px; }
+.ptitle { font: 500 13px var(--f-title); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.big { font: 700 20px var(--f-title); color: var(--cream); }
+.place { left: var(--m); top: var(--m); padding: 10px 16px; display: grid; gap: 2px; }
+.menus { right: var(--m); top: var(--m); display: flex; gap: 10px; }
+.toasts { left: 50%; top: calc(var(--m) + 76px); transform: translateX(-50%); display: grid; gap: 8px; justify-items: center; width: 760px; }
+.toast { display: flex; align-items: center; gap: 12px; padding: 10px 16px; font: 500 17px/1.35 var(--f-title); color: var(--cream); background: linear-gradient(rgba(14,22,40,.92), rgba(8,12,24,.94)); box-shadow: 0 0 0 1px var(--gold); max-width: 760px; }
+.toast .tag { font: 13px var(--f-pixel); color: var(--ink); background: var(--gold); padding: 2px 6px; white-space: nowrap; }
+.toast .narr { font: italic 500 20px/1.3 var(--f-narr); }
+.toast.leave { opacity: 0; transition: opacity .4s; }
+.vitals { left: var(--m); bottom: var(--m); padding: 12px 16px 12px 12px; display: grid; grid-template-columns: 72px auto; gap: 4px 14px; align-items: center; }
+.portrait { grid-row: span 3; width: 72px; height: 72px; image-rendering: pixelated; background: #1b2236 center / 100% 100% no-repeat; box-shadow: 0 0 0 1px var(--gold-soft); }
+.hearts { display: flex; gap: 3px; } .hearts svg { width: 21px; height: 18px; display: block; }
+.vrow { display: flex; align-items: center; gap: 12px; font: 15px var(--f-pixel); }
+.gem { display: inline-flex; align-items: center; gap: 6px; }
+.badge { font: 12px var(--f-pixel); padding: 2px 6px; color: var(--ink); background: var(--cream); }
+.party { left: var(--m); bottom: calc(var(--m) + 112px); padding: 10px 14px; display: grid; gap: 8px; min-width: 300px; }
+.pm { display: grid; grid-template-columns: 36px 1fr; gap: 0 10px; align-items: center; }
+.pm .face { grid-row: span 2; width: 36px; height: 36px; image-rendering: pixelated; background: #1b2236 center / 100% 100%; box-shadow: 0 0 0 1px var(--gold-soft); }
+.pm b { font: 600 15px var(--f-sans); } .pm span { font: 13px var(--f-sans); color: var(--muted); }
+.prompt { left: 50%; bottom: calc(var(--m) + 96px); transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 10px 18px; font: 500 18px var(--f-title); letter-spacing: .03em; white-space: nowrap; transition: opacity .15s; }
+.prompt.off { opacity: 0; }
+.prompt small { font: 13px var(--f-sans); color: var(--muted); letter-spacing: 0; }
+.helper { right: var(--m); bottom: var(--m); padding: 10px 14px; font: 14px var(--f-sans); color: var(--muted); display: flex; gap: 10px; align-items: center; transition: opacity .6s; }
+.helper.off { opacity: 0; }
+
+/* ---------- board text ---------- */
+section.doc { margin-top: 36px; }
+section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.rule { background: var(--page-2); padding: 14px 16px; border-left: 3px solid var(--gold); }
+.rule b { font: 13px var(--f-pixel); color: var(--gold); display: block; margin-bottom: 4px; }
+.rule p { margin: 0; color: #d6d6d6; }
+.cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.cmp div { background: var(--page-2); padding: 14px 16px; }
+.cmp h3 { margin: 0 0 6px; font: 600 16px var(--f-sans); }
+.cmp ul { margin: 0; padding-left: 18px; color: #d6d6d6; }
+.ask { background: var(--page-2); padding: 16px 20px; border: 1px solid var(--gold); box-shadow: inset 0 0 0 3px var(--page-2), inset 0 0 0 4px var(--gold-soft); }
+.ask ol { margin: 8px 0 0; padding-left: 20px; } .ask li + li { margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <h1>Taverne HD-2D · le Perroquet Noyé</h1>
+    <p>L'image PixelLab de la taverne (<code>assets/maquette/a-salle.png</code>) devenue une scène HD-2D jouable : Three.js, plans découpés en profondeur, caméra qui suit, persos animés éclairés par les chandelles. Mêmes règles qu'<code>exploration.html</code>. Corsaires, acte 1, scène <code>sc_perroquet</code>.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="Réglages de la planche">
+    <div class="seg"><span>Vu par</span><div class="opts" data-ctl="who">
+      <button type="button" data-v="yann" aria-pressed="true">Yann · Perception 11</button>
+      <button type="button" data-v="lea" aria-pressed="false">Léa · Perception 15</button>
+    </div></div>
+    <div class="seg"><span>Appareil</span><div class="opts" data-ctl="device">
+      <button type="button" data-v="kb" aria-pressed="true">Clavier / souris</button>
+      <button type="button" data-v="pad" aria-pressed="false">Manette</button>
+    </div></div>
+  </div>
+  <p class="hint">Clique dans l'écran, puis <b>ZQSD</b> (ou les flèches, ou un clic au sol) pour te déplacer, et <b>E</b> pour interagir. Une manette branchée marche aussi : stick gauche et <b>A</b>.</p>
+
+  <div class="frame-wrap" id="wrap" tabindex="0" aria-label="Écran de jeu : la taverne du Perroquet Noyé">
+    <div class="screen" id="screen">
+      <canvas id="gl" width="1920" height="1080"></canvas>
+      <div id="world" style="position:absolute;inset:0;pointer-events:none"><div class="target-dot" id="dot" hidden></div></div>
+
+      <div class="ui">
+        <div class="place panel"><span class="ptitle">Chapitre 1 · Les lettres de marque</span><span class="big">Le Perroquet Noyé</span></div>
+        <nav class="menus" aria-hidden="true">
+          <span class="mbtn"><span class="key" data-kb="J" data-pad="☰">J</span>Journal</span>
+          <span class="mbtn"><span class="key" data-kb="I" data-pad="☰">I</span>Inventaire</span>
+          <span class="mbtn"><span class="key" data-kb="C" data-pad="☰">C</span>Fiche</span>
+          <span class="mbtn"><span class="key" data-kb="Échap" data-pad="☰">Échap</span>Menu</span>
+        </nav>
+        <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+        <div class="party panel" id="party"><span class="ptitle">Le groupe</span></div>
+        <div class="vitals panel" id="vitals">
+          <div class="portrait" id="portrait"></div>
+          <div><span class="big" style="font-size:18px" id="vname"></span> <span style="color:var(--muted);font-size:14px" id="vclass"></span></div>
+          <div class="hearts" id="hearts"></div>
+          <div class="vrow">
+            <span class="gem"><svg width="18" height="20" viewBox="0 0 9 10" shape-rendering="crispEdges" aria-hidden="true"><path fill="#0a0a0a" d="M0 0h9v6h-1v2h-2v1h-1v1h-1v-1h-1v-1h-2v-2h-1z"/><path fill="#3D9BFF" d="M1 1h7v5h-1v1h-1v1h-1v1h-1v-1h-1v-1h-1v-1h-1z"/></svg><span style="color:var(--ac)" id="vac"></span></span>
+            <span style="color:var(--hp)" id="vhp"></span>
+            <span class="badge" id="vperc"></span>
+          </div>
+        </div>
+        <div class="prompt panel off" id="prompt"><span class="key" id="pkey">E</span><span id="ptext"></span></div>
+        <div class="helper panel" id="helper"><span class="key" data-kb="ZQSD" data-pad="L">ZQSD</span>se déplacer · <span class="key" data-kb="E" data-pad="A">E</span>interagir</div>
+      </div>
+    </div>
+  </div>
+
+  <section class="doc">
+    <h2>La même taverne, deux joueurs</h2>
+    <div class="cmp">
+      <div><h3>Yann · Bretteur · Perception passive 11</h3><ul>
+        <li><b>[!]</b> sur Mère Goulven : elle a des rumeurs (et une ardoise).</li>
+        <li><b>[?]</b> sur la table de dés : un mini-jeu.</li>
+        <li>Fañch n'est qu'un « Marin » attablé avec une « Jeune femme ». On peut lui parler, mais rien ne le signale.</li>
+      </ul></div>
+      <div><h3>Léa · Vigie · Perception passive 15</h3><ul>
+        <li>Tout ce que voit Yann.</li>
+        <li><b>[!] doré sur Fañch</b> (seuil 13) : à sa première entrée dans la salle, le narrateur le lui signale, en privé. La découverte va dans <b>son</b> journal, et Yann n'en sait rien tant qu'elle ne l'a pas partagée.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="doc">
+    <h2>Les règles de l'exploration</h2>
+    <div class="rules">
+      <div class="rule"><b>Déplacement</b><p>Libre, sans cases : ZQSD, flèches, clic au sol ou stick gauche. Les murs, le comptoir et les tables bloquent. La profondeur suit les pieds : on passe derrière une table et devant une autre.</p></div>
+      <div class="rule"><b>Vitesse</b><p>Une seule vitesse de marche : pas de course. La salle est petite, et tout le monde reste synchronisé.</p></div>
+      <div class="rule"><b>Autres joueurs</b><p>On les voit bouger en direct, leur nom au-dessus de la tête. Le groupe (à gauche) dit où sont ceux qui ne sont pas dans la salle.</p></div>
+      <div class="rule"><b>Trois sortes de choses</b><p><b>[!]</b> quête ou information, <b>[?]</b> mini-jeu, et ce qui n'a pas de marqueur (René, Jacquot) : il faut s'approcher pour le découvrir.</p></div>
+      <div class="rule"><b>Perception passive</b><p>Un élément peut avoir un seuil. Sous ce seuil, il n'existe pas pour le joueur : le serveur ne l'envoie pas. Au-dessus, son marqueur est doré, et le narrateur l'annonce une fois.</p></div>
+      <div class="rule"><b>Noms</b><p>Un PNJ porte une description (« Marin ») tant qu'il ne s'est pas présenté <b>à ce joueur</b>. Son nom ne s'affiche qu'à portée, ou au-dessus d'un marqueur.</p></div>
+      <div class="rule"><b>Interagir</b><p>À portée (environ 1,5 m), la chose la plus proche s'entoure d'or et une seule action s'affiche. Une touche, pas de menu.</p></div>
+      <div class="rule"><b>Ce qui suit</b><p>Interagir ouvre la fenêtre G : un dialogue (<code>design/draw-dialogue-screen</code>) ou un mini-jeu (jalon 2). Ici, une notification le remplace.</p></div>
+    </div>
+  </section>
+
+  <section class="doc">
+    <div class="ask">
+      <b>Décidé (12 octobre 2026, choix laissé à Claude par Romain)</b>
+      <ol>
+        <li><b>Noms des PNJ : une fois connus.</b> Une description (« Marin », « Jeune femme ») tant que le PNJ ne s'est pas présenté à ce joueur. C'est le savoir privé : Yann peut connaître Fañch sans que Léa le connaisse. Le narrateur suit la même règle : il dit « la jeune femme » tant que Léa ne connaît pas Anaïs.</li>
+        <li><b>Découverte par la Perception : marqueur doré + une phrase du narrateur</b>, une seule fois et en privé. Le joueur sent que sa stat a servi (règle 3 : chaque stat compte).</li>
+        <li><b>Une seule vitesse</b>, pas de course.</li>
+      </ol>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  // ======================================================================
+  // The scene is the PixelLab key art, in its own pixels: 688 x 384, y down.
+  // World units are those pixels (x right, y up, z towards the camera).
+  // Every cut-out layer and every character is placed at a depth z, then
+  // pushed back along the line of sight of the neutral camera C0, so from C0
+  // the picture is exactly the painting; when the camera follows the player,
+  // the layers slide against each other (parallax).
+  // ======================================================================
+  var IW = 688, IH = 384, D0 = 716, ZMAX = 70, ZOOM = 1.1;
+  var C0 = new THREE.Vector3(IW / 2, IH / 2, D0);
+  function Z(y) { return Math.max(0, (y - 190) / (IH - 190)) * ZMAX; }       // depth of a point on the floor
+  function H(y) { return 85 + (y - 260) * (35 / 120); }                        // a standing figure's height, in picture px (a door is ~100)
+  function at(px, py, z) {                                                     // picture point -> world, at depth z
+    var k = (D0 - z) / D0;
+    return new THREE.Vector3(C0.x + (px - C0.x) * k, C0.y + ((IH - py) - C0.y) * k, z);
+  }
+
+  // ---------- renderer, camera, light ----------
+  var canvas = document.getElementById("gl");
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: false });
+  renderer.setPixelRatio(1); renderer.setSize(1920, 1080, false);
+  // colours stay display-referred end to end: the painting must come out as painted
+  var scene = new THREE.Scene(); scene.background = new THREE.Color("#0b0705");
+  // near/far hug the scene: the composer's depth buffer is 16-bit, and layers sit ~1 unit apart
+  var camera = new THREE.PerspectiveCamera(2 * Math.atan(IH / 2 / ZOOM / D0) * 180 / Math.PI, 1920 / 1080, 500, 800);
+  camera.position.copy(C0);
+  scene.add(new THREE.AmbientLight("#f0c8a4", 0.72));
+
+  function tex(src) { var t = typeof src === "string" ? new THREE.TextureLoader().load(window.HD2D_IMG[src]) : new THREE.Texture(src); if (typeof src !== "string") t.needsUpdate = true; t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; return t; }
+
+  // ---------- the backdrop and its cut-out layers ----------
+  var BACK = "maquette/a-vide.png";
+  // polygon in picture px, base = the y where the thing stands on the floor (sets its depth)
+  var LAYERS = [
+    { id: "bar", base: 262, poly: [[333, 194], [657, 194], [657, 262], [333, 262]] },
+    { id: "left", base: 322, poly: [[0, 240], [138, 240], [138, 322], [0, 322]] },
+    { id: "round", base: 334, poly: [[305, 232], [345, 232], [345, 248], [432, 248], [432, 230], [470, 230], [470, 334], [305, 334]] },
+    { id: "right", base: 300, poly: [[570, 235], [688, 235], [688, 282], [570, 282]] },
+    { id: "lantern", base: 352, poly: [[460, 315], [492, 315], [492, 352], [460, 352]] },
+    { id: "frontL", base: 384, poly: [[45, 300], [238, 300], [238, 272], [282, 272], [282, 300], [320, 300], [320, 384], [45, 384]] },
+    { id: "frontR", base: 384, poly: [[545, 282], [688, 282], [688, 384], [545, 384]] }
+  ];
+  var backImg = new Image();
+  backImg.onload = function () {
+    var back = new THREE.Mesh(new THREE.PlaneGeometry(IW, IH), new THREE.MeshBasicMaterial({ map: tex(backImg) }));
+    back.position.set(IW / 2, IH / 2, 0); scene.add(back);
+    LAYERS.forEach(function (L) {
+      var xs = L.poly.map(function (p) { return p[0]; }), ys = L.poly.map(function (p) { return p[1]; });
+      var x0 = Math.min.apply(0, xs), x1 = Math.max.apply(0, xs), y0 = Math.min.apply(0, ys), y1 = Math.max.apply(0, ys);
+      var c = document.createElement("canvas"); c.width = x1 - x0; c.height = y1 - y0;
+      var g = c.getContext("2d"); g.beginPath(); L.poly.forEach(function (p, i) { g[i ? "lineTo" : "moveTo"](p[0] - x0, p[1] - y0); }); g.closePath(); g.clip();
+      g.drawImage(backImg, -x0, -y0);
+      var z = Z(L.base), k = (D0 - z) / D0;
+      var m = new THREE.Mesh(new THREE.PlaneGeometry((x1 - x0) * k, (y1 - y0) * k), new THREE.MeshBasicMaterial({ map: tex(c), alphaTest: 0.5 }));
+      m.position.copy(at((x0 + x1) / 2, (y0 + y1) / 2, z)); scene.add(m);
+    });
+  };
+  backImg.src = window.HD2D_IMG[BACK];
+
+  // ---------- candles: a halo, a flickering point light ----------
+  function radial(stops) { var c = document.createElement("canvas"); c.width = c.height = 64; var g = c.getContext("2d"), r = g.createRadialGradient(32, 32, 0, 32, 32, 32); stops.forEach(function (s) { r.addColorStop(s[0], s[1]); }); g.fillStyle = r; g.fillRect(0, 0, 64, 64); var t = new THREE.CanvasTexture(c); return t; }
+  var haloT = radial([[0, "rgba(255,210,140,1)"], [0.25, "rgba(255,150,60,.45)"], [1, "rgba(255,120,40,0)"]]);
+  var FLAMES = [ // flame x, y, floor base, light?
+    [70, 232, 262, true], [188, 298, 330, true], [380, 232, 270, true], [622, 248, 290, true],
+    [604, 292, 340, false], [476, 333, 352, true], [598, 112, 262, false], [8, 120, 240, false]
+  ];
+  var flames = FLAMES.map(function (f, i) {
+    var p = at(f[0], f[1], Z(f[2]) + 0.5);
+    var s = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloT, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    s.position.copy(p); s.scale.set(44, 44, 1); scene.add(s);
+    var light = null;
+    if (f[3]) { light = new THREE.PointLight("#ff9a40", 1.0, 140, 1.4); light.position.copy(p).add(new THREE.Vector3(0, 0, 14)); scene.add(light); }
+    return { s: s, light: light, ph: i * 1.7 };
+  });
+
+  // ---------- dust in the light, smoke drifting under the beams ----------
+  var moteT = radial([[0, "rgba(255,230,190,1)"], [1, "rgba(255,230,190,0)"]]), motes = [];
+  for (var i = 0; i < 46; i++) {
+    var m = new THREE.Sprite(new THREE.SpriteMaterial({ map: moteT, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.25 + Math.random() * 0.35 }));
+    m.scale.set(2.2, 2.2, 1); m.userData = { x: Math.random() * IW, y: 60 + Math.random() * 300, z: Math.random() * ZMAX, v: 2 + Math.random() * 4, ph: Math.random() * 6 };
+    scene.add(m); motes.push(m);
+  }
+  var smokeT = radial([[0, "rgba(160,175,200,.55)"], [1, "rgba(160,175,200,0)"]]), smoke = [];
+  for (i = 0; i < 9; i++) {
+    var sm = new THREE.Sprite(new THREE.SpriteMaterial({ map: smokeT, depthWrite: false, transparent: true, opacity: 0.18 }));
+    sm.scale.set(160 + Math.random() * 120, 26, 1); sm.userData = { x: Math.random() * IW, y: 100 + Math.random() * 60, v: 3 + Math.random() * 4 };
+    scene.add(sm); smoke.push(sm);
+  }
+
+  // ---------- characters: PixelLab sheets (8 x 9 cells of 92 px, see assets/README.md) ----------
+  var CELL = 92, FEET_X = 44, FEET_Y = 79, DIRS = ["south", "east", "north", "west"];
+  var ANIMS = { idle: { row: 1, frames: 4, fps: 5 }, walk: { row: 5, frames: 8, fps: 12 } };
+  var sheetTex = {};
+  function sheet(id) { if (!sheetTex[id]) { var t = tex("sprites/" + id + ".png"); t.repeat.set(1 / 8, 1 / 9); sheetTex[id] = t; } var c = sheetTex[id].clone(); c.needsUpdate = true; return c; }
+  function face(id) { return "assets/portraits/" + id + ".png"; }
+  var blobT = radial([[0, "rgba(0,0,0,.6)"], [0.6, "rgba(0,0,0,.35)"], [1, "rgba(0,0,0,0)"]]);
+  var ringT = (function () { var c = document.createElement("canvas"); c.width = 64; c.height = 32; var g = c.getContext("2d"); g.strokeStyle = "rgba(243,230,200,.75)"; g.lineWidth = 3; g.beginPath(); g.ellipse(32, 16, 28, 12, 0, 0, Math.PI * 2); g.stroke(); return new THREE.CanvasTexture(c); })();
+  function makeActor(key) {
+    var map = sheet(key);
+    var geo = new THREE.PlaneGeometry(1, 1); geo.translate(0.5 - FEET_X / CELL, 0.5 - (CELL - FEET_Y) / CELL, 0);
+    var mat = new THREE.MeshLambertMaterial({ map: map, alphaTest: 0.5, emissive: "#000000" });
+    var mesh = new THREE.Mesh(geo, mat); scene.add(mesh);
+    var blob = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.35), new THREE.MeshBasicMaterial({ map: blobT, transparent: true, depthWrite: false })); scene.add(blob);
+    var ring = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.5), new THREE.MeshBasicMaterial({ map: ringT, transparent: true, depthWrite: false })); ring.visible = false; scene.add(ring);
+    return { mesh: mesh, map: map, mat: mat, blob: blob, ring: ring, classList: { toggle: function (c, on) { if (c === "me") ring.visible = on; }, add: function (c) { if (c === "near") mat.emissive.set("#1c1404"); }, remove: function (c) { if (c === "near") mat.emissive.set("#000000"); }, contains: function () { return false; } } };
+  }
+  function place(a, x, y) {
+    var z = Z(y), k = (D0 - z) / D0, size = CELL * (a.h || H(y)) / 66 * k;
+    a.mesh.position.copy(at(x, y, z)); a.mesh.scale.set(size, size, 1);
+    a.blob.position.copy(at(x, y, z - 0.4)); a.blob.scale.set(size * 0.36, size * 0.36, 1);
+    a.ring.position.copy(at(x, y, z - 0.3)); a.ring.scale.set(size * 0.5, size * 0.5, 1);
+  }
+  function pose(a, anim, dir, t) {
+    var A = ANIMS[anim], d = DIRS.indexOf(dir), f = Math.floor(t * A.fps) % A.frames;
+    a.map.offset.set(f / 8, 1 - (A.row + d + 1) / 9);
+  }
+  // screen position (1920 x 1080) of a picture point at a floor depth
+  function screenOf(x, y, lift) {
+    var p = at(x, y - (lift || 0), Z(y)).project(camera);
+    return [(p.x + 1) / 2 * 1920, (1 - p.y) / 2 * 1080];
+  }
+
+  // ---------- data: players, NPCs, things (picture px, feet) ----------
+  var PLAYERS = {
+    yann:   { name: "Yann", cls: "Bretteur niv. 1", hp: 24, max: 30, ac: 15, perc: 11, x: 405, y: 356, dir: "north" },
+    lea:    { name: "Léa", cls: "Vigie niv. 1", hp: 18, max: 22, ac: 14, perc: 15, x: 312, y: 372, dir: "north" },
+    max:    { name: "Max", cls: "Canonnier", x: 258, y: 282, dir: "east", where: "Aux dés, ici" },
+    romain: { name: "Romain", cls: "Navigateur", x: 335, y: 370, dir: "east", where: "Près de la fenêtre, ici", path: [[335, 370], [535, 370], [535, 380], [335, 380]] }
+  };
+  var NPCS = [
+    { id: "goulven", name: "Mère Goulven", x: 505, y: 250, h: 125, dir: "south", reach: [505, 300], marker: "!", act: "Parler à Mère Goulven",
+      on: "Dialogue avec Mère Goulven → planche dialogue.html." },
+    { id: "jacquot", name: "Jacquot le Sourd", x: 232, y: 268, dir: "south", reach: [232, 280], act: "Parler à Jacquot", alias: "Vieux marin ivre", actAlias: "Parler au vieux marin",
+      on: "Jacquot vous regarde, plisse les yeux, et parle beaucoup trop fort. → dialogue." },
+    { id: "rene", name: "René, à la vielle", x: 152, y: 262, dir: "south", reach: [160, 278], act: "Écouter René jouer", alias: "Gamin à la vielle", actAlias: "Écouter le gamin jouer",
+      on: "René massacre un air breton, puis vous lance un regard en coin. → dialogue." },
+    { id: "fanch", name: "Fañch", x: 420, y: 266, dir: "west", reach: [420, 340], act: "Aborder Fañch", alias: "Marin", actAlias: "Aborder le marin", hidden: { perc: 13,
+      seen: "Le marin attablé avec la jeune femme regarde un peu trop votre table.", journal: "Un marin, attablé avec une jeune femme, observe la table du groupe." },
+      on: "Fañch pose la main sur son couteau, sourire aux lèvres. → dialogue." },
+    { id: "anais", name: "Anaïs", x: 352, y: 266, dir: "east", reach: [352, 340], act: "Saluer Anaïs", alias: "Jeune femme", actAlias: "Saluer la jeune femme",
+      on: "Anaïs vous rend un salut poli, sans lâcher Fañch des yeux. → dialogue." }
+  ];
+  var PROPS = [{ id: "dice", name: "Table de dés", x: 190, y: 330, mk: [190, 296], reach: [[312, 300], [330, 345]], marker: "?", act: "Jouer aux dés avec Max",
+    on: "Mini-jeu « Les Os du Pendu » (jalon 2, minigames/play-dice)." }];
+  // walkable floor and obstacles, in feet coordinates
+  var BOUNDS = { x0: 8, x1: 680, y0: 245, y1: 381 };
+  var BLOCKS = [[325, 0, 688, 292], [0, 0, 138, 322], [325, 0, 475, 334], [40, 286, 302, 384], [540, 282, 688, 384], [458, 328, 494, 356]];
+
+  var world = document.getElementById("world");
+  function el(cls, html) { var d = document.createElement("div"); d.className = cls; if (html != null) d.innerHTML = html; world.appendChild(d); return d; }
+  function setAt(node, x, y, lift) { var s = screenOf(x, y, lift); node.style.left = s[0] + "px"; node.style.top = s[1] + "px"; }
+
+  Object.keys(PLAYERS).forEach(function (k) { var p = PLAYERS[k]; p.el = makeActor(k); p.label = el("wlabel"); p.label.textContent = p.name; p.i = 0; });
+  NPCS.forEach(function (n) {
+    n.el = makeActor(n.id); n.el.h = n.h; place(n.el, n.x, n.y);
+    n.label = el("wlabel npc");
+    if (n.marker || n.hidden) { n.mk = el("marker"); n.mk.textContent = "!"; }
+  });
+  PROPS.forEach(function (p) {
+    p.el = { classList: { add: function () {}, remove: function () {}, contains: function () { return true; } } };
+    p.mk = el("marker"); p.mk.textContent = p.marker;
+    p.label = el("wlabel npc"); p.label.textContent = p.name;
+  });
+
+  // ---------- state ----------
+  var state = { who: "yann", device: "kb", keys: {}, target: null, near: null, seen: {}, knows: {}, last: performance.now(), padA: false, moved: false };
+  function me() { return PLAYERS[state.who]; }
+  function canSee(n) { return !n.hidden || me().perc >= n.hidden.perc; }
+
+  // ---------- HUD ----------
+  var HEART = "M1 0h2v1h1v-1h2v1h1v3h-1v1h-1v1h-1v1h-1v-1h-1v-1h-1v-1h-1v-3h1z";
+  function renderHud() {
+    var p = me();
+    document.getElementById("portrait").style.backgroundImage = "url(" + face(state.who) + ")";
+    document.getElementById("vname").textContent = p.name;
+    document.getElementById("vclass").textContent = "· " + p.cls;
+    document.getElementById("vac").textContent = p.ac;
+    document.getElementById("vhp").textContent = "♥ " + p.hp + "/" + p.max;
+    document.getElementById("vperc").textContent = "Perception " + p.perc;
+    var per = p.max > 20 ? p.max / 10 : 2, n = Math.min(10, Math.ceil(p.max / per)), full = Math.round(p.hp / per), h = "";
+    for (var i = 0; i < n; i++) h += '<svg viewBox="-0.5 -0.5 8 8" shape-rendering="crispEdges" aria-hidden="true"><path d="' + HEART + '" fill="' + (i < full ? "#FF4D5E" : "#2a2a2a") + '" stroke="#0a0a0a"/></svg>';
+    document.getElementById("hearts").innerHTML = h;
+    document.getElementById("hearts").setAttribute("aria-label", p.hp + " points de vie sur " + p.max);
+    var party = document.getElementById("party");
+    party.innerHTML = '<span class="ptitle">Le groupe</span>';
+    Object.keys(PLAYERS).filter(function (k) { return k !== state.who; }).forEach(function (k) {
+      var o = PLAYERS[k];
+      party.insertAdjacentHTML("beforeend", '<div class="pm"><div class="face" style="background-image:url(' + face(k) + ')"></div><b>' + o.name + " · " + o.cls.replace(/ niv\. \d/, "") + "</b><span>" + (o.where || "Dans la salle, ici") + "</span></div>");
+    });
+    Object.keys(PLAYERS).forEach(function (k) { PLAYERS[k].el.classList.toggle("me", k === state.who); PLAYERS[k].label.style.display = k === state.who ? "none" : ""; });
+  }
+  function renderKeys() {
+    document.querySelectorAll(".key[data-kb]").forEach(function (k) { k.textContent = state.device === "pad" ? k.dataset.pad : k.dataset.kb; k.classList.toggle("pad", state.device === "pad"); });
+    var pk = document.getElementById("pkey"); pk.textContent = state.device === "pad" ? "A" : "E"; pk.classList.toggle("pad", state.device === "pad");
+    document.querySelectorAll('[data-ctl="device"] button').forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.v === state.device)); });
+  }
+  function toast(html, ms) {
+    var box = document.getElementById("toasts");
+    if (box.lastChild && box.lastChild.dataset.html === html && !box.lastChild.classList.contains("leave")) return;
+    var t = document.createElement("div"); t.className = "toast"; t.innerHTML = html; t.dataset.html = html; box.appendChild(t);
+    while (box.children.length > 3) box.removeChild(box.firstChild);
+    setTimeout(function () { t.classList.add("leave"); setTimeout(function () { t.remove(); }, 400); }, ms || 4200);
+  }
+  function setDevice(d) { if (state.device !== d) { state.device = d; renderKeys(); } }
+
+  // ---------- perception reveal (once per player, private) ----------
+  function revealFor(who) {
+    NPCS.forEach(function (n) {
+      if (!n.hidden || !canSee(n) || state.seen[who + n.id]) return;
+      state.seen[who + n.id] = true;
+      setTimeout(function () {
+        if (state.who !== who) return;
+        toast('<span class="tag">Perception ' + me().perc + '</span><span class="narr">' + n.hidden.seen + "</span>", 6000);
+        setTimeout(function () { if (state.who === who) toast('<span class="tag">Journal</span>' + n.hidden.journal + ' <span class="key" style="min-width:auto">Partager</span>', 5000); }, 1400);
+      }, 700);
+    });
+  }
+  function renderVisibility() {
+    NPCS.forEach(function (n) {
+      if (!n.mk) return;
+      var vis = canSee(n);
+      n.mk.style.display = vis ? "" : "none";
+      n.mk.classList.toggle("found", !!n.hidden && vis);
+    });
+  }
+
+  // ---------- movement ----------
+  function blocked(x, y) {
+    if (x < BOUNDS.x0 || x > BOUNDS.x1 || y < BOUNDS.y0 || y > BOUNDS.y1) return true;
+    for (var i = 0; i < BLOCKS.length; i++) { var b = BLOCKS[i]; if (x > b[0] && x < b[2] && y > b[1] && y < b[3]) return true; }
+    return false;
+  }
+  function tryMove(p, dx, dy) {
+    var moved = false;
+    if (dx && !blocked(p.x + dx, p.y)) { p.x += dx; moved = true; }
+    if (dy && !blocked(p.x, p.y + dy)) { p.y += dy; moved = true; }
+    return moved;
+  }
+  function interactables() { return NPCS.concat(PROPS); }
+  function reachOf(t) {
+    var list = typeof t.reach[0] === "number" ? [t.reach] : t.reach, p = me();
+    return list.reduce(function (a, b) { return Math.hypot(b[0] - p.x, b[1] - p.y) < Math.hypot(a[0] - p.x, a[1] - p.y) ? b : a; });
+  }
+  function findNear() {
+    var p = me(), best = null, bd = 34;
+    interactables().forEach(function (t) { var r = reachOf(t), d = Math.hypot(r[0] - p.x, r[1] - p.y); if (d < bd) { bd = d; best = t; } });
+    return best;
+  }
+  function known(t) { return !t.alias || state.knows[state.who + t.id]; }
+  function nameOf(t) { return known(t) ? t.name : t.alias; }
+  function actOf(t) { return known(t) ? t.act : t.actAlias; }
+  function renderNames() {
+    NPCS.forEach(function (n) { n.label.textContent = nameOf(n); });
+    if (state.near) document.getElementById("ptext").textContent = actOf(state.near);
+  }
+  function interact() {
+    if (!state.near) return;
+    var t = state.near, first = !known(t);
+    if (first) state.knows[state.who + t.id] = true;
+    toast('<span class="tag">' + t.name + "</span>" + (first ? "Se présente : « " + t.name + " ». " : "") + t.on);
+    renderNames();
+  }
+
+  // ---------- post-processing: bloom on the flames, light depth blur at the edges, vignette ----------
+  var composer = new THREE.EffectComposer(renderer);
+  composer.setSize(1920, 1080);
+  composer.addPass(new THREE.RenderPass(scene, camera));
+  composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(1920, 1080), 0.65, 0.45, 0.88));
+  var blurShader = { uniforms: { tDiffuse: { value: null }, dir: { value: new THREE.Vector2(1, 0) }, res: { value: new THREE.Vector2(1920, 1080) } },
+    vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }",
+    fragmentShader: "uniform sampler2D tDiffuse; uniform vec2 dir, res; varying vec2 vUv;\n" +
+      "void main(){ float d = smoothstep(.2, .0, vUv.y) * 1.0 + smoothstep(.78, 1., vUv.y) * .7; float r = d * d * 3.5; vec4 s = vec4(0.); float t = 0.;\n" +
+      "  for (int i = -5; i <= 5; i++) { float w = exp(-float(i*i) / 12.); s += texture2D(tDiffuse, vUv + dir * float(i) * r / res) * w; t += w; }\n" +
+      "  vec4 c = s / t; c.rgb *= mix(.6, 1., smoothstep(.95, .35, length((vUv - .5) * vec2(1.15, 1.)))); gl_FragColor = c; }" };
+  var bh = new THREE.ShaderPass(blurShader), bv = new THREE.ShaderPass(blurShader); bv.uniforms.dir.value.set(0, 1);
+  composer.addPass(bh); composer.addPass(bv);
+
+  // ---------- frame ----------
+  var SPEED = 95; // picture px per second
+  function dirOf(vx, vy) { return Math.abs(vx) > Math.abs(vy) ? (vx < 0 ? "west" : "east") : (vy < 0 ? "north" : "south"); }
+  var camX = C0.x, camY = C0.y, HW = IH / 2 / ZOOM * 1920 / 1080, HH = IH / 2 / ZOOM;
+  function frame(now) {
+    var dt = Math.min(0.05, (now - state.last) / 1000); state.last = now;
+    var t = now / 1000, p = me(), vx = 0, vy = 0, k = state.keys;
+    if (k.z || k.w || k.arrowup) vy -= 1; if (k.s || k.arrowdown) vy += 1;
+    if (k.q || k.a || k.arrowleft) vx -= 1; if (k.d || k.arrowright) vx += 1;
+    var pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    for (var i = 0; i < pads.length; i++) {
+      var g = pads[i]; if (!g) continue;
+      var ax = g.axes[0] || 0, ay = g.axes[1] || 0;
+      if (Math.hypot(ax, ay) > 0.25) { vx = ax; vy = ay; setDevice("pad"); state.target = null; }
+      var a = g.buttons[0] && g.buttons[0].pressed;
+      if (a && !state.padA) { setDevice("pad"); interact(); }
+      state.padA = a;
+    }
+    if (vx || vy) state.target = null;
+    else if (state.target) {
+      var tx = state.target[0] - p.x, ty = state.target[1] - p.y, d = Math.hypot(tx, ty);
+      if (d < 2) { state.target = null; document.getElementById("dot").hidden = true; } else { vx = tx / d; vy = ty / d; }
+    }
+    var walking = false;
+    if (vx || vy) {
+      var len = Math.hypot(vx, vy); if (len > 1) { vx /= len; vy /= len; }
+      walking = tryMove(p, vx * SPEED * dt, vy * SPEED * 0.7 * dt);
+      if (!walking && state.target) { state.target = null; document.getElementById("dot").hidden = true; }
+      if (walking) p.dir = dirOf(vx, vy);
+      if (walking && !state.moved) { state.moved = true; setTimeout(function () { document.getElementById("helper").classList.add("off"); }, 2500); }
+    }
+    p.walking = walking;
+    var r = PLAYERS.romain;
+    if (state.who !== "romain" && r.path) {
+      var wp = r.path[r.i], ddx = wp[0] - r.x, ddy = wp[1] - r.y, dd = Math.hypot(ddx, ddy);
+      if (dd < 1.5) r.i = (r.i + 1) % r.path.length;
+      else { r.x += ddx / dd * 32 * dt; r.y += ddy / dd * 32 * dt; r.dir = dirOf(ddx, ddy); }
+      r.walking = dd >= 1.5;
+    }
+    // camera: follows the player within the picture, eased
+    var wantX = Math.max(HW, Math.min(IW - HW, C0.x + (p.x - C0.x) * 0.6)), wantY = Math.max(HH, Math.min(IH - HH, C0.y + ((IH - p.y) - C0.y) * 0.5));
+    camX += (wantX - camX) * Math.min(1, dt * 2.5); camY += (wantY - camY) * Math.min(1, dt * 2.5);
+    camera.position.set(camX, camY, D0); camera.lookAt(camX, camY, 0);
+    // life: flames, dust, smoke
+    flames.forEach(function (f) { var fl = 0.82 + 0.12 * Math.sin(t * 9 + f.ph) + 0.08 * Math.sin(t * 23 + f.ph * 3); f.s.material.opacity = fl; if (f.light) f.light.intensity = 1.0 * fl; });
+    motes.forEach(function (m) { var u = m.userData; u.y -= u.v * dt * 0.3; u.x += Math.sin(t * 0.5 + u.ph) * dt * 2; if (u.y < 40) u.y = 360; m.position.copy(at(u.x, u.y, u.z)); });
+    smoke.forEach(function (s) { var u = s.userData; u.x += u.v * dt; if (u.x > IW + 150) u.x = -150; s.position.copy(at(u.x, u.y, 2)); });
+    // actors
+    NPCS.forEach(function (n) { pose(n.el, "idle", n.dir, t); });
+    Object.keys(PLAYERS).forEach(function (key) {
+      var o = PLAYERS[key]; place(o.el, o.x, o.y); pose(o.el, o.walking ? "walk" : "idle", o.dir, t);
+      setAt(o.label, o.x, o.y, H(o.y) + 6);
+    });
+    NPCS.forEach(function (n) { setAt(n.label, n.x, n.y, (n.h || H(n.y)) + 14); if (n.mk) setAt(n.mk, n.x, n.y, (n.h || H(n.y)) + 2); });
+    PROPS.forEach(function (pr) { setAt(pr.mk, pr.mk_x || pr.mk[0], pr.mk[1], 0); setAt(pr.label, pr.mk[0], pr.mk[1], 14); });
+    if (state.target) setAt(document.getElementById("dot"), state.target[0], state.target[1], 0);
+    // nearest thing: gold glow, its name, one action
+    var near = findNear();
+    if (near !== state.near) {
+      if (state.near) state.near.el.classList.remove("near");
+      state.near = near;
+      if (near) near.el.classList.add("near");
+      var pr = document.getElementById("prompt");
+      pr.classList.toggle("off", !near);
+      if (near) document.getElementById("ptext").textContent = actOf(near);
+    }
+    NPCS.forEach(function (n) { n.label.style.display = (n === state.near || (n.mk && n.mk.style.display !== "none")) ? "" : "none"; });
+    PROPS.forEach(function (x) { x.label.style.display = x === state.near ? "" : "none"; });
+    composer.render();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- input ----------
+  var wrap = document.getElementById("wrap"), screen = document.getElementById("screen");
+  var MOVE = { z: 1, q: 1, s: 1, d: 1, w: 1, a: 1, arrowup: 1, arrowdown: 1, arrowleft: 1, arrowright: 1 };
+  function inGame() { return document.activeElement === wrap; }
+  window.addEventListener("keydown", function (e) {
+    if (!inGame()) return;
+    var k = e.key.toLowerCase();
+    if (MOVE[k]) { state.keys[k] = true; e.preventDefault(); setDevice("kb"); }
+    if (k === "e" || k === "enter") { e.preventDefault(); setDevice("kb"); interact(); }
+  });
+  window.addEventListener("keyup", function (e) { state.keys[e.key.toLowerCase()] = false; });
+  wrap.addEventListener("blur", function () { state.keys = {}; });
+  // screen (1920 x 1080) -> the floor point under it, by fixed-point refinement
+  function floorAt(sx, sy) {
+    var x = camX + (sx / 1920 - 0.5) * 2 * HW, y = IH - (camY - (sy / 1080 - 0.5) * 2 * HH);
+    for (var i = 0; i < 6; i++) { var s = screenOf(x, y, 0); x += (sx - s[0]) * HW * 2 / 1920 * 0.9; y += (sy - s[1]) * HH * 2 / 1080 * 0.9; }
+    return [x, y];
+  }
+  wrap.addEventListener("pointerdown", function (e) {
+    wrap.focus();
+    var r = screen.getBoundingClientRect(), s = r.width / 1920;
+    var sx = (e.clientX - r.left) / s, sy = (e.clientY - r.top) / s, f = floorAt(sx, sy);
+    var hit = interactables().filter(function (t) { var c = screenOf(t.x, t.y, 30); return Math.hypot(c[0] - sx, c[1] - sy) < 90; })[0];
+    if (hit && hit === state.near) { interact(); return; }
+    var tx = hit ? reachOf(hit)[0] : f[0], ty = hit ? reachOf(hit)[1] : Math.max(BOUNDS.y0, Math.min(BOUNDS.y1, f[1]));
+    state.target = [tx, ty]; setDevice("kb");
+    document.getElementById("dot").hidden = false;
+  });
+  window.addEventListener("gamepadconnected", function () { setDevice("pad"); });
+
+  document.querySelectorAll(".opts").forEach(function (group) {
+    group.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      group.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      if (group.dataset.ctl === "device") { state.device = b.dataset.v; renderKeys(); }
+      if (group.dataset.ctl === "who") {
+        state.who = b.dataset.v; state.target = null;
+        if (state.near) state.near.el.classList.remove("near"); state.near = null;
+        document.getElementById("prompt").classList.add("off");
+        document.getElementById("toasts").innerHTML = "";
+        renderHud(); renderVisibility(); renderNames(); revealFor(state.who);
+      }
+      wrap.focus();
+    });
+  });
+
+  function layout() { var k = wrap.clientWidth / 1920; screen.style.transform = "scale(" + k + ")"; wrap.style.height = 1080 * k + "px"; }
+  new ResizeObserver(layout).observe(wrap);
+  layout(); renderHud(); renderKeys(); renderVisibility(); renderNames(); revealFor(state.who);
+  requestAnimationFrame(function (t) { state.last = t; frame(t); });
+})();
+</script>
+</body>
+</html>

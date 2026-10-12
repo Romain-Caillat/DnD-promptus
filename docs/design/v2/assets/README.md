@@ -50,3 +50,25 @@ each): `comptoir`, `etagere`, `table`, `fenetre`, `chandelle`, `perroquet`
 (`create_image_pixflux`, 1 generation each): `sol` (floor planks, tiled)
 and `mur` (second try: the first had an electric bulb). The bottom 12 px
 of `mur.png` are paving that the floor hides.
+
+## `maquette/` — key art of the tavern (`create_image_pro`, 688 × 384)
+
+`a-salle.png` (25 generations) is the reference picture chosen by Romain:
+the tavern full, every character of `sc_perroquet` and the four players.
+`b-comptoir.png` (25) is the closer variant that was not kept (René twice).
+`a-vide.png` (25) is the same room emptied, made with `a-salle.png` as
+reference and style: it is the backdrop of `taverne-hd2d.html`.
+
+`hd2d-data.js` carries `a-vide.png` and the nine sheets as data URLs,
+because WebGL refuses images read from `file://`. Regenerate it after
+changing any of them:
+
+```bash
+cd docs/design/v2 && python3 - <<'PY'
+import base64
+out = ["window.HD2D_IMG = {"]
+for rel in ["maquette/a-vide.png"] + ["sprites/%s.png" % n for n in "yann lea max romain goulven jacquot rene fanch anais".split()]:
+    out.append('  "%s": "data:image/png;base64,%s",' % (rel, base64.b64encode(open("assets/" + rel, "rb").read()).decode()))
+open("assets/hd2d-data.js", "w").write("\n".join(out + ["};"]) + "\n")
+PY
+```
