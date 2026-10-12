@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadre PC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Chakra+Petch:wght@400;600&family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@1,500&display=swap">
+<style>
+/* Reference board for design/set-pc-game-frame (TICKETS.md).
+   The game is dark on purpose (a lit scene framed like a game screen),
+   so this board has a single dark look. Stat colours come from
+   MEMORY.md §2 and front/src/styles/tokens.css. */
+:root {
+  --ink: #0a0a0a;
+  --ink-soft: #5a5a5a;
+  --ivory: #ededed;
+  --ivory-hi: #ffffff;
+  --ivory-side: #bdbdbd;
+  --ivory-edge: #8a8a8a;
+  --page: #111214;
+  --page-2: #1a1c20;
+  --text: #ededed;
+  --muted: #9a9a9a;
+  --hp: #FF4D5E;
+  --ac: #3D9BFF;
+  --gold: #d8ac5c;
+  --gold-soft: #7c6338;
+  --zone: #2EE6A6;
+  --f-pixel: "Silkscreen", "Chakra Petch", monospace;
+  --f-sans: "Chakra Petch", system-ui, sans-serif;
+  --f-title: "Cinzel", Georgia, serif;
+  --f-narr: "Cormorant Garamond", Georgia, serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--page); color: var(--text); font: 16px/1.5 var(--f-sans); }
+.page { max-width: 1280px; margin: 0 auto; padding: 24px 16px 64px; }
+header.top h1 { font: 700 28px/1.2 var(--f-title); margin: 0 0 4px; letter-spacing: .02em; }
+header.top p { margin: 0; color: var(--muted); }
+code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; color: #cfcfcf; }
+
+/* ---------- controls ---------- */
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; margin: 20px 0 12px; align-items: center; }
+.seg { display: inline-flex; align-items: center; gap: 8px; }
+.seg > span { font: 12px var(--f-pixel); color: var(--muted); text-transform: uppercase; }
+.seg .opts { display: inline-flex; border: 2px solid #333; }
+.seg button { font: 600 14px var(--f-sans); color: var(--text); background: var(--page-2); border: 0; padding: 6px 12px; cursor: pointer; }
+.seg button + button { border-left: 2px solid #333; }
+.seg button[aria-pressed="true"] { background: var(--ivory); color: var(--ink); }
+.seg button:focus-visible { outline: 2px solid var(--zone); outline-offset: 2px; }
+
+/* ---------- the screen, scaled to the page width ---------- */
+.frame-wrap { width: 100%; position: relative; background: #000; border: 2px solid #2a2a2a; overflow: hidden; }
+.screen { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; background: #120b07; }
+
+/* the world: authored at 1920×1080, scaled to cover the screen */
+.world { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform: translate(-50%, -50%) scale(var(--ws, 1)); }
+.w { position: absolute; }
+.wall { left: 0; top: 0; width: 1920px; height: 540px;
+  background:
+    linear-gradient(#140c08 0 22px, transparent 22px) 0 70px / 100% 170px repeat-y,
+    repeating-linear-gradient(90deg, #2b1b12 0 58px, #24160f 58px 62px, #2e1d13 62px 120px),
+    #2a1a12; }
+.floor-clip { left: 0; top: 520px; width: 1920px; height: 560px; overflow: hidden; perspective: 900px; }
+.floor { position: absolute; left: -600px; top: -40px; width: 3120px; height: 1100px; transform: rotateX(58deg); transform-origin: 50% 0;
+  background:
+    repeating-linear-gradient(0deg, #1e130c 0 4px, transparent 4px 86px),
+    repeating-linear-gradient(90deg, #3f2a1b 0 230px, #382517 230px 236px, #432d1d 236px 470px); }
+.window { left: 190px; top: 150px; width: 200px; height: 230px; background: linear-gradient(#5c7a8f, #2f4656); border: 14px solid #160e09; box-shadow: inset 0 0 0 4px #160e09; }
+.window::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 46%, #160e09 46% 54%, transparent 54%), linear-gradient(transparent 46%, #160e09 46% 54%, transparent 54%); }
+.shaft { left: 150px; top: 370px; width: 520px; height: 520px; background: linear-gradient(170deg, rgba(150,190,215,.20), transparent 70%); clip-path: polygon(10% 0, 45% 0, 100% 100%, 30% 100%); mix-blend-mode: screen; }
+.shelf { left: 1200px; top: 250px; width: 520px; height: 14px; background: #160e09; box-shadow: 0 90px 0 #160e09; }
+.bottles { left: 1215px; top: 196px; width: 500px; height: 54px;
+  background:
+    linear-gradient(90deg, #3d6b3a 0 14px, transparent 14px 40px, #7a2f2a 40px 52px, transparent 52px 78px, #c8a24a 78px 90px, transparent 90px 120px) 0 0 / 120px 54px repeat-x;
+  box-shadow: 0 90px 0 -0px transparent; }
+.bottles.b2 { top: 286px; filter: hue-rotate(60deg) brightness(.9); }
+.parrot { left: 1430px; top: 120px; width: 46px; height: 60px; background: #3e7d3a; border: 6px solid #141010; border-radius: 40% 40% 20% 20%; }
+.parrot::after { content: ""; position: absolute; left: 24px; top: 10px; width: 8px; height: 8px; background: #e8d36a; box-shadow: 10px 6px 0 -1px #c06a2a; }
+.counter-top { left: 1150px; top: 560px; width: 600px; height: 40px; background: #7a5233; border-top: 6px solid #9b6d45; }
+.counter { left: 1150px; top: 600px; width: 600px; height: 150px; background: repeating-linear-gradient(90deg, #5a3a22 0 96px, #4a2f1b 96px 102px); border-bottom: 10px solid #2a1a10; }
+.table { width: 240px; height: 70px; background: #6b4528; border-top: 8px solid #87593a; border-bottom: 12px solid #3a2414; border-radius: 4px; }
+.table::before, .table::after { content: ""; position: absolute; bottom: -64px; width: 18px; height: 54px; background: #3a2414; }
+.table::before { left: 26px; } .table::after { right: 26px; }
+.t1 { left: 380px; top: 690px; }
+.t2 { left: 760px; top: 840px; width: 280px; }
+.dice { left: 470px; top: 694px; width: 12px; height: 12px; background: #ededed; box-shadow: 18px 4px 0 #ededed, 9px -6px 0 #d9d9d9; }
+.mug { width: 18px; height: 22px; background: #b98a4a; border: 3px solid #141010; }
+.m1 { left: 820px; top: 830px; } .m2 { left: 900px; top: 836px; } .m3 { left: 1260px; top: 538px; }
+.candle { width: 10px; height: 18px; background: #e9dcc0; }
+.candle::before { content: ""; position: absolute; left: 2px; top: -9px; width: 6px; height: 9px; background: #ffd27a; border-radius: 50% 50% 30% 30%; }
+.glow { width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: 50%; background: radial-gradient(rgba(255,170,70,.42), rgba(255,140,40,.12) 40%, transparent 70%); mix-blend-mode: screen; }
+@media (prefers-reduced-motion: no-preference) { .glow { animation: flicker 3.2s ease-in-out infinite; } .marker { animation: bob 1.4s ease-in-out infinite; } }
+@keyframes flicker { 0%,100% { opacity: 1; } 40% { opacity: .82; } 55% { opacity: .95; } 70% { opacity: .78; } }
+@keyframes bob { 0%,100% { transform: translate(-50%, -100%); } 50% { transform: translate(-50%, calc(-100% - 6px)); } }
+.sprite { width: 60px; height: 84px; image-rendering: pixelated; background-size: 100% 100%; }
+.sprite::after { content: ""; position: absolute; left: 6px; bottom: -8px; width: 48px; height: 12px; border-radius: 50%; background: rgba(0,0,0,.45); z-index: -1; }
+.me-ring { width: 76px; height: 22px; margin-left: -8px; border: 3px solid rgba(237,237,237,.55); border-radius: 50%; }
+.light { left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 55%, transparent 40%, rgba(0,0,0,.55) 100%); }
+.tilt { left: 0; width: 1920px; pointer-events: none; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.tilt.top { top: 0; height: 300px; mask-image: linear-gradient(#000, transparent); -webkit-mask-image: linear-gradient(#000, transparent); }
+.tilt.bot { bottom: 0; height: 220px; mask-image: linear-gradient(transparent, #000); -webkit-mask-image: linear-gradient(transparent, #000); }
+
+/* labels floating in the world: never bare text on decor */
+.wlabel { transform: translate(-50%, -100%); font: calc(15px / var(--ws, 1)) var(--f-pixel); color: #fff; white-space: nowrap;
+  text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 0 3px 6px rgba(0,0,0,.8); }
+.marker { transform: translate(-50%, -100%); width: calc(30px / var(--ws, 1)); height: calc(30px / var(--ws, 1)); display: grid; place-items: center;
+  font: calc(18px / var(--ws, 1)) var(--f-pixel); color: var(--ink); background: var(--ivory); box-shadow: 0 0 0 3px var(--ink), 0 4px 0 3px var(--ink);
+  clip-path: polygon(0 3px, 3px 3px, 3px 0, calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)); }
+
+/* ---------- UI layer (screen pixels, never scaled with the world) ---------- */
+.ui { position: absolute; inset: 0; pointer-events: none; }
+.play { position: absolute; inset: 0; }
+.play > *, .gmp { position: absolute; pointer-events: auto; }
+/* the GM panel takes the right edge: the game (world and zones) moves into the rest */
+.screen.gm .play { right: 360px; }
+.screen.gm .world { left: calc(50% - 180px); }
+.safe { --m: 24px; }
+
+/* skin A — pixel menu (MEMORY.md §2, ui/adopt-pixel-menu) */
+.panel { background: rgba(10,10,10,.90); box-shadow: inset 0 0 0 2px #2c2c2c, 0 0 0 2px var(--ink); color: var(--text); }
+.key { --step: 3px; display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; font: 15px var(--f-pixel); color: var(--ink);
+  background: var(--ivory); box-shadow: inset 3px 3px 0 var(--ivory-hi), inset -3px -4px 0 var(--ivory-side), 0 3px 0 var(--ivory-edge);
+  clip-path: polygon(0 var(--step), var(--step) var(--step), var(--step) 0, calc(100% - var(--step)) 0, calc(100% - var(--step)) var(--step), 100% var(--step), 100% calc(100% - var(--step)), calc(100% - var(--step)) calc(100% - var(--step)), calc(100% - var(--step)) 100%, var(--step) 100%, var(--step) calc(100% - var(--step)), 0 calc(100% - var(--step))); }
+.key.pad { border-radius: 50%; clip-path: none; min-width: 30px; width: 30px; padding: 0; box-shadow: 0 0 0 2px var(--ink), 0 3px 0 2px var(--ivory-edge); }
+.mbtn { position: relative; display: flex; align-items: center; gap: 10px; font: 600 16px var(--f-sans); color: var(--text); background: rgba(10,10,10,.90);
+  border: 0; padding: 8px 12px; cursor: pointer; box-shadow: inset 0 0 0 2px #3a3a3a, inset 3px 3px 0 1px #262626; }
+.mbtn .key { min-width: 24px; height: 24px; font-size: 12px; padding: 0 6px; }
+.mbtn .key.pad { width: 24px; min-width: 24px; }
+.mbtn:hover { box-shadow: inset 0 0 0 2px var(--ivory-edge); }
+.mbtn:focus-visible, .mbtn.cursor { outline: none; box-shadow: inset 0 0 0 2px var(--ivory); }
+.mbtn:focus-visible::before, .mbtn.cursor::before { content: ""; position: absolute; left: -20px; top: 50%; width: 12px; height: 14px; margin-top: -7px; background: var(--ivory);
+  clip-path: polygon(0 0, 4px 0, 4px 2px, 8px 2px, 8px 5px, 12px 5px, 12px 9px, 8px 9px, 8px 12px, 4px 12px, 4px 14px, 0 14px); }
+.ptitle { font: 13px var(--f-pixel); text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.big { font: 700 20px var(--f-title); color: var(--text); }
+.narr { font: italic 500 20px/1.35 var(--f-narr); }
+
+/* skin B — Octopath: translucent night blue, double gold rule, Cinzel */
+.screen[data-skin="octo"] .panel { background: linear-gradient(rgba(14,22,40,.82), rgba(8,12,24,.86)); box-shadow: 0 0 0 1px var(--gold), inset 0 0 0 3px rgba(8,12,24,.9), inset 0 0 0 4px var(--gold-soft); border-radius: 2px; }
+.screen[data-skin="octo"] .mbtn { background: linear-gradient(rgba(14,22,40,.82), rgba(8,12,24,.86)); box-shadow: 0 0 0 1px var(--gold-soft); font-family: var(--f-title); font-weight: 500; letter-spacing: .04em; }
+.screen[data-skin="octo"] .mbtn:hover, .screen[data-skin="octo"] .mbtn:focus-visible, .screen[data-skin="octo"] .mbtn.cursor { box-shadow: 0 0 0 1px var(--gold), 0 0 12px rgba(216,172,92,.35); }
+.screen[data-skin="octo"] .mbtn:focus-visible::before, .screen[data-skin="octo"] .mbtn.cursor::before { background: var(--gold); clip-path: polygon(0 0, 100% 50%, 0 100%); width: 10px; height: 14px; }
+.screen[data-skin="octo"] .key { background: rgba(8,12,24,.9); color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); clip-path: none; border-radius: 3px; font-family: var(--f-title); }
+.screen[data-skin="octo"] .key.pad { border-radius: 50%; }
+.screen[data-skin="octo"] .ptitle { font: 500 13px var(--f-title); letter-spacing: .14em; color: var(--gold); }
+.screen[data-skin="octo"] .big { color: #f3e6c8; }
+.screen[data-skin="octo"] .marker { background: #0e1628; color: var(--gold); box-shadow: 0 0 0 2px var(--gold); clip-path: none; transform-origin: center; }
+
+/* A — place */
+.place { left: var(--m); top: var(--m); padding: 10px 16px; display: grid; gap: 2px; }
+/* B — menus */
+.menus { right: var(--m); top: var(--m); display: flex; gap: 10px; }
+/* C — notifications */
+.toasts { left: 50%; top: calc(var(--m) + 76px); transform: translateX(-50%); display: grid; gap: 8px; justify-items: center; }
+.toast { display: flex; align-items: center; gap: 10px; padding: 10px 16px; font: 600 16px var(--f-sans); background: var(--ivory); color: var(--ink); box-shadow: 0 0 0 2px var(--ink), 0 4px 0 2px var(--ivory-edge); }
+.screen[data-skin="octo"] .toast { background: linear-gradient(rgba(14,22,40,.9), rgba(8,12,24,.92)); color: #f3e6c8; box-shadow: 0 0 0 1px var(--gold); font-family: var(--f-title); font-weight: 500; }
+/* D — vitals */
+.vitals { left: var(--m); bottom: var(--m); padding: 12px 16px 12px 12px; display: grid; grid-template-columns: 72px auto; gap: 4px 14px; align-items: center; }
+.portrait { grid-row: span 3; width: 72px; height: 72px; image-rendering: pixelated; background: #2a2a2a center / 100% 100% no-repeat; box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 2px #444; }
+.hearts { display: flex; gap: 3px; }
+.hearts svg { width: 21px; height: 18px; display: block; }
+.vrow { display: flex; align-items: center; gap: 12px; font: 15px var(--f-pixel); }
+.gem { display: inline-flex; align-items: center; gap: 6px; }
+.badge { font: 12px var(--f-pixel); padding: 2px 6px; background: var(--ivory); color: var(--ink); }
+/* E — interaction prompt */
+.prompt { left: 50%; bottom: calc(var(--m) + 96px); transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 10px 18px; font: 600 18px var(--f-sans); white-space: nowrap; }
+.screen[data-skin="octo"] .prompt { font: 500 18px var(--f-title); letter-spacing: .03em; }
+/* F — party */
+.party { left: var(--m); bottom: calc(var(--m) + 112px); padding: 10px 14px; display: grid; gap: 8px; min-width: 300px; }
+.pm { display: grid; grid-template-columns: 36px 1fr; gap: 0 10px; align-items: center; }
+.pm .face { grid-row: span 2; width: 36px; height: 36px; image-rendering: pixelated; background: #2a2a2a center / 100% 100%; box-shadow: 0 0 0 2px var(--ink); }
+.pm b { font: 600 15px var(--f-sans); }
+.pm span { font: 13px var(--f-sans); color: var(--muted); }
+/* H — GM panel (GM only) */
+.gmp { right: 0; top: 0; bottom: 0; width: 360px; padding: 20px; display: none; gap: 14px; align-content: start; }
+.screen.gm .gmp { display: grid; }
+.gmp .row { display: flex; justify-content: space-between; font: 15px var(--f-sans); gap: 8px; }
+.gmp .row span { color: var(--muted); }
+.gmp .warn { color: #ffd60a; }
+
+/* zone overlay */
+.zones .zone { position: absolute; border: 2px dashed var(--zone); pointer-events: none; display: none; }
+.screen.show-zones .zones .zone { display: block; }
+.zone i { position: absolute; left: -2px; top: -26px; font: normal 13px var(--f-pixel); color: #04120d; background: var(--zone); padding: 3px 7px; white-space: nowrap; }
+.zone.safe-line { inset: 24px; border-width: 1px; border-color: rgba(46,230,166,.45); }
+.zone.win { left: 50%; top: 50%; width: min(1100px, calc(100% - 48px)); min-width: 640px; height: 58%; transform: translate(-50%, -52%); }
+.screen.gm .zone.win { left: calc(50% - 180px); width: min(1100px, calc(100% - 48px - 360px)); }
+.screen.gm .zone.safe-line { right: 384px; }
+
+/* ---------- board text ---------- */
+section.doc { margin-top: 36px; }
+section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.rule { background: var(--page-2); padding: 14px 16px; border-left: 3px solid var(--zone); }
+.rule b { font: 13px var(--f-pixel); color: var(--zone); display: block; margin-bottom: 4px; }
+.rule p { margin: 0; color: #d6d6d6; }
+table { width: 100%; border-collapse: collapse; background: var(--page-2); }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #2a2a2a; }
+th { font: 12px var(--f-pixel); color: var(--muted); text-transform: uppercase; }
+td .key { margin-right: 4px; }
+.type-row { display: grid; grid-template-columns: 220px 1fr; gap: 12px; padding: 12px 16px; background: var(--page-2); border-bottom: 1px solid #2a2a2a; align-items: baseline; }
+.type-row span { color: var(--muted); font-size: 14px; }
+.ask { background: var(--page-2); padding: 16px 20px; border: 2px solid var(--ivory); }
+.ask ol { margin: 8px 0 0; padding-left: 20px; }
+.ask li + li { margin-top: 8px; }
+.scroll-x { overflow-x: auto; }
+@media (max-width: 640px) { .type-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <h1>Cadre PC · le jeu à l'écran</h1>
+    <p>Ticket <code>design/set-pc-game-frame</code> · le cadre commun à tous les écrans de jeu. Décor : le Perroquet Noyé, Corsaires, acte 1.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="Réglages de la planche">
+    <div class="seg"><span>Habillage</span><div class="opts" data-ctl="skin">
+      <button type="button" data-v="pixel" aria-pressed="true">A · Menu pixel</button>
+      <button type="button" data-v="octo" aria-pressed="false">B · Octopath</button>
+    </div></div>
+    <div class="seg"><span>Appareil</span><div class="opts" data-ctl="device">
+      <button type="button" data-v="kb" aria-pressed="true">Clavier / souris</button>
+      <button type="button" data-v="pad" aria-pressed="false">Manette</button>
+    </div></div>
+    <div class="seg"><span>Écran</span><div class="opts" data-ctl="res">
+      <button type="button" data-v="1920" aria-pressed="true">1920 × 1080</button>
+      <button type="button" data-v="1366" aria-pressed="false">1366 × 768</button>
+    </div></div>
+    <div class="seg"><span>Vue</span><div class="opts" data-ctl="role">
+      <button type="button" data-v="player" aria-pressed="true">Joueur</button>
+      <button type="button" data-v="gm" aria-pressed="false">MJ (Tab)</button>
+    </div></div>
+    <div class="seg"><span>Zones</span><div class="opts" data-ctl="zones">
+      <button type="button" data-v="on" aria-pressed="true">Afficher</button>
+      <button type="button" data-v="off" aria-pressed="false">Masquer</button>
+    </div></div>
+  </div>
+
+  <div class="frame-wrap" id="wrap">
+    <div class="screen show-zones" id="screen" data-skin="pixel">
+      <div class="world" id="world" aria-hidden="true">
+        <div class="w wall"></div>
+        <div class="w window"></div>
+        <div class="w shelf"></div>
+        <div class="w bottles"></div>
+        <div class="w bottles b2"></div>
+        <div class="w parrot"></div>
+        <div class="w floor-clip"><div class="floor"></div></div>
+        <div class="w shaft"></div>
+        <div class="w sprite" data-who="goulven" style="left:1380px;top:478px"></div>
+        <div class="w counter-top"></div>
+        <div class="w counter"></div>
+        <div class="w mug m3"></div>
+        <div class="w candle" style="left:1560px;top:544px"></div>
+        <div class="w table t1"></div>
+        <div class="w dice"></div>
+        <div class="w candle" style="left:560px;top:674px"></div>
+        <div class="w sprite" data-who="jacquot" style="left:800px;top:600px"></div>
+        <div class="w sprite" data-who="romain" style="left:250px;top:640px"></div>
+        <div class="w sprite" data-who="max" style="left:330px;top:676px"></div>
+        <div class="w me-ring" style="left:1236px;top:810px"></div>
+        <div class="w sprite" data-who="me" style="left:1236px;top:740px"></div>
+        <div class="w table t2"></div>
+        <div class="w mug m1"></div><div class="w mug m2"></div>
+        <div class="w candle" style="left:960px;top:824px"></div>
+        <div class="w glow" style="left:1565px;top:540px"></div>
+        <div class="w glow" style="left:565px;top:670px"></div>
+        <div class="w glow" style="left:965px;top:820px"></div>
+        <div class="w glow" style="left:1100px;top:250px;opacity:.6"></div>
+        <div class="w light"></div>
+        <div class="w tilt top"></div>
+        <div class="w tilt bot"></div>
+        <div class="w marker" style="left:1410px;top:462px">!</div>
+        <div class="w wlabel" style="left:1410px;top:420px">Mère Goulven</div>
+        <div class="w marker" style="left:476px;top:676px">?</div>
+        <div class="w wlabel" style="left:280px;top:628px">Romain</div>
+        <div class="w wlabel" style="left:360px;top:664px;transform:translate(-50%,-100%) translateY(-28px)">Max</div>
+      </div>
+
+      <div class="ui safe" id="ui">
+        <div class="play">
+        <div class="place panel">
+          <span class="ptitle">Chapitre 1 · Les lettres de marque</span>
+          <span class="big">Le Perroquet Noyé</span>
+        </div>
+
+        <div class="toasts" role="status">
+          <div class="toast">◆ Léa a partagé une découverte</div>
+        </div>
+
+        <nav class="menus" aria-label="Menus du jeu">
+          <button class="mbtn" type="button"><span class="key" data-kb="J" data-pad="☰">J</span>Journal</button>
+          <button class="mbtn" type="button"><span class="key" data-kb="I" data-pad="☰">I</span>Inventaire</button>
+          <button class="mbtn" type="button"><span class="key" data-kb="C" data-pad="☰">C</span>Fiche</button>
+          <button class="mbtn" type="button"><span class="key" data-kb="Échap" data-pad="☰">Échap</span>Menu</button>
+        </nav>
+
+        <div class="vitals panel">
+          <div class="portrait" id="portrait"></div>
+          <div><span class="big" style="font-size:18px">Yann</span> <span style="color:var(--muted);font-size:14px">· Bretteur niv. 1</span></div>
+          <div class="hearts" id="hearts" aria-label="24 points de vie sur 30"></div>
+          <div class="vrow">
+            <span class="gem" aria-label="Classe d'armure 15"><svg width="18" height="20" viewBox="0 0 9 10" shape-rendering="crispEdges" aria-hidden="true"><path fill="#0a0a0a" d="M0 0h9v6h-1v2h-2v1h-1v1h-1v-1h-1v-1h-2v-2h-1z"/><path fill="#3D9BFF" d="M1 1h7v5h-1v1h-1v1h-1v1h-1v-1h-1v-1h-1v-1h-1z"/></svg><span style="color:var(--ac)">15</span></span>
+            <span style="color:var(--hp)">♥ 24/30</span>
+            <span class="badge">Inspiré · 2</span>
+          </div>
+        </div>
+
+        <div class="prompt panel"><span class="key" data-kb="E" data-pad="A">E</span>Parler à Mère Goulven</div>
+
+        <div class="party panel" aria-label="Le groupe">
+          <span class="ptitle">Le groupe</span>
+          <div class="pm"><div class="face" data-face="lea"></div><b>Léa · Vigie</b><span>Cave du Perroquet</span></div>
+          <div class="pm"><div class="face" data-face="max"></div><b>Max · Canonnier</b><span>Aux dés, ici</span></div>
+          <div class="pm"><div class="face" data-face="romain"></div><b>Romain · Navigateur</b><span>Près de la fenêtre, ici</span></div>
+        </div>
+
+        </div>
+
+        <aside class="gmp panel" aria-label="Panneau MJ">
+          <span class="ptitle">Panneau MJ · invisible des joueurs</span>
+          <div class="row"><b>Léa</b><span>cave · fouille</span></div>
+          <div class="row"><b>Max</b><span>dés · 3 min</span></div>
+          <div class="row"><b>Yann</b><span>→ Mère Goulven</span></div>
+          <div class="row warn"><b>⚠ Max</b><span>3e partie de dés</span></div>
+          <button class="mbtn" type="button">Pause globale</button>
+          <button class="mbtn" type="button">Déclencher : Vaubernier entre</button>
+          <span style="color:var(--muted);font-size:14px">Détail : <code>design/draw-gm-panel</code></span>
+        </aside>
+
+        <div class="zones" aria-hidden="true">
+          <div class="zone safe-line"></div>
+          <div class="zone" data-z="place"><i>A · Lieu</i></div>
+          <div class="zone" data-z="toasts"><i>C · Notifications</i></div>
+          <div class="zone" data-z="menus"><i>B · Menus</i></div>
+          <div class="zone win"><i>G · Fenêtre (dialogue, journal, mini-jeu)</i></div>
+          <div class="zone" data-z="vitals"><i>D · Mon perso</i></div>
+          <div class="zone" data-z="prompt"><i>E · Action</i></div>
+          <div class="zone" data-z="party"><i>F · Groupe</i></div>
+          <div class="zone" data-z="gmp"><i>H · Panneau MJ</i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="doc">
+    <h2>Les zones</h2>
+    <div class="rules">
+      <div class="rule"><b>A · Lieu</b><p>Chapitre et lieu, en haut à gauche. Discret : on le lit en arrivant, puis on l'oublie.</p></div>
+      <div class="rule"><b>B · Menus</b><p>Journal, Inventaire, Fiche, Menu. Toujours le raccourci à côté du mot. À la manette, un seul bouton ☰ ouvre les onglets.</p></div>
+      <div class="rule"><b>C · Notifications</b><p>En haut au centre, sous la ligne des menus, empilées, 4 secondes. Claires pour une bonne nouvelle, sombres pour une mauvaise.</p></div>
+      <div class="rule"><b>D · Mon perso</b><p>Portrait, cœurs, CA, états. Toujours visible, jamais masqué par une fenêtre.</p></div>
+      <div class="rule"><b>E · Action</b><p>Une seule action proposée, au centre en bas, avec la touche de l'appareil utilisé.</p></div>
+      <div class="rule"><b>F · Groupe</b><p>Les autres joueurs, en colonne au-dessus de mon perso : où ils sont et ce qu'ils font (« ici » quand ils sont dans le même lieu). À droite, il chevauchait l'action en 1366 × 768 avec le panneau MJ ouvert.</p></div>
+      <div class="rule"><b>G · Fenêtre</b><p>Dialogue, journal, mini-jeu : au centre. Le monde reste visible autour. Elle peut couvrir F, jamais D.</p></div>
+      <div class="rule"><b>H · Panneau MJ</b><p>Bord droit, 360 px, MJ seulement (Tab). Le jeu entier (le monde et ses zones) se décale dans le reste de l'écran : rien n'est recouvert.</p></div>
+    </div>
+  </section>
+
+  <section class="doc">
+    <h2>Les règles du cadre</h2>
+    <div class="rules">
+      <div class="rule"><b>Taille</b><p>L'interface garde sa taille en pixels, c'est le monde qui s'adapte. En 1366 × 768, même avec le panneau MJ, aucune zone n'en chevauche une autre. Pointillé fin : la marge de 24 px.</p></div>
+      <div class="rule"><b>Lisibilité</b><p>Aucun texte posé à même le décor. Dans un panneau, ou, pour une étiquette du monde (nom, [!], [?]), avec un contour noir.</p></div>
+      <div class="rule"><b>Tailles minimales</b><p>Texte 16 px, étiquettes 13 px, à 1920 × 1080. La narration est en Cormorant, à 20 px au moins.</p></div>
+      <div class="rule"><b>Couleurs</b><p>L'interface reste neutre. La couleur sert aux stats (PV rouge, CA bleu…), toujours accompagnée d'une forme.</p></div>
+      <div class="rule"><b>Focus</b><p>Le curseur ▶ montre le focus, au clavier comme à la manette. Essaie : Tab sur les menus de l'écran.</p></div>
+      <div class="rule"><b>Appareil</b><p>Les touches affichées suivent la dernière entrée utilisée : on touche la manette, tout passe en boutons.</p></div>
+    </div>
+  </section>
+
+  <section class="doc">
+    <h2>Les raccourcis</h2>
+    <div class="scroll-x"><table>
+      <thead><tr><th>Action</th><th>Clavier / souris</th><th>Manette</th></tr></thead>
+      <tbody>
+        <tr><td>Se déplacer</td><td><span class="key">Z</span><span class="key">Q</span><span class="key">S</span><span class="key">D</span> ou clic au sol</td><td>Stick gauche</td></tr>
+        <tr><td>Interagir, valider</td><td><span class="key">E</span> ou clic</td><td><span class="key pad">A</span></td></tr>
+        <tr><td>Retour, annuler</td><td><span class="key">Échap</span> ou clic droit</td><td><span class="key pad">B</span></td></tr>
+        <tr><td>Journal · Inventaire · Fiche</td><td><span class="key">J</span><span class="key">I</span><span class="key">C</span></td><td><span class="key pad">☰</span> puis LB / RB</td></tr>
+        <tr><td>Caméra</td><td>Molette, clic milieu</td><td>Stick droit</td></tr>
+        <tr><td>Choix de dialogue</td><td><span class="key">1</span>…<span class="key">5</span> ou clic</td><td>Croix + <span class="key pad">A</span></td></tr>
+        <tr><td>Panneau MJ (MJ seulement)</td><td><span class="key">Tab</span></td><td><span class="key pad">⧉</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="doc">
+    <h2>La typographie</h2>
+    <div class="type-row"><span>Titres · Cinzel</span><div style="font:700 26px var(--f-title)">Le Perroquet Noyé</div></div>
+    <div class="type-row"><span>Narration · Cormorant</span><div class="narr">Salle enfumée, poutres basses, sol qui colle sous les bottes.</div></div>
+    <div class="type-row"><span>Interface · Chakra Petch</span><div style="font:600 16px var(--f-sans)">Parler à Mère Goulven · Persuasion DD 10</div></div>
+    <div class="type-row"><span>Étiquettes, chiffres · Silkscreen</span><div style="font:15px var(--f-pixel)">Chapitre 1 · CA 15 · 24/30</div></div>
+  </section>
+
+  <section class="doc">
+    <div class="ask">
+      <b>À trancher par Romain</b>
+      <ol>
+        <li><b>L'habillage : A ou B ?</b> A est le menu pixel noir et blanc déjà choisi le 8 octobre. B est plus proche d'Octopath : panneaux bleu nuit, double filet doré, Cinzel.</li>
+        <li><b>Le groupe (F) en colonne à gauche</b>, au-dessus de mon perso : je l'ai déplacé parce qu'en bas à droite, il chevauchait l'action en 1366 × 768. Ça te va ?</li>
+        <li><b>ZQSD</b> par défaut (clavier AZERTY), avec WASD dans les options, ça te va ?</li>
+      </ol>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  // Pixel sprites drawn in code (placeholders until PixelLab characters).
+  var BODY = [
+    "..KKKKKK..", ".KHHHHHHK.", ".KHSSSSHK.", ".KSKSSKSK.", ".KSSSSSSK.", "..KKSSKK..",
+    ".KCCAACCK.", "KSCCAACCSK", "KSCCCCCCSK", ".KCCCCCCK.", ".KPPPPPPK.", ".KPPKKPPK.",
+    ".KBBKKBBK.", "..KK..KK.."
+  ];
+  var LOOKS = {
+    me:      { H: "#2b1a10", S: "#e2b48c", C: "#8c1f2b", A: "#e9dcc0", P: "#2a2a3a", B: "#3a2414" },
+    lea:     { H: "#c7742f", S: "#f0c9a0", C: "#2f5d4a", A: "#d8c27a", P: "#3a3226", B: "#2a1a10" },
+    max:     { H: "#151515", S: "#b9825a", C: "#4a4f5a", A: "#d0a040", P: "#2a2a2a", B: "#1a1a1a" },
+    romain:  { H: "#6b4a2a", S: "#e2b48c", C: "#1f3d6b", A: "#ededed", P: "#3a2a1a", B: "#2a1a10" },
+    goulven: { H: "#9a9a9a", S: "#e8b896", C: "#6b3a5a", A: "#ededed", P: "#4a3a2a", B: "#2a1a10" },
+    jacquot: { H: "#d9d9d9", S: "#d9a07a", C: "#5a4a2a", A: "#8a7a5a", P: "#3a3a2a", B: "#2a1a10" }
+  };
+  function draw(look, rows) {
+    var c = document.createElement("canvas");
+    c.width = 10; c.height = rows.length;
+    var g = c.getContext("2d");
+    rows.forEach(function (row, y) {
+      for (var x = 0; x < row.length; x++) {
+        var ch = row[x];
+        if (ch === ".") continue;
+        g.fillStyle = ch === "K" ? "#141010" : look[ch];
+        g.fillRect(x, y, 1, 1);
+      }
+    });
+    return c.toDataURL();
+  }
+  var full = {}, head = {};
+  Object.keys(LOOKS).forEach(function (k) {
+    full[k] = draw(LOOKS[k], BODY);
+    head[k] = draw(LOOKS[k], BODY.slice(0, 10)); // head and shoulders, 10 × 10
+  });
+  document.querySelectorAll("[data-who]").forEach(function (el) { el.style.backgroundImage = "url(" + full[el.dataset.who] + ")"; });
+  document.querySelectorAll("[data-face]").forEach(function (el) { el.style.backgroundImage = "url(" + head[el.dataset.face] + ")"; });
+  document.getElementById("portrait").style.backgroundImage = "url(" + head.me + ")";
+
+  // Hearts: 30 HP max -> ten hearts of 3 HP (MEMORY.md §2), 24 HP -> eight full.
+  var HEART = "M1 0h2v1h1v-1h2v1h1v3h-1v1h-1v1h-1v1h-1v-1h-1v-1h-1v-1h-1v-3h1z";
+  var hearts = document.getElementById("hearts");
+  for (var i = 0; i < 10; i++) {
+    var full_ = i < 8;
+    hearts.insertAdjacentHTML("beforeend",
+      '<svg viewBox="-0.5 -0.5 8 8" shape-rendering="crispEdges" aria-hidden="true"><path d="' + HEART + '" fill="' + (full_ ? "#FF4D5E" : "#2a2a2a") + '" stroke="#0a0a0a" stroke-width="1"/></svg>');
+  }
+
+  var screen = document.getElementById("screen");
+  var wrap = document.getElementById("wrap");
+  var world = document.getElementById("world");
+  var state = { res: 1920, device: "kb" };
+
+  function placeZones() {
+    var ui = document.getElementById("ui").getBoundingClientRect();
+    var k = ui.width / state.res; // the screen is scaled; zones are measured back in screen pixels
+    document.querySelectorAll(".zone[data-z]").forEach(function (z) {
+      var target = document.querySelector("." + z.dataset.z);
+      if (!target || getComputedStyle(target).display === "none") { z.style.visibility = "hidden"; return; }
+      z.style.visibility = "visible";
+      var r = target.getBoundingClientRect();
+      z.style.left = (r.left - ui.left) / k - 6 + "px";
+      z.style.top = (r.top - ui.top) / k - 6 + "px";
+      z.style.width = r.width / k + 12 + "px";
+      z.style.height = r.height / k + 12 + "px";
+    });
+  }
+  function layout() {
+    var w = state.res, h = state.res === 1920 ? 1080 : 768;
+    screen.style.width = w + "px";
+    screen.style.height = h + "px";
+    world.style.setProperty("--ws", Math.max(w / 1920, h / 1080));
+    var k = wrap.clientWidth / w;
+    screen.style.transform = "scale(" + k + ")";
+    wrap.style.height = h * k + "px";
+    placeZones();
+  }
+  function setDevice(d) {
+    state.device = d;
+    document.querySelectorAll(".screen .key[data-kb]").forEach(function (key) {
+      key.textContent = d === "pad" ? key.dataset.pad : key.dataset.kb;
+      key.classList.toggle("pad", d === "pad");
+    });
+    // a gamepad always shows the cursor on the current choice
+    document.querySelector(".menus .mbtn").classList.toggle("cursor", d === "pad");
+    placeZones();
+  }
+  document.querySelectorAll(".opts").forEach(function (group) {
+    group.addEventListener("click", function (e) {
+      var b = e.target.closest("button");
+      if (!b) return;
+      group.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      var v = b.dataset.v, ctl = group.dataset.ctl;
+      if (ctl === "skin") screen.dataset.skin = v;
+      if (ctl === "device") setDevice(v);
+      if (ctl === "res") state.res = Number(v);
+      if (ctl === "role") screen.classList.toggle("gm", v === "gm");
+      if (ctl === "zones") screen.classList.toggle("show-zones", v === "on");
+      layout();
+    });
+  });
+  // the board follows the last input used, like the game will
+  window.addEventListener("gamepadconnected", function () { setDevice("pad"); });
+  new ResizeObserver(layout).observe(wrap);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+  layout();
+})();
+</script>
+</body>
+</html>
