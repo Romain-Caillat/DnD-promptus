@@ -213,7 +213,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
   var IW = 688, IH = 384, D0 = 716, ZMAX = 80, ZOOM = 1.5;
   var C0 = new THREE.Vector3(IW / 2, IH / 2, D0);
   function Z(y) { return Math.max(0, (y - 190) / (IH - 190)) * ZMAX; }       // depth of a point on the floor
-  function H(y) { return 72 + (y - 260) * (28 / 120); }                        // a standing figure's height, in picture px (a door is ~100)
+  function H(y) { return 84 + (y - 260) * (34 / 120); }                        // a standing figure's height, in picture px (a door is ~100)
   function at(px, py, z) {                                                     // picture point -> world, at depth z
     var k = (D0 - z) / D0;
     return new THREE.Vector3(C0.x + (px - C0.x) * k, C0.y + ((IH - py) - C0.y) * k, z);
@@ -341,7 +341,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
     romain: { name: "Romain", cls: "Navigateur", x: 335, y: 370, dir: "east", where: "Près de la fenêtre, ici", path: [[335, 370], [535, 370], [535, 380], [335, 380]] }
   };
   var NPCS = [
-    { id: "goulven", name: "Mère Goulven", x: 505, y: 250, h: 112, dir: "south", reach: [505, 300], marker: "!", act: "Parler à Mère Goulven",
+    { id: "goulven", name: "Mère Goulven", x: 505, y: 250, h: 128, dir: "south", reach: [505, 300], marker: "!", act: "Parler à Mère Goulven",
       on: "Dialogue avec Mère Goulven → planche dialogue.html." },
     { id: "jacquot", name: "Jacquot le Sourd", x: 232, y: 268, dir: "south", reach: [232, 280], act: "Parler à Jacquot", alias: "Vieux marin ivre", actAlias: "Parler au vieux marin",
       on: "Jacquot vous regarde, plisse les yeux, et parle beaucoup trop fort. → dialogue." },

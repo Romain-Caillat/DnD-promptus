@@ -314,6 +314,21 @@ défaite comme branche. Les éléments PixelLab sont générés et placés.
 Règle commune : **la grille porte toujours les règles**. La scène 3D
 n'est qu'une projection des données que le serveur a déjà filtrées.
 
+### `hd2d/build-level-from-key-art` · todo
+
+**Périmètre** — Outiller la recette de `MEMORY.md` §0 (« un niveau est
+une image peinte rendue jouable ») : image de référence et salle vide
+PixelLab, plans découpés en polygones avec leur ligne de sol, persos
+dans le style de l'image, données de sol (zones praticables, obstacles,
+points d'interaction), lumières. Le format d'un niveau en données, lu
+par le jeu, et un éditeur de polygones pour l'Auteur. Coût annoncé
+avant chaque lot.
+
+**Fini quand** — Le Perroquet Noyé et le quai de Port-Louis sont des
+niveaux en données, jouables à 60 images/s, sans code propre à l'un
+d'eux. **Origine** — `docs/design/v2/taverne-hd2d.html`, validé par
+Romain le 12 octobre 2026.
+
 ### `hd2d/build-pixellab-asset-pack` · todo
 
 **Périmètre** — Repris tel quel du backlog gelé : la liste des éléments

@@ -48,6 +48,33 @@ below only as history until their ticket rewrites them:
   prompt, party in a column on the left, window, GM panel on the right
   that shifts the whole game left) are in that board. Movement defaults
   to ZQSD (AZERTY), with WASD in the options.
+- **A level is a painted key art made playable, not a 3D model (Romain,
+  12 October 2026).** Built 3D (textured boxes, then flat props laid out
+  in CSS) read as a cheap miniature; the PixelLab key art of the
+  Perroquet Noyé, turned into a scene, "sells the dream". Board:
+  `docs/design/v2/taverne-hd2d.html`, assets and costs in
+  `docs/design/v2/assets/README.md`. The recipe, per place:
+  1. **Key art**: `create_image_pro` at 688 × 384 (16:9), the scene's
+     `art` and `read_aloud`, every character placed (25 generations a
+     try). The Author picks one.
+  2. **Empty plate**: the same call with the chosen art as reference and
+     style, "same room, no people" (25). It is the backdrop.
+  3. **Cut-out layers**: polygons in picture pixels around what stands in
+     front (counter, tables), each with the floor line it stands on.
+     Each is pushed to a depth from that line, back along the neutral
+     camera's sight line, so the picture is exact at rest and the layers
+     slide as the camera follows the player (parallax).
+  4. **Characters in the art's style**: lineups with crops of the key art
+     as references, cut out; players rotated in PixelLab v3 and walked in
+     4 directions, NPCs given a front idle loop.
+  5. **Floor data**: walkable bounds and blocked rectangles, interaction
+     points, in picture pixels: the same role as the grid, the server's
+     reference for movement and reach.
+  6. **Life**: candle halos with point lights that light passing
+     characters, dust, smoke, bloom, light depth blur.
+  This replaces, for the look of places, the "volumes are textured 3D
+  boxes" rule of §2. It does not yet say how combat grids sit on a
+  painted plate (`design/draw-combat-planes`).
 
 ---
 
