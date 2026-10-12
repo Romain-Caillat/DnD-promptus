@@ -10,6 +10,7 @@ decisions also go to `MEMORY.md` §0 and to the tickets they affect.
 | --- | --- | --- |
 | `cadre-pc.html` | `design/set-pc-game-frame` | validated 12 Oct 2026 (Octopath skin, party left, ZQSD) |
 | `exploration.html` | `design/draw-explore-screen` | validated 12 Oct 2026 (names once known, perception announced, one speed) |
+| `dialogue.html` | `design/draw-dialogue-screen` | drawn 12 Oct 2026, three questions open |
 
 ## Conventions
 

@@ -27,7 +27,16 @@ cette note.
 
 ## 2. Ce qui est commencé
 
-### `design/draw-dialogue-screen` — conçu, pas encore écrit
+### `design/draw-dialogue-screen` — écrit le 12 octobre 2026, à valider
+
+Planche : `docs/design/v2/dialogue.html`. Écarts avec ce qui suit : le
+Bretteur a CHA 9 (−1) et chacun a 15 PO (`content/rules/corsaires/v1.yaml`,
+60 PO de départ du groupe), donc l'ardoise de 10 PO est payable et
+l'option verrouillée montrée est celle de Perspicacité (passive 11 pour
+Léa, 10 pour Yann). Un réglage « Option verrouillée » (grisée / cachée)
+aide à trancher la question 1.
+
+Ce qui avait été conçu :
 
 Fichier prévu : `docs/design/v2/dialogue.html`, même gabarit que
 `exploration.html` (habillage Octopath, écran 1920 × 1080 mis à
