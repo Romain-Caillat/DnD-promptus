@@ -22,3 +22,4 @@ réelle et itéré dessus » (Romain).
 | Ticket | Ce qui a été livré |
 | --- | --- |
 | `design/set-pc-game-frame` | `cadre-pc.html` : les zones A à H sur la taverne du Perroquet Noyé, clavier et manette, 1920 × 1080 et 1366 × 768, vue MJ. Validé le 12 octobre 2026 : habillage B · Octopath, groupe en colonne à gauche, ZQSD (`MEMORY.md` §0). Le report dans le code passe à `design/write-frame-tokens` |
+| `design/draw-explore-screen` | `exploration.html` : planche jouable du Perroquet Noyé (déplacement libre, collisions, profondeur, autres joueurs en direct, [!] [?] et choses sans marqueur, une action à portée), la même salle vue par Yann et par Léa. Décidé le 12 octobre 2026 : noms des PNJ une fois connus (narrateur compris), découverte par la Perception annoncée une fois en privé, une seule vitesse. Reporté dans `hd2d/walk-freely-together`, `engine/reveal-by-passive-perception`, `session/project-private-knowledge` |

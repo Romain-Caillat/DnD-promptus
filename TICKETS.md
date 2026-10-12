@@ -79,7 +79,7 @@ Les joueurs disent ensuite que les règles étaient claires et que chacun
 a eu son moment.
 
 **Phase 1 · Maquettes et règles** — `design/write-frame-tokens` ·
-`design/draw-explore-screen` · `design/draw-dialogue-screen` ·
+`design/draw-dialogue-screen` ·
 `design/draw-combat-planes` · `design/draw-journal-and-sheet` ·
 `design/draw-lobby-and-creator` · `design/draw-gm-panel` ·
 `engine/rewrite-corsaires-rules` · `engine/fix-stats-by-class`
@@ -146,14 +146,6 @@ changent pas.
 
 **Fini quand** — La page `/reference` montre le cadre comme la
 maquette, et Romain l'a relue. **Origine** — Bible §10 ; `MEMORY.md` §0. *Point de départ* — `ui/write-design-tokens`, `ui/adopt-pixel-menu` (gelés).
-
-### `design/draw-explore-screen` · todo
-
-**Périmètre** — La taverne de Port-Louis : joueurs visibles,
-indicateurs `[!]` et `[?]`, indicateur caché révélé par la Perception
-(la même scène vue par deux joueurs), invite d'interaction.
-
-**Fini quand** — Maquette validée par Romain. **Origine** — Bible §6.
 
 ### `design/draw-dialogue-screen` · todo
 
@@ -238,8 +230,9 @@ sans choisir ses stats. **Origine** — Bible §5.
 
 **Périmètre** — Un élément préparé (PNJ, objet, passage, indicateur)
 peut porter un seuil de Perception passive. Le serveur ne l'envoie qu'aux
-joueurs qui l'atteignent, par la projection. Même mécanisme pour un
-indice de Perspicacité en dialogue.
+joueurs qui l'atteignent, par la projection. Son marqueur est doré, et
+le narrateur l'annonce une seule fois, en privé, avec une entrée de
+journal. Même mécanisme pour un indice de Perspicacité en dialogue.
 
 **Fini quand** — Deux joueurs aux Perceptions différentes ne voient pas
 la même taverne, et un test de fuite le prouve.
@@ -359,8 +352,10 @@ autres joueurs.
 **Périmètre** — Déplacement continu au clavier, au clic ou à la
 manette, collisions déduites des murs de la grille. Positions envoyées
 au serveur, qui les valide et les diffuse aux joueurs du même lieu.
-Interaction à portée (une touche, une seule action proposée). La grille
-réapparaît quand un combat commence sur place.
+Interaction à portée (une touche, une seule action proposée, la chose
+la plus proche entourée d'or, atteignable de plusieurs côtés). Une
+seule vitesse, pas de course. La grille réapparaît quand un combat
+commence sur place. Maquette : `docs/design/v2/exploration.html`.
 
 **Fini quand** — Quatre joueurs se promènent dans la taverne en même
 temps, sans traverser de mur, et chacun voit les autres bouger.
@@ -491,8 +486,10 @@ hors combat (règle 3), à partir du système de règles.
 autres ne le savent pas tant qu'il ne l'a pas partagé.
 
 **Périmètre** — La projection joueur devient **par joueur** : indices,
-dialogues, objets et Perception filtrent ce que chacun reçoit. Le MJ
-voit tout. Tests de fuite entre deux joueurs.
+dialogues, objets et Perception filtrent ce que chacun reçoit. Les
+**noms** aussi : un PNJ est une description (« Marin ») tant qu'il ne
+s'est pas présenté à ce joueur, y compris dans le texte du narrateur.
+Le MJ voit tout. Tests de fuite entre deux joueurs.
 
 **Fini quand** — Aucun test de fuite ne montre un savoir d'un joueur
 chez un autre. **Origine** — Bible §3. *Point de départ* — `session/project-player-view`, `session/track-table-knowledge`.

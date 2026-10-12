@@ -218,7 +218,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
       <div><h3>Yann · Bretteur · Perception passive 11</h3><ul>
         <li><b>[!]</b> sur Mère Goulven : elle a des rumeurs (et une ardoise).</li>
         <li><b>[?]</b> sur la table de dés : un mini-jeu.</li>
-        <li>Fañch n'est qu'un marin attablé avec Anaïs. On peut lui parler, mais rien ne le signale.</li>
+        <li>Fañch n'est qu'un « Marin » attablé avec une « Jeune femme ». On peut lui parler, mais rien ne le signale.</li>
       </ul></div>
       <div><h3>Léa · Vigie · Perception passive 15</h3><ul>
         <li>Tout ce que voit Yann.</li>
@@ -231,9 +231,11 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
     <h2>Les règles de l'exploration</h2>
     <div class="rules">
       <div class="rule"><b>Déplacement</b><p>Libre, sans cases : ZQSD, flèches, clic au sol ou stick gauche. Les murs, le comptoir et les tables bloquent. La profondeur suit les pieds : on passe derrière une table et devant une autre.</p></div>
+      <div class="rule"><b>Vitesse</b><p>Une seule vitesse de marche : pas de course. La salle est petite, et tout le monde reste synchronisé.</p></div>
       <div class="rule"><b>Autres joueurs</b><p>On les voit bouger en direct, leur nom au-dessus de la tête. Le groupe (à gauche) dit où sont ceux qui ne sont pas dans la salle.</p></div>
       <div class="rule"><b>Trois sortes de choses</b><p><b>[!]</b> quête ou information, <b>[?]</b> mini-jeu, et ce qui n'a pas de marqueur (René, Jacquot) : il faut s'approcher pour le découvrir.</p></div>
       <div class="rule"><b>Perception passive</b><p>Un élément peut avoir un seuil. Sous ce seuil, il n'existe pas pour le joueur : le serveur ne l'envoie pas. Au-dessus, son marqueur est doré, et le narrateur l'annonce une fois.</p></div>
+      <div class="rule"><b>Noms</b><p>Un PNJ porte une description (« Marin ») tant qu'il ne s'est pas présenté <b>à ce joueur</b>. Son nom ne s'affiche qu'à portée, ou au-dessus d'un marqueur.</p></div>
       <div class="rule"><b>Interagir</b><p>À portée (environ 1,5 m), la chose la plus proche s'entoure d'or et une seule action s'affiche. Une touche, pas de menu.</p></div>
       <div class="rule"><b>Ce qui suit</b><p>Interagir ouvre la fenêtre G : un dialogue (<code>design/draw-dialogue-screen</code>) ou un mini-jeu (jalon 2). Ici, une notification le remplace.</p></div>
     </div>
@@ -241,11 +243,11 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
 
   <section class="doc">
     <div class="ask">
-      <b>À trancher par Romain</b>
+      <b>Décidé (12 octobre 2026, choix laissé à Claude par Romain)</b>
       <ol>
-        <li><b>Les noms des PNJ</b> : toujours affichés, seulement à portée (comme ici), ou seulement une fois qu'on les connaît (« Marin » tant que Fañch ne s'est pas présenté) ?</li>
-        <li><b>Une découverte par la Perception</b> : marqueur doré + une phrase du narrateur (comme ici), ou marqueur seul, sans annonce ?</li>
-        <li><b>Courir</b> (Maj ou stick enfoncé) : utile dans une taverne, ou on garde une seule vitesse ?</li>
+        <li><b>Noms des PNJ : une fois connus.</b> Une description (« Marin », « Jeune femme ») tant que le PNJ ne s'est pas présenté à ce joueur. C'est le savoir privé : Yann peut connaître Fañch sans que Léa le connaisse. Le narrateur suit la même règle : il dit « la jeune femme » tant que Léa ne connaît pas Anaïs.</li>
+        <li><b>Découverte par la Perception : marqueur doré + une phrase du narrateur</b>, une seule fois et en privé. Le joueur sent que sa stat a servi (règle 3 : chaque stat compte).</li>
+        <li><b>Une seule vitesse</b>, pas de course.</li>
       </ol>
     </div>
   </section>
@@ -287,14 +289,14 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
   var NPCS = [
     { id: "goulven", name: "Mère Goulven", x: 1410, y: 562, reach: [1410, 800], marker: "!", act: "Parler à Mère Goulven",
       on: "Dialogue avec Mère Goulven → planche suivante (design/draw-dialogue-screen)." },
-    { id: "jacquot", name: "Jacquot le Sourd", x: 830, y: 684, reach: [830, 720], act: "Parler à Jacquot",
+    { id: "jacquot", name: "Jacquot le Sourd", x: 830, y: 684, reach: [830, 720], act: "Parler à Jacquot", alias: "Vieux marin ivre", actAlias: "Parler au vieux marin",
       on: "Jacquot vous regarde, plisse les yeux, et parle beaucoup trop fort. → dialogue." },
-    { id: "rene", name: "René, à la vielle", x: 1820, y: 724, reach: [1820, 760], act: "Écouter René jouer",
+    { id: "rene", name: "René, à la vielle", x: 1820, y: 724, reach: [1820, 760], act: "Écouter René jouer", alias: "Gamin à la vielle", actAlias: "Écouter le gamin jouer",
       on: "René massacre un air breton, puis vous lance un regard en coin. → dialogue." },
-    { id: "fanch", name: "Fañch", x: 830, y: 829, reach: [[830, 800], [830, 965]], act: "Aborder Fañch", hidden: { perc: 13,
-      seen: "Le marin attablé avec Anaïs regarde un peu trop votre table.", journal: "Fañch observe la table du groupe." },
+    { id: "fanch", name: "Fañch", x: 830, y: 829, reach: [[830, 800], [830, 965]], act: "Aborder Fañch", alias: "Marin", actAlias: "Aborder le marin", hidden: { perc: 13,
+      seen: "Le marin attablé avec la jeune femme regarde un peu trop votre table.", journal: "Un marin, attablé avec une jeune femme, observe la table du groupe." },
       on: "Fañch pose la main sur son couteau, sourire aux lèvres. → dialogue." },
-    { id: "anais", name: "Anaïs", x: 960, y: 829, reach: [[960, 800], [960, 965]], act: "Saluer Anaïs",
+    { id: "anais", name: "Anaïs", x: 960, y: 829, reach: [[960, 800], [960, 965]], act: "Saluer Anaïs", alias: "Jeune femme", actAlias: "Saluer la jeune femme",
       on: "Anaïs vous rend un salut poli, sans lâcher Fañch des yeux. → dialogue." }
   ];
   var PROPS = [{ id: "dice", el: "t1", name: "Table de dés", x: 500, y: 790, reach: [500, 820], marker: "?", act: "Jouer aux dés avec Max",
@@ -314,7 +316,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
   NPCS.forEach(function (n) {
     n.el = makeActor(n.id); place(n.el, n.x, n.y);
     if (n.id === "goulven") n.el.style.zIndex = 590; // behind the counter
-    n.label = el("wlabel npc"); n.label.textContent = n.name;
+    n.label = el("wlabel npc");
     n.label.style.left = n.x + "px"; n.label.style.top = n.y - 132 + "px";
     if (n.marker || n.hidden) { n.mk = el("marker"); n.mk.textContent = "!"; n.mk.style.left = n.x + "px"; n.mk.style.top = n.y - 92 + "px"; }
   });
@@ -325,7 +327,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
   });
 
   // ---------- state ----------
-  var state = { who: "yann", device: "kb", keys: {}, target: null, near: null, seen: {}, last: performance.now(), padA: false, moved: false };
+  var state = { who: "yann", device: "kb", keys: {}, target: null, near: null, seen: {}, knows: {}, last: performance.now(), padA: false, moved: false };
   function me() { return PLAYERS[state.who]; }
   function canSee(n) { return !n.hidden || me().perc >= n.hidden.perc; }
 
@@ -411,9 +413,20 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
     var list = typeof t.reach[0] === "number" ? [t.reach] : t.reach, p = me();
     return list.reduce(function (a, b) { return Math.hypot(b[0] - p.x, b[1] - p.y) < Math.hypot(a[0] - p.x, a[1] - p.y) ? b : a; });
   }
+  // a name is known per player: the alias until the NPC introduces themselves
+  function known(t) { return !t.alias || state.knows[state.who + t.id]; }
+  function nameOf(t) { return known(t) ? t.name : t.alias; }
+  function actOf(t) { return known(t) ? t.act : t.actAlias; }
+  function renderNames() {
+    NPCS.forEach(function (n) { n.label.textContent = nameOf(n); });
+    if (state.near) document.getElementById("ptext").textContent = actOf(state.near);
+  }
   function interact() {
     if (!state.near) return;
-    toast('<span class="tag">' + state.near.name + "</span>" + state.near.on);
+    var t = state.near, first = !known(t);
+    if (first) state.knows[state.who + t.id] = true;
+    toast('<span class="tag">' + t.name + "</span>" + (first ? "Se présente : « " + t.name + " ». " : "") + t.on);
+    renderNames();
   }
 
   var SPEED = 320; // px per second
@@ -462,9 +475,9 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
       if (near) { (near.el.classList.contains("table") ? near.el.classList.add("prop-near") : near.el.classList.add("near")); }
       var pr = document.getElementById("prompt");
       pr.classList.toggle("off", !near);
-      if (near) document.getElementById("ptext").textContent = near.act;
+      if (near) document.getElementById("ptext").textContent = actOf(near);
     }
-    NPCS.forEach(function (n) { n.label.style.display = (n === state.near || (n.mk && n.mk.style.display !== "none" && n.marker)) ? "" : "none"; });
+    NPCS.forEach(function (n) { n.label.style.display = (n === state.near || (n.mk && n.mk.style.display !== "none")) ? "" : "none"; });
     PROPS.forEach(function (t) { t.label.style.display = t === state.near ? "" : "none"; });
     requestAnimationFrame(frame);
   }
@@ -504,7 +517,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
         document.querySelectorAll(".prop-near").forEach(function (x) { x.classList.remove("prop-near"); });
         document.getElementById("prompt").classList.add("off");
         document.getElementById("toasts").innerHTML = "";
-        renderHud(); renderVisibility(); revealFor(state.who);
+        renderHud(); renderVisibility(); renderNames(); revealFor(state.who);
       }
       wrap.focus();
     });
@@ -512,7 +525,7 @@ section.doc h2 { font: 700 20px var(--f-title); margin: 0 0 12px; }
 
   function layout() { var k = wrap.clientWidth / 1920; screen.style.transform = "scale(" + k + ")"; wrap.style.height = 1080 * k + "px"; }
   new ResizeObserver(layout).observe(wrap);
-  layout(); renderHud(); renderKeys(); renderVisibility(); revealFor(state.who);
+  layout(); renderHud(); renderKeys(); renderVisibility(); renderNames(); revealFor(state.who);
   requestAnimationFrame(function (t) { state.last = t; frame(t); });
 })();
 </script>
