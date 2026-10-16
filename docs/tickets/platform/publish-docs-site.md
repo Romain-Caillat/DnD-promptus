@@ -20,7 +20,7 @@
 - un contrôle des gabarits lancé par `bun run lint`
 - le site MkDocs, construit dans l'image Docker et servi sous `/docs/`
 - `bun run docs` pour le lire en local
-- installation, sauvegarde et accès MCP restent hors du site ; mais il montre le contenu du one-shot (Gorvin, Mère Goulven, la bagarre du quai) et l'hébergement prévu : **décision de Romain**, `/docs/` derrière la garde MJ ou exposé tel quel
+- installation, sauvegarde et accès MCP restent hors du site ; le reste est lisible par tous, joueurs compris, spoilers du one-shot inclus (choix de Romain, 16/10/2026)
 
 **Fini quand** : Romain ouvre `/docs/` sur le serveur et y relit une règle, sa fiche et son ticket.
 
