@@ -16,9 +16,9 @@ Comment chaque règle est rendue vraie, une page par fiche. Gabarit : [carte des
 | [campaign-format](../campaign-format.md) | le format YAML d'une campagne |
 | [rules-format](../rules-format.md) | le format YAML d'un système de règles |
 | [map-format](../map-format.md) | le format des cartes |
-| [claude-mcp](../claude-mcp.md) | Claude prépare la campagne par le MCP |
+| `docs/claude-mcp.md` | Claude prépare la campagne par le MCP (hors du site) |
 | [evaluation](../evaluation.md) | évaluer l'IA sur les vraies parties |
-| [install](../install.md) · [backup](../backup.md) | installer et sauvegarder le serveur |
+| `docs/install.md` · `docs/backup.md` | installer et sauvegarder le serveur (hors du site) |
 | [rapport-phase-1](../rapport-phase-1.md) | rapport généré sur l'équilibre des règles |
 
-Les invariants et pièges du code restent dans [MEMORY.md](../../MEMORY.md).
+Les invariants et pièges du code restent dans `MEMORY.md`, à la racine du dépôt.

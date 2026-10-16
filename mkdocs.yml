@@ -1,0 +1,55 @@
+# The docs site, served by the game server under /docs/ (docs/README.md).
+# Build: bun run docs:build · Read locally: bun run docs
+site_name: Promptus — la doc
+docs_dir: docs
+site_dir: site
+use_directory_urls: false
+strict: true
+
+theme:
+  name: material
+  language: fr
+  features:
+    - navigation.indexes
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: amber
+
+plugins:
+  - search:
+      lang: fr
+  - awesome-nav
+
+markdown_extensions:
+  - tables
+  - attr_list
+  - admonition
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+# Design boards, their Python generators and images stay in the repo,
+# not on the site. Install, backup and MCP access stay off a site
+# reachable from the Internet.
+exclude_docs: |
+  /design/
+  /install.md
+  /backup.md
+  /claude-mcp.md
+  /design-brief.md
+  /user-journeys.md
+
+# The older English docs link to code outside docs/: report, don't fail.
+validation:
+  links:
+    not_found: info
+    unrecognized_links: info
+    absolute_links: info
+  omitted_files: info

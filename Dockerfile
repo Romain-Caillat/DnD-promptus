@@ -13,6 +13,18 @@ RUN bun install --frozen-lockfile
 COPY front/ ./
 RUN bun run build
 
+# ---------------------------------------------------------------- docs
+# The docs site (docs/README.md), served under /docs/ by the server.
+# MkDocs is pinned below 2.0, which drops the plugin system.
+FROM python:3.13-slim AS docs-builder
+
+WORKDIR /app
+COPY requirements-docs.txt ./
+RUN pip install --no-cache-dir -r requirements-docs.txt
+COPY mkdocs.yml ./
+COPY docs/ docs/
+RUN mkdocs build --site-dir /app/site
+
 # ---------------------------------------------------------------- server
 FROM rust:1-slim-trixie AS server-builder
 
@@ -53,6 +65,7 @@ RUN groupadd --system --gid 10001 promptus \
 
 COPY --from=server-builder /usr/local/bin/promptus-server /usr/local/bin/promptus-server
 COPY --from=front-builder /app/front/dist /srv/front
+COPY --from=docs-builder /app/site /srv/front/docs
 
 WORKDIR /var/lib/promptus
 USER promptus:promptus

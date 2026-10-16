@@ -10,7 +10,7 @@ archived in `archive/promptus-v1-nextjs.zip`.
 
 - `CLAUDE.md` — vision, stack, structure, development environment
 - `MEMORY.md` — durable decisions and invariants
-- `TICKETS.md` — backlog
+- `docs/tickets/` — backlog (`TICKETS.md` points there)
 
 ## Development
 

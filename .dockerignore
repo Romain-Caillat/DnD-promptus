@@ -1,4 +1,4 @@
-# Only front/, back/, shared/ and the Cargo files reach the build.
+# Only front/, back/, shared/, the Cargo files and the docs reach the build.
 **/target
 **/node_modules
 front/dist
@@ -6,7 +6,7 @@ front/dist
 .claude
 archive
 dnd-save
-docs
+docs/design
 backups
 src-tauri
 # Secrets never enter an image.

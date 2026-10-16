@@ -61,7 +61,7 @@ frozen in `archive/tickets/backlog-avant-bible.md` and its code is the
 starting point of the new tickets.
 
 **The vision changed on 11 October 2026** (`docs/bible.md`: GM-light
-game, PC first, true HD-2D in Three.js). `TICKETS.md` now orders the
+game, PC first, true HD-2D in Three.js). `docs/tickets/` now orders the
 work in two milestones: the Corsaires one-shot (tavern hub → thread →
 dock brawl), then a short campaign. Each phase starts with its mockups
 (`docs/design/v2/`); the older canvas boards (`docs/design/README.md`)
@@ -94,7 +94,7 @@ src-tauri/      # Tauri 2.x shell (desktop/mobile app)
 mcp/            # Local MCP server (Bun, stdio) for Claude on the GM's Mac (docs/claude-mcp.md)
 scripts/        # Dev helpers (test database creation)
 deploy/         # Production: install, backup, restore, continuous deploy (docs/install.md)
-docs/           # Reference docs (design brief, security, realtime…)
+docs/           # Rules, platform fiches, tickets, reference docs; the /docs/ site
 archive/        # V1 zip, retired BMad artifacts, shipped tickets per epic
 ```
 
@@ -132,7 +132,8 @@ Vitest 5 + jsdom 30 fail to start their workers under Bun.
 |---------|--------------|
 | `bun run dev` | Postgres (Docker), Axum on `:4333` (bacon, reloads on change), Vite on `:4334` proxying `/api` |
 | `bun run test` | `cargo test --workspace` against `TEST_DATABASE_URL`, then Vitest |
-| `bun run lint` | `cargo fmt --check`, clippy `-D warnings`, ESLint, `tsc -b`, knip |
+| `bun run lint` | doc templates, `cargo fmt --check`, clippy `-D warnings`, ESLint, `tsc -b`, knip |
+| `bun run docs` | The docs site on `:4335` (Python venv `.venv-docs`, MkDocs pinned below 2.0) |
 | `bun run db:start` / `db:stop` / `db:reset` | Dev Postgres 17 on `127.0.0.1:5432` |
 | `bun run build:tauri` | Production Tauri build (`dev:tauri`, `dev:ios` for live runs) |
 
@@ -148,40 +149,44 @@ are run on Romain's Mac, not in PCT 105.
 
 ## Rules, platform, tickets
 
-Map and block skeleton: `docs/README.md`. **Read the three indexes
-first** (`docs/regles/jeu/README.md`, `docs/regles/campagne/README.md`,
-`docs/plateforme/README.md`), then only the file you touch.
+Map and templates: `docs/README.md`. **Read the four indexes first**
+(`docs/regles/jeu/`, `docs/regles/campagne/`, `docs/plateforme/`,
+`docs/tickets/`, each `README.md`), then only the page you touch.
 
 ```
- docs/regles/jeu, docs/regles/campagne   what must be true   (French)
-        │ « résolue par »
- docs/plateforme                         how it is solved     (French)
-        │ cited by
- TICKETS.md                              the work
+ docs/regles/jeu, docs/regles/campagne   what must be true   one page per rule
+        │ Résolue par / Résout
+ docs/plateforme                         how it is solved    one page per fiche
+        │ Tickets / Réalise
+ docs/tickets/<epic>/                    the work            one page per ticket
 ```
 
-- A rule with no « résolue par » is a platform gap. A technical limit
+- **Every doc addition or change is as concise as possible.** A rule,
+  fiche or ticket is one page, one screen: the labelled fields of its
+  template, in order, each a paragraph of its own — a visual schema
+  (`text` block, 15 lines at most), one to three sentences for the
+  core field, at most five bullets, why in one line. No prose around
+  it. `bun run check:docs` enforces it (also first step of `lint`);
+  the global `sobre` skill trims the wording before a commit.
+- A rule with no « Résolue par » is a platform gap. A technical limit
   never changes a rule silently: it comes back as a rule to settle.
-- A decision settled in conversation becomes a block in the same commit.
-- **Every doc addition or change is as concise as possible**: each rule
-  or fiche follows the one skeleton of `docs/README.md` — a visual
-  schema (15 lines at most), then at most five bullets (or Question ·
-  Options · Recommandation while open), why in one line, knock-on
-  effects. No prose around it. A rule is named by its title, never by
-  a number.
-- One fact lives in one place; other docs point to it by name.
+- A decision settled in conversation becomes a page in the same commit.
+- One fact lives in one place; other pages point to it by title, never
+  by a number.
+- The site (`mkdocs.yml`) is built into the image and served under
+  `/docs/`; `bun run docs` serves it locally on `:4335`.
 
 ## Tickets and memory
 
-- `TICKETS.md` — active backlog. Named epics, named tickets
-  (`epic/verb-object`), never numbered.
+- `docs/tickets/` — active backlog (`TICKETS.md` only points there).
+  Named epics, named tickets (`epic/verb-object`), never numbered.
 - `MEMORY.md` — code invariants and traps. Read its sections when
   touching the code they cover. Its V1 invariants must survive the
   rewrite. Game rules do not go there.
 - `archive/tickets/<epic>.md` — what shipped, one line per ticket.
 - `archive/bmad/` — the retired BMad export (brief, architecture,
   retrospective, V2 vision). Historical reference only; BMad is no
-  longer used — work is tracked in `TICKETS.md` and `MEMORY.md`.
+  longer used — work is tracked in `docs/tickets/` and `MEMORY.md`.
 
 ## Communication
 

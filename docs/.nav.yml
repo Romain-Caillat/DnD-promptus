@@ -1,0 +1,14 @@
+nav:
+  - README.md
+  - Vision: bible.md
+  - Règles du jeu: regles/jeu
+  - Règles de campagne: regles/campagne
+  - Plateforme: plateforme
+  - Tickets: tickets
+  - Référence technique:
+      - campaign-format.md
+      - rules-format.md
+      - map-format.md
+      - evaluation.md
+      - rapport-phase-1.md
+  - Leçons des parties: lecons-des-parties.md
