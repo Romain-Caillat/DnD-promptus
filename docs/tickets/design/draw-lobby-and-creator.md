@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Maquettes et règles »
 
-**Réalise** : [Bible, « Écrans joueur »](../../bible.md) · [Classes, prétirés et arcs personnels](../../regles/campagne/reglages/classes-pretires-et-arcs-personnels.md)
+**Réalise** : [Créer ton personnage](../../regles/jeu/personnage/creer-ton-personnage.md) · [Classes, prétirés et arcs personnels](../../regles/campagne/reglages/classes-pretires-et-arcs-personnels.md)
 
 **Objectif** : Les joueurs se retrouvent, prennent une classe chacun et créent leur perso.
 

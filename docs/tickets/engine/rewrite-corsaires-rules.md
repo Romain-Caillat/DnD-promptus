@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Maquettes et règles »
 
-**Réalise** : [Bible, « Règles »](../../bible.md)
+**Réalise** : [Moteur de règles en données](../../plateforme/moteur-de-regles.md)
 
 **Objectif** : Les joueurs retrouvent l'esprit DnD qu'ils connaissent, sans la complexité de la 5e.
 

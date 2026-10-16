@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Autour du jeu »
 
-**Réalise** : [Bible, « Écrans joueur »](../../bible.md)
+**Réalise** : [Créer ton personnage](../../regles/jeu/personnage/creer-ton-personnage.md)
 
 **Objectif** : La soirée démarre depuis un lobby où chacun prend sa classe.
 

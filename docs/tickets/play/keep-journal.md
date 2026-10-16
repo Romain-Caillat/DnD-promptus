@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Autour du jeu »
 
-**Réalise** : [Bible, « La boucle de jeu »](../../bible.md) · [Bible, « Écrans joueur »](../../bible.md)
+**Réalise** : [Ce que tu sais t'appartient](../../regles/jeu/exploration/ce-que-tu-sais-t-appartient.md)
 
 **Objectif** : Chaque joueur garde ce qu'il découvre, et choisit ce qu'il partage.
 

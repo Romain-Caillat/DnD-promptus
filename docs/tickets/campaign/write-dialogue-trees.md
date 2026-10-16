@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Parler »
 
-**Réalise** : [Choix uniquement](../../regles/jeu/dialogue/choix-uniquement.md) · [Options verrouillées cachées](../../regles/jeu/dialogue/options-verrouillees-cachees.md)
+**Réalise** : [Choisir ta réplique](../../regles/jeu/dialogue/choisir-ta-replique.md) · [Ce que tes stats ouvrent](../../regles/jeu/dialogue/ce-que-tes-stats-ouvrent.md)
 
 **Objectif** : L'Auteur écrit, avec Claude, tout ce qu'un PNJ peut dire et ce qui en découle.
 

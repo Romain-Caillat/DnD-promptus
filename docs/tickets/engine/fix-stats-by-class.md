@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Maquettes et règles »
 
-**Réalise** : [Bible, « Règles »](../../bible.md) · [Classes, prétirés et arcs personnels](../../regles/campagne/reglages/classes-pretires-et-arcs-personnels.md)
+**Réalise** : [Moteur de règles en données](../../plateforme/moteur-de-regles.md) · [Créer ton personnage](../../regles/jeu/personnage/creer-ton-personnage.md)
 
 **Objectif** : Le joueur choisit sa classe, et ses stats en découlent.
 

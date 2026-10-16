@@ -2,9 +2,9 @@
 
 **État** : tranchée · avant la bible
 
-**Résout** : [Musique choisie, synchronisée](../regles/jeu/apparence/musique-choisie-synchronisee.md)
+**Résout** : [Bible, « Direction artistique et contenu »](../bible.md)
 
-**Solution** : le serveur annonce le morceau et l'instant de départ ; chaque joueur le joue sur son propre lecteur YouTube.
+**Solution** : l'Auteur choisit plusieurs morceaux YouTube par scène ; le serveur annonce le morceau et l'instant de départ ; chaque joueur le joue sur son propre lecteur YouTube.
 
 **Schéma** :
 
@@ -21,5 +21,7 @@
 - Une publicité peut décaler un joueur ; la lecture se recale d'elle-même.
 
 **Limites** : un joueur peut entendre un morceau avec quelques secondes de décalage.
+
+**Pourquoi** : choisie, la musique porte l'ambiance mieux qu'une génération, sans rien coûter à l'Auteur.
 
 **Tickets** : —

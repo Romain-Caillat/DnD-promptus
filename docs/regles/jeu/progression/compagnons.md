@@ -4,9 +4,9 @@
 
 **Question** : qui sont les compagnons, et qui les joue ?
 
-**Options** : PNJ recrutables préparés par l'Auteur · persos générés · pas de compagnons.
+**Options** : PNJ recrutables préparés par l'Auteur · persos générés · pas de compagnons
 
-**Recommandation** : PNJ préparés par l'Auteur, joués par le joueur sans perso.
+**Recommandation** : des PNJ préparés par l'Auteur, joués par le joueur qui n'a plus de perso.
 
 **Schéma** :
 
@@ -14,8 +14,8 @@
  perso mort ──▶ son joueur prend un compagnon ──▶ ou un nouveau perso au hub suivant
 ```
 
-**Pourquoi** : la bible les promet au joueur dont le perso meurt, sans les définir.
+**Pourquoi** : la règle « Quand ton perso meurt » les promet sans les définir.
 
-**Impacts** : campagne — l'Auteur prépare au moins un compagnon par chapitre · plateforme — un PNJ peut passer sous le contrôle d'un joueur.
+**Impacts** : campagne — au moins un compagnon prêt par chapitre · plateforme — un PNJ passe sous le contrôle d'un joueur
 
 **Résolue par** : —

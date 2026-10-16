@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Combattre »
 
-**Réalise** : [Bible, « Combat »](../../bible.md)
+**Réalise** : [Écran de combat](../../plateforme/ecran-de-combat.md)
 
 **Objectif** : Un critique ou un sort ultime devient un moment de bravoure, vu par tous.
 

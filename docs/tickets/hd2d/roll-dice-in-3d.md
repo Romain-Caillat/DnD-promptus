@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Parler »
 
-**Réalise** : [Un vrai dé au milieu de l'écran](../../regles/jeu/jets/un-vrai-de-au-milieu-de-l-ecran.md)
+**Réalise** : [Dé 3D au milieu de l'écran](../../plateforme/de-3d.md)
 
 **Objectif** : Chaque jet roule un dé en 3D au milieu de l'écran, vu de tous les joueurs concernés.
 

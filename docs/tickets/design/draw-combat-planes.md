@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Maquettes et règles »
 
-**Réalise** : [Bible, « Combat »](../../bible.md)
+**Réalise** : [Écran de combat](../../plateforme/ecran-de-combat.md)
 
 **Objectif** : La bagarre du quai se lit en trois plans : tactique, coup, banderole.
 

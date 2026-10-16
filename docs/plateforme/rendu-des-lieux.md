@@ -2,7 +2,7 @@
 
 **État** : tranchée · 12/10/2026
 
-**Résout** : [Un lieu est une illustration peinte](../regles/jeu/apparence/un-lieu-est-une-illustration-peinte.md)
+**Résout** : [Bible, « Direction artistique et contenu »](../bible.md)
 
 **Solution** : l'illustration choisie par l'Auteur devient un décor vide, découpé en plans posés en profondeur dans une scène Three.js ; le sol jouable, en pixels de l'image, est la référence du serveur.
 
@@ -25,5 +25,7 @@
 - Sol jouable : zone de marche, rectangles bloquants, points d'interaction, en pixels de l'image.
 
 **Limites** : une illustration de biais (rue en diagonale) déforme la grille de combat ; comment la grille se pose sur le décor reste à dessiner (`design/draw-combat-planes`). Maquette : `docs/design/v2/taverne-hd2d.html`.
+
+**Pourquoi** : les volumes construits faisaient « maquette bon marché » ; l'illustration rendue jouable « vend le rêve » (Romain, 12/10/2026).
 
 **Tickets** : [`hd2d/build-level-from-key-art`](../tickets/hd2d/build-level-from-key-art.md)

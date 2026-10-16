@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Maquettes et règles »
 
-**Réalise** : [Interface façon Octopath](../../regles/jeu/apparence/interface-facon-octopath.md)
+**Réalise** : [Interface façon Octopath](../../plateforme/interface-octopath.md)
 
 **Objectif** : Le cadre validé vit dans le code, pas seulement dans une maquette.
 

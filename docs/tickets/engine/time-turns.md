@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Combattre »
 
-**Réalise** : [Bible, « Combat »](../../bible.md)
+**Réalise** : [Moteur de règles en données](../../plateforme/moteur-de-regles.md) · [Ton tour](../../regles/jeu/combat/ton-tour.md)
 
 **Objectif** : Un tour de combat dure 60 secondes ; personne n'attend un joueur absent.
 

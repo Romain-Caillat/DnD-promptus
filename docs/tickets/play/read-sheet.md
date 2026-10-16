@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Autour du jeu »
 
-**Réalise** : [Bible, « Écrans joueur »](../../bible.md)
+**Réalise** : [Les six stats](../../regles/jeu/personnage/les-six-stats.md)
 
 **Objectif** : Un joueur qui découvre DnD comprend ce que vaut chaque stat.
 

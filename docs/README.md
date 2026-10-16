@@ -2,10 +2,10 @@
 
 ```text
  bible.md              la vision : le jeu qu'on fait, ses inspirations
- regles/jeu/           CE QUI DOIT ÊTRE VRAI pour le joueur
- regles/campagne/      CE QUI DOIT ÊTRE VRAI pour l'Auteur, et ce qu'il règle
+ regles/jeu/           le livre du joueur : ce que tu peux faire, les dés, les issues
+ regles/campagne/      le livre de l'Auteur : ce qu'il prépare et ce qu'il règle
           │ chaque règle est « résolue par » ▼
- plateforme/           COMMENT on la rend vraie (moteur, données, temps réel, IA)
+ plateforme/           comment le jeu le montre et le fait tourner (écrans, technique)
           │ chaque fiche liste ses « tickets » ▼
  tickets/              le travail, un fichier par ticket
 ```
@@ -13,6 +13,8 @@
 - Une règle sans « Résolue par » est un **trou de plateforme** : les index le montrent.
 - Une limite technique ne change jamais une règle en douce : elle remonte comme une règle à trancher.
 - Quand une règle est muette, on suit la **référence par défaut** de son domaine (index de `regles/jeu/`).
+- **Le test d'une phrase** : le joueur peut-il le faire, le savoir ou le risquer ? → règle. Comment c'est montré, construit ou cadré ? → fiche plateforme.
+- Les chiffres (DD, PV, portées) sont des données du système de règles de chaque campagne (`rules-format.md`) : une règle donne la mécanique et la valeur par défaut, jamais une seconde copie.
 - Un fait vit à un seul endroit ; les autres pages le citent par son nom, jamais par un numéro.
 - Une décision tranchée en conversation devient une page dans le même commit.
 - `bun run check:docs` vérifie les gabarits ci-dessous.
@@ -43,6 +45,8 @@ bloc `text`. Listes : 5 puces au plus. Page : 45 lignes au plus.
 
 - 5 puces au plus (champ facultatif)
 
+**Exemple** : un cas joué, chiffres compris (champ facultatif).
+
 **Pourquoi** : une ligne.
 
 **Impacts** : campagne — … · plateforme — …
@@ -60,15 +64,17 @@ Une règle **à définir** remplace **Règle** par trois champs :
 
 **État** : tranchée · avant la bible
 
-**Résout** : [Nom de la règle](../regles/jeu/<domaine>/<règle>.md)
+**Résout** : [Nom de la règle](../regles/jeu/<domaine>/<règle>.md), ou la section de la bible pour une fiche de produit
 
-**Solution** : une ou trois phrases.
+**Solution** : une ou trois phrases (ou **Question** · **Options** · **Recommandation** tant qu'elle est à définir).
 
 **Schéma** : (bloc text)
 
-**Comment** : 5 puces au plus
+**Comment** : 5 puces au plus (facultatif)
 
-**Limites** : ce qu'elle ne fait pas.
+**Limites** : ce qu'elle ne fait pas (facultatif).
+
+**Pourquoi** : une ligne (facultatif).
 
 **Tickets** : [`epic/verb-object`](../tickets/<epic>/<ticket>.md) ou —
 ````

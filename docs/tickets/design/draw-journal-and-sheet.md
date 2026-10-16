@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Maquettes et règles »
 
-**Réalise** : [Bible, « Écrans joueur »](../../bible.md)
+**Réalise** : [Les six stats](../../regles/jeu/personnage/les-six-stats.md) · [Ce que tu sais t'appartient](../../regles/jeu/exploration/ce-que-tu-sais-t-appartient.md) · [Le butin](../../regles/jeu/progression/le-butin.md)
 
 **Objectif** : Le joueur retrouve ce qu'il sait, ce qu'il porte et ce que valent ses stats.
 

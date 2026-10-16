@@ -2,7 +2,7 @@
 
 **État** : à spécifier · Jalon 1, phase « Autour du jeu »
 
-**Réalise** : [Classes, prétirés et arcs personnels](../../regles/campagne/reglages/classes-pretires-et-arcs-personnels.md)
+**Réalise** : [Créer ton personnage](../../regles/jeu/personnage/creer-ton-personnage.md) · [Classes, prétirés et arcs personnels](../../regles/campagne/reglages/classes-pretires-et-arcs-personnels.md)
 
 **Objectif** : Chaque joueur crée son perso, avec son sprite et son portrait.
 

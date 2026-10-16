@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Parler »
 
-**Réalise** : [Options verrouillées cachées](../../regles/jeu/dialogue/options-verrouillees-cachees.md) · [Option bloquée par l'argent](../../regles/jeu/dialogue/option-bloquee-par-l-argent.md) · [Rejoindre une conversation](../../regles/jeu/dialogue/rejoindre-une-conversation.md)
+**Réalise** : [Écran de dialogue](../../plateforme/ecran-de-dialogue.md)
 
 **Objectif** : Un joueur parle à un PNJ en choisissant ses répliques, et un autre peut le rejoindre.
 

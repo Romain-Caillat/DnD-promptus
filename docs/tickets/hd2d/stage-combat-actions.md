@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Combattre »
 
-**Réalise** : [Bible, « Combat »](../../bible.md)
+**Réalise** : [Écran de combat](../../plateforme/ecran-de-combat.md)
 
 **Objectif** : Un tour se lit à l'écran sans explication du MJ.
 

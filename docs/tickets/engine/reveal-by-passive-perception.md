@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Le monde »
 
-**Réalise** : [Bible, « Exploration »](../../bible.md)
+**Réalise** : [Perception passive](../../regles/jeu/exploration/perception-passive.md)
 
 **Objectif** : Deux joueurs ne voient pas la même taverne : le plus perceptif en voit plus.
 

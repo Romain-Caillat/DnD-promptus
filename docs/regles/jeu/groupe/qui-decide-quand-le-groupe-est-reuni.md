@@ -4,7 +4,7 @@
 
 **Question** : en hub chacun parle seul ; dans un fil, qui choisit la réplique ?
 
-**Options** : porte-parole tournant · vote à temps limité · le premier qui parle (BG3).
+**Options** : porte-parole tournant · vote à temps limité · le premier qui parle (BG3)
 
 **Recommandation** : porte-parole (celui dont la stat est en jeu, ou qui a déclenché le fil), les autres soufflent ; vote seulement sur les choix lourds.
 
@@ -18,6 +18,6 @@
 
 **Pourquoi** : BG3 n'a pas de modèle pour six ; le vote partout ralentit tout.
 
-**Impacts** : campagne — l'Auteur marque les choix lourds · plateforme — vote synchronisé et minuté chez six joueurs.
+**Impacts** : campagne — l'Auteur marque les choix lourds · plateforme — vote synchronisé et minuté chez six joueurs
 
 **Résolue par** : —

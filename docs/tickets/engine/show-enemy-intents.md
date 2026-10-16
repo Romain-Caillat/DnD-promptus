@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Combattre »
 
-**Réalise** : [Bible, « Combat »](../../bible.md)
+**Réalise** : [Lire les intentions ennemies](../../regles/jeu/combat/lire-les-intentions-ennemies.md)
 
 **Objectif** : Un joueur perspicace voit ce que l'ennemi va faire avant son tour.
 

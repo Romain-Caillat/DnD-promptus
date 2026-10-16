@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Combattre »
 
-**Réalise** : [Bible, « Combat »](../../bible.md)
+**Réalise** : [Écran de combat](../../plateforme/ecran-de-combat.md)
 
 **Objectif** : Le combat passe de la vue tactique au coup sans coupure.
 

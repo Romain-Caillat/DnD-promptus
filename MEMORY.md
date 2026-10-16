@@ -41,16 +41,15 @@ below only as history until their ticket rewrites them:
 - *The player projection* (§3) holds, and becomes **per player**:
   knowledge is private until shared (`session/project-private-knowledge`).
 - *The interface chrome is a pixel menu* (§2) is replaced on the game
-  screen by the **Octopath skin**: rule « Interface façon Octopath » in
-  `docs/regles/jeu/apparence/`, zones in `docs/design/v2/cadre-pc.html`.
+  screen by the **Octopath skin**: fiche `docs/plateforme/interface-octopath.md`,
+  zones in `docs/design/v2/cadre-pc.html`.
   Fonts: Cinzel titles, Cormorant narration, Chakra Petch for the
   interface, Silkscreen for labels and numbers.
 - *Volumes are textured 3D boxes* (Visual direction) is replaced by the painted key art
-  made playable: rule « Un lieu est une illustration peinte »
-  (`docs/regles/jeu/apparence/`), recipe in
-  `docs/plateforme/rendu-des-lieux.md`.
+  made playable: fiche `docs/plateforme/rendu-des-lieux.md`.
 - The dialogue decisions of 16 October 2026 are rules in
-  `docs/regles/jeu/dialogue/` and `jets/`.
+  `docs/regles/jeu/dialogue/`, their screen in
+  `docs/plateforme/ecran-de-dialogue.md` and `de-3d.md`.
 
 ---
 

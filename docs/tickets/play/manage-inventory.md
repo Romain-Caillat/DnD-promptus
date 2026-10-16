@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Autour du jeu »
 
-**Réalise** : [Bible, « Écrans joueur »](../../bible.md)
+**Réalise** : [Le butin](../../regles/jeu/progression/le-butin.md)
 
 **Objectif** : Le joueur range, compare et donne ses objets.
 

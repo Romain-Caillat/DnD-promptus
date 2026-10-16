@@ -2,9 +2,9 @@
 
 **État** : à définir
 
-**Question** : que voit le groupe en fin de soirée ?
+**Question** : que vit le groupe en fin de soirée ?
 
-**Options** : écran de récap complet · simple message · rien (le lobby suivant résume).
+**Options** : un récap complet · un simple message · rien (le lobby suivant résume)
 
 **Recommandation** : récap narré, butin, montée de niveau, aperçu de la suite ; le lobby suivant le reprend en résumé.
 

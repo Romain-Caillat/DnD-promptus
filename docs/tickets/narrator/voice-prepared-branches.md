@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Parler »
 
-**Réalise** : [Choix uniquement](../../regles/jeu/dialogue/choix-uniquement.md) · [Bible, « Les rôles »](../../bible.md)
+**Réalise** : [Choisir ta réplique](../../regles/jeu/dialogue/choisir-ta-replique.md) · [Bible, « Les rôles »](../../bible.md)
 
 **Objectif** : C'est le jeu qui raconte, sans jamais sortir de ce que l'Auteur a préparé.
 

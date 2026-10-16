@@ -2,21 +2,21 @@
 
 **État** : à définir
 
-**Question** : que devient le perso d'un joueur qui décroche, ou qui manque une soirée ?
+**Question** : que devient ton perso si tu décroches, ou si tu manques une soirée ?
 
-**Options** : en retrait · suit le groupe en compagnon piloté par le jeu · confié à un autre joueur.
+**Options** : en retrait · suit le groupe, piloté par le jeu · confié à un autre joueur
 
-**Recommandation** : Esquiver en combat (comme le temps écoulé), puis le MJ peut le confier ; absent au chapitre = en retrait, sans perte de niveau.
+**Recommandation** : Esquiver en combat (comme quand ton temps est écoulé), puis le MJ peut le confier ; absent au chapitre = en retrait, sans perte de niveau.
 
 **Schéma** :
 
 ```text
- en combat : déconnecté ──▶ Esquiver à chaque tour ──▶ reprend la main au retour
- au chapitre : absent    ──▶ perso « en retrait », même niveau que le groupe
+ en combat : déconnecté ──▶ Esquiver à chaque tour ──▶ tu reprends la main au retour
+ au chapitre : absent    ──▶ ton perso est « en retrait », même niveau que le groupe
 ```
 
 **Pourquoi** : personne n'est puni d'une coupure, et le jeu ne s'arrête pas.
 
-**Impacts** : campagne — — · plateforme — reprise de session à chaud, état du perso gardé par le serveur.
+**Impacts** : campagne — — · plateforme — reprise à chaud, ton perso gardé par le serveur
 
 **Résolue par** : —

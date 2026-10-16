@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Le monde »
 
-**Réalise** : [Bible, « Exploration »](../../bible.md)
+**Réalise** : [Écran d'exploration](../../plateforme/ecran-d-exploration.md)
 
 **Objectif** : En exploration, on se promène sans cases, et on voit les autres joueurs.
 

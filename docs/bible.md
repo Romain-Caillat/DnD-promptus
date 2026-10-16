@@ -86,82 +86,27 @@ garde ou le partage. Deux joueurs ne voient pas forcément la même chose
 
 Pas d'asynchrone. Chaque soirée a un début et une fin nets.
 
-Table, temps d'une soirée : voir `docs/regles/jeu/groupe/` et `soiree/`.
+Table de six, reprise : `docs/plateforme/` ; budget d'une soirée : `docs/regles/campagne/soiree/`.
 
 ## 5. Règles
 
-### Personnages
-- Le joueur choisit **race, classe, historique**. Les **stats sont fixées
-  par la classe** (tableau standard réparti au mieux pour elle).
-- **Une classe = un seul joueur**, premier arrivé, premier servi, visible dans le lobby.
-- Classes limitées, prétirés, arcs personnels : voir `docs/regles/campagne/reglages/`.
-
-### Chaque stat sert partout
-Chaque joueur doit trouver son compte, en combat **et** hors combat.
-
-| Stat | En combat | Hors combat |
-|---|---|---|
-| FOR | dégâts au corps à corps, pousser d'une case | bras de fer, forcer une porte |
-| DEX | initiative, CA, armes à distance | crochetage, tricher aux dés, discrétion |
-| CON | PV, concentration | concours de boisson, résister au poison |
-| INT | sorts de magicien, faiblesses ennemies | énigmes, indices, histoire des lieux |
-| SAG | intentions ennemies, éviter les embuscades | indicateurs cachés, détecter les mensonges |
-| CHA | sorts de barde/ensorceleur, démoraliser | marchandage, persuasion, intimidation |
-
-Une occasion par stat dans chaque hub : voir `docs/regles/campagne/hub/`.
-
-### Progression
-- **Jalons** : tout le groupe monte de niveau ensemble, à des moments clés.
-- **Butin** : objets uniques préparés par l'Auteur + tables aléatoires.
-  Chacun garde ce qu'il trouve, et peut le donner à un joueur proche.
-
-### Échec
-- **Perso à 0 PV** : à terre, jets contre la mort, un allié peut le relever.
-  La mort est possible, et la résurrection rare et coûteuse
-  (difficulté : voir `docs/regles/campagne/reglages/`).
-- **Perso mort** : son joueur prend un compagnon, ou crée un nouveau perso
-  qui arrive au prochain hub. Il ne reste jamais spectateur.
-- **Défaite du groupe** : un **échec qui fait avancer**. C'est une branche
-  préparée (capturés, laissés pour morts…), jamais un game over.
+Migré : le livre du joueur, `docs/regles/jeu/` (personnage, jets, combat, progression).
 
 ## 6. Exploration
 
-- Déplacement **libre** (pas de cases), clavier/souris ou manette.
-- Les autres joueurs sont visibles dans le même lieu.
-- Indicateurs au-dessus des PNJ et des objets : `[!]` quête, `[?]` mini-jeu.
-  Certains sont **cachés** et n'apparaissent que si la **Perception
-  passive** est suffisante.
+Migré : `docs/regles/jeu/exploration/`.
 
 ## 7. Dialogue
 
-Migré : `docs/regles/jeu/dialogue/` et `jets/`.
+Migré : `docs/regles/jeu/dialogue/` ; l'écran, `docs/plateforme/`.
 
 ## 8. Combat
 
-Le combat se déroule **sur place**, dans le décor de l'exploration, et alterne trois plans :
-
-```
- 1. TACTIQUE (vue de dessus) ──▶ 2. COUP (HD-2D) ──▶ 3. BANDEROLE (rare)
-    même scène 3D, caméra haute     la caméra plonge     critique, sort ultime :
-    grille, portées, choix          sur l'action         portrait « en action »
-```
-
-- **Initiative DnD**, affichée en frise. Pas de phases à la Fire Emblem.
-- Ressources toujours visibles : Action, Action bonus, Réaction, Déplacement.
-- **Aperçu avant de valider** : % de toucher et dégâts. On peut annuler tant que l'action n'est pas validée.
-- **60 secondes par tour**. Une fois le temps écoulé, le perso prend l'action Esquiver.
-- **Intentions ennemies** visibles selon la **Perspicacité**.
-- Animations : celles des joueurs sont jouées, celles des ennemis sont
-  accélérées ou désactivables, et la banderole est toujours jouée.
+Migré : `docs/regles/jeu/combat/` ; l'écran, `docs/plateforme/`.
 
 ## 9. Mini-jeux
 
-- Un **catalogue de types programmés**, que l'Auteur et l'IA habillent pour chaque lieu.
-- Premiers types : **dés · crochetage · marchandage**.
-- Uniquement dans les hubs, toujours optionnels, moins de 2 minutes.
-- La compétence DnD liée change la difficulté (exemple : l'Escamotage permet de tricher aux dés).
-- Gains : or, objet, rumeur, accès à une quête secondaire.
-- Possibles entre joueurs (les dés en duel).
+Migré : `docs/regles/jeu/mini-jeux/`.
 
 ## 10. Écrans joueur
 
@@ -199,7 +144,7 @@ Un **panneau** que le MJ ouvre par-dessus son propre écran de joueur (touche `T
 
 - **Vrai HD-2D** : sprites en pixel art dans un décor en profondeur,
   lumière dynamique, flou de profondeur.
-- Lieux, interface, musique, voix : voir `docs/regles/jeu/apparence/`.
+- Lieux, interface, musique, voix : voir `docs/plateforme/`.
 - **PixelLab** : sprites animés, tuiles, décors.
 - **IA image** : portraits des PNJ et des persos, portraits « en action »
   pour les banderoles, illustrations des scènes clés.
@@ -211,7 +156,7 @@ branches d'échec et la convergence vers le fil.
 
 ## 13. Son
 
-Migré : `docs/regles/jeu/apparence/`.
+Migré : `docs/plateforme/` (musique, voix, effets sonores).
 
 ## 14. Écarts avec la vision précédente
 

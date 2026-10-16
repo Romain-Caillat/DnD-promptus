@@ -1,6 +1,6 @@
 # Règles de campagne
 
-Ce que l'Auteur construit et règle, une page par règle. Gabarit : [carte des docs](../../README.md).
+Le livre de l'Auteur : ce qu'il prépare et ce qu'il règle. Une page par règle ; gabarit : [carte des docs](../../README.md).
 
 | Domaine | Règle | État | Résolue par |
 |---|---|---|---|
@@ -10,3 +10,4 @@ Ce que l'Auteur construit et règle, une page par règle. Gabarit : [carte des d
 | reglages | [Classes, prétirés et arcs personnels](reglages/classes-pretires-et-arcs-personnels.md) | tranchée · 11/10/2026 | — |
 | reglages | [Difficulté](reglages/difficulte.md) | tranchée · 11/10/2026 | — |
 | reglages | [Ton et limites de contenu](reglages/ton-et-limites-de-contenu.md) | à définir | — |
+| soiree | [Le budget d'une soirée](soiree/le-budget-d-une-soiree.md) | provisoire · 16/10/2026 | — |

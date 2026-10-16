@@ -2,7 +2,7 @@
 
 **État** : à faire · Jalon 1, phase « Le monde »
 
-**Réalise** : [Bible, « Exploration »](../../bible.md)
+**Réalise** : [Explorer librement](../../regles/jeu/exploration/explorer-librement.md)
 
 **Objectif** : Une soirée se joue entièrement au clavier/souris ou à la manette.
 
