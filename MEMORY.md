@@ -45,7 +45,7 @@ below only as history until their ticket rewrites them:
   `docs/regles/jeu/apparence.md`, zones in `docs/design/v2/cadre-pc.html`.
   Fonts: Cinzel titles, Cormorant narration, Chakra Petch for the
   interface, Silkscreen for labels and numbers.
-- *Volumes are textured 3D boxes* (§2) is replaced by the painted key art
+- *Volumes are textured 3D boxes* (Visual direction) is replaced by the painted key art
   made playable: rule « Un lieu est une illustration peinte »
   (`docs/regles/jeu/apparence.md`), recipe in
   `docs/plateforme/rendu-des-lieux.md`.

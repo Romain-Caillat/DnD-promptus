@@ -1,7 +1,7 @@
 # Musique
 
 ## Lecteur YouTube synchronisé
-> **tranchée** 11/10/2026 · résout : [Musique choisie, synchronisée](../regles/jeu/apparence.md)
+> **tranchée** avant la bible · résout : [Musique choisie, synchronisée](../regles/jeu/apparence.md)
 
 ```
  serveur : morceau + instant de départ ──▶ chaque joueur : lecteur YouTube visible

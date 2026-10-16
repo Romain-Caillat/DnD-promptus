@@ -6,7 +6,7 @@ Une fiche cite les règles qu'elle **résout** ; un ticket cite sa fiche.
 | Fiche | Résout | État |
 |---|---|---|
 | [Rendu des lieux](rendu-des-lieux.md) | Un lieu est une illustration peinte | tranchée 12/10 |
-| [Musique](musique.md) | Musique choisie, synchronisée | tranchée 11/10 |
+| [Musique](musique.md) | Musique choisie, synchronisée | tranchée avant la bible |
 
 ## Docs techniques déjà en place
 

@@ -1,7 +1,7 @@
 # Groupe
 
 ## Une table de six
-> **tranchée** 11/10/2026 · résolue par : —
+> **tranchée** avant la bible (leçons des parties) · résolue par : —
 
 ```
  6 joueurs  ⚔  6 adversaires

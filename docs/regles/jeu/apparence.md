@@ -1,6 +1,6 @@
 # Apparence et son
 
-## Un lieu est une illustration peinte rendue jouable
+## Un lieu est une illustration peinte
 > **tranchée** 12/10/2026 · résolue par : [plateforme/rendu-des-lieux.md](../../plateforme/rendu-des-lieux.md)
 
 ```
@@ -36,7 +36,7 @@
 **↳ campagne** : — · **↳ plateforme** : ticket `design/write-frame-tokens`.
 
 ## Musique choisie, synchronisée
-> **tranchée** 11/10/2026 · résolue par : [plateforme/musique.md](../../plateforme/musique.md)
+> **tranchée** avant la bible · résolue par : [plateforme/musique.md](../../plateforme/musique.md)
 
 ```
  scène ──▶ morceaux YouTube de l'Auteur ──▶ joués en même temps chez tous
@@ -70,7 +70,7 @@
 
 **Question** : le narrateur et les PNJ parlent-ils à voix haute ?
 **Options** : texte seul · voix pour le narrateur · une voix par PNJ.
-**Recommandation** : texte d'abord ; un PNJ a déjà un champ « voix », pour l'ajouter plus tard sans refaire.
+**Recommandation** : texte d'abord ; prévoir dès maintenant un champ « voix » par PNJ, pour l'ajouter plus tard sans refaire.
 
 **Pourquoi** : la voix coûte cher et change le look ; la décider tôt évite de refaire les PNJ.
 **↳ campagne** : l'Auteur choisit une voix par PNJ · **↳ plateforme** : synthèse vocale derrière un fournisseur interchangeable.
