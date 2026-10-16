@@ -1,8 +1,8 @@
 # Bible du jeu — Promptus
 
-> Issue du brainstorming du 11/10/2026, complétée le 16/10/2026 avec les
-> décisions prises sur les maquettes. Définit **le jeu**, pas sa
-> réalisation : ni ticket, ni maquette, ni code.
+> Issue du brainstorming du 11/10/2026. Définit **le jeu**, pas sa
+> réalisation : ni ticket, ni maquette, ni code. Ses détails migrent en
+> règles (`docs/regles/`) : une section migrée devient un renvoi.
 
 ## 1. En une phrase
 
@@ -86,8 +86,7 @@ garde ou le partage. Deux joueurs ne voient pas forcément la même chose
 
 Pas d'asynchrone. Chaque soirée a un début et une fin nets.
 
-**La table compte jusqu'à six joueurs.** Tout écran, tout combat et
-tout ordre de tour doit tenir à six joueurs contre six adversaires.
+Table, temps d'une soirée : voir `docs/regles/jeu/groupe.md` et `soiree.md`.
 
 ## 5. Règles
 
@@ -95,10 +94,7 @@ tout ordre de tour doit tenir à six joueurs contre six adversaires.
 - Le joueur choisit **race, classe, historique**. Les **stats sont fixées
   par la classe** (tableau standard réparti au mieux pour elle).
 - **Une classe = un seul joueur**, premier arrivé, premier servi, visible dans le lobby.
-- L'Auteur peut **limiter les classes** disponibles dans sa campagne.
-- **Prétirés** préparés par l'Auteur, en option.
-- L'**historique** ouvre un **arc personnel** : une quête préparée par
-  l'Auteur pour chaque historique.
+- Classes limitées, prétirés, arcs personnels : voir `docs/regles/campagne/reglages.md`.
 
 ### Chaque stat sert partout
 Chaque joueur doit trouver son compte, en combat **et** hors combat.
@@ -112,8 +108,7 @@ Chaque joueur doit trouver son compte, en combat **et** hors combat.
 | SAG | intentions ennemies, éviter les embuscades | indicateurs cachés, détecter les mensonges |
 | CHA | sorts de barde/ensorceleur, démoraliser | marchandage, persuasion, intimidation |
 
-**Règle d'Auteur :** chaque hub offre **au moins une occasion par stat**.
-La génération le vérifie.
+Une occasion par stat dans chaque hub : voir `docs/regles/campagne/hub.md`.
 
 ### Progression
 - **Jalons** : tout le groupe monte de niveau ensemble, à des moments clés.
@@ -122,8 +117,8 @@ La génération le vérifie.
 
 ### Échec
 - **Perso à 0 PV** : à terre, jets contre la mort, un allié peut le relever.
-  La mort est possible, et la résurrection rare et coûteuse.
-  **La difficulté est réglable par l'Auteur.**
+  La mort est possible, et la résurrection rare et coûteuse
+  (difficulté : voir `docs/regles/campagne/reglages.md`).
 - **Perso mort** : son joueur prend un compagnon, ou crée un nouveau perso
   qui arrive au prochain hub. Il ne reste jamais spectateur.
 - **Défaite du groupe** : un **échec qui fait avancer**. C'est une branche
@@ -139,34 +134,7 @@ La génération le vérifie.
 
 ## 7. Dialogue
 
-```
- ┌────────┐  GORVIN, tavernier
- │portrait│  « On ne pose pas de questions, ici. »
- └────────┘
-  💡 Perspicacité : il ment, il a peur de quelqu'un.
-
-  1. « Je cherche une chambre. »
-  2. [Persuasion]   « Je saurai être discret. »   DD 12
-  3. [Perspicacité] « De qui as-tu peur ? »
-  4. « Une tournée pour tout le monde. »          (manque 5 po)
-```
-
-- Portraits façon Fire Emblem, avec quelques expressions.
-- **Choix uniquement**, pas de texte libre. Chaque jet affiche son DD.
-- Une option que la classe ou les stats du joueur n'ouvrent pas est
-  **cachée**, comme dans Baldur's Gate 3 : il ne voit que ce qu'il peut
-  dire. Ce qu'une stat apporte se lit sur la fiche, pas dans des options
-  grisées.
-- Une option bloquée par **l'argent** reste visible, grisée, avec ce qui
-  manque.
-- On peut **rejoindre** une conversation : celui qui l'a lancée choisit,
-  celui qui a rejoint voit tout et peut **souffler uniquement les options
-  que lui seul débloque**.
-
-### Les jets
-
-Chaque jet d'une action, en dialogue comme en combat, est **un vrai dé
-en 3D qui roule au milieu de l'écran**, vu par tous les joueurs présents.
+Migré : `docs/regles/jeu/dialogue.md` et `jets.md`.
 
 ## 8. Combat
 
@@ -185,8 +153,6 @@ Le combat se déroule **sur place**, dans le décor de l'exploration, et alterne
 - **Intentions ennemies** visibles selon la **Perspicacité**.
 - Animations : celles des joueurs sont jouées, celles des ennemis sont
   accélérées ou désactivables, et la banderole est toujours jouée.
-- La grille apparaît sur le décor du lieu au moment où le combat
-  commence (voir *Direction artistique et contenu*).
 
 ## 9. Mini-jeux
 
@@ -232,22 +198,8 @@ Un **panneau** que le MJ ouvre par-dessus son propre écran de joueur (touche `T
 ## 12. Direction artistique et contenu
 
 - **Vrai HD-2D** : sprites en pixel art dans un décor en profondeur,
-  lumière dynamique, flou de profondeur, rendu dans le navigateur.
-- **Un lieu est une illustration peinte rendue jouable**, pas une
-  maquette 3D (les volumes construits faisaient « maquette bon marché »).
-  L'Auteur choisit une illustration du lieu, vue de face ; le jeu en tire
-  un décor vide découpé en plans qui glissent quand la caméra suit le
-  joueur. Les personnages sont dessinés dans le style de l'illustration,
-  et des lueurs de bougie, de la poussière et de la fumée font vivre la
-  scène. Le sol jouable (où l'on marche, ce qui bloque, où l'on
-  interagit) est la référence du serveur.
-- **L'illustration fait face au lieu** : le fond de la carte en haut de
-  l'image, le devant en bas. La profondeur se lit dans la hauteur de
-  l'image, et une grille de combat s'y pose sans déformation.
-- **Interface façon Octopath** : panneaux bleu nuit translucides, double
-  filet doré, titres et narration dans des polices à l'ancienne. Les
-  couleurs et formes des stats, les cœurs et cases en pixel art sont
-  gardés. Déplacement en ZQSD par défaut (WASD en option).
+  lumière dynamique, flou de profondeur.
+- Lieux, interface, musique, voix : voir `docs/regles/jeu/apparence.md`.
 - **PixelLab** : sprites animés, tuiles, décors.
 - **IA image** : portraits des PNJ et des persos, portraits « en action »
   pour les banderoles, illustrations des scènes clés.
@@ -259,12 +211,7 @@ branches d'échec et la convergence vers le fil.
 
 ## 13. Son
 
-- **Musique** : choisie, pas générée. L'Auteur attache à chaque scène
-  plusieurs morceaux YouTube, que le jeu enchaîne et synchronise chez
-  tous les joueurs. Le lecteur reste visible (conditions de YouTube) et
-  démarre muet : chaque joueur active le son. Une publicité peut
-  désynchroniser un joueur ; la lecture se recale seule.
-- **Effets sonores** : pas encore définis (voir *Hors champ*).
+Migré : `docs/regles/jeu/apparence.md`.
 
 ## 14. Écarts avec la vision précédente
 
@@ -280,10 +227,6 @@ Les règles 3 (règles claires), 4 (pas de mock) et 5 (le français d'abord) res
 
 ## 15. Hors champ (à définir plus tard)
 
-- **Effets sonores** et ambiance (bruits de taverne, coups, dés).
 - **Le jeu sur téléphone.**
 - **D'autres types de mini-jeux** que dés, crochetage et marchandage.
-- Et tout ce que les premières parties de test feront apparaître.
-
-Tranché depuis le brainstorming : le moteur 3D (le HD-2D est rendu dans
-le navigateur, pas dans un moteur de jeu) et la musique (YouTube).
+- Ce qui reste à trancher est listé dans les index de `docs/regles/`.

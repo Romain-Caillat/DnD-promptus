@@ -4,7 +4,7 @@ Static HTML boards, one per `design/*` ticket of `TICKETS.md`, built
 from `docs/design/hd2d/quai.html` and `docs/bible.md`. They replace the
 canvas boards of `docs/design/README.md` as the specification of the
 game screens. Each board ends with a "Décidé" / "À trancher" box: the
-decisions also go to `MEMORY.md` §0 and to the tickets they affect.
+decisions become rules in `docs/regles/` (or fiches in `docs/plateforme/`) and reach the tickets they affect.
 
 | Board | Ticket | State |
 | --- | --- | --- |

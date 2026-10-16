@@ -7,8 +7,10 @@ server, the player screen, or anything the LLM produces.
 constraints, invariants that are load-bearing, decisions that were
 argued and settled, and traps that already cost someone a day.
 
-**What does NOT belong here:** work to do (→ `TICKETS.md`), narration
-of what was built (→ `archive/tickets/`), API documentation (→ code).
+**What does NOT belong here:** game and campaign rules
+(→ `docs/regles/`), how a rule is solved (→ `docs/plateforme/`), work to
+do (→ `TICKETS.md`), narration of what was built (→ `archive/tickets/`),
+API documentation (→ code). Map of the docs: `docs/README.md`.
 
 Rule of thumb: if it stops being true when a ticket closes, it is not
 memory. If someone would re-litigate it in six months, it is.
@@ -20,8 +22,8 @@ memory. If someone would re-litigate it in six months, it is.
 On 11 October 2026 Promptus became a GM-light, "Baldur's Gate"-style
 game (`docs/bible.md`): an Author prepares, the game narrates live, the
 GM keeps an invisible override. The old backlog is frozen in
-`archive/tickets/backlog-avant-bible.md`. Where this file and the bible
-disagree, **the bible wins**. These entries are superseded, and stay
+`archive/tickets/backlog-avant-bible.md`. Where this file disagrees with
+`docs/regles/`, `docs/plateforme/` or the bible, **they win**. These entries are superseded, and stay
 below only as history until their ticket rewrites them:
 
 - *Fully remote first* (§1): still remote and live, but **PC first**;
@@ -39,58 +41,16 @@ below only as history until their ticket rewrites them:
 - *The player projection* (§3) holds, and becomes **per player**:
   knowledge is private until shared (`session/project-private-knowledge`).
 - *The interface chrome is a pixel menu* (§2) is replaced on the game
-  screen by the **Octopath skin** (decided 12 October 2026, board
-  `docs/design/v2/cadre-pc.html`): translucent night-blue panels, a
-  double gold rule, Cinzel titles, Cormorant narration, Chakra Petch for
-  the interface and Silkscreen for labels and numbers. Kept from §2:
-  stat colours **and** shapes, pixel hearts and cells, sprites in colour.
-  The frame's zones (place, menus, notifications, my character, action
-  prompt, party in a column on the left, window, GM panel on the right
-  that shifts the whole game left) are in that board. Movement defaults
-  to ZQSD (AZERTY), with WASD in the options.
-- **A level is a painted key art made playable, not a 3D model (Romain,
-  12 October 2026).** Built 3D (textured boxes, then flat props laid out
-  in CSS) read as a cheap miniature; the PixelLab key art of the
-  Perroquet Noyé, turned into a scene, "sells the dream". Board:
-  `docs/design/v2/taverne-hd2d.html`, assets and costs in
-  `docs/design/v2/assets/README.md`. The recipe, per place:
-  1. **Key art**: `create_image_pro` at 688 × 384 (16:9), the scene's
-     `art` and `read_aloud`, every character placed (25 generations a
-     try). The Author picks one.
-  2. **Empty plate**: the same call with the chosen art as reference and
-     style, "same room, no people" (25). It is the backdrop.
-  3. **Cut-out layers**: polygons in picture pixels around what stands in
-     front (counter, tables), each with the floor line it stands on.
-     Each is pushed to a depth from that line, back along the neutral
-     camera's sight line, so the picture is exact at rest and the layers
-     slide as the camera follows the player (parallax).
-  4. **Characters in the art's style**: lineups with crops of the key art
-     as references, cut out; players rotated in PixelLab v3 and walked in
-     4 directions, NPCs given a front idle loop.
-  5. **Floor data**: walkable bounds and blocked rectangles, interaction
-     points, in picture pixels: the same role as the grid, the server's
-     reference for movement and reach.
-  6. **Life**: candle halos with point lights that light passing
-     characters, dust, smoke, bloom, light depth blur.
-  **The key art faces the place**, laid out like its map: the map's far
-  rows at the back of the picture, the near ones in front, so depth is
-  the picture's height and a grid falls on it undistorted. A first quay
-  (`docs/design/v2/assets/quai/`) ran its street diagonally to a vanishing
-  point: moving was sideways along a thin strip, and the grid would have
-  been skewed. Say the framing in the prompt ("seen from the front, the
-  far side parallel to the picture").
-  This replaces, for the look of places, the "volumes are textured 3D
-  boxes" rule of §2. It does not yet say how combat grids sit on a
-  painted plate (`design/draw-combat-planes`).
-- **Dialogue (Romain, 16 October 2026, board
-  `docs/design/v2/dialogue.html`).** Options a player's class or stats
-  do not open are **hidden**, as in BG3: what a stat brings is read on
-  the sheet, not in greyed-out options. An option blocked by money
-  (an unpaid slate) stays shown, greyed, with what is missing. A player
-  who joined a conversation can **whisper only the options that they
-  alone unlock**. Every roll of an action, in dialogue as in combat, is
-  **a real 3D die in the middle of the screen**, seen by everyone
-  (`hd2d/roll-dice-in-3d`); the faceted look of §2 holds.
+  screen by the **Octopath skin**: rule « Interface façon Octopath » in
+  `docs/regles/jeu/apparence.md`, zones in `docs/design/v2/cadre-pc.html`.
+  Fonts: Cinzel titles, Cormorant narration, Chakra Petch for the
+  interface, Silkscreen for labels and numbers.
+- *Volumes are textured 3D boxes* (§2) is replaced by the painted key art
+  made playable: rule « Un lieu est une illustration peinte »
+  (`docs/regles/jeu/apparence.md`), recipe in
+  `docs/plateforme/rendu-des-lieux.md`.
+- The dialogue decisions of 16 October 2026 are rules in
+  `docs/regles/jeu/dialogue.md` and `jets.md`.
 
 ---
 
@@ -909,9 +869,7 @@ condition or damage it causes still reaches them as its own event.
     the outline and invents colours; picking one pixel in N breaks the
     outline and drops the eyes. A small sprite is redrawn at its size:
     give the large image as a reference (PixelLab v3), not as a source.
-- **YouTube player must stay visible** (YouTube terms) and starts muted:
-  each player taps "activate sound". Ads can desync a player; playback
-  re-syncs on its own.
+- **YouTube player must stay visible**: see `docs/plateforme/musique.md`.
 - **OpenRouter video is asynchronous** (`media/generate-images-and-video`):
   `POST /api/v1/videos` returns a job, polled at `/videos/{id}` until
   `completed`, the file at `unsigned_urls[0]`. Built from OpenRouter's

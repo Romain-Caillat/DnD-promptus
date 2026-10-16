@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Chakra+Petch:wght@400;600&family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@1,500&display=swap">
 <style>
 /* Playable board for design/draw-dialogue-screen (TICKETS.md), as designed
-   in docs/reprise.md §2. Frame and Octopath skin from cadre-pc.html. */
+   in docs/regles/jeu/dialogue.md. Frame and Octopath skin from cadre-pc.html. */
 :root {
   --ink: #0a0a0a; --page: #111214; --page-2: #1a1c20; --text: #ededed; --muted: #9a9a9a;
   --hp: #FF4D5E; --ac: #3D9BFF; --gold: #d8ac5c; --gold-soft: #7c6338; --cream: #f3e6c8;
@@ -306,7 +306,7 @@ pre.graph { background: var(--page-2); padding: 14px 16px; overflow-x: auto; fon
   };
   var DD = 10, INSIGHT = 11;
 
-  // ---------- the dialogue graph (docs/reprise.md §2) ----------
+  // ---------- the dialogue graph (docs/regles/jeu/dialogue.md) ----------
   var CLUES = "Des marins de Locmaria me l'ont dit : les voiles anglaises passent toujours par le sud de Belle-Île, jamais par le nord. Et au sud de l'île, le jusant tire vers l'est à la pointe de Kerdonis. Un bon pilote s'y cache comme un chat derrière une porte.";
   var NODES = {
     accueil:  { expr: "neutre", line: "Encore des têtes neuves. Ici on boit, on paie… et on écoute.", intent: "accueil · jauger les nouveaux venus, ne rien donner" },

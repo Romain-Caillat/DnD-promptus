@@ -4,8 +4,8 @@ Tout ce qui reste à construire. Un ticket = une unité livrable qui a
 un « fini quand » vérifiable.
 
 **Ce qui appartient ici :** le travail à faire.
-**Ce qui n'appartient pas ici :** les décisions durables (→ `MEMORY.md`),
-le jeu lui-même (→ `docs/bible.md`), le récit de ce qui a été livré
+**Ce qui n'appartient pas ici :** les règles (→ `docs/regles/`), leur
+solution (→ `docs/plateforme/`), les pièges du code (→ `MEMORY.md`), le récit de ce qui a été livré
 (→ `archive/tickets/`).
 
 ## Conventions
@@ -14,7 +14,8 @@ le jeu lui-même (→ `docs/bible.md`), le récit de ce qui a été livré
   `epic/verbe-objet`, kebab-case anglais.
 - **Statut** : `todo` · `doing` · `blocked` (avec la raison).
   Un ticket fini quitte ce fichier pour `archive/tickets/<epic>.md`.
-- **Origine** : la section de `docs/bible.md` qui l'exige.
+- **Origine** : la fiche de `docs/plateforme/` qu'il réalise (ou, pour
+  les anciens tickets, la section de `docs/bible.md` qui l'exige).
 - **Point de départ** : le code déjà écrit qu'il reprend, et le ticket
   gelé correspondant dans `archive/tickets/backlog-avant-bible.md`.
 - Un ticket marqué **à spécifier** n'est pas implémentable en l'état :

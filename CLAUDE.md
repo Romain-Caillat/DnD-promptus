@@ -21,8 +21,9 @@ rewrites between chapters through Claude + the MCP.
 - **Scale**: short campaigns (4–6 chapters, levels 1–5), one chapter
   per evening, everyone connected; one-shot as the test format.
 
-The game bible (`docs/bible.md`, French) is the reference for every
-gameplay decision.
+The game bible (`docs/bible.md`, French) is the vision. Its details
+migrate into rules (`docs/regles/`); see **Rules, platform, tickets**
+below.
 
 ### Design rules (non-negotiable)
 
@@ -64,8 +65,8 @@ game, PC first, true HD-2D in Three.js). `TICKETS.md` now orders the
 work in two milestones: the Corsaires one-shot (tavern hub → thread →
 dock brawl), then a short campaign. Each phase starts with its mockups
 (`docs/design/v2/`); the older canvas boards (`docs/design/README.md`)
-remain a style reference, not a specification. `MEMORY.md` §0 lists
-the decisions the bible supersedes.
+remain a style reference, not a specification. The pivot section at
+the top of `MEMORY.md` lists the decisions the bible supersedes.
 
 ## Tech Stack (target)
 
@@ -145,12 +146,38 @@ is fixed (`promptus-dev`), so every worktree shares one database.
 The iOS simulator needs macOS: `tauri ios init` / `bun run dev:ios`
 are run on Romain's Mac, not in PCT 105.
 
+## Rules, platform, tickets
+
+Map and block skeleton: `docs/README.md`. **Read the three indexes
+first** (`docs/regles/jeu/README.md`, `docs/regles/campagne/README.md`,
+`docs/plateforme/README.md`), then only the file you touch.
+
+```
+ docs/regles/jeu, docs/regles/campagne   what must be true   (French)
+        │ « résolue par »
+ docs/plateforme                         how it is solved     (French)
+        │ cited by
+ TICKETS.md                              the work
+```
+
+- A rule with no « résolue par » is a platform gap. A technical limit
+  never changes a rule silently: it comes back as a rule to settle.
+- A decision settled in conversation becomes a block in the same commit.
+- **Every doc addition or change is as concise as possible**: each rule
+  or fiche follows the one skeleton of `docs/README.md` — a visual
+  schema (15 lines at most), then at most five bullets (or Question ·
+  Options · Recommandation while open), why in one line, knock-on
+  effects. No prose around it. A rule is named by its title, never by
+  a number.
+- One fact lives in one place; other docs point to it by name.
+
 ## Tickets and memory
 
 - `TICKETS.md` — active backlog. Named epics, named tickets
   (`epic/verb-object`), never numbered.
-- `MEMORY.md` — durable decisions, invariants, traps. **Read it first.**
-  Its V1 invariants must survive the rewrite.
+- `MEMORY.md` — code invariants and traps. Read its sections when
+  touching the code they cover. Its V1 invariants must survive the
+  rewrite. Game rules do not go there.
 - `archive/tickets/<epic>.md` — what shipped, one line per ticket.
 - `archive/bmad/` — the retired BMad export (brief, architecture,
   retrospective, V2 vision). Historical reference only; BMad is no
@@ -160,4 +187,6 @@ are run on Romain's Mac, not in PCT 105.
 
 - All conversations and documents with the user should be in **French**
   (tickets included).
-- Code, code comments, commit messages and technical docs in **English**.
+- Code, code comments, commit messages and technical docs in **English**,
+  except `docs/regles/` and `docs/plateforme/`, written in French. The
+  older English reference docs (formats, install, MCP) stay as they are.
