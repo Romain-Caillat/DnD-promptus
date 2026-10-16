@@ -1,6 +1,7 @@
 # Bible du jeu — Promptus
 
-> Issue du brainstorming du 11/10/2026. Définit **le jeu**, pas sa
+> Issue du brainstorming du 11/10/2026, complétée le 16/10/2026 avec les
+> décisions prises sur les maquettes. Définit **le jeu**, pas sa
 > réalisation : ni ticket, ni maquette, ni code.
 
 ## 1. En une phrase
@@ -71,7 +72,7 @@ n'invente jamais de branche qui casserait l'histoire.
 
 **Savoir privé.** Chaque joueur a son journal. Ce qu'il découvre, il le
 garde ou le partage. Deux joueurs ne voient pas forcément la même chose
-(voir la Perception, §6).
+(voir la Perception passive, dans *Exploration*).
 
 ## 4. L'échelle
 
@@ -84,6 +85,9 @@ garde ou le partage. Deux joueurs ne voient pas forcément la même chose
 ```
 
 Pas d'asynchrone. Chaque soirée a un début et une fin nets.
+
+**La table compte jusqu'à six joueurs.** Tout écran, tout combat et
+tout ordre de tour doit tenir à six joueurs contre six adversaires.
 
 ## 5. Règles
 
@@ -143,15 +147,26 @@ La génération le vérifie.
 
   1. « Je cherche une chambre. »
   2. [Persuasion]   « Je saurai être discret. »   DD 12
-  3. [Perspicacité] « De qui as-tu peur ? »       (débloqué)
+  3. [Perspicacité] « De qui as-tu peur ? »
+  4. « Une tournée pour tout le monde. »          (manque 5 po)
 ```
 
 - Portraits façon Fire Emblem, avec quelques expressions.
-- **Choix uniquement**, pas de texte libre. Jets visibles avec leur DD, et
-  le d20 roule à l'écran.
-- Certaines options ne sont **débloquées que par les stats**.
+- **Choix uniquement**, pas de texte libre. Chaque jet affiche son DD.
+- Une option que la classe ou les stats du joueur n'ouvrent pas est
+  **cachée**, comme dans Baldur's Gate 3 : il ne voit que ce qu'il peut
+  dire. Ce qu'une stat apporte se lit sur la fiche, pas dans des options
+  grisées.
+- Une option bloquée par **l'argent** reste visible, grisée, avec ce qui
+  manque.
 - On peut **rejoindre** une conversation : celui qui l'a lancée choisit,
-  celui qui a rejoint voit tout et peut « souffler » un choix.
+  celui qui a rejoint voit tout et peut **souffler uniquement les options
+  que lui seul débloque**.
+
+### Les jets
+
+Chaque jet d'une action, en dialogue comme en combat, est **un vrai dé
+en 3D qui roule au milieu de l'écran**, vu par tous les joueurs présents.
 
 ## 8. Combat
 
@@ -170,6 +185,8 @@ Le combat se déroule **sur place**, dans le décor de l'exploration, et alterne
 - **Intentions ennemies** visibles selon la **Perspicacité**.
 - Animations : celles des joueurs sont jouées, celles des ennemis sont
   accélérées ou désactivables, et la banderole est toujours jouée.
+- La grille apparaît sur le décor du lieu au moment où le combat
+  commence (voir *Direction artistique et contenu*).
 
 ## 9. Mini-jeux
 
@@ -214,7 +231,23 @@ Un **panneau** que le MJ ouvre par-dessus son propre écran de joueur (touche `T
 
 ## 12. Direction artistique et contenu
 
-- **Vrai HD-2D** : décor 3D, sprites en pixel art, lumière dynamique, flou de profondeur.
+- **Vrai HD-2D** : sprites en pixel art dans un décor en profondeur,
+  lumière dynamique, flou de profondeur, rendu dans le navigateur.
+- **Un lieu est une illustration peinte rendue jouable**, pas une
+  maquette 3D (les volumes construits faisaient « maquette bon marché »).
+  L'Auteur choisit une illustration du lieu, vue de face ; le jeu en tire
+  un décor vide découpé en plans qui glissent quand la caméra suit le
+  joueur. Les personnages sont dessinés dans le style de l'illustration,
+  et des lueurs de bougie, de la poussière et de la fumée font vivre la
+  scène. Le sol jouable (où l'on marche, ce qui bloque, où l'on
+  interagit) est la référence du serveur.
+- **L'illustration fait face au lieu** : le fond de la carte en haut de
+  l'image, le devant en bas. La profondeur se lit dans la hauteur de
+  l'image, et une grille de combat s'y pose sans déformation.
+- **Interface façon Octopath** : panneaux bleu nuit translucides, double
+  filet doré, titres et narration dans des polices à l'ancienne. Les
+  couleurs et formes des stats, les cœurs et cases en pixel art sont
+  gardés. Déplacement en ZQSD par défaut (WASD en option).
 - **PixelLab** : sprites animés, tuiles, décors.
 - **IA image** : portraits des PNJ et des persos, portraits « en action »
   pour les banderoles, illustrations des scènes clés.
@@ -224,7 +257,16 @@ remplis**. Pour chaque hub, il faut des PNJ et leurs dialogues à choix,
 des quêtes secondaires, des mini-jeux habillés, une occasion par stat, les
 branches d'échec et la convergence vers le fil.
 
-## 13. Écarts avec la vision précédente
+## 13. Son
+
+- **Musique** : choisie, pas générée. L'Auteur attache à chaque scène
+  plusieurs morceaux YouTube, que le jeu enchaîne et synchronise chez
+  tous les joueurs. Le lecteur reste visible (conditions de YouTube) et
+  démarre muet : chaque joueur active le son. Une publicité peut
+  désynchroniser un joueur ; la lecture se recale seule.
+- **Effets sonores** : pas encore définis (voir *Hors champ*).
+
+## 14. Écarts avec la vision précédente
 
 `CLAUDE.md` a été mis à jour en conséquence.
 
@@ -236,8 +278,12 @@ branches d'échec et la convergence vers le fil.
 
 Les règles 3 (règles claires), 4 (pas de mock) et 5 (le français d'abord) restent inchangées.
 
-## 14. Hors champ (à définir plus tard)
+## 15. Hors champ (à définir plus tard)
 
-- Ambiance sonore (musique, effets).
-- Choix du moteur 3D pour le HD-2D (dans le navigateur, ou un vrai moteur de jeu).
+- **Effets sonores** et ambiance (bruits de taverne, coups, dés).
+- **Le jeu sur téléphone.**
+- **D'autres types de mini-jeux** que dés, crochetage et marchandage.
 - Et tout ce que les premières parties de test feront apparaître.
+
+Tranché depuis le brainstorming : le moteur 3D (le HD-2D est rendu dans
+le navigateur, pas dans un moteur de jeu) et la musique (YouTube).
