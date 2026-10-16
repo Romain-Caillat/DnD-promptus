@@ -172,8 +172,8 @@ pre.graph { background: var(--page-2); padding: 14px 16px; overflow-x: auto; fon
       <button type="button" data-v="show" aria-pressed="false">Montrer</button>
     </div></div>
     <div class="seg"><span>Option verrouillée</span><div class="opts" data-ctl="locked">
-      <button type="button" data-v="grey" aria-pressed="true">Grisée</button>
-      <button type="button" data-v="hide" aria-pressed="false">Cachée</button>
+      <button type="button" data-v="grey" aria-pressed="false">Grisée</button>
+      <button type="button" data-v="hide" aria-pressed="true">Cachée</button>
     </div></div>
     <button type="button" class="reset" id="reset">Recommencer</button>
   </div>
@@ -275,11 +275,11 @@ pre.graph { background: var(--page-2); padding: 14px 16px; overflow-x: auto; fon
 
   <section class="doc">
     <div class="ask">
-      <b>À trancher</b>
+      <b>Décidé (16 octobre 2026, Romain)</b>
       <ol>
-        <li><b>Options verrouillées (classe, stat)</b> : cachées comme dans BG3, ou grisées avec la raison ? Le réglage « Option verrouillée » montre les deux.</li>
-        <li><b>Le d20</b> : au centre de l'écran (ici), ou dans la fenêtre de dialogue ?</li>
-        <li><b>Celui qui a rejoint</b> peut-il souffler toutes les options, ou seulement celles que lui seul débloque (ici) ?</li>
+        <li><b>Options verrouillées : cachées, comme dans BG3.</b> Un joueur ne voit que les options que sa classe et ses stats lui ouvrent. Ce qu'une stat apporte se lit sur la Fiche, pas dans les options qu'on rate. Le réglage « Option verrouillée » reste pour comparer.</li>
+        <li><b>Le d20 : un vrai dé en 3D, au milieu de l'écran</b>, vu de tous, à chaque jet d'une action (dialogue comme combat). Le dé plat de la planche tient la place : ticket <code>hd2d/roll-dice-in-3d</code>.</li>
+        <li><b>Celui qui a rejoint ne souffle que les options que lui seul débloque.</b> Les autres, celui qui mène les a déjà.</li>
       </ol>
     </div>
   </section>
@@ -328,7 +328,7 @@ pre.graph { background: var(--page-2); padding: 14px 16px; overflow-x: auto; fon
     S = { who: S ? S.who : "yann", node: "accueil", typed: 0, done: false, used: {}, slate: 0, slate10: false, whispered: false, po: 15, rolling: false, over: false, cur: 0, clues: false };
     show("accueil");
   }
-  var opts = { die: "rand", intent: "hide", locked: "grey" };
+  var opts = { die: "rand", intent: "hide", locked: "hide" };
 
   function choices() {
     var me = P[S.who], lead = S.who === "yann", list = [];

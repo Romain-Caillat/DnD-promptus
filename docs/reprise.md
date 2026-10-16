@@ -27,71 +27,9 @@ cette note.
 
 ## 2. Ce qui est commencé
 
-### `design/draw-dialogue-screen` — écrit le 12 octobre 2026, à valider
-
-Planche : `docs/design/v2/dialogue.html`. Écarts avec ce qui suit : le
-Bretteur a CHA 9 (−1) et chacun a 15 PO (`content/rules/corsaires/v1.yaml`,
-60 PO de départ du groupe), donc l'ardoise de 10 PO est payable et
-l'option verrouillée montrée est celle de Perspicacité (passive 11 pour
-Léa, 10 pour Yann). Un réglage « Option verrouillée » (grisée / cachée)
-aide à trancher la question 1.
-
-Ce qui avait été conçu :
-
-Fichier prévu : `docs/design/v2/dialogue.html`, même gabarit que
-`exploration.html` (habillage Octopath, écran 1920 × 1080 mis à
-l'échelle). Le contenu vient de `content/campaigns/corsaires/campagne.yaml`
-(scène `sc_perroquet`, PNJ `pnj_goulven`, indices `cl_route_goulven` et
-`cl_courants_goulven`).
-
-**Disposition** — Le monde reste derrière, assombri et un peu flou. La
-fenêtre G est en bas au centre (x 420 à 1500 sur 1920), et elle ne
-couvre jamais D (mon perso, en bas à gauche). Un grand portrait pixel
-de Mère Goulven est posé sur le bord haut de la fenêtre, à gauche
-(façon Fire Emblem), avec trois expressions : neutre, méfiante, ravie.
-La fenêtre contient : le nom, la réplique (Cormorant, qui s'écrit au
-fil de l'eau et qu'on peut passer), l'indice de Perspicacité s'il y en
-a un, puis « Yann répond : » et les choix numérotés. Si Léa a rejoint,
-son petit portrait s'affiche en haut à droite avec « Léa écoute ».
-
-**Réglages de la planche** — Vu par : Yann (mène) / Léa (a rejoint) ;
-Le dé : aléatoire / 1 naturel / 20 naturel ; Intention préparée :
-masquer / montrer (l'intention du graphe sous chaque réplique, pour
-montrer « structure figée, voix vivante ») ; Recommencer.
-
-**Le dialogue (graphe)**
-
-```
- accueil (neutre) « Encore des têtes neuves. Ici on boit, on paie… »
-   1. « Une chope, et des nouvelles du port. »      → méfiante « Les nouvelles, ça se paie. »
-   2. [Persuasion · CHA +2] DD 10                    → jet du d20 au centre de l'écran
-        réussite → ravie : voiles anglaises au sud de Belle-Île + jusant de Kerdonis
-                   (2 entrées de journal, chez Yann seulement)
-        échec    → « Paie ton ardoise d'abord. »  débloque « Régler l'ardoise · 3 PO »
-        1 nat.   → ressort une ardoise de 10 PO au nom du Quartier-maître
-                   (option affichée mais grisée : « il vous manque 5 PO »)
-        20 nat.  → réussite + « le gamin à la vielle en sait plus que moi »
-   3. [Perspicacité] « Qu'est-ce que vous voulez en échange ? »
-        n'existe que pour Léa (Perspicacité 14) ; elle peut la SOUFFLER
-        → elle apparaît chez Yann, marquée « Léa souffle »
-        → « Il y a une ardoise de 3 PO au nom de votre équipage… »  débloque l'ardoise
-   4. [Ardoise · 3 PO] (débloquée) → elle parle sans jet (règle de la campagne)
-   5. Partir.
-```
-
-L'indice de Perspicacité n'est vu que par Léa : « elle se moque de
-votre charme ; elle veut être payée ». Le jet affiche son calcul : « d20 13
-+ CHA 2 = 15 contre DD 10 · Réussite ». Le dé est blanc (jet de
-compétence, `MEMORY.md` §2). Touches : 1 à 5 ou clic ; à la manette, la
-croix puis A. Le narrateur respecte la règle des noms : rien d'inconnu
-du joueur.
-
-**Questions prévues pour Romain**
-1. Les options verrouillées (classe, stat) : cachées comme dans BG3, ou
-   grisées avec la raison ?
-2. Le d20 : au centre de l'écran, ou dans la fenêtre de dialogue ?
-3. Le joueur qui rejoint : peut-il souffler toutes les options, ou
-   seulement celles que lui seul débloque ?
+Rien : `design/draw-dialogue-screen` a été validé le 16 octobre 2026
+(décisions dans `MEMORY.md` §0 et `archive/tickets/design.md`, nouveau
+ticket `hd2d/roll-dice-in-3d`).
 
 ## 3. Ce qui reste à faire
 
@@ -113,7 +51,6 @@ jusqu'au 11 novembre.
 ### Ensuite, phase 1 du jalon 1 (`TICKETS.md`)
 
 ```
- design/draw-dialogue-screen    conçu (§2 ci-dessus), à écrire
  design/draw-combat-planes      la bagarre du quai en 3 plans (repartir de docs/design/hd2d/quai.html)
  design/draw-journal-and-sheet  Journal · Inventaire · Fiche
  design/draw-lobby-and-creator  lobby (une classe par joueur) + création

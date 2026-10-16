@@ -10,7 +10,7 @@ decisions also go to `MEMORY.md` §0 and to the tickets they affect.
 | --- | --- | --- |
 | `cadre-pc.html` | `design/set-pc-game-frame` | validated 12 Oct 2026 (Octopath skin, party left, ZQSD) |
 | `exploration.html` | `design/draw-explore-screen` | validated 12 Oct 2026 (names once known, perception announced, one speed) |
-| `dialogue.html` | `design/draw-dialogue-screen` | drawn 12 Oct 2026, three questions open |
+| `dialogue.html` | `design/draw-dialogue-screen` | validated 16 Oct 2026 (locked options hidden, 3D die mid-screen, whisper only what you alone unlock) |
 | `taverne-hd2d.html` | HD-2D from the key art | prototype 12 Oct 2026: `assets/maquette/a-salle.png` as a playable Three.js scene |
 
 ## Conventions

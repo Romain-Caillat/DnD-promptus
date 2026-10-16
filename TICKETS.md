@@ -79,7 +79,6 @@ Les joueurs disent ensuite que les règles étaient claires et que chacun
 a eu son moment.
 
 **Phase 1 · Maquettes et règles** — `design/write-frame-tokens` ·
-`design/draw-dialogue-screen` ·
 `design/draw-combat-planes` · `design/draw-journal-and-sheet` ·
 `design/draw-lobby-and-creator` · `design/draw-gm-panel` ·
 `engine/rewrite-corsaires-rules` · `engine/fix-stats-by-class`
@@ -146,15 +145,6 @@ changent pas.
 
 **Fini quand** — La page `/reference` montre le cadre comme la
 maquette, et Romain l'a relue. **Origine** — Bible §10 ; `MEMORY.md` §0. *Point de départ* — `ui/write-design-tokens`, `ui/adopt-pixel-menu` (gelés).
-
-### `design/draw-dialogue-screen` · todo
-
-**Périmètre** — Un dialogue avec un PNJ des Corsaires : portrait et
-expressions, réplique, indice de Perspicacité, choix avec compétence et
-DD, option débloquée, d20 qui roule, joueur qui rejoint et souffle un
-choix.
-
-**Fini quand** — Maquette validée par Romain. **Origine** — Bible §7.
 
 ### `design/draw-combat-planes` · todo
 
@@ -395,6 +385,24 @@ le jet est expliqué au-dessus des personnages.
 
 **Fini quand** — Un tour complet de la bagarre du quai se lit sans explication du MJ.
 
+### `hd2d/roll-dice-in-3d` · todo
+
+**Périmètre** — Chaque jet d'une action (option de dialogue, attaque,
+sauvegarde, test pendant l'exploration) fait rouler un vrai dé en 3D au
+milieu de l'écran, vu de tous les joueurs concernés : il tombe, roule,
+s'arrête sur la face tirée par le serveur, puis le calcul s'affiche
+(« d20 13 + CHA 2 = 15 contre DD 10 · Réussite »). Le dé a des facettes
+ombrées et la couleur du type de jet (`MEMORY.md` §2). Le résultat vient
+du serveur, l'animation ne fait que le montrer. Hypothèse : le même dé
+sert en dialogue et en combat, il ne remplace pas la banderole de
+critique.
+
+**Fini quand** — À la soirée, un jet de Persuasion chez Mère Goulven et
+une attaque de la bagarre du quai roulent ce dé, et les joueurs lisent
+le résultat sans explication. **Origine** — Bible §7, décision du
+16 octobre 2026 (`MEMORY.md` §0). *Point de départ* — `ui/roll-faceted-dice`
+(gelé), le dé plat de `docs/design/v2/dialogue.html`.
+
 ### `hd2d/play-critical-banner` · todo
 
 **Périmètre** — Sur un critique ou un sort marqué « ultime », une
@@ -448,10 +456,13 @@ raccourcis et boutons affichés suivent l'appareil utilisé.
 ### `play/talk-to-npcs` · todo
 
 **Périmètre** — L'écran de dialogue : portrait, texte du narrateur,
-choix, jets avec le d20 qui roule, options débloquées, indice de
-Perspicacité. Un autre joueur peut rejoindre : celui qui a lancé la
-conversation choisit, celui qui a rejoint voit tout et peut souffler un
-choix.
+choix, jets avec le dé en 3D (`hd2d/roll-dice-in-3d`), options
+débloquées, indice de Perspicacité. Les options que la classe ou les
+stats du joueur n'ouvrent pas sont cachées ; celle qu'il ne peut pas
+payer reste grisée avec ce qui manque. Un autre joueur peut rejoindre :
+celui qui a lancé la conversation choisit, celui qui a rejoint voit tout
+et ne souffle que les options que lui seul débloque. Maquette :
+`docs/design/v2/dialogue.html`.
 
 **Fini quand** — À la soirée, deux joueurs mènent une conversation
 ensemble. **Origine** — Bible §7. *Point de départ* — `player/play-scene` (gelé), `ui/roll-faceted-dice`.

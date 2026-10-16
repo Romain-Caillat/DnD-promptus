@@ -82,6 +82,15 @@ below only as history until their ticket rewrites them:
   This replaces, for the look of places, the "volumes are textured 3D
   boxes" rule of §2. It does not yet say how combat grids sit on a
   painted plate (`design/draw-combat-planes`).
+- **Dialogue (Romain, 16 October 2026, board
+  `docs/design/v2/dialogue.html`).** Options a player's class or stats
+  do not open are **hidden**, as in BG3: what a stat brings is read on
+  the sheet, not in greyed-out options. An option blocked by money
+  (an unpaid slate) stays shown, greyed, with what is missing. A player
+  who joined a conversation can **whisper only the options that they
+  alone unlock**. Every roll of an action, in dialogue as in combat, is
+  **a real 3D die in the middle of the screen**, seen by everyone
+  (`hd2d/roll-dice-in-3d`); the faceted look of §2 holds.
 
 ---
 
