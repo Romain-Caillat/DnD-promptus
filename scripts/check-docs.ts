@@ -149,7 +149,9 @@ for (const path of new Glob("docs/{regles,plateforme,tickets}/**/*.md").scanSync
 // Every link of every page must exist; the chains must point both ways.
 const BACK_LINKS: [Kind, string, Kind, string][] = [
   ["rule", "Résolue par", "fiche", "Résout"],
+  ["fiche", "Résout", "rule", "Résolue par"],
   ["fiche", "Tickets", "ticket", "Réalise"],
+  ["ticket", "Réalise", "fiche", "Tickets"],
 ];
 for (const page of pages.values()) {
   for (const field of page.fields.keys()) {
@@ -164,6 +166,34 @@ for (const page of pages.values()) {
       if (other?.kind === otherKind && !links(other, otherField).includes(page.path))
         fail(page.path, `« ${field} » → ${target}, whose « ${otherField} » does not link back`);
     }
+  }
+}
+
+// Each folder's index lists every page with the page's own state (and,
+// for a rule, what resolves it); a ticket sits under its phase.
+const INDEXES = ["docs/regles/jeu", "docs/regles/campagne", "docs/plateforme", "docs/tickets"];
+const plain = (text: string) => text.replaceAll("**", "").trim();
+for (const page of pages.values()) {
+  const dir = INDEXES.find((d) => page.path.startsWith(`${d}/`));
+  if (!dir) continue;
+  const index = readFileSync(join(ROOT, dir, "README.md"), "utf8");
+  const target = `](${relative(dir, page.path)})`;
+  const row = index.split("\n").find((line) => line.startsWith("|") && line.includes(target));
+  if (!row) {
+    fail(page.path, `missing from ${dir}/README.md`);
+    continue;
+  }
+  const state = plain(page.fields.get("État") ?? "");
+  const shown = page.kind === "ticket" ? state.split(" · ")[0] : state;
+  if (!plain(row).includes(shown)) fail(page.path, `${dir}/README.md shows another state than « ${shown} »`);
+  if (page.kind === "rule") {
+    const solved = /^\[([^\]]+)\]/.exec(page.fields.get("Résolue par") ?? "")?.[1] ?? "—";
+    if (!row.includes(solved)) fail(page.path, `${dir}/README.md shows another « Résolue par » than « ${solved} »`);
+  }
+  const phase = /phase « ([^»]+) »/.exec(state)?.[1];
+  if (phase) {
+    const line = index.split("\n").find((l) => l.startsWith(`- **${phase}** :`));
+    if (!line?.includes(target)) fail(page.path, `not listed under phase « ${phase} » in ${dir}/README.md`);
   }
 }
 
