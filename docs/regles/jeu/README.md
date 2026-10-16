@@ -1,40 +1,40 @@
-# Règles du jeu — index
+# Règles du jeu
 
-Ce que vit le joueur. Squelette d'un bloc : [docs/README.md](../../README.md).
+Ce que vit le joueur, une page par règle. Gabarit : [carte des docs](../../README.md).
 Ce qui n'est pas encore ici vit toujours dans [la bible](../../bible.md).
 
-**Références par défaut** — quand une règle est muette, on fait comme elles :
+**Références par défaut** : quand une règle est muette, on fait comme elles.
 
-```
- règles, stats, combat   DnD 5e, lu avec la clarté de Fire Emblem
- dialogue, vie de groupe Baldur's Gate 3
- look, arcs personnels   Octopath Traveler
- intentions ennemies     Into the Breach
+```text
+ règles, stats, combat    DnD 5e, lu avec la clarté de Fire Emblem
+ dialogue, vie de groupe  Baldur's Gate 3
+ look, arcs personnels    Octopath Traveler
+ intentions ennemies      Into the Breach
 ```
 
-| Règle | Fichier | État | Résolue par |
+| Domaine | Règle | État | Résolue par |
 |---|---|---|---|
-| Choix uniquement | [dialogue](dialogue.md) | tranchée 11/10 | — |
-| Options verrouillées cachées | [dialogue](dialogue.md) | tranchée 16/10 | — |
-| Option bloquée par l'argent | [dialogue](dialogue.md) | tranchée 16/10 | — |
-| Rejoindre une conversation | [dialogue](dialogue.md) | tranchée 16/10 | — |
-| Un vrai dé au milieu de l'écran | [jets](jets.md) | tranchée 16/10 | — |
-| Une table de six | [groupe](groupe.md) | tranchée avant la bible | — |
-| Qui décide quand le groupe est réuni | [groupe](groupe.md) | **à définir** | — |
-| Joueur déconnecté ou absent | [groupe](groupe.md) | à définir | — |
-| Le temps d'une soirée | [soiree](soiree.md) | provisoire | — |
-| Arrêter et reprendre | [soiree](soiree.md) | à définir | — |
-| Fin de chapitre | [soiree](soiree.md) | à définir | — |
-| Repos | [progression](progression.md) | à définir | — |
-| Montée de niveau | [progression](progression.md) | à définir | — |
-| Compagnons | [progression](progression.md) | à définir | — |
-| Économie | [progression](progression.md) | à définir | — |
-| Ce que le monde retient de vos choix | [monde](monde.md) | **à définir** | — |
-| Un lieu est une illustration peinte | [apparence](apparence.md) | tranchée 12/10 | [rendu-des-lieux](../../plateforme/rendu-des-lieux.md) |
-| Interface façon Octopath | [apparence](apparence.md) | tranchée 12/10 | — |
-| Musique choisie, synchronisée | [apparence](apparence.md) | tranchée avant la bible | [musique](../../plateforme/musique.md) |
-| Voix entre joueurs | [apparence](apparence.md) | provisoire | — |
-| Voix du narrateur | [apparence](apparence.md) | à définir | — |
-| Effets sonores | [apparence](apparence.md) | à définir | — |
+| apparence | [Effets sonores](apparence/effets-sonores.md) | à définir | — |
+| apparence | [Interface façon Octopath](apparence/interface-facon-octopath.md) | tranchée · 12/10/2026 | — |
+| apparence | [Musique choisie, synchronisée](apparence/musique-choisie-synchronisee.md) | tranchée · avant la bible | [Lecteur YouTube synchronisé](../../plateforme/musique.md) |
+| apparence | [Un lieu est une illustration peinte](apparence/un-lieu-est-une-illustration-peinte.md) | tranchée · 12/10/2026 | [Rendu des lieux peints](../../plateforme/rendu-des-lieux.md) |
+| apparence | [Voix du narrateur](apparence/voix-du-narrateur.md) | à définir | — |
+| apparence | [Voix entre joueurs](apparence/voix-entre-joueurs.md) | provisoire · 16/10/2026 | — |
+| dialogue | [Choix uniquement](dialogue/choix-uniquement.md) | tranchée · 11/10/2026 | — |
+| dialogue | [Option bloquée par l'argent](dialogue/option-bloquee-par-l-argent.md) | tranchée · 16/10/2026 | — |
+| dialogue | [Options verrouillées cachées](dialogue/options-verrouillees-cachees.md) | tranchée · 16/10/2026 | — |
+| dialogue | [Rejoindre une conversation](dialogue/rejoindre-une-conversation.md) | tranchée · 16/10/2026 | — |
+| groupe | [Joueur déconnecté ou absent](groupe/joueur-deconnecte-ou-absent.md) | à définir | — |
+| groupe | [Qui décide quand le groupe est réuni](groupe/qui-decide-quand-le-groupe-est-reuni.md) | **à définir** | — |
+| groupe | [Une table de six](groupe/une-table-de-six.md) | tranchée · avant la bible (leçons des parties) | — |
+| jets | [Un vrai dé au milieu de l'écran](jets/un-vrai-de-au-milieu-de-l-ecran.md) | tranchée · 16/10/2026 | — |
+| monde | [Ce que le monde retient de vos choix](monde/ce-que-le-monde-retient-de-vos-choix.md) | **à définir** | — |
+| progression | [Compagnons](progression/compagnons.md) | à définir | — |
+| progression | [Économie](progression/economie.md) | à définir | — |
+| progression | [Montée de niveau](progression/montee-de-niveau.md) | à définir | — |
+| progression | [Repos](progression/repos.md) | à définir | — |
+| soiree | [Arrêter et reprendre](soiree/arreter-et-reprendre.md) | à définir | — |
+| soiree | [Fin de chapitre](soiree/fin-de-chapitre.md) | à définir | — |
+| soiree | [Le temps d'une soirée](soiree/le-temps-d-une-soiree.md) | provisoire · 16/10/2026 | — |
 
 En gras : les deux questions à trancher en premier.

@@ -1,12 +1,12 @@
-# Règles de campagne — index
+# Règles de campagne
 
-Ce que l'Auteur construit et règle. Squelette d'un bloc : [docs/README.md](../../README.md).
+Ce que l'Auteur construit et règle, une page par règle. Gabarit : [carte des docs](../../README.md).
 
-| Règle | Fichier | État | Résolue par |
+| Domaine | Règle | État | Résolue par |
 |---|---|---|---|
-| Une occasion par stat | [hub](hub.md) | tranchée 11/10 | — |
-| Ce qu'un hub contient au minimum | [hub](hub.md) | à définir | — |
-| L'Auteur teste avant la table | [hub](hub.md) | à définir | — |
-| Classes, prétirés et arcs personnels | [reglages](reglages.md) | tranchée 11/10 | — |
-| Difficulté | [reglages](reglages.md) | tranchée 11/10 | — |
-| Ton et limites de contenu | [reglages](reglages.md) | à définir | — |
+| hub | [Ce qu'un hub contient au minimum](hub/ce-qu-un-hub-contient-au-minimum.md) | à définir | — |
+| hub | [L'Auteur teste avant la table](hub/l-auteur-teste-avant-la-table.md) | à définir | — |
+| hub | [Une occasion par stat](hub/une-occasion-par-stat.md) | tranchée · 11/10/2026 | — |
+| reglages | [Classes, prétirés et arcs personnels](reglages/classes-pretires-et-arcs-personnels.md) | tranchée · 11/10/2026 | — |
+| reglages | [Difficulté](reglages/difficulte.md) | tranchée · 11/10/2026 | — |
+| reglages | [Ton et limites de contenu](reglages/ton-et-limites-de-contenu.md) | à définir | — |

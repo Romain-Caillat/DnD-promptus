@@ -1,12 +1,11 @@
-# Plateforme — index
+# Plateforme
 
-Comment chaque règle est rendue vraie. Squelette d'un bloc : [docs/README.md](../README.md).
-Une fiche cite les règles qu'elle **résout** ; un ticket cite sa fiche.
+Comment chaque règle est rendue vraie, une page par fiche. Gabarit : [carte des docs](../README.md).
 
 | Fiche | Résout | État |
 |---|---|---|
-| [Rendu des lieux](rendu-des-lieux.md) | Un lieu est une illustration peinte | tranchée 12/10 |
-| [Musique](musique.md) | Musique choisie, synchronisée | tranchée avant la bible |
+| [Rendu des lieux peints](rendu-des-lieux.md) | Un lieu est une illustration peinte | tranchée · 12/10/2026 |
+| [Lecteur YouTube synchronisé](musique.md) | Musique choisie, synchronisée | tranchée · avant la bible |
 
 ## Docs techniques déjà en place
 

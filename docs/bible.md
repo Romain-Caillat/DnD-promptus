@@ -86,7 +86,7 @@ garde ou le partage. Deux joueurs ne voient pas forcément la même chose
 
 Pas d'asynchrone. Chaque soirée a un début et une fin nets.
 
-Table, temps d'une soirée : voir `docs/regles/jeu/groupe.md` et `soiree.md`.
+Table, temps d'une soirée : voir `docs/regles/jeu/groupe/` et `soiree/`.
 
 ## 5. Règles
 
@@ -94,7 +94,7 @@ Table, temps d'une soirée : voir `docs/regles/jeu/groupe.md` et `soiree.md`.
 - Le joueur choisit **race, classe, historique**. Les **stats sont fixées
   par la classe** (tableau standard réparti au mieux pour elle).
 - **Une classe = un seul joueur**, premier arrivé, premier servi, visible dans le lobby.
-- Classes limitées, prétirés, arcs personnels : voir `docs/regles/campagne/reglages.md`.
+- Classes limitées, prétirés, arcs personnels : voir `docs/regles/campagne/reglages/`.
 
 ### Chaque stat sert partout
 Chaque joueur doit trouver son compte, en combat **et** hors combat.
@@ -108,7 +108,7 @@ Chaque joueur doit trouver son compte, en combat **et** hors combat.
 | SAG | intentions ennemies, éviter les embuscades | indicateurs cachés, détecter les mensonges |
 | CHA | sorts de barde/ensorceleur, démoraliser | marchandage, persuasion, intimidation |
 
-Une occasion par stat dans chaque hub : voir `docs/regles/campagne/hub.md`.
+Une occasion par stat dans chaque hub : voir `docs/regles/campagne/hub/`.
 
 ### Progression
 - **Jalons** : tout le groupe monte de niveau ensemble, à des moments clés.
@@ -118,7 +118,7 @@ Une occasion par stat dans chaque hub : voir `docs/regles/campagne/hub.md`.
 ### Échec
 - **Perso à 0 PV** : à terre, jets contre la mort, un allié peut le relever.
   La mort est possible, et la résurrection rare et coûteuse
-  (difficulté : voir `docs/regles/campagne/reglages.md`).
+  (difficulté : voir `docs/regles/campagne/reglages/`).
 - **Perso mort** : son joueur prend un compagnon, ou crée un nouveau perso
   qui arrive au prochain hub. Il ne reste jamais spectateur.
 - **Défaite du groupe** : un **échec qui fait avancer**. C'est une branche
@@ -134,7 +134,7 @@ Une occasion par stat dans chaque hub : voir `docs/regles/campagne/hub.md`.
 
 ## 7. Dialogue
 
-Migré : `docs/regles/jeu/dialogue.md` et `jets.md`.
+Migré : `docs/regles/jeu/dialogue/` et `jets/`.
 
 ## 8. Combat
 
@@ -199,7 +199,7 @@ Un **panneau** que le MJ ouvre par-dessus son propre écran de joueur (touche `T
 
 - **Vrai HD-2D** : sprites en pixel art dans un décor en profondeur,
   lumière dynamique, flou de profondeur.
-- Lieux, interface, musique, voix : voir `docs/regles/jeu/apparence.md`.
+- Lieux, interface, musique, voix : voir `docs/regles/jeu/apparence/`.
 - **PixelLab** : sprites animés, tuiles, décors.
 - **IA image** : portraits des PNJ et des persos, portraits « en action »
   pour les banderoles, illustrations des scènes clés.
@@ -211,7 +211,7 @@ branches d'échec et la convergence vers le fil.
 
 ## 13. Son
 
-Migré : `docs/regles/jeu/apparence.md`.
+Migré : `docs/regles/jeu/apparence/`.
 
 ## 14. Écarts avec la vision précédente
 
